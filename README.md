@@ -1,0 +1,2 @@
+# MDMCv0.2_pilot
+A pilot version of MDMCv0.2 to refine experimental data for simple MD models (e.g. water).  Aim is to have this pilot version working by the next Developer Meeting at the end of June. 
