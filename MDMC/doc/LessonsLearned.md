@@ -43,4 +43,17 @@ It appears that a reasonable approach to creating structural units (e.g. atoms, 
 In many respects it makes sense to have the charge of each atom as an attribute of the atom object, as it is a parameter that each atom possesses and is unrelated to  any other object (at least generally - there may be special cases where this is not true).  This is the method that MMTK uses for defining the charge.  However, as the charge is a forcefield parameter, it is important that it is accessible in the same way as the bonded interaction parameters, so that they can be adjusted in a consistent manner.  Therefore there are two choices:
 * Store the charge independently from the atom class, in a non-bonded force field class - has the drawback that a probable operation on an atom (accessing the charge) is no longer trivial.
 * Having the charge as an attribute of the atom class, which can be modified from a non-bonded force field class - increases coupling between classes.
-A further important consideration is whether to have a different force field object for each non-bonded interaction for each atom, even though in theory the charges of all identical atoms should be the same.  Having an object per atom would allow the charge on each atom to be varied individually, which might be useful in some situations - *discuss this at June 2018 developer meeting.*
+
+A further important consideration is whether to have a different force field object for each non-bonded interaction for each atom, even though in theory the charges of all identical atoms should be the same.  Having an object per atom would allow the charge on each atom to be varied individually, which might be useful in some situations. *discuss this at June 2018 developer meeting.*
+
+
+### Python Version
+Currently making code backwards compatible with Python 2.7 (with the exception of using enum module of stdlib and implementation of abstract classes), but this might lead to some restrictions - do we want this to be the case with the release version of MDMC? *discuss this at June 2018 developer meeting.*
+
+
+### MD Engine Ensemble
+Decided upon different simulator classes for different ensembles.  This will make it clear which ensemble is selected in each instance, whereas I think just passing a thermo/barostat to a 'simulate' class is less clear.
+
+
+### Bond generation from pdb files
+If MDMC is to read pdb files and generate topology from them, we will need to select a method for assigning bonds.  A common simple approach is to determine a distance cutoff below which bonds are assigned.  This can further be developed by having bond configurations for (and between) known structures (specifically residues).  Are there any other more sophisticated/general methods that can be applied?
