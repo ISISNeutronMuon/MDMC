@@ -32,7 +32,7 @@ Potentially beneficial for each atom to be uniquely identified by an atomID (pos
 The simulation box should possess a size, shape, and boundary conditions.  It might be useful if the size can be defined in two ways:
 * Specified by the user (either upon initialization or later)
 * Determined based on the extremes of the atoms that have been included in the box.
-The latter of these two might require some careful thought, however it would be useful in the case of liquids if the user can just specify a number of atoms and a box shape and the box size is determined for them.
+The latter of these two might require some careful thought, however it would be useful in the case of liquids if the user can just specify a number of atoms, density, and a box shape and the box size is determined for them.
 
 
 ### Hierarchy of structural units
@@ -57,3 +57,12 @@ Decided upon different simulator classes for different ensembles.  This will mak
 
 ### Bond generation from pdb files
 If MDMC is to read pdb files and generate topology from them, we will need to select a method for assigning bonds.  A common simple approach is to determine a distance cutoff below which bonds are assigned.  This can further be developed by having bond configurations for (and between) known structures (specifically residues).  Are there any other more sophisticated/general methods that can be applied?
+
+### Format for storing topologies
+As with MD engines, it would make sense for MDMC to store common topologies (and configurations?) internally, so that users are not required to define them.  This also enables users to add to the database of topologies, which could ideally be fed back into release versions in a simple manner.  We need to consider what the best format for storing these topologies is, particularly given the requirement that they need to be easily created by users. *discuss this at June 2018 developer meeting*
+
+### Universe building approaches
+There are two approaches for filling a universe with n copies of a structural unit:
+* Creating the structural unit, adding it to the universe, adding a forcefield, and then copying the structural unit.  Just adding the forcefield to a single structural unit and then copying this will eliminate the need to assign an interaction function (and parameters) to every interaction, which will be quicker than the alternative:
+* Creating the structural unit and then adding n copies of it to the universe.  Following this a forcefield would need to be applied to the universe, which would result in interaction functions being assigned to every interaction.
+The first of these is preferential, however the second is potentially more natural from a user perspective.  *Therefore ideally the second of these (from the user perspective) should be setup to perform the first of these in the background i.e. the user should have to specify a forcefield when they perform the copy.*
