@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from functools import reduce
 from itertools import count
+import weakref
 
 class StructuralUnit(ABC):
     """Abstract base class for all structural units
@@ -25,22 +26,26 @@ class StructuralUnit(ABC):
     _ID_generator = count(start=1,step=1)
 
     # TODO: If structures are copied, assign new ID to copy
-    def __init__(self):
+    def __init__(self,position):
         # TODO: Add init docstring
+        # TODO: Ensure that deepcopy doesn't copy self.ID
         self.ID = next(self._ID_generator)
-        self._atoms = []
         self._interactions = set()
         self.type = type(self)
         self.universe = None
+        self.position = position
 
-    def atom_list(self):
-        return self._atoms
-
-    def atom_iterator(self):
-        return iter(self._atoms)
-
+    @property
     def position(self):
-        pass
+        return self._position
+
+    @position.setter
+    def position(self,position):
+        self._position = np.array(position)
+
+    @property
+    def atom_list(self):
+        return self._atom_list
 
     def velocity(self):
         pass
@@ -52,6 +57,25 @@ class StructuralUnit(ABC):
     def interaction_set(self):
         return self._interactions
 
+    def top_level_structure(self):
+        """Returns:
+            Highest level structural unit of which it is a member
+        """
+        if issubclass(type(self.parent),StructuralUnit):
+            return self.parent.top_level_structure()
+        else:
+            return self
+
+    def _position_in_parent_CoM_frame(self):
+        if top_level_structure() is self:
+            # TODO: Raise error rather than returning None
+            return None
+        else:
+            return self.position - parent._get_center_of_mass()
+
+    def _added_to_structure(self):
+        """Method is called if it becomes subunit of another structural_unit"""
+        self._position_in_parent = _position_in_parent_CoM_frame()
 
 class Atom(StructuralUnit):
     """A single atom
@@ -63,7 +87,7 @@ class Atom(StructuralUnit):
     position - position in simulation box
     velocity -
     element - atomic element
-    mass - atomic mass (amu).  Can either be specified of determined from loopup
+    mass - atomic mass (amu).  Can either be specified of determined from lookup
     """
 
     def __init__(self,element,position=(0,0,0),velocity=(0,0,0),**kwargs):
@@ -77,12 +101,12 @@ class Atom(StructuralUnit):
         # TODO: Create lookup table for atomic masses
         # TODO: Check position and velocity are valid
 
-        super().__init__()
+        super().__init__(position)
         self.element = element
         self.mass = kwargs['mass']
-        self.position = np.array(position)
         self.velocity = np.array(velocity)
-        self.add_interaction(NonBonded)
+        self.add_interaction(Coulombic)
+        self._atom_list = [self]
 
     # TODO: Think about naming of add_interaction and update_interactions
     def add_interaction(self,interaction_type,*atom):
@@ -96,9 +120,6 @@ class Atom(StructuralUnit):
 
     def interaction_set(self):
         return self._interactions
-
-    def atom_list(self):
-        return [self]
 
 
 class Group(StructuralUnit):
@@ -120,15 +141,46 @@ class Molecule(StructuralUnit):
     position - center of mass position
     velocity - center of mass translational velocity
     """
-
+    # TODO: Check bond lengths are consistent with atom positions
     # TODO: Make Molecule init from list of atoms and also list of element symbols (both with list of bonds)
-    def __init__(self,**kwargs):
-        super().__init__()
-        self._atoms = kwargs['atoms']
-        self._interactions = kwargs['interactions']
+    def __init__(self,position=(0,0,0),**kwargs):
+        self._atom_list = kwargs['atoms']
+        self._calc_subunit_position_in_CoM_frame()
+        super().__init__(position)
+        self._interactions = set(kwargs['interactions'])
+        # TODO: ENSURE THAT INTERACTIONS FROM CONSTITUENT ATOMS ARE ADDED
 
-    def add_interaction(self):
-        pass
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self,position):
+        self._position = np.array(position)
+        self._set_subunit_positions()
+
+    def _set_subunit_positions(self):
+        for atom in self.atom_list:
+            atom.position = self.position + self._CoM_frame_positions[atom]
+
+    # TODO: Improve implementation which determines atomic positions relative to molecular CoM
+    def _calc_CoM(self):
+        mass = 0.
+        weighted_positions = np.zeros(3)
+        for atom in self.atom_list:
+            mass += atom.mass
+            weighted_positions += (atom.position * atom.mass)
+        return weighted_positions / mass
+
+    def _calc_subunit_position_in_CoM_frame(self):
+        self._CoM_frame_positions = {}
+        CoM = self._calc_CoM()
+        for atom in self.atom_list:
+            self._CoM_frame_positions[atom] = atom.position - CoM
+
+    # TODO: Unify add/update interaction methods
+    def add_interaction(self,interaction):
+        self._interactions.add(interaction)
 
 # TODO: Take out atom operations common to both structures and interactions, like atom_list, into a mixin class
 
@@ -140,49 +192,60 @@ class Interaction(object):
 
     Attributes:
     atoms
-    interaction_function - A class of bond interaction function (e.g. harmonic
+    function - A class of bond interaction function (e.g. harmonic
     potential)
     parameters - bond interaction parameters
     """
 
-    def __init__(self,*atoms):
+    def __init__(self,atom,*atoms):
         # TODO: Iterate over atoms adding self to atoms.interactions, maybe also with interaction type
         # TODO: Iterate over atoms adding each element to self.elements
         # TODO: Test that number of parameters is what is required by bond_interaction
         # TODO: Change init so that Interaction can be called with a structural unit rather than atom
         # TODO: Change from passing atoms to something more general, as other interactions also need to be passed (e.g. bonds for dihedral)
-        self._atoms = list(atoms)
-        self.parameters = None
-        self.interaction_function = None
+        self._atom_list = [atom] + list(atoms)
+        self.function = None
         self._generate_ID()
         self.universe = None
+        self._add_interaction_atoms()
 
     # TODO: Unify atom_list methods
     # TODO: Extract code so that atoms is not regenerated each time
+    @property
     def atom_list(self):
-        atoms = []
-        for atom in self._atoms:
-            atoms.extend(atom.atom_list())
-        return atoms
+        return self._atom_list
+
+    @atom_list.setter
+    def atom_list(self,atoms):
+        for atom in atoms:
+            self._atom_list.extend(atom.atom_list)
 
     def atom_IDs(self):
-        return [atom.ID for atom in self.atom_list()]
+        return [atom.ID for atom in self.atom_list]
 
     # TODO: Make IDs unique prime numbers
     def _generate_ID(self):
         self.ID = reduce(lambda x,y: x*y, self.atom_IDs())
 
+    def element_list(self):
+        return [atom.element for atom in self.atom_list]
+
     def sorted_element_list(self):
         """Returns elements sorted alphabetically"""
-        return sorted([atom.element for atom in self.atom_list()])
+        return sorted(self.element_list())
+
+    # TODO: Currently defined so that force_field INTERACTION can be hashed - change this
+    def _element_tuple(self):
+        return tuple(self.element_list())
 
     # TODO: Ensure this doesn't get called when interactions are added with a call to self from an atom object
     def _add_interaction_atoms(self):
-        for atom in self.atom_list():
-            atom.add_interaction(self)
+        for atom in self.atom_list:
+            atom.update_interactions(self)
 
-class NonBonded(Interaction):
-    """A non-bonded interaction
+
+class Dispersion(Interaction):
+    """A non-bonded dispersive interaction - either LJ or Buckingham
 
     Requires only a single atom, and can only take non-bonded functions as
     interaction functions.
@@ -191,6 +254,15 @@ class NonBonded(Interaction):
     def __init__(self,atom):
         super().__init__(atom)
 
+class Coulombic(Interaction):
+    """A non-bonded coulombic interaction - either normal or modified Coulomb
+
+    Requires only a single atom, and can only take non-bonded functions as
+    interaction functions.
+    """
+
+    def __init__(self,atom):
+        super().__init__(atom)
 
 class Bond(Interaction):
     """A bond between any two atoms
@@ -213,8 +285,15 @@ class BondAngle(Interaction):
     Attributes:
     ATTRIBUTES"""
 
-    def __init__(self):
-        pass
+    def __init__(self,**kwargs):
+        # TODO: Improve ability to deal with both atoms and bonds
+        try:
+            atoms = kwargs['atoms']
+        except KeyError:
+            pass
+            # Deal with bonds
+
+        super().__init__(*atoms)
 
 
 # TODO: Think about whether a class which contains exclusions to non-bonded interactions is required
