@@ -5,13 +5,13 @@ defined.  All shared behaviour is included within the StructuralUnit base class.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 import numpy as np
 from functools import reduce
 from itertools import count
 import weakref
 
-class StructuralUnit(ABC):
+class StructuralUnit:
     """Abstract base class for all structural units
 
  	Attributes:
@@ -22,11 +22,13 @@ class StructuralUnit(ABC):
     bonds - list of all
     """
 
+    __metaclass__ = ABCMeta
+
     # TODO: Replace ID generation method
     _ID_generator = count(start=1,step=1)
 
     # TODO: If structures are copied, assign new ID to copy
-    def __init__(self,position):
+    def __init__(self,position,name):
         # TODO: Add init docstring
         # TODO: Ensure that deepcopy doesn't copy self.ID
         self.ID = next(self._ID_generator)
@@ -34,6 +36,7 @@ class StructuralUnit(ABC):
         self.type = type(self)
         self.universe = None
         self.position = position
+        self.name = name
 
     @property
     def position(self):
@@ -47,6 +50,9 @@ class StructuralUnit(ABC):
     def atom_list(self):
         return self._atom_list
 
+    def translate(self, displacement):
+        self.position = self.position + np.array(displacement)
+
     def velocity(self):
         pass
 
@@ -56,6 +62,9 @@ class StructuralUnit(ABC):
 
     def interaction_set(self):
         return self._interactions
+
+    def interaction_list(self):
+        return list(self.interaction_set())
 
     def top_level_structure(self):
         """Returns:
@@ -76,6 +85,9 @@ class StructuralUnit(ABC):
     def _added_to_structure(self):
         """Method is called if it becomes subunit of another structural_unit"""
         self._position_in_parent = _position_in_parent_CoM_frame()
+
+    # TODO: Test position of all atoms is within universe
+
 
 class Atom(StructuralUnit):
     """A single atom
@@ -101,7 +113,7 @@ class Atom(StructuralUnit):
         # TODO: Create lookup table for atomic masses
         # TODO: Check position and velocity are valid
 
-        super().__init__(position)
+        super(Atom,self).__init__(position,name=element)
         self.element = element
         self.mass = kwargs['mass']
         self.velocity = np.array(velocity)
@@ -120,6 +132,17 @@ class Atom(StructuralUnit):
 
     def interaction_set(self):
         return self._interactions
+
+    @property
+    def charge(self):
+        try:
+            for interaction in self.interaction_list():
+                if type(interaction) == Coulombic:
+                    return interaction.function.params['charge']
+            else:
+                return None
+        except AttributeError:
+            return None
 
 
 class Group(StructuralUnit):
@@ -143,10 +166,10 @@ class Molecule(StructuralUnit):
     """
     # TODO: Check bond lengths are consistent with atom positions
     # TODO: Make Molecule init from list of atoms and also list of element symbols (both with list of bonds)
-    def __init__(self,position=(0,0,0),**kwargs):
+    def __init__(self,position=(0,0,0),name=None,**kwargs):
         self._atom_list = kwargs['atoms']
         self._calc_subunit_position_in_CoM_frame()
-        super().__init__(position)
+        super(Molecule,self).__init__(position,name)
         self._interactions = set(kwargs['interactions'])
         # TODO: ENSURE THAT INTERACTIONS FROM CONSTITUENT ATOMS ARE ADDED
 
@@ -178,9 +201,23 @@ class Molecule(StructuralUnit):
         for atom in self.atom_list:
             self._CoM_frame_positions[atom] = atom.position - CoM
 
+    @property
+    def bounding_box(self):
+        return BoundingBox(self.position, self.atom_list)
+
     # TODO: Unify add/update interaction methods
     def add_interaction(self,interaction):
         self._interactions.add(interaction)
+
+
+class BoundingBox(object):
+
+    def __init__(self, position, atom_list):
+        self.min = position
+        self.max = position
+        for atom in atom_list:
+            self.min = np.minimum(self.min,atom.position)
+            self.max = np.maximum(self.max,atom.position)
 
 # TODO: Take out atom operations common to both structures and interactions, like atom_list, into a mixin class
 
@@ -252,7 +289,7 @@ class Dispersion(Interaction):
     """
 
     def __init__(self,atom):
-        super().__init__(atom)
+        super(Dispersion,self).__init__(atom)
 
 class Coulombic(Interaction):
     """A non-bonded coulombic interaction - either normal or modified Coulomb
@@ -262,7 +299,7 @@ class Coulombic(Interaction):
     """
 
     def __init__(self,atom):
-        super().__init__(atom)
+        super(Coulombic,self).__init__(atom)
 
 class Bond(Interaction):
     """A bond between any two atoms
@@ -273,7 +310,7 @@ class Bond(Interaction):
     """
 
     def __init__(self,atom1,atom2):
-        super().__init__(atom1,atom2)
+        super(Bond,self).__init__(atom1,atom2)
 
 
 class BondAngle(Interaction):
@@ -293,7 +330,7 @@ class BondAngle(Interaction):
             pass
             # Deal with bonds
 
-        super().__init__(*atoms)
+        super(BondAngle,self).__init__(*atoms)
 
 
 # TODO: Think about whether a class which contains exclusions to non-bonded interactions is required
