@@ -8,14 +8,17 @@ definitions.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
-from abc import ABC, abstractmethod
+from abc import ABCMeta, abstractmethod
 
-class interaction_function(ABC):
+# TODO: Define abstract class
+class interaction_function:
     """Abstract class defining form of interaction functions, which can be user
     supplied
 
     Attributes:
     """
+
+    __metaclass__ = ABCMeta
 
     def function(self):
         pass
