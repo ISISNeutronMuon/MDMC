@@ -46,6 +46,7 @@ In many respects it makes sense to have the charge of each atom as an attribute 
 
 A further important consideration is whether to have a different force field object for each non-bonded interaction for each atom, even though in theory the charges of all identical atoms should be the same.  Having an object per atom would allow the charge on each atom to be varied individually, which might be useful in some situations. *discuss this at June 2018 developer meeting.*
 
+A similar question arises for dispersive interaction parameters (e.g. LJ sigma), although for this it might be the case that the MD engine does not assign this for every atom, and instead just has a single set of dispersive parameters.  This is definitely the situation for MMTK.
 
 ### Python Version
 Currently making code backwards compatible with Python 2.7 (with the exception of using enum module of stdlib and implementation of abstract classes), but this might lead to some restrictions - do we want this to be the case with the release version of MDMC? *discuss this at June 2018 developer meeting.*
@@ -58,11 +59,29 @@ Decided upon different simulator classes for different ensembles.  This will mak
 ### Bond generation from pdb files
 If MDMC is to read pdb files and generate topology from them, we will need to select a method for assigning bonds.  A common simple approach is to determine a distance cutoff below which bonds are assigned.  This can further be developed by having bond configurations for (and between) known structures (specifically residues).  Are there any other more sophisticated/general methods that can be applied?
 
+
 ### Format for storing topologies
 As with MD engines, it would make sense for MDMC to store common topologies (and configurations?) internally, so that users are not required to define them.  This also enables users to add to the database of topologies, which could ideally be fed back into release versions in a simple manner.  We need to consider what the best format for storing these topologies is, particularly given the requirement that they need to be easily created by users. *discuss this at June 2018 developer meeting*
+
 
 ### Universe building approaches
 There are two approaches for filling a universe with n copies of a structural unit:
 * Creating the structural unit, adding it to the universe, adding a forcefield, and then copying the structural unit.  Just adding the forcefield to a single structural unit and then copying this will eliminate the need to assign an interaction function (and parameters) to every interaction, which will be quicker than the alternative:
 * Creating the structural unit and then adding n copies of it to the universe.  Following this a forcefield would need to be applied to the universe, which would result in interaction functions being assigned to every interaction.
 The first of these is preferential, however the second is potentially more natural from a user perspective.  *Therefore ideally the second of these (from the user perspective) should be setup to perform the first of these in the background i.e. the user should have to specify a forcefield when they perform the copy.*
+
+
+### Determine cost of weakrefs
+Currently the universe-atom and atom-interaction relationships contain cyclical references using weakrefs.
+
+
+### MMTK LJ Parameters
+MMTK returns three parameters for LJ interactions, where commonly there would be two.  The third parameter is undefined, and is usually hard coded as 0.
+
+
+### Vector parameter passing
+Use `*`args to allow vectors to be passed as both a list and individual floats.
+
+
+### Universe bounding box position
+MMTK defines it's universes centered around [0,0,0], rather than having this as a corner. Need to map positions when converting between MDMC and MMTK universe. Do we want our universes to be defined around or from [0,0,0]?  *discuss this at June 2018 developer meeting*
