@@ -7,18 +7,20 @@ the parameter sets are restricted to describing water.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-4 17:38:48"""
 
-from abc import ABC,abstractmethod
+from abc import ABCMeta,abstractmethod
 
 import MDMC.src.MD.interaction_functions as ifu
 import MDMC.src.MD.structural_units as su
 
-class ForceField(ABC):
+class ForceField:
     """Abstract class defining a force field
 
     For each interaction type that it uses (non-bonded, bonds, bond angles etc),
     a force field must define the interaction function (LJ, harmonic etc).  It
     must also define the parameters for each of these functions.
     """
+
+    __metaclass__ = ABCMeta
 
     def __init__(self,interactions):
         for interaction in interactions:
@@ -61,7 +63,7 @@ class SPCE(ForceField):
     f_HOH = 383.      # kJ mol^-1 rad^2
 
     def __init__(self,interactions):
-        super().__init__(interactions)
+        super(SPCE,self).__init__(interactions)
 
     # TODO: Recreates interaction dictionary with each call - change this, but maintain new potential object generation
     # TODO: Replace with abstract factory
