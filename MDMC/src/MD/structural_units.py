@@ -28,7 +28,7 @@ class StructuralUnit:
     _ID_generator = count(start=1,step=1)
 
     # TODO: If structures are copied, assign new ID to copy
-    def __init__(self,position,name):
+    def __init__(self,position,velocity,name):
         # TODO: Add init docstring
         # TODO: Ensure that deepcopy doesn't copy self.ID
         self.ID = next(self._ID_generator)
@@ -36,6 +36,7 @@ class StructuralUnit:
         self.type = type(self)
         self.universe = None
         self.position = position
+        self.velocity = velocity
         self.name = name
 
     @property
@@ -47,14 +48,19 @@ class StructuralUnit:
         self._position = np.array(position)
 
     @property
+    def velocity(self):
+        return self._velocity
+
+    @velocity.setter
+    def velocity(self,velocity):
+        self._velocity = np.array(velocity)
+
+    @property
     def atom_list(self):
         return self._atom_list
 
     def translate(self, displacement):
         self.position = self.position + np.array(displacement)
-
-    def velocity(self):
-        pass
 
     @abstractmethod
     def add_interaction(self):
@@ -102,7 +108,7 @@ class Atom(StructuralUnit):
     mass - atomic mass (amu).  Can either be specified of determined from lookup
     """
 
-    def __init__(self,element,position=(0,0,0),velocity=(0,0,0),**kwargs):
+    def __init__(self, element, position=(0,0,0), velocity=(0,0,0), **kwargs):
         """init with position, velocity, element, mass and a non-bonded
         interaction
 
@@ -113,10 +119,9 @@ class Atom(StructuralUnit):
         # TODO: Create lookup table for atomic masses
         # TODO: Check position and velocity are valid
 
-        super(Atom,self).__init__(position,name=element)
+        super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
         self.mass = kwargs['mass']
-        self.velocity = np.array(velocity)
         self.add_interaction(Coulombic)
         self._atom_list = [self]
 
@@ -166,10 +171,10 @@ class Molecule(StructuralUnit):
     """
     # TODO: Check bond lengths are consistent with atom positions
     # TODO: Make Molecule init from list of atoms and also list of element symbols (both with list of bonds)
-    def __init__(self,position=(0,0,0),name=None,**kwargs):
+    def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None, **kwargs):
         self._atom_list = kwargs['atoms']
         self._calc_subunit_position_in_CoM_frame()
-        super(Molecule,self).__init__(position,name)
+        super(Molecule,self).__init__(position, velocity, name)
         self._interactions = set(kwargs['interactions'])
         # TODO: ENSURE THAT INTERACTIONS FROM CONSTITUENT ATOMS ARE ADDED
 
