@@ -26,9 +26,11 @@ class Configuration(object):
     def atom_list(self):
         return self.data['atom']
 
+    @property
     def atom_positions(self):
         return self.data['position']
 
+    @property
     def atom_velocities(self):
         return self.data['velocity']
 
@@ -102,7 +104,21 @@ class Trajectory(object):
                 ('configuration', 'object')])
 
     def __getitem__(self, item):
-        return Trajectory(self.data[item])
+
+        """
+        Indexing and slicing is relative to frames, so is normalised -1 i.e.
+        __getitem__(1) returns the configuration of frame 1.
+        """
+
+        # TODO: Currently raises TypeError if item is int and < 1 instead of IndexError
+        if item > 0 or item.start > 0:
+            try:
+                return Trajectory(self.data[item-1]['configuration'])
+            except TypeError:
+                slce = slice(item.start-1,item.stop-1,item.step)
+                return Trajectory(*self.data[slce]['configuration'])
+        else:
+            raise IndexError("Frame indexes start at 1")
 
     # TODO: Add methods for returning configs for specific frames/times
     @property
@@ -126,7 +142,15 @@ class Trajectory(object):
     def configurations(self):
         return self.data['configuration']
 
+    @property
+    def positions(self):
+        return np.array([config.atom_positions
+            for config in self.configurations])
 
+    @property
+    def velocities(self):
+        return np.array([config.atom_velocities
+            for config in self.configurations])
 
 
 class Histogram(object):
