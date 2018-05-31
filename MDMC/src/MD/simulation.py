@@ -4,14 +4,15 @@
 
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:01:04"""
 
-from MDMC.src.MD.engine_facades.facade_factory import MDEngineFacadeFactory
-from MDMC.src.MD.structural_units import Molecule
-
 from enum import Enum
 import itertools
 from copy import deepcopy
 import numpy as np
 import weakref
+
+from MDMC.src.MD.engine_facades.facade_factory import MDEngineFacadeFactory
+from MDMC.src.MD.structural_units import Molecule
+from MDMC.src.trajectory_analysis.trajectory import Configuration
 
 Shape = Enum('Shape',['cubic','orthorhombic','infinite','rhombic_dodecahedron',
                 'truncated_octahedron'])
@@ -42,7 +43,7 @@ class Universe(object):
         # TODO: Change interactions so that it maintains an ordered set, so that searching is optimized
         self.dims = np.array(dimensions)
         self.shape = shape
-        self.configuration = []
+        self.configuration = Configuration()
         self._interactions = set()
         self.force_field = None
 
@@ -64,10 +65,10 @@ class Universe(object):
         # Calculate what bounding radius factor needs to be so structural units
         # are approximately equidistant and pass this to fill.
         for _ in range(duplicates):
-            self.configuration.append(deepcopy(structural_unit))
+            self.configuration.add_structural_units(deepcopy(structural_unit))
 
     def _add_single_structural_unit(self,structural_unit):
-        self.configuration.append(structural_unit)
+        self.configuration.add_structural_units(structural_unit)
         structural_unit.universe = weakref.ref(self)
         for atom in structural_unit.atom_list:
             self._interactions.update(atom.interaction_set())
@@ -119,18 +120,15 @@ class Universe(object):
             else:
                 new_unit = deepcopy(structural_unit)
                 new_unit.position = position + offset
-                self.configuration.append(new_unit)
+                self.configuration.add_structural_units(new_unit)
 
     # TODO: Add duplicate structural unit method
 
     # TODO: Extract this code into another method so that atoms is not regenerated each time
     def atom_list(self):
-        atoms = []
-        for structure in self.configuration:
-            atoms.extend(structure.atom_list)
-        return atoms
+        return self.configuration.atom_list
 
-    def add_force_field(self,force_field,*interactions):
+    def add_force_field(self, force_field, *interactions):
         if not interactions:
             interactions = (self.interactions,)
         self.force_field = force_field(*interactions)
@@ -153,8 +151,7 @@ class Universe(object):
     # TODO: Determine method of getting molecule list with looser coupling
     @property
     def molecule_list(self):
-        return [unit for unit in self.configuration
-            if isinstance(unit,Molecule)]
+        return self.configuration.molecule_list
 
 
 class EnergyMinimizer(object):
