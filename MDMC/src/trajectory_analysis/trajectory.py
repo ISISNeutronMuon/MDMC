@@ -73,6 +73,11 @@ class Trajectory(object):
     TimedConfigurations
     """
 
+    # TODO: Frames currently start at 1, which leads to an offset to the array numbering - do
+    # we want to start from frame 0 or alternatively return item-1 from __getitem__()? Although
+    # this needs to throw an exception when being called with 0, rather than returning the last
+    # item i.e. __getitem__(-1)
+
     def __init__(self, *configurations):
         self.n_frames = len(configurations)
         self.data = configurations
@@ -84,13 +89,13 @@ class Trajectory(object):
     # TODO: Remove DRY violation
     @data.setter
     def data(self, configurations):
-        if [isinstance(config,TimedConfiguration) for config in configurations]:
+        try:
             self._data = np.array(
                 [(i, config.time, config) for i, config in enumerate(configurations, 1)],
                 dtype = [('frame', 'int64'),
                 ('time', 'float64'),
                 ('configuration', 'object')])
-        else:
+        except AttributeError:
             self._data = np.array(
                 [(i, config) for i, config in enumerate(configurations, 1)],
                 dtype = [('frame', 'int64'),
@@ -99,7 +104,29 @@ class Trajectory(object):
     def __getitem__(self, item):
         return Trajectory(self.data[item])
 
-    # TODO: Add methods for returning frames, times, configs, as well as configs for specific frames/times
+    # TODO: Add methods for returning configs for specific frames/times
+    @property
+    def frames(self):
+        return self.data['frame']
+
+    @property
+    def times(self):
+        return self.data['time']
+
+    @property
+    def atoms(self):
+        # TODO: Test that all configurations have the same atoms
+        """
+        Assumes that all configurations have the same atoms
+        """
+
+        return self.data['configuration'][0].atom_list
+
+    @property
+    def configurations(self):
+        return self.data['configuration']
+
+
 
 
 class Histogram(object):
