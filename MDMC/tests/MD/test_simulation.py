@@ -76,7 +76,7 @@ def test_add_atom(universe,atom):
 def test_add_molecule(universe,water_molecule):
     universe.add_structural_unit(water_molecule)
     assert water_molecule.position.all() == np.array(WATER_POSITION).all()
-    assert water_molecule.atom_list == universe.atom_list()
+    assert sorted(water_molecule.atom_list) == sorted(universe.atom_list())
 
     water_CoM = ((np.array(H1_POSITION) * H_MASS) +\
                 (np.array(H2_POSITION) * H_MASS) +\
@@ -126,13 +126,13 @@ def test_spce_water_molecule(universe,water_molecule):
 def test_spce_water_box(water_SPCE_universe):
     n_molecules_xyz = np.array(UNIVERSE_DIMS) * WATER_NUM_DENSITY**(1./3.)
     n_molecules = np.prod(n_molecules_xyz.astype(int))
-    print n_molecules
-    water_positions = sorted([list(structural_unit.position) for structural_unit
-                                    in water_SPCE_universe.configuration])
 
-    assert int(n_molecules) == len(water_positions)
+    assert int(n_molecules) == \
+        len(water_SPCE_universe.configuration.molecule_list)
 
     # TODO: Test for correct positions
+    # water_positions = sorted([list(structural_unit.position) for structural_unit
+    #                                 in water_SPCE_universe.configuration])
     # intermol_dist = np.array(UNIVERSE_DIMS) / int(n_molecules**(1./3.))
     # calc_positions = []
     # for x in np.arange(0,UNIVERSE_DIMS[0],intermol_dist[0]):
