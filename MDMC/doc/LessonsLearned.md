@@ -85,3 +85,11 @@ Use `*`args to allow vectors to be passed as both a list and individual floats.
 
 ### Universe bounding box position
 MMTK defines it's universes centered around [0,0,0], rather than having this as a corner. Need to map positions when converting between MDMC and MMTK universe. Do we want our universes to be defined around or from [0,0,0]?  *discuss this at June 2018 developer meeting*
+
+
+### Configurations, Trajectories and Histograms
+Configuration currently stores both positions and velocities - do we want to allow it to store just one or the other for analysis i.e. of just position or just velocity observables.  Similarly do we want both to be stored in Trajectories?  GROMACS has different file formats which either come with or without velocity data.
+
+
+### Named arguments
+When creating examples/tutorials, use named arguments for all function/class arguments, as this is more explicit. 
