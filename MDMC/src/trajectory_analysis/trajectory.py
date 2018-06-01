@@ -75,11 +75,6 @@ class Trajectory(object):
     TimedConfigurations
     """
 
-    # TODO: Frames currently start at 1, which leads to an offset to the array numbering - do
-    # we want to start from frame 0 or alternatively return item-1 from __getitem__()? Although
-    # this needs to throw an exception when being called with 0, rather than returning the last
-    # item i.e. __getitem__(-1)
-
     def __init__(self, *configurations):
         self.n_frames = len(configurations)
         self.data = configurations
@@ -106,21 +101,17 @@ class Trajectory(object):
     def __getitem__(self, item):
 
         """
-        Indexing and slicing is relative to frames, so is normalised -1 i.e.
-        __getitem__(1) returns the configuration of frame 1.
+        Indexing and slicing is relative to time
         """
 
-        # TODO: Currently raises TypeError if item is int and < 1 instead of IndexError
-        if item > 0 or item.start > 0:
-            try:
-                return Trajectory(self.data[item-1]['configuration'])
-            except TypeError:
-                slce = slice(item.start-1,item.stop-1,item.step)
-                return Trajectory(*self.data[slce]['configuration'])
-        else:
-            raise IndexError("Frame indexes start at 1")
+        # TODO: Change filter_configs_by_time so that a single time can also be passed
 
-    # TODO: Add methods for returning configs for specific frames/times
+        try:
+            return Trajectory(*self.filter_configs_by_time(
+                item.start,item.stop))
+        except AttributeError:
+            raise ValueError("Trajectory can only be sliced, not indexed")
+
     @property
     def frames(self):
         return self.data['frame']
@@ -152,6 +143,15 @@ class Trajectory(object):
         return np.array([config.atom_velocities
             for config in self.configurations])
 
+    def filter_configs_by_time(self, start, end):
+
+        """
+        Returns configurations with times in half open interval defined by start
+        and end
+        """
+
+        return self.configurations[(self.times >= start) & (self.times < end)]
+
 
 class Histogram(object):
 
@@ -162,7 +162,7 @@ class Histogram(object):
     """
 
     def __init__(self, trajectory, bin_axis, *bin_axes):
-        pass#self.data = configuration
+        pass
 
     @property
     def data(self):
