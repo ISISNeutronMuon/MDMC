@@ -17,6 +17,7 @@ class Configuration(object):
     """
 
     # TODO: Consider how wraparound for periodic objects will work
+    # TODO: Consider how filtering by element will work - should config array include element type?
 
     def __init__(self, *structural_units):
         self.data = self.create_config_array(*structural_units)
@@ -59,10 +60,10 @@ class Configuration(object):
     def __getitem__(self, item):
         pass
 
-class TimedConfiguration(Configuration):
+class TemporalConfiguration(Configuration):
 
     def __init__(self, time, *structural_units):
-        super(TimedConfiguration, self).__init__(*structural_units)
+        super(TemporalConfiguration, self).__init__(*structural_units)
         self.time = time
 
 
@@ -156,22 +157,58 @@ class Trajectory(object):
 class Histogram(object):
 
     """
-    A Histogram is a rebinned Configuration
+    A Histogram is a rebinned Trajectory
 
     Assumes isotropic configuration
     """
 
-    def __init__(self, trajectory, bin_axis, *bin_axes):
-        pass
+    def __init__(self, trajectory, **axes):
+        if len(axes) > 2:
+            return TypeError("Histogram takes a maximum of two axes (r,v,time)")
+
+        self.r_axis = axes.get('r')
+
+
 
     @property
     def data(self):
         return self._data
 
     @data.setter
-    def data(self, configuraton):
-        self._data = np.histogram(configuraton)
+    def data(self, trajectory):
+        self._data = np.histogram(trajectory)
 
     # TODO: Consider if this will be extracted into a vector class
-    def distance(self,vec1,vec2):
+    def _distance(self,vec1,vec2):
         return np.linalg.norm(vec1-vec2)
+
+    def _calculate_distances(self, positions):
+
+        """
+        Returns a generator of pairwise distances
+        """
+
+        exclude = []
+        for position1 in positions:
+            for position2 in positions:
+                if position2 not in exclude:
+                    yield (self._distance(position1,position2))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# End
