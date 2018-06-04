@@ -60,11 +60,38 @@ class Configuration(object):
     def __getitem__(self, item):
         pass
 
+    @classmethod
+    def add_configurations(cls, *configurations):
+
+        """
+        Returns a new configuration from the sum of configurations
+        """
+
+        # TODO: Currently doesn't add molecule lists - add this but consider if a molecule set would be preferable
+        structural_units = [atom for config in configurations
+            for atom in config.data['atom']]
+        return cls(*structural_units)
+
+    def __len__(self):
+        return len(self.atom_list)
+
 class TemporalConfiguration(Configuration):
 
     def __init__(self, time, *structural_units):
         super(TemporalConfiguration, self).__init__(*structural_units)
         self.time = time
+
+    @classmethod
+    def add_configurations(cls, *configurations, **set_time):
+
+        # TODO: Add warning if configurations don't all have the same time
+        time = set_time.get('time',
+            np.mean([config.time for config in configurations]))
+
+        # TODO: Currently doesn't support molecule lists - add this
+        structural_units = [atom for config in configurations
+            for atom in config.data['atom']]
+        return cls(time, *structural_units)
 
 
 class Trajectory(object):
@@ -136,13 +163,13 @@ class Trajectory(object):
 
     @property
     def positions(self):
-        return np.array([config.atom_positions
-            for config in self.configurations])
+        return np.array([position for config in self.configurations
+            for position in config.atom_positions])
 
     @property
     def velocities(self):
-        return np.array([config.atom_velocities
-            for config in self.configurations])
+        return np.array([velocity for config in self.configurations
+            for velocity in config.atom_velocities])
 
     def filter_configs_by_time(self, start, end):
 
@@ -153,6 +180,9 @@ class Trajectory(object):
 
         return self.configurations[(self.times >= start) & (self.times < end)]
 
+    def __len__(self):
+        return sum([len(config) for config in self.data['configuration']])
+
 
 class Histogram(object):
 
@@ -162,21 +192,23 @@ class Histogram(object):
     Assumes isotropic configuration
     """
 
-    def __init__(self, trajectory, **axes):
-        if len(axes) > 2:
-            return TypeError("Histogram takes a maximum of two axes (r,v,time)")
+    # TODO: Implement logic for velocity as well as position
+    def __init__(self, trajectory, **axes_bins):
 
-        self.r_axis = axes.get('r')
+        self.trajectory = trajectory
 
+        self.r_axis = axes_bins['r']
+        self.time_axis = axes_bins.get('time', None)
+        self.distance_data = np.array([(frame['time'],
+            list(self._calculate_distances(
+            frame['configuration'].atom_positions)))
+            for frame in trajectory.data],
+        dtype = [('time', 'float64'), ('distances', 'object')])
 
+        if self.time_axis:
+            self._rebin_time()
 
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, trajectory):
-        self._data = np.histogram(trajectory)
+        self.data = self._histogram_distance_data(self.r_axis)
 
     # TODO: Consider if this will be extracted into a vector class
     def _distance(self,vec1,vec2):
@@ -188,23 +220,79 @@ class Histogram(object):
         Returns a generator of pairwise distances
         """
 
-        exclude = []
-        for position1 in positions:
-            for position2 in positions:
-                if position2 not in exclude:
-                    yield (self._distance(position1,position2))
+        # TODO: Something more pythonic
+        for i in range(len(positions)):
+            for j in range(i+1, len(positions)):
+                yield self._distance(positions[i], positions[j])
 
+    def _calculate_histogram(self, input, axis_bins):
 
+        """
+        Returns a histogram with n_bins determined from axis_bins
 
+        All bins are half open to the right, except the final bin which is fully
+        open.
+        """
 
+        # TODO: Change to make axis values more explicit (as [start,end,step] - maybe change to dict?
+        # TODO: Deal with non integer n_bins in a better way
+        # TODO: Change so that it can accept a generator input
+        n_bins = self._calc_n_bins(axis_bins)
+        return np.histogram(input, n_bins, range = (axis_bins[0], axis_bins[1]))
 
+    def _histogram_distance_data(self, axis_bins):
 
+        """
+        Returns histograms for all configurations in the distance data
+        """
 
+        return np.array(
+            [(frame['time'],
+            self._calculate_histogram(frame['distances'], axis_bins))
+            for frame in self.distance_data],
+            dtype = [('time', 'float64'),
+            ('histogram', 'object')])
 
+    # TODO: Generalise to _rebin
+    def _rebin_time(self):
 
+        """
+        Rebins distance data
 
+        Determines the upper and lower bounds and the centers of each bin.
+        These are used to rebin the configurations for the trajectory, which is
+        then returned. Uses Trajectory __getitem__ to produce a trajectory for
+        each time bin. For each of these trajectories the configurations are
+        added and then used to return a new trajectory.
+        """
 
+        n_bins = self._calc_n_bins(self.r_axis)
+        bin_bounds = np.linspace(self.r_axis[0], self.r_axis[1], n_bins+1)
+        bin_centers = bin_bounds[0:-1] + (bin_bounds[1] - bin_bounds[0]) / 2.
 
+        trajectories = [trajectory[bin_bounds[i]:bin_bounds[i+1]]
+            for i in range(len(bin_centers))]
+
+        # TODO: Fix fudge which sets configuration times = bin_centers
+        configurations = [TemporalConfiguration.add_configurations(
+            *traj.data['configuration'], time=bin_centers[i])
+            for i,traj in enumerate(trajectories)]
+
+        return Trajectory(*configurations)
+
+    def _calc_n_bins(self, axis_bins):
+        return int((axis_bins[1] - axis_bins[0]) / axis_bins[2])
+
+    def filter_distance_data_by_time(self, start, end):
+
+        """
+        Returns configurations with times in half open interval defined by start
+        and end
+        """
+
+        return self.distance_data['distances'][
+            (self.distance_data['time'] >= start) &
+            (self.distance_data['time'] < end)]
 
 
 
