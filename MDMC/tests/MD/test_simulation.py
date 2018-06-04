@@ -27,11 +27,11 @@ WATER_NUM_DENSITY = 0.0333679
 
 @pytest.fixture
 def universe():
-    return sim.Universe(UNIVERSE_DIMS,UNIVERSE_SHAPE)
+    return sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
 
 @pytest.fixture
 def atom():
-    return su.Atom('H',mass=H_MASS)
+    return su.Atom('H', mass=H_MASS)
 
 # TODO: Combine with water box defined in test_structural_units
 @pytest.fixture
@@ -58,7 +58,6 @@ def test_create_universe(universe):
     npt.assert_array_equal (UNIVERSE_DIMS,universe.dims)
 
 def test_create_atom(atom):
-    assert 1 == atom.ID
     npt.assert_array_equal((0,0,0),atom.position)
     npt.assert_array_equal((0,0,0),atom.velocity)
     assert 'H' == atom.element
