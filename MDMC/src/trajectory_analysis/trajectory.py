@@ -52,14 +52,6 @@ class Configuration(object):
             self.data,self.create_config_array(*structural_units))
         self.molecule_list += (self.create_molecule_list(*structural_units))
 
-    # TODO: Create delete method
-    def remove_structural_units(self, *structural_units):
-        pass
-
-    # TODO: Add __getitem__ to return atom_list, positions and velocities
-    def __getitem__(self, item):
-        pass
-
     @classmethod
     def add_configurations(cls, *configurations):
 
@@ -184,6 +176,41 @@ class Trajectory(object):
         return sum([len(config) for config in self.data['configuration']])
 
 
+class DistanceData(object):
+
+    """
+    A container for calculating and storing separation distances determined from
+    trajectories
+    """
+
+    def __init__(self, trajectory):
+        self.data = np.array([(frame['time'],
+            list(self._calculate_distances(
+            frame['configuration'].atom_positions)))
+            for frame in trajectory.data],
+            dtype = [('time', 'float64'), ('distances', 'object')])
+
+    @property
+    def distances(self):
+        return np.array([distance for distances in self.data['distances']
+            for distance in distances])
+
+    def _calculate_distances(self, positions):
+
+        """
+        Returns a generator of pairwise distances
+        """
+
+        # TODO: Something more pythonic
+        for i in range(len(positions)):
+            for j in range(i+1, len(positions)):
+                yield self._distance(positions[i], positions[j])
+
+    # TODO: Consider if this will be extracted into a vector class
+    def _distance(self,vec1,vec2):
+        return np.linalg.norm(vec1-vec2)
+
+
 class Histogram(object):
 
     """
@@ -199,31 +226,20 @@ class Histogram(object):
 
         self.r_axis = axes_bins['r']
         self.time_axis = axes_bins.get('time', None)
-        self.distance_data = np.array([(frame['time'],
-            list(self._calculate_distances(
-            frame['configuration'].atom_positions)))
-            for frame in trajectory.data],
-        dtype = [('time', 'float64'), ('distances', 'object')])
+        self.distance_data = DistanceData(trajectory)
+
+        self.data = self._histogram_distance_data(self.r_axis)
 
         if self.time_axis:
             self._rebin_time()
 
-        self.data = self._histogram_distance_data(self.r_axis)
+    @property
+    def histograms(self):
+        return self.data['histogram']
 
-    # TODO: Consider if this will be extracted into a vector class
-    def _distance(self,vec1,vec2):
-        return np.linalg.norm(vec1-vec2)
-
-    def _calculate_distances(self, positions):
-
-        """
-        Returns a generator of pairwise distances
-        """
-
-        # TODO: Something more pythonic
-        for i in range(len(positions)):
-            for j in range(i+1, len(positions)):
-                yield self._distance(positions[i], positions[j])
+    @property
+    def times(self):
+        return self.data['time']
 
     def _calculate_histogram(self, input, axis_bins):
 
@@ -249,7 +265,7 @@ class Histogram(object):
         return np.array(
             [(frame['time'],
             self._calculate_histogram(frame['distances'], axis_bins))
-            for frame in self.distance_data],
+            for frame in self.distance_data.data],
             dtype = [('time', 'float64'),
             ('histogram', 'object')])
 
@@ -257,46 +273,65 @@ class Histogram(object):
     def _rebin_time(self):
 
         """
-        Rebins distance data
+        Rebins histogram data
 
         Determines the upper and lower bounds and the centers of each bin.
-        These are used to rebin the configurations for the trajectory, which is
-        then returned. Uses Trajectory __getitem__ to produce a trajectory for
-        each time bin. For each of these trajectories the configurations are
-        added and then used to return a new trajectory.
+        These are used to rebin the histograms.
         """
 
-        n_bins = self._calc_n_bins(self.r_axis)
-        bin_bounds = np.linspace(self.r_axis[0], self.r_axis[1], n_bins+1)
+        n_bins = self._calc_n_bins(self.time_axis)
+        bin_bounds = np.linspace(self.time_axis[0], self.time_axis[1], n_bins+1)
         bin_centers = bin_bounds[0:-1] + (bin_bounds[1] - bin_bounds[0]) / 2.
 
-        trajectories = [trajectory[bin_bounds[i]:bin_bounds[i+1]]
-            for i in range(len(bin_centers))]
+        # TODO: Refactor to remove empty array creation
 
-        # TODO: Fix fudge which sets configuration times = bin_centers
-        configurations = [TemporalConfiguration.add_configurations(
-            *traj.data['configuration'], time=bin_centers[i])
-            for i,traj in enumerate(trajectories)]
+        # rebin = np.array([])
+        # for i in range(len(bin_bounds) - 1):
+        #     rebin = np.append(rebin,
+        #         self._sum_histograms(*self[bin_bounds[i]:bin_bounds[i+1]]))
 
-        return Trajectory(*configurations)
+        self.data = np.array([(bin_centers[i],
+            self._sum_histograms(*self[bin_bounds[i]:bin_bounds[i + 1]]))
+            for i in range(len(bin_bounds) - 1)],
+            dtype = [('time','float64'),
+            ('histogram','object')])
+
+    def _sum_histograms(self, *histograms):
+
+        """
+        Returns the sum of histograms, assuming that they have identical bins
+        """
+
+        # TODO: Test for identical bins and return error if not
+        bin_bounds = histograms[0][1]
+        histogram_sum = [np.sum(
+            [histogram[0] for histogram in histograms], axis=0),
+            bin_bounds]
+
+        return histogram_sum
 
     def _calc_n_bins(self, axis_bins):
         return int((axis_bins[1] - axis_bins[0]) / axis_bins[2])
 
-    def filter_distance_data_by_time(self, start, end):
+    def filter_histogram_by_time(self, start, end):
 
         """
-        Returns configurations with times in half open interval defined by start
+        Returns histograms with times in half open interval defined by start
         and end
         """
 
-        return self.distance_data['distances'][
-            (self.distance_data['time'] >= start) &
-            (self.distance_data['time'] < end)]
+        return self.histograms[(self.times >= start) & (self.times < end)]
 
+    def __getitem__(self, item):
 
+        """
+        Indexing and slicing is relative to time
 
+        Returns histograms with times in half open interval defined by start
+        and end
+        """
 
-
-
-# End
+        try:
+            return self.filter_histogram_by_time(item.start, item.stop)
+        except AttributeError:
+            raise ValueError("Trajectory can only be sliced, not indexed")
