@@ -90,6 +90,26 @@ MMTK defines it's universes centered around [0,0,0], rather than having this as 
 ### Configurations, Trajectories and Histograms
 Configuration currently stores both positions and velocities - do we want to allow it to store just one or the other for analysis i.e. of just position or just velocity observables.  Similarly do we want both to be stored in Trajectories?  GROMACS has different file formats which either come with or without velocity data.
 
+A further consideration is the container type for storing data within Configuration, Trajectory and Histogram classes.  Currently this is a NumPy ordered array, which has the benefit that an object name and type are associated with each type of data i.e. all of the times in a trajectory can be recovered from the data variable with data['time'].  This has the advantage of being more explicit, however it could lead to potential drawbacks when plotting data (e.g. having to convert to a regular array).  *discuss this at June 2018 developer meeting*
+
+Also, do we want histogram data to be stored with bin edges or bin centers?  NumPy outputs an array of values and an array of bin edges (i.e. len(values) + 1).
+
 
 ### Named arguments
-When creating examples/tutorials, use named arguments for all function/class arguments, as this is more explicit. 
+When creating examples/tutorials, use named arguments for all function/class arguments, as this is more explicit.
+
+
+### Trajectory filtering - frame vs time
+In nMoldyn one of the parameters for both RDF and SQw is the frame (start, stop, step).  This is then translated into the time for calculations, and it is the time that is output to the user.  It feels more intuitive to me for the user to specify the time, rather than the number of frames - do we want to do this instead?  We could also output the total number of frames used, if this information is deemed relevant.  *discuss this at June 2018 developer meeting*
+
+
+### Histogram generator
+There isn't an obvious histogram algorithm that takes a generator as input, although this might be useful for us in the case of very large configurations - however the fastest histogram algorithms are in c, which would prohibit this.  Another possible solution for very large configurations would be forming several histograms from subsets of the configuration, and then summing these histograms.
+
+
+### Histogram and Trajectory interactions
+The interactions between the Histogram and Trajectory classes needs to be rethought, particularly with respect to time rebinning.  Currently rebinning a trajectory results in an array of trajectories being created, whereas it should essentially rebin in place.
+
+
+### Calculating distances
+Currently calculates distances between all atoms, which may be unnecessary depending on the size of the simulation and the required bound (either rmax/qmin).  Sorting atoms into boxes depending on this bound and then only calculating distances for atoms in the same box or adjacent boxes will eliminate unnecessary calculations.
