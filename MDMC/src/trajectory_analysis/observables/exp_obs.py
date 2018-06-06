@@ -34,8 +34,9 @@ class ExperimentalObservable:
 
         pass
 
+    # TODO: Potentially the reader can be selected based upon file name and experimental observable class type
     @abstractmethod
-    def read_from_file(self, reader, file):
+    def read_from_file(self, reader, file_name):
 
         """
         Reads in experimental data from a file using a specified reader
@@ -45,11 +46,14 @@ class ExperimentalObservable:
 
     # TODO: Currently uses the generic parameter MD_input - if this is only histograms then change this
     @abstractmethod
-    def calculate_from_MD(self, MD_input):
+    def calculate_from_MD(self, MD_input, **params):
 
         """
         Calculates the experimental obseravable using input from an MD
         simulation
+
+        params enables any additional parameters required for calculation to be
+        passed e.g. variables for RDF prefactor calculation
         """
 
         pass
