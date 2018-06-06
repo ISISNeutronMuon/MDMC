@@ -113,3 +113,23 @@ The interactions between the Histogram and Trajectory classes needs to be rethou
 
 ### Calculating distances
 Currently calculates distances between all atoms, which may be unnecessary depending on the size of the simulation and the required bound (either rmax/qmin).  Sorting atoms into boxes depending on this bound and then only calculating distances for atoms in the same box or adjacent boxes will eliminate unnecessary calculations.
+
+
+### Experimental Observables
+As with MD engines, experimental observables will use the factory pattern and introspection to allow for easy addition of new observables.  Currently the observable classes will contain the methods required to both calculate them from MD trajectories and read them in from experimental data.  Both of these aspects could be separated out into their own classes, but considering they would be strongly coupled to the ExperimentalObservable class, I am not sure about the benefits.
+
+
+### Structure of experimental observables modules
+nMOLDYN groups experimental observables together by type, e.g. structure, dynamics, scattering etc.  This would potentially be a good approach although in this case it might overcomplicate things with the introspection being used - it would particularly limit the ability for users to extend the package with their own experimental observables, although I am not sure what the probability of this is. *discuss this at June 2018 developer meeting*
+
+
+### Uncertainties
+An important consideration is how to deal with uncertainties (errors) in data, particularly given the need to perform operations on this when calculating the figure of merit.   While NumPy doesn't have a inbuilt mechanism for dealing with uncertainties, there is the appropriately named uncertainties package which extends NumPy to include arrays.  While in general I would prefer to only use major packages (such as NumPy or pandas) as they are unlikely to be discontinued, the uncertainties package was first released in 2008, so appears likely to be maintained.  Alternatively NumPy could be extended internally to MDMC to deal with uncertainties, to remove any dependencies.
+
+
+### Structure of readers module
+As with the experimental observables module, readers could be grouped, for instance into the type of data that is being read e.g. configuration, topology, static or dynamic data.  This might be more beneficial in this instance, however the issue arises with formats that are used to store multiple different types of data (e.g. possibly hdf5?). *discuss this at June 2018 developer meeting*
+
+
+### File output
+Do we also want to be able to write to all of the file formats that we are supporting? *discuss this at June 2018 developer meeting*
