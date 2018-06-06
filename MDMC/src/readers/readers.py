@@ -10,6 +10,7 @@ class Reader:
     Abstract class that defines methods common to all readers
     """
 
+    # TODO: Consider if splitting these methods may cause issue - should I be using a with ... as statement?
     def open(self, file_name):
 
         """
@@ -19,10 +20,19 @@ class Reader:
         Should be overriden if necessary for specific file types.
         """
 
-        self.file = open(file_name)
-
+        self.file = open(file_name, 'r')
 
     @abstractmethod
     def parse(self):
+
+        """
+        Parses the file data so that it is in a format expected by the class
+        calling the data reader
+
+        For readers which are not specific to one data type, the calling class
+        must be determined using ??? so that the file data can be parsed into
+        the appropriate data type.
+
+        """
 
         pass
