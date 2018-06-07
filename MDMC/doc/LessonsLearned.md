@@ -133,3 +133,15 @@ As with the experimental observables module, readers could be grouped, for insta
 
 ### File output
 Do we also want to be able to write to all of the file formats that we are supporting? *discuss this at June 2018 developer meeting*
+
+
+### Units
+Need to consider how best to deal with units - whether to have an inbuilt conversion (like MMTK) or just state which units will be used for each variable.
+
+
+### Data in readers
+The format in which data in readers is stored should be self descriptive, so that whatever calls a reader can extract the data in whatever manner it chooses with no further information.
+
+
+### Uncertainty in MD trajectories
+Currently the uncertainty in MD trajectories (or other data determined from MD simulations) is not considered - in the experimental observables the error is set to zero if the observable is calculated from MD. Is it possible to calculate uncertainty in MD trajectories? *discuss this at June 2018 developer meeting*
