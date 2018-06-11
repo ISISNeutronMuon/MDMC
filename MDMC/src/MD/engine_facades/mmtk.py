@@ -9,6 +9,8 @@ from MDMC.src.MD.engine_facades.facade import MDEngine
 from MDMC.src.MD.simulation import Shape
 from MDMC.src.MD.force_fields import SPCE
 from MDMC.src.MD.structural_units import Dispersion
+import MDMC.src.MD.structural_units as MDMCs
+import MDMC.src.trajectory_analysis.trajectory as MDMCt
 
 # TODO: import other modules that need to be wrapped
 
@@ -19,11 +21,6 @@ from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
 from MMTK.Minimization import SteepestDescentMinimizer, \
                                 ConjugateGradientMinimizer
 from Scientific._vector import Vector
-# from MMTK import ChemicalObjects,MMTK.Universe
-# from MMTK.Trajectory import Trajectory
-# from MMTK.Minimization import SteepestDescentMinimizer
-# from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
-#                             TranslationRemover
 
 
 UNIVERSE_PBC = {Shape.infinite:MMTK.Universe.InfiniteUniverse,
@@ -242,3 +239,47 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 
     def update_MDMC_obj(self):
         pass
+
+
+# TODO: Update this so that it can form an association with specific atoms and also creates molecules not just atoms
+def convert_trajectory(MMTK_trajectory):
+
+    """
+    Builds an MDMC trajectory from an MMTK trajectory
+
+    Assumes that there is no change in the number/types of atom in the universe.
+    """
+
+    # Convert between coordinate systems
+    universe_dims = MMTK_trajectory.universe.cellParameters()
+    coordinate_map = universe_dims / 2.
+
+    # List of atom element and masses as ordered in configuration
+    atom_list = [(atom.type.symbol, atom.mass()) for atom in
+        MMTK_trajectory.universe.atomList()]
+
+    # TODO:Seperate out configuration into convert_configuration function 
+    configurations = []
+    for MMTK_frame in MMTK_trajectory:
+        atoms = []
+        for index in range(len(MMTK_frame['configuration'])):
+            symbol = atom_list[index][0]
+            mass = atom_list[index][1]
+            position = MMTK_frame['configuration'].__dict__['array'] + \
+                coordinate_map
+            atoms.append(MDMCs.Atom(symbol, position = position, mass = mass))
+        configurations.append(MDMCt.TemporalConfiguration(MMTK_frame['time'],
+            *atoms))
+
+    return MDMCt.Trajectory(*configurations)
+
+
+
+
+
+
+
+
+
+
+# End
