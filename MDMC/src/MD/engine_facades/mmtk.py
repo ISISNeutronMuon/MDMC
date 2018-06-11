@@ -250,6 +250,7 @@ def convert_trajectory(MMTK_trajectory):
     Assumes that there is no change in the number/types of atom in the universe.
     """
 
+    # TODO: Extract this conversion into own function
     # Convert between coordinate systems
     universe_dims = MMTK_trajectory.universe.cellParameters()
     coordinate_map = universe_dims / 2.
@@ -258,28 +259,17 @@ def convert_trajectory(MMTK_trajectory):
     atom_list = [(atom.type.symbol, atom.mass()) for atom in
         MMTK_trajectory.universe.atomList()]
 
-    # TODO:Seperate out configuration into convert_configuration function 
+    # TODO:Seperate out configuration into convert_configuration function
     configurations = []
     for MMTK_frame in MMTK_trajectory:
         atoms = []
         for index in range(len(MMTK_frame['configuration'])):
             symbol = atom_list[index][0]
             mass = atom_list[index][1]
-            position = MMTK_frame['configuration'].__dict__['array'] + \
+            position = MMTK_frame['configuration'].__dict__['array'][index] + \
                 coordinate_map
             atoms.append(MDMCs.Atom(symbol, position = position, mass = mass))
         configurations.append(MDMCt.TemporalConfiguration(MMTK_frame['time'],
             *atoms))
 
     return MDMCt.Trajectory(*configurations)
-
-
-
-
-
-
-
-
-
-
-# End
