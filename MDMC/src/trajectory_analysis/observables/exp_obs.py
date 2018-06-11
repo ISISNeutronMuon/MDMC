@@ -5,6 +5,8 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:14:51"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from MDMC.src.readers.reader_factory import ReaderFactory
+
 class ExperimentalObservable:
 
     """
@@ -28,21 +30,27 @@ class ExperimentalObservable:
 
         pass
 
+    @abstractproperty
+    def independent_variables(self):
+
+        pass
+
     # TODO: Determine if this can be concrete rather than abstract
     @abstractproperty
-    def dependent_variable(self):
+    def dependent_variables(self):
 
         pass
 
     # TODO: Potentially the reader can be selected based upon file name and experimental observable class type
-    @abstractmethod
     def read_from_file(self, reader, file_name):
 
         """
         Reads in experimental data from a file using a specified reader
         """
 
-        pass
+        self.reader = ReaderFactory.create_reader(reader)
+        reader.open(file_name)
+        reader.parse()
 
     # TODO: Currently uses the generic parameter MD_input - if this is only histograms then change this
     @abstractmethod
@@ -53,7 +61,8 @@ class ExperimentalObservable:
         simulation
 
         params enables any additional parameters required for calculation to be
-        passed e.g. variables for RDF prefactor calculation
+        passed e.g. variables for RDF prefactor calculation, independent
+        variable axis
         """
 
         pass
