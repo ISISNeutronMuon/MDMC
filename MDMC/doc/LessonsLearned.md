@@ -145,3 +145,11 @@ The format in which data in readers is stored should be self descriptive, so tha
 
 ### Uncertainty in MD trajectories
 Currently the uncertainty in MD trajectories (or other data determined from MD simulations) is not considered - in the experimental observables the error is set to zero if the observable is calculated from MD. Is it possible to calculate uncertainty in MD trajectories? *discuss this at June 2018 developer meeting*
+
+
+### Configuration/trajectory from MD engine
+The ideal situation when interacting with the configurations/trajectories of the MD engine would be that each atom in the MDMC configuration has an equivalent atom in the MD engine, which are linked by a unique ID.  However certainly in the case of MMTK (and therefore potentially also in the case of others), there is no unique ID for each atom.  As MMTK is in python, an association could be made with the object location, however this would not necessarily be an option for other MD engines.  In these cases the MDMC configuration/trajectory will need to be generated from the MD engine, rather than just updating a structure that already exists.
+
+
+### MD Engine classes
+Having looked back, potentially the MD engine classes (e.g. MMTK CubicUniverse) should instead just be a collection of functions which do the conversion between MDMC and the MD engine; this might help improve clarity as to what exactly they represent.  Obviously the abstract base class classes setup_universe, setup_simulation and run are excluded from this - they would be calling the functions.
