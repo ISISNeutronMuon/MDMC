@@ -3,7 +3,7 @@
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 
 import numpy as np
-import uncertainties.unumpy as unp
+#import uncertainties.unumpy as unp
 
 from MDMC.src.trajectory_analysis.observables.exp_obs import \
     ExperimentalObservable
@@ -45,18 +45,25 @@ class DynamicStructureFactor(ExperimentalObservable):
     def read_from_file(self, reader, file_name):
 
         super(DynamicStructureFactor, self).read_from_file(reader, file_name)
-        self._data = reader.data
+        self._data = self.reader.data
 
+    # TODO: Add neutron weights
+    # TODO: Detailed balance correction
     def calculate_from_MD(self, MD_input, **params):
 
         """
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
         """
         self.trajectory = MD_input
-        self.Q_vectors = params.get('Q_vectors')
+        self.Q_vectors = np.array(params.get('Q_vectors'))
         self.dt = self.trajectory.times - self.trajectory.times[0]
 
         self.FQt = [self._calculate_FQt_single_Q(Q) for Q in self.Q_vectors]
+        self.SQw = self._calculate_SQw()
+        self.SQw_err = np.zeros(self.SQw.shape)
+        self.w = self._change_domain(self.dt)
+
+        self._data = [self.Q_vectors, self.w, self.SQw, self.SQw_err]
 
     # TODO: Refactor to remove horrible indexing [(self.dt == t1)] etc
     def _calculate_FQt_single_Q(self, Q):
@@ -73,17 +80,16 @@ class DynamicStructureFactor(ExperimentalObservable):
         rho = self._calculate_rho_single_Q(Q)
         n_atoms = len(self.trajectory.atoms)
 
-        FQt = np.zeros([len(self.dt),2])
-        FQt[:,0] = self.dt
+        FQt = np.zeros(len(self.dt))
         for t1 in self.trajectory.times:
             for t2 in self.trajectory.times:
                 if t2 >= t1:
                     rho_t1 = rho[(self.dt == t1)]
                     rho_t2 = rho[(self.dt == t1)]
                     corr = self.correlation(rho_t1, rho_t2)
-                    FQt[(self.dt == t2 - t1),1] += corr
+                    FQt[(self.dt == t2 - t1)] += corr
 
-        FQt[:,1] /= n_atoms
+        FQt /= n_atoms
         return FQt
 
     # TODO: Implement following method for a single q-shell with random direction q-vectors.
@@ -96,16 +102,36 @@ class DynamicStructureFactor(ExperimentalObservable):
         """
         rho = np.empty(len(self.trajectory.times))
         for i, time in enumerate(self.trajectory.times):
-            rho[i] = sum([(np.exp(-1j * np.dot(Q, r)))
-                for r in self.trajectory[time].positions])
+            rho[i] = np.sum([(np.exp(-1j * np.dot(Q, r)))
+                for r in self.trajectory[time].positions], axis = 0)
         return rho
 
     # TODO: Replace this with Full Correlation Analysis algorithm?
-    def correlation(self, input1, input2=None):
+    def correlation(self, input1, input2):
 
         """
-        Calculates the correlation between the two inputs, or the
-        autocorrelation for a single input
+        Calculates the correlation between the two inputs
         """
 
         return np.dot(input1, input2)
+
+    def _calculate_SQw(self):
+
+        """
+        Calculates SQw from FQt
+        """
+        SQw = []
+        for Ft in self.FQt:
+            SQw.append(np.fft.ifft(Ft))
+
+        return np.array(SQw)
+
+    def _change_domain(self, domain):
+
+        """
+        Assumes domain of constant step size
+        """
+
+        n = domain.size
+        step = domain[1] - domain[0]
+        return np.pi * np.fft.fftshift(np.fft.fftfreq(domain.size, step))
