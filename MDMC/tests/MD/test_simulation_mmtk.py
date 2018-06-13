@@ -77,7 +77,7 @@ def test_MMTK_simulation_setup(water_MMTK_NVE):
     assert round(water_MMTK_NVE.engine.universe.temperature(),-2) == \
         round(TEMPERATURE,-2)
 
-def test_MMTKK_simulation_run(water_MMTK_NVE):
+def test_MMTK_simulation_run(water_MMTK_NVE):
 
     """
     Test the following equivalencies:
@@ -94,3 +94,15 @@ def test_MMTKK_simulation_run(water_MMTK_NVE):
     assert round(water_MMTK_NVE.engine.universe.temperature(),-2) == \
         round(TEMPERATURE,-2)
     # TODO: Add density test
+
+def test_MMTK_trajectory_convert():
+
+    """
+    Run an MMTK simulation and determines the trajectory.  The trajectory is
+    converted to an MDMC trajectory.
+
+    Test for same atomic positions in each configuration of the trajectory,
+    accounting for the difference in coordinate systems. 
+    """
+
+    pass
