@@ -57,6 +57,7 @@ class DynamicStructureFactor(ExperimentalObservable):
         self.trajectory = MD_input
         self.Q_vectors = np.array(params.get('Q_vectors'))
         self.dt = self.trajectory.times - self.trajectory.times[0]
+        self.universe_cell = params.get('cell')
 
         self.FQt = [self._calculate_FQt_single_Q(Q) for Q in self.Q_vectors]
         self.SQw = self._calculate_SQw()
@@ -74,22 +75,25 @@ class DynamicStructureFactor(ExperimentalObservable):
 
         Gets rho for all times for single Q value and then determines
         correlation of rho for every time with every time (including self
-        correlation).  Sums correlations with same time interval.
+        correlation).  Sums correlations with same time interval.  The counter
+        normalises FQt depending on how many repetitions of the same time
+        interval contributed to that dt.
         """
 
         rho = self._calculate_rho_single_Q(Q)
         n_atoms = len(self.trajectory.atoms)
 
-        FQt = np.zeros(len(self.dt))
+        FQt = np.zeros(len(self.dt), dtype = complex)
+        counter = np.zeros(len(self.dt))
         for t1 in self.trajectory.times:
             for t2 in self.trajectory.times:
                 if t2 >= t1:
                     rho_t1 = rho[(self.dt == t1)]
-                    rho_t2 = rho[(self.dt == t1)]
+                    rho_t2 = rho[(self.dt == t2)]
                     corr = self.correlation(rho_t1, rho_t2)
                     FQt[(self.dt == t2 - t1)] += corr
-
-        FQt /= n_atoms
+                    counter[(self.dt == t2 - t1)] += 1
+        FQt /= (n_atoms * counter)
         return FQt
 
     # TODO: Implement following method for a single q-shell with random direction q-vectors.
@@ -100,11 +104,12 @@ class DynamicStructureFactor(ExperimentalObservable):
         Calculates time dependent number density in reciprocal space for a
         single Q value
         """
-        rho = np.empty(len(self.trajectory.times))
-        for i, time in enumerate(self.trajectory.times):
-            rho[i] = np.sum([(np.exp(-1j * np.dot(Q, r)))
-                for r in self.trajectory[time].positions], axis = 0)
-        return rho
+        rho = []
+        for time in self.trajectory:
+            rho_temp = [(np.exp(-1j * np.dot(Q, r)))
+                for r in time.positions]
+            rho.append(np.sum(rho_temp, axis = 0))
+        return np.array(rho)
 
     # TODO: Replace this with Full Correlation Analysis algorithm?
     def correlation(self, input1, input2):
@@ -115,6 +120,7 @@ class DynamicStructureFactor(ExperimentalObservable):
 
         return np.dot(input1, input2)
 
+    # TODO: Extract out fft calculation into utilities
     def _calculate_SQw(self):
 
         """
