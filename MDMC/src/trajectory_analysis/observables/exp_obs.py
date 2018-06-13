@@ -49,8 +49,8 @@ class ExperimentalObservable:
         """
 
         self.reader = ReaderFactory.create_reader(reader)
-        reader.open(file_name)
-        reader.parse()
+        self.reader.open(file_name)
+        self.reader.parse()
 
     # TODO: Currently uses the generic parameter MD_input - if this is only histograms then change this
     @abstractmethod
