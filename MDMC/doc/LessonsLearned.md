@@ -149,3 +149,7 @@ Currently the uncertainty in MD trajectories (or other data determined from MD s
 
 ### MD Engine classes
 Having looked back, potentially the MD engine classes (e.g. MMTK CubicUniverse) should instead just be a collection of functions which do the conversion between MDMC and the MD engine; this might help improve clarity as to what exactly they represent.  Obviously the abstract base class classes setup_universe, setup_simulation and run are excluded from this - they would be calling the functions.
+
+
+### MMTK Trajectories
+In MMTK trajectories are stored with element information and a list of position vectors separately.  I would definitely prefer to avoid this.
