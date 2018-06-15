@@ -13,7 +13,10 @@ from MDMC.tests.MD.test_simulation import universe, atom, water_molecule, \
 R_AXIS = [0., 20., 0.5]
 T_AXIS = [0., 5., 1.0]
 
-TIMES = np.arange(0., 5., 0.5)
+TRAJ_TIME_START = 0.
+TRAJ_TIME_END = 5.0
+TRAJ_TIME_STEP = 0.5
+TIMES = np.arange(TRAJ_TIME_START, TRAJ_TIME_END, TRAJ_TIME_STEP)
 
 @pytest.fixture
 def configuration(water_SPCE_universe):
@@ -56,10 +59,14 @@ def test_histogram(configuration, histogram):
     """
     Test for:
 
-    number of elements of histogram
+    number of elements of histogram - for the first time bin this should be
+    equal to the sum of the pairwise distances (i.e. range(len(configuration)))
+    multiplied by the number of histograms grouped in the bin (i.e. the time
+    step of the trajectories divided by the histogram time bin size)
     equal bin sizes
     number of frames
     """
 
     assert sum(range(len(configuration))) == \
-        sum(histogram.data['histogram'][0][0])
+        int(sum(histogram.data['histogram'][0][0]) / (
+        T_AXIS[2] / TRAJ_TIME_STEP))
