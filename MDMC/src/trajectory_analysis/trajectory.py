@@ -7,6 +7,7 @@ import numpy as np
 # TODO: Remove this dependency
 from MDMC.src.MD.structural_units import Molecule
 
+# TODO: SORT OUT EFFECTS OF PBC
 
 # TODO: Deal with molecule list better - separate Atomic Configuration?
 class Configuration(object):
@@ -130,7 +131,7 @@ class Trajectory(object):
             return Trajectory(*self.filter_configs_by_time(
                 item.start,item.stop))
         except AttributeError:
-            raise ValueError("Trajectory can only be sliced, not indexed")
+            return Trajectory(*self.filter_configs_by_time(item))
 
     @property
     def frames(self):
@@ -163,13 +164,18 @@ class Trajectory(object):
         return np.array([velocity for config in self.configurations
             for velocity in config.atom_velocities])
 
-    def filter_configs_by_time(self, start, end):
+    # TODO: Refactor how filter deals with end=None
+    def filter_configs_by_time(self, start, end=None):
 
         """
         Returns configurations with times in half open interval defined by start
         and end
         """
-
+        if end is None:
+            if start in self.times:
+                return self.configurations[(self.times == start)]
+            else:
+                raise ValueError("Value is not in self.times")
         return self.configurations[(self.times >= start) & (self.times < end)]
 
     def __len__(self):
