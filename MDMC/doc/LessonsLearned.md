@@ -51,13 +51,15 @@ A similar question arises for dispersive interaction parameters (e.g. LJ sigma),
 ### Python Version
 Currently making code backwards compatible with Python 2.7 (with the exception of using enum module of stdlib and implementation of abstract classes), but this might lead to some restrictions - do we want this to be the case with the release version of MDMC? *discuss this at June 2018 developer meeting.*
 
+Actually changed this so that it currently only uses 2.7 features, as MMTK uses 2.7
+
 
 ### MD Engine Ensemble
 Decided upon different simulator classes for different ensembles.  This will make it clear which ensemble is selected in each instance, whereas I think just passing a thermo/barostat to a 'simulate' class is less clear.
 
 
 ### Bond generation from pdb files
-If MDMC is to read pdb files and generate topology from them, we will need to select a method for assigning bonds.  A common simple approach is to determine a distance cutoff below which bonds are assigned.  This can further be developed by having bond configurations for (and between) known structures (specifically residues).  Are there any other more sophisticated/general methods that can be applied?
+If MDMC is to read pdb files and generate topology from them, we will need to select a method for assigning bonds.  A common simple approach is to determine a distance cutoff below which bonds are assigned.  This can further be developed by having bond configurations for (and between) known structures (specifically residues).  Are there any other more sophisticated/general methods that can be applied? *discuss this at June 2018 developer meeting*
 
 
 ### Format for storing topologies
@@ -153,3 +155,7 @@ Having looked back, potentially the MD engine classes (e.g. MMTK CubicUniverse) 
 
 ### MMTK Trajectories
 In MMTK trajectories are stored with element information and a list of position vectors separately.  I would definitely prefer to avoid this.
+
+
+### Isotropic systems
+For isotropic systems, improvements in statistics can be achieved by averaging over orthogonal directions.  To allow this to be taken advantage of by non-expert users (while maintaining performance for expert users) I would suggest having an option/flag to specify if the system is isotropic.  If this is not set True/False then for the first calculation of FQt etc, it is calculated separately for each orthogonal direction and compared.  If they are within a certain tolerance, the system is assumed to be isotropic (could also repeat this test every n calculations of FQt etc).  This does have a small risk that the system would be incorrectly determined to be isotropic, therefore invalidating all refinements, however I think the probability is vanishingly small. *discuss this at June 2018 developer meeting*
