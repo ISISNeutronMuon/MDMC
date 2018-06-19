@@ -68,8 +68,8 @@ class SPCE(ForceField):
     # TODO: Recreates interaction dictionary with each call - change this, but maintain new potential object generation
     # TODO: Replace with abstract factory
     def interaction_dictionary(self):
-        return {(su.Coulombic,('O',)):ifu.coulomb(self.q_O),
-                (su.Coulombic,('H',)):ifu.coulomb(self.q_H),
-                (su.Dispersion,('O',)):ifu.lennard_jones(self.sigma,self.eta),
-                (su.Bond,('H','O')):ifu.harmonic_potential(self.r_OH,self.f_OH),
-                (su.BondAngle,('H','O','H')):ifu.harmonic_potential(self.a_HOH,self.f_HOH)}
+        return {(su.Coulombic,('O',)):ifu.Coulomb(self.q_O),
+                (su.Coulombic,('H',)):ifu.Coulomb(self.q_H),
+                (su.Dispersion,('O',)):ifu.LennardJones(self.sigma,self.eta),
+                (su.Bond,('H','O')):ifu.HarmonicPotential(self.r_OH,self.f_OH),
+                (su.BondAngle,('H','O','H')):ifu.HarmonicPotential(self.a_HOH,self.f_HOH)}
