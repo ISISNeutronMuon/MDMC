@@ -8,10 +8,11 @@ definitions.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 # TODO: Define abstract class
-class interaction_function:
+# TODO: Consider if having an abstract setter but concrete getter is a good idea
+class InteractionFunction:
     """Abstract class defining form of interaction functions, which can be user
     supplied
 
@@ -20,25 +21,41 @@ class interaction_function:
 
     __metaclass__ = ABCMeta
 
+
+    @property
+    def params(self):
+
+        return {kv[0]: kv[1].value for kv in self._params.items()}
+
     def function(self):
+
         pass
 
 
-class harmonic_potential(interaction_function):
+class Parameter(object):
+
+    def __init__(self, value):
+        self.value = value
+        self.constrained = True
+
+
+class HarmonicPotential(InteractionFunction):
     """Harmonic potential for bond stretching and angular vibration"""
 
     def __init__(self,equilibrium_state,potential_strength):
-        self.params = {'equilibrium_state':equilibrium_state,
-                    'potential_strength':potential_strength}
 
-class lennard_jones(interaction_function):
+        self._params = {'equilibrium_state':Parameter(equilibrium_state),
+                    'potential_strength':Parameter(potential_strength)}
+
+
+class LennardJones(InteractionFunction):
     """Dispersive Lennard-Jones interaction"""
 
     def __init__(self,sigma,eta):
-        self.params = {'sigma':sigma,'eta':eta}
+        self._params = {'sigma':Parameter(sigma),'eta':Parameter(eta)}
 
-class coulomb(interaction_function):
+class Coulomb(InteractionFunction):
     """Coulomb interaction for charged particles"""
 
     def __init__(self,charge):
-        self.params = {'charge':charge}
+        self._params = {'charge':Parameter(charge)}
