@@ -159,3 +159,35 @@ In MMTK trajectories are stored with element information and a list of position 
 
 ### Isotropic systems
 For isotropic systems, improvements in statistics can be achieved by averaging over orthogonal directions.  To allow this to be taken advantage of by non-expert users (while maintaining performance for expert users) I would suggest having an option/flag to specify if the system is isotropic.  If this is not set True/False then for the first calculation of FQt etc, it is calculated separately for each orthogonal direction and compared.  If they are within a certain tolerance, the system is assumed to be isotropic (could also repeat this test every n calculations of FQt etc).  This does have a small risk that the system would be incorrectly determined to be isotropic, therefore invalidating all refinements, however I think the probability is vanishingly small. *discuss this at June 2018 developer meeting*
+
+
+### Figure of Merit Module
+As we want MDMC to be able to fit multiple datasets, the refinement needs to use a figure of merit that reflects this.  Therefore there should be a multiple dataset figure of merit class, which contains n figures of merit which it uses to calculate the total figure of merit (with specific weighting for each dataset if required.)  This multiple figure of merit class should have the same interface as the individual ones, as it needs to expose the same methods to the minimizer.
+
+Each (single) figure of merit also needs to check that it has one experimental dataset (flag in experimental observable) and one MD calculated dataset.  If in future other simulation methods (e.g. Monte Carlo, DFT) are used to get data against which MD data is compared, these would count as experimental datasets (however this flag is not set by the user, it is as a result of the dataset being read from a file).
+
+
+### Minimizer
+It is likely that all of the minimizers we use for MDMC will be variations of the Monte Carlo method, so rather than have an abstract Minimizer class from which others are derived, we could potentially have a single Minimizer class and just use different functions to determine whether or not a new state is accepted or rejected.  However, if we do determine another suitable class of minimizers, this might restrict our ability to extend the code without modifying it.  Therefore I think using an abstract base class tailored towards MD methods is the best choice, as then any divergence from MD methods can just override any required methods.
+
+
+### Parameter constraints
+There appear to be two obvious ways to denote which potential parameters are constrained:
+
+* Within each interaction, denote whether each parameter is constrained or not.  Then the minimizer would need to iterate over all interactions and only change those parameters which are unconstrained.  The concern with this is that if the majority of parameters are constrained, then there is a lot of wasted iteration.  This could partially be mitigated by having references to only interaction that possess constrained parameters, however if there are a lot of interactions with only one unconstrained parameter, this will not result in a significant improvement.
+
+* Have a separate parameter class which has a constrained attribute.  This will allow a reference to every constrained parameter to be passed to the minimizer.  The only concern would be that the list could become very large if there is a large number of unconstrained parameters, however I think it is unlikely that this situation would occur.
+
+*Discuss this at June 2018 developer meeting*
+
+
+### MDMCControl
+This class essentially just sets up the experimental observables from files before calling the minimizer - I don't really like it in it's current form.  I need to determine if there are other control aspects that need to be added to it, or if it shouldn't exist at all.
+
+Another clunky element is that because the experimental observables are instantiated with MDMCControl, but the minimizer needs to be passed these, then either one of the following has to occur:
+
+* Either an instance of the minimizer with no attributes needs to be passed to MDMCControl;
+
+* Or a string establishing whichever minimizer is to be used needs to be passed.
+
+The first is unappealing because the initialization of the minimizer is essentially wasted, and attributes then have to be set separately.  The second is unappealing because an MD engine instance is also passed to MDMCControl, and I think mixing up passing instances and what is essentially a keyword lacks clarity.
