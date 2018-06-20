@@ -19,5 +19,6 @@ class ExperimentalObservableFactory(object):
                                         and not isabstract(m)
                                         and issubclass(m, ExperimentalObservable
                                         )))
-
-        return classes[0][1]()
+        observable = classes[0][1]()
+        observable.name = module_name
+        return observable

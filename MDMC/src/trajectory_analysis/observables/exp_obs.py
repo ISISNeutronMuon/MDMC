@@ -20,6 +20,20 @@ class ExperimentalObservable:
 
     __metaclass__ = ABCMeta
 
+    @property
+    def name(self):
+
+        """
+        The module name that was used for factory instantiation
+        """
+
+        return self._name
+
+    @name.setter
+    def name(self, name):
+
+        self._name = name
+
     @abstractproperty
     def from_MD(self):
 
