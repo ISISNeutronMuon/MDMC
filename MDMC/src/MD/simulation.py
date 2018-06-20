@@ -151,7 +151,19 @@ class Universe(object):
     # TODO: Determine method of getting molecule list with looser coupling
     @property
     def molecule_list(self):
+
         return self.configuration.molecule_list
+
+    # TODO: Implement
+    def interaction_filter(self, condition):
+
+        """
+        Generic method for filtering interactions
+        """
+
+        raise NotImplementedError
+
+    # TODO: Add helper methods for common filtering operations
 
 
 class EnergyMinimizer(object):
