@@ -191,3 +191,7 @@ Another clunky element is that because the experimental observables are instanti
 * Or a string establishing whichever minimizer is to be used needs to be passed.
 
 The first is unappealing because the initialization of the minimizer is essentially wasted, and attributes then have to be set separately.  The second is unappealing because an MD engine instance is also passed to MDMCControl, and I think mixing up passing instances and what is essentially a keyword lacks clarity.
+
+
+### Distribution of parameter changes
+MDMC v0.1 uses a uniform RNG to determine the change in each parameter - need to determine if this is the best approach for sampling parameter phase space.
