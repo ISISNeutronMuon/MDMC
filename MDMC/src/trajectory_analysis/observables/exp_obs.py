@@ -80,3 +80,15 @@ class ExperimentalObservable:
         """
 
         pass
+
+    # TODO: Implement
+    def check_identical_indep_var(self, experimental_observable):
+
+        """
+        Checks that this another ExperimentalObservable instance has identical
+        independent variables to this instance
+
+        This check is required for calculating FoM
+        """
+
+        raise NotImplementedError
