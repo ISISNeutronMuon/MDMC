@@ -39,7 +39,7 @@ class LAMPSQw(Reader):
     @property
     def data(self):
 
-        return np.array([self.Q, self.E, self.SQw, self.SQw_err])
+        return {"independent":{"Q":self.Q, "E":self.E}, "dependent":{"SQw":self.SQw}, "errors":{"SQw":self.SQw_err}}
 
 
     # TODO: Refactor and abstract out E and q
