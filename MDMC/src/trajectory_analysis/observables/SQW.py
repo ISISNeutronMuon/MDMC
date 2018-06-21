@@ -22,43 +22,64 @@ class DynamicStructureFactor(ExperimentalObservable):
     @property
     def data(self):
 
-        return self._data
+        return {'independent':self.independent_variables,
+            'dependent':self.dependent_variables,
+            'errors':self.errors}
 
     @property
     def independent_variables(self):
 
         """
-        Assumes there is only a single dependent dataset and its error
+        Returns a dictionary of all independent variables
         """
 
-        return self.data[0:-2]
+        return self._independent_variables
 
     @property
     def dependent_variables(self):
 
         """
-        Returns a single dependent dataset and its error
+        Returns a dictionary of all dependent variables
         """
 
-        return self.data[-2:]
+        return self._dependent_variables
+
+    @property
+    def errors(self):
+
+        """
+        Returns a dictionary of all errors
+        """
+
+        return self._errors
 
     def read_from_file(self, reader, file_name):
 
         super(DynamicStructureFactor, self).read_from_file(reader, file_name)
-        self._data = self.reader.data
+        self._independent_variables = self.reader.data['independent']
+        self._dependent_variables = self.reader.data['dependent']
+        self._errors = self.reader.data['errors']
         self._from_MD = False
 
     # TODO: Add neutron weights
     # TODO: Detailed balance correction
+    # TODO: Add SQw errors
     def calculate_from_MD(self, MD_input, **params):
 
         """
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
+
+        Independent variables can either set previously or defined here within
+        params
         """
         self.trajectory = MD_input
-        self.Q_values = np.array(params.get('Q_values'))
         self.dt = self.trajectory.times - self.trajectory.times[0]
         self.universe_cell = params.get('cell')
+
+        try:
+            self.Q_values = np.array(params.get('Q_values'))
+        except KeyError:
+            self.Q_values = self.independent_variables['Q']
 
         if params.get('isotropic', False):
             self.FQt = self._calculate_FQt_orthogonal_Q_vectors()
@@ -70,7 +91,9 @@ class DynamicStructureFactor(ExperimentalObservable):
         self.SQw_err = np.zeros(self.SQw.shape)
         self.w = self._change_domain(self.dt)
 
-        self._data = [self.Q_vectors, self.w, self.SQw, self.SQw_err]
+        self._independent_variables = {'Q':self.Q_values, 'w':self.w}
+        self._dependent_variables = {'SQw':self.SQw}
+        self._errors = {'SQw':self.SQw_err}
         self._from_MD = True
 
     # TODO: Sum contributions of different directions at rho stage, rather than here
