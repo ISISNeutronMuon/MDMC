@@ -192,6 +192,16 @@ Another clunky element is that because the experimental observables are instanti
 
 The first is unappealing because the initialization of the minimizer is essentially wasted, and attributes then have to be set separately.  The second is unappealing because an MD engine instance is also passed to MDMCControl, and I think mixing up passing instances and what is essentially a keyword lacks clarity.
 
+It also currently has a "while True" loop with break conditions.  In this instance I feel this is valid, however this should be discussed. *Discuss this at June 2018 developer meeting*
+
+A further question of software philosophy which relates to the above discussion concerns how settings should be passed to instances within MDMCControl.  For example, if the FigureOfMeritCalculator has some settings, there are two ways in which they could be set:
+
+* Either the class in instantiated by the user and passed to MDMCControl;
+
+* Or a collection of settings are passed to MDMC.  
+
+*Discuss this at June 2018 developer meeting*
+
 
 ### Distribution of parameter changes
 MDMC v0.1 uses a uniform RNG to determine the change in each parameter - need to determine if this is the best approach for sampling parameter phase space.
