@@ -2,7 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-5 17:23:06"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 class Reader:
 
@@ -30,9 +30,14 @@ class Reader:
         calling the data reader
 
         For readers which are not specific to one data type, the calling class
-        must be determined using ??? so that the file data can be parsed into
+        must be determined so that the file data can be parsed into
         the appropriate data type.
 
         """
 
         pass
+
+    @abstractproperty
+    def data(self):
+
+        raise NotImplementedError
