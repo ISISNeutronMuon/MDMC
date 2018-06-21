@@ -107,9 +107,9 @@ def test_spce_water_molecule(universe,water_molecule):
         params.append(interaction.function.params)
 
     # Test interaction functions
-    assert Counter([ifu.coulomb,ifu.coulomb,ifu.coulomb,ifu.lennard_jones,
-                    ifu.harmonic_potential,ifu.harmonic_potential,
-                    ifu.harmonic_potential]) == Counter(functions)
+    assert Counter([ifu.Coulomb,ifu.Coulomb,ifu.Coulomb,ifu.LennardJones,
+                    ifu.HarmonicPotential,ifu.HarmonicPotential,
+                    ifu.HarmonicPotential]) == Counter(functions)
 
     # Test interaction parameters
     SPCEparams = [{'charge':-0.8476},{'charge':0.4238},{'charge':0.4238},
