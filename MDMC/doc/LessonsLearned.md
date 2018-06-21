@@ -205,3 +205,11 @@ A further question of software philosophy which relates to the above discussion 
 
 ### Distribution of parameter changes
 MDMC v0.1 uses a uniform RNG to determine the change in each parameter - need to determine if this is the best approach for sampling parameter phase space.
+
+
+### Flexibility of FoM calculations
+The most flexible structure for calculating FoMs would allow each dataset to use a different FoM when using multiple datasets.  However allowing this additional flexibility will require additional code and may make the common user case more complicated to select - is it an option that is likely to be used? *Discuss this at June 2018 developer meeting*
+
+
+### Analysis
+Minimizer (or MDMCControl) needs to output some metadata about MC e.g. ratio of accepted/rejected steps, correlation between parameters etc.
