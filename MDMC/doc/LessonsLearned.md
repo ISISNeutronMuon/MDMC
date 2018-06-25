@@ -20,7 +20,7 @@ It is not currently apparent how to modify the values of the charges on the fly.
 *This overall lack of consistency in how the force field parameters are defined in MMTK might preclude its inclusion in the final version of MDMC*
 
 
-### MD Simulation Properties
+### Analysis tools (MD Simulation Properties)
 The various MD simulation software will also include analysis tools for calculating different simulation properties e.g. RMS.  Depending on the amount of work it will require, it would be best if the majority of these tools were included within MDMC, so that the analysis that can be performed is independent on the MD engines which was used for the simulation.  The alternative would be to support using the analysis tools of each MD engine.  While this will be trivial in some instances (e.g. MMTK), it will be more challenging in others.  It will also require a greater amount of work to create an interface for each additional MD engine.
 
 
@@ -40,11 +40,11 @@ It appears that a reasonable approach to creating structural units (e.g. atoms, 
 
 
 ### Charges
-In many respects it makes sense to have the charge of each atom as an attribute of the atom object, as it is a parameter that each atom possesses and is unrelated to  any other object (at least generally - there may be special cases where this is not true).  This is the method that MMTK uses for defining the charge.  However, as the charge is a forcefield parameter, it is important that it is accessible in the same way as the bonded interaction parameters, so that they can be adjusted in a consistent manner.  Therefore there are two choices:
+In many respects it makes sense to have the charge of each atom as an attribute of the atom object, as it is a parameter that each atom possesses and is unrelated to any other object (at least generally - there may be special cases where this is not true).  This is the method that MMTK uses for defining the charge.  However, as the charge is a forcefield parameter, it is important that it is accessible in the same way as the bonded interaction parameters, so that they can be adjusted in a consistent manner.  Therefore there are two choices:
 * Store the charge independently from the atom class, in a non-bonded force field class - has the drawback that a probable operation on an atom (accessing the charge) is no longer trivial.
 * Having the charge as an attribute of the atom class, which can be modified from a non-bonded force field class - increases coupling between classes.
 
-A further important consideration is whether to have a different force field object for each non-bonded interaction for each atom, even though in theory the charges of all identical atoms should be the same.  Having an object per atom would allow the charge on each atom to be varied individually, which might be useful in some situations. *discuss this at June 2018 developer meeting.*
+A further important consideration is whether to have a different force field object for each non-bonded interaction for each atom, even though in theory the charges of all identical atoms should be the same.  Having an object per atom would allow the charge on each atom to be varied individually, which might be useful in some situations - to clarify, currently force fields assume that atoms are identical if their environment is the same to first order, i.e. if they have the same bonds; however in reality the higher order environment may have a significant enough effect to be worth considering.  *discuss this at June 2018 developer meeting.*
 
 A similar question arises for dispersive interaction parameters (e.g. LJ sigma), although for this it might be the case that the MD engine does not assign this for every atom, and instead just has a single set of dispersive parameters.  This is definitely the situation for MMTK.
 
@@ -126,7 +126,7 @@ nMOLDYN groups experimental observables together by type, e.g. structure, dynami
 
 
 ### Uncertainties
-An important consideration is how to deal with uncertainties (errors) in data, particularly given the need to perform operations on this when calculating the figure of merit.   While NumPy doesn't have a inbuilt mechanism for dealing with uncertainties, there is the appropriately named uncertainties package which extends NumPy to include arrays.  While in general I would prefer to only use major packages (such as NumPy or pandas) as they are unlikely to be discontinued, the uncertainties package was first released in 2008, so appears likely to be maintained.  Alternatively NumPy could be extended internally to MDMC to deal with uncertainties, to remove any dependencies.
+An important consideration is how to deal with uncertainties (errors) in data, particularly given the need to perform operations on this when calculating the figure of merit.   While NumPy doesn't have a inbuilt mechanism for dealing with uncertainties, there is the appropriately named uncertainties package which extends NumPy to include arrays.  While in general I would prefer to only use major packages (such as NumPy or pandas) as they are unlikely to be discontinued, the uncertainties package was first released in 2008, so appears likely to be maintained.  Alternatively NumPy could be extended internally to MDMC to deal with uncertainties, to remove any dependencies. *discuss this at June 2018 developer meeting*
 
 
 ### Structure of readers module
@@ -154,7 +154,7 @@ Having looked back, potentially the MD engine classes (e.g. MMTK CubicUniverse) 
 
 
 ### MMTK Trajectories
-In MMTK trajectories are stored with element information and a list of position vectors separately.  I would definitely prefer to avoid this.
+In MMTK, trajectories are stored with element information and a list of position vectors separately.  I would definitely prefer to avoid this.
 
 
 ### Isotropic systems
@@ -165,6 +165,8 @@ For isotropic systems, improvements in statistics can be achieved by averaging o
 As we want MDMC to be able to fit multiple datasets, the refinement needs to use a figure of merit that reflects this.  Therefore there should be a multiple dataset figure of merit class, which contains n figures of merit which it uses to calculate the total figure of merit (with specific weighting for each dataset if required.)  This multiple figure of merit class should have the same interface as the individual ones, as it needs to expose the same methods to the minimizer.
 
 Each (single) figure of merit also needs to check that it has one experimental dataset (flag in experimental observable) and one MD calculated dataset.  If in future other simulation methods (e.g. Monte Carlo, DFT) are used to get data against which MD data is compared, these would count as experimental datasets (however this flag is not set by the user, it is as a result of the dataset being read from a file).
+
+Do we think it is likely that different FoMs will need to be used when fitting multiple datasets? *discuss this at June 2018 developer meeting*
 
 
 ### Minimizer
@@ -178,7 +180,7 @@ There appear to be two obvious ways to denote which potential parameters are con
 
 * Have a separate parameter class which has a constrained attribute.  This will allow a reference to every constrained parameter to be passed to the minimizer.  The only concern would be that the list could become very large if there is a large number of unconstrained parameters, however I think it is unlikely that this situation would occur.
 
-*Discuss this at June 2018 developer meeting*
+*discuss this at June 2018 developer meeting*
 
 
 ### MDMCControl
@@ -192,7 +194,7 @@ Another clunky element is that because the experimental observables are instanti
 
 The first is unappealing because the initialization of the minimizer is essentially wasted, and attributes then have to be set separately.  The second is unappealing because an MD engine instance is also passed to MDMCControl, and I think mixing up passing instances and what is essentially a keyword lacks clarity.
 
-It also currently has a "while True" loop with break conditions.  In this instance I feel this is valid, however this should be discussed. *Discuss this at June 2018 developer meeting*
+It also currently has a "while True" loop with break conditions.  In this instance I feel this is valid, however this should be discussed. *discuss this at June 2018 developer meeting*
 
 A further question of software philosophy which relates to the above discussion concerns how settings should be passed to instances within MDMCControl.  For example, if the FigureOfMeritCalculator has some settings, there are two ways in which they could be set:
 
@@ -200,7 +202,7 @@ A further question of software philosophy which relates to the above discussion 
 
 * Or a collection of settings are passed to MDMC.  
 
-*Discuss this at June 2018 developer meeting*
+*discuss this at June 2018 developer meeting*
 
 
 ### Distribution of parameter changes
@@ -208,8 +210,18 @@ MDMC v0.1 uses a uniform RNG to determine the change in each parameter - need to
 
 
 ### Flexibility of FoM calculations
-The most flexible structure for calculating FoMs would allow each dataset to use a different FoM when using multiple datasets.  However allowing this additional flexibility will require additional code and may make the common user case more complicated to select - is it an option that is likely to be used? *Discuss this at June 2018 developer meeting*
+The most flexible structure for calculating FoMs would allow each dataset to use a different FoM when using multiple datasets.  However allowing this additional flexibility will require additional code and may make the common user case more complicated to select - is it an option that is likely to be used? *discuss this at June 2018 developer meeting*
 
 
 ### Analysis
 Minimizer (or MDMCControl) needs to output some metadata about MC e.g. ratio of accepted/rejected steps, correlation between parameters etc.
+
+
+### Configuration storing
+MDMCv0.1 stored the configuration from the previous 'good' parameter set (i.e. the last MC accepted parameter set), and the MD configuration is reverted back to this if the MC step is rejected.  However based on the assumption that the system is kept in equilibrium by the small parameter changes, I'm not sure how necessary this is.  Avoiding doing it would save a significant amount of memory for large systems, and might also be advantageous in terms of interacting with certain MD engines.
+
+However they may also be advantages to keeping the configuration.  It would be best to support both and allow the user to choose (could also limit it based on simulation size). *discuss this at June 2018 developer meeting*
+
+
+### Attitude to scripts
+As the end goal is developing software with a GUI, how user friendly do scripted arguments need to be e.g. is it reasonable to expect the user to provide a predicate to a filter, or should there be simple options for common predicates?  Does the ability to script for MDMC need to be suitable for inexpert users?
