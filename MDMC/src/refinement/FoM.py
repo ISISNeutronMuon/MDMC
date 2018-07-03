@@ -15,67 +15,58 @@ class FigureOfMeritCalculator:
 
     __metaclass__ = ABCMeta
 
+    def calculate_all_FoM(self, data_pairs):
+
+        """
+        Accepts a list of dictionaries of data. Each
+        dictionary contains exp_data, MD_data, exp_err, and optionally contains
+        weight.
+        """
+
+        self.check_data_properties(data_pairs)
+        FoMs = []
+        for data_pair in data_pairs:
+            FoMs.append(self.calculate_FoM(data_pair))
+
+        return sum(FoMs)
+
     @abstractmethod
-    def calculate_FOM(self):
+    def calculate_FoM(self, data_pair):
+
+        """
+        Performs the FoM calculation specific to each FoM
+        """
 
         raise NotImplementedError
 
     @abstractmethod
-    def check_dataset_properties(self):
+    def check_data_properties(self, data_pairs):
 
         """
         Checks for required properties of all datasets
 
         This includes:
-        - Two datasets exist
-        - Exactly one dataset is an experimental dataset
-        - Identical dimensions
+        - At least two datasets exist
+        - Exactly one dataset in each pair is an experimental dataset
+        - Identical dimensions for each pair
         """
 
         raise NotImplementedError
 
 
-class MultipleFOMCalculator(FigureOfMeritCalculator):
+class StandardFoMCalculator(FigureOfMeritCalculator):
 
     """
-    Enables a single FOM to be calculated from multiple FOM (i.e. multiple
-    experimental datasets)
-
-    Each individual FOM has its own scaling, which defaults to unity.
+    Calculates the error normalised square difference, with an optional
+    weighting
     """
 
-    def __init__(self, *data):
+    def calculate_FoM(self, data_pair):
 
-        """
-        data_pair - a dictionary containing exp_data and MD_data
-        """
-
-
-class StandardFOMCalculator(FigureOfMeritCalculator):
-
-    """
-    Calculates the error normalised square difference
-    """
-
-    def __init__(self, data):
-
-        """
-        data - a dictionary containing exp_data, MD_data, err_data and scale,
-        which is a scale factor for normalising the MD data to the exp_data
-        """
-
-        self.exp_data = data.get("exp_data")
-        self.MD_data = data.get("MD_data")
-        self.err_data = data.get("err_data")
-        self.scale = data.get("scale")
-        self.check_dataset_properties()
-
-    def calculate_FOM(self):
-
-        return np.sum((self.exp_data - self.scale * self.MD_data) ^ 2 \
-            / self.err_data)
+        return np.sum((data_pair['exp_data'] - data_pair['MD_data']) ^ 2 \
+            * data_pair.get('weight', 1) / data_pair['err_data'])
 
     # TODO: Implement
-    def check_dataset_properties(self):
+    def check_data_properties(self):
 
-        pass
+        raise NotImplementedError
