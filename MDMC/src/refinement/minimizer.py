@@ -4,8 +4,9 @@ parameters
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-
 import random
+from copy import deepcopy
+
 import numpy as np
 
 class Minimizer:
@@ -16,30 +17,38 @@ class Minimizer:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, MC_norm):
+    def __init__(self, MC_norm, config_reset):
 
         """
         Arguments:
-        fit_params - References to all potential parameters that will be refined
+        MC_norm - Normalization parameter for MC which determines the
+        accept/reject ratio
+        config_reset - Boolean which determines whether or not the MD
+        configuration is stored.  If True, the MD configuration will always be
+        reset to the configuration for the last accepted parameter set.
         """
 
         self.FoM_old = float('inf')
-        self.FoM_new = None
+        self.FoM = None
+        self.fit_params_old = None
+        self.fit_params = None
         self.MC_norm = MC_norm
+        self.config_reset = config_reset
 
-    def step(self, fit_params):
+    @abstractmethod
+    def step(self):
 
-        """
-        Iterates the minimization by a single step
+        raise NotImplementedError
 
-        The following occurs with each step:
-        - Accept/Reject new state
-        - Change potential parameters
-        """
+    @property
+    def fit_params_old(self):
 
-        if self._change_state():
-            self.FoM_old = self.FoM_new
-            self._change_parameter(fit_params)
+        return self._fit_params_old
+
+    @fit_params_old.setter
+    def fit_params_old(self, params):
+
+        self._fit_params_old = deepcopy(params)
 
     @abstractproperty
     def max_param_change(self):
@@ -47,7 +56,7 @@ class Minimizer:
         raise NotImplementedError
 
     @abstractmethod
-    def _change_state(self):
+    def change_state(self):
 
         """
         Stochastic determination of whether the state should change based on the
@@ -66,7 +75,21 @@ class Minimizer:
 
         raise NotImplementedError
 
+    def change_parameters(self, fit_params):
+
+        """
+        Arguments:
+        fit_params - References to all potential parameters that will be refined
+        """
+
+        for param in fit_params:
+            self._change_parameter(param)
+
     def _calc_max_param_change(self):
+
+        raise NotImplementedError
+
+    def has_converged(self):
 
         raise NotImplementedError
 
@@ -77,9 +100,17 @@ class MMC(Minimizer):
     Minimizer employing the Metropolis algorithm
     """
 
-    def _change_state(self):
+    def step(self, FoM):
 
-        prob = min(1, np.exp(self.FoM_old - self.FoM_new) / self.MC_norm)
+        self.FoM = FoM
+
+        if self.change_state():
+            self.FoM_old = self.FoM
+            # TODO: FINISH!
+
+    def change_state(self):
+
+        prob = min(1, np.exp(self.FoM_old - self.FoM) / self.MC_norm)
         return True if prob > random.random() else False
 
     def _change_parameter(self, parameter):

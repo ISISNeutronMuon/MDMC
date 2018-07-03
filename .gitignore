@@ -1,0 +1,17 @@
+*.pyc
+
+.pytest_cache
+
+__pycache__
+
+*.log
+
+*.nc
+
+*.html
+
+*.setup
+
+.DS_Store
+
+<fdopen>
