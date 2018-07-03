@@ -7,18 +7,20 @@ the parameter sets are restricted to describing water.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-4 17:38:48"""
 
-from abc import ABC,abstractmethod
+from abc import ABCMeta,abstractmethod
 
 import MDMC.src.MD.interaction_functions as ifu
 import MDMC.src.MD.structural_units as su
 
-class ForceField(ABC):
+class ForceField:
     """Abstract class defining a force field
 
     For each interaction type that it uses (non-bonded, bonds, bond angles etc),
     a force field must define the interaction function (LJ, harmonic etc).  It
     must also define the parameters for each of these functions.
     """
+
+    __metaclass__ = ABCMeta
 
     def __init__(self,interactions):
         for interaction in interactions:
@@ -61,13 +63,13 @@ class SPCE(ForceField):
     f_HOH = 383.      # kJ mol^-1 rad^2
 
     def __init__(self,interactions):
-        super().__init__(interactions)
+        super(SPCE,self).__init__(interactions)
 
     # TODO: Recreates interaction dictionary with each call - change this, but maintain new potential object generation
     # TODO: Replace with abstract factory
     def interaction_dictionary(self):
-        return {(su.Coulombic,('O',)):ifu.coulomb(self.q_O),
-                (su.Coulombic,('H',)):ifu.coulomb(self.q_H),
-                (su.Dispersion,('O',)):ifu.lennard_jones(self.sigma,self.eta),
-                (su.Bond,('H','O')):ifu.harmonic_potential(self.r_OH,self.f_OH),
-                (su.BondAngle,('H','O','H')):ifu.harmonic_potential(self.a_HOH,self.f_HOH)}
+        return {(su.Coulombic,('O',)):ifu.Coulomb(self.q_O),
+                (su.Coulombic,('H',)):ifu.Coulomb(self.q_H),
+                (su.Dispersion,('O',)):ifu.LennardJones(self.sigma,self.eta),
+                (su.Bond,('H','O')):ifu.HarmonicPotential(self.r_OH,self.f_OH),
+                (su.BondAngle,('H','O','H')):ifu.HarmonicPotential(self.a_HOH,self.f_HOH)}
