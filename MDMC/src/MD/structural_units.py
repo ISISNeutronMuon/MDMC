@@ -60,6 +60,14 @@ class StructuralUnit:
         return self._atom_list
 
     def translate(self, displacement):
+
+        """
+        Translate the structural unit by the specified displacement
+
+        Arguments:
+        Displacement - three dimensional array
+        """
+
         self.position = self.position + np.array(displacement)
 
     @abstractmethod
@@ -73,8 +81,9 @@ class StructuralUnit:
         return list(self.interaction_set())
 
     def top_level_structure(self):
-        """Returns:
-            Highest level structural unit of which it is a member
+        """
+        Returns:
+        Highest level structural unit of which it is a member
         """
         if issubclass(type(self.parent),StructuralUnit):
             return self.parent.top_level_structure()
@@ -102,8 +111,8 @@ class Atom(StructuralUnit):
 
     Attributes:
     atomID - Unique positive integer
-    position - position in simulation box
-    velocity -
+    position - three dimensional array of the position in simulation box
+    velocity - three dimensional array of the velocity
     element - atomic element
     mass - atomic mass (amu).  Can either be specified of determined from lookup
     """
