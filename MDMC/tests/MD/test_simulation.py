@@ -62,7 +62,7 @@ def test_create_atom(atom):
     npt.assert_array_equal((0,0,0),atom.velocity)
     assert 'H' == atom.element
     assert 1.008 == atom.mass
-    assert su.Coulombic == type(atom.interaction_set().pop())
+    assert su.Coulombic == type(atom.interactions.pop())
 
 def test_atom_list(atom):
     assert atom in atom.atom_list
@@ -92,7 +92,7 @@ def test_add_molecule(universe,water_molecule):
 
     # Test interactions have expected element lists
     interaction_elements = []
-    for interaction in water_molecule.interaction_set():
+    for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
     assert sorted([['H','H','O'],['H','O'],['H','O'],['O']]) ==\
             sorted(interaction_elements)
