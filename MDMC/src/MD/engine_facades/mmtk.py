@@ -35,14 +35,12 @@ UNIVERSE_MINIM = {'steepest_descent':SteepestDescentMinimizer,
 class MMTKEngine(MDEngine):
 
     """
-    Facade for MMTK API
-
-    Implements simple methods in abstract base class facade.
+    Facade for MMTK
     """
 
     # TODO: Enable different universe types
     def setup_universe(self, universe, **settings):
-        self._MDMC_universe = weakref.ref(universe)
+        self.MDMC_universe = universe
         self.universe = MMTKCubicUniverse(self.MDMC_universe,
             **settings)
         self.build_configuration()
@@ -87,10 +85,6 @@ class MMTKEngine(MDEngine):
 
     def run(self, n_steps):
 
-        """
-        Minimizes (if provided with a minimizer) and integrates the universe
-        """
-
         if hasattr(self,'minimizer'):
             self.minimizer(steps = self.minimizer_steps)
         self.integrator(steps = n_steps)
@@ -105,7 +99,13 @@ class MMTKEngine(MDEngine):
 
     @property
     def MDMC_universe(self):
+
         return self._MDMC_universe()
+
+    @MDMC_universe.setter
+    def MDMC_universe(self, universe):
+
+        self._MDMC_universe = weakref.ref(universe)
 
     def build_configuration(self):
 
