@@ -8,7 +8,6 @@ from enum import Enum
 import itertools
 from copy import deepcopy
 import numpy as np
-import weakref
 
 from MDMC.src.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.src.trajectory_analysis.trajectory import Configuration
