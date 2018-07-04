@@ -11,19 +11,19 @@ import numpy as np
 import weakref
 
 from MDMC.src.MD.engine_facades.facade_factory import MDEngineFacadeFactory
-from MDMC.src.MD.structural_units import Molecule
 from MDMC.src.trajectory_analysis.trajectory import Configuration
 
-Shape = Enum('Shape',['cubic','orthorhombic','infinite','rhombic_dodecahedron',
-                'truncated_octahedron'])
+Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
+                        'rhombic_dodecahedron', 'truncated_octahedron'])
 
 # TODO: Extract out atomic structure generation from Universe class, so that more structures can be easily added
-# TODO: Atomic Structures should be factory
 
-def _primitive_cubic(dimensions,number):
+def _primitive_cubic(dimensions, number):
+
     pass
 
 def _liquid_structure():
+
     pass
 
 class Universe(object):
@@ -31,47 +31,48 @@ class Universe(object):
     """
     Class where configuration and topology are defined
 
-    DESCRIPTION
-
     Attributes:
     shape
     dims - dimensions
     pbc - Periodic Boundary Conditions
     """
 
-    def __init__(self,dimensions,shape=Shape.cubic):
-        # TODO: Change interactions so that it maintains an ordered set, so that searching is optimized
+    def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
+        structures=None):
+
+        # TODO: Change interactions to maintain an ordered set, so that searching is optimized
         self.dims = np.array(dimensions)
         self.shape = shape
-        self.configuration = Configuration()
+        if structures:
+            self.configuration = Configuration(structures)
+        else:
+            self.configuration = Configuration()
         self._interactions = set()
-        self.force_field = None
+        self.force_fields = force_field
 
     @property
     def interactions(self):
+
         return self._interactions
 
     @property
     def volume(self):
+
         return np.prod(self.dims)
 
-    # TODO: Potentially remove duplicate option and just rely on fill method
-    def add_structural_unit(self,structural_unit,duplicates=0,
-                            structure='liquid',force_field=None):
-        self._add_single_structural_unit(structural_unit)
-        if force_field:
-            self.add_force_field(force_field,structural_unit.interaction_set())
-        # TODO: Extract below into fill method
-        # Calculate what bounding radius factor needs to be so structural units
-        # are approximately equidistant and pass this to fill.
-        for _ in range(duplicates):
-            self.configuration.add_structural_units(deepcopy(structural_unit))
+    def add_structural_unit(self,structural_unit, force_field=None):
 
-    def _add_single_structural_unit(self,structural_unit):
+        """
+        Adds a single structural unit to the universe, with optional force field
+        applying only to that structural unit
+        """
+
         self.configuration.add_structural_units(structural_unit)
-        structural_unit.universe = weakref.ref(self)
+        structural_unit.universe = self
         for atom in structural_unit.atom_list:
-            self._interactions.update(atom.interaction_set())
+            self._interactions.update(atom.interactions)
+        if force_field:
+            self.add_force_field(force_field, structural_unit.interactions)
 
     # TODO: Add in option to tessellate a configuration to fill universe (a la GROMACS)
     def fill(self,structural_unit,force_field=None,
@@ -93,9 +94,6 @@ class Universe(object):
         number_density - in AA^-3
         forcefield - Simultaneously applies a forcefield
         structural_motif - The arrangement of structural units
-
-        Raises:
-        EXCEPTIONS
         """
 
         # TODO: implement method for specifying number of molecules and number density, rather than box size
@@ -112,30 +110,37 @@ class Universe(object):
         # TODO: See if changing from appending to extending improves performance
         for position in positions:
             if position is positions[0]:
-                self._add_single_structural_unit(structural_unit)
+                self.add_structural_unit(structural_unit)
                 offset = (structural_unit.position - structural_unit.bounding_box.min)
                 structural_unit.position = position + offset
                 if force_field:
-                    self.add_force_field(force_field,structural_unit.interaction_set())
+                    self.add_force_field(force_field,structural_unit.interactions)
             else:
                 new_unit = deepcopy(structural_unit)
                 new_unit.position = position + offset
                 self.configuration.add_structural_units(new_unit)
 
-    # TODO: Add duplicate structural unit method
-
-    # TODO: Extract this code into another method so that atoms is not regenerated each time
+    @property
     def atom_list(self):
         return self.configuration.atom_list
 
+    # TODO: Change this so that multiple forcefields can be stored - this will necessitate a change in how force fields are passed to MMTK
     def add_force_field(self, force_field, *interactions):
+
+        """
+        Adds a force field to the passed interactions.  If no interactions are
+        passed, the force field is applied to all interactions in the universe.
+        """
+
         if not interactions:
-            interactions = (self.interactions,)
-        self.force_field = force_field(*interactions)
+            self.force_fields = force_field(self.interactions)
+        else:
+            self.force_fields = force_field(*interactions)
 
     @property
     def element_list(self):
-        return [atom.element for atom in self.atom_list()]
+
+        return [atom.element for atom in self.atom_list]
 
     @property
     def element_dict(self):
@@ -146,9 +151,8 @@ class Universe(object):
         potential parameters for all identical element types.
         """
 
-        return {atom.element:atom for atom in self.atom_list()}
+        return {atom.element:atom for atom in self.atom_list}
 
-    # TODO: Determine method of getting molecule list with looser coupling
     @property
     def molecule_list(self):
 
@@ -165,7 +169,7 @@ class Universe(object):
 
     # TODO: Add helper methods for common filtering operations
 
-
+# TODO: Implement
 class EnergyMinimizer(object):
 
     """
