@@ -40,10 +40,9 @@ class MMTKEngine(MDEngine):
 
     # TODO: Enable different universe types
     def setup_universe(self, universe, **settings):
-        self.MDMC_universe = universe
-        self.universe = MMTKCubicUniverse(self.MDMC_universe,
-            **settings)
-        self.build_configuration()
+
+        self.universe = MMTKCubicUniverse(universe, **settings)
+        self.build_configuration(universe)
 
     def setup_simulation(self, universe, **settings):
 
@@ -65,18 +64,18 @@ class MMTKEngine(MDEngine):
         """
 
         # TODO: Add in additional actions. Change so that TranslationRemover can be deselected
-        temperature = settings.get('temperature',300) * MMTK.Units.K
+        temperature = settings.get('temperature', 300) * MMTK.Units.K
         temperature_variation = 10. * MMTK.Units.K
 
-        time_step = settings.get('time_step',1) * MMTK.Units.fs
+        time_step = settings.get('time_step', 1) * MMTK.Units.fs
 
         self._set_trajectory_output()
 
         self.universe.initializeVelocitiesToTemperature(temperature)
         actions = [self.trajectory_output, TranslationRemover(),
-                    VelocityScaler(temperature,temperature_variation)]
+                    VelocityScaler(temperature, temperature_variation)]
         self.integrator = UNIVERSE_INT[settings['integrator']](self.universe,
-            delta_t=time_step, actions = actions)
+            delta_t=time_step, actions=actions)
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
@@ -90,12 +89,61 @@ class MMTKEngine(MDEngine):
         self.integrator(steps = n_steps)
 
     def _set_trajectory_output(self):
+
+        """
+        Creates a temporary file in which to output MMTK trajectories
+        """
+
     # TODO: Consider if a SpooledTemporaryFile would be more appropriate
         trajectory_file = TemporaryFile()
         self.trajectory = MMTK.Trajectory.Trajectory(self.universe,
             trajectory_file.name, mode = 'w')
         self.trajectory_output = MMTK.Trajectory.TrajectoryOutput(
             self.trajectory)
+
+    def build_configuration(self, MDMC_universe):
+
+        """
+        Fills the MMTK universe from MDMC universe configuration and topology
+
+        Only adds atoms in molecules to MMTK universe, as MMTK does not define
+        force fields on individual atoms (except about noble gases, excluding
+        He)
+        """
+
+        # TODO: Add additional parameters that can be passed to an MMTK molecule
+        for molecule in MDMC_universe.molecule_list:
+            m = MMTKMolecule(molecule)
+            self.universe.addObject(m)
+
+
+class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
+
+    def __init__(self, universe, **settings):
+
+        """
+        As the base class defines __setattr__, self.MDMC_universe cannot have a
+        setter method which sets self._MDMC_universe as a weakref. The
+        consequence of this is that self.MDMC_universe cannot be set after
+        initialization.
+        """
+
+        self._MDMC_universe = weakref.ref(universe)
+
+        # TODO: Following if else is valid for other universe shapes but not cubic
+        if universe.shape is Shape.cubic:
+            dims = universe.dims[0]
+        else:
+            dims = universe.dims
+
+        if universe.force_fields is None:
+            super(MMTKCubicUniverse,self).__init__(universe.dims[0])
+        else:
+            super(MMTKCubicUniverse,self).__init__(universe.dims[0],
+                UNIVERSE_FF[type(universe.force_fields)](
+                settings.get('lj_options',None),
+                settings.get('es_options',None)))
+        self.assign_lj_parameters()
 
     @property
     def MDMC_universe(self):
@@ -107,46 +155,9 @@ class MMTKEngine(MDEngine):
 
         self._MDMC_universe = weakref.ref(universe)
 
-    def build_configuration(self):
+    # TODO: Implement
+    def update_MDMC_universe(self):
 
-        """
-        Fills the MMTK universe from MDMC universe configuration and topology
-
-        Only adds atoms in molecules to MMTK universe, as MMTK does not define
-        force fields on individual atoms (except about gases, excluding He)
-        """
-
-        # TODO: Add additional parameters that can be passed to an MMTK molecule
-        for molecule in self.MDMC_universe.molecule_list:
-            m = MMTKMolecule(molecule)
-            self.universe.addObject(m)
-
-
-# TODO: Take out self.MDMC_obj definition into mixin class
-# TODO: Expand to other universes
-class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
-
-    def __init__(self, universe, **settings):
-        self._MDMC_obj = weakref.ref(universe)
-
-        if universe.shape is Shape.cubic:
-            dims = universe.dims[0]
-        else:
-            dims = universe.dims
-        if universe.force_fields is None:
-            super(MMTKCubicUniverse,self).__init__(universe.dims[0])
-        else:
-            super(MMTKCubicUniverse,self).__init__(universe.dims[0],
-                UNIVERSE_FF[type(universe.force_fields)](
-                settings.get('lj_options',None),
-                settings.get('es_options',None)))
-        self.assign_lj_parameters()
-
-    @property
-    def MDMC_obj(self):
-        return self._MDMC_obj()
-
-    def update_MDMC_obj(self):
         pass
 
     def assign_lj_parameters(self):
@@ -157,7 +168,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
 
         self.forcefield().nonbonded.dataset.ljParameters = \
-            self.lj_parameters_closure(self.MDMC_obj.element_dict)
+            self.lj_parameters_closure(self.MDMC_universe.element_dict)
 
     def lj_parameters_closure(self, element_dict):
 
@@ -214,7 +225,7 @@ class MMTKAtom(MMTK.ChemicalObjects.Atom):
     def MDMC_obj(self):
         return self._MDMC_obj()
 
-    # TODO: MMTK doesn't support spce for individual atoms (or in fact for Amber forcefields)
+    # TODO: MMTK doesn't support spce for individual atoms (same for Amber forcefields)
     # def assign_charge(self):
     #     self.topLevelChemicalObject().spce_charge[
     #         self.topLevelChemicalObject().getReference(self)] = \
