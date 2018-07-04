@@ -12,6 +12,10 @@ from itertools import count
 import weakref
 from copy import deepcopy
 
+import MDMC.src.utilities.atom_properties as atom_properties
+
+# TODO: Create pattern to recursively update attributes of subunits e.g. when molecule has universe updated, so do all atoms belonging to it
+# TODO: Change structural unit to structure
 class StructuralUnit:
     """Abstract base class for all structural units
 
@@ -27,8 +31,8 @@ class StructuralUnit:
 
     _ID_generator = count(start=1, step=1)
 
-    # TODO: If structures are copied, assign new ID to copy
     def __init__(self, position, velocity, name):
+
         # TODO: Add init docstring
         self.ID = self._generate_ID()
         self._interactions = set()
@@ -41,6 +45,7 @@ class StructuralUnit:
     # TODO: Implement __copy__
 
     def __deepcopy__(self, memo):
+
         cls = self.__class__
         structural_unit = cls.__new__(cls)
         memo[id(self)] = structural_unit
@@ -53,23 +58,61 @@ class StructuralUnit:
 
     @property
     def position(self):
+
         return self._position
 
     @position.setter
     def position(self, position):
+
+        """
+        Provides a warning if the specified position is not within the
+        structural units universe
+        """
+
+        if not self.valid_position(position):
+            print "Warning: Structural unit lies outside of the universe bounds"
         self._position = np.array(position)
 
     @property
     def velocity(self):
+
         return self._velocity
 
     @velocity.setter
     def velocity(self, velocity):
+
         self._velocity = np.array(velocity)
 
+    # TODO: Create structure list so that this makes more sense
     @property
     def atom_list(self):
-        return self._atom_list
+
+        """
+        Returns:
+        A list of all of the atoms in the structure by recursively calling
+        atom_list for all substructures.
+        """
+
+        atom_list = []
+        for structure in self._structure_list:
+            atom_list.extend(structure.atom_list)
+        return atom_list
+
+    @property
+    def universe(self):
+
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
+
+    @universe.setter
+    def universe(self, universe):
+
+        try:
+            self._universe = weakref.ref(universe)
+        except TypeError:
+            self._universe = None
 
     def translate(self, displacement):
 
@@ -84,6 +127,7 @@ class StructuralUnit:
 
     @abstractmethod
     def add_interaction(self):
+
         raise NotImplementedError
 
     @property
@@ -104,6 +148,7 @@ class StructuralUnit:
         return next(self._ID_generator)
 
     def add_interaction(self, interaction):
+
         self._interactions.add(interaction)
 
     def top_level_structure(self):
@@ -138,38 +183,63 @@ class StructuralUnit:
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
-    # TODO: Test position of all atoms is within universe
+    def valid_position(self, position):
+
+        """
+        Checks if the specified position is within the bounds of the structural
+        unit's universe, if it is associated with one
+
+        Returns:
+        True if position is within universe or there is no associated universe.
+        False if structural unit has an associated universe but the position is
+        not within its bounds.
+        """
+
+        try:
+            if np.any(position < np.array([0,0,0])) or \
+                np.any(position > self.universe.dims):
+                return False
+            else:
+                return True
+        except AttributeError:
+            return True
 
 
 class Atom(StructuralUnit):
-    """A single atom
 
-    DESCRIPTION
+    """
+    A single atom
 
     Attributes:
-    atomID - Unique positive integer
     position - three dimensional array of the position in simulation box
     velocity - three dimensional array of the velocity
     element - atomic element
-    mass - atomic mass (amu).  Can either be specified of determined from lookup
+    mass - atomic mass (amu). Can either be specified of determined from lookup.
     """
 
     def __init__(self, element, position=(0,0,0), velocity=(0,0,0), **kwargs):
-        """init with position, velocity, element, mass and a non-bonded
-        interaction
 
-        The non-bonded interaction will be set as a Coulomb interaction once a
-        force field has been applied to the universe and each element has an
-        associated charge.
         """
-        # TODO: Create lookup table for atomic masses
-        # TODO: Check position and velocity are valid
+        init with position, velocity, element, mass and a non-bonded interaction
+
+        The Coulombic interaction value (i.e. charge) is set when a force field
+        is applied to the universe.
+        """
 
         super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
-        self.mass = kwargs['mass']
+        self.mass = kwargs.get('mass', atom_properties.MASS[element])
         self.add_interaction(Coulombic(self))
-        self._atom_list = [self]
+
+    @property
+    def atom_list(self):
+
+        """
+        Returns:
+        A list containing the atom
+        """
+
+        return [self]
 
     @property
     def charge(self):
@@ -192,7 +262,9 @@ class Atom(StructuralUnit):
 
 
 class Group(StructuralUnit):
-	"""Two or more atoms that form a subset of a molcule
+
+    """
+    Two or more atoms that form a subset of a molcule
 
  	Attributes:
  	position - center of mass position
@@ -200,7 +272,9 @@ class Group(StructuralUnit):
     """
 
 class Molecule(StructuralUnit):
-    """Two or more bonded atoms, passed either as individual atoms or as groups
+
+    """
+    Two or more bonded atoms, passed either as individual atoms or as groups
 
     Must be declared with at least 2 atoms and one interaction.
 
@@ -208,30 +282,48 @@ class Molecule(StructuralUnit):
     position - center of mass position
     velocity - center of mass translational velocity
     """
-    # TODO: Check bond lengths are consistent with atom positions
-    # TODO: Make Molecule init from list of atoms and also list of element symbols (both with list of bonds)
+
+    # TODO: Make Molecule init from list of atoms/groups and also list of element symbols (both with list of bonds)
+    # TODO: Create method for adding atoms/groups after init
     def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None, **kwargs):
-        self._atom_list = kwargs['atoms']
+
+        self._structure_list = kwargs['atoms']
         self._calc_subunit_position_in_CoM_frame()
         super(Molecule,self).__init__(position, velocity, name)
-        self._interactions = set(kwargs['interactions'])
-        # TODO: ENSURE THAT INTERACTIONS FROM CONSTITUENT ATOMS ARE ADDED
+        self.interactions = kwargs['interactions']
 
     @property
     def position(self):
+
         return self._position
 
     @position.setter
     def position(self, position):
+
         self._position = np.array(position)
         self._set_subunit_positions()
 
+    @property
+    def interactions(self):
+
+        return self._interactions
+
+    @interactions.setter
+    def interactions(self, interactions):
+
+        self._interactions = set(interactions)
+        for atom in self.atom_list:
+            for interaction in atom.interactions:
+                self._interactions.add(interaction)
+
     def _set_subunit_positions(self):
+
         for atom in self.atom_list:
             atom.position = self.position + self._CoM_frame_positions[atom]
 
     # TODO: Improve implementation which determines atomic positions relative to molecular CoM
     def _calc_CoM(self):
+
         mass = 0.
         weighted_positions = np.zeros(3)
         for atom in self.atom_list:
@@ -240,33 +332,34 @@ class Molecule(StructuralUnit):
         return weighted_positions / mass
 
     def _calc_subunit_position_in_CoM_frame(self):
+
         self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
         for atom in self.atom_list:
             self._CoM_frame_positions[atom] = atom.position - CoM
 
+    # TODO: Not sure this method is necessary!
     @property
     def bounding_box(self):
-        return BoundingBox(self.position, self.atom_list)
 
-    # TODO: Unify add/update interaction methods
-    def add_interaction(self, interaction):
-        self._interactions.add(interaction)
+        return BoundingBox(self.position, self.atom_list)
 
 
 class BoundingBox(object):
 
     def __init__(self, position, atom_list):
+
         self.min = position
         self.max = position
         for atom in atom_list:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
 
-# TODO: Take out atom operations common to both structures and interactions, like atom_list, into a mixin class
 
-class Interaction(object):
-    """Base class for interactions, both bonded, non-bonded and constraints
+class Interaction:
+
+    """
+    Base class for interactions, both bonded, non-bonded and constraints
 
     When atoms are passed to interactions, the interaction is also added to the
     atoms.
@@ -278,104 +371,122 @@ class Interaction(object):
     parameters - bond interaction parameters
     """
 
+    __metaclass__ = ABCMeta
+
     def __init__(self, atom, *atoms):
-        # TODO: Iterate over atoms adding self to atoms.interactions, maybe also with interaction type
-        # TODO: Iterate over atoms adding each element to self.elements
-        # TODO: Test that number of parameters is what is required by bond_interaction
-        # TODO: Change init so that Interaction can be called with a structural unit rather than atom
-        # TODO: Change from passing atoms to something more general, as other interactions also need to be passed (e.g. bonds for dihedral)
+
         self._atom_list = [atom] + list(atoms)
         self.function = None
         self._generate_ID()
         self.universe = None
         self._add_interaction_atoms()
 
-    # TODO: Unify atom_list methods
-    # TODO: Extract code so that atoms is not regenerated each time
     @property
     def atom_list(self):
+
         return self._atom_list
 
     @atom_list.setter
-    def atom_list(self, atoms):
-        for atom in atoms:
-            self._atom_list.extend(atom.atom_list)
+    def atom_list(self, structures):
+
+        for structure in structures:
+            self._atom_list.extend(structure.atom_list)
 
     def atom_IDs(self):
+
         return [atom.ID for atom in self.atom_list]
 
     # TODO: Make IDs unique prime numbers
     def _generate_ID(self):
+
         self.ID = reduce(lambda x,y: x*y, self.atom_IDs())
 
     def element_list(self):
+
         return [atom.element for atom in self.atom_list]
 
     def sorted_element_list(self):
-        """Returns elements sorted alphabetically"""
+
+        """
+        Returns:
+        Elements sorted alphabetically
+        """
+
         return sorted(self.element_list())
 
     # TODO: Currently defined so that force_field INTERACTION can be hashed - change this
     def _element_tuple(self):
+
         return tuple(self.element_list())
 
     # TODO: Ensure this doesn't get called when interactions are added with a call to self from an atom object
     def _add_interaction_atoms(self):
+
         for atom in self.atom_list:
             atom.add_interaction(self)
 
 
 class Dispersion(Interaction):
-    """A non-bonded dispersive interaction - either LJ or Buckingham
+
+    """
+    A non-bonded dispersive interaction - either LJ or Buckingham
 
     Requires only a single atom, and can only take non-bonded functions as
     interaction functions.
     """
 
     def __init__(self, atom):
+
         super(Dispersion,self).__init__(atom)
 
+
 class Coulombic(Interaction):
-    """A non-bonded coulombic interaction - either normal or modified Coulomb
+
+    """
+    A non-bonded coulombic interaction - either normal or modified Coulomb
 
     Requires only a single atom, and can only take non-bonded functions as
     interaction functions.
     """
 
     def __init__(self, atom):
+
         super(Coulombic,self).__init__(atom)
 
 class Bond(Interaction):
-    """A bond between any two atoms
 
-    Requires exactly two atoms.
-
-    Attributes:
+    """
+    A bond between any two atoms. Requires exactly two atoms.
     """
 
     def __init__(self, atom1, atom2):
+
         super(Bond,self).__init__(atom1,atom2)
 
 
 class BondAngle(Interaction):
-    """A bond angle between any two bonds
+    """
+    A bond angle between any two bonds
 
     Requires either three atoms (rotation around central atom) or four atoms
     (rotation around central bond - dihedral or torsional rotation)
+    """
 
-    Attributes:
-    ATTRIBUTES"""
+    def __init__(self, atoms):
 
-    def __init__(self, **kwargs):
-        # TODO: Improve ability to deal with both atoms and bonds
-        try:
-            atoms = kwargs['atoms']
-        except KeyError:
-            pass
-            # Deal with bonds
-
+        self._validate_atoms(atoms)
         super(BondAngle,self).__init__(*atoms)
 
+    def _validate_atoms(self, atoms):
 
-# TODO: Think about whether a class which contains exclusions to non-bonded interactions is required
-#class Exclusions(CompositeParameter):
+        """
+        Validates that the correct number of atoms have been passed to the
+        interaction
+        """
+
+        n_atoms = len(atoms)
+        print n_atoms
+        if n_atoms == 3 or n_atoms == 4:
+            pass
+        else:
+            raise ValueError("BondAngle only accepts three or four atoms")
