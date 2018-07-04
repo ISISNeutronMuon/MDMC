@@ -361,6 +361,7 @@ class BoundingBox(object):
             self.max = np.maximum(self.max, atom.position)
 
 
+# TODO: Separate interactions into own module
 class Interaction:
 
     """
