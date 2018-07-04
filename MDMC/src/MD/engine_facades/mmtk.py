@@ -150,16 +150,22 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         pass
 
     def assign_lj_parameters(self):
+
+        """
+        Sets the MMTK function which defines the LJ parameters equal to the
+        function returned by self.lj_parameters_closure.
+        """
+
         self.forcefield().nonbonded.dataset.ljParameters = \
             self.lj_parameters_closure(self.MDMC_obj.element_dict)
 
     def lj_parameters_closure(self, element_dict):
 
         """
-        LJ Parameters closure returns function equivalent to
-        MMTK SPCEParameters.ljParameters method, which is where LJ parameters
-        are hard coded. Parameters are returned (as a tuple) from first
-        Dispersion interaction of MDMC atom of same element.
+
+        Returns:
+        Function equivalent to MMTK SPCEParameters.ljParameters method, which is
+        where LJ parameters are hard coded in MMTK.
         """
 
         parameters = {element:self.get_interaction_parameters(atom,
@@ -175,9 +181,15 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
     # TODO: Change hard coded return (if atom has no interaction of that type)
     def get_interaction_parameters(self, element, interaction_type):
+
+        """
+        Returns:
+        A tuple from first Dispersion interaction of MDMC atom of same element.
+        """
+
         try:
             parameters = tuple(next(interaction.function.params.values() for
-                interaction in element.interaction_list() if
+                interaction in element.interactions if
                 isinstance(interaction,interaction_type)))
 
             # TODO: MMTK takes three parameters for LJ, with the third commonly being hard coded to 0 - determine why and account for this better than below
