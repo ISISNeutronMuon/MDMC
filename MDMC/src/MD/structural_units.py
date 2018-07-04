@@ -228,7 +228,12 @@ class Atom(StructuralUnit):
 
         super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
-        self.mass = kwargs.get('mass', atom_properties.MASS[element])
+        self.mass = kwargs.get('mass', None)
+        if self.mass is None:
+            try:
+                self.mass = atom_properties.MASS[element]
+            except KeyError:
+                raise KeyError("The mass of that element is not tabulated")
         self.add_interaction(Coulombic(self))
 
     @property
@@ -252,7 +257,7 @@ class Atom(StructuralUnit):
         """
 
         try:
-            for interaction in self.interaction_list():
+            for interaction in self.interactions:
                 if type(interaction) == Coulombic:
                     return interaction.function.params['charge']
             else:
@@ -485,7 +490,6 @@ class BondAngle(Interaction):
         """
 
         n_atoms = len(atoms)
-        print n_atoms
         if n_atoms == 3 or n_atoms == 4:
             pass
         else:
