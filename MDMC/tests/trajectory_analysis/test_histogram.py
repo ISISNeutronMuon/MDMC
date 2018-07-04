@@ -20,7 +20,7 @@ TIMES = np.arange(TRAJ_TIME_START, TRAJ_TIME_END, TRAJ_TIME_STEP)
 
 @pytest.fixture
 def configuration(water_SPCE_universe):
-    return trj.TemporalConfiguration(0., *water_SPCE_universe.atom_list())
+    return trj.TemporalConfiguration(0., *water_SPCE_universe.atom_list)
 
 @pytest.fixture
 def trajectory(water_SPCE_universe):

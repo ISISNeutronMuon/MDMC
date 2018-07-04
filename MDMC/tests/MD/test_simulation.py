@@ -69,13 +69,13 @@ def test_atom_list(atom):
 
 def test_add_atom(universe,atom):
     universe.add_structural_unit(atom)
-    assert atom.atom_list == universe.atom_list()
+    assert atom.atom_list == universe.atom_list
     assert su.Coulombic == type(universe.interactions.pop())
 
 def test_add_molecule(universe,water_molecule):
     universe.add_structural_unit(water_molecule)
     assert water_molecule.position.all() == np.array(WATER_POSITION).all()
-    assert sorted(water_molecule.atom_list) == sorted(universe.atom_list())
+    assert sorted(water_molecule.atom_list) == sorted(universe.atom_list)
 
     water_CoM = ((np.array(H1_POSITION) * H_MASS) +\
                 (np.array(H2_POSITION) * H_MASS) +\
@@ -90,11 +90,12 @@ def test_add_molecule(universe,water_molecule):
         assert atom_pos_water_CoM_frame[i].all() ==\
                                     water_molecule.atom_list[i].position.all()
 
-    # Test interactions have expected element lists
+    # Test interactions have expected element lists - 1 bond angle, 2 H-O bonds,
+    # 1 dispersive on O, 1 Coulombic on O, and 2 Coulombic on H
     interaction_elements = []
     for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
-    assert sorted([['H','H','O'],['H','O'],['H','O'],['O']]) ==\
+    assert sorted([['H','H','O'],['H','O'],['H','O'],['O'],['O'],['H'],['H']]) ==\
             sorted(interaction_elements)
 
 def test_spce_water_molecule(universe,water_molecule):

@@ -44,7 +44,7 @@ def test_MMTK_universe_setup(water_MMTK_NVE):
     MMTK_universe = water_MMTK_NVE.engine.universe
     MDMC_universe = MMTK_universe.MDMC_obj
     npt.assert_array_equal(MMTK_universe.data,np.array(UNIVERSE_DIMS))
-    assert len(MMTK_universe.atomList()) == len(MDMC_universe.atom_list())
+    assert len(MMTK_universe.atomList()) == len(MDMC_universe.atom_list)
 
     MMTK_molecule_positions = [np.array(mol.position()) for mol
         in MMTK_universe.objectList()]
@@ -56,7 +56,7 @@ def test_MMTK_universe_setup(water_MMTK_NVE):
             atol = 1e-5)
 
     assert type(MMTK_universe.forcefield()) == \
-        mmtk.UNIVERSE_FF[type(MDMC_universe.force_field)]
+        mmtk.UNIVERSE_FF[type(MDMC_universe.force_fields)]
 
     # TODO: Test for force field parameters
 
@@ -102,7 +102,7 @@ def test_MMTK_trajectory_convert():
     converted to an MDMC trajectory.
 
     Test for same atomic positions in each configuration of the trajectory,
-    accounting for the difference in coordinate systems. 
+    accounting for the difference in coordinate systems.
     """
 
     pass
