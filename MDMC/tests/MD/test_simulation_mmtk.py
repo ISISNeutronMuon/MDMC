@@ -42,7 +42,7 @@ def test_MMTK_universe_setup(water_MMTK_NVE):
     """
 
     MMTK_universe = water_MMTK_NVE.engine.universe
-    MDMC_universe = MMTK_universe.MDMC_obj
+    MDMC_universe = MMTK_universe.MDMC_universe
     npt.assert_array_equal(MMTK_universe.data,np.array(UNIVERSE_DIMS))
     assert len(MMTK_universe.atomList()) == len(MDMC_universe.atom_list)
 
