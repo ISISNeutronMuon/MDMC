@@ -133,11 +133,11 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
             dims = universe.dims[0]
         else:
             dims = universe.dims
-        if universe.force_field is None:
+        if universe.force_fields is None:
             super(MMTKCubicUniverse,self).__init__(universe.dims[0])
         else:
             super(MMTKCubicUniverse,self).__init__(universe.dims[0],
-                UNIVERSE_FF[type(universe.force_field)](
+                UNIVERSE_FF[type(universe.force_fields)](
                 settings.get('lj_options',None),
                 settings.get('es_options',None)))
         self.assign_lj_parameters()
