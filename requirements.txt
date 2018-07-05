@@ -1,3 +1,2 @@
 NumPy==1.8
 netCDF4
-ScientificPython==2.9.4
