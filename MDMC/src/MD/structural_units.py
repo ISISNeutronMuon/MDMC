@@ -29,6 +29,8 @@ class StructuralUnit:
 
     __metaclass__ = ABCMeta
 
+    # ID exists to facilitate a 1 to 1 association with structural units within
+    # MD engines.  It may not be required or may only be required for atoms. 
     _ID_generator = count(start=1, step=1)
 
     def __init__(self, position, velocity, name):
