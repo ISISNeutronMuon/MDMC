@@ -4,6 +4,6 @@ python:
 install:
   - pip install -r requirements.txt
   - pip install -e hg+https://bitbucket.org/khinsen/scientificpython/src#egg=ScientificPython
-  - pip install -e git+https://github.com/ostrokach/MMTK#egg=MMTK
+  - pip install -e hg+https://bitbucket.org/khinsen/mmtk/src#egg=MMTK
 script:
   - py.test
