@@ -4,7 +4,7 @@ python:
 notifications:
   email: false
 before_install:
-  - sudo apt-get install -y hdf5
+  - sudo apt-get install -y libhdf5-7
 install:
   - pip install -r requirements.txt
   - pip install -e hg+https://bitbucket.org/khinsen/scientificpython/src#egg=ScientificPython
