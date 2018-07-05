@@ -1,2 +1,1 @@
 NumPy==1.8
-ScientificPython==2.6.1
