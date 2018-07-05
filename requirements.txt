@@ -1,3 +1,8 @@
 mmtk
+<<<<<<< HEAD
 ScientificPython==2.6
 NumPy==1.8
+=======
+ScientificPython=2.6
+NumPy=1.8
+>>>>>>> b75c569d84f97142ad7165fa34df62bc873f035c
