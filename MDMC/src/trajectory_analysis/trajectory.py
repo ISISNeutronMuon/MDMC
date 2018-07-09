@@ -19,6 +19,7 @@ class Configuration(object):
 
     # TODO: Consider how wraparound for periodic objects will work
     # TODO: Consider how filtering by element will work - should config array include element type?
+    # TODO: Consider storage of weakref to each atom - fine for configuration but requires a complete atom object for each atom in every configuration in a trajectory
 
     def __init__(self, *structural_units):
         self.data = self.create_config_array(*structural_units)
