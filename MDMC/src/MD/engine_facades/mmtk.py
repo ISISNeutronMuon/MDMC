@@ -8,7 +8,6 @@ from tempfile import TemporaryFile
 from MDMC.src.MD.engine_facades.facade import MDEngine
 from MDMC.src.MD.simulation import Shape
 from MDMC.src.MD.force_fields import SPCE
-from MDMC.src.MD.structural_units import Dispersion
 import MDMC.src.MD.structural_units as MDMCs
 import MDMC.src.trajectory_analysis.trajectory as MDMCt
 
@@ -179,7 +178,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
 
         parameters = {element:self.get_interaction_parameters(atom,
-            Dispersion) for element, atom in element_dict.items()}
+            MDMCs.Dispersion) for element, atom in element_dict.items()}
 
         def lj_parameters(type):
             try:
@@ -210,12 +209,12 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
                 interaction in element.interactions if
                 isinstance(interaction,interaction_type)))
 
-            if interaction_type == Dispersion:
+            if interaction_type == MDMCs.Dispersion:
                 return parameters + (0,)
             else:
                 return parameters
         except StopIteration:
-            if interaction_type == Dispersion:
+            if interaction_type == MDMCs.Dispersion:
                 return (0., 0., 0)
             else:
                 return (0., 0.)
@@ -279,7 +278,10 @@ def convert_trajectory(MMTK_trajectory):
     Assumes that there is no change in the number/types of atom in the universe.
     """
 
+    # This currently exists as a separate function so that saved MMTK trajectories can be tested 
+
     # TODO: Extract this conversion into own function
+
     # Convert between coordinate systems
     universe_dims = MMTK_trajectory.universe.cellParameters()
     coordinate_transform = universe_dims / 2.
