@@ -52,6 +52,12 @@ water_molecule.add_interaction(su.BondAngle(atoms=[H1,O,H2]))
 
 universe.fill(water_molecule,force_field=ff.SPCE,num_density=WATER_NUM_DENSITY)
 
+NVESim = sim.NVESimulation(universe,'mmtk',time_step = TIME_STEP,
+    temperature = TEMPERATURE, integrator = INTEGRATOR,
+    lj_options=LJ_OPTIONS,es_options=ES_OPTIONS, minimizer = MINIM,
+    minimizer_steps = MINIM_STEPS, minimizer_step_size = MINIM_STEP_SIZE)
+
+
 conf1a = deepcopy(universe.configuration)
 conf1b = deepcopy(universe.configuration)
 
@@ -98,11 +104,7 @@ Q = SQwfile.data[0]
 t = np.fft.fftfreq(w.size, w[1] - w[2])
 
 
-# NVESim = sim.NVESimulation(universe,'mmtk',time_step = TIME_STEP,
-#     temperature = TEMPERATURE, integrator = INTEGRATOR,
-#     lj_options=LJ_OPTIONS,es_options=ES_OPTIONS, minimizer = MINIM,
-#     minimizer_steps = MINIM_STEPS, minimizer_step_size = MINIM_STEP_SIZE)
-#
+
 # def timeMDMC():
 #     NVESim.run(n_steps=N_STEPS)
 # print timeit(timeMDMC,number=1)
@@ -217,37 +219,37 @@ bins = np.linspace(0,1,11)
 # print counts
 
 
-from MMTK.Trajectory import Trajectory
-import MDMC.src.trajectory_analysis.observables.exp_obs_factory as eof
-import MDMC.src.MD.engine_facades.mmtk as mmtk
-import numpy as np
-
-trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/v2/water5000_1000steps_spce.nc")
-MDMC_traj = mmtk.convert_trajectory(trajectory)
-SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
-n_Q = 10
-Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
-SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = trajectory.universe.cellParameters())
-
-
-surf = go.Surface(x = SQwfile.data[1], y = SQwfile.data[0], z = np.absolute(SQwfile[2]), colorscale = [[0, 'rgb(0,0,255)', [0.1 'rgb(128,0,128)'],[1, 'rgb(255,0,0)']])
-x = SQwfile.data[0]
-y = SQwfile.data[1]
-xGrid, yGrid = np.meshgrid(y, x)
-line_marker = dict(color='rgb(0, 0, 0)', width=2)
-for i, j, k in zip(xGrid, yGrid, z):
-    lines.append(go.Scatter3d(x=i, y=j, z=k, mode='lines', line=line_marker))
-
-layout = go.Layout(
-    scene=dict(
-    xaxis=dict(
-    gridcolor='rgb(255, 255, 255)',
-    zerolinecolor='rgb(255, 255, 255)', range = [-0.3,0.3], title = 'E /meV'),
-    yaxis=dict(
-    gridcolor='rgb(255, 255, 255)',
-    zerolinecolor='rgb(255, 255, 255)', range = [0,2.25], title = 'Q /AA<sup>-1</sup>'),
-    zaxis=dict(
-    gridcolor='rgb(255, 255, 255)',
-    zerolinecolor='rgb(255, 255, 255)', title = 'S(Qw) /arb')), showlegend = False, height = 1000, width = 1000)
-fig=go.Figure(data=[surf]+lines ,layout = layout)
-py.offline.plot(fig)
+# from MMTK.Trajectory import Trajectory
+# import MDMC.src.trajectory_analysis.observables.exp_obs_factory as eof
+# import MDMC.src.MD.engine_facades.mmtk as mmtk
+# import numpy as np
+#
+# trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/v2/water5000_1000steps_spce.nc")
+# MDMC_traj = mmtk.convert_trajectory(trajectory)
+# SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
+# n_Q = 10
+# Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
+# SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = trajectory.universe.cellParameters())
+#
+#
+# surf = go.Surface(x = SQwfile.data[1], y = SQwfile.data[0], z = np.absolute(SQwfile[2]), colorscale = [[0, 'rgb(0,0,255)', [0.1 'rgb(128,0,128)'],[1, 'rgb(255,0,0)']])
+# x = SQwfile.data[0]
+# y = SQwfile.data[1]
+# xGrid, yGrid = np.meshgrid(y, x)
+# line_marker = dict(color='rgb(0, 0, 0)', width=2)
+# for i, j, k in zip(xGrid, yGrid, z):
+#     lines.append(go.Scatter3d(x=i, y=j, z=k, mode='lines', line=line_marker))
+#
+# layout = go.Layout(
+#     scene=dict(
+#     xaxis=dict(
+#     gridcolor='rgb(255, 255, 255)',
+#     zerolinecolor='rgb(255, 255, 255)', range = [-0.3,0.3], title = 'E /meV'),
+#     yaxis=dict(
+#     gridcolor='rgb(255, 255, 255)',
+#     zerolinecolor='rgb(255, 255, 255)', range = [0,2.25], title = 'Q /AA<sup>-1</sup>'),
+#     zaxis=dict(
+#     gridcolor='rgb(255, 255, 255)',
+#     zerolinecolor='rgb(255, 255, 255)', title = 'S(Qw) /arb')), showlegend = False, height = 1000, width = 1000)
+# fig=go.Figure(data=[surf]+lines ,layout = layout)
+# py.offline.plot(fig)
