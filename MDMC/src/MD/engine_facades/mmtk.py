@@ -173,7 +173,6 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def lj_parameters_closure(self, element_dict):
 
         """
-
         Returns:
         Function equivalent to MMTK SPCEParameters.ljParameters method, which is
         where LJ parameters are hard coded in MMTK.
@@ -194,6 +193,14 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def get_interaction_parameters(self, element, interaction_type):
 
         """
+        Gets the parameters by finding the first interactiomn with the specified
+        interaction type.  If no matching interaction type is found then all
+        parameters are set to 0.
+
+        MMTK requires a third parameter for LJ which appears to always be 0. As
+        the LJ force field normally only takes two parameters, this third
+        parameter will always be hard coded to 0.
+
         Returns:
         A tuple from first Dispersion interaction of MDMC atom of same element.
         """
@@ -203,7 +210,6 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
                 interaction in element.interactions if
                 isinstance(interaction,interaction_type)))
 
-            # TODO: MMTK takes three parameters for LJ, with the third commonly being hard coded to 0 - determine why and account for this better than below
             if interaction_type == Dispersion:
                 return parameters + (0,)
             else:
@@ -253,7 +259,7 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
     # TODO: Only works for spce
     def assign_charge(self):
         for atom in self.atomList():
-            for MDMC_atom in self.MDMC_obj().atom_list:
+            for MDMC_atom in self.MDMC_obj.atom_list:
                 if atom.type.symbol == MDMC_atom.element:
                     atom.topLevelChemicalObject().spce_charge[
                         atom.topLevelChemicalObject().getReference(atom)] = \
@@ -268,7 +274,7 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 def convert_trajectory(MMTK_trajectory):
 
     """
-    Builds an MDMC trajectory from an MMTK trajectory
+    Builds an MDMC trajectory from an MMTK trajectory.
 
     Assumes that there is no change in the number/types of atom in the universe.
     """
@@ -276,7 +282,7 @@ def convert_trajectory(MMTK_trajectory):
     # TODO: Extract this conversion into own function
     # Convert between coordinate systems
     universe_dims = MMTK_trajectory.universe.cellParameters()
-    coordinate_map = universe_dims / 2.
+    coordinate_transform = universe_dims / 2.
 
     # List of atom element and masses as ordered in configuration
     atom_list = [(atom.type.symbol, atom.mass()) for atom in
@@ -285,14 +291,27 @@ def convert_trajectory(MMTK_trajectory):
     # TODO:Seperate out configuration into convert_configuration function
     configurations = []
     for MMTK_frame in MMTK_trajectory:
-        atoms = []
-        for index in range(len(MMTK_frame['configuration'])):
-            symbol = atom_list[index][0]
-            mass = atom_list[index][1]
-            position = MMTK_frame['configuration'].__dict__['array'][index] + \
-                coordinate_map
-            atoms.append(MDMCs.Atom(symbol, position = position, mass = mass))
-        configurations.append(MDMCt.TemporalConfiguration(MMTK_frame['time'],
-            *atoms))
+        configurations.append(convert_configuration(MMTK_frame,
+            atom_list, coordinate_transform))
 
     return MDMCt.Trajectory(*configurations)
+
+def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
+
+    """
+    Builds an MDMC configuration from an MMTK configuration.
+    """
+
+    if not atom_list:
+        atom_list = [(atom.type.symbol, atom.mass()) for atom in
+            MMTK_frame.universe.atomList()]
+
+    atoms = []
+    for index in range(len(MMTK_frame['configuration'])):
+        symbol = atom_list[index][0]
+        mass = atom_list[index][1]
+        position = MMTK_frame['configuration'].__dict__['array'][index] + \
+            coordinate_transform
+        atoms.append(MDMCs.Atom(symbol, position = position, mass = mass))
+        return MDMCt.TemporalConfiguration(MMTK_frame['time'],
+            *atoms)
