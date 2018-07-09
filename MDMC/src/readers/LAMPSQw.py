@@ -34,15 +34,11 @@ class LAMPSQw(Reader):
         self.parse_dep_var(self.file_dep)
         self.parse_dep_var(self.file_dep_err, error=True)
 
-    # TODO: Consider if indep_var should be more explicit i.e. an ordered array or dictionary
-    # TODO: Make data self descriptive, so that whatever is calling reader.data can interogate it
     @property
     def data(self):
 
         return {"independent":{"Q":self.Q, "E":self.E}, "dependent":{"SQw":self.SQw}, "errors":{"SQw":self.SQw_err}}
 
-
-    # TODO: Refactor and abstract out E and q
     def parse_indep_var(self, file):
 
         """
