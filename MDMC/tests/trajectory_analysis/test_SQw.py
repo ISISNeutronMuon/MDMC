@@ -12,7 +12,7 @@ import MDMC.src.trajectory_analysis.observables.exp_obs_factory as eof
 @pytest.fixture
 def SQw_from_data():
     SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
-    SQw.read_from_file(reader='LAMPSQw', file_name=data.LAMP_SQW_FILE)
+    SQw.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
     return SQw.data
 
 @pytest.fixture
