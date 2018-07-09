@@ -13,10 +13,10 @@ notifications:
 
 before_install:
   - docker pull tfarmer/mmtk_dependencies
-  - docker run mmtk_dependencies
+  - docker run tfarmer/mmtk_dependencies
 
 script:
-  - pytest -vv directory
+  - pytest -vv
 
 branches:
   only:
