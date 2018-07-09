@@ -1,11 +1,23 @@
+sudo: required
+
 language: python
+
+services:
+  - docker
+
 python:
   - "2.7"
+
 notifications:
   email: false
-install:
-  - pip install -r requirements.txt
-  - pip install -e hg+https://bitbucket.org/khinsen/scientificpython/src#egg=ScientificPython
-  - pip install -e hg+https://bitbucket.org/khinsen/mmtk/src#egg=MMTK
+
+before_install:
+  - docker pull tfarmer/mmtk_dependencies
+  - docker run mmtk_dependencies
+
 script:
-  - py.test
+  - pytest -vv directory
+
+branches:
+  only:
+    - master
