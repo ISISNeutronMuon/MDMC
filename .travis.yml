@@ -16,7 +16,7 @@ before_install:
   - docker run tfarmer/mmtk_dependencies
 
 install:
-  - pip install enum
+  - pip install enum34
 
 script:
   - pytest -vv
