@@ -56,9 +56,9 @@ class DynamicStructureFactor(ExperimentalObservable):
     def read_from_file(self, reader, file_name):
 
         super(DynamicStructureFactor, self).read_from_file(reader, file_name)
-        self._independent_variables = self.reader.data['independent']
-        self._dependent_variables = self.reader.data['dependent']
-        self._errors = self.reader.data['errors']
+        self._independent_variables = self.reader.independent
+        self._dependent_variables = self.reader.dependent
+        self._errors = self.reader.errors
         self._from_MD = False
 
     # TODO: Add neutron weights
