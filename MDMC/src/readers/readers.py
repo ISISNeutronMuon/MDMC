@@ -40,4 +40,19 @@ class Reader:
     @abstractproperty
     def data(self):
 
-        raise NotImplementedError
+        pass
+
+    @abstractproperty
+    def independent_variables(self):
+
+        pass
+
+    @abstractproperty
+    def dependent_variables(self):
+
+        pass
+
+    @abstractproperty
+    def errors(self):
+
+        pass

@@ -39,6 +39,21 @@ class LAMPSQw(Reader):
 
         return {"independent":{"Q":self.Q, "E":self.E}, "dependent":{"SQw":self.SQw}, "errors":{"SQw":self.SQw_err}}
 
+    @property
+    def independent_variables(self):
+
+        return self.data['independent']
+
+    @property
+    def dependent_variables(self):
+
+        return self.data['dependent']
+
+    @property
+    def errors(self):
+
+        return data['errors']
+
     def parse_indep_var(self, file):
 
         """
