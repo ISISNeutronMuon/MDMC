@@ -28,42 +28,62 @@ class LAMPSQw(Reader):
 
         """
         Parse into SQW format
+
+        E is the energy transfer (in meV)
+        Q is wavevector transfer (in AA^-1)
         """
 
-        self.parse_indep_var(self.file_indep)
-        self.parse_dep_var(self.file_dep)
-        self.parse_dep_var(self.file_dep_err, error=True)
+        self.E, self.Q = self.parse_indep_var(self.file_indep)
+        self.SQw = self.parse_dep_var(self.file_dep)
+        self.SQw_err = self.parse_dep_var(self.file_dep_err)
 
     @property
     def data(self):
+
+        """
+        A dictionary of dictionaries containing the independent variables,
+        dependent variables and the associated errors.
+        """
 
         return {"independent":{"Q":self.Q, "E":self.E}, "dependent":{"SQw":self.SQw}, "errors":{"SQw":self.SQw_err}}
 
     @property
     def independent_variables(self):
 
+        """
+        A dictionary containing Q and E
+        """
+
         return self.data['independent']
 
     @property
     def dependent_variables(self):
+
+        """
+        A dictionary containing SQw
+        """
 
         return self.data['dependent']
 
     @property
     def errors(self):
 
-        return data['errors']
+        """
+        A dictionary containing the error associated with SQw
+        """
+
+        return self.data['errors']
 
     def parse_indep_var(self, file):
 
         """
-        Determines the number of elements of the independent variables and
-        creates a numpy array of that size.
+        Parses the independent variables
 
-        file is an iterator
+        Splits the file so that the data can be extracted into a numpy array by
+        self._get_data
 
-        X is energy transfer (E in meV)
-        Y is wavevector transfer (q in AA^-1)
+        Parameters:
+        file - open file containing independent data
         """
 
         def get_n_elements(line):
@@ -75,9 +95,9 @@ class LAMPSQw(Reader):
 
         for line in file:
             if "X_SIZE" in line:
-                self.E_dim = get_n_elements(line)
+                self._X_dim = get_n_elements(line)
             elif "Y_SIZE" in line:
-                self.Q_dim = get_n_elements(line)
+                self._Y_dim = get_n_elements(line)
                 break
 
         for line in file:
@@ -88,34 +108,61 @@ class LAMPSQw(Reader):
         file_split = iter([str for line in file for str in line.split(" ")
             if "Y_COORDINATES" not in line])
 
-        self.E = np.empty(self.E_dim)
-        self.Q = np.empty(self.Q_dim)
-        self._get_data(self.E, self.E_dim, file_split)
-        self._get_data(self.Q, self.Q_dim, file_split)
+        X = self._get_data(file_split, self._X_dim)
+        Y = self._get_data(file_split, self._Y_dim)
 
-    # TODO: Refactor to deal with errors better - DRY
-    def parse_dep_var(self, file, error=False):
+        return X, Y
+
+    def parse_dep_var(self, file):
+
+        """
+        Parses the dependent variables or their errors.
+
+        Parameters:
+        file - open file containing independent data
+        """
 
         file_split = iter([str for line in file for str in line.split(" ")])
-
-        if error:
-            self.SQw_err = np.empty([self.Q_dim, self.E_dim])
-            for k in range(self.Q_dim):
-                self._get_data(self.SQw_err[k], self.E_dim, file_split)
-        else:
-            self.SQw = np.empty([self.Q_dim, self.E_dim])
-            for k in range(self.Q_dim):
-                self._get_data(self.SQw[k], self.E_dim, file_split)
+        dep = self._get_data(file_split, self._Y_dim, self._X_dim)
+        return dep
 
     def _make_float(self, i):
+
+        """
+        Returns:
+        A float, if the input can be converted to a float.
+        """
+
         try:
             return np.float64(i)
         except ValueError:
             pass
 
-    def _get_data(self, var, dim, str_iter):
-        for j in range(dim):
-            datum = None
-            while datum is None:
-                datum = self._make_float(next(str_iter))
-            var[j] = datum
+    def _get_data(self, str_iter, *dims):
+
+        """
+        Iterates over an iterator from a file and extracts the numerical values
+        as data. 
+        """
+
+        def get_row_data(dim):
+
+            row_data = np.empty(dim)
+
+            for j in range(dim):
+                datum = None
+                while datum is None:
+                    datum = self._make_float(next(str_iter))
+                row_data[j] = datum
+
+            return row_data
+
+        var = np.empty(dims)
+
+        if len(dims) == 1:
+            var = get_row_data(dims[0])
+        else:
+            for k in range(dims[0]):
+                var[k] = get_row_data(dims[1])
+
+        return var
