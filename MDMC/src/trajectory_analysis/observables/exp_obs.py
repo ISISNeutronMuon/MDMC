@@ -49,9 +49,13 @@ class ExperimentalObservable:
 
         pass
 
-    # TODO: Determine if this can be concrete rather than abstract
     @abstractproperty
     def dependent_variables(self):
+
+        pass
+
+    @abstractproperty
+    def errors(self):
 
         pass
 
