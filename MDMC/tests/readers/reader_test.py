@@ -16,10 +16,11 @@ from MDMC.tests.test_data import data
 READER_TEST_INFO contains the following:
 
 - Reader name
+- Independent data type(s) as a list
 - Dependent data type
 """
 
-READERS_TEST_INFO = [('LAMPSQw', 'SQw')]
+READERS_TEST_INFO = [('LAMPSQw', ['Q', 'E'], 'SQw')]
 
 
 @pytest.fixture(params=READERS_TEST_INFO)
@@ -33,7 +34,8 @@ def reader_info(request):
     """
 
     return {'reader':ReaderFactory.create_reader(request.param[0]),
-            'dep_datatype':request.param[1]}
+            'indep_datatypes':request.param[1],
+            'dep_datatype':request.param[2]}
 
 
 def test_open(reader_info):
@@ -61,4 +63,6 @@ def test_parse(reader_info):
 
     reader.open(data.data[reader.__class__.__name__])
     reader.parse()
+    for indep_datatype in reader_info['indep_datatypes']:
+        assert indep_datatype in reader.data['independent']
     assert reader_info['dep_datatype'] in reader.data['dependent']
