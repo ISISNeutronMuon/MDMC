@@ -38,13 +38,17 @@ def test_from_data(SQw_from_data):
     - reader is LAMPSQw
     - Q and E are the independent variables
     - SQw is the dependent variable
+    - SQw is the variable on which there is an error
     - Q ranges from 0 to 3.5 in 0.05 increments
     """
 
     assert SQw_from_data._from_MD is False
     assert SQw_from_data.reader.__class__.__name__ == "LAMPSQw"
+
     assert 'Q' in SQw_from_data.independent_variables and \
         'E' in SQw_from_data.independent_variables
     assert 'SQw' in SQw_from_data.dependent_variables
+    assert 'SQw' in SQw_from_data.errors
+
     assert np.all(SQw_from_data.independent_variables['Q']) == \
         np.all(np.arange(0, 3.55, 0.05))
