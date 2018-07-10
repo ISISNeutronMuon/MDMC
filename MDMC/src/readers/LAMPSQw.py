@@ -5,7 +5,6 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 14:38:55"""
 import numpy as np
 
 from MDMC.src.readers.readers import Reader
-import MDMC.src.utilities.constants as const
 
 # TODO: Determine if base class for dynamic data is required
 
@@ -142,7 +141,7 @@ class LAMPSQw(Reader):
 
         """
         Iterates over an iterator from a file and extracts the numerical values
-        as data. 
+        as data.
         """
 
         def get_row_data(dim):

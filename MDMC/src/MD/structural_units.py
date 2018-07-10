@@ -12,7 +12,7 @@ from itertools import count
 import weakref
 from copy import deepcopy
 
-import MDMC.src.utilities.atom_properties as atom_properties
+import MDMC.src.common.atom_properties as atom_properties
 
 # TODO: Create pattern to recursively update attributes of subunits e.g. when molecule has universe updated, so do all atoms belonging to it
 # TODO: Change structural unit to structure
@@ -30,7 +30,7 @@ class StructuralUnit:
     __metaclass__ = ABCMeta
 
     # ID exists to facilitate a 1 to 1 association with structural units within
-    # MD engines.  It may not be required or may only be required for atoms. 
+    # MD engines.  It may not be required or may only be required for atoms.
     _ID_generator = count(start=1, step=1)
 
     def __init__(self, position, velocity, name):
