@@ -38,7 +38,6 @@ class StructuralUnit:
         # TODO: Add init docstring
         self.ID = self._generate_ID()
         self._interactions = set()
-        self.type = type(self)
         self.universe = None
         self.position = position
         self.velocity = velocity
@@ -140,6 +139,11 @@ class StructuralUnit:
         """
 
         return self._interactions
+
+    @property
+    def structure_type(self):
+
+         return self.__class__.__name__
 
     def _generate_ID(self):
 
