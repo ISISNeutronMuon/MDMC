@@ -3,12 +3,11 @@
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 
 import numpy as np
-#import uncertainties.unumpy as unp
 
-from MDMC.src.trajectory_analysis.observables.exp_obs import \
-    ExperimentalObservable
+from MDMC.src.trajectory_analysis.observables.obs import \
+    Observable
 
-class DynamicStructureFactor(ExperimentalObservable):
+class DynamicStructureFactor(Observable):
 
     """
     A class for containing, calculating and reading a dynamic structure factor

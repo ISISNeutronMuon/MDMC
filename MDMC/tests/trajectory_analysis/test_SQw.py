@@ -7,7 +7,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 16:34:02"""
 import pytest
 import numpy as np
 
-import MDMC.src.trajectory_analysis.observables.exp_obs_factory as eof
+import MDMC.src.trajectory_analysis.observables.obs_factory as eof
 
 from MDMC.tests.test_data import data
 from MDMC.tests.trajectory_analysis.test_histogram import trajectory
@@ -15,13 +15,13 @@ from MDMC.tests.trajectory_analysis.test_histogram import trajectory
 
 @pytest.fixture
 def SQw_from_data():
-    SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
+    SQw = eof.ObservableFactory.create_observable('SQw')
     SQw.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
     return SQw
 
 @pytest.fixture
 def SQw_from_MD(trajectory):
-    SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
+    SQw = eof.ObservableFactory.create_observable('SQw')
     params = {}
     SQw.calculate_from_MD(trajectory, params)
     return SQw

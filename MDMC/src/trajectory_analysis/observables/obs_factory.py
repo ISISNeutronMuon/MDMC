@@ -5,10 +5,10 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-5 14:18:49"""
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
 
-from MDMC.src.trajectory_analysis.observables.exp_obs import \
-    ExperimentalObservable
+from MDMC.src.trajectory_analysis.observables.obs import \
+    Observable
 
-class ExperimentalObservableFactory(object):
+class ObservableFactory(object):
 
     @staticmethod
     def create_observable(module_name):
@@ -17,7 +17,7 @@ class ExperimentalObservableFactory(object):
         classes = getmembers(module, lambda m: (
                                         isclass(m)
                                         and not isabstract(m)
-                                        and issubclass(m, ExperimentalObservable
+                                        and issubclass(m, Observable
                                         )))
         observable = classes[0][1]()
         observable.name = module_name

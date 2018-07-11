@@ -3,13 +3,12 @@
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-5 14:28:35"""
 
 import numpy as np
-import uncertainties.unumpy as unp
 
-from MDMC.src.trajectory_analysis.observables.exp_obs import \
-    ExperimentalObservable
+from MDMC.src.trajectory_analysis.observables.obs import \
+    Observable
 
 
-class RadialDistributionFunction(ExperimentalObservable):
+class RadialDistributionFunction(Observable):
 
     """
     A class for containing, calculating and reading a radial distribution

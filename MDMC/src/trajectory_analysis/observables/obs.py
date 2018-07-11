@@ -7,13 +7,13 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 from MDMC.src.readers.reader_factory import ReaderFactory
 
-class ExperimentalObservable:
+class Observable:
 
     """
-    Abstract class that defines methods common to all experimental observable
+    Abstract class that defines methods common to all observable
     data containers
 
-    Experimental observable data can either be from a file or calculated from
+    Observable data can either be from a file or calculated from
     MD and stored in the data property, along with the associated uncertainty.
     The boolean property from_MD states the source of the information.
     """
@@ -75,7 +75,7 @@ class ExperimentalObservable:
     def calculate_from_MD(self, MD_input, **params):
 
         """
-        Calculates the experimental obseravable using input from an MD
+        Calculates the obseravable using input from an MD
         simulation
 
         params enables any additional parameters required for calculation to be
@@ -86,13 +86,25 @@ class ExperimentalObservable:
         pass
 
     # TODO: Implement
-    def check_identical_indep_var(self, experimental_observable):
+    def _check_identical_indep_var(self, observable):
 
         """
-        Checks that this another ExperimentalObservable instance has identical
+        Checks that this another Observable instance has identical
         independent variables to this instance
 
         This check is required for calculating FoM
         """
 
+        raise NotImplementedError
+
+    def __sub__(self, observable):
+
+        """
+        Returns:
+        An observable of the same type, with dependent data equal to the
+        difference of the two observables, and errors calculated in quadrature.
+        """
+
+        # TODO: Issue with this approach is what to set the from_MD flag to
+        # TODO: Use _check_identical_indep_var and also test that one observable is from data and the other from MD
         raise NotImplementedError
