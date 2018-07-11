@@ -1,11 +1,10 @@
-"""Module for SQW class
+"""Module for SQw class
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 
 import numpy as np
 
-from MDMC.src.trajectory_analysis.observables.obs import \
-    Observable
+from MDMC.src.trajectory_analysis.observables.obs import Observable
 
 class DynamicStructureFactor(Observable):
 
@@ -55,8 +54,8 @@ class DynamicStructureFactor(Observable):
     def read_from_file(self, reader, file_name):
 
         super(DynamicStructureFactor, self).read_from_file(reader, file_name)
-        self._independent_variables = self.reader.independent
-        self._dependent_variables = self.reader.dependent
+        self._independent_variables = self.reader.independent_variables
+        self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
         self._from_MD = False
 

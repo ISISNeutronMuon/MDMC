@@ -278,7 +278,7 @@ def convert_trajectory(MMTK_trajectory):
     Assumes that there is no change in the number/types of atom in the universe.
     """
 
-    # This currently exists as a separate function so that saved MMTK trajectories can be tested 
+    # This currently exists as a separate function so that saved MMTK trajectories can be tested
 
     # TODO: Extract this conversion into own function
 
