@@ -107,6 +107,18 @@ class Configuration(object):
 
         return self.filter_atoms(lambda x: x.element == element)
 
+    # TODO: Implement
+    def scale(self, factor, vectors='positions'):
+
+        """
+        Scales either atom positions (default) or velocities by a factor
+
+        Arguments:
+        factor: float by which the vector is scaled
+        vectors: 'positions' (default) or 'velocities' of the atoms
+        """
+
+        raise NotImplementedError
 
 class TemporalConfiguration(Configuration):
 
