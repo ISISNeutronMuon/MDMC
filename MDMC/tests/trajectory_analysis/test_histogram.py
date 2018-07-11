@@ -4,6 +4,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 17:36:22"""
 
 import pytest
 import numpy as np
+from copy import deepcopy
 
 import MDMC.src.trajectory_analysis.trajectory as trj
 
@@ -41,14 +42,39 @@ def histogram(trajectory):
     return trj.Histogram(trajectory, r = R_AXIS, time = T_AXIS)
 
 def test_configuration(configuration):
-    pass
+
+    """
+    Test for:
+
+    Existence of atom_list, atom_positions, atom_velocities, structure_list
+    Add configurations
+    Filter
+    time
+    """
+
+    # Copy the configuration, sum the original and the copy, test that the
+    # structure_list in the sum is exactly composed of the structures in the
+    # original and the copy.
+    conf_copy = deepcopy(configuration)
+    conf_sum = configuration + conf_copy
+    for structure in conf_copy.structures_list + configuration.structures_list:
+        assert structure in conf_sum.structures_list
+        conf_sum.structures_list.remove(structure)
+    assert len(conf_sum.structures_list) == 0
+
+    # Testing filter_by_element
+    H_atoms = configuration.filter_by_element('H')
+    for atom in H_atoms:
+        assert atom.element == 'H'
+    for atom in set(configuration.atom_list) - set(H_atoms):
+        assert atom.element != 'H'
 
 def test_trajectory(trajectory):
 
     """
     Test for:
 
-    Existance of times, atom list, positions, velocities
+    Existence of times, atom_list, positions, velocities
     Ensure structuredarray maintains order - test filter configs by time against more explicit version (i.e. both taken from data)
     """
 
