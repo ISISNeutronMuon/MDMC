@@ -1,15 +1,12 @@
-"""Module for trajectory and histogram containers
+"""Module for configuration, trajectory and histogram containers
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 23:44:11"""
 
 import numpy as np
 
-# TODO: Remove this dependency
-from MDMC.src.MD.structural_units import Molecule
-
 # TODO: SORT OUT EFFECTS OF PBC
 
-# TODO: Deal with molecule list better - separate Atomic Configuration?
+
 class Configuration(object):
 
     """
@@ -22,22 +19,31 @@ class Configuration(object):
     # TODO: Consider storage of weakref to each atom - fine for configuration but requires a complete atom object for each atom in every configuration in a trajectory
 
     def __init__(self, *structural_units):
+        self.structures_list = list(structural_units)
         self.data = self.create_config_array(*structural_units)
-        self.molecule_list = self.create_molecule_list(*structural_units)
 
     @property
     def atom_list(self):
+
         return self.data['atom']
 
     @property
     def atom_positions(self):
+
         return self.data['position']
 
     @property
     def atom_velocities(self):
+
         return self.data['velocity']
 
+    @property
+    def molecule_list(self):
+
+        return self.filter_structures(lambda x: x.structure_type == 'Molecule')
+
     def create_config_array(self, *structural_units):
+
         return np.array([(atom, atom.position, atom.velocity)
             for unit in structural_units
             for atom in unit.atom_list],
@@ -45,29 +51,62 @@ class Configuration(object):
             ('position','object'),
             ('velocity','object')])
 
-    # TODO: change to np.array
-    def create_molecule_list(self, *structural_units):
-        return [unit for unit in structural_units if isinstance(unit, Molecule)]
-
     def add_structural_units(self, *structural_units):
+
+        self.structures_list.extend(structural_units)
         self.data = np.append(
             self.data,self.create_config_array(*structural_units))
-        self.molecule_list += (self.create_molecule_list(*structural_units))
 
-    @classmethod
-    def add_configurations(cls, *configurations):
+    def __add__(self, configuration):
 
         """
         Returns a new configuration from the sum of configurations
         """
 
-        # TODO: Currently doesn't add molecule lists - add this but consider if a molecule set would be preferable
-        structural_units = [atom for config in configurations
-            for atom in config.data['atom']]
-        return cls(*structural_units)
+        structures_list = self.structures_list + configuration.structures_list
+
+        return self.__class__(*structures_list)
 
     def __len__(self):
+
         return len(self.atom_list)
+
+    def filter_structures(self, predicate):
+
+        """
+        Filters the list of structural units using the predicate
+
+        Arguments:
+        predicate - a boolean valued function which can be applied to structural
+        units
+        """
+
+        return filter(predicate, self.structures_list)
+
+    def filter_atoms(self, predicate):
+
+        """
+        Filters the list of atoms using the predicate
+
+        Arguments:
+        predicate - a boolean valued function which can be applied to structural
+        units
+        """
+
+        return filter(predicate, self.atom_list)
+
+    def filter_by_element(self, element):
+
+        """
+        Filter the configuration using an element
+
+        Arguments:
+        element - elemental symbol of the same format as is used for creating
+                  atoms
+        """
+
+        return self.filter_atoms(lambda x: x.element == element)
+
 
 class TemporalConfiguration(Configuration):
 
@@ -75,17 +114,14 @@ class TemporalConfiguration(Configuration):
         super(TemporalConfiguration, self).__init__(*structural_units)
         self.time = time
 
-    @classmethod
-    def add_configurations(cls, *configurations, **set_time):
+    def __add__(self, configuration):
 
         # TODO: Add warning if configurations don't all have the same time
-        time = set_time.get('time',
-            np.mean([config.time for config in configurations]))
+        time = np.mean([self.time, configuration.time])
 
-        # TODO: Currently doesn't support molecule lists - add this
-        structural_units = [atom for config in configurations
-            for atom in config.data['atom']]
-        return cls(time, *structural_units)
+        structures_list = self.structures_list + configuration.structures_list
+
+        return self.__class__(time, *structures_list)
 
 
 class Trajectory(object):
