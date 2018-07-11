@@ -1,5 +1,5 @@
-"""Module defining a class for storing, calculating and reading in experimental
-observables from molecular dynamics trajectories.
+"""Module defining a class for storing, calculating and reading in observables
+from molecular dynamics trajectories.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:14:51"""
 

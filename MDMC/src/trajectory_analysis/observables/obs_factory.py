@@ -1,4 +1,4 @@
-"""Factory class for generating experimental observables
+"""Factory class for generating observables
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-5 14:18:49"""
 
