@@ -75,7 +75,6 @@ def test_trajectory(trajectory):
     Test for:
 
     Existence of times, atom_list, positions, velocities
-    Ensure structuredarray maintains order - test filter configs by time against more explicit version (i.e. both taken from data)
     """
 
     pass
