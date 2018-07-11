@@ -77,7 +77,7 @@ class Configuration(object):
         Filters the list of structural units using the predicate
 
         Arguments:
-        predicate - a boolean valued function which can be applied to structural
+        predicate: a boolean valued function which can be applied to structural
         units
         """
 
@@ -89,7 +89,7 @@ class Configuration(object):
         Filters the list of atoms using the predicate
 
         Arguments:
-        predicate - a boolean valued function which can be applied to structural
+        predicate: a boolean valued function which can be applied to structural
         units
         """
 
@@ -101,7 +101,7 @@ class Configuration(object):
         Filter the configuration using an element
 
         Arguments:
-        element - elemental symbol of the same format as is used for creating
+        element: elemental symbol of the same format as is used for creating
                   atoms
         """
 
@@ -127,95 +127,95 @@ class TemporalConfiguration(Configuration):
 class Trajectory(object):
 
     """
-    A Trajectory is a collection of Configurations
+    A Trajectory is a collection of TimedConfigurations
 
-    For calculating dynamic observables, all Configurations must be
-    TimedConfigurations
+    Attributes:
+    data: an ordered array of frames, times and TimedConfigurations
+    configurations: TimedConfigurations
     """
 
     def __init__(self, *configurations):
-        self.n_frames = len(configurations)
+
         self.data = configurations
 
     @property
     def data(self):
+
         return self._data
 
-    # TODO: Remove DRY violation
     @data.setter
     def data(self, configurations):
-        try:
-            self._data = np.array(
-                [(i, config.time, config) for i, config in enumerate(configurations, 1)],
-                dtype = [('frame', 'int64'),
-                ('time', 'float64'),
-                ('configuration', 'object')])
-        except AttributeError:
-            self._data = np.array(
-                [(i, config) for i, config in enumerate(configurations, 1)],
-                dtype = [('frame', 'int64'),
-                ('configuration', 'object')])
+
+    # TODO: Test that all configurations have the same atoms
+
+        self._data = np.array(
+            [(i, config.time, config) for
+            i, config in enumerate(configurations, 1)],
+            dtype = [('frame', 'int64'),
+            ('time', 'float64'),
+            ('configuration', 'object')])
 
     def __getitem__(self, item):
 
         """
-        Indexing and slicing is relative to time
+        Indexing and slicing is relative to frames
         """
 
-        # TODO: Change filter_configs_by_time so that a single time can also be passed
-
-        try:
-            return Trajectory(*self.filter_configs_by_time(
-                item.start,item.stop))
-        except AttributeError:
-            return Trajectory(*self.filter_configs_by_time(item))
+        return Trajectory(self.configurations[item])
 
     @property
     def frames(self):
+
         return self.data['frame']
 
     @property
     def times(self):
+
         return self.data['time']
 
     @property
     def atoms(self):
-        # TODO: Test that all configurations have the same atoms
+
         """
-        Assumes that all configurations have the same atoms
+        Returns atoms from the frame 0 configuration
         """
 
         return self.data['configuration'][0].atom_list
 
     @property
     def configurations(self):
+
         return self.data['configuration']
 
     @property
     def positions(self):
+
         return np.array([position for config in self.configurations
             for position in config.atom_positions])
 
     @property
     def velocities(self):
+
         return np.array([velocity for config in self.configurations
             for velocity in config.atom_velocities])
 
-    # TODO: Refactor how filter deals with end=None
-    def filter_configs_by_time(self, start, end=None):
+    def filter_by_time(self, start, end=None):
 
         """
-        Returns configurations with times in half open interval defined by start
+        Returns:
+        Configurations with times in half open interval defined by start
         and end
         """
+
         if end is None:
-            if start in self.times:
+            try:
                 return self.configurations[(self.times == start)]
-            else:
-                raise ValueError("Value is not in self.times")
+            except IndexError:
+                raise ValueError("Start is not in self.times")
         return self.configurations[(self.times >= start) & (self.times < end)]
 
     def __len__(self):
+
         return sum([len(config) for config in self.data['configuration']])
 
 
@@ -224,9 +224,15 @@ class DistanceData(object):
     """
     A container for calculating and storing separation distances determined from
     trajectories
+
+    Attributes:
+    data: an ordered array of times and atomic separations from each
+    TimedConfiguration
+    distances: all atomic separations
     """
 
     def __init__(self, trajectory):
+
         self.data = np.array([(frame['time'],
             list(self._calculate_distances(
             frame['configuration'].atom_positions)))
@@ -235,6 +241,7 @@ class DistanceData(object):
 
     @property
     def distances(self):
+
         return np.array([distance for distances in self.data['distances']
             for distance in distances])
 
@@ -244,13 +251,12 @@ class DistanceData(object):
         Returns a generator of pairwise distances
         """
 
-        # TODO: Something more pythonic
         for i in range(len(positions)):
             for j in range(i+1, len(positions)):
                 yield self._distance(positions[i], positions[j])
 
-    # TODO: Consider if this will be extracted into a vector class
     def _distance(self,vec1,vec2):
+
         return np.linalg.norm(vec1-vec2)
 
 
