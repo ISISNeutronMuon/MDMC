@@ -36,6 +36,11 @@ class LAMPSQw(Reader):
         self.SQw = self.parse_dep_var(self.file_dep)
         self.SQw_err = self.parse_dep_var(self.file_dep_err)
 
+        # LAMP sets errors -1 if the corresponding datum is 0.  Change these to
+        # inf so that error calculations can still be performed on them but
+        # result in inf.
+        self.SQw_err[np.where(self.SQw_err < 0.)] = np.float('inf')
+
     @property
     def data(self):
 
@@ -129,7 +134,7 @@ class LAMPSQw(Reader):
 
         """
         Returns:
-        A float, if the input can be converted to a float.
+        A non-negative float, if the input can be converted to a float.
         """
 
         try:
