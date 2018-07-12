@@ -71,6 +71,10 @@ def plot_configuration(config):
 
     py.offline.plot(fig)
 
+def plot_trajectory(trajectory):
+
+    # TODO: Implement using https://plot.ly/python/visualizing-mri-volume-slices/
+    raise NotImplementedError
 
 # TODO: get mesh working
 def plot3d_mesh(data, log_z = False):
