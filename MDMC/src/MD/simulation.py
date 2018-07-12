@@ -230,4 +230,19 @@ class NVESimulation(object):
         self.engine.setup_simulation(self.universe,**self.settings)
 
     def run(self,n_steps):
+
+        """
+        Runs the MD simulation
+        """
+
         self.engine.run(n_steps)
+
+    @property
+    def trajectory(self):
+
+        """
+        Returns:
+        MDMC trajectory calculated during the MD simulation run
+        """
+
+        return self.engine.convert_trajectory()
