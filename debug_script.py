@@ -6,8 +6,8 @@ import MDMC.src.MD.simulation as sim
 import MDMC.src.MD.force_fields as ff
 import MDMC.src.MD.engine_facades.mmtk as mmtkf
 import MDMC.src.trajectory_analysis.trajectory as tr
-from MDMC.src.readers.dynamic_data_readers import LAMPSQw
-import MDMC.src.trajectory_analysis.observables.exp_obs_factory as eof
+from MDMC.src.readers.LAMPSQw import LAMPSQw
+import MDMC.src.trajectory_analysis.observables.obs_factory as eof
 from MDMC.tests.test_data import data
 from MDMC.src.utilities import plot
 
@@ -20,7 +20,8 @@ from MMTK import *
 from MMTK.Minimization import SteepestDescentMinimizer
 
 
-
+SQwfile = eof.ObservableFactory.create_observable('SQw')
+SQwfile.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
 
 UNIVERSE_DIMS = (10.,10.,10.)
 UNIVERSE_SHAPE = sim.Shape.orthorhombic
@@ -84,10 +85,10 @@ histo2 = tr.Histogram(traj3, r = [0., 20., 0.5], time = [0., t_max, 1.])
 # file = open("/Users/thomasfarmer/Documents/QENS/Model_System_Data/Water/Bertil_Halle_data/in5_data/test2_dat_LAMP")
 # lamp.parse_indep_var(file)
 
-SQwfile = eof.ExperimentalObservableFactory.create_observable('SQw')
-SQwfile.read_from_file(reader='LAMPSQw', file_name=data.LAMP_SQW_FILE)
+SQwfile = eof.ObservableFactory.create_observable('SQw')
+SQwfile.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
 
-SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
+SQw = eof.ObservableFactory.create_observable('SQw')
 n_Q = 10
 Q_values = [2 * np.pi * i / UNIVERSE_DIMS[0] for i in range(1,n_Q)]
 
@@ -219,17 +220,17 @@ bins = np.linspace(0,1,11)
 # print counts
 
 
-# from MMTK.Trajectory import Trajectory
-# import MDMC.src.trajectory_analysis.observables.exp_obs_factory as eof
-# import MDMC.src.MD.engine_facades.mmtk as mmtk
-# import numpy as np
-#
-# trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/v2/water5000_1000steps_spce.nc")
-# MDMC_traj = mmtk.convert_trajectory(trajectory)
-# SQw = eof.ExperimentalObservableFactory.create_observable('SQw')
-# n_Q = 10
-# Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
-# SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = trajectory.universe.cellParameters())
+from MMTK.Trajectory import Trajectory
+import MDMC.src.trajectory_analysis.observables.obs_factory as of
+import MDMC.src.MD.engine_facades.mmtk as mmtk
+import numpy as np
+
+trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/v2/water5000_1000steps_spce.nc")
+MDMC_traj = mmtk.convert_trajectory(trajectory)
+SQw = of.ObservableFactory.create_observable('SQw')
+n_Q = 10
+Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
+SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = trajectory.universe.cellParameters())
 #
 #
 # surf = go.Surface(x = SQwfile.data[1], y = SQwfile.data[0], z = np.absolute(SQwfile[2]), colorscale = [[0, 'rgb(0,0,255)', [0.1 'rgb(128,0,128)'],[1, 'rgb(255,0,0)']])
