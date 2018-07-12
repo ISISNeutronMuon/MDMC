@@ -115,6 +115,10 @@ class MMTKEngine(MDEngine):
             m = MMTKMolecule(molecule)
             self.universe.addObject(m)
 
+    # TODO: Unite convert trajectory methods once testing is complete
+    def convert_trajectory(self):
+
+        return convert_trajectory(self.trajectory)
 
 class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
@@ -276,6 +280,9 @@ def convert_trajectory(MMTK_trajectory):
     Builds an MDMC trajectory from an MMTK trajectory.
 
     Assumes that there is no change in the number/types of atom in the universe.
+
+    Arguments:
+    MMTK_trajectory: An MMTK trajectory
     """
 
     # This currently exists as a separate function so that saved MMTK trajectories can be tested
@@ -290,11 +297,10 @@ def convert_trajectory(MMTK_trajectory):
     atom_list = [(atom.type.symbol, atom.mass()) for atom in
         MMTK_trajectory.universe.atomList()]
 
-    # TODO:Seperate out configuration into convert_configuration function
     configurations = []
     for MMTK_frame in MMTK_trajectory:
         configurations.append(convert_configuration(MMTK_frame,
-            atom_list, coordinate_transform))
+            coordinate_transform, atom_list))
 
     return MDMCt.Trajectory(*configurations)
 
@@ -304,7 +310,7 @@ def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
     Builds an MDMC configuration from an MMTK configuration.
     """
 
-    if not atom_list:
+    if atom_list is None:
         atom_list = [(atom.type.symbol, atom.mass()) for atom in
             MMTK_frame.universe.atomList()]
 
@@ -315,5 +321,5 @@ def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
         position = MMTK_frame['configuration'].__dict__['array'][index] + \
             coordinate_transform
         atoms.append(MDMCs.Atom(symbol, position = position, mass = mass))
-        return MDMCt.TemporalConfiguration(MMTK_frame['time'],
-            *atoms)
+    return MDMCt.TemporalConfiguration(MMTK_frame['time'],
+        *atoms)

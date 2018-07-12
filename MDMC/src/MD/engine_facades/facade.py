@@ -36,3 +36,15 @@ class MDEngine:
         """
 
         pass
+
+    @abstractmethod
+    def convert_trajectory(self):
+
+        """
+        Parses the trajectory from the MDEngine format into MDMC format
+        """
+
+        # convert_trajectory has no range function as it is assumed that the
+        # trajectory that is calculated by MD is exactly what is required
+
+        pass
