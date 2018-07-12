@@ -16,9 +16,9 @@ class RadialDistributionFunction(Observable):
     """
 
     @property
-    def from_MD(self):
+    def origin(self):
 
-        return self._from_MD
+        raise NotImplementedError
 
     @property
     def data(self):

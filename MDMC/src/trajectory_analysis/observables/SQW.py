@@ -13,9 +13,9 @@ class DynamicStructureFactor(Observable):
     """
 
     @property
-    def from_MD(self):
+    def origin(self):
 
-        return self._from_MD
+        return self._origin
 
     @property
     def data(self):
@@ -57,7 +57,7 @@ class DynamicStructureFactor(Observable):
         self._independent_variables = self.reader.independent_variables
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
-        self._from_MD = False
+        self._origin = 'experiment'
 
     # TODO: Add neutron weights
     # TODO: Detailed balance correction
@@ -92,7 +92,7 @@ class DynamicStructureFactor(Observable):
         self._independent_variables = {'Q':self.Q_values, 'w':self.w}
         self._dependent_variables = {'SQw':self.SQw}
         self._errors = {'SQw':self.SQw_err}
-        self._from_MD = True
+        self._origin = 'MD'
 
     # TODO: Sum contributions of different directions at rho stage, rather than here
     def _calculate_FQt_orthogonal_Q_vectors(self):
