@@ -31,6 +31,8 @@ def trajectory(water_SPCE_universe):
     is passed to Trajectory.
     """
 
+    # TODO: Change the configurations to scaled copies once configuration scaling has been implemented 
+
     configurations = []
     for time in TIMES:
         configurations.append(trj.TemporalConfiguration(
