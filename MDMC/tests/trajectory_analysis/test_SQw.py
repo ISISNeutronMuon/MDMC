@@ -11,7 +11,8 @@ import MDMC.src.trajectory_analysis.observables.obs_factory as eof
 
 from MDMC.tests.test_data import data
 from MDMC.tests.trajectory_analysis.test_histogram import trajectory
-
+from MDMC.tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
+    atom, universe
 
 @pytest.fixture
 def SQw_from_data():
@@ -20,14 +21,17 @@ def SQw_from_data():
     return SQw
 
 @pytest.fixture
-def SQw_from_MD(trajectory):
+def SQw_from_MD(trajectory, universe):
     SQw = eof.ObservableFactory.create_observable('SQw')
-    params = {}
-    SQw.calculate_from_MD(trajectory, params)
+    cell = universe.dims
+    n_Q = 10
+    Q_values = [2 * np.pi * i / cell[0] for i in range(1,n_Q+1)]
+    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = cell)
     return SQw
 
-# TODO: Test for  consistency by comparing S(Q,w) where w = 0 with S(Q)
+# TODO: Test for consistency by comparing S(Q,w) where w = 0 with S(Q)
 # TODO: Add plain text files with expected values of E and SQw and then compare with parsed values
+
 
 def test_from_data(SQw_from_data):
 
@@ -42,7 +46,7 @@ def test_from_data(SQw_from_data):
     - Q ranges from 0 to 3.5 in 0.05 increments
     """
 
-    assert SQw_from_data._from_MD is False
+    assert SQw_from_data.origin == 'experiment'
     assert SQw_from_data.reader.__class__.__name__ == "LAMPSQw"
 
     assert 'Q' in SQw_from_data.independent_variables and \
@@ -52,3 +56,14 @@ def test_from_data(SQw_from_data):
 
     assert np.all(SQw_from_data.independent_variables['Q']) == \
         np.all(np.arange(0, 3.55, 0.05))
+
+
+def test_from_MD(SQw_from_MD):
+
+    """
+    Test the following:
+
+
+    """
+
+    pass
