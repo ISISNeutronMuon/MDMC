@@ -95,7 +95,7 @@ def test_MMTK_simulation_run(water_MMTK_NVE):
         round(TEMPERATURE,-2)
     # TODO: Add density test
 
-def test_MMTK_trajectory_convert():
+def test_MMTK_trajectory_convert(water_MMTK_NVE):
 
     """
     Run an MMTK simulation and determines the trajectory.  The trajectory is
@@ -105,4 +105,5 @@ def test_MMTK_trajectory_convert():
     accounting for the difference in coordinate systems.
     """
 
-    pass
+    water_MMTK_NVE.run(N_STEPS)
+    MDMC_traj = water_MMTK_NVE.trajectory
