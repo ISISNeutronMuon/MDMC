@@ -274,7 +274,7 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 
 
 # TODO: Update this so that it can form an association with specific atoms and also creates molecules not just atoms
-def convert_trajectory(MMTK_trajectory):
+def convert_trajectory(MMTK_trajectory, **kwargs):
 
     """
     Builds an MDMC trajectory from an MMTK trajectory.
@@ -286,9 +286,9 @@ def convert_trajectory(MMTK_trajectory):
     """
 
     # This currently exists as a separate function so that saved MMTK trajectories can be tested
+    # For the same reason the ability to filter the trajectories is provided
 
     # TODO: Extract this conversion into own function
-
     # Convert between coordinate systems
     universe_dims = MMTK_trajectory.universe.cellParameters()
     coordinate_transform = universe_dims / 2.
@@ -298,9 +298,16 @@ def convert_trajectory(MMTK_trajectory):
         MMTK_trajectory.universe.atomList()]
 
     configurations = []
-    for MMTK_frame in MMTK_trajectory:
-        configurations.append(convert_configuration(MMTK_frame,
-            coordinate_transform, atom_list))
+    if kwargs.get('slice'):
+        for i in range(kwargs.get('slice').get('start'),
+                       kwargs.get('slice').get('stop'),
+                       kwargs.get('slice').get('step')):
+            configurations.append(convert_configuration(MMTK_trajectory[i],
+                coordinate_transform, atom_list))
+    else:
+        for MMTK_frame in MMTK_trajectory:
+            configurations.append(convert_configuration(MMTK_frame,
+                coordinate_transform, atom_list))
 
     return MDMCt.Trajectory(*configurations)
 
