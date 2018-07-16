@@ -67,7 +67,7 @@ class DynamicStructureFactor(Observable):
         """
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
 
-        Independent variables can either set previously or defined here within
+        Independent variables can either be set previously or defined within
         params
         """
         self.trajectory = MD_input
@@ -79,7 +79,7 @@ class DynamicStructureFactor(Observable):
         except KeyError:
             self.Q_values = self.independent_variables['Q']
 
-        if params.get('isotropic', False):
+        if params.get('isotropic', True):
             self.FQt = self._calculate_FQt_orthogonal_Q_vectors()
         else:
             direction = params.get('direction', (1, 0, 0))
