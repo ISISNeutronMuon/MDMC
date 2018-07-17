@@ -31,7 +31,7 @@ def trajectory(water_SPCE_universe):
     is passed to Trajectory.
     """
 
-    # TODO: Change the configurations to scaled copies once configuration scaling has been implemented 
+    # TODO: Change the configurations to scaled copies once configuration scaling has been implemented
 
     configurations = []
     for time in TIMES:
@@ -77,9 +77,18 @@ def test_trajectory(trajectory):
     Test for:
 
     Existence of times, atom_list, positions, velocities
+    filter_by_time results in expected time for the new trajectory
     """
 
-    pass
+    START = 1
+    STOP = 4
+    single_time_traj = trajectory.filter_by_time(trajectory.times[START])
+    slice_time_traj = trajectory.filter_by_time(trajectory.times[START],
+        trajectory.times[STOP])
+
+    assert single_time_traj.times == trajectory.times[START]
+    assert np.all(slice_time_traj.times) == np.all(trajectory.times[START:STOP])
+
 
 def test_histogram(configuration, histogram):
 
