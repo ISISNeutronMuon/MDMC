@@ -20,8 +20,19 @@ from MMTK import *
 from MMTK.Minimization import SteepestDescentMinimizer
 
 
-SQwfile = eof.ObservableFactory.create_observable('SQw')
-SQwfile.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
+from MMTK.Trajectory import Trajectory
+import MDMC.src.trajectory_analysis.observables.obs_factory as of
+import MDMC.src.MD.engine_facades.mmtk as mmtk
+import numpy as np
+
+trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
+MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':100})
+SQw = of.ObservableFactory.create_observable('SQw')
+n_Q = 10
+Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
+cell = trajectory.universe.cellParameters()
+SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell, isotropic = False)
+
 
 UNIVERSE_DIMS = (10.,10.,10.)
 UNIVERSE_SHAPE = sim.Shape.orthorhombic
@@ -225,12 +236,12 @@ import MDMC.src.trajectory_analysis.observables.obs_factory as of
 import MDMC.src.MD.engine_facades.mmtk as mmtk
 import numpy as np
 
-trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/v2/water5000_1000steps_spce.nc")
-MDMC_traj = mmtk.convert_trajectory(trajectory)
-SQw = of.ObservableFactory.create_observable('SQw')
+trajectory2 = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
+MDMC_traj2 = mmtk.convert_trajectory(trajectory2, slice={'start':50,'stop':5010,'step':10})
+SQw2 = of.ObservableFactory.create_observable('SQw')
 n_Q = 10
-Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
-SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = trajectory.universe.cellParameters())
+Q_values2 = [2 * np.pi * i / trajectory2.universe.cellParameters()[0] for i in range(1,n_Q+1)]
+SQw2.calculate_from_MD(MDMC_traj2, Q_values = Q_values2, cell = trajectory2.universe.cellParameters())
 #
 #
 # surf = go.Surface(x = SQwfile.data[1], y = SQwfile.data[0], z = np.absolute(SQwfile[2]), colorscale = [[0, 'rgb(0,0,255)', [0.1 'rgb(128,0,128)'],[1, 'rgb(255,0,0)']])
