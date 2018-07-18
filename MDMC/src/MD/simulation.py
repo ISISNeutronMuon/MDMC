@@ -13,7 +13,7 @@ from MDMC.src.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.src.trajectory_analysis.trajectory import Configuration
 
 Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
-                        'rhombic_dodecahedron', 'truncated_octahedron'])
+                       'rhombic_dodecahedron', 'truncated_octahedron'])
 
 # TODO: Extract out atomic structure generation from Universe class, so that more structures can be easily added
 
@@ -37,7 +37,7 @@ class Universe(object):
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
-        structures=None):
+                 structures=None):
 
         # TODO: Change interactions to maintain an ordered set, so that searching is optimized
         self.dims = np.array(dimensions)
@@ -59,7 +59,7 @@ class Universe(object):
 
         return np.prod(self.dims)
 
-    def add_structural_unit(self,structural_unit, force_field=None):
+    def add_structural_unit(self, structural_unit, force_field=None):
 
         """
         Adds a single structural unit to the universe, with optional force field
@@ -74,8 +74,8 @@ class Universe(object):
             self.add_force_field(force_field, structural_unit.interactions)
 
     # TODO: Add in option to tessellate a configuration to fill universe (a la GROMACS)
-    def fill(self,structural_unit,force_field=None,
-                structural_motif=_liquid_structure(),**kwargs):
+    def fill(self, structural_unit, force_field=None,
+             structural_motif=_liquid_structure(), **kwargs):
 
         """
         A fluid-like filling of the universe independent of existing atoms
@@ -96,13 +96,13 @@ class Universe(object):
         """
 
         # TODO: implement method for specifying number of molecules and number density, rather than box size
-        n_units_xyz = self.dims/(1./kwargs.get('num_density'))**(1./3.)
+        n_units_xyz = self.dims / (1. / kwargs.get('num_density')) ** (1. / 3.)
         n_units_xyz = n_units_xyz.astype(int)
 
         positions = []
         for i in range(len(self.dims)):
-            positions.append(np.linspace(0,self.dims[i],n_units_xyz[i],
-                endpoint = False))
+            positions.append(np.linspace(0, self.dims[i], n_units_xyz[i],
+                             endpoint = False))
 
         positions = sorted(list(itertools.product(*positions)))
 
@@ -110,10 +110,12 @@ class Universe(object):
         for position in positions:
             if position is positions[0]:
                 self.add_structural_unit(structural_unit)
-                offset = (structural_unit.position - structural_unit.bounding_box.min)
+                offset = (structural_unit.position
+                          - structural_unit.bounding_box.min)
                 structural_unit.position = position + offset
                 if force_field:
-                    self.add_force_field(force_field,structural_unit.interactions)
+                    self.add_force_field(force_field,
+                                         structural_unit.interactions)
             else:
                 new_unit = deepcopy(structural_unit)
                 new_unit.position = position + offset
@@ -226,10 +228,10 @@ class NVESimulation(object):
         conditions
         """
 
-        self.engine.setup_universe(self.universe,**self.settings)
-        self.engine.setup_simulation(self.universe,**self.settings)
+        self.engine.setup_universe(self.universe, **self.settings)
+        self.engine.setup_simulation(self.universe, **self.settings)
 
-    def run(self,n_steps):
+    def run(self, n_steps):
 
         """
         Runs the MD simulation
