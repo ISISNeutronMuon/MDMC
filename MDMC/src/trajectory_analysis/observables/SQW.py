@@ -162,7 +162,6 @@ class DynamicStructureFactor(Observable):
             rho.append(np.sum(rho_temp, axis = 0))
         return np.array(rho)
 
-    # TODO: Replace this with Full Correlation Analysis algorithm?
     def _correlation(self, input1, input2):
 
         """
@@ -171,7 +170,6 @@ class DynamicStructureFactor(Observable):
 
         return np.vdot(input1, input2)
 
-    # TODO: Extract out fft calculation into utilities
     def _calculate_SQw(self):
 
         """
