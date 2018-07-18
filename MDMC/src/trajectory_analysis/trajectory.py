@@ -172,8 +172,10 @@ class Trajectory(object):
         """
         Indexing and slicing is relative to frames
         """
-
-        return Trajectory(self.configurations[item])
+        if type(item) == int:
+            return self.__class__(self.configurations[item])
+        else:
+            return self.__class__(*self.configurations[item])
 
     @property
     def frames(self):
@@ -215,16 +217,17 @@ class Trajectory(object):
 
         """
         Returns:
-        Configurations with times in half open interval defined by start
-        and end
+        Trajectory with times in half open interval defined by start and end
         """
 
         if end is None:
             try:
-                return self.configurations[(self.times == start)]
+                return self.__class__(*self.configurations[
+                    (self.times == start)])
             except IndexError:
                 raise ValueError("Start is not in self.times")
-        return self.configurations[(self.times >= start) & (self.times < end)]
+        return self.__class__(*self.configurations[
+            (self.times >= start) & (self.times < end)])
 
     def __len__(self):
 
