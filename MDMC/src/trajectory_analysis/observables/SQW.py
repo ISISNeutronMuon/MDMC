@@ -61,9 +61,6 @@ class DynamicStructureFactor(Observable):
         self._errors = self.reader.errors
         self._origin = 'experiment'
 
-    # TODO: Add neutron weights
-    # TODO: Detailed balance correction
-    # TODO: Add SQw errors
     def calculate_from_MD(self, MD_input, **params):
 
         """
@@ -96,7 +93,6 @@ class DynamicStructureFactor(Observable):
         self._errors = {'SQw':self.SQw_err}
         self._origin = 'MD'
 
-    # TODO: Sum contributions of different directions at rho stage, rather than here
     def _calculate_FQt_orthogonal_Q_vectors(self):
 
         """
@@ -116,8 +112,6 @@ class DynamicStructureFactor(Observable):
         self.Q_vectors = self._calculate_Q_vectors(direction)
         return [self._calculate_FQt_single_Q(Q) for Q in self.Q_vectors]
 
-    # TODO: Refactor to remove horrible indexing [(self.dt == t1)] etc
-    # TODO: Consider effects of correlation in consecutive timesteps
     def _calculate_FQt_single_Q(self, Q):
 
         """
@@ -153,8 +147,6 @@ class DynamicStructureFactor(Observable):
             FQt[(self.dt == t2 - self.trajectory.times[0])] += corr
         return FQt
 
-    # TODO: Implement following method for a single q-shell with random direction q-vectors.
-    # This will add resolution effects and remove assumption of isotropy
     def _calculate_rho_single_Q(self, Q):
 
         """
