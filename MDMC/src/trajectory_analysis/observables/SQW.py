@@ -6,6 +6,8 @@ import numpy as np
 
 from MDMC.src.trajectory_analysis.observables.obs import Observable
 
+from nMOLDYN.Mathematics.Analysis import correlation
+
 class DynamicStructureFactor(Observable):
 
     """
@@ -133,16 +135,22 @@ class DynamicStructureFactor(Observable):
         n_atoms = len(self.trajectory.atoms)
 
         FQt = np.zeros(len(self.dt), dtype = complex)
-        counter = np.zeros(len(self.dt))
-        for t1 in self.trajectory.times:
-            for t2 in self.trajectory.times:
-                if t2 >= t1:
-                    rho_t1 = rho[(self.dt == t1)]
-                    rho_t2 = rho[(self.dt == t2)]
-                    corr = self._correlation(rho_t1, rho_t2)
-                    FQt[(self.dt == t2 - t1)] += corr
-                    counter[(self.dt == t2 - t1)] += 1
-        FQt /= (n_atoms * counter)
+        # counter = np.zeros(len(self.dt))
+        # for t1 in self.trajectory.times:
+        #     for t2 in self.trajectory.times:
+        #         if t2 >= t1:
+        #             rho_t1 = rho[(self.trajectory.times == t1)]
+        #             rho_t2 = rho[(self.trajectory.times == t2)]
+        #             corr = self._correlation(rho_t1, rho_t2)
+        #             FQt[(self.dt == t2 - t1)] += corr
+        #             counter[(self.dt == t2 - t1)] += 1
+        # FQt /= (n_atoms * counter)
+
+        rho_t1 = rho[0]
+        for t2 in self.trajectory.times:
+            rho_t2 = rho[(self.trajectory.times == t2)]
+            corr = correlation(rho_t1, rho_t2)
+            FQt[(self.dt == t2 - self.trajectory.times[0])] += corr
         return FQt
 
     # TODO: Implement following method for a single q-shell with random direction q-vectors.
@@ -152,11 +160,13 @@ class DynamicStructureFactor(Observable):
         """
         Calculates time dependent number density in reciprocal space for a
         single Q value
+
+        Includes contributions from all atoms
         """
         rho = []
-        for _, time in enumerate(self.trajectory.times):
+        for time in self.trajectory.times:
             rho_temp = [(np.exp(-1j * np.dot(Q, r)))
-                for r in self.trajectory[time].positions]
+                for r in self.trajectory.filter_by_time(time).positions]
             rho.append(np.sum(rho_temp, axis = 0))
         return np.array(rho)
 
@@ -167,7 +177,7 @@ class DynamicStructureFactor(Observable):
         Calculates the correlation between the two inputs
         """
 
-        return np.dot(input1, input2)
+        return np.vdot(input1, input2)
 
     # TODO: Extract out fft calculation into utilities
     def _calculate_SQw(self):
@@ -211,8 +221,8 @@ class DynamicStructureFactor(Observable):
         self.SQ = []
         for Q in Q_vectors:
             rho_Q = []
-            for _, time in enumerate(trajectory.times):
-                positions = trajectory[time].positions
+            for time in trajectory.times:
+                positions = trajectory.filter_by_time(time).positions
                 rho_Q_time = np.sum([(np.exp(-1j * np.dot(Q, r)))
                     for r in positions])
                 rho_Q.append(rho_Q_time)
