@@ -78,11 +78,16 @@ class DynamicStructureFactor(Observable):
         except KeyError:
             self.Q_values = self.independent_variables['Q']
 
-        if params.get('isotropic', True):
-            self.FQt = self._calculate_FQt_orthogonal_Q_vectors()
-        else:
-            direction = params.get('direction', (1, 0, 0))
-            self.FQt = self._calculate_FQt_multiple_Q(direction)
+        # if params.get('isotropic', True):
+        #     self.FQt = self._calculate_FQt_orthogonal_Q_vectors()
+        # else:
+        #     direction = params.get('direction', (1, 0, 0))
+        #     self.FQt = self._calculate_FQt_multiple_Q(direction)
+
+        self.isotropic = params.get('isotropic', True)
+        if not self.isotropic:
+            self.direction = np.array(params.get('direction', [1, 0, 0]))
+        self.FQt = self._calculate_FQt()
 
         self.SQw = self._calculate_SQw()
         self.SQw_err = np.zeros(self.SQw.shape)
@@ -93,24 +98,35 @@ class DynamicStructureFactor(Observable):
         self._errors = {'SQw':self.SQw_err}
         self._origin = 'MD'
 
-    def _calculate_FQt_orthogonal_Q_vectors(self):
+    # def _calculate_FQt_orthogonal_Q_vectors(self):
+    #
+    #     """
+    #     Calculates Q for three orthgonal directions
+    #     """
+    #
+    #     ortho_dir = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
+    #
+    #     return np.sum([self._calculate_FQt_multiple_Q(dir)
+    #         for dir in ortho_dir], axis = 0)
+    #
+    # def _calculate_FQt_multiple_Q(self, direction):
+    #
+    #     """
+    #     Calculates FQt for a range of Q in one direction
+    #     """
+    #     self.Q_vectors = self._calculate_Q_vectors(direction)
+    #     return [self._calculate_FQt_single_Q(Q) for Q in self.Q_vectors]
+
+    def _calculate_FQt(self):
 
         """
-        Calculates Q for three orthgonal directions
+        Calculate intermediate scattering function for all Q vectors for all
+        time intervals
         """
 
-        ortho_dir = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
-
-        return np.sum([self._calculate_FQt_multiple_Q(dir)
-            for dir in ortho_dir], axis = 0)
-
-    def _calculate_FQt_multiple_Q(self, direction):
-
-        """
-        Calculates FQt for a range of Q in one direction
-        """
-        self.Q_vectors = self._calculate_Q_vectors(direction)
-        return [self._calculate_FQt_single_Q(Q) for Q in self.Q_vectors]
+        self.Q_vectors = self._calculate_Q_vectors()
+        return [self._calculate_FQt_single_Q(Q_vector)
+                for Q_vector in self.Q_vectors]
 
     def _calculate_FQt_single_Q(self, Q):
 
@@ -191,10 +207,22 @@ class DynamicStructureFactor(Observable):
         step = domain[1] - domain[0]
         return np.pi * np.fft.fftshift(np.fft.fftfreq(domain.size, step))
 
-    def _calculate_Q_vectors(self, direction):
+    def _calculate_Q_vectors(self):
 
-        return np.array([value * np.array(direction)
+        if self.isotropic:
+            direction = np.array([[1., 0., 0.],
+                                  [0., 1., 0.],
+                                  [0., 0., 1.]])
+        else:
+            direction = self.direction
+
+        return np.array([value * direction
             for value in self.Q_values])
+
+    # def _calculate_Q_vectors(self, direction):
+    #
+    #     return np.array([value * np.array(direction)
+    #         for value in self.Q_values])
 
     def _calculate_SQ(self, trajectory, dir):
 
