@@ -38,3 +38,10 @@ def correlation(input1, input2=None, normalise=False):
 
     return corr
 
+def convolution(input1, input2):
+
+    """
+    The convolution of two inputs
+    """
+
+    raise NotImplementedError
