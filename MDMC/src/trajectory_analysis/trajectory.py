@@ -67,9 +67,27 @@ class Configuration(object):
 
         return self.__class__(*structures_list)
 
+    def __sub__(self, configuration):
+
+        """
+        Returns a new configuration from the difference of configurations
+        """
+
+        raise NotImplementedError
+
     def __len__(self):
 
         return len(self.atom_list)
+
+    def __getitem__(self, item):
+
+        """
+        Returns:
+        A numpy void containing a slice from the data. The same fields can be
+        accessed with 'atom', 'position', and 'velocity'.
+        """
+
+        return self.data[item]
 
     def filter_structures(self, predicate):
 
