@@ -13,12 +13,9 @@ from MDMC.src.utilities import plot
 
 from timeit import timeit
 from copy import deepcopy
-import numpy as np
-
 
 from MMTK import *
 from MMTK.Minimization import SteepestDescentMinimizer
-
 
 from MMTK.Trajectory import Trajectory
 import MDMC.src.trajectory_analysis.observables.obs_factory as of
@@ -31,7 +28,7 @@ SQw = of.ObservableFactory.create_observable('SQw')
 n_Q = 10
 Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
 cell = trajectory.universe.cellParameters()
-SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell, isotropic = False)
+SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell)
 
 
 UNIVERSE_DIMS = (10.,10.,10.)
