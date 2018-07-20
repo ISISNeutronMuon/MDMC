@@ -1,18 +1,23 @@
-"""Module for SQw class
+"""Module for total SQw class
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 
+from abc import ABCMeta, abstractmethod
+
 import numpy as np
 
+from MDMC.src.common.mathematics import correlation
 from MDMC.src.trajectory_analysis.observables.obs import Observable
 
-from nMOLDYN.Mathematics.Analysis import correlation
 
-class DynamicStructureFactor(Observable):
+class AbstractSQw(Observable):
 
     """
-    A class for containing, calculating and reading a dynamic structure factor
+    An abstract class for total, coherent and incoherent dynamic structure
+    factors
     """
+
+    __metaclass__ = ABCMeta
 
     @property
     def origin(self):
@@ -55,11 +60,12 @@ class DynamicStructureFactor(Observable):
 
     def read_from_file(self, reader, file_name):
 
-        super(DynamicStructureFactor, self).read_from_file(reader, file_name)
+        super(AbstractSQw, self).read_from_file(reader, file_name)
+        self._origin = 'experiment'
         self._independent_variables = self.reader.independent_variables
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
-        self._origin = 'experiment'
+
 
     def calculate_from_MD(self, MD_input, **params):
 
@@ -69,6 +75,7 @@ class DynamicStructureFactor(Observable):
         Independent variables can either be set previously or defined within
         params
         """
+        self._origin = 'MD'
         self.trajectory = MD_input
         self.dt = self.trajectory.times - self.trajectory.times[0]
         self.universe_cell = params.get('cell')
@@ -78,134 +85,35 @@ class DynamicStructureFactor(Observable):
         except KeyError:
             self.Q_values = self.independent_variables['Q']
 
-        # if params.get('isotropic', True):
-        #     self.FQt = self._calculate_FQt_orthogonal_Q_vectors()
-        # else:
-        #     direction = params.get('direction', (1, 0, 0))
-        #     self.FQt = self._calculate_FQt_multiple_Q(direction)
-
         self.isotropic = params.get('isotropic', True)
         if not self.isotropic:
             self.direction = np.array(params.get('direction', [1, 0, 0]))
-        self.FQt = self._calculate_FQt()
 
-        self.SQw = self._calculate_SQw()
-        self.SQw_err = np.zeros(self.SQw.shape)
-        self.w = self._change_domain(self.dt)
+        self.FQt = self.calculate_FQt()
 
-        self._independent_variables = {'Q':self.Q_values, 'w':self.w}
-        self._dependent_variables = {'SQw':self.SQw}
-        self._errors = {'SQw':self.SQw_err}
-        self._origin = 'MD'
-
-    # def _calculate_FQt_orthogonal_Q_vectors(self):
-    #
-    #     """
-    #     Calculates Q for three orthgonal directions
-    #     """
-    #
-    #     ortho_dir = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
-    #
-    #     return np.sum([self._calculate_FQt_multiple_Q(dir)
-    #         for dir in ortho_dir], axis = 0)
-    #
-    # def _calculate_FQt_multiple_Q(self, direction):
-    #
-    #     """
-    #     Calculates FQt for a range of Q in one direction
-    #     """
-    #     self.Q_vectors = self._calculate_Q_vectors(direction)
-    #     return [self._calculate_FQt_single_Q(Q) for Q in self.Q_vectors]
-
-    def _calculate_FQt(self):
+    def calculate_FQt(self):
 
         """
-        Calculate intermediate scattering function for all Q vectors for all
-        time intervals
+        Calculates the intermediate scattering function for all Q vectors for
+        all time intervals
         """
 
         self.Q_vectors = self._calculate_Q_vectors()
         return [self._calculate_FQt_single_Q(Q_vector)
                 for Q_vector in self.Q_vectors]
 
-    def _calculate_FQt_single_Q(self, Q):
+    @abstractmethod
+    def _calculate_FQt_single_Q(self, Q_vector):
 
         """
         Calculates intermediate scattering function for a single Q value for all
         time intervals (dt)
 
-        Gets rho for all times for single Q value and then determines
-        correlation of rho for every time with every time (including self
-        correlation).  Sums correlations with same time interval.  The counter
-        normalises FQt depending on how many repetitions of the same time
-        interval contributed to that dt.
+        Arguments:
+        Q_vector: Either a single Q vector or three orthogonal Q vectors
         """
 
-        rho = self._calculate_rho_single_Q(Q)
-        n_atoms = len(self.trajectory.atoms)
-
-        FQt = np.zeros(len(self.dt), dtype = complex)
-        # counter = np.zeros(len(self.dt))
-        # for t1 in self.trajectory.times:
-        #     for t2 in self.trajectory.times:
-        #         if t2 >= t1:
-        #             rho_t1 = rho[(self.trajectory.times == t1)]
-        #             rho_t2 = rho[(self.trajectory.times == t2)]
-        #             corr = self._correlation(rho_t1, rho_t2)
-        #             FQt[(self.dt == t2 - t1)] += corr
-        #             counter[(self.dt == t2 - t1)] += 1
-        # FQt /= (n_atoms * counter)
-
-        rho_t1 = rho[0]
-        for t2 in self.trajectory.times:
-            rho_t2 = rho[(self.trajectory.times == t2)]
-            corr = correlation(rho_t1, rho_t2)
-            FQt[(self.dt == t2 - self.trajectory.times[0])] += corr
-        return FQt
-
-    def _calculate_rho_single_Q(self, Q):
-
-        """
-        Calculates time dependent number density in reciprocal space for a
-        single Q value
-
-        Includes contributions from all atoms
-        """
-        rho = []
-        for time in self.trajectory.times:
-            rho_temp = [(np.exp(-1j * np.dot(Q, r)))
-                for r in self.trajectory.filter_by_time(time).positions]
-            rho.append(np.sum(rho_temp, axis = 0))
-        return np.array(rho)
-
-    def _correlation(self, input1, input2):
-
-        """
-        Calculates the correlation between the two inputs
-        """
-
-        return np.vdot(input1, input2)
-
-    def _calculate_SQw(self):
-
-        """
-        Calculates SQw from FQt
-        """
-        SQw = []
-        for Ft in self.FQt:
-            SQw.append(np.fft.ifft(Ft))
-
-        return np.array(SQw)
-
-    def _change_domain(self, domain):
-
-        """
-        Assumes domain of constant step size
-        """
-
-        n = domain.size
-        step = domain[1] - domain[0]
-        return np.pi * np.fft.fftshift(np.fft.fftfreq(domain.size, step))
+        pass
 
     def _calculate_Q_vectors(self):
 
@@ -219,32 +127,37 @@ class DynamicStructureFactor(Observable):
         return np.array([value * direction
             for value in self.Q_values])
 
-    # def _calculate_Q_vectors(self, direction):
-    #
-    #     return np.array([value * np.array(direction)
-    #         for value in self.Q_values])
 
-    def _calculate_SQ(self, trajectory, dir):
+class SQw(AbstractSQw):
 
-        """
-        Calculate static structure factor, primarily for testing
+    """
+    A class for containing, calculating and reading the total dynamic structure
+    factor
+    """
 
-        Normalised to number of atoms and number of contributing configurations
-        (at different times)
-        """
+    def _calculate_FQt_single_Q(self, Q_vector):
 
         n_atoms = len(self.trajectory.atoms)
-        Q_vectors = self._calculate_Q_vectors(dir)
+        rho = self._calculate_rho(Q_vector)
+        FQt_single_Q = correlation(rho, normalise=True) / n_atoms
+        return FQt_single_Q
 
-        self.SQ = []
-        for Q in Q_vectors:
-            rho_Q = []
-            for time in trajectory.times:
-                positions = trajectory.filter_by_time(time).positions
-                rho_Q_time = np.sum([(np.exp(-1j * np.dot(Q, r)))
-                    for r in positions])
-                rho_Q.append(rho_Q_time)
-            rho_Q = np.sum(rho_Q)
-            self.SQ.append(self._correlation(rho_Q, rho_Q))
+    def _calculate_rho(self, Q_vector):
 
-        self.SQ = np.array(self.SQ) / (n_atoms * len(trajectory.times))
+        """
+        Calculates time dependent number density in reciprocal space for all Q
+        vectors
+
+        As rho is the sum of the contributions for all of the specified Q
+        vectors, these Q vectors should have the same Q value. Includes
+        contributions from all atoms in the trajectory.
+
+        Arguments:
+        Q_vector: Either a single Q vector or three orthogonal Q vectors
+        """
+        rho = []
+        for time in self.trajectory.times:
+            rho_temp = [(np.exp(-1j * np.dot(Q_vector, r)))
+                for r in self.trajectory.filter_by_time(time).positions]
+            rho.append(np.sum(rho_temp, axis = 0))
+        return np.array(rho)
