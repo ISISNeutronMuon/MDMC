@@ -2,7 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    18/07/2018, 16:42:10"""
 
-from numpy import conjugate, arange, real
+import numpy as np
 from numpy.fft import fft, ifft
 
 def correlation(input1, input2=None, normalise=False):
@@ -16,15 +16,15 @@ def correlation(input1, input2=None, normalise=False):
 
     N = len(input1)
 
-    fft1 = fft(input1, n=(N * 2))
+    fft1 = fft(input1, n=(N * 2), axis=0)
 
     if input2 is None:
         fft2 = fft1
     else:
-        fft2 = fft(input2, n=(N * 2))
+        fft2 = fft(input2, n=(N * 2), axis=0)
 
     # Calculate the cyclic correlation function
-    cyclic_corr = ifft(conjugate(fft1) * fft2)
+    cyclic_corr = ifft(np.conjugate(fft1) * fft2, axis=0)
 
     # Normalise for variable number of contributions to each timestep:
     # 1 / (N - m)
