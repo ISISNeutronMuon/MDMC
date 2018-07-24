@@ -24,3 +24,12 @@ reader_data = {'LAMPSQw':'/263K05Awat_LAMP'}
 for key in reader_data:
     reader_data[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + reader_data[key]
 
+
+# Calculated observable data
+#
+# Dynamic incoherent structure factor (DISF i.e. incoherent SQw) - MD simulation
+# on 2048 water molecules for 50000 timesteps of 1 fs length.  DISF calculated
+# from time start:end:step of 50:5000:10, q start:end:step 1.6:22.4:1.6, with a
+# qshell width of 0.1, maxmimum 50 q vectors per shell and a resolution of 0.05
+
+obs_data = {'SQw_incoh':'/nMOLDYN_ASCII_DISF_water.txt'}
