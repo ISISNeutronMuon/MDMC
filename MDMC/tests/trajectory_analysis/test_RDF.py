@@ -1,7 +1,5 @@
 """Tests for the calculation of RDF from MD trajectory
 
-DESCRIPTION
-
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 16:46:16"""
 
 import pytest
