@@ -1,7 +1,8 @@
 """Stores all filenames and additional data that is required for testing
 
-Test data must have the same name as the reader. Origins for data are also
-supplied.
+Data for reader unit tests must have the same name as the reader. Data for
+observable system tests must have the same name as the observable. Origins for
+data are also supplied.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-7 14:10:35"""
 
@@ -13,6 +14,13 @@ _CALC_OBS_PATH = '/calculated_observables'
 
 # TODO: introspective method to add abs_dir_path (use dir() to get all var names)
 
+# Reader/experimental data
+#
 # LAMPSQw - From Bertil Halle QENS water data on in5
 
-data = {'LAMPSQw':_ABS_DIR_PATH + _EXP_DATA_PATH + '/263K05Awat_LAMP'}
+reader_data = {'LAMPSQw':'/263K05Awat_LAMP'}
+
+# Add paths to data values
+for key in reader_data:
+    reader_data[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + reader_data[key]
+

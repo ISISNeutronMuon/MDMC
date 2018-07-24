@@ -50,7 +50,7 @@ def test_open(reader_info):
     reader = reader_info['reader']
 
     try:
-        reader.open(data.data[reader.__class__.__name__])
+        reader.open(data.reader_data[reader.__class__.__name__])
     except KeyError:
         raise KeyError("The test data must have the same name as the reader")
 
@@ -69,7 +69,7 @@ def test_parse(reader_info):
     indep_datatypes = reader_info['indep_datatypes']
     dep_datatype = reader_info['dep_datatype']
 
-    reader.open(data.data[reader.__class__.__name__])
+    reader.open(data.reader_data[reader.__class__.__name__])
     reader.parse()
     for indep_datatype in indep_datatypes:
         assert indep_datatype in reader.independent_variables

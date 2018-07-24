@@ -17,7 +17,7 @@ from MDMC.tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
 @pytest.fixture
 def SQw_from_data():
     SQw = eof.ObservableFactory.create_observable('SQw')
-    SQw.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
+    SQw.read_from_file(reader='LAMPSQw', file_name=data.reader_data['LAMPSQw'])
     return SQw
 
 @pytest.fixture
