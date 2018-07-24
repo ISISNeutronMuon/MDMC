@@ -18,15 +18,23 @@ class SQwIncoherent(AbstractSQw):
     def _calculate_FQt_single_Q(self, Q_vector):
 
         n_atoms = len(self.trajectory.atoms)
-        # Iterate over all atoms and over all trajectories to get atom positions
-        for i in np.arange(n_atoms):
-            for j in np.arange(len(self.trajectory.times)):
-                atom_positions = self.trajectory.configurations[j] \
-                                     .atom_positions[i]
-                rho = self._calculate_rho(atom_positions, Q_vector)
-                FQt_single_Q_atom = correlation(rho, normalise=True)
 
-    def _calculate_rho(self, r, Q_vector):
+        # Iterate over all atoms and over all trajectories to get atom positions
+        FQt_single_Q = np.zeros(len(self.trajectory.times))
+        for i in np.arange(n_atoms):
+            atom_positions = [conf.atom_positions[i] for conf
+                              in self.trajectory.configurations]
+
+            # Normalise to the number of orthogonal vectors
+            rho = self._calculate_rho(atom_positions, Q_vector) \
+                  / np.shape(Q_vector)[1]
+            FQt_single_Q_atom = correlation(rho, normalise=True)
+            FQt_single_Q += FQt_single_Q_atom
+
+        return FQt_single_Q
+
+
+    def _calculate_rho(self, positions, Q_vector):
 
         """
         Calculates time dependent number density in reciprocal space for all Q
@@ -41,5 +49,7 @@ class SQwIncoherent(AbstractSQw):
         """
 
         rho = []
-        for time in self.trajectory.times:
+        for r in positions:
             rho.append(np.exp(-1j * np.dot(Q_vector, r)))
+
+        return np.array(rho)
