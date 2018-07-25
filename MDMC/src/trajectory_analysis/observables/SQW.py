@@ -91,7 +91,7 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
-        self.w = self._change_domain(self.dt)
+        self.w = 2 * np.pi() / self.dt
         self.SQw = self._calculate_SQw()
         self.SQw_err = np.zeros
 
@@ -145,16 +145,6 @@ class AbstractSQw(Observable):
             SQw.append(np.fft.ifft(Ft))
 
         return np.array(SQw)
-
-    def _change_domain(self, domain):
-
-        """
-        Assumes domain of constant step size
-        """
-
-        n = domain.size
-        step = domain[1] - domain[0]
-        return np.pi * np.fft.fftshift(np.fft.fftfreq(domain.size, step))
 
 
 class SQw(AbstractSQw):
