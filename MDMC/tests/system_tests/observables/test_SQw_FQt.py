@@ -126,9 +126,12 @@ def test_Q(Q_ref, SQw_obs):
 
     """
     Test Q equivalence
+
+    Exact equivalence results in failed assertion due to rounding errors caused
+    by the range routine used in nMOLDYN
     """
 
-    assert np.all(SQw_obs.Q_values == Q_ref)
+    assert_allclose(SQw_obs.Q_values, Q_ref, rtol=1e-07)
 
 
 def test_time(time_ref, SQw_obs):
