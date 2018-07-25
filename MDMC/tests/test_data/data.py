@@ -45,3 +45,15 @@ OBS_DATA = {'SQw_incoh':'/nMOLDYN_ASCII_DISF_water.nc',
 # Add paths to data values
 for key in OBS_DATA:
     OBS_DATA[key] = _ABS_DIR_PATH + _CALC_OBS_PATH + OBS_DATA[key]
+
+
+# MDMC object data
+#
+# trajectory
+# Calculated from same MMTK simulation on water as used to calculate DISF
+
+OBJECT_DATA = {'trajectory':'/trajectory.pkl'}
+
+# Add paths to data values
+for key in OBJECT_DATA:
+    OBJECT_DATA[key] = _ABS_DIR_PATH + _OBJECT_PATH + OBJECT_DATA[key]
