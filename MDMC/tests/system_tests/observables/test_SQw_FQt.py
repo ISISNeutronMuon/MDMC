@@ -27,39 +27,39 @@ STEP = 100
 n_Q = 13
 CELL = (3.94221067, 3.94221067, 3.94221067)
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def incoh_file():
     return Dataset(data.OBS_DATA['SQw_incoh'],'r')
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def coh_file():
     return Dataset(data.OBS_DATA['SQw_coh'],'r')
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def Q_ref(incoh_file):
     return np.array(incoh_file.variables['q'][:])
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def time_ref(incoh_file):
     return np.array(incoh_file.variables['time'][:])
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def w_ref(incoh_file):
     return np.array(incoh_file.variables['frequency'][:])
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def FQt_incoh_ref(incoh_file):
     return np.array(incoh_file.variables['Fqt-total'][:])
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def SQw_incoh_ref(incoh_file):
     return np.array(incoh_file.variables['Sqw-total'][:])
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def FQt_coh_ref(coh_file):
     return np.array(coh_file.variables['Fqt-total'][:])
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def SQw_coh_ref(coh_file):
     return np.array(coh_file.variables['Sqw-total'][:])
 
