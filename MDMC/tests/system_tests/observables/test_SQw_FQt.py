@@ -22,11 +22,10 @@ import MDMC.src.trajectory_analysis.observables.obs_factory as of
 from MDMC.tests.test_data import data
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
-START = 50
-STOP = 5010
-STEP = 100
-n_Q = 13
 CELL = (3.94221067, 3.94221067, 3.94221067)
+
+# Relative tolerance for comparing FQt and SQw
+RTOL = 0.01
 
 @pytest.fixture(scope="module")
 def incoh_file():
@@ -129,7 +128,7 @@ def test_Q(Q_ref, SQw_obs):
     Test Q equivalence
     """
 
-    raise NotImplementedError
+    assert np.all(SQw_obs.Q_values == Q_ref)
 
 
 def test_time(time_ref, SQw_obs):
@@ -138,7 +137,7 @@ def test_time(time_ref, SQw_obs):
     Test time equivalence
     """
 
-    raise NotImplementedError
+    assert np.all(SQw_obs.dt == time_ref)
 
 
 def test_w(w_ref, SQw_obs):
@@ -147,27 +146,29 @@ def test_w(w_ref, SQw_obs):
     Test frequency equivalence
     """
 
-    raise NotImplementedError
+    assert np.all(SQw_obs.w == w_ref)
 
 
-def test_FQt_incoh(FQt_incoh_ref, SQw_obs):
+def test_FQt_incoh(FQt_incoh_ref, SQw_incoh_obs):
 
     """
     Validate the calculation of the intermediate incoherent structure factor
     against nMOLDYN
     """
 
-    raise NotImplementedError
+    assert np.all(np.shape(SQw_incoh_obs.FQt) == np.shape(FQt_incoh_ref))
+    assert_allclose(SQw_incoh_obs.FQt, FQt_incoh_ref, rtol=RTOL)
 
 
-def test_FQt_coh(FQt_coh_ref, SQw_obs):
+def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
 
     """
     Validate the calculation of the intermediate coherent structure factor
     against nMOLDYN
     """
 
-    raise NotImplementedError
+    assert np.all(np.shape(SQw_coh_obs.FQt) == np.shape(FQt_coh_ref))
+    assert_allclose(SQw_coh_obs.FQt, FQt_coh_ref, rtol=RTOL)
 
 
 def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
@@ -178,27 +179,31 @@ def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
     calculated by MOLDYN
     """
 
-    raise NotImplementedError
+    assert np.all(np.shape(SQw_obs.FQt) == np.shape(FQt_incoh_ref))
+    FQt_ref = FQt_incoh_ref + FQt_coh_ref
+    assert_allclose(SQw_obs.FQt, FQt_ref, rtol=RTOL)
 
 
-def test_SQw_incoh(SQw_incoh_ref, SQw_obs):
+def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
 
     """
     Validate the calculation of the dynamic incoherent structure factor against
     nMOLDYN
     """
 
-    raise NotImplementedError
+    assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
+    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_ref, rtol=RTOL)
 
 
-def test_SQw_coh(SQw_coh_ref, SQw_obs):
+def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
 
     """
     Validate the calculation of the dynamic coherent structure factor against
     nMOLDYN
     """
 
-    raise NotImplementedError
+    assert np.all(np.shape(SQw_coh_obs.SQw) == np.shape(SQw_coh_ref))
+    assert_allclose(SQw_coh_obs.SQw, SQw_coh_ref, rtol=RTOL)
 
 
 def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
@@ -209,4 +214,6 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
     nMOLDYN
     """
 
-    raise NotImplementedError
+    assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
+    SQw_ref = SQw_incoh_ref + SQw_coh_ref
+    assert_allclose(SQw_obs.SQw, SQw_ref, rtol=RTOL)
