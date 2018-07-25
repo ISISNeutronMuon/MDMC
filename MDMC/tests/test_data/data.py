@@ -30,6 +30,15 @@ for key in reader_data:
 # Dynamic incoherent structure factor (DISF i.e. incoherent SQw) - MD simulation
 # on 2048 water molecules for 50000 timesteps of 1 fs length.  DISF calculated
 # from time start:end:step of 50:5000:10, q start:end:step 1.6:22.4:1.6, with a
-# qshell width of 0.1, maxmimum 50 q vectors per shell and a resolution of 0.05
+# qshell width of 0.1, maxmimum 50 q vectors per shell and a resolution of 0.05.
+# File format is netcdf.
+#
+# Dynamic coherent structure factor (DCSF i.e. coherent SQw) - Same MD
+# simulation and nMOLDYN parameters as DISF
 
-obs_data = {'SQw_incoh':'/nMOLDYN_ASCII_DISF_water.txt'}
+obs_data = {'SQw_incoh':'/nMOLDYN_ASCII_DISF_water.nc',
+            'SQw_coh':'/nMOLDYN_ASCII_DCSF_water.nc'}
+
+# Add paths to data values
+for key in obs_data:
+    obs_data[key] = _ABS_DIR_PATH + _CALC_OBS_PATH + obs_data[key]
