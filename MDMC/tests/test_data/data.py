@@ -50,9 +50,10 @@ for key in OBS_DATA:
 # MDMC object data
 #
 # trajectory
-# Calculated from same MMTK simulation on water as used to calculate DISF
+# Calculated from same MMTK simulation on water as used to calculate DISF. Must
+# be unzipped using zlib and then unpickled before use.
 
-OBJECT_DATA = {'trajectory':'/trajectory.pkl'}
+OBJECT_DATA = {'trajectory':'/trajectory.zip'}
 
 # Add paths to data values
 for key in OBJECT_DATA:
