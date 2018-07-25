@@ -33,7 +33,6 @@ class SQwIncoherent(AbstractSQw):
 
         return FQt_single_Q
 
-
     def _calculate_rho(self, positions, Q_vector):
 
         """
