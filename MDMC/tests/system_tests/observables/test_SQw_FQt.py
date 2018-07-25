@@ -10,48 +10,96 @@ import pytest
 import numpy as np
 from netCDF4 import Dataset
 
-import MDMC.src.trajectory_analysis.observables.obs_factory as eof
+import MDMC.src.trajectory_analysis.observables.obs_factory as of
 
 from MDMC.tests.test_data import data
 
+# Values are equivalent to those used by nMOLDYN to generate the test data
+START = 50
+STOP = 5010
+STEP = 100
+n_Q = 13
+CELL = (3.94221067, 3.94221067, 3.94221067)
+
 @pytest.fixture
 def incoh_file():
-    return Dataset(data.obs_data['SQw_incoh'],'r')
+    return Dataset(data.OBS_DATA['SQw_incoh'],'r')
 
 @pytest.fixture
 def coh_file():
-    return Dataset(data.obs_data['SQw_coh'],'r')
+    return Dataset(data.OBS_DATA['SQw_coh'],'r')
 
 @pytest.fixture
-def Q(incoh_file):
+def Q_ref(incoh_file):
     return np.array(incoh_file.variables['q'][:])
 
 @pytest.fixture
-def time(incoh_file):
+def time_ref(incoh_file):
     return np.array(incoh_file.variables['time'][:])
 
 @pytest.fixture
-def w(incoh_file):
+def w_ref(incoh_file):
     return np.array(incoh_file.variables['frequency'][:])
 
 @pytest.fixture
-def FQt_incoh(incoh_file):
+def FQt_incoh_ref(incoh_file):
     return np.array(incoh_file.variables['Fqt-total'][:])
 
 @pytest.fixture
-def SQw_incoh(incoh_file):
+def SQw_incoh_ref(incoh_file):
     return np.array(incoh_file.variables['Sqw-total'][:])
 
 @pytest.fixture
-def FQt_coh(coh_file):
+def FQt_coh_ref(coh_file):
     return np.array(coh_file.variables['Fqt-total'][:])
 
 @pytest.fixture
-def SQw_coh(coh_file):
+def SQw_coh_ref(coh_file):
     return np.array(coh_file.variables['Sqw-total'][:])
 
+@pytest.fixture
+def SQw_obs():
 
-def test_FQt_incoh(Q, time, FQt_incoh):
+    """
+    Setup the container for Q, time, w, FQt and SQt
+
+    Q_values are rounded to ensure consistency, as nMOLDYN rounds.
+    """
+
+    trajectory = None
+    Q_values = np.around([2 * np.pi * i / CELL[0] for i in range(1, n_Q+1)], 1)
+    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = CELL)
+
+
+def test_Q(Q_ref, SQw_obs):
+
+    """
+    Test Q equivalence
+    """
+
+    raise NotImplementedError
+
+
+def test_time(time_ref, SQw_obs):
+
+    """
+    Test time equivalence
+    """
+
+    raise NotImplementedError
+
+
+def test_w(w_ref, SQw_obs):
+
+    """
+    Test frequency equivalence
+    """
+
+    raise NotImplementedError
+
+
+def test_FQt_incoh(FQt_incoh_ref, SQw_obs):
 
     """
     Validate the calculation of the intermediate incoherent structure factor
@@ -61,7 +109,7 @@ def test_FQt_incoh(Q, time, FQt_incoh):
     raise NotImplementedError
 
 
-def test_FQt_coh(Q, time, FQt_coh):
+def test_FQt_coh(FQt_coh_ref, SQw_obs):
 
     """
     Validate the calculation of the intermediate coherent structure factor
@@ -71,7 +119,7 @@ def test_FQt_coh(Q, time, FQt_coh):
     raise NotImplementedError
 
 
-def test_FQt_total(Q, time, FQt_incoh, FQt_coh):
+def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
 
     """
     Validate the calculation of the intermediate total structure factor against
@@ -82,7 +130,7 @@ def test_FQt_total(Q, time, FQt_incoh, FQt_coh):
     raise NotImplementedError
 
 
-def test_SQw_incoh(Q, w, SQw_incoh):
+def test_SQw_incoh(SQw_incoh_ref, SQw_obs):
 
     """
     Validate the calculation of the dynamic incoherent structure factor against
@@ -92,7 +140,7 @@ def test_SQw_incoh(Q, w, SQw_incoh):
     raise NotImplementedError
 
 
-def test_SQw_coh(Q, w, SQw_coh):
+def test_SQw_coh(SQw_coh_ref, SQw_obs):
 
     """
     Validate the calculation of the dynamic coherent structure factor against
@@ -102,7 +150,7 @@ def test_SQw_coh(Q, w, SQw_coh):
     raise NotImplementedError
 
 
-def test_SQw_total(Q, w, SQw_incoh, SQw_coh):
+def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
 
     """
     Validate the calculation of the dynamic total structure factor against the
