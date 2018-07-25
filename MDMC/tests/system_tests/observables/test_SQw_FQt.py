@@ -14,6 +14,7 @@ import zlib
 
 from netCDF4 import Dataset
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 import MDMC.src.trajectory_analysis.observables.obs_factory as of
@@ -63,22 +64,63 @@ def FQt_coh_ref(coh_file):
 def SQw_coh_ref(coh_file):
     return np.array(coh_file.variables['Sqw-total'][:])
 
-@pytest.fixture
-def SQw_obs():
+@pytest.fixture(scope="module")
+def trajectory():
 
     """
-    Setup the container for Q, time, w, FQt and SQt
+    Read the trajectory
 
-    trajectory is unzipped and unpickled. Q_values are rounded to ensure
-    consistency, as nMOLDYN rounds.
+    trajectory is unzipped and unpickled.
     """
 
     compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'r').read()
     pickled_trajectory = zlib.decompress(compressed_trajectory)
     trajectory = pickle.loads(pickled_trajectory)
-    Q_values = np.around([2 * np.pi * i / CELL[0] for i in range(1, n_Q+1)], 1)
+    return trajectory
+
+@pytest.fixture(scope="module")
+def Q_values():
+
+    return np.arange(1.6, 21, 1.6)
+
+@pytest.fixture(scope="module")
+def SQw_obs(trajectory, Q_values):
+
+    """
+    Setup the container for Q, time, w, total FQt and total SQt
+    """
+
     SQw = of.ObservableFactory.create_observable('SQw')
-    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = CELL)
+    SQw.calculate_from_MD(trajectory, Q_values=Q_values, cell=CELL)
+    return SQw
+
+@pytest.fixture(scope="module")
+def SQw_incoh_obs(trajectory, Q_values):
+
+    """
+    Setup the container for Q, time, w, incoherent FQt and incoherent SQt
+
+    Only FQt and SQt are used for testing, as Q, time and w are calculated
+    using the same base class as SQw_obs
+    """
+
+    SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh.calculate_from_MD(trajectory, Q_values=Q_values, cell=CELL)
+    return SQw_incoh
+
+@pytest.fixture(scope="module")
+def SQw_coh_obs(trajectory, Q_values):
+
+    """
+    Setup the container for Q, time, w, coherent FQt and coherent SQt
+
+    Only FQt and SQt are used for testing, as Q, time and w are calculated
+    using the same base class as SQw_obs
+    """
+
+    SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh.calculate_from_MD(trajectory, Q_values=Q_values, cell=CELL)
+    return SQw_coh
 
 
 def test_Q(Q_ref, SQw_obs):
