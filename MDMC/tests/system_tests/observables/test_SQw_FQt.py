@@ -45,7 +45,7 @@ def time_ref(incoh_file):
 
 @pytest.fixture(scope="module")
 def w_ref(incoh_file):
-    return np.array(incoh_file.variables['frequency'][:])
+    return np.array(incoh_file.variables['angular_frequency'][:])
 
 @pytest.fixture(scope="module")
 def FQt_incoh_ref(incoh_file):
@@ -146,7 +146,7 @@ def test_time(time_ref, SQw_obs):
 def test_w(w_ref, SQw_obs):
 
     """
-    Test frequency equivalence
+    Test angular frequency equivalence
     """
 
     assert np.all(SQw_obs.w == w_ref)
