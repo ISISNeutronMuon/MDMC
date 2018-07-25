@@ -6,9 +6,15 @@ realies on the calculation of FQt they are tested together.
 
 AUTHOR :    Thomas Farmer        START DATE :    24/07/2018, 15:34:26"""
 
-import pytest
-import numpy as np
+try:
+    import cPickle as pickle
+except:
+    import pickle
+import zlib
+
 from netCDF4 import Dataset
+import numpy as np
+import pytest
 
 import MDMC.src.trajectory_analysis.observables.obs_factory as of
 
@@ -63,10 +69,13 @@ def SQw_obs():
     """
     Setup the container for Q, time, w, FQt and SQt
 
-    Q_values are rounded to ensure consistency, as nMOLDYN rounds.
+    trajectory is unzipped and unpickled. Q_values are rounded to ensure
+    consistency, as nMOLDYN rounds.
     """
 
-    trajectory = None
+    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'r').read()
+    pickled_trajectory = zlib.decompress(compressed_trajectory)
+    trajectory = pickle.loads(pickled_trajectory)
     Q_values = np.around([2 * np.pi * i / CELL[0] for i in range(1, n_Q+1)], 1)
     SQw = of.ObservableFactory.create_observable('SQw')
     SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = CELL)
