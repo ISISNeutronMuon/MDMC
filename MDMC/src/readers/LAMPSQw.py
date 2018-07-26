@@ -60,7 +60,7 @@ class LAMPSQw(Reader):
         A dictionary containing Q and E
         """
 
-        return self.data['independent']
+        return {"Q":self.Q, "E":self.E}
 
     @property
     def dependent_variables(self):
@@ -69,7 +69,7 @@ class LAMPSQw(Reader):
         A dictionary containing SQw
         """
 
-        return self.data['dependent']
+        return {"SQw":self.SQw}
 
     @property
     def errors(self):
@@ -78,7 +78,7 @@ class LAMPSQw(Reader):
         A dictionary containing the error associated with SQw
         """
 
-        return self.data['errors']
+        return {"SQw":self.SQw_err}
 
     def parse_indep_var(self, file):
 
