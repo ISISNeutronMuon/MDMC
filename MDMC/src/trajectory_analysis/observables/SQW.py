@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+from MDMC.src.common.constants import h_bar
 from MDMC.src.common.mathematics import correlation
 from MDMC.src.trajectory_analysis.observables.obs import Observable
 
@@ -91,7 +92,8 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
-        self.w = 2 * np.pi() / self.dt
+        self.w = 2 * np.pi / self.dt
+        self.E = h_bar * self.w
         self.SQw = self._calculate_SQw()
         self.SQw_err = np.zeros
 
