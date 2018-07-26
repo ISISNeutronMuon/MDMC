@@ -42,18 +42,6 @@ class LAMPSQw(Reader):
         self.SQw_err[np.where(self.SQw_err < 0.)] = np.float('inf')
 
     @property
-    def data(self):
-
-        """
-        A dictionary of dictionaries containing the independent variables,
-        dependent variables and the associated errors.
-        """
-
-        return {"independent":{"Q":self.Q, "E":self.E},
-                "dependent":{"SQw":self.SQw},
-                "errors":{"SQw":self.SQw_err}}
-
-    @property
     def independent_variables(self):
 
         """
