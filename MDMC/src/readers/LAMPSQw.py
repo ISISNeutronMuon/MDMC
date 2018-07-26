@@ -49,7 +49,9 @@ class LAMPSQw(Reader):
         dependent variables and the associated errors.
         """
 
-        return {"independent":{"Q":self.Q, "E":self.E}, "dependent":{"SQw":self.SQw}, "errors":{"SQw":self.SQw_err}}
+        return {"independent":{"Q":self.Q, "E":self.E},
+                "dependent":{"SQw":self.SQw},
+                "errors":{"SQw":self.SQw_err}}
 
     @property
     def independent_variables(self):
