@@ -12,6 +12,12 @@ def correlation(input1, input2=None, normalise=False):
 
     The Fast Correlation Algorithm (FCA) is utilised.  If only a single input is
     provided, the autocorrelation is calculated.
+
+    Arguments:
+    input1: A 1D series
+    input2: A 1D series
+    normalise: Normalise the correlation at each point to the number of
+    contributions to that point
     """
 
     N = len(input1)
