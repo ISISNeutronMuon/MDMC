@@ -24,8 +24,9 @@ from MDMC.tests.test_data import data
 # Values are equivalent to those used by nMOLDYN to generate the test data
 CELL = (3.94221067, 3.94221067, 3.94221067)
 
-# Relative tolerance for comparing FQt and SQw
-RTOL = 0.01
+# As all SQw and FQt should be normalised to 1, the absolute tolerance for
+# comparisons with reference data is set
+ATOL = 0.015
 
 @pytest.fixture(scope="module")
 def incoh_file():
@@ -131,7 +132,7 @@ def test_Q(Q_ref, SQw_obs):
     by the range routine used in nMOLDYN
     """
 
-    assert_allclose(SQw_obs.Q_values, Q_ref, rtol=1e-07)
+    assert_allclose(SQw_obs.Q_values, Q_ref, atol=1e-07)
 
 
 def test_time(time_ref, SQw_obs):
@@ -160,7 +161,7 @@ def test_FQt_incoh(FQt_incoh_ref, SQw_incoh_obs):
     """
 
     assert np.all(np.shape(SQw_incoh_obs.FQt) == np.shape(FQt_incoh_ref))
-    assert_allclose(SQw_incoh_obs.FQt, FQt_incoh_ref, rtol=RTOL)
+    assert_allclose(SQw_incoh_obs.FQt, FQt_incoh_ref, atol=ATOL)
 
 
 def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
@@ -171,7 +172,7 @@ def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
     """
 
     assert np.all(np.shape(SQw_coh_obs.FQt) == np.shape(FQt_coh_ref))
-    assert_allclose(SQw_coh_obs.FQt, FQt_coh_ref, rtol=RTOL)
+    assert_allclose(SQw_coh_obs.FQt, FQt_coh_ref, atol=ATOL)
 
 
 def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
@@ -184,7 +185,7 @@ def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
 
     assert np.all(np.shape(SQw_obs.FQt) == np.shape(FQt_incoh_ref))
     FQt_ref = FQt_incoh_ref + FQt_coh_ref
-    assert_allclose(SQw_obs.FQt, FQt_ref, rtol=RTOL)
+    assert_allclose(SQw_obs.FQt, FQt_ref, atol=ATOL)
 
 
 def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
@@ -195,7 +196,7 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
     """
 
     assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
-    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_ref, rtol=RTOL)
+    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_ref, atol=ATOL)
 
 
 def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
@@ -206,7 +207,7 @@ def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
     """
 
     assert np.all(np.shape(SQw_coh_obs.SQw) == np.shape(SQw_coh_ref))
-    assert_allclose(SQw_coh_obs.SQw, SQw_coh_ref, rtol=RTOL)
+    assert_allclose(SQw_coh_obs.SQw, SQw_coh_ref, atol=ATOL)
 
 
 def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
@@ -219,4 +220,4 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
 
     assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
     SQw_ref = SQw_incoh_ref + SQw_coh_ref
-    assert_allclose(SQw_obs.SQw, SQw_ref, rtol=RTOL)
+    assert_allclose(SQw_obs.SQw, SQw_ref, atol=ATOL)
