@@ -19,3 +19,15 @@ def Gaussian(N, sigma):
     return signal.gaussian(N, sigma)
 
 
+def Lorentzian(N, gamma):
+
+    """
+    Returns:
+    A Lorentzian (Cauchy) distribution
+
+    Arguments:
+    N: Length of the distribution
+    gamma: half-width at half-maximum
+    """
+
+    raise NotImplementedError
