@@ -14,7 +14,7 @@ def plot_observable(observable):
 
 def plot2d(data):
 
-    trace = [go.Scatter(x = data[0], y = data[1])]
+    trace = [go.Scatter(x=data[0], y=data[1])]
 
     py.offline.plot(trace)
 
@@ -25,26 +25,28 @@ def plot2d_cuts(data, n_cuts):
     cut_spacing = int(data[0].size / n_cuts)
     traces = []
     for i in range(n_cuts):
-        traces.append(go.Scatter(x = data[1], y = data[2][i * cut_spacing],
-            name = str(data[0][i * cut_spacing])))
+        traces.append(go.Scatter(x=data[1], y=data[2][i * cut_spacing],
+            name=str(data[0][i * cut_spacing])))
 
     py.offline.plot(traces)
 
 
-def plot3d_surface(data, log_z = False):
+def plot3d_surface(data, log_z=False, standard_layout=False):
 
     x = data[0]
 
     y = data[1]
 
     if log_z:
-        surf = [go.Surface(x = x, y = y, z=np.log(data[2]))]
+        surf = [go.Surface(x=x, y=y, z=np.log(data[2]))]
     else:
-        surf = [go.Surface(x = x, y = y, z=data[2])]
+        surf = [go.Surface(x=x, y=y, z=data[2])]
 
-    layout = go.Layout(autosize = False, width = 1000, height = 1000)
-
-    fig = go.Figure(data = surf, layout = layout)
+    if standard_layout:
+        layout = go.Layout(autosize=False, width=1000, height=1000)
+        fig = go.Figure(data=surf, layout=layout)
+    else:
+        fig = go.Figure(data=surf)
 
     py.offline.plot(fig)
 
@@ -67,7 +69,7 @@ def plot_configuration(config):
 
     data = [trace]
 
-    fig = go.Figure(data = data)
+    fig = go.Figure(data=data)
 
     py.offline.plot(fig)
 
@@ -77,7 +79,7 @@ def plot_trajectory(trajectory):
     raise NotImplementedError
 
 # TODO: get mesh working
-def plot3d_mesh(data, log_z = False):
+def plot3d_mesh(data, log_z=False):
 
     x = data[0]
     y = data[1]
@@ -87,17 +89,17 @@ def plot3d_mesh(data, log_z = False):
     else:
         z = [go.Surface(z=data[2])]
 
-    trace = go.Data([go.Mesh3d(x = x, y = y, z = z,
+    trace = go.Data([go.Mesh3d(x=x, y=y, z=z,
         colorscale = [['0', 'rgb(255, 0, 0)'],
         ['0', 'rgb(255, 0, 0)'],
         ['0', 'rgb(255, 0, 0)']])])
 
-    fig = go.Figure(data = trace)
+    fig = go.Figure(data=trace)
 
     py.offline.plot(fig)
 
 
 # TODO: add ribbon plot
-def plot3d_ribbon(data, log_z = False):
+def plot3d_ribbon(data, log_z=False):
 
     raise NotImplementedError
