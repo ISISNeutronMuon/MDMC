@@ -8,6 +8,7 @@ import numpy as np
 
 from MDMC.src.common.constants import h_bar
 from MDMC.src.common.mathematics import correlation
+from MDMC.src.common.resolution_functions import Gaussian
 from MDMC.src.trajectory_analysis.observables.obs import Observable
 
 
@@ -142,11 +143,28 @@ class AbstractSQw(Observable):
         """
         Calculates SQw from FQt
         """
-        SQw = []
-        for Ft in self.FQt:
-            SQw.append(np.fft.ifft(Ft))
 
-        return np.array(SQw)
+        return np.fft.fft(self._apply_instrument_resolution(self.FQt))
+
+    def _apply_instrument_resolution(self, params, function=Gaussian):
+
+        """
+        Applies the specified resolution function to the S(Q,w) data
+
+        As the S(Q,w) data is calculated from the time domain Fourier transform,
+        F(Q,t), the resolution function can be applied multiplicatively, rather
+        than by convolution.  Assumes that the temporal resolution has no Q
+        dependence.
+
+        CURRENTLY SQw is hard coded to only apply Gaussian resolution functions
+        """
+
+        # Functions other than Gaussians must be FFT before multiplication
+        dim = np.shape(self.FQt)
+        window = function(dim[1], params['sigma'])
+
+        # Tile the window so that it is applied for all Q values
+        return np.tile(window, [dim[0], 1]) * self.FQt
 
 
 class SQw(AbstractSQw):
