@@ -5,6 +5,7 @@ AUTHOR :    Thomas Farmer        START DATE :    18/07/2018, 16:42:10"""
 import numpy as np
 from numpy.fft import fft, ifft
 
+
 def correlation(input1, input2=None, normalise=False):
 
     """
@@ -45,6 +46,7 @@ def correlation(input1, input2=None, normalise=False):
     corr = prefactor * np.real(cyclic_corr[0:N])
 
     return corr
+
 
 def convolution(input1, input2):
 
