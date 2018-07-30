@@ -81,6 +81,7 @@ class AbstractSQw(Observable):
         self.trajectory = MD_input
         self.dt = self.trajectory.times - self.trajectory.times[0]
         self.universe_cell = params.get('cell')
+        self.t_res = params.get('t_resolution')
 
         try:
             self.Q_values = np.array(params.get('Q_values'))
@@ -144,9 +145,11 @@ class AbstractSQw(Observable):
         Calculates SQw from FQt
         """
 
-        return np.fft.fft(self._apply_instrument_resolution(self.FQt))
+        return np.fft.fft(self._apply_instrument_resolution(self.FQt,
+                                                            {'sigma':self.t_res}
+                                                           ))
 
-    def _apply_instrument_resolution(self, params, function=Gaussian):
+    def _apply_instrument_resolution(self, FQt, params, function=Gaussian):
 
         """
         Applies the specified resolution function to the S(Q,w) data
@@ -160,11 +163,11 @@ class AbstractSQw(Observable):
         """
 
         # Functions other than Gaussians must be FFT before multiplication
-        dim = np.shape(self.FQt)
+        dim = np.shape(FQt)
         window = function(dim[1], params['sigma'])
 
         # Tile the window so that it is applied for all Q values
-        return np.tile(window, [dim[0], 1]) * self.FQt
+        return np.tile(window, [dim[0], 1]) * FQt
 
 
 class SQw(AbstractSQw):
