@@ -5,7 +5,7 @@ AUTHOR :    Thomas Farmer        START DATE :    27/07/2018, 13:40:34"""
 from scipy import signal
 
 
-def Gaussian(N, sigma):
+def gaussian(N, sigma):
 
     """
     Returns:
@@ -19,7 +19,7 @@ def Gaussian(N, sigma):
     return signal.gaussian(N, sigma)
 
 
-def Lorentzian(N, gamma):
+def lorentzian(N, gamma):
 
     """
     Returns:
