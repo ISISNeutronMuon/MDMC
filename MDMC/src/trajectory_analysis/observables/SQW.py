@@ -79,7 +79,7 @@ class AbstractSQw(Observable):
         """
         self._origin = 'MD'
         self.trajectory = MD_input
-        self.dt = self.trajectory.times - self.trajectory.times[0]
+        self.t = self.trajectory.times - self.trajectory.times[0]
         self.universe_cell = params.get('cell')
         self.t_res = params.get('t_resolution')
 
@@ -94,7 +94,7 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
-        self.w = 2 * np.pi / self.dt
+        self.w = 2 * np.pi / self.t
         self.E = h_bar * self.w
         self.SQw = self._calculate_SQw()
         self.SQw_err = np.zeros
@@ -119,7 +119,7 @@ class AbstractSQw(Observable):
 
         """
         Calculates intermediate scattering function for a single Q value for all
-        time intervals (dt)
+        time intervals (t)
 
         Arguments:
         Q_vector: Either a single Q vector or three orthogonal Q vectors
