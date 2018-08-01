@@ -145,11 +145,20 @@ class AbstractSQw(Observable):
         Calculates SQw from FQt
         """
 
-        return np.fft.fft(self._apply_instrument_resolution(self.FQt,
-                                                            {'sigma':self.t_res}
-                                                           ))
+        FQt_res = self._apply_instrument_resolution(self.FQt,
+                                                    {'sigma':self.t_res})
 
-    def _apply_instrument_resolution(self, FQt, params, function=Gaussian):
+        # Reflect F(t) [except for both end points] for each Q value and append
+        # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
+        FQt_mirror = np.append(FQt_res, FQt_res[:,-2:0:-1], axis=1)
+
+        # Normalisation requires factor of dt
+        # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
+        dt = self.t[1] - self.t[0]
+
+        # FFT and reduce the temporal dimension back to that of F(Q,t), with the
+        # factor of 0.5 accounting for the fft over the reflected F(Q,t)
+        return 0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
 
         """
         Applies the specified resolution function to the S(Q,w) data
