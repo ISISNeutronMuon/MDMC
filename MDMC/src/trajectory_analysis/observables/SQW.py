@@ -111,8 +111,8 @@ class AbstractSQw(Observable):
         """
 
         self.Q_vectors = self._calculate_Q_vectors()
-        return [self._calculate_FQt_single_Q(Q_vector)
-                for Q_vector in self.Q_vectors]
+        return np.array([self._calculate_FQt_single_Q(Q_vector)
+                for Q_vector in self.Q_vectors])
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, Q_vector):
