@@ -47,8 +47,6 @@ class SQwIncoherent(AbstractSQw):
         Q_vector: Either a single Q vector or three orthogonal Q vectors
         """
 
-        rho = []
-        for r in positions:
-            rho.append(np.exp(-1j * np.dot(Q_vector, r)))
+        rho = [np.exp(-1j * np.dot(Q_vector, r)) for r in positions]
 
         return np.array(rho)
