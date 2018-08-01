@@ -8,7 +8,7 @@ import numpy as np
 
 from MDMC.src.common.constants import h_bar
 from MDMC.src.common.mathematics import correlation
-from MDMC.src.common.resolution_functions import Gaussian
+from MDMC.src.common.resolution_functions import gaussian
 from MDMC.src.trajectory_analysis.observables.obs import Observable
 
 
