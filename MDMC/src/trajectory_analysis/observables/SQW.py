@@ -160,6 +160,8 @@ class AbstractSQw(Observable):
         # factor of 0.5 accounting for the fft over the reflected F(Q,t)
         return 0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
 
+    def _apply_instrument_resolution(self, FQt, params, function=gaussian):
+
         """
         Applies the specified resolution function to the S(Q,w) data
 
@@ -172,11 +174,15 @@ class AbstractSQw(Observable):
         """
 
         # Functions other than Gaussians must be FFT before multiplication
-        dim = np.shape(FQt)
-        window = function(dim[1], params['sigma'])
+        # As self.FQt is only half of the full (symmetric) FQt, only the
+        # positive half of each resolution function is required.  Functions of
+        # of odd length so that window[N_t] = 1
+        N_t = np.shape(FQt)[1]
+        N_Q = np.shape(FQt)[0]
+        window = function(2 * N_t + 1, params['sigma'])[N_t:-1]
 
         # Tile the window so that it is applied for all Q values
-        return np.tile(window, [dim[0], 1]) * FQt
+        return np.tile(window, [N_Q, 1]) * FQt
 
 
 class SQw(AbstractSQw):
