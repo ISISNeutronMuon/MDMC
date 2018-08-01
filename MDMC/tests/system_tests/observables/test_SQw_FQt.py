@@ -24,9 +24,11 @@ from MDMC.tests.test_data import data
 # Values are equivalent to those used by nMOLDYN to generate the test data
 CELL = (3.94221067, 3.94221067, 3.94221067)
 
-# As all SQw and FQt should be normalised to 1, the absolute tolerance for
-# comparisons with reference data is set
+# As all FQt should be normalised to 1, the absolute tolerance for
+# comparisons with reference data is set.  As SQw data has been FFT, the effects
+# if noise are less significant, so relative tolerance can be used.
 ATOL = 0.015
+RTOL = 0.010
 
 @pytest.fixture(scope="module")
 def incoh_file():
@@ -196,7 +198,7 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
     """
 
     assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
-    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_ref, atol=ATOL)
+    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_ref, rtol=RTOL)
 
 
 def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
@@ -207,7 +209,7 @@ def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
     """
 
     assert np.all(np.shape(SQw_coh_obs.SQw) == np.shape(SQw_coh_ref))
-    assert_allclose(SQw_coh_obs.SQw, SQw_coh_ref, atol=ATOL)
+    assert_allclose(SQw_coh_obs.SQw, SQw_coh_ref, rtol=RTOL)
 
 
 def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
@@ -220,4 +222,4 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
 
     assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
     SQw_ref = SQw_incoh_ref + SQw_coh_ref
-    assert_allclose(SQw_obs.SQw, SQw_ref, atol=ATOL)
+    assert_allclose(SQw_obs.SQw, SQw_ref, rtol=RTOL)
