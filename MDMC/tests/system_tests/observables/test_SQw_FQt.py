@@ -29,7 +29,7 @@ T_RESOLUTION = 30.999425
 # comparisons with reference data is set.  As SQw data has been FFT, the effects
 # if noise are less significant, so relative tolerance can be used.
 ATOL = 0.015
-RTOL = 0.010
+RTOL = 0.050
 
 @pytest.fixture(scope="module")
 def incoh_file():
