@@ -25,8 +25,10 @@ def SQw_from_MD(trajectory, universe):
     SQw = of.ObservableFactory.create_observable('SQw')
     cell = universe.dims
     n_Q = 10
+    t_resolution = 30.999425
     Q_values = [2 * np.pi * i / cell[0] for i in range(1,n_Q+1)]
-    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = cell)
+    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = cell,
+                          t_resolution=t_resolution)
     return SQw
 
 # TODO: Test for consistency by comparing S(Q,w) where w = 0 with S(Q)
