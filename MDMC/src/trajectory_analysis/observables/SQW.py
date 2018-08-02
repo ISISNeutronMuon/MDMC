@@ -208,9 +208,15 @@ class SQw(AbstractSQw):
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
+        # Normalise to the number of atoms and orthogonal vectors
         n_atoms = len(self.trajectory.atoms)
+        try:
+            norm = np.shape(Q_vector)[1] * n_atoms
+        except IndexError:
+            norm = n_atoms
+
         rho = self._calculate_rho(Q_vector)
-        FQt_single_Q = correlation(rho, normalise=True) / n_atoms
+        FQt_single_Q = correlation(rho, normalise=True) / norm
         return FQt_single_Q
 
     def _calculate_rho(self, Q_vector):
