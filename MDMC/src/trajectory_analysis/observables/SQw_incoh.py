@@ -26,9 +26,14 @@ class SQwIncoherent(AbstractSQw):
                               in self.trajectory.configurations]
 
             # Normalise to the number of orthogonal vectors
+            try:
+                norm = np.shape(Q_vector)[1]
+            except IndexError:
+                norm = 1.
+
             rho = self._calculate_rho(atom_positions, Q_vector)
             FQt_single_Q_atom = correlation(rho, normalise=True) \
-                  / np.shape(Q_vector)[1]
+                  / norm
             FQt_single_Q += FQt_single_Q_atom
 
         return FQt_single_Q / n_atoms
