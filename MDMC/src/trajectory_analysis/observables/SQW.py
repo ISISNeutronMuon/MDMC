@@ -94,7 +94,8 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
-        self.w = 2 * np.pi / self.t
+        dt = self.t[1] - self.t[0]
+        self.w = np.pi * np.arange(len(self.t)) / (len(self.t) * dt)
         self.E = h_bar * self.w
         self.SQw = self._calculate_SQw()
         self.SQw_err = np.zeros
