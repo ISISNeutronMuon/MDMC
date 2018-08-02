@@ -147,7 +147,7 @@ def test_time(time_ref, SQw_obs):
     Test time equivalence
     """
 
-    assert np.all(SQw_obs.dt == time_ref)
+    assert np.all(SQw_obs.t == time_ref)
 
 
 def test_w(w_ref, SQw_obs):
