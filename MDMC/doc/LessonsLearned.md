@@ -7,6 +7,8 @@ Typically neutron data will be compared against the calculated total DSF, as thi
 
 ![alt-text](https://github.com/MDMCproject/MDMCv0.2_pilot/blob/SQw-development/MDMC/doc/SQw_incoherent_percentage_of_SQw_total.png "SQw incoherent percentage of SQw total")
 
+![alt-text](https://github.com/MDMCproject/MDMCv0.2_pilot/blob/SQw-development/MDMC/doc/SQw_incoherent_percentage_of_SQw_total.png "SQw incoherent percentage of SQw total")
+
 
 ## MMTK
 
