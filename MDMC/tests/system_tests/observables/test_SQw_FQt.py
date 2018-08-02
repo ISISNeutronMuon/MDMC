@@ -154,9 +154,11 @@ def test_w(w_ref, SQw_obs):
 
     """
     Test angular frequency equivalence
+
+    Exact equivalence results in failed assertion due to rounding errors
     """
 
-    assert np.all(SQw_obs.w == w_ref)
+    assert_allclose(SQw_obs.w, w_ref, atol=1e-07)
 
 
 def test_FQt_incoh(FQt_incoh_ref, SQw_incoh_obs):
