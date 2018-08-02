@@ -140,6 +140,19 @@ class AbstractSQw(Observable):
         return np.array([value * direction
             for value in self.Q_values])
 
+    def _rho(self, r, Q_vector):
+
+        """
+        Returns:
+        The reciprocal space density for a position and Q vectors
+
+        Arguments:
+        r: A position vector
+        Q_vector: One or more orthogonal Q vectors
+        """
+
+        return np.exp(-1j * np.dot(Q_vector, r))
+
     def _calculate_SQw(self):
 
         """
