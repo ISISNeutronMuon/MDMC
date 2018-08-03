@@ -4,6 +4,7 @@ AUTHOR :    Thomas Farmer        START DATE :    20/07/2018, 16:28:02"""
 
 import numpy as np
 
+from MDMC.src.common.atom_properties import B_INCOH
 from MDMC.src.common.mathematics import correlation
 from MDMC.src.trajectory_analysis.observables.SQw import AbstractSQw
 
@@ -14,6 +15,13 @@ class SQwIncoherent(AbstractSQw):
     A class for containing, calculating and reading the incoherent dynamic
     structure factor
     """
+
+    def _set_weights(self):
+
+        element_weights = {element:B_INCOH[element]**2 for element
+                           in self.trajectory.element_set}
+        self.weights = [element_weights[atom.element] for atom
+                        in self.trajectory.atoms]
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
@@ -32,9 +40,8 @@ class SQwIncoherent(AbstractSQw):
                 norm = 1.
 
             rho = self._calculate_rho(atom_positions, Q_vector)
-            FQt_single_Q_atom = correlation(rho, normalise=True) \
-                  / norm
-            FQt_single_Q += FQt_single_Q_atom
+            FQt_single_Q_atom = correlation(rho, normalise=True) / norm
+            FQt_single_Q += FQt_single_Q_atom * self.weights[i]
 
         return FQt_single_Q / n_atoms
 
