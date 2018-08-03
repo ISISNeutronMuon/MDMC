@@ -6,8 +6,6 @@ __pycache__
 
 *.log
 
-*.nc
-
 *.html
 
 *.setup
