@@ -21,6 +21,7 @@ class Configuration(object):
     def __init__(self, *structural_units):
         self.structures_list = list(structural_units)
         self.data = self.create_config_array(*structural_units)
+        self.element_set = set(self.element_list)
 
     @property
     def atom_list(self):
@@ -36,6 +37,11 @@ class Configuration(object):
     def atom_velocities(self):
 
         return self.data['velocity']
+
+    @property
+    def element_list(self):
+
+        return [atom.element for atom in self.atom_list]
 
     @property
     def molecule_list(self):
@@ -120,7 +126,7 @@ class Configuration(object):
 
         Arguments:
         element: elemental symbol of the same format as is used for creating
-                  atoms
+                 atoms
         """
 
         return self.filter_atoms(lambda x: x.element == element)
@@ -209,10 +215,31 @@ class Trajectory(object):
     def atoms(self):
 
         """
-        Returns atoms from the frame 0 configuration
+        Returns:
+        Atoms from the frame 0 configuration
         """
 
         return self.data['configuration'][0].atom_list
+
+    @property
+    def element_set(self):
+
+        """
+        Returns:
+        Set of elements from the frame 0 configuration
+        """
+
+        return self.data['configuration'][0].element_set
+
+    @property
+    def element_list(self):
+
+        """
+        Returns:
+        List of elements from the frame 0 configuration
+        """
+
+        return self.data['configuration'][0].element_list
 
     @property
     def configurations(self):
