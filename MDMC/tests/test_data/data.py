@@ -39,8 +39,8 @@ for key in READER_DATA:
 # Dynamic coherent structure factor (DCSF i.e. coherent SQw)
 # Same MD simulation and nMOLDYN parameters as DISF.
 
-OBS_DATA = {'SQw_incoh':'/nMOLDYN_ASCII_DISF_water.nc',
-            'SQw_coh':'/nMOLDYN_ASCII_DCSF_water.nc'}
+OBS_DATA = {'SQw_incoh':'/nMOLDYN_DISF_water.nc',
+            'SQw_coh':'/nMOLDYN_DCSF_water.nc'}
 
 # Add paths to data values
 for key in OBS_DATA:
