@@ -68,7 +68,6 @@ class AbstractSQw(Observable):
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
 
-
     def calculate_from_MD(self, MD_input, **params):
 
         """
@@ -82,6 +81,7 @@ class AbstractSQw(Observable):
         self.t = self.trajectory.times - self.trajectory.times[0]
         self.universe_cell = params.get('cell')
         self.t_res = params.get('t_resolution')
+        self._set_weights()
 
         try:
             self.Q_values = np.array(params.get('Q_values'))
@@ -103,6 +103,15 @@ class AbstractSQw(Observable):
         self._independent_variables = {'Q':self.Q_values, 'w':self.w}
         self._dependent_variables = {'SQw':self.SQw}
         self._errors = {'SQw':self.SQw_err}
+
+    @abstractmethod
+    def _set_weights(self):
+
+        """
+        Calculate the neutron weighting
+        """
+
+        pass
 
     def calculate_FQt(self):
 
@@ -205,6 +214,10 @@ class SQw(AbstractSQw):
     A class for containing, calculating and reading the total dynamic structure
     factor
     """
+
+    def _set_weights(self):
+
+        pass
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
