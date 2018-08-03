@@ -245,9 +245,11 @@ class SQw(AbstractSQw):
         Arguments:
         Q_vector: Either a single Q vector or three orthogonal Q vectors
         """
-        rho = []
-        for time in self.trajectory.times:
-            rho_temp = [(np.exp(-1j * np.dot(Q_vector, r)))
-                for r in self.trajectory.filter_by_time(time).positions]
-            rho.append(np.sum(rho_temp, axis = 0))
-        return np.array(rho)
+
+        rho_all_atoms = [np.sum(np.apply_along_axis(self._rho,
+                                                    1,
+                                                    conf.positions,
+                                                    Q_vector), 0)
+                         for conf in self.trajectory]
+
+        return np.array(rho_all_atoms)
