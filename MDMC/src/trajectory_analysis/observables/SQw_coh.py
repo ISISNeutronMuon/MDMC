@@ -14,6 +14,9 @@ class SQwCoherent(AbstractSQw):
     A class for containing, calculating and reading the coherent dynamic
     structure factor
     """
+    def _set_weights(self):
+
+        raise NotImplementedError
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
