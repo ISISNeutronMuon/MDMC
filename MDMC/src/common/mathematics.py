@@ -9,7 +9,7 @@ from numpy.fft import fft, ifft
 def correlation(input1, input2=None, normalise=False):
 
     """
-    The correlation of two vector
+    The correlation of two vectors
 
     The Fast Correlation Algorithm (FCA) is utilised.  If only a single input is
     provided, the autocorrelation is calculated.
