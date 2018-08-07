@@ -92,6 +92,8 @@ class AbstractSQw(Observable):
         if not self.isotropic:
             self.direction = np.array(params.get('direction', [1, 0, 0]))
 
+        self.Q_vectors = params.get('Q_vectors', self._calculate_Q_vectors())
+
         self.FQt = self.calculate_FQt()
 
         dt = self.t[1] - self.t[0]
@@ -120,7 +122,6 @@ class AbstractSQw(Observable):
         all time intervals
         """
 
-        self.Q_vectors = self._calculate_Q_vectors()
         return np.array([self._calculate_FQt_single_Q(Q_vector)
                 for Q_vector in self.Q_vectors])
 
