@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
+from MDMC.src.common.atom_properties import B_COH, B_INCOH
 from MDMC.src.common.constants import h_bar
 from MDMC.src.common.mathematics import correlation
 from MDMC.src.common.resolution_functions import gaussian
@@ -257,7 +258,9 @@ class SQw(AbstractSQw):
 
     def _set_weights(self):
 
-        raise NotImplementedError
+        self.weights = {element:{'coh':B_COH[element],
+                                    'incoh':B_INCOH[element]}
+                           for element in self.trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
