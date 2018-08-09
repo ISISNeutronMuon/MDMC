@@ -37,7 +37,8 @@ class AbstractSQw(Observable):
     def independent_variables(self):
 
         """
-        Returns a dictionary of all independent variables
+        Return:
+        Dictionary of independent variables Q and E
         """
 
         return self._independent_variables
@@ -45,20 +46,62 @@ class AbstractSQw(Observable):
     @property
     def dependent_variables(self):
 
-        """
-        Returns a dictionary of all dependent variables
-        """
-
         return self._dependent_variables
 
     @property
     def errors(self):
 
+        return self._errors
+
+    @property
+    def Q(self):
+
         """
-        Returns a dictionary of all errors
+        Returns:
+        1D array of Q floats
         """
 
-        return self._errors
+        return self.independent_variables['Q']
+
+    @property
+    def E(self):
+
+        """
+        Returns:
+        1D array of energy floats
+        """
+
+        return self.independent_variables['E']
+
+    @property
+    def w(self):
+
+        """
+        Returns:
+        1D array of angular frequency floats, calculated from E
+        """
+
+        return self.E / h_bar
+
+    @property
+    def SQw(self):
+
+        """
+        Returns:
+        2D array of S(Q,w) floats
+        """
+
+        return self.dependent_variables['SQw']
+
+    @property
+    def SQw_err(self):
+
+        """
+        Returns:
+        2D array of S(Q,w) errors
+        """
+
+        return self.errors['SQw']
 
     def read_from_file(self, reader, file_name):
 
@@ -76,6 +119,7 @@ class AbstractSQw(Observable):
         Independent variables can either be set previously or defined within
         params
         """
+
         self._origin = 'MD'
         self.trajectory = MD_input
         self.t = self.trajectory.times - self.trajectory.times[0]
@@ -83,10 +127,7 @@ class AbstractSQw(Observable):
         self.t_res = params.get('t_resolution')
         self._set_weights()
 
-        try:
-            self.Q_values = np.array(params.get('Q_values'))
-        except KeyError:
-            self.Q_values = self.independent_variables['Q']
+        self._independent_variables = {'Q':np.array(params.get('Q_values'))}
 
         self.isotropic = params.get('isotropic', True)
         if not self.isotropic:
@@ -97,14 +138,12 @@ class AbstractSQw(Observable):
         self.FQt = self.calculate_FQt()
 
         dt = self.t[1] - self.t[0]
-        self.w = np.pi * np.arange(len(self.t)) / (len(self.t) * dt)
-        self.E = h_bar * self.w
-        self.SQw = self._calculate_SQw()
-        self.SQw_err = np.zeros
 
-        self._independent_variables = {'Q':self.Q_values, 'w':self.w}
-        self._dependent_variables = {'SQw':self.SQw}
-        self._errors = {'SQw':self.SQw_err}
+        self._independent_variables['E'] = h_bar * np.pi \
+                                           * np.arange(len(self.t)) \
+                                           / (len(self.t) * dt)
+        self._dependent_variables = {'SQw':self._calculate_SQw}
+        self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
     @abstractmethod
     def _set_weights(self):
@@ -148,7 +187,7 @@ class AbstractSQw(Observable):
             direction = self.direction
 
         return np.array([value * direction
-            for value in self.Q_values])
+            for value in self.Q])
 
     def _rho(self, r, Q_vector):
 
