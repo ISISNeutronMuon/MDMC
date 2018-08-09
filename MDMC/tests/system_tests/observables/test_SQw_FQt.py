@@ -32,6 +32,13 @@ T_RESOLUTION = 30.999425
 ATOL = 0.015
 RTOL = 0.050
 
+# Constants for correct normalisation relative to nMOLDYN FQt and SQw
+N_H = 4096
+N_O = 2048
+N_TOTAL = N_H + N_O
+N_H_O = np.sqrt(N_H * N_O)
+B_FACTOR = (ap.B_INCOH['H']**2 * N_H + ap.B_INCOH['O']**2 * N_O) / N_TOTAL
+
 @pytest.fixture(scope="module")
 def incoh_file():
     return Dataset(data.OBS_DATA['SQw_incoh'],'r')
