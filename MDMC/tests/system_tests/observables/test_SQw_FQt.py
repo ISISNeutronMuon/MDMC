@@ -68,8 +68,23 @@ def SQw_incoh_ref(incoh_file):
     return np.array(incoh_file.variables['Sqw-total'][:])
 
 @pytest.fixture(scope="module")
-def FQt_coh_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-total'][:])
+def FQt_coh_HH_ref(coh_file):
+    return np.array(coh_file.variables['Fqt-HH'][:])
+
+@pytest.fixture(scope="module")
+def FQt_coh_HO_ref(coh_file):
+    return np.array(coh_file.variables['Fqt-HO'][:])
+
+@pytest.fixture(scope="module")
+def FQt_coh_OO_ref(coh_file):
+    return np.array(coh_file.variables['Fqt-OO'][:])
+
+@pytest.fixture(scope="module")
+def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
+    FQt_coh_ref = (FQt_coh_HH_ref * ap.B_COH['H']**2 * N_H
+                   + FQt_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
+                   + FQt_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
+    return FQt_coh_ref
 
 @pytest.fixture(scope="module")
 def SQw_coh_ref(coh_file):
@@ -176,16 +191,11 @@ def test_FQt_incoh(FQt_incoh_ref, SQw_incoh_obs):
     against nMOLDYN
 
     nMOLDYN normalises all FQt to 1, rather than the incoherent scattering cross
-    section, so this factor is added.
+    section, so this factor is included.
     """
 
-    n_H = 4096
-    n_O = 2048
-    n_total = n_H + n_O
-    b_factor = (ap.B_INCOH['H']**2 * n_H + ap.B_INCOH['O']**2 * n_O) / n_total
-
     assert np.all(np.shape(SQw_incoh_obs.FQt) == np.shape(FQt_incoh_ref))
-    assert_allclose(SQw_incoh_obs.FQt / b_factor, FQt_incoh_ref, atol=ATOL)
+    assert_allclose(SQw_incoh_obs.FQt / B_FACTOR, FQt_incoh_ref, atol=ATOL)
 
 
 def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
@@ -217,10 +227,13 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
     """
     Validate the calculation of the dynamic incoherent structure factor against
     nMOLDYN
+
+    nMOLDYN normalises all FQt to 1, rather than the incoherent scattering cross
+    section, so this factor is included.
     """
 
     assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
-    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_ref, rtol=RTOL)
+    assert_allclose(SQw_incoh_obs.SQw / B_FACTOR, SQw_incoh_ref, rtol=RTOL)
 
 
 def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
