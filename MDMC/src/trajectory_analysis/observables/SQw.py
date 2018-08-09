@@ -288,6 +288,3 @@ class SQw(AbstractSQw):
 
         raise NotImplementedError
 
-    def _calculate_rho(self, Q_vector):
-
-        raise NotImplementedError
