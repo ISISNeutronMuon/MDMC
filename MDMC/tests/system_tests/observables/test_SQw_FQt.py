@@ -17,6 +17,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
+import MDMC.src.common.atom_properties as ap
 import MDMC.src.trajectory_analysis.observables.obs_factory as of
 
 from MDMC.tests.test_data import data
@@ -166,10 +167,18 @@ def test_FQt_incoh(FQt_incoh_ref, SQw_incoh_obs):
     """
     Validate the calculation of the intermediate incoherent structure factor
     against nMOLDYN
+
+    nMOLDYN normalises all FQt to 1, rather than the incoherent scattering cross
+    section, so this factor is added.
     """
 
+    n_H = 4096
+    n_O = 2048
+    n_total = n_H + n_O
+    b_factor = (ap.B_INCOH['H']**2 * n_H + ap.B_INCOH['O']**2 * n_O) / n_total
+
     assert np.all(np.shape(SQw_incoh_obs.FQt) == np.shape(FQt_incoh_ref))
-    assert_allclose(SQw_incoh_obs.FQt, FQt_incoh_ref, atol=ATOL)
+    assert_allclose(SQw_incoh_obs.FQt / b_factor, FQt_incoh_ref, atol=ATOL)
 
 
 def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
