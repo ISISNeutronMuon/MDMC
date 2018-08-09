@@ -51,11 +51,11 @@ class Configuration(object):
     def create_config_array(self, *structural_units):
 
         return np.array([(atom, atom.position, atom.velocity)
-            for unit in structural_units
-            for atom in unit.atom_list],
-            dtype=[('atom','object'),
-            ('position','object'),
-            ('velocity','object')])
+                         for unit in structural_units
+                         for atom in unit.atom_list],
+                         dtype=[('atom','object'),
+                         ('position','object'),
+                         ('velocity','object')])
 
     def add_structural_units(self, *structural_units):
 
