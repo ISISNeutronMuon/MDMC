@@ -146,7 +146,7 @@ def test_Q(Q_ref, SQw_obs):
     by the range routine used in nMOLDYN
     """
 
-    assert_allclose(SQw_obs.Q_values, Q_ref, atol=1e-07)
+    assert_allclose(SQw_obs.Q, Q_ref, atol=1e-07)
 
 
 def test_time(time_ref, SQw_obs):
