@@ -26,16 +26,13 @@ class SQwIncoherent(AbstractSQw):
     def _calculate_FQt_single_Q(self, Q_vector):
 
         n_atoms = len(self.trajectory.atoms)
+        rho = self._calculate_rho(Q_vector)
 
-        # Iterate over all atoms and over all trajectories to get atom positions
+        # Iterate over rho and autocorrelate for each atom
         FQt_single_Q = np.zeros(len(self.trajectory.times))
         for i in np.arange(n_atoms):
-            atom_positions = [conf.atom_positions[i] for conf
-                              in self.trajectory.configurations]
-
-
-            rho = self._calculate_rho(atom_positions, Q_vector)
-            FQt_single_Q_atom = correlation(rho, normalise=True)
+            rho_atom = [rho_t[i] for rho_t in rho]
+            FQt_single_Q_atom = correlation(rho_atom, normalise=True)
             FQt_single_Q += FQt_single_Q_atom * self.weights[i]
 
         # Normalise to the number of orthogonal vectors
@@ -45,21 +42,3 @@ class SQwIncoherent(AbstractSQw):
             norm = 1.
 
         return FQt_single_Q / (n_atoms * norm)
-
-    def _calculate_rho(self, positions, Q_vector):
-
-        """
-        Calculates time dependent number density in reciprocal space for all Q
-        vectors
-
-        As rho is the sum of the contributions for all of the specified Q
-        vectors, these Q vectors should have the same Q value. rho is calculated
-        for only a single atom.
-
-        Arguments:
-        Q_vector: Either a single Q vector or three orthogonal Q vectors
-        """
-
-        rho = [self._rho(r, Q_vector) for r in positions]
-
-        return np.array(rho)

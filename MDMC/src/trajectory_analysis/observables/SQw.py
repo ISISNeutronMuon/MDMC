@@ -178,6 +178,28 @@ class AbstractSQw(Observable):
 
         pass
 
+    def _calculate_rho(self, Q_vector):
+
+        """
+        Calculates time dependent number density in reciprocal space for all Q
+        vectors
+
+        As rho is the sum of the contributions for all of the specified Q
+        vectors, these Q vectors should have the same Q value. Includes
+        contributions from all atoms in the trajectory.
+
+        Arguments:
+        Q_vector: Either a single Q vector or three orthogonal Q vectors
+        """
+
+        rho_all_atoms = [np.apply_along_axis(self._rho,
+                                             1,
+                                             conf.positions,
+                                             Q_vector)
+                         for conf in self.trajectory]
+
+        return np.array(rho_all_atoms)
+
     def _calculate_Q_vectors(self):
 
         if self.isotropic:
