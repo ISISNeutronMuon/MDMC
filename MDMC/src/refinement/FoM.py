@@ -15,7 +15,7 @@ class FigureOfMeritCalculator:
 
     __metaclass__ = ABCMeta
 
-    def calculate_all_FoM(self, data_pairs):
+    def calculate_all_FoM(self, obs_pair):
 
         """
         Accepts a list of dictionaries of data. Each
@@ -23,15 +23,14 @@ class FigureOfMeritCalculator:
         weight.
         """
 
-        self.check_data_properties(data_pairs)
         FoMs = []
-        for data_pair in data_pairs:
-            FoMs.append(self.calculate_FoM(data_pair))
+        for obs_pair in obs_pairs:
+            FoMs.append(self.calculate_FoM(obs_pair))
 
         return sum(FoMs)
 
     @abstractmethod
-    def calculate_FoM(self, data_pair):
+    def calculate_FoM(self, obs_pair):
 
         """
         Performs the FoM calculation specific to each FoM
