@@ -37,8 +37,7 @@ class FigureOfMeritCalculator:
 
         raise NotImplementedError
 
-    @abstractmethod
-    def check_data_properties(self, data_pairs):
+
 class StandardFoMCalculator(FigureOfMeritCalculator):
 
     """
@@ -52,30 +51,15 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                       * obs_pair.weight / obs_pair.calculate_errors())
 
         """
-        Checks for required properties of all datasets
 
-        This includes:
-        - At least two datasets exist
-        - Exactly one dataset in each pair is an experimental dataset
-        - Identical dimensions for each pair
         """
 
         raise NotImplementedError
 
 
-class StandardFoMCalculator(FigureOfMeritCalculator):
 
-    """
-    Calculates the error normalised square difference, with an optional
-    weighting
-    """
 
-    def calculate_FoM(self, data_pair):
 
-        return np.sum((data_pair['exp_data'] - data_pair['MD_data']) ^ 2 \
-            * data_pair.get('weight', 1) / data_pair['err_data'])
 
-    # TODO: Implement
-    def check_data_properties(self):
 
         raise NotImplementedError
