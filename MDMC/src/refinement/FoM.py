@@ -15,12 +15,11 @@ class FigureOfMeritCalculator:
 
     __metaclass__ = ABCMeta
 
-    def calculate_all_FoM(self, obs_pair):
+    def calculate_all_FoM(self, obs_pairs):
 
         """
-        Accepts a list of dictionaries of data. Each
-        dictionary contains exp_data, MD_data, exp_err, and optionally contains
-        weight.
+        Arguments:
+        obs_pair - an ObservablePair
         """
 
         FoMs = []
@@ -40,6 +39,17 @@ class FigureOfMeritCalculator:
 
     @abstractmethod
     def check_data_properties(self, data_pairs):
+class StandardFoMCalculator(FigureOfMeritCalculator):
+
+    """
+    Calculates the error normalised square difference, with an optional
+    weighting
+    """
+
+    def calculate_FoM(self, obs_pair):
+
+        return np.sum(obs_pair.calculate_diffence() ** 2
+                      * obs_pair.weight / obs_pair.calculate_errors())
 
         """
         Checks for required properties of all datasets
