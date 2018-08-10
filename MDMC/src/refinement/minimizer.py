@@ -17,7 +17,7 @@ class Minimizer:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, MC_norm, config_reset):
+    def __init__(self, MC_norm, config_reset=False):
 
         """
         Arguments:
@@ -37,6 +37,10 @@ class Minimizer:
 
     @abstractmethod
     def step(self):
+
+        """
+        Increments the minimization by a step
+        """
 
         raise NotImplementedError
 
@@ -97,7 +101,7 @@ class Minimizer:
 class MMC(Minimizer):
 
     """
-    Minimizer employing the Metropolis algorithm
+    Minimizer employing the Metropolis-Hastings algorithm
     """
 
     def step(self, FoM):
