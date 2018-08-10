@@ -2,7 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-15 14:15:58"""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
@@ -15,18 +15,16 @@ class FigureOfMeritCalculator:
 
     __metaclass__ = ABCMeta
 
-    def calculate_all_FoM(self, obs_pairs):
+    def __init__(self, obs_pairs):
 
         """
         Arguments:
-        obs_pair - an ObservablePair
+        obs_pairs - One or more ObservablePairs
         """
 
-        FoMs = []
-        for obs_pair in obs_pairs:
-            FoMs.append(self.calculate_FoM(obs_pair))
-
-        return sum(FoMs)
+        self.obs_pairs = list(obs_pairs)
+        self.value = np.sum([self.calculate_FoM(obs_pair)
+                             for obs_pair in self.obs_pairs])
 
     @abstractmethod
     def calculate_FoM(self, obs_pair):
