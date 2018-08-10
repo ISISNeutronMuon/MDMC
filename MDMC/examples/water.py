@@ -30,7 +30,9 @@ md_engine = sim.NVESimulation(universe, engine="mmtk", time_step = 1, temperatur
     integrator = 'velocity_verlet', lj_options = 1.2, es_options = {'method':'ewald'})
 
 # Setup and run refinement
-exp_data = {'file_name':data.LAMP_SQW_FILE, 'type':'SQw', 'reader':'LAMPSQw', 'weight':1}
-fit_params = None
-control = MDMCControl(n_steps=100, MD_engine=md_engine, exp_datasets=exp_data,
+# exp_datasets is a list of dictionaries with one dictionary per experimental dataset
+exp_datasets = [{'file_name':data.LAMP_SQW_FILE, 'type':'SQw', 'reader':'LAMPSQw', 'weight':1}]
+# Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
+fit_params = universe.parameters
+control = MDMCControl(n_steps=100, MD_engine=md_engine, exp_datasets=exp_datasets,
     fit_params=fit_params, minimizer_type = "MMC")
