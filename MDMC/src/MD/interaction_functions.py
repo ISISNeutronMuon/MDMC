@@ -40,9 +40,13 @@ class InteractionFunction:
 
 class Parameter(object):
 
+    """
+    A force field parameter
+    """
+
     def __init__(self, value):
         self.value = value
-        self.constrained = True
+        self.constrained = False
 
 
 class HarmonicPotential(InteractionFunction):
