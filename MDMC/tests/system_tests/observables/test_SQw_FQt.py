@@ -206,7 +206,7 @@ def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
     """
 
     assert np.all(np.shape(SQw_coh_obs.FQt) == np.shape(FQt_coh_ref))
-    assert_allclose(SQw_coh_obs.FQt, FQt_coh_ref, atol=ATOL)
+    assert_allclose_chi2(SQw_coh_obs.FQt, FQt_coh_ref, 1., atol=1)
 
 
 def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
@@ -258,3 +258,23 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
     assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
     SQw_ref = SQw_incoh_ref + SQw_coh_ref
     assert_allclose(SQw_obs.SQw, SQw_ref, rtol=RTOL)
+
+
+def assert_allclose_chi2(actual, desired, chi2, rtol=1e-07, atol=0):
+
+    """
+    Arguments:
+    actual - an array to be tested
+    desired - a reference array of the same dimensions as actual
+    chi2 - a float specifying the maximum chi squared
+    rtol - a float specifying the relative tolerance
+    atol - a float specifying the absolute tolerance
+
+    Raises:
+    AssertionError if two objects do not have chi squared less than desired
+    maximum and are not equal within desired tolerance
+    """
+
+    test_chi2 = np.sum((actual - desired) ** 2 / np.absolute(desired))
+    assert test_chi2 < chi2, "Chi squared is greater than desired maximum"
+    assert_allclose(actual, desired, rtol, atol)
