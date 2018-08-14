@@ -26,16 +26,16 @@ class ForceField:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self,interactions):
+    def __init__(self, interactions):
         for interaction in interactions:
             self.parameterize_interaction(interaction)
 
-    def parameterize_interaction(self,interaction):
+    def parameterize_interaction(self, interaction):
         int_type = type(interaction)
         elements = interaction._element_tuple()
         try:
             interaction.function = self.interaction_dictionary[
-                (int_type,elements)]
+                (int_type, elements)]
         except KeyError:
             raise KeyError("This force field does not have defined interactions"
                 " for these element types")
@@ -67,14 +67,14 @@ class SPCE(ForceField):
     a_HOH = 109.47    # deg
     f_HOH = 383.      # kJ mol^-1 rad^2
 
-    interaction_dictionary = {(su.Coulombic,('O',)):ifu.Coulomb(q_O),
-        (su.Coulombic,('H',)):ifu.Coulomb(q_H),
-        (su.Dispersion,('O',)):ifu.LennardJones(sigma, eta),
-        (su.Bond,('H','O')):ifu.HarmonicPotential(r_OH,f_OH),
-        (su.BondAngle,('H','O','H')):ifu.HarmonicPotential(a_HOH,f_HOH)}
+    interaction_dictionary = {(su.Coulombic, ('O',)):ifu.Coulomb(q_O),
+        (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
+        (su.Dispersion, ('O',)):ifu.LennardJones(sigma, eta),
+        (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
+        (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
 
     def __init__(self,interactions):
-        super(SPCE,self).__init__(interactions)
+        super(SPCE, self).__init__(interactions)
 
 
 class SPC(ForceField):
@@ -102,8 +102,8 @@ class SPC(ForceField):
     def __init__(self, interactions):
         super(SPC, self).__init__(interactions)
 
-    interaction_dictionary = {(su.Coulombic,('O',)):ifu.Coulomb(q_O),
-        (su.Coulombic,('H',)):ifu.Coulomb(q_H),
-        (su.Dispersion,('O',)):ifu.LennardJones(sigma,eta),
-        (su.Bond,('H','O')):ifu.HarmonicPotential(r_OH,f_OH),
-        (su.BondAngle,('H','O','H')):ifu.HarmonicPotential(a_HOH,f_HOH)}
+    interaction_dictionary = {(su.Coulombic, ('O',)):ifu.Coulomb(q_O),
+        (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
+        (su.Dispersion, ('O',)):ifu.LennardJones(sigma, eta),
+        (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
+        (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
