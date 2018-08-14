@@ -118,7 +118,7 @@ class Parameter(object):
         for p in prop_str:
             rpr[p] = getattr(self, p)
 
-        return '<Parameter %s>' % rpr
+        return '<{name} {rpr}>'.format(name=self.__class__.__name__, rpr=rpr)
 
     def __getitem__(self, key):
 
