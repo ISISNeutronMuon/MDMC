@@ -42,7 +42,14 @@ class InteractionFunction:
 class Parameter(object):
 
     """
-    A force field parameter
+    A force field parameter which can be fixed or constrained within limits
+
+    The value of a parameter cannot be set if fixed=True.  The constraints
+    specif
+
+    As __repr__ returns a string of a dictionary of the public attributes (so
+    that these are easy to view), for consistency this class implements some
+    dictionary methods.
     """
 
     def __init__(self, value, fixed=False, constraints=None):
