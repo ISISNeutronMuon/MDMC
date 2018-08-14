@@ -8,8 +8,9 @@ definitions.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 from collections import MutableMapping
+from inspect import getmembers
 
 
 class InteractionFunction:
@@ -92,6 +93,34 @@ class Parameter(object):
         """
 
         self._constraints = constraints
+
+    def __repr__(self):
+
+        """
+        Returns:
+        The class name and a string of a dictionary containing public attributes
+        including properties
+        """
+
+        # Determine which attributes are in the form of properties, and include
+        # add these to public attributes in __dict__
+        properties = getmembers(self.__class__,
+                                lambda o: isinstance(o, property))
+        prop_str = [str(p[0]) for p in properties]
+        rpr = {k:v for k,v in self.__dict__.items() if '_' not in k[0]}
+        for p in prop_str:
+            rpr[p] = getattr(self, p)
+
+        return '<Parameter %s>' % rpr
+
+    def __getitem__(self, key):
+
+        return self.__getattribute__(key)
+
+    def __setitem__(self, key, value):
+
+        self.__setattr__(key, value)
+
 
 class ParameterDict(MutableMapping):
 
