@@ -9,6 +9,7 @@ definitions.
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
+from collections import MutableMapping
 
 
 class InteractionFunction:
@@ -20,22 +21,21 @@ class InteractionFunction:
 
     __metaclass__ = ABCMeta
 
+    @abstractmethod
+    def __init__(self):
+
+        raise NotImplementedError
+
 
     @property
     def params(self):
 
         """
         Returns:
-        The params key and the numerical value associated with the key, which is
-        contained within a Parameter object.
+        The params key and the attributes of the Parameter associated with it.
         """
 
-        return {kv[0]: kv[1].value for kv in self._params.items()}
-
-    # TODO: If functional forms are implemented then function should be abstract
-    def function(self):
-
-        pass
+        return self._params
 
 
 class Parameter(object):
@@ -47,6 +47,53 @@ class Parameter(object):
     def __init__(self, value):
         self.value = value
         self.constrained = False
+class ParameterDict(MutableMapping):
+
+    """
+    A dictionary for storing the Parameters of an InteractionFunction
+    """
+
+    def __init__(self, *args, **kwargs):
+
+        self.__dict__.update(*args, **kwargs)
+
+    def __setitem__(self, key, value):
+
+        """
+        If value is a dictionary then attributes in Parameter using this
+        dictionary. If value is a float (or can be cast to a float),
+        Parameter.value is set to value.
+        """
+
+        if isinstance(value, dict):
+            for attr, val in value.items():
+                if hasattr(self.__dict__[key], attr):
+                    setattr(self.__dict__[key], attr, val)
+                else:
+                    raise AttributeError(
+                        "Parameter does not have that attribute")
+        else:
+            self.__dict__[key].value = float(value)
+
+    def __getitem__(self, key):
+
+        return self.__dict__[key]
+
+    def __delitem__(self, key):
+
+        del self.__dict__[key]
+
+    def __iter__(self):
+
+        return iter(self.__dict__)
+
+    def __len__(self):
+
+        return len(self.__dict__)
+
+    def __repr__(self):
+
+        return str(self.__dict__)
 
 
 class HarmonicPotential(InteractionFunction):
@@ -57,8 +104,10 @@ class HarmonicPotential(InteractionFunction):
 
     def __init__(self, equilibrium_state, potential_strength):
 
-        self._params = {'equilibrium_state':Parameter(equilibrium_state),
-                    'potential_strength':Parameter(potential_strength)}
+        self._params = ParameterDict({'equilibrium_state':
+                                      Parameter(equilibrium_state),
+                                      'potential_strength':
+                                      Parameter(potential_strength)})
 
 
 class LennardJones(InteractionFunction):
@@ -68,7 +117,8 @@ class LennardJones(InteractionFunction):
     """
 
     def __init__(self, sigma, eta):
-        self._params = {'sigma':Parameter(sigma),'eta':Parameter(eta)}
+        self._params = ParameterDict({'sigma':Parameter(sigma),
+                                      'eta':Parameter(eta)})
 
 class Coulomb(InteractionFunction):
 
@@ -77,4 +127,4 @@ class Coulomb(InteractionFunction):
     """
 
     def __init__(self, charge):
-        self._params = {'charge':Parameter(charge)}
+        self._params = ParameterDict({'charge':Parameter(charge)})
