@@ -58,6 +58,41 @@ class Parameter(object):
         self.value = value
         self.fixed = fixed
 
+    @property
+    def value(self):
+
+        return self._value
+
+    @value.setter
+    def value(self, value):
+
+        """
+        Checks if Parameter is fixed or constrained
+        """
+
+        if hasattr(self, 'fixed') and self.fixed:
+            print "Unable to change fixed parameter"
+        else:
+            if self.constraints is not None:
+                raise NotImplementedError
+            else:
+                self._value = value
+
+    @property
+    def constraints(self):
+
+        return self._constraints
+
+    @constraints.setter
+    def constraints(self, constraints):
+
+        """
+        Checks if constraints are a 2 element tuple of floats, that lower is
+        less than or equal to upper, and that self.value is within them
+        """
+
+        self._constraints = constraints
+
 class ParameterDict(MutableMapping):
 
     """
