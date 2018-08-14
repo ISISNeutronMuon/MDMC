@@ -44,9 +44,20 @@ class Parameter(object):
     A force field parameter
     """
 
-    def __init__(self, value):
+    def __init__(self, value, fixed=False, constraints=None):
+
+        """
+        Attributes:
+        value - float specifying the value of the parameter
+        fixed - boolean specifying whether or not the value can be changed
+        constraints - 2 element tuple (lower, upper) specifying the closed range
+        in which value can be set
+        """
+
+        self.constraints = constraints
         self.value = value
-        self.constrained = False
+        self.fixed = fixed
+
 class ParameterDict(MutableMapping):
 
     """
