@@ -10,7 +10,6 @@ import numpy.testing as npt
 import pytest
 
 import MDMC.src.MD.force_fields as ff
-import MDMC.src.MD.interaction_functions as ifu
 import MDMC.src.MD.simulation as sim
 import MDMC.src.MD.structural_units as su
 
@@ -29,15 +28,18 @@ WATER_NUM_DENSITY = 0.0333679
 
 @pytest.fixture
 def universe():
+
     return sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
 
 @pytest.fixture
 def atom():
+
     return su.Atom('H', mass=H_MASS)
 
 # TODO: Combine with water box defined in test_structural_units
 @pytest.fixture
 def water_molecule(atom):
+
     H1 = atom
     H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
     O = su.Atom('O', position=O_POSITION, mass=O_MASS)
@@ -49,6 +51,7 @@ def water_molecule(atom):
 
 @pytest.fixture
 def water_SPCE_universe(water_molecule, universe):
+
     water_universe = deepcopy(universe)
     water_universe.fill(water_molecule, force_field=ff.SPCE,
                         num_density=WATER_NUM_DENSITY)
@@ -56,10 +59,12 @@ def water_SPCE_universe(water_molecule, universe):
 
 
 def test_create_universe(universe):
+
     assert UNIVERSE_SHAPE == universe.shape
     npt.assert_array_equal(UNIVERSE_DIMS, universe.dims)
 
 def test_create_atom(atom):
+
     npt.assert_array_equal((0., 0., 0.), atom.position)
     npt.assert_array_equal((0., 0., 0.), atom.velocity)
     assert atom.element == 'H'
@@ -67,14 +72,17 @@ def test_create_atom(atom):
     assert su.Coulombic == type(atom.interactions.pop())
 
 def test_atom_list(atom):
+
     assert atom in atom.atom_list
 
 def test_add_atom(universe, atom):
+
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
     assert su.Coulombic == type(universe.interactions.pop())
 
 def test_add_molecule(universe, water_molecule):
+
     universe.add_structural_unit(water_molecule)
     assert water_molecule.position.all() == np.array(WATER_POSITION).all()
     assert sorted(water_molecule.atom_list) == sorted(universe.atom_list)
@@ -101,6 +109,7 @@ def test_add_molecule(universe, water_molecule):
                    ['H']]) == sorted(interaction_elements)
 
 def test_spce_water_molecule(universe, water_molecule):
+
     universe.add_structural_unit(water_molecule)
     universe.add_force_field(ff.SPCE)
     functions = []
@@ -126,6 +135,7 @@ def test_spce_water_molecule(universe, water_molecule):
         SPCEparams.remove(param)
 
 def test_spce_water_box(water_SPCE_universe):
+
     n_molecules_xyz = np.array(UNIVERSE_DIMS) * WATER_NUM_DENSITY**(1./3.)
     n_molecules = np.prod(n_molecules_xyz.astype(int))
 
