@@ -13,6 +13,7 @@ from collections import MutableMapping
 from inspect import getargspec, getmembers
 import weakref
 
+import numpy as np
 
 class Parameter(object):
 
@@ -134,18 +135,22 @@ class InteractionFunction(object):
 
     def __init__(self, names, values):
 
-        self._params = [Parameter(values[name], name) for name in names]
+        self.params = [Parameter(values[name], name) for name in names]
 
     @property
     def params(self):
 
         """
         Returns:
-        Dictionary of params keys and the attributes of the Parameter associated
-        with them.
+        Array of parameters
         """
 
         return self._params
+
+    @params.setter
+    def params(self, value):
+
+        self._params = np.array(value)
 
     @property
     def name(self):
