@@ -207,7 +207,7 @@ class InteractionFunction(object):
         Sets the parent interaction for all parameters
         """
 
-        for param in self.params.values():
+        for param in self.params:
 
             param.interactions = interaction
 

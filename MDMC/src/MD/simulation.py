@@ -58,7 +58,7 @@ class Universe(object):
     def parameters(self):
 
         return set([param for interaction in self.interactions
-                    for param in interaction.params.values()])
+                    for param in interaction.params])
 
     @property
     def volume(self):
