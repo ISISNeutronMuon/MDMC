@@ -126,55 +126,6 @@ class Parameter(object):
         self.__setattr__(key, value)
 
 
-class ParameterDict(MutableMapping):
-
-    """
-    A dictionary for storing the Parameters of an InteractionFunction
-    """
-
-    def __init__(self, *args, **kwargs):
-
-        self.__dict__.update(*args, **kwargs)
-
-    def __setitem__(self, key, value):
-
-        """
-        If value is a dictionary then attributes in Parameter using this
-        dictionary. If value is a float (or can be cast to a float),
-        Parameter.value is set to value.
-        """
-
-        if isinstance(value, dict):
-            for attr, val in value.items():
-                if hasattr(self.__dict__[key], attr):
-                    setattr(self.__dict__[key], attr, val)
-                else:
-                    raise AttributeError(
-                        "Parameter does not have that attribute")
-        else:
-            self.__dict__[key].value = float(value)
-
-    def __getitem__(self, key):
-
-        return self.__dict__[key]
-
-    def __delitem__(self, key):
-
-        del self.__dict__[key]
-
-    def __iter__(self):
-
-        return iter(self.__dict__)
-
-    def __len__(self):
-
-        return len(self.__dict__)
-
-    def __repr__(self):
-
-        return str(self.__dict__)
-
-
 class InteractionFunction(object):
 
     """
