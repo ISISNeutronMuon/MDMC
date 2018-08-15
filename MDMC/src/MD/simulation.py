@@ -55,6 +55,12 @@ class Universe(object):
         return self._interactions
 
     @property
+    def parameters(self):
+
+        return set([param for interaction in self.interactions
+                    for param in interaction.params.values()])
+
+    @property
     def volume(self):
 
         return np.prod(self.dims)
