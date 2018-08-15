@@ -404,6 +404,15 @@ class Interaction:
         for structure in structures:
             self._atom_list.extend(structure.atom_list)
 
+    @property
+    def params(self):
+
+        try:
+            return self.function.params
+        except AttributeError:
+            raise AttributeError('Interaction has no params as no force field'
+                                 ' has been defined on it')
+
     def atom_IDs(self):
 
         return [atom.ID for atom in self.atom_list]
