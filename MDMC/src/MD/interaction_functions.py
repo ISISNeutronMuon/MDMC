@@ -10,33 +10,8 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
 from abc import ABCMeta, abstractmethod
 from collections import MutableMapping
-from inspect import getmembers
-
-
-class InteractionFunction:
-
-    """
-    Abstract class defining form of interaction functions, which can be user
-    supplied
-    """
-
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def __init__(self):
-
-        raise NotImplementedError
-
-
-    @property
-    def params(self):
-
-        """
-        Returns:
-        The params key and the attributes of the Parameter associated with it.
-        """
-
-        return self._params
+from inspect import getargspec, getmembers
+import weakref
 
 
 class Parameter(object):
@@ -200,6 +175,43 @@ class ParameterDict(MutableMapping):
         return str(self.__dict__)
 
 
+class InteractionFunction(object):
+
+    """
+    Base class for interaction functions, which can be user supplied
+    """
+
+    def __init__(self, names, values):
+
+        self._params = [Parameter(values[name], name) for name in names]
+
+    @property
+    def params(self):
+
+        """
+        Returns:
+        Dictionary of params keys and the attributes of the Parameter associated
+        with them.
+        """
+
+        return self._params
+
+    @property
+    def name(self):
+
+        return self.__class__.__name__
+
+    def set_params_interactions(self, interaction):
+
+        """
+        Sets the parent interaction for all parameters
+        """
+
+        for param in self.params.values():
+
+            param.interactions = interaction
+
+
 class HarmonicPotential(InteractionFunction):
 
     """
@@ -208,10 +220,9 @@ class HarmonicPotential(InteractionFunction):
 
     def __init__(self, equilibrium_state, potential_strength):
 
-        self._params = ParameterDict({'equilibrium_state':
-                                      Parameter(equilibrium_state),
-                                      'potential_strength':
-                                      Parameter(potential_strength)})
+        # Get the __init__ argument list except the zeroeth index which is self
+        args = getargspec(self.__class__.__init__).args[1:]
+        super(self.__class__, self).__init__(args, locals())
 
 
 class LennardJones(InteractionFunction):
@@ -221,8 +232,9 @@ class LennardJones(InteractionFunction):
     """
 
     def __init__(self, sigma, eta):
-        self._params = ParameterDict({'sigma':Parameter(sigma),
-                                      'eta':Parameter(eta)})
+
+        args = getargspec(self.__class__.__init__).args[1:]
+        super(self.__class__, self).__init__(args, locals())
 
 class Coulomb(InteractionFunction):
 
@@ -231,4 +243,6 @@ class Coulomb(InteractionFunction):
     """
 
     def __init__(self, charge):
-        self._params = ParameterDict({'charge':Parameter(charge)})
+
+        args = getargspec(self.__class__.__init__).args[1:]
+        super(self.__class__, self).__init__(args, locals())
