@@ -119,7 +119,7 @@ class Universe(object):
             else:
                 new_unit = deepcopy(structural_unit)
                 new_unit.position = position + offset
-                self.configuration.add_structural_units(new_unit)
+                self.add_structural_unit(new_unit)
 
     @property
     def atom_list(self):
