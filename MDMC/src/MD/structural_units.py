@@ -392,6 +392,28 @@ class Interaction:
         self._generate_ID()
         self.universe = None
         self._add_interaction_atoms()
+        self.name = self.__class__.__name__
+
+    def __deepcopy__(self, memo):
+
+        """
+        Prevents deepcopy of function (type InteractionFunction) as the function
+        (and associated parameters) are shared for all Interactions which only
+        differ on the specific atoms on which they act (not on the element
+        types).
+        """
+
+        cls = self.__class__
+        interaction = cls.__new__(cls)
+        memo[id(self)] = interaction
+        shallow_copy_attr = ['function']
+        for k, v in self.__dict__.items():
+            if k in shallow_copy_attr:
+                setattr(interaction, k, getattr(self, k))
+            else:
+                setattr(interaction, k, deepcopy(v, memo))
+        interaction.function.set_params_interactions(interaction)
+        return interaction
 
     @property
     def atom_list(self):
