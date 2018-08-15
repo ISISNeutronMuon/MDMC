@@ -52,7 +52,7 @@ class Parameter(object):
     dictionary methods.
     """
 
-    def __init__(self, value, fixed=False, constraints=None):
+    def __init__(self, value, name, fixed=False, constraints=None):
 
         """
         Attributes:
@@ -62,9 +62,11 @@ class Parameter(object):
         in which value can be set
         """
 
+        self.name = name
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
+        self._interactions = []
 
     @property
     def value(self):
@@ -100,6 +102,26 @@ class Parameter(object):
         """
 
         self._constraints = constraints
+
+    @property
+    def interactions(self):
+
+        """
+        Returns:
+        A list of all parent Interaction objects for this Parameter object
+        """
+
+        return [interaction() for interaction in self._interactions]
+
+    @interactions.setter
+    def interactions(self, interaction):
+
+        """
+        Appends to a list of parent Interaction objects for this Parameter
+        object
+        """
+
+        self._interactions.append(weakref.ref(interaction))
 
     def __repr__(self):
 
