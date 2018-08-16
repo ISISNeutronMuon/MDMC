@@ -402,6 +402,7 @@ class Interaction:
 
         self._atom_list = [atom] + list(atoms)
         self.function = None
+        self.function_name = None
         self._generate_ID()
         self.universe = None
         self._add_interaction_atoms()
@@ -419,7 +420,7 @@ class Interaction:
         cls = self.__class__
         interaction = cls.__new__(cls)
         memo[id(self)] = interaction
-        shallow_copy_attr = ['function']
+        shallow_copy_attr = ['function','function_name']
         for k, v in self.__dict__.items():
             if k in shallow_copy_attr:
                 setattr(interaction, k, getattr(self, k))
