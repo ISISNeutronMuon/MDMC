@@ -42,6 +42,7 @@ class StructuralUnit:
         self.position = position
         self.velocity = velocity
         self.name = name
+        self.parent = self
 
     # TODO: Implement __copy__
 
@@ -173,7 +174,8 @@ class StructuralUnit:
         Highest level structural unit of which it is a member
         """
 
-        if issubclass(type(self.parent),StructuralUnit):
+        if issubclass(type(self.parent),StructuralUnit) \
+        and self.parent is not self:
             return self.parent.top_level_structure()
         else:
             return self
@@ -308,6 +310,8 @@ class Molecule(StructuralUnit):
     def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None, **kwargs):
 
         self._structure_list = kwargs['atoms']
+        for structure in self._structure_list:
+            structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
         super(Molecule,self).__init__(position, velocity, name)
         self.interactions = kwargs['interactions']
