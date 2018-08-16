@@ -102,6 +102,11 @@ class StructuralUnit:
     @property
     def universe(self):
 
+        """
+        Returns:
+        A weakref to universe or None
+        """
+
         try:
             return self._universe()
         except TypeError:
@@ -109,6 +114,10 @@ class StructuralUnit:
 
     @universe.setter
     def universe(self, universe):
+
+        """
+        Sets self.universe to a weakref to universe or None
+        """
 
         try:
             self._universe = weakref.ref(universe)
