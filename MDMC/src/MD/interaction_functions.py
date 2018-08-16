@@ -11,6 +11,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 from abc import ABCMeta, abstractmethod
 from collections import MutableMapping
 from inspect import getargspec, getmembers
+import operator
 import weakref
 
 import numpy as np
@@ -213,3 +214,136 @@ class Coulomb(InteractionFunction):
 
         args = getargspec(self.__class__.__init__).args[1:]
         super(self.__class__, self).__init__(args, locals())
+
+def filter_parameters(parameters, predicate):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    predicate - a function that returns a boolean
+
+    Returns:
+    a list of parameters which meet the condition of predicate
+    """
+
+    return filter(predicate, parameters)
+
+
+def filter_parameters_name(parameters, name):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    name - a string specifying the parameter name, for example 'charge' for a
+    Coulomb interaction or 'sigma' for an LJ interaction
+
+    Returns:
+    a list of parameters which meet the condition of parameter.name == name
+    """
+
+    return filter(lambda p: p.name == name, parameters)
+
+
+def filter_parameters_value(parameters, comparison, value):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    comparison - a string representing a comparison operator: '>', '<', '>=',
+    '<=', '==', '!='
+
+    Returns:
+    a list of parameters which meet the condition of
+    parameter.value comparison value e.g. parameter.value > value
+    """
+
+    ops = {'>':operator.gt,
+           '<':operator.lt,
+           '>=':operator.ge,
+           '<=':operator.le,
+           '==':operator.eq,
+           '!=':operator.ne}
+
+    return filter(lambda p: ops[comparison](p.value, value), parameters)
+
+
+def filter_parameters_interaction(parameters, interaction_name):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    interaction_name - a string specifying the interaction name, for example
+    'Bond' for a bonded interaction
+
+    Returns:
+    a list of parameters where the interaction meets the condition of
+    interaction.name == interaction_name
+    """
+
+    return filter(lambda p: p.interactions_name == interaction_name, parameters)
+
+
+def filter_parameters_function(parameters, function_name):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    function_name - a string specifying the interaction function name, for
+    example 'LennardJones' or 'HarmonicPotential'
+
+    Returns:
+    a list of parameters where the interaction function meets the condition of
+    function.name == function_name
+    """
+
+    return filter(lambda p: p.functions_name == function_name, parameters)
+
+
+def filter_parameters_atom_attribute(parameters, attribute, value):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    attribute - a string specifying an attribute of an Atom.  Attributes are
+    restricted to float or strings.
+    value - the desired value of the attribute
+
+    Returns:
+    a list of parameters which relate to any atom where atom.attribute == value
+    """
+
+    return filter(lambda p: value in [getattr(atom, attribute)
+                                      for int in p.interactions
+                                      for atom in int.atom_list], parameters)
+
+
+def filter_parameters_structure(parameters, structure_name):
+
+    """
+    Arguments:
+    parameters - a list of parameters
+    structure_name - a string specifying the name of a structure e.g. 'water'
+    for a water molecule
+
+    Returns:
+    a list of parameters which relate to any structure where
+    structure.name == structure_name
+    """
+
+    def check_structure_name(parameter):
+
+        # Recursively add structure.name to structure_names set until the
+        # structure is the top level structure
+        structure_names = set()
+        def add_name(structure):
+            structure_names.add(structure.name)
+            if structure.top_level_structure() == structure:
+                return
+            add_name(structure.parent)
+
+        for int in parameter.interactions:
+            for atom in int.atom_list:
+                add_name(atom)
+        return structure_name in structure_names
+
+    return filter(check_structure_name, parameters)
