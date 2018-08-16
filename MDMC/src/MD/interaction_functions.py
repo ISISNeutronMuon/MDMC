@@ -42,6 +42,8 @@ class Parameter(object):
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
+        self.interactions_name = None
+        self.functions_name = None
         self._interactions = []
 
     @property
@@ -96,6 +98,15 @@ class Parameter(object):
         Appends to a list of parent Interaction objects for this Parameter
         object
         """
+
+        # Test if interaction is of the same type as any interactions already
+        # stored
+        if self.interactions_name:
+            assert interaction.name == self.interactions_name
+            assert interaction.function_name == self.functions_name
+        else:
+            self.interactions_name = interaction.name
+            self.functions_name = interaction.function_name
 
         self._interactions.append(weakref.ref(interaction))
 
