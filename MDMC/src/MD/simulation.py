@@ -165,16 +165,6 @@ class Universe(object):
 
         return self.configuration.molecule_list
 
-    # TODO: Implement
-    def interaction_filter(self, condition):
-
-        """
-        Generic method for filtering interactions
-        """
-
-        raise NotImplementedError
-
-    # TODO: Add helper methods for common filtering operations
 
 # TODO: Implement
 class EnergyMinimizer(object):
