@@ -28,7 +28,7 @@ UNIVERSE_PBC = {Shape.infinite:MMTK.Universe.InfiniteUniverse,
 UNIVERSE_FF = {SPCE:SPCEFF.SPCEForceField}
 UNIVERSE_INT = {'velocity_verlet':VelocityVerletIntegrator}
 UNIVERSE_MINIM = {'steepest_descent':SteepestDescentMinimizer,
-                    'conjugate_gradient_minimizer':ConjugateGradientMinimizer}
+                  'conjugate_gradient_minimizer':ConjugateGradientMinimizer}
 
 
 class MMTKEngine(MDEngine):
@@ -72,14 +72,15 @@ class MMTKEngine(MDEngine):
 
         self.universe.initializeVelocitiesToTemperature(temperature)
         actions = [self.trajectory_output, TranslationRemover(),
-                    VelocityScaler(temperature, temperature_variation)]
-        self.integrator = UNIVERSE_INT[settings['integrator']](self.universe,
+                   VelocityScaler(temperature, temperature_variation)]
+        self.integrator = UNIVERSE_INT[settings['integrator']](
+            self.universe,
             delta_t=time_step, actions=actions)
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
-                step_size = settings.get('minimizer_step_size',0.05))
-            self.minimizer_steps = settings.get('minimizer_steps',100)
+                step_size=settings.get('minimizer_step_size', 0.05))
+            self.minimizer_steps = settings.get('minimizer_steps', 100)
 
     def run(self, n_steps):
 
@@ -96,7 +97,8 @@ class MMTKEngine(MDEngine):
     # TODO: Consider if a SpooledTemporaryFile would be more appropriate
         trajectory_file = TemporaryFile()
         self.trajectory = MMTK.Trajectory.Trajectory(self.universe,
-            trajectory_file.name, mode = 'w')
+                                                     trajectory_file.name,
+                                                     mode='w')
         self.trajectory_output = MMTK.Trajectory.TrajectoryOutput(
             self.trajectory)
 
@@ -140,12 +142,13 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
             dims = universe.dims
 
         if universe.force_fields is None:
-            super(MMTKCubicUniverse,self).__init__(universe.dims[0])
+            super(MMTKCubicUniverse, self).__init__(universe.dims[0])
         else:
-            super(MMTKCubicUniverse,self).__init__(universe.dims[0],
+            super(MMTKCubicUniverse, self).__init__(
+                universe.dims[0],
                 UNIVERSE_FF[type(universe.force_fields)](
-                settings.get('lj_options',None),
-                settings.get('es_options',None)))
+                    settings.get('lj_options', None),
+                    settings.get('es_options', None)))
         self.assign_lj_parameters()
 
     @property
@@ -158,10 +161,9 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
         self._MDMC_universe = weakref.ref(universe)
 
-    # TODO: Implement
     def update_MDMC_universe(self):
 
-        pass
+        raise NotImplementedError
 
     def assign_lj_parameters(self):
 
@@ -182,13 +184,14 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
 
         parameters = {element:self.get_interaction_parameters(atom,
-            MDMCs.Dispersion) for element, atom in element_dict.items()}
+                                                              MDMCs.Dispersion)
+                      for element, atom in element_dict.items()}
 
-        def lj_parameters(type):
+        def lj_parameters(atom_type):
             try:
-                return parameters[type]
+                return parameters[atom_type]
             except:
-                raise ValueError('Unknown atom type' + type)
+                raise ValueError('Unknown atom type' + atom_type)
 
         return lj_parameters
 
@@ -196,7 +199,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def get_interaction_parameters(self, element, interaction_type):
 
         """
-        Gets the parameters by finding the first interactiomn with the specified
+        Gets the parameters by finding the first interaction with the specified
         interaction type.  If no matching interaction type is found then all
         parameters are set to 0.
 
@@ -215,20 +218,18 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
             if interaction_type == MDMCs.Dispersion:
                 return parameters + (0,)
-            else:
-                return parameters
+            return parameters
         except StopIteration:
             if interaction_type == MDMCs.Dispersion:
                 return (0., 0., 0)
-            else:
-                return (0., 0.)
+            return (0., 0.)
 
 
 class MMTKAtom(MMTK.ChemicalObjects.Atom):
 
     def __init__(self, atom, atom_spec, **properties):
         self._MDMC_obj = weakref.ref(atom)
-        super(MMTKAtom,self).__init__(atom_spec, **properties)
+        super(MMTKAtom, self).__init__(atom_spec, **properties)
 
     @property
     def MDMC_obj(self):
@@ -251,8 +252,9 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 
     def __init__(self, molecule, **properties):
         self._MDMC_obj = weakref.ref(molecule)
-        super(MMTKMolecule,self).__init__(molecule.name,
-            position = Vector(molecule.position), **properties)
+        super(MMTKMolecule, self).__init__(molecule.name,
+                                           position=Vector(molecule.position),
+                                           **properties)
 
     @property
     def MDMC_obj(self):
@@ -295,7 +297,7 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
 
     # List of atom element and masses as ordered in configuration
     atom_list = [(atom.type.symbol, atom.mass()) for atom in
-        MMTK_trajectory.universe.atomList()]
+                 MMTK_trajectory.universe.atomList()]
 
     configurations = []
     if kwargs.get('slice'):
@@ -303,11 +305,13 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
                        kwargs.get('slice').get('stop'),
                        kwargs.get('slice').get('step')):
             configurations.append(convert_configuration(MMTK_trajectory[i],
-                coordinate_transform, atom_list))
+                                                        coordinate_transform,
+                                                        atom_list))
     else:
         for MMTK_frame in MMTK_trajectory:
             configurations.append(convert_configuration(MMTK_frame,
-                coordinate_transform, atom_list))
+                                                        coordinate_transform,
+                                                        atom_list))
 
     return MDMCt.Trajectory(*configurations)
 
@@ -319,7 +323,7 @@ def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
 
     if atom_list is None:
         atom_list = [(atom.type.symbol, atom.mass()) for atom in
-            MMTK_frame.universe.atomList()]
+                     MMTK_frame.universe.atomList()]
 
     atoms = []
     for index in range(len(MMTK_frame['configuration'])):
@@ -327,6 +331,5 @@ def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
         mass = atom_list[index][1]
         position = MMTK_frame['configuration'].__dict__['array'][index] + \
             coordinate_transform
-        atoms.append(MDMCs.Atom(symbol, position = position, mass = mass))
-    return MDMCt.TemporalConfiguration(MMTK_frame['time'],
-        *atoms)
+        atoms.append(MDMCs.Atom(symbol, position=position, mass=mass))
+    return MDMCt.TemporalConfiguration(MMTK_frame['time'], *atoms)
