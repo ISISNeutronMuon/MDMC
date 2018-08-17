@@ -5,9 +5,9 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 import random
-from copy import deepcopy
 
 import numpy as np
+
 
 class Minimizer:
 
@@ -17,21 +17,28 @@ class Minimizer:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, MC_norm, config_reset=False):
+    def __init__(self, MC_norm, params, config_reset=False,
+                 distribution='normal'):
 
         """
         Arguments:
         MC_norm - Normalization parameter for MC which determines the
         accept/reject ratio
+        params - a list of MD parameters which will be fit
         config_reset - Boolean which determines whether or not the MD
         configuration is stored.  If True, the MD configuration will always be
         reset to the configuration for the last accepted parameter set.
         """
 
+
+        # First MC step always changes state
         self.FoM_old = float('inf')
         self.FoM = None
-        self.fit_params_old = None
-        self.fit_params = None
+
+        params = np.array(list(params))
+        self._check_parameters(params)
+        self.params_old_values = np.array([param.value for param in params])
+        self.params = self.change_parameters(params)
         self.MC_norm = MC_norm
         self.config_reset = config_reset
 
@@ -45,16 +52,6 @@ class Minimizer:
         raise NotImplementedError
 
     @property
-    def fit_params_old(self):
-
-        return self._fit_params_old
-
-    @fit_params_old.setter
-    def fit_params_old(self, params):
-
-        self._fit_params_old = deepcopy(params)
-
-    @abstractproperty
     def max_param_change(self):
 
         raise NotImplementedError
@@ -96,6 +93,19 @@ class Minimizer:
     def has_converged(self):
 
         raise NotImplementedError
+
+    def _check_parameters(self, params):
+
+        """
+        Checks the validity of the parameters on input
+
+        Raises:
+        ValueError when any parameter has fixed = True
+        """
+
+        for param in params:
+            if param.fixed == True:
+                raise ValueError('Parameter {0} is fixed'.format(param.name)) 
 
 
 class MMC(Minimizer):
