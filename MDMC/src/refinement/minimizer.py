@@ -60,7 +60,11 @@ class Minimizer:
     @property
     def max_param_change(self):
 
-        raise NotImplementedError
+        """
+        Maximum factor by which a parameter can change
+        """
+
+        return 0.01
 
     @abstractmethod
     def change_state(self):
