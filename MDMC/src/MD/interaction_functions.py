@@ -169,6 +169,16 @@ class InteractionFunction(object):
         self._params = np.array(value)
 
     @property
+    def params_values(self):
+
+        """
+        Returns:
+        Array of values for all parameters
+        """
+
+        return np.array([p.value for p in self.params])
+
+    @property
     def name(self):
 
         return self.__class__.__name__
