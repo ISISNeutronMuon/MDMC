@@ -3,7 +3,8 @@ parameters
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+
+from abc import ABCMeta, abstractmethod
 
 import numpy as np
 
@@ -72,24 +73,17 @@ class Minimizer:
         raise NotImplementedError
 
     @abstractmethod
-    def _change_parameter(self, parameter):
+    def change_parameters(self, params):
 
         """
-        Selects a new value for the parameter from a distribution centered
+        Selects a new value for each parameter from a distribution centered
         around the current value
+
+        Arguments:
+        params - References to all potential parameters that will be refined
         """
 
         raise NotImplementedError
-
-    def change_parameters(self, fit_params):
-
-        """
-        Arguments:
-        fit_params - References to all potential parameters that will be refined
-        """
-
-        for param in fit_params:
-            self._change_parameter(param)
 
     def _calc_max_param_change(self):
 
@@ -125,12 +119,31 @@ class MMC(Minimizer):
 
         if self.change_state():
             self.FoM_old = self.FoM
-            # TODO: FINISH!
+            self.params_old_values = np.array([param.value
+                                               for param in self.params])
+        else:
+            self.FoM = self.FoM_old
+            self.reset_params()
+
+        self.change_parameters(self.params)
 
     def change_state(self):
 
         prob = min(1, np.exp(self.FoM_old - self.FoM) / self.MC_norm)
         return True if prob > np.random.random() else False
 
-    def _change_parameter(self, parameter):
+    def change_parameters(self, params):
 
+        # About 10x faster to generate all random numbers at once
+        changes = self.distribution(-self.max_param_change,
+                                    self.max_param_change,
+                                    len(params))
+        for i, param in enumerate(params):
+            param.value += param.value * changes[i]
+
+        return params
+
+    def reset_params(self):
+
+        for i, param in enumerate(self.params):
+            param.value = self.params_old_values[i]
