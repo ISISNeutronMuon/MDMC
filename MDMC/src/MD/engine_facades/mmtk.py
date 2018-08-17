@@ -209,9 +209,9 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
 
         try:
-            parameters = tuple(next(interaction.function.params.values() for
-                interaction in element.interactions if
-                isinstance(interaction,interaction_type)))
+            parameters = tuple(next(interaction.function.params_values for
+                                    interaction in element.interactions if
+                                    isinstance(interaction, interaction_type)))
 
             if interaction_type == MDMCs.Dispersion:
                 return parameters + (0,)
