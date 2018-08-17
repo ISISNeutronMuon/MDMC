@@ -4,7 +4,6 @@ parameters
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
-import random
 
 import numpy as np
 
@@ -17,6 +16,9 @@ class Minimizer:
 
     __metaclass__ = ABCMeta
 
+    DISTRIBUTION = {'normal':np.random.normal,
+                    'uniform':np.random.uniform}
+
     def __init__(self, MC_norm, params, config_reset=False,
                  distribution='normal'):
 
@@ -28,8 +30,11 @@ class Minimizer:
         config_reset - Boolean which determines whether or not the MD
         configuration is stored.  If True, the MD configuration will always be
         reset to the configuration for the last accepted parameter set.
+        distribution - the distribution from which parameter changes are
+        selected
         """
 
+        self.distribution = self.__class__.DISTRIBUTION[distribution]
 
         # First MC step always changes state
         self.FoM_old = float('inf')
@@ -125,9 +130,7 @@ class MMC(Minimizer):
     def change_state(self):
 
         prob = min(1, np.exp(self.FoM_old - self.FoM) / self.MC_norm)
-        return True if prob > random.random() else False
+        return True if prob > np.random.random() else False
 
     def _change_parameter(self, parameter):
 
-        parameter.value += parameter.value * \
-            random.uniform(-self.max_param_change,self.max_param_change)
