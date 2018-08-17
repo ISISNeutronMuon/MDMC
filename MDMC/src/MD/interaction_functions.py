@@ -105,10 +105,10 @@ class Parameter(object):
         if self.interactions_name:
             if interaction.name != self.interactions_name:
                 raise ValueError('Added interaction name is not consistent with'
-                                 'existing interaction names')
-            if interaction.function_name == self.functions_name:
+                                 ' existing interaction names')
+            if interaction.function_name != self.functions_name:
                 raise ValueError('Added function name is not consistent with'
-                                 'existing function names')
+                                 ' existing function names')
         else:
             self.interactions_name = interaction.name
             self.functions_name = interaction.function_name
