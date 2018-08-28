@@ -1,35 +1,21 @@
 """Script for running debug"""
 
-import MDMC.src.MD.interaction_functions as ifu
-import MDMC.src.MD.structural_units as su
-import MDMC.src.MD.simulation as sim
-import MDMC.src.MD.force_fields as ff
-import MDMC.src.MD.engine_facades.mmtk as mmtkf
-import MDMC.src.trajectory_analysis.trajectory as tr
-from MDMC.src.readers.LAMPSQw import LAMPSQw
-import MDMC.src.trajectory_analysis.observables.obs_factory as eof
-from MDMC.tests.test_data import data
-from MDMC.src.utilities import plot
+import MDMC.MD.interaction_functions as ifu
+import MDMC.MD.structural_units as su
+import MDMC.MD.simulation as sim
+import MDMC.MD.force_fields as ff
+import MDMC.MD.engine_facades.mmtk as mmtkf
+import MDMC.trajectory_analysis.trajectory as tr
+from MDMC.readers.LAMPSQw import LAMPSQw
+import MDMC.trajectory_analysis.observables.obs_factory as eof
+from tests.test_data import data
+from MDMC.utilities import plot
 
 from timeit import timeit
 from copy import deepcopy
 
 from MMTK import *
 from MMTK.Minimization import SteepestDescentMinimizer
-
-from MMTK.Trajectory import Trajectory
-import MDMC.src.trajectory_analysis.observables.obs_factory as of
-import MDMC.src.MD.engine_facades.mmtk as mmtk
-import numpy as np
-
-trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
-MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':100})
-SQw = of.ObservableFactory.create_observable('SQw')
-n_Q = 10
-Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
-cell = trajectory.universe.cellParameters()
-SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell)
-
 
 UNIVERSE_DIMS = (10.,10.,10.)
 UNIVERSE_SHAPE = sim.Shape.orthorhombic
@@ -66,6 +52,18 @@ NVESim = sim.NVESimulation(universe,'mmtk',time_step = TIME_STEP,
     lj_options=LJ_OPTIONS,es_options=ES_OPTIONS, minimizer = MINIM,
     minimizer_steps = MINIM_STEPS, minimizer_step_size = MINIM_STEP_SIZE)
 
+from MMTK.Trajectory import Trajectory
+import MDMC.trajectory_analysis.observables.obs_factory as of
+import MDMC.MD.engine_facades.mmtk as mmtk
+import numpy as np
+
+trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
+MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':100})
+SQw = of.ObservableFactory.create_observable('SQw')
+n_Q = 10
+Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
+cell = trajectory.universe.cellParameters()
+SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell)
 
 conf1a = deepcopy(universe.configuration)
 conf1b = deepcopy(universe.configuration)
@@ -229,8 +227,8 @@ bins = np.linspace(0,1,11)
 
 
 from MMTK.Trajectory import Trajectory
-import MDMC.src.trajectory_analysis.observables.obs_factory as of
-import MDMC.src.MD.engine_facades.mmtk as mmtk
+import MDMC.trajectory_analysis.observables.obs_factory as of
+import MDMC.MD.engine_facades.mmtk as mmtk
 import numpy as np
 
 trajectory2 = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
