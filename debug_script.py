@@ -260,3 +260,17 @@ SQw2.calculate_from_MD(MDMC_traj2, Q_values = Q_values2, cell = trajectory2.univ
 #     zerolinecolor='rgb(255, 255, 255)', title = 'S(Qw) /arb')), showlegend = False, height = 1000, width = 1000)
 # fig=go.Figure(data=[surf]+lines ,layout = layout)
 # py.offline.plot(fig)
+
+# To update the trajectory file:
+import cPickle as pickle
+import zlib
+from MMTK.Trajectory import Trajectory
+import MDMC.MD.engine_facades.mmtk as mmtk
+from tests.test_data import data
+MMTK_trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
+trajectory = mmtk.convert_trajectory(MMTK_trajectory, slice={'start':50,'stop':5010,'step':100})
+pickled_trajectory = pickle.dumps(trajectory)
+compressed_trajectory = zlib.compress(pickled_trajectory)
+file = open(data.OBJECT_DATA['trajectory'], 'w')
+file.write(compressed_trajectory)
+file.close()
