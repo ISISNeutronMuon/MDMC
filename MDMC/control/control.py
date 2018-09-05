@@ -31,6 +31,26 @@ class MDMCControl(object):
         Minimizer FoM_old is initialized to infinity so that the first MC step (i.e. the
         setup) is always accepted. Settings for calculating observables can be
         specified.
+
+        Arguments:
+        MD_engine - MDEngine
+        exp_datasets - a list of dictionaries with one dictionary fof each
+        dataset. Each dictionary contains the file name, the type of observable,
+        the reader required for the file, and the weighting of the dataset in
+        the Figure of Merit calculation. For example:
+
+        exp_datasets = [{'file_name':data.LAMP_SQW_FILE,
+                         'type':'SQw',
+                         'reader':'LAMPSQw',
+                         'weight':1.},
+                        {'file_name:data.ANOTHER_FILE',
+                         'type':'FQt',
+                         'reader':'GENERIC_READER',
+                         'weight':0.5}]
+
+        fit_params - a list of all parameters which will be refined
+        minimizier_type - a string with the minimizer type. 'MMC' is the default
+        FoM_calculator - a string with the type of Figure of Merit calculation
         """
 
         self.MD_engine = MD_engine
