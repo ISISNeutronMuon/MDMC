@@ -79,10 +79,13 @@ class MDMCControl(object):
 
         raise NotImplementedError
 
-    def refine(self, fit_params):
+    def refine(self, n_steps):
 
         """
         Refines the specified potential parameters
+
+        Arguments:
+        n_steps - integer maximum number of steps for the refinement
         """
 
         self.generate_FoM()
@@ -92,7 +95,6 @@ class MDMCControl(object):
             if self.minimizer.has_converged():
                 break
             self.generate_FoM()
-
 
         while True:
 
