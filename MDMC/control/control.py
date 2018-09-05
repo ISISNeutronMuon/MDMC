@@ -5,8 +5,8 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-18 15:47:47"""
 
 from MDMC.trajectory_analysis.exp_obs_factory \
     import ExperimentalObservableFactory
-import MDMC.refinement.minimizer as minim
-import MDMC.refinement.FoM
+from MDMC.refinement import minimizer
+from MDMC.refinement import FoM
 
 
 class MDMCControl(object):
@@ -16,13 +16,13 @@ class MDMCControl(object):
     """
 
     # TODO: Better implementation of minimizer instantiation - maybe factory pattern
-    MINIMIZER_DICT = {"MMC":minim.MMC}
+    MINIMIZER_DICT = {"MMC":minimizer.MMC}
+    FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
     # TODO: Change __init__ so that a minimizer instance is passed
     # TODO: Find a better solution for passing settings for refinement - or can it be avoided altogether?
-    def __init__(self, n_steps, MD_engine, exp_datasets, fit_params,
-        minimizer_type, FoM_calculator = FoM.StandardFoMCalculator(),
-        **settings):
+    def __init__(self, MD_engine, exp_datasets, fit_params,
+        minimizer_type='MMC', FoM_calculator='standard', **settings):
 
         """
         Creates experimental observables from datasets and placeholders for
@@ -37,7 +37,7 @@ class MDMCControl(object):
         self.exp_datasets = exp_datasets
         self.fit_params = fit_params
         self.minimizer = self.MINIMIZER_DICT[minimizer_type]()
-        self.FoM_calculator = FoM_calculator
+        self.FoM_calculator = self.FOM_DICT[FoM_calculator]()
         self.settings = settings
         self.n_steps = n_steps
         self.count = 0
