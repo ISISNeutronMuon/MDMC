@@ -70,8 +70,6 @@ class MDMCControl(object):
         for exp_observable in exp_observables:
             MD_observables.append(self._create_empty_observable(exp_observable))
 
-        self.refine(fit_params)
-
 
     def test_convergence(self):
 
