@@ -67,25 +67,30 @@ class MDMCControl(object):
         Refines the specified potential parameters
         """
 
-        # RUN MD
-        # CALCULATE OBSERVABLES
+        self.generate_FoM()
 
-        # Calculate Figure of Merit
-        FoM = self.generate_FoM()
+        for _ in range(n_steps):
+            self.minimizer.step()
+            if self.minimizer.has_converged():
+                break
+            self.generate_FoM()
+
 
         while True:
 
-            if self.minimizer.test_convergence() or self.count >= self.n_steps:
+            if self.minimizer.test_convergence() or count >= n_steps:
+
                 break
 
-            self.minimizer.step(FoM)
-            self.count += 1
+            if self.minimizer.change_state():
+                self.minimizer.FoM_old = self.minimizer.FoM
+                self.minimizer.fit_params_old = fit_params
+                self.count += 1
+                self.minimizer.change_parameters(self.fit_params)
+            else:
+                self.count += 1
 
-            # Indicate progress
-            print self.count
-
-        # As parameters are changed at the end of a step, reset these
-        self.minimizer.reset_params()
+        print self.fit_params
 
     def generate_FoM(self):
 
