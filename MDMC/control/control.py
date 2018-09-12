@@ -21,8 +21,8 @@ class MDMCControl(object):
 
     # TODO: Change __init__ so that a minimizer instance is passed
     # TODO: Find a better solution for passing settings for refinement - or can it be avoided altogether?
-    def __init__(self, MD_engine, exp_datasets, fit_params,
-        minimizer_type='MMC', FoM_calculator='standard', **settings):
+    def __init__(self, MD_engine, exp_datasets, fit_params, MC_norm=1.,
+        minimizer_type='MMC', FoM_type='standard', **settings):
 
         """
         Creates experimental observables from datasets and placeholders for
@@ -48,6 +48,7 @@ class MDMCControl(object):
                          'reader':'GENERIC_READER',
                          'weight':0.5}]
 
+        MC_norm - a float which determines the accept/reject ratio of the MC
         fit_params - a list of all parameters which will be refined
         minimizier_type - a string with the minimizer type. 'MMC' is the default
         FoM_calculator - a string with the type of Figure of Merit calculation
