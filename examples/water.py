@@ -38,6 +38,10 @@ md_engine = sim.NVESimulation(universe,
                               es_options={'method':'ewald'},
                               minimizer='steepest_descent')
 
+# Energy Minimization and equilibration
+md_engine.minimize(n_steps=5000)
+md_engine.run(n_steps=2000)
+
 # Setup refinement
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental dataset
