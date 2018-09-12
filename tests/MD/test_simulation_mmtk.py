@@ -72,39 +72,38 @@ def test_MMTK_simulation_setup(water_MMTK_NVE):
     specified in fs, whereas they are specified in ps in MMTK.
     """
 
-    assert type(water_MMTK_NVE.engine.integrator) ==  VelocityVerletIntegrator
-    assert water_MMTK_NVE.engine.integrator.options['delta_t'] == \
-        TIME_STEP / 1000.
+    assert water_MMTK_NVE.engine.integrator_type ==  VelocityVerletIntegrator
+    assert water_MMTK_NVE.engine.time_step == TIME_STEP / 1000.
     assert round(water_MMTK_NVE.engine.universe.temperature(),-2) == \
         round(TEMPERATURE,-2)
 
-def test_MMTK_simulation_run(water_MMTK_NVE):
-
-    """
-    Test the following equivalencies:
-
-    Total simulation time
-    Temperature
-    Density
-    """
-
-    water_MMTK_NVE.run(N_STEPS)
-    npt.assert_allclose((TIME_STEP / 1000) * N_STEPS,
-        water_MMTK_NVE.engine.trajectory.time[-1],
-        rtol = 1e-5)
-    assert round(water_MMTK_NVE.engine.universe.temperature(),-2) == \
-        round(TEMPERATURE,-2)
-    # TODO: Add density test
-
-def test_MMTK_trajectory_convert(water_MMTK_NVE):
-
-    """
-    Run an MMTK simulation and determines the trajectory.  The trajectory is
-    converted to an MDMC trajectory.
-
-    Test for same atomic positions in each configuration of the trajectory,
-    accounting for the difference in coordinate systems.
-    """
-
-    water_MMTK_NVE.run(N_STEPS)
-    MDMC_traj = water_MMTK_NVE.trajectory
+# def test_MMTK_simulation_run(water_MMTK_NVE):
+#
+#     """
+#     Test the following equivalencies:
+#
+#     Total simulation time
+#     Temperature
+#     Density
+#     """
+#
+#     water_MMTK_NVE.run(N_STEPS)
+#     npt.assert_allclose((TIME_STEP / 1000) * N_STEPS,
+#         water_MMTK_NVE.engine.trajectory.time[-1],
+#         rtol = 1e-5)
+#     assert round(water_MMTK_NVE.engine.universe.temperature(),-2) == \
+#         round(TEMPERATURE,-2)
+#     # TODO: Add density test
+#
+# def test_MMTK_trajectory_convert(water_MMTK_NVE):
+#
+#     """
+#     Run an MMTK simulation and determines the trajectory.  The trajectory is
+#     converted to an MDMC trajectory.
+#
+#     Test for same atomic positions in each configuration of the trajectory,
+#     accounting for the difference in coordinate systems.
+#     """
+#
+#     water_MMTK_NVE.run(N_STEPS)
+#     MDMC_traj = water_MMTK_NVE.trajectory
