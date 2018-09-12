@@ -23,11 +23,6 @@ class AbstractSQw(Observable):
     __metaclass__ = ABCMeta
 
     @property
-    def origin(self):
-
-        return self._origin
-
-    @property
     def data(self):
 
         return {'independent':self.independent_variables,
@@ -107,7 +102,6 @@ class AbstractSQw(Observable):
     def read_from_file(self, reader, file_name):
 
         super(AbstractSQw, self).read_from_file(reader, file_name)
-        self._origin = 'experiment'
         self._independent_variables = self.reader.independent_variables
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
