@@ -39,6 +39,11 @@ class AbstractSQw(Observable):
 
         return self._independent_variables
 
+    @independent_variables.setter
+    def independent_variables(self, value):
+
+        self._independent_variables = value
+
     @property
     def dependent_variables(self):
 
