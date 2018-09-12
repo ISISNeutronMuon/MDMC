@@ -98,7 +98,8 @@ class ObservablePair(object):
         Performs all applicable checks to test the validity of an observable
         """
 
-        raise NotImplementedError
+        if obs.origin != origin:
+            raise ValueError('The observable does not have the correct origin')
 
     def check_types(self):
 
