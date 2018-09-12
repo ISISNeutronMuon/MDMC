@@ -57,7 +57,8 @@ class MDMCControl(object):
         self.MD_engine = MD_engine
         self.exp_datasets = exp_datasets
         self.fit_params = fit_params
-        self.minimizer = self.MINIMIZER_DICT[minimizer_type]()
+        self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
+                                                             self.fit_params)
         self.settings = settings
         self.n_steps = n_steps
         self.count = 0
