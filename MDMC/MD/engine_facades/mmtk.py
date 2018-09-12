@@ -81,11 +81,22 @@ class MMTKEngine(MDEngine):
                 self.universe,
                 step_size=settings.get('minimizer_step_size', 0.05))
             self.minimizer_steps = settings.get('minimizer_steps', 100)
+    def minimize(self, n_steps):
+
+        self.minimizer(steps = n_steps)
+        self.universe.initializeVelocitiesToTemperature(self.temperature)
 
     def run(self, n_steps):
 
-        if hasattr(self,'minimizer'):
-            self.minimizer(steps = self.minimizer_steps)
+        # Including the trajectory and integrator setup before running resets
+        # the trajectory before each run
+        self._set_trajectory_output()
+        actions = [self.trajectory_output, TranslationRemover(),
+                   VelocityScaler(self.temperature, self.temperature_variation)]
+        self.integrator = self.integrator_type(self.universe,
+                                               delta_t=self.time_step,
+                                               actions=actions)
+
         self.integrator(steps = n_steps)
 
     def _set_trajectory_output(self):
@@ -101,6 +112,14 @@ class MMTKEngine(MDEngine):
                                                      mode='w')
         self.trajectory_output = MMTK.Trajectory.TrajectoryOutput(
             self.trajectory)
+
+    def update_parameters(self):
+
+        self.universe.assign_lj_parameters()
+        self.universe.assign_bond_parameters()
+        self.universe.assign_bond_angle_parameters()
+        for mol in self.universe:
+            mol.assign_charge()
 
     def build_configuration(self, MDMC_universe):
 
