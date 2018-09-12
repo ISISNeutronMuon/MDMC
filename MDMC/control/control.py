@@ -123,7 +123,7 @@ class MDMCControl(object):
 
     def run_MD(self):
 
-        self.MD_engine.run()
+        self.MD_engine.run(self.MD_steps)
 
     def _read_observable_from_file(self, dataset):
 
