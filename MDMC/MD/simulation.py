@@ -227,6 +227,14 @@ class NVESimulation(object):
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(self.universe, **self.settings)
 
+    def minimize(self, n_steps):
+
+        """
+        Minimizes the MD simulation energy
+        """
+
+        self.engine.minimize(n_steps)
+
     def run(self, n_steps):
 
         """
