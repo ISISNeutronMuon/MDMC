@@ -28,6 +28,18 @@ class MDEngine:
         pass
 
     @abstractmethod
+    def minimize(self, n_steps):
+
+        """
+        Minimizes the simulation energy
+
+        Arguments:
+        steps - maximum number of steps for minimizer
+        """
+
+        pass
+
+    @abstractmethod
     def run(self, n_steps):
 
         """
@@ -46,5 +58,14 @@ class MDEngine:
 
         # convert_trajectory has no range function as it is assumed that the
         # trajectory that is calculated by MD is exactly what is required
+
+        pass
+
+    @abstractmethod
+    def update_parameters(self):
+
+        """
+        Updates the MD engine force field parameters
+        """
 
         pass
