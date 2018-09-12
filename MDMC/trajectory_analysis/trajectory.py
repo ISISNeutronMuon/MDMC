@@ -20,7 +20,7 @@ class Configuration(object):
 
     def __init__(self, *structural_units):
         self.structures_list = list(structural_units)
-        self.data = self.create_config_array(*structural_units)
+        self.data = structural_units
         self.element_set = set(self.element_list)
 
     @property
@@ -48,20 +48,25 @@ class Configuration(object):
 
         return self.filter_structures(lambda x: x.structure_type == 'Molecule')
 
-    def create_config_array(self, *structural_units):
+    @property
+    def data(self):
 
         return np.array([(atom, atom.position, atom.velocity)
-                         for unit in structural_units
-                         for atom in unit.atom_list],
-                         dtype=[('atom','object'),
-                         ('position','object'),
-                         ('velocity','object')])
+                         for atom in self._data],
+                        dtype=[('atom', 'object'),
+                               ('position', 'object'),
+                               ('velocity', 'object')])
+
+    @data.setter
+    def data(self, structural_units):
+
+        self._data = [atom for unit in structural_units
+                      for atom in unit.atom_list]
 
     def add_structural_units(self, *structural_units):
 
         self.structures_list.extend(structural_units)
-        self.data = np.append(
-            self.data,self.create_config_array(*structural_units))
+        self.data = np.append(self._data,structural_units)
 
     def __add__(self, configuration):
 
