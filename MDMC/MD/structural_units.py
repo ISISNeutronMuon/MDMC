@@ -276,7 +276,9 @@ class Atom(StructuralUnit):
         try:
             for interaction in self.interactions:
                 if type(interaction) == Coulombic:
-                    return interaction.function.params['charge']
+                    # Zero index parameter can be used as there should only be
+                    # one parameter as each atom only has a single charge 
+                    return interaction.params[0].value
             else:
                 return None
         except AttributeError:
