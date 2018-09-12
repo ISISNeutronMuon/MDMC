@@ -125,7 +125,7 @@ class MDMCControl(object):
 
         self.MD_engine.run(self.MD_steps)
 
-    def _read_observable_from_file(self, dataset):
+    def _read_observable_from_file(self, type, reader, file_name):
 
         """
         Creates an observable of the specified type and reads in data from file
