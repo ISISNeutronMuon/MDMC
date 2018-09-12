@@ -166,3 +166,11 @@ class MDMCControl(object):
 
     def _calculate_MD_steps(self):
 
+        """
+        Returns:
+        The minimum number of steps required for the MD engine in order to
+        calculate MD observables with the same independent variables as the
+        experimental observables.
+        """
+
+        raise NotImplementedError
