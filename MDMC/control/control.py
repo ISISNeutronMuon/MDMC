@@ -80,6 +80,8 @@ class MDMCControl(object):
         """
 
         raise NotImplementedError
+        # Use specified MD_steps if supplied, else calculate
+        self.MD_steps = settings.get('MD_steps')
 
     def refine(self, n_steps):
 
