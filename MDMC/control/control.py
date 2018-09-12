@@ -86,29 +86,15 @@ class MDMCControl(object):
         n_steps - integer maximum number of steps for the refinement
         """
 
-        self.generate_FoM()
-
-        for _ in range(n_steps):
-            self.minimizer.step()
-            if self.minimizer.has_converged():
-                break
-            self.generate_FoM()
-
-        while True:
-
-            if self.minimizer.test_convergence() or count >= n_steps:
         count = -1
 
-                break
+        while count < n_steps and not self.minimizer.has_converged():
 
-            if self.minimizer.change_state():
-                self.minimizer.FoM_old = self.minimizer.FoM
-                self.minimizer.fit_params_old = fit_params
-                self.count += 1
-                self.minimizer.change_parameters(self.fit_params)
-            else:
-                self.count += 1
+            FoM = self.generate_FoM()
+            self.minimizer.step(FoM)
+            count += 1
 
+        self.minimizer.reset_params()
         print self.fit_params
 
     def generate_FoM(self):
