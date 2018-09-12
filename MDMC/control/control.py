@@ -131,10 +131,9 @@ class MDMCControl(object):
         Creates an observable of the specified type and reads in data from file
         """
 
-        observable = ExperimentalObservableFactory.create_observable(
-            dataset['type'])
-        return observable.read_from_file(reader=dataset['reader'],
-            file_name=dataset['file_name'])
+        observable = ObservableFactory.create_observable(type)
+        observable.read_from_file(reader=reader, file_name=file_name)
+        return observable
 
     def _create_empty_observable(self, exp_observable):
 
