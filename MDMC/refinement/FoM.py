@@ -145,11 +145,16 @@ class ObservablePair(object):
     def calculate_diffence(self):
 
         """
+        Assumes a single dependent variable for each observable
+
         Returns:
-        The difference between the dependent variables
+        The absolute difference between the dependent variables
         """
 
-        raise NotImplementedError
+        diff = (np.array(self.exp_obs.dependent_variables.values())
+                - np.array(self.MD_obs.dependent_variables.values()))
+
+        return diff
 
     def calculate_errors(self):
 
