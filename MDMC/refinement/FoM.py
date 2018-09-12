@@ -23,7 +23,7 @@ class FigureOfMeritCalculator:
         """
 
         self.obs_pairs = list(obs_pairs)
-        self.value = np.sum([self.calculate_FoM(obs_pair)
+        self.value = None
                              for obs_pair in self.obs_pairs])
 
     @abstractmethod
