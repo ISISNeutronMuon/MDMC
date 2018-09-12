@@ -124,7 +124,7 @@ class AbstractSQw(Observable):
         self.trajectory = MD_input
         self.t = self.trajectory.times - self.trajectory.times[0]
         self.universe_cell = params.get('cell')
-        self.t_res = params.get('t_resolution')
+        self.t_res = params['t_resolution']
         self._set_weights()
 
         self._independent_variables = {'Q':np.array(params.get('Q_values'))}
