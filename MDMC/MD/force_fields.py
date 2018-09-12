@@ -71,7 +71,7 @@ class SPCE(ForceField):
 
     interaction_dictionary = {(su.Coulombic, ('O',)):ifu.Coulomb(q_O),
         (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-        (su.Dispersion, ('O',)):ifu.LennardJones(sigma, eta),
+        (su.Dispersion, ('O',)):ifu.LennardJones(eta, sigma),
         (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
         (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
 
