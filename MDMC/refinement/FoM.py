@@ -159,8 +159,13 @@ class ObservablePair(object):
     def calculate_errors(self):
 
         """
+        Assumes a single dependent variable error for each observable
+
         Returns:
         The combination of the errors in quadrature
         """
 
-        raise NotImplementedError
+        errors = (np.array(self.exp_obs.errors.values()) ** 2
+                  + np.array(self.MD_obs.errors.values()) ** 2) ** 0.5
+
+        return errors
