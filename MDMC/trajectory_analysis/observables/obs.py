@@ -34,14 +34,19 @@ class Observable:
 
         self._name = name
 
-    @abstractproperty
+    @property
     def origin(self):
 
         """
         The origin of the observable: experiment, MD, difference
         """
 
-        pass
+        return self._origin
+
+    @origin.setter
+    def origin(self, origin):
+
+        self._origin = origin
 
     @abstractproperty
     def data(self):
@@ -85,6 +90,7 @@ class Observable:
         Reads in experimental data from a file using a specified reader
         """
 
+        self._origin = 'experiment'
         self.reader = ReaderFactory.create_reader(reader)
         self.reader.open(file_name)
         self.reader.parse()
