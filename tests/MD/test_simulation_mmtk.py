@@ -41,14 +41,15 @@ def test_MMTK_universe_setup(water_MMTK_NVE):
     Force field parameters
     """
 
+    # MMTK coordinates are in nm, MDMC coordinates are in Angstroms
     MMTK_universe = water_MMTK_NVE.engine.universe
     MDMC_universe = MMTK_universe.MDMC_universe
-    npt.assert_array_equal(MMTK_universe.data,np.array(UNIVERSE_DIMS))
+    npt.assert_array_equal(MMTK_universe.data, np.array(UNIVERSE_DIMS) / 10.)
     assert len(MMTK_universe.atomList()) == len(MDMC_universe.atom_list)
 
     MMTK_molecule_positions = [np.array(mol.position()) for mol
         in MMTK_universe.objectList()]
-    MDMC_molecule_positions = [mol.position for mol
+    MDMC_molecule_positions = [mol.position / 10. for mol
         in MDMC_universe.molecule_list]
     for i in range(len(MMTK_molecule_positions)):
         npt.assert_allclose(MMTK_molecule_positions[i],
