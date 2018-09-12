@@ -5,6 +5,8 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 11:07:19"""
 import weakref
 from tempfile import TemporaryFile
 
+import numpy as np
+
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.simulation import Shape
 from MDMC.MD.force_fields import SPCE
@@ -157,6 +159,8 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
                     settings.get('lj_options', None),
                     settings.get('es_options', None)))
         self.assign_lj_parameters()
+        self.assign_bond_parameters()
+        self.assign_bond_angle_parameters()
 
     @property
     def MDMC_universe(self):
@@ -179,7 +183,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         function returned by self.lj_parameters_closure.
         """
 
-        self.forcefield().nonbonded.dataset.ljParameters = \
+        self._forcefield.nonbonded.dataset.ljParameters = \
             self.lj_parameters_closure(self.MDMC_universe.element_dict)
 
     def lj_parameters_closure(self, element_dict):
@@ -190,9 +194,9 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         where LJ parameters are hard coded in MMTK.
         """
 
-        parameters = {element:self.get_interaction_parameters(atom,
-                                                              MDMCs.Dispersion)
-                      for element, atom in element_dict.items()}
+        parameters = {element:self.get_interaction_parameters(MDMCs.Dispersion,
+                                                              element)
+                      for element in element_dict.keys()}
 
         def lj_parameters(atom_type):
             try:
@@ -202,8 +206,78 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
         return lj_parameters
 
-    # TODO: Change hard coded return (if atom has no interaction of that type)
-    def get_interaction_parameters(self, element, interaction_type):
+    def assign_bond_parameters(self):
+
+        """
+        Sets the MMTK function which defines the bond Parameters equal to the
+        function returned by self.bond_parameters_closure.
+        """
+
+        self._forcefield.bonded.dataset.bondParameters = \
+            self.bond_parameters_closure(self.MDMC_universe.element_dict)
+
+    def bond_parameters_closure(self, element_dict):
+
+        """
+        Returns:
+        Function equivalent to MMTK SPCEParameters.bondParameters method, which
+        is where bond parameters are hard coded in MMTK.
+        """
+
+        parameters = {}
+        for element1 in element_dict.keys():
+            for element2 in element_dict.keys():
+                elements = sorted([element1, element2])
+                parameters[tuple(sorted([element1, element2]))] = \
+                    self.get_interaction_parameters(MDMCs.Bond, *elements)
+
+        def bond_parameters(*atom_type):
+            try:
+                return parameters[tuple(sorted(atom_type))]
+            except:
+                raise ValueError('Unknown atom combination '
+                                 + atom_type)
+
+        return bond_parameters
+
+    def assign_bond_angle_parameters(self):
+
+        """
+        Sets the MMTK function which defines the bond Parameters equal to the
+        function returned by self.bond_parameters_closure.
+        """
+
+        self._forcefield.bonded.dataset.bondAngleParameters = \
+            self.bond_angle_parameters_closure(self.MDMC_universe.element_dict)
+
+    def bond_angle_parameters_closure(self, element_dict):
+
+        """
+        Returns:
+        Function equivalent to MMTK SPCEParameters.bondAngleParameters method,
+        which is where bond parameters are hard coded in MMTK.
+        """
+
+        parameters = {}
+        for element1 in element_dict.keys():
+            for element2 in element_dict.keys():
+                for element3 in element_dict.keys():
+                    parameters[tuple([element1, element2, element3])] =\
+                        self.get_interaction_parameters(MDMCs.BondAngle,
+                                                        element1,
+                                                        element2,
+                                                        element3)
+
+        def bond_angle_parameters(*atom_type):
+            try:
+                return parameters[atom_type]
+            except:
+                raise ValueError('Unknown atom combination '
+                                 + atom_type)
+
+        return bond_angle_parameters
+
+    def get_interaction_parameters(self, interaction_type, *elements):
 
         """
         Gets the parameters by finding the first interaction with the specified
@@ -218,18 +292,30 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         A tuple from first Dispersion interaction of MDMC atom of same element.
         """
 
-        try:
-            parameters = tuple(next(interaction.function.params_values for
-                                    interaction in element.interactions if
-                                    isinstance(interaction, interaction_type)))
+        elements = list(elements)
+        for interaction in self.MDMC_universe.interactions:
+            if isinstance(interaction, interaction_type):
+                int_elements = [atom.element for atom
+                                in interaction.atom_list]
+                if len(elements) == 2:
+                    int_elements = sorted(int_elements)
+                if int_elements == elements:
+                    parameters = interaction.function.params_values
+                    # Converting from Angstroms to nm for bonds and LJ
+                    if interaction_type == MDMCs.Dispersion:
+                        parameters[1] /= 10.
+                        return tuple(parameters) + (0,)
+                    if interaction_type == MDMCs.Bond:
+                        parameters[0] *= 0.1
+                        parameters[1] *= 100.
+                    # Converting from degrees to radians for bond angles
+                    if interaction_type == MDMCs.BondAngle:
+                        parameters[0] *= 2. * np.pi / 360.
+                    return tuple(parameters)
 
-            if interaction_type == MDMCs.Dispersion:
-                return parameters + (0,)
-            return parameters
-        except StopIteration:
-            if interaction_type == MDMCs.Dispersion:
-                return (0., 0., 0)
-            return (0., 0.)
+        if interaction_type == MDMCs.Dispersion:
+            return (0., 0., 0.)
+        return (0., 0.)
 
 
 class MMTKAtom(MMTK.ChemicalObjects.Atom):
