@@ -74,14 +74,6 @@ class MDMCControl(object):
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
-
-    def test_convergence(self):
-
-        """
-        Tests whether the refinement has converged
-        """
-
-        raise NotImplementedError
         # Use specified MD_steps if supplied, else calculate
         self.MD_steps = settings.get('MD_steps')
 
