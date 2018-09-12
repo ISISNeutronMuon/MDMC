@@ -3,8 +3,8 @@
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-18 15:47:47"""
 
 
-from MDMC.trajectory_analysis.exp_obs_factory \
-    import ExperimentalObservableFactory
+from MDMC.trajectory_analysis.observables.obs_factory \
+    import ObservableFactory
 from MDMC.refinement import minimizer
 from MDMC.refinement import FoM
 
