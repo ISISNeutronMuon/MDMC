@@ -24,7 +24,17 @@ class FigureOfMeritCalculator:
 
         self.obs_pairs = list(obs_pairs)
         self.value = None
+
+    def calculate(self):
+
+        """
+        Calculates the FoM value by calculating the FoM for every observable
+        pair
+        """
+
+        self.value = np.sum([self.calculate_single_FoM(obs_pair)
                              for obs_pair in self.obs_pairs])
+        return self.value
 
     @abstractmethod
     def calculate_single_FoM(self, obs_pair):
