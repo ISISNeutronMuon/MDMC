@@ -134,9 +134,9 @@ class AbstractSQw(Observable):
 
         dt = self.t[1] - self.t[0]
 
-        self._independent_variables['E'] = h_bar * np.pi \
-                                           * np.arange(len(self.t)) \
-                                           / (len(self.t) * dt)
+        self.independent_variables['E'] = (h_bar * np.pi
+                                           * np.arange(len(self.t))
+                                           / (len(self.t) * dt))
         self._dependent_variables = {'SQw':self._calculate_SQw()}
         self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
