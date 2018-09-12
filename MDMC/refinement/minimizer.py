@@ -95,7 +95,7 @@ class Minimizer:
 
     def has_converged(self):
 
-        raise NotImplementedError
+        return False
 
     def _check_parameters(self, params):
 
@@ -108,7 +108,7 @@ class Minimizer:
 
         for param in params:
             if param.fixed == True:
-                raise ValueError('Parameter {0} is fixed'.format(param.name)) 
+                raise ValueError('Parameter {0} is fixed'.format(param.name))
 
 
 class MMC(Minimizer):
@@ -138,7 +138,7 @@ class MMC(Minimizer):
 
     def change_parameters(self, params):
 
-        # About 10x faster to generate all random numbers at once
+        # Faster to generate all random numbers at once
         changes = self.distribution(-self.max_param_change,
                                     self.max_param_change,
                                     len(params))
