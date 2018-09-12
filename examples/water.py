@@ -14,7 +14,10 @@ from MDMC.control.control import MDMCControl
 from tests.test_data import data
 
 # Build universe
-universe = sim.Universe(dimensions=(10., 10., 10.), shape=sim.Shape.orthorhombic)
+# Cubic universe of side 9.32 A is 27 water molecules, 24.86 is 512 water molecules
+side = 24.86
+universe = sim.Universe(dimensions=(side, side, side),
+                        shape=sim.Shape.orthorhombic)
 H1 = su.Atom('H', mass=1.008)
 H2 = su.Atom('H', position=(1.51390, 0., 0.), mass=1.008)
 O = su.Atom('O', position=(0.75695, 0., 0.58588), mass=16.000)
