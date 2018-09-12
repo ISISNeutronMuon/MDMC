@@ -51,14 +51,13 @@ class MDMCControl(object):
         MC_norm - a float which determines the accept/reject ratio of the MC
         fit_params - a list of all parameters which will be refined
         minimizier_type - a string with the minimizer type. 'MMC' is the default
-        FoM_calculator - a string with the type of Figure of Merit calculation
+        FoM_type - a string with the type of Figure of Merit calculation
         """
 
         self.MD_engine = MD_engine
         self.exp_datasets = exp_datasets
         self.fit_params = fit_params
         self.minimizer = self.MINIMIZER_DICT[minimizer_type]()
-        self.FoM_calculator = self.FOM_DICT[FoM_calculator]()
         self.settings = settings
         self.n_steps = n_steps
         self.count = 0
@@ -70,6 +69,7 @@ class MDMCControl(object):
         self.MD_observables = []
         for exp_observable in exp_observables:
             MD_observables.append(self._create_empty_observable(exp_observable))
+        self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
 
     def test_convergence(self):
