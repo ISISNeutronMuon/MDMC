@@ -61,13 +61,17 @@ class MDMCControl(object):
                                                              self.fit_params)
         self.settings = settings
 
-        self.exp_observables = []
-        for dataset in exp_datasets:
-            exp_observables.append(self._read_observable_from_file(dataset))
+        self.observable_pairs = []
+        for dset in exp_datasets:
+            exp_observable = self._read_observable_from_file(dset['type'],
+                                                             dset['reader'],
+                                                             dset['file_name'])
+            MD_observable = self._create_empty_observable(exp_observable)
+            observable_pair = FoM.ObservablePair(exp_observable,
+                                                 MD_observable,
+                                                 dset['weight'])
+            self.observable_pairs.append(observable_pair)
 
-        self.MD_observables = []
-        for exp_observable in exp_observables:
-            MD_observables.append(self._create_empty_observable(exp_observable))
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
 
@@ -118,14 +122,12 @@ class MDMCControl(object):
     def generate_FoM(self):
 
         """
-        The methods requires to generate a FoM
+        The methods required to generate a FoM
         """
 
         self.run_MD()
-        self.calculate_observables(self.MD_engine, self.MD_observables)
-        self.minimizer.FoM = self.calculate_FoM(self.exp_observables,
-            self.MD_observables)
-
+        self._calculate_observables(self.MD_engine, self.observable_pairs)
+        return self._calculate_FoM()
 
     def run_MD(self):
 
@@ -152,22 +154,23 @@ class MDMCControl(object):
         an MD trajectory
         """
 
-        observable = ExperimentalObservableFactory.create_observable(
-            exp_observable.name)
+        observable = ObservableFactory.create_observable(exp_observable.name)
+        observable.origin = 'MD'
         observable.independent_variables = exp_observable.independent_variables
         return observable
 
-    def _calculate_observables(self, MD_engine, observables):
+    def _calculate_observables(self, MD_engine, observable_pairs):
 
         """
         Calculates all of the observables from the MD trajectory/configurations
         """
 
-        for observable in observables:
-            observable.calculate_from_MD(MD_engine, self.settings)
+        for pair in observable_pairs:
+            pair.MD_obs.calculate_from_MD(MD_engine.trajectory, **self.settings)
 
-    def _calculate_FoM(self, exp_observables, MD_observables):
+    def _calculate_FoM(self):
 
-        data_pairs = [dict(chain(tup[0].items(), tup[1].items))
-            for tup in zip(exp_observables, MD_observables)]
-        return self.FoM_calculator().calculate_FoM(data_pairs)
+        return self.FoM_calculator.calculate()
+
+    def _calculate_MD_steps(self):
+
