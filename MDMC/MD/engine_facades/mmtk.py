@@ -153,18 +153,12 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
 
         self._MDMC_universe = weakref.ref(universe)
-
-        # TODO: Following if else is valid for other universe shapes but not cubic
-        if universe.shape is Shape.cubic:
-            dims = universe.dims[0]
-        else:
-            dims = universe.dims
-
+        dims = self.MDMC_universe.dims[0] / 10.
         if universe.force_fields is None:
-            super(MMTKCubicUniverse, self).__init__(universe.dims[0])
+            super(MMTKCubicUniverse, self).__init__(dims)
         else:
             super(MMTKCubicUniverse, self).__init__(
-                universe.dims[0],
+                dims,
                 UNIVERSE_FF[type(universe.force_fields)](
                     settings.get('lj_options', None),
                     settings.get('es_options', None)))
@@ -271,8 +265,11 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 
     def __init__(self, molecule, **properties):
         self._MDMC_obj = weakref.ref(molecule)
+        position = coordinate_transform(molecule.position,
+                                        molecule.universe.dims / 10.,
+                                        from_MDMC=True)
         super(MMTKMolecule, self).__init__(molecule.name,
-                                           position=Vector(molecule.position),
+                                           position=Vector(position),
                                            **properties)
 
     @property
@@ -309,10 +306,7 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
     # This currently exists as a separate function so that saved MMTK trajectories can be tested
     # For the same reason the ability to filter the trajectories is provided
 
-    # TODO: Extract this conversion into own function
-    # Convert between coordinate systems
     universe_dims = MMTK_trajectory.universe.cellParameters()
-    coordinate_transform = universe_dims / 2.
 
     # List of atom element and masses as ordered in configuration
     atom_list = [(atom.type.symbol, atom.mass()) for atom in
@@ -324,20 +318,26 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
                        kwargs.get('slice').get('stop'),
                        kwargs.get('slice').get('step')):
             configurations.append(convert_configuration(MMTK_trajectory[i],
-                                                        coordinate_transform,
+                                                        universe_dims,
                                                         atom_list))
     else:
         for MMTK_frame in MMTK_trajectory:
             configurations.append(convert_configuration(MMTK_frame,
-                                                        coordinate_transform,
+                                                        universe_dims,
                                                         atom_list))
 
     return MDMCt.Trajectory(*configurations)
 
-def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
+
+def convert_configuration(MMTK_frame, uni_dims, atom_list=None):
 
     """
     Builds an MDMC configuration from an MMTK configuration.
+
+    Arguments:
+    MMTK_frame - A frame of an MMTK trajectory ir a configuration
+    uni_dims - a vector of the MDMC universe dimensions
+    atom_list - a list of the atoms in the configuration
     """
 
     if atom_list is None:
@@ -348,7 +348,36 @@ def convert_configuration(MMTK_frame, coordinate_transform, atom_list=None):
     for index in range(len(MMTK_frame['configuration'])):
         symbol = atom_list[index][0]
         mass = atom_list[index][1]
-        position = MMTK_frame['configuration'].__dict__['array'][index] + \
-            coordinate_transform
+        MMTK_position = MMTK_frame['configuration'].__dict__['array'][index]
+        position = coordinate_transform(MMTK_position,
+                                        uni_dims,
+                                        from_MDMC=False)
         atoms.append(MDMCs.Atom(symbol, position=position, mass=mass))
     return MDMCt.TemporalConfiguration(MMTK_frame['time'], *atoms)
+
+
+def coordinate_transform(coordinates, uni_dims, from_MDMC=True):
+
+    """
+    Transforms between MDMC and MMTK coordinate systems
+
+    MDMC coordinates are only in a positive quadrant and are in Angstroms,
+    whereas MMTK coordinates are in all four quadrants are in nm.
+
+    Arguments:
+    coordinates - the coordinate vector
+    uni_dims - a vector of the MMTK universe dimensions, equivalent to
+    MMTK universe.cellParameters()
+    from_MDMC - If True convert from MDMC coordinates to MMTK, if False
+    convert from MMTK coordinates to MDMC.
+
+    Returns:
+    Vector of transformed coordinates
+    """
+
+    if from_MDMC:
+        coord = coordinates / 10. - uni_dims / 2.
+    else:
+        coord = (coordinates + uni_dims / 2.) * 10.
+
+    return coord
