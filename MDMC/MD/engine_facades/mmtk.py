@@ -63,24 +63,18 @@ class MMTKEngine(MDEngine):
         """
 
         # TODO: Add in additional actions. Change so that TranslationRemover can be deselected
-        temperature = settings.get('temperature', 300) * MMTK.Units.K
-        temperature_variation = 10. * MMTK.Units.K
+        self.temperature = settings.get('temperature', 300) * MMTK.Units.K
+        self.temperature_variation = 10. * MMTK.Units.K
+        self.time_step = settings.get('time_step', 1) * MMTK.Units.fs
+        self.integrator_type = UNIVERSE_INT[settings['integrator']]
 
-        time_step = settings.get('time_step', 1) * MMTK.Units.fs
-
-        self._set_trajectory_output()
-
-        self.universe.initializeVelocitiesToTemperature(temperature)
-        actions = [self.trajectory_output, TranslationRemover(),
-                   VelocityScaler(temperature, temperature_variation)]
-        self.integrator = UNIVERSE_INT[settings['integrator']](
-            self.universe,
-            delta_t=time_step, actions=actions)
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
                 step_size=settings.get('minimizer_step_size', 0.05))
-            self.minimizer_steps = settings.get('minimizer_steps', 100)
+        else:
+            self.universe.initializeVelocitiesToTemperature(self.temperature)
+
     def minimize(self, n_steps):
 
         self.minimizer(steps = n_steps)
@@ -105,7 +99,7 @@ class MMTKEngine(MDEngine):
         Creates a temporary file in which to output MMTK trajectories
         """
 
-    # TODO: Consider if a SpooledTemporaryFile would be more appropriate
+        # TODO: Consider if a SpooledTemporaryFile would be more appropriate
         trajectory_file = TemporaryFile()
         self.trajectory = MMTK.Trajectory.Trajectory(self.universe,
                                                      trajectory_file.name,
