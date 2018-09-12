@@ -127,7 +127,11 @@ class AbstractSQw(Observable):
         self.t_res = params['t_resolution']
         self._set_weights()
 
-        self._independent_variables = {'Q':np.array(params.get('Q_values'))}
+        # Overwrite independent variable 'Q' if it already exists
+        try:
+            self.independent_variables = {'Q':np.array(params['Q_values'])}
+        except KeyError:
+            pass
 
         self.isotropic = params.get('isotropic', True)
         if not self.isotropic:
