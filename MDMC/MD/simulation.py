@@ -106,9 +106,14 @@ class Universe(object):
         n_units_xyz = n_units_xyz.astype(int)
 
         positions = []
+        # Determine the upper and lower bounds for structural unit with its
+        # position (CoM) and its bounding box
+        bounds = structural_unit.bounding_box
+        mn = 0. + structural_unit.position - bounds.min
+        mx = self.dims + structural_unit.position - bounds.max
         for i in range(len(self.dims)):
-            positions.append(np.linspace(0, self.dims[i], n_units_xyz[i],
-                             endpoint = False))
+            positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
+                                         endpoint=False))
 
         positions = sorted(list(itertools.product(*positions)))
 
@@ -116,15 +121,13 @@ class Universe(object):
         for position in positions:
             if position is positions[0]:
                 self.add_structural_unit(structural_unit)
-                offset = (structural_unit.position
-                          - structural_unit.bounding_box.min)
-                structural_unit.position = position + offset
+                structural_unit.position = position
                 if force_field:
                     self.add_force_field(force_field,
                                          structural_unit.interactions)
             else:
                 new_unit = deepcopy(structural_unit)
-                new_unit.position = position + offset
+                new_unit.position = position
                 self.add_structural_unit(new_unit)
 
     @property
