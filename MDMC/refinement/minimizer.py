@@ -43,8 +43,8 @@ class Minimizer:
 
         params = np.array(list(params))
         self._check_parameters(params)
-        self.params_old_values = np.array([param.value for param in params])
-        self.params = self.change_parameters(params)
+        self.params_old_values = None
+        self.params = params
         self.MC_norm = MC_norm
         self.config_reset = config_reset
 
