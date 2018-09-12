@@ -27,7 +27,7 @@ class FigureOfMeritCalculator:
                              for obs_pair in self.obs_pairs])
 
     @abstractmethod
-    def calculate_FoM(self, obs_pair):
+    def calculate_single_FoM(self, obs_pair):
 
         """
         Performs the FoM calculation specific to each FoM
@@ -43,7 +43,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
     weighting
     """
 
-    def calculate_FoM(self, obs_pair):
+    def calculate_single_FoM(self, obs_pair):
 
         return np.sum(obs_pair.calculate_diffence() ** 2
                       * obs_pair.weight / obs_pair.calculate_errors())
