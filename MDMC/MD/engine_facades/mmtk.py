@@ -118,7 +118,9 @@ class MMTKEngine(MDEngine):
                                                      trajectory_file.name,
                                                      mode='w')
         self.trajectory_output = MMTK.Trajectory.TrajectoryOutput(
-            self.trajectory)
+            self.trajectory,
+            ("time", "energy", "thermodynamic", "configuration"),
+            0, None, self.traj_step)
 
     def update_parameters(self):
 
