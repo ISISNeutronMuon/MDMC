@@ -89,17 +89,21 @@ class MMTKEngine(MDEngine):
         self.minimizer(steps = n_steps, step_size = 0.05*Units.Ang)
         self.universe.initializeVelocitiesToTemperature(self.temperature)
 
-    def run(self, n_steps):
+    def run(self, n_steps, equilibration=False):
 
         # Including the trajectory and integrator setup before running resets
         # the trajectory before each run
         self._set_trajectory_output()
-        actions = [self.trajectory_output, TranslationRemover(),
-                   VelocityScaler(self.temperature, self.temperature_variation)]
+        actions = [self.trajectory_output,
+                   TranslationRemover()]
+
+        if equilibration:
+            actions.append(VelocityScaler(self.temperature,
+                                          self.temperature_variation))
+
         self.integrator = self.integrator_type(self.universe,
                                                delta_t=self.time_step,
                                                actions=actions)
-
         self.integrator(steps = n_steps)
 
     def _set_trajectory_output(self):
