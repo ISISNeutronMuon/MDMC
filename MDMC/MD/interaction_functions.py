@@ -61,9 +61,8 @@ class Parameter(object):
             print "Unable to change fixed parameter"
         else:
             if self.constraints is not None:
-                raise NotImplementedError
-            else:
-                self._value = value
+                self.validate_value(value, self.constraints)
+            self._value = value
 
     @property
     def constraints(self):
@@ -79,6 +78,10 @@ class Parameter(object):
         within them, if it exists
         """
 
+        if constraints[0] > constraints[1]:
+            raise ValueError("Constaints must be (lower, upper)")
+        if hasattr(self, 'value'):
+            self.validate_value(self.value, constraints)
         self._constraints = constraints
 
     @property
@@ -140,6 +143,15 @@ class Parameter(object):
     def __setitem__(self, key, value):
 
         self.__setattr__(key, value)
+
+    def validate_value(self, value, constraints):
+
+        """
+        Validates the parameter value by testing if it is within
+        """
+
+        if self.value > constraints[0] or self.value < constraints[1]:
+            raise ValueError("Value must be within constraints")
 
 
 class InteractionFunction(object):
