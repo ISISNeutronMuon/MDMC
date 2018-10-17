@@ -15,7 +15,7 @@ from tests.test_data import data
 
 # Build universe
 # Cubic universe of side 9.32 A is 27 water molecules, 24.86 is 512 water molecules
-side = 24.86
+side = 21.75
 universe = sim.Universe(dimensions=(side, side, side),
                         shape=sim.Shape.orthorhombic)
 H1 = su.Atom('H', mass=1.008)
