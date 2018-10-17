@@ -2,24 +2,61 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 23:44:11"""
 
+import weakref
+
 import numpy as np
 
 # TODO: SORT OUT EFFECTS OF PBC
 
-
-class Configuration(object):
+class AtomCollection(object):
 
     """
-    A Configuration stores atoms and their positions and velocities (in the form
-    of AtomConfig)
+    Base class for shared attributes for Configurations and Trajectories
+    """
+
+    @property
+    def universe(self):
+
+        try:
+            return self._universe()
+        except TypeError:
+            return None
+
+    @universe.setter
+    def universe(self, universe):
+
+        try:
+            self._universe = weakref.ref(universe)
+        except TypeError:
+            self._universe = None
+
+    @property
+    def dims(self):
+
+        return self.universe.dims
+
+
+class Configuration(AtomCollection):
+
+    """
+    A Configuration stores atoms and their positions and velocities
     """
 
     # TODO: Consider how wraparound for periodic objects will work
-    # TODO: Consider how filtering by element will work - should config array include element type?
     # TODO: Consider storage of weakref to each atom - fine for configuration but requires a complete atom object for each atom in every configuration in a trajectory
 
-    def __init__(self, *structural_units):
         self.structures_list = list(structural_units)
+    def __init__(self, *structural_units, **kwargs):
+
+        """
+        Arugments:
+        structural_units - any object with base class StructuralUnit
+        """
+
+        try:
+            self.universe = structural_units[0].universe
+        except IndexError:
+            self.universe = kwargs.get('universe', None)
         self.data = structural_units
         self.element_set = set(self.element_list)
 
@@ -165,7 +202,7 @@ class TemporalConfiguration(Configuration):
         return self.__class__(time, *structures_list)
 
 
-class Trajectory(object):
+class Trajectory(AtomCollection):
 
     """
     A Trajectory is a collection of TimedConfigurations
@@ -177,6 +214,7 @@ class Trajectory(object):
 
     def __init__(self, *configurations):
 
+        self.universe = configurations[0].universe
         self.data = configurations
 
     @property

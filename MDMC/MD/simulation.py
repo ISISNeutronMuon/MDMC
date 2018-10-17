@@ -45,7 +45,7 @@ class Universe(object):
         if structures:
             self.configuration = Configuration(structures)
         else:
-            self.configuration = Configuration()
+            self.configuration = Configuration(universe=self)
         self._interactions = set()
         self.force_fields = force_field
 
@@ -72,8 +72,8 @@ class Universe(object):
         applying only to that structural unit
         """
 
-        self.configuration.add_structural_units(structural_unit)
         structural_unit.universe = self
+        self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
             self._interactions.update(atom.interactions)
         if force_field:
