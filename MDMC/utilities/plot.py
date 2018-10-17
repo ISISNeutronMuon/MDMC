@@ -2,9 +2,9 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-11 14:23:28"""
 
+import numpy as np
 import plotly as py
 import plotly.graph_objs as go
-import numpy as np
 
 # TODO: Add in axes labels etc
 def plot_observable(observable):
@@ -73,7 +73,16 @@ def plot_configuration(config):
 
     py.offline.plot(fig)
 
-def plot_trajectory(trajectory):
+def plot_trajectory(trajectory, fps, frames=None):
+
+    """
+    Plots a configuration over time
+
+    Arguments:
+    trajectory - an MDMC trajectory
+    fps - an integer number of frames per second
+    frames - an array with [start, stop, step]
+    """
 
     # TODO: Implement using https://plot.ly/python/visualizing-mri-volume-slices/
     raise NotImplementedError
