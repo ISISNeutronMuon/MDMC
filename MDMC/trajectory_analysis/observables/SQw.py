@@ -26,8 +26,8 @@ class AbstractSQw(Observable):
     def data(self):
 
         return {'independent':self.independent_variables,
-            'dependent':self.dependent_variables,
-            'errors':self.errors}
+                'dependent':self.dependent_variables,
+                'errors':self.errors}
 
     @property
     def independent_variables(self):
