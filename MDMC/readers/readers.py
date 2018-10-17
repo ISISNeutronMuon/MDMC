@@ -10,6 +10,8 @@ class Reader:
     Abstract class that defines methods common to all readers
     """
 
+    __metaclass__ = ABCMeta
+
     # TODO: Consider if splitting these methods may cause issue - should I be using a with ... as statement?
     def open(self, file_name):
 
