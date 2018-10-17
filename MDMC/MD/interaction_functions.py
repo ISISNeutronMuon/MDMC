@@ -160,9 +160,16 @@ class InteractionFunction(object):
     Base class for interaction functions, which can be user supplied
     """
 
-    def __init__(self, names, values):
+    def __init__(self, names, val_dict):
 
-        self.params = [Parameter(values[name], name) for name in names]
+        """
+        Arguments:
+        names - a list of names of the parameters of the interaction function
+        val_dict - a dictionary of name:value pairs
+        """
+
+        names = list(names)
+        self.params = [Parameter(val_dict[name], name) for name in names]
 
     @property
     def params(self):
