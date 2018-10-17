@@ -82,7 +82,7 @@ class AbstractSQw(Observable):
         1D array of angular frequency floats, calculated from E
         """
 
-        return self.E / h_bar
+        return self.E / (h_bar * 1e15)
 
     @property
     def SQw(self):
@@ -143,7 +143,7 @@ class AbstractSQw(Observable):
 
         dt = self.t[1] - self.t[0]
 
-        self.independent_variables['E'] = (h_bar * np.pi
+        self.independent_variables['E'] = (h_bar * 1e15 * np.pi
                                            * np.arange(len(self.t))
                                            / (len(self.t) * dt))
         self._dependent_variables = {'SQw':self._calculate_SQw()}
