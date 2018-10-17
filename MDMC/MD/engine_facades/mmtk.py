@@ -16,6 +16,7 @@ import MDMC.trajectory_analysis.trajectory as MDMCt
 # TODO: import other modules that need to be wrapped
 
 import MMTK
+from MMTK import Units
 from MMTK.ForceFields import SPCEFF
 from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
                             TranslationRemover
@@ -66,7 +67,8 @@ class MMTKEngine(MDEngine):
 
         # TODO: Add in additional actions. Change so that TranslationRemover can be deselected
         self.temperature = settings.get('temperature', 300) * MMTK.Units.K
-        self.temperature_variation = 10. * MMTK.Units.K
+        self.temperature_variation = (settings.get('temperature_variation', 10.)
+                                      * MMTK.Units.K)
         self.time_step = settings.get('time_step', 1) * MMTK.Units.fs
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
 
