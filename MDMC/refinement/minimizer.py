@@ -41,6 +41,9 @@ class Minimizer:
         self.FoM_old = float('inf')
         self.FoM = None
 
+        # History of minimization
+        self.history = []
+
         params = np.array(list(params))
         self._check_parameters(params)
         self.params_old_values = None
@@ -120,15 +123,28 @@ class MMC(Minimizer):
     def step(self, FoM):
 
         self.FoM = FoM
+        values = np.array([p.value for p in self.params])
+        print '\n' + 'New FoM'
+        print self.FoM
+        print 'Old FoM'
+        print self.FoM_old
+        print values
+        history = [self.FoM, values]
 
         if self.change_state():
+            print 'Accepted'
+            history.append('Accepted')
             self.FoM_old = self.FoM
             self.params_old_values = np.array([param.value
                                                for param in self.params])
+
         else:
+            print 'Rejected'
+            history.append('Rejected')
             self.FoM = self.FoM_old
             self.reset_params()
 
+        self.history.append(history)
         self.change_parameters(self.params)
 
     def change_state(self):
