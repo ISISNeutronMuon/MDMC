@@ -100,4 +100,4 @@ control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
                                                             'Q':Q}
 
 # Run refinement
-control.refine(n_steps=0)
+control.refine(n_steps=1)
