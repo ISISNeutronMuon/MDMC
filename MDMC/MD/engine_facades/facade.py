@@ -34,17 +34,22 @@ class MDEngine:
         Minimizes the simulation energy
 
         Arguments:
-        steps - maximum number of steps for minimizer
+        n_steps - integer maximum number of steps for minimizer
         """
 
         pass
 
     @abstractmethod
-    def run(self, n_steps):
+    def run(self, n_steps, equilibration):
 
         """
         Runs a simulation.  Must follow a call to setup_universe() and
         setup_simulation().
+
+        Arguments:
+        n_steps - integer number of steps for integrator
+        equilibration - Boolean which defines if run is equilibration or
+        production
         """
 
         pass
