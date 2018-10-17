@@ -39,7 +39,8 @@ md_engine = sim.NVESimulation(universe,
                               integrator='velocity_verlet',
                               lj_options=1.2,
                               es_options={'method':'ewald'},
-                              minimizer='steepest_descent')
+                              minimizer='steepest_descent',
+                              traj_step=1057)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
@@ -60,7 +61,7 @@ control = MDMCControl(MD_engine=md_engine,
                       fit_params=fit_params,
                       MC_norm=1,
                       minimizer_type="MMC",
-                      MD_steps=103,
+                      MD_steps=108929,
                       t_resolution=114.,
 
 # Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
