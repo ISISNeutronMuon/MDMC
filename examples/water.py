@@ -72,13 +72,16 @@ control = MDMCControl(MD_engine=md_engine,
 # This should really be performed before the data is read into control - the
 # final step is a reflection of this as the MD observable is changed to match
 # the new independent variables of the experimental observable
+# So that the MD simulation size can be minimized, the Q min is increased and
+# the Q resolution is reduced.
 exp_obs = control.observable_pairs[0].exp_obs
-Q = exp_obs.Q
+Q_slice = slice(6, len(exp_obs.Q), 2)
+Q = exp_obs.Q[Q_slice]
 E_range = (exp_obs.E >=0)
 E = exp_obs.E[E_range]
-SQw = np.array([Sw[E_range] for Sw in exp_obs.SQw])
+SQw = np.array([Sw[E_range] for Sw in exp_obs.SQw[Q_slice]])
 SQw_err = np.array([Sw_err[E_range] for Sw_err
-                          in exp_obs.SQw_err])
+                          in exp_obs.SQw_err[Q_slice]])
 SQw_fun = interp2d(E, Q, SQw)
 SQw_err_zero = SQw_err
 SQw_err_zero[SQw_err == np.float('inf')] = 0
