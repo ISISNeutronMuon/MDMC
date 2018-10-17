@@ -59,10 +59,10 @@ def test_configuration(configuration):
     # original and the copy.
     conf_copy = deepcopy(configuration)
     conf_sum = configuration + conf_copy
-    for structure in conf_copy.structures_list + configuration.structures_list:
-        assert structure in conf_sum.structures_list
-        conf_sum.structures_list.remove(structure)
-    assert len(conf_sum.structures_list) == 0
+    for structure in conf_copy.structure_list + configuration.structure_list:
+        assert structure in conf_sum.structure_list
+        conf_sum.structure_list.remove(structure)
+    assert len(conf_sum.structure_list) == 0
 
     # Testing filter_by_element
     H_atoms = configuration.filter_by_element('H')
