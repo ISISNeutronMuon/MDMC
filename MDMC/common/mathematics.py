@@ -6,6 +6,10 @@ import numpy as np
 from numpy.fft import fft, ifft
 
 
+UNIT_VECTOR = np.array([[1., 0., 0.],
+                        [0., 1., 0.],
+                        [0., 0., 1.]])
+
 def correlation(input1, input2=None, normalise=False):
 
     """
