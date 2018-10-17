@@ -293,7 +293,10 @@ class AbstractSQw(Observable):
 
         # FFT and reduce the temporal dimension back to that of F(Q,t), with the
         # factor of 0.5 accounting for the fft over the reflected F(Q,t)
-        return 0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
+        # By default numpy fft is unnormalized, so to have the same power as in
+        # FQt the transform should be normalized to the length of the spectra
+        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
+                / len(FQt_mirror))
 
     def _apply_instrument_resolution(self, FQt, params, function=gaussian):
 
