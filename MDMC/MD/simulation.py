@@ -228,7 +228,7 @@ class NVESimulation(object):
         """
 
         self.engine.setup_universe(self.universe, **self.settings)
-        self.engine.setup_simulation(self.universe, **self.settings)
+        self.engine.setup_simulation(**self.settings)
 
     def minimize(self, n_steps):
 

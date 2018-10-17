@@ -12,17 +12,27 @@ class MDEngine:
     def setup_universe(self, universe, **settings):
 
         """
-        Creates a universe configuration on which a simulation can be run
+        Creates a universe configuration and populates with structural units
+
+        Arguments:
+        universe - a Universe object
+        settings - The majority of these are generic but some are specific to
+        the MDEngine that is being used
         """
 
         pass
 
     @abstractmethod
-    def setup_simulation(self, universe, **settings):
+    def setup_simulation(self, **settings):
 
         """
         Sets the options required to perform a simulation on a setup universe.
         Must follow a call to setup_universe().
+
+        Arguments:
+        universe - a Universe object
+        settings - The majority of these are generic but some are specific to
+        the MDEngine that is being used
         """
 
         pass
@@ -70,7 +80,7 @@ class MDEngine:
     def update_parameters(self):
 
         """
-        Updates the MD engine force field parameters
+        Updates the MD engine force field parameters from the universe
         """
 
         pass

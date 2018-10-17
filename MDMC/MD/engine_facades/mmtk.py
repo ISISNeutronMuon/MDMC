@@ -13,8 +13,6 @@ from MDMC.MD.force_fields import SPCE
 import MDMC.MD.structural_units as MDMCs
 import MDMC.trajectory_analysis.trajectory as MDMCt
 
-# TODO: import other modules that need to be wrapped
-
 import MMTK
 from MMTK import Units
 from MMTK.ForceFields import SPCEFF
@@ -46,7 +44,7 @@ class MMTKEngine(MDEngine):
         self.universe = MMTKCubicUniverse(universe, **settings)
         self.build_configuration(universe)
 
-    def setup_simulation(self, universe, **settings):
+    def setup_simulation(self, **settings):
 
         """
         Creates a time integrator and sets relevant simulation parameters
