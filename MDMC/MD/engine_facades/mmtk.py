@@ -95,8 +95,7 @@ class MMTKEngine(MDEngine):
         # Including the trajectory and integrator setup before running resets
         # the trajectory before each run
         self._set_trajectory_output()
-        actions = [self.trajectory_output,
-                   TranslationRemover()]
+        actions = [self.trajectory_output, TranslationRemover()]
 
         if equilibration:
             actions.append(VelocityScaler(self.temperature,
@@ -170,14 +169,16 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
         self._MDMC_universe = weakref.ref(universe)
         dims = self.MDMC_universe.dims[0] / 10.
+
+        ls = self.parse_ff_option(settings.get('ls_options'))
+        es = self.parse_ff_option(settings.get('es_options'))
+
         if universe.force_fields is None:
             super(MMTKCubicUniverse, self).__init__(dims)
         else:
             super(MMTKCubicUniverse, self).__init__(
                 dims,
-                UNIVERSE_FF[type(universe.force_fields)](
-                    settings.get('lj_options', None),
-                    settings.get('es_options', None)))
+                UNIVERSE_FF[type(universe.force_fields)](ls, es))
         self.assign_lj_parameters()
         self.assign_bond_parameters()
         self.assign_bond_angle_parameters()
@@ -356,6 +357,25 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         if interaction_type == MDMCs.Dispersion:
             return (0., 0., 0.)
         return (0., 0.)
+
+        def parse_ff_option(self, option):
+
+            """
+            Parses forcefield option, either electrostatic or LJ
+
+            option - a float specifying the cutoff, a string specifying the
+            method for calculating the cutoff or None
+            """
+
+            if isinstance(option, float):
+                return option * Units.Ang
+            elif isinstance(option, str):
+                return {'method':option}
+            elif option is None:
+                return option
+            else:
+                raise TypeError('Invalid forcefield option (es or lj) specified'
+                               )
 
 
 class MMTKAtom(MMTK.ChemicalObjects.Atom):
