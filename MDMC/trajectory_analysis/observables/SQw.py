@@ -8,7 +8,7 @@ import numpy as np
 
 from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h_bar
-from MDMC.common.mathematics import correlation
+from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.common.resolution_functions import gaussian
 from MDMC.trajectory_analysis.observables.obs import Observable
 
@@ -118,6 +118,9 @@ class AbstractSQw(Observable):
 
         Independent variables can either be set previously or defined within
         params
+
+        Arguments:
+        n_Q_vectors - The maximum number of Q vectors for any Q value
         """
 
         self._origin = 'MD'
@@ -126,6 +129,9 @@ class AbstractSQw(Observable):
         self.universe_cell = params.get('cell')
         self.t_res = params['t_resolution']
         self._set_weights()
+
+        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_cell)
+                                 * UNIT_VECTOR)
 
         # Overwrite independent variable 'Q' if it already exists
         try:
@@ -137,7 +143,12 @@ class AbstractSQw(Observable):
         if not self.isotropic:
             self.direction = np.array(params.get('direction', [1, 0, 0]))
 
-        self.Q_vectors = params.get('Q_vectors', self._calculate_Q_vectors())
+        self.n_Q_vectors = params.get('n_Q_vectors', 30)
+        if not hasattr(self, 'Q_vectors'):
+            try:
+                self.Q_vectors = params['Q_vectors']
+            except KeyError:
+                self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
         self.FQt = self.calculate_FQt()
 
@@ -203,17 +214,52 @@ class AbstractSQw(Observable):
 
         return np.array(rho_all_atoms)
 
-    def _calculate_Q_vectors(self):
+    def _calculate_Q_vectors(self, Q_values):
 
-        if self.isotropic:
-            direction = np.array([[1., 0., 0.],
-                                  [0., 1., 0.],
-                                  [0., 0., 1.]])
-        else:
-            direction = self.direction
+        # Only valid for uniform Q_values
+        Q_step = (Q_values[1] - Q_values[0]) / 2.
 
-        return np.array([value * direction
-            for value in self.Q])
+        Q_vectors = []
+        updated_Q_values = []
+        for Q in Q_values:
+
+            Q_min = Q - Q_step
+            Q_max = Q + Q_step
+
+            vectors = self._calculate_vectors_single_Q(Q_min, Q, Q_max)
+
+            if len(vectors) > 0:
+                Q_vectors.append(np.array(vectors))
+                updated_Q_values.append(Q)
+
+        self.Q_values = updated_Q_values
+
+        return np.array(Q_vectors)
+
+    def _calculate_vectors_single_Q(self, Q_min, Q, Q_max):
+
+        x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
+                               in self.reciprocal_basis)
+
+        vectors = []
+        for l in range(-x_max, x_max + 1):
+            for m in range(-y_max, y_max + 1):
+                for n in range(-z_max, z_max + 1):
+
+                    if l == m == n == 0:
+                        continue
+
+                    vector = np.array(l * self.reciprocal_basis[0]
+                                       + m * self.reciprocal_basis[1]
+                                       + n * self.reciprocal_basis[2])
+
+                    if Q_min < np.linalg.norm(vector) <= Q_max:
+                        vectors.append(vector)
+
+                    if len(vectors) >= self.n_Q_vectors:
+                        return np.array(vectors)
+
+        return np.array(vectors)
 
     def _rho(self, r, Q_vector):
 
