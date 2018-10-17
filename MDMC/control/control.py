@@ -2,6 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-18 15:47:47"""
 
+import numpy as np
 
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
@@ -109,6 +110,13 @@ class MDMCControl(object):
 
         self.run_MD()
         self._calculate_observables(self.MD_engine, self.observable_pairs)
+
+        # TODO: Remove arbitrary normalization
+        self.observable_pairs[0].exp_obs._dependent_variables['SQw'] /= \
+            np.max(self.observable_pairs[0].exp_obs._dependent_variables['SQw'])
+        self.observable_pairs[0].MD_obs._dependent_variables['SQw'] /= \
+            np.max(self.observable_pairs[0].MD_obs._dependent_variables['SQw'])
+
         return self._calculate_FoM()
 
     def run_MD(self):
