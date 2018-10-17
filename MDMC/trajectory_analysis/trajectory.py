@@ -45,7 +45,6 @@ class Configuration(AtomCollection):
     # TODO: Consider how wraparound for periodic objects will work
     # TODO: Consider storage of weakref to each atom - fine for configuration but requires a complete atom object for each atom in every configuration in a trajectory
 
-        self.structures_list = list(structural_units)
     def __init__(self, *structural_units, **kwargs):
 
         """
@@ -97,13 +96,24 @@ class Configuration(AtomCollection):
     @data.setter
     def data(self, structural_units):
 
-        self._data = [atom for unit in structural_units
-                      for atom in unit.atom_list]
+        self.structure_list = []
+        self._data = []
+        for unit in structural_units:
+            self.add_structural_unit(unit)
 
-    def add_structural_units(self, *structural_units):
+    def add_structural_unit(self, structural_unit):
 
-        self.structures_list.extend(structural_units)
-        self.data = np.append(self._data,structural_units)
+        self.validate_structure(structural_unit)
+        self.structure_list.append(structural_unit)
+        self._data.extend([atom for atom in structural_unit.atom_list])
+
+    def validate_structure(self, structure):
+
+        # Test that all structural units are from the same universe
+        try:
+            assert structure.universe is self.universe
+        except AssertionError:
+            raise AssertionError('Atoms are not all from same universe')
 
     def __add__(self, configuration):
 
@@ -111,9 +121,9 @@ class Configuration(AtomCollection):
         Returns a new configuration from the sum of configurations
         """
 
-        structures_list = self.structures_list + configuration.structures_list
+        structure_list = self.structure_list + configuration.structure_list
 
-        return self.__class__(*structures_list)
+        return self.__class__(*structure_list)
 
     def __sub__(self, configuration):
 
@@ -147,7 +157,7 @@ class Configuration(AtomCollection):
         units
         """
 
-        return filter(predicate, self.structures_list)
+        return filter(predicate, self.structure_list)
 
     def filter_atoms(self, predicate):
 
@@ -173,7 +183,6 @@ class Configuration(AtomCollection):
 
         return self.filter_atoms(lambda x: x.element == element)
 
-    # TODO: Implement
     def scale(self, factor, vectors='positions'):
 
         """
@@ -186,7 +195,12 @@ class Configuration(AtomCollection):
 
         raise NotImplementedError
 
+
 class TemporalConfiguration(Configuration):
+
+    """
+    A configuration which has a time associated with it
+    """
 
     def __init__(self, time, *structural_units):
         super(TemporalConfiguration, self).__init__(*structural_units)
@@ -194,12 +208,23 @@ class TemporalConfiguration(Configuration):
 
     def __add__(self, configuration):
 
+        """
+        Sums the structure list of two configurations
+
+        Arguments:
+        configuration - a TemporalConfiguration object
+
+        Returns:
+        A TemporalConfiguration object with the sum of the structures from the
+        configuration and self
+        """
+
         # TODO: Add warning if configurations don't all have the same time
         time = np.mean([self.time, configuration.time])
 
-        structures_list = self.structures_list + configuration.structures_list
+        structure_list = self.structure_list + configuration.structure_list
 
-        return self.__class__(time, *structures_list)
+        return self.__class__(time, *structure_list)
 
 
 class Trajectory(AtomCollection):
