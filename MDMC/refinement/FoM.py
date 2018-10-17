@@ -30,10 +30,14 @@ class FigureOfMeritCalculator:
         """
         Calculates the FoM value by calculating the FoM for every observable
         pair
+
+        Returns:
+        Non-negative float
         """
 
         self.value = np.sum([self.calculate_single_FoM(obs_pair)
                              for obs_pair in self.obs_pairs])
+        assert self.value >= 0.
         return self.value
 
     @abstractmethod

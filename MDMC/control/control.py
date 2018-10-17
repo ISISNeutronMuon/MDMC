@@ -104,6 +104,9 @@ class MDMCControl(object):
 
         """
         The methods required to generate a FoM
+
+        Returns:
+        Non-negative float FoM
         """
 
         self.run_MD()
@@ -157,6 +160,13 @@ class MDMCControl(object):
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
 
     def _calculate_FoM(self):
+
+        """
+        Calculates the total FoM for all observable pairs
+
+        Returns:
+        Non-negative float FoM
+        """
 
         return self.FoM_calculator.calculate()
 
