@@ -38,7 +38,7 @@ md_engine = sim.NVESimulation(universe,
                               temperature=263.,
                               integrator='velocity_verlet',
                               lj_options=12,
-                              es_options={'method':'ewald'},
+                              es_options='ewald',
                               minimizer='steepest_descent',
                               traj_step=1057)
 
