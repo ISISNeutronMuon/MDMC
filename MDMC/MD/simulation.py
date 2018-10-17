@@ -17,15 +17,6 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
                        'rhombic_dodecahedron', 'truncated_octahedron'])
 
-# TODO: Extract out atomic structure generation from Universe class, so that more structures can be easily added
-
-def _primitive_cubic(dimensions, number):
-
-    pass
-
-def _liquid_structure():
-
-    pass
 
 class Universe(object):
 
@@ -33,23 +24,49 @@ class Universe(object):
     Class where configuration and topology are defined
 
     Attributes:
-    shape
-    dims - dimensions
-    pbc - Periodic Boundary Conditions
+    shape - member of the Shape enum
+    dims - array of dimensions
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
                  structures=None):
 
-        # TODO: Change interactions to maintain an ordered set, so that searching is optimized
-        self.dims = np.array(dimensions)
+        """
+        Arguments:
+        dimensions - single float for cubic universe or 3 element list of floats
+        shape - member of shape enum
+        """
+
         self.shape = shape
+        self.dims = dimensions
         if structures:
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
         self._interactions = set()
         self.force_fields = force_field
+
+    @property
+    def dims(self):
+
+        return self._dims
+
+    @dims.setter
+    def dims(self, dims):
+
+        if isinstance(dims, float):
+            if self.shape == Shape.cubic:
+                self._dims = np.array([dims] * 3)
+            else:
+                raise TypeError("Only dimensions of cubic Universes can be"
+                                " specified with a float")
+        elif isinstance(dims, float) or isinstance(dims, np.ndarray):
+            if len(dims) == 3:
+                self._dims = np.array(dims)
+            else:
+                raise ValueError("3 dimensions must be specified")
+        else:
+            raise TypeError("dims must be a float or 3 element list of floats")
 
     @property
     def interactions(self):
@@ -86,7 +103,7 @@ class Universe(object):
              structural_motif=_liquid_structure(), **kwargs):
 
         """
-        A fluid-like filling of the universe independent of existing atoms
+        A liquid-like filling of the universe independent of existing atoms
 
         Adds copies of structural_unit to existing configuration until universe
         is full.  As exclusion region is defined by the size of a bounding
@@ -136,7 +153,6 @@ class Universe(object):
     def atom_list(self):
         return self.configuration.atom_list
 
-    # TODO: Change this so that multiple forcefields can be stored - this will necessitate a change in how force fields are passed to MMTK
     def add_force_field(self, force_field, *interactions):
 
         """
@@ -171,7 +187,24 @@ class Universe(object):
         return self.configuration.molecule_list
 
 
-# TODO: Implement
+def _primitive_cubic(dimensions, number):
+
+    """
+    Generates a primitive cubic structure
+    """
+
+    raise NotImplementedError
+
+
+def _liquid_structure():
+
+    """
+    Generates a random arrangement of structural units
+    """
+
+    raise NotImplementedError
+
+
 class EnergyMinimizer(object):
 
     """
@@ -185,7 +218,10 @@ class EnergyMinimizer(object):
     minimize() - uses MD engine API to minimize energy
     """
 
-# TODO: Create other ensembles by decorating NVESimulation with thermo/barostats
+    def __init__(self):
+
+        raise NotImplementedError
+
 class NVESimulation(object):
 
     """
