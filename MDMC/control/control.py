@@ -173,8 +173,8 @@ class MDMCControl(object):
         observable_pairs - a list of observable pairs
         """
 
+        trj = MD_engine.engine.convert_trajectory()
         for pair in observable_pairs:
-            trj = MD_engine.engine.convert_trajectory()
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
 
     def _calculate_FoM(self):
