@@ -61,7 +61,7 @@ control = MDMCControl(MD_engine=md_engine,
                       MC_norm=1,
                       minimizer_type="MMC",
                       MD_steps=103,
-                      t_resolution=30.)
+                      t_resolution=114.,
 
 # Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
 # a non-uniform E step.
