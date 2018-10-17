@@ -238,13 +238,13 @@ class NVESimulation(object):
 
         self.engine.minimize(n_steps)
 
-    def run(self, n_steps):
+    def run(self, n_steps, equilibration=False):
 
         """
         Runs the MD simulation
         """
 
-        self.engine.run(n_steps)
+        self.engine.run(n_steps, equilibration)
 
     @property
     def trajectory(self):
