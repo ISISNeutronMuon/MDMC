@@ -2,25 +2,24 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 11:07:19"""
 
-import weakref
 from tempfile import TemporaryFile
-
-import numpy as np
-
-from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.simulation import Shape
-from MDMC.MD.force_fields import SPCE
-import MDMC.MD.structural_units as MDMCs
-import MDMC.trajectory_analysis.trajectory as MDMCt
+import weakref
 
 import MMTK
 from MMTK import Units
-from MMTK.ForceFields import SPCEFF
 from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
                             TranslationRemover
+from MMTK.ForceFields import SPCEFF
 from MMTK.Minimization import SteepestDescentMinimizer, \
                                 ConjugateGradientMinimizer
+import numpy as np
 from Scientific._vector import Vector
+
+from MDMC.MD.engine_facades.facade import MDEngine
+from MDMC.MD.force_fields import SPCE
+from MDMC.MD.simulation import Shape
+import MDMC.MD.structural_units as MDMCs
+import MDMC.trajectory_analysis.trajectory as MDMCt
 
 
 UNIVERSE_PBC = {Shape.infinite:MMTK.Universe.InfiniteUniverse,

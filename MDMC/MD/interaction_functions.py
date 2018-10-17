@@ -8,8 +8,6 @@ definitions.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
-from abc import ABCMeta, abstractmethod
-from collections import MutableMapping
 from inspect import getargspec, getmembers
 import operator
 import weakref
@@ -32,8 +30,9 @@ class Parameter(object):
     def __init__(self, value, name, fixed=False, constraints=None):
 
         """
-        Attributes:
+        Arguments:
         value - float specifying the value of the parameter
+        name - a string specifying the name
         fixed - boolean specifying whether or not the value can be changed
         constraints - 2 element tuple (lower, upper) specifying the closed range
         in which value can be set

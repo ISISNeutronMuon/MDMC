@@ -4,10 +4,9 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-18 15:47:47"""
 
 import numpy as np
 
+from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
-from MDMC.refinement import minimizer
-from MDMC.refinement import FoM
 
 
 class MDMCControl(object):

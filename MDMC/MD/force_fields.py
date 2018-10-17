@@ -12,8 +12,7 @@ from abc import ABCMeta,abstractmethod
 import MDMC.MD.interaction_functions as ifu
 import MDMC.MD.structural_units as su
 
-# TODO: Implement factory pattern for force fields
-# TODO: Make dictionary an abstractproperty but for a class if this is possible
+
 class ForceField:
 
     """
