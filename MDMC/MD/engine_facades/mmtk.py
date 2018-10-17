@@ -406,10 +406,9 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
                  MMTK_trajectory.universe.atomList()]
 
     configurations = []
-    if kwargs.get('slice'):
-        for i in range(kwargs.get('slice').get('start'),
-                       kwargs.get('slice').get('stop'),
-                       kwargs.get('slice').get('step')):
+    slce = kwargs.get('slice')
+    if slce:
+        for i in range(slce.start, slce.stop, slce.step):
             configurations.append(convert_configuration(MMTK_trajectory[i],
                                                         universe_dims,
                                                         atom_list))
