@@ -75,7 +75,7 @@ class MMTKEngine(MDEngine):
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
-                step_size=settings.get('minimizer_step_size', 0.05))
+                step_size=settings.get('minimizer_step_size', 0.05)*Units.Ang)
         else:
             self.universe.initializeVelocitiesToTemperature(self.temperature)
 
