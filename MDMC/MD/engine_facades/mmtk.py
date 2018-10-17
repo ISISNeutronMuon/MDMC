@@ -49,22 +49,25 @@ class MMTKEngine(MDEngine):
         """
         Creates a time integrator and sets relevant simulation parameters
 
-        Call MMTK integrator corresponding to the integrator setting.
-        Initialize velocities to Boltzmann distribution based on temperature,
-        defaulting to 300 K if no temperature is specified. Set integrator to
-        scale velocities to this temperature as it runs, with default allowed
-        variation in temperature of 10 K.  MMTK integrator takes time steps in
-        ps (although defaults to 1 fs).
-
-        If a minimizer is specified, it will run before the integrator. The step
-        size and number of steps of the minimizer can also be passed in
-        **settings, with defaults of 100 and 0.05 AA.
+        Calls MMTK integrator corresponding to the integrator setting.
+        Initializes velocities to Boltzmann distribution based on temperature,
+        defaulting to 300 K if no temperature is specified. The temperature is
+        scaled to this value during equilibration but not during production
+        runs.
 
         MMTK.Trajectory.Trajectory() is called with a temporary file.
 
         Arguments:
+        Settings:
+        temperature - float temperature in units of K (default 300 K)
+        temperature_variation - float maximum temperature before scaling in K
+        (default 10 K)
         traj_step - the number of simulation steps between each trajectory
         output
+        time_step - float time step in units of fs (default 1 fs)
+        minimizer_step_size - float minimizer distance step in units of AA
+        (default 0.05 AA)
+
         """
 
         # TODO: Add in additional actions. Change so that TranslationRemover can be deselected
@@ -110,7 +113,6 @@ class MMTKEngine(MDEngine):
         Creates a temporary file in which to output MMTK trajectories
         """
 
-        # TODO: Consider if a SpooledTemporaryFile would be more appropriate
         trajectory_file = TemporaryFile()
         self.trajectory = MMTK.Trajectory.Trajectory(self.universe,
                                                      trajectory_file.name,
@@ -134,11 +136,10 @@ class MMTKEngine(MDEngine):
         Fills the MMTK universe from MDMC universe configuration and topology
 
         Only adds atoms in molecules to MMTK universe, as MMTK does not define
-        force fields on individual atoms (except about noble gases, excluding
+        force fields on individual atoms (except for noble gases, excluding
         He)
         """
 
-        # TODO: Add additional parameters that can be passed to an MMTK molecule
         for molecule in MDMC_universe.molecule_list:
             m = MMTKMolecule(molecule)
             self.universe.addObject(m)
@@ -157,6 +158,14 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         setter method which sets self._MDMC_universe as a weakref. The
         consequence of this is that self.MDMC_universe cannot be set after
         initialization.
+
+        Arguments:
+        universe - an MDMC universe
+        Settings:
+        lj_options - Either a float specifying the cutoff in AA or a string
+        specifying the cutoff type
+        es_options - Either a float specifying the cutoff in AA or a string
+        specifying the cutoff type
         """
 
         self._MDMC_universe = weakref.ref(universe)
@@ -185,6 +194,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
     def update_MDMC_universe(self):
 
+        """
+        Updates the positions and velocities of atoms in the MDMC universe
+        """
+
         raise NotImplementedError
 
     def assign_lj_parameters(self):
@@ -200,6 +213,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def lj_parameters_closure(self, element_dict):
 
         """
+        Arguments:
+        element_dict - a dictionary with (element string):(atom of element)
+        pairs
+
         Returns:
         Function equivalent to MMTK SPCEParameters.ljParameters method, which is
         where LJ parameters are hard coded in MMTK.
@@ -230,6 +247,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def bond_parameters_closure(self, element_dict):
 
         """
+        Arguments:
+        element_dict - a dictionary with (element string):(atom of element)
+        pairs
+
         Returns:
         Function equivalent to MMTK SPCEParameters.bondParameters method, which
         is where bond parameters are hard coded in MMTK.
@@ -264,6 +285,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def bond_angle_parameters_closure(self, element_dict):
 
         """
+        Arguments:
+        element_dict - a dictionary with (element string):(atom of element)
+        pairs
+
         Returns:
         Function equivalent to MMTK SPCEParameters.bondAngleParameters method,
         which is where bond parameters are hard coded in MMTK.
@@ -299,6 +324,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         the LJ force field normally only takes two parameters, this third
         parameter will always be hard coded to 0.
 
+        Arguments:
+        interaction_type - a class which is a subclass of MDMCs.Interaction
+        elements - one or more strings specifying an element
+
         Returns:
         A tuple from first Dispersion interaction of MDMC atom of same element.
         """
@@ -331,6 +360,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
 class MMTKAtom(MMTK.ChemicalObjects.Atom):
 
+    """
+    An MMTK atom with a reference to the correpsonding MDMC atom
+    """
+
     def __init__(self, atom, atom_spec, **properties):
         self._MDMC_obj = weakref.ref(atom)
         super(MMTKAtom, self).__init__(atom_spec, **properties)
@@ -354,6 +387,11 @@ class MMTKAtom(MMTK.ChemicalObjects.Atom):
 # TODO: Modify so if molecule.name = None, it can be determined from MMTK database based on atoms and bonds
 class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 
+    """
+    An MMTK molecule with a reference to the corresponding MDMC molecule and a
+    method for assigning the charge
+    """
+
     def __init__(self, molecule, **properties):
         self._MDMC_obj = weakref.ref(molecule)
         position = coordinate_transform(molecule.position,
@@ -367,9 +405,15 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
     def MDMC_obj(self):
         return self._MDMC_obj()
 
-    # TODO: Find a better way of matching atoms in Molecules in MDMC and MMTK
-    # TODO: Only works for spce
     def assign_charge(self):
+
+        """
+        Assigns the charge to each atom in the MMTK molecule based on the
+        charges of atoms of the corresponding MDMC molecule
+
+        CURRENTLY ONLY APPLIES TO SPCE CHARGES
+        """
+
         for atom in self.atomList():
             for MDMC_atom in self.MDMC_obj.atom_list:
                 if atom.type.symbol == MDMC_atom.element:
@@ -383,7 +427,7 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
 
 
 # TODO: Update this so that it can form an association with specific atoms and also creates molecules not just atoms
-def convert_trajectory(MMTK_trajectory, **kwargs):
+def convert_trajectory(MMTK_trajectory, **settings):
 
     """
     Builds an MDMC trajectory from an MMTK trajectory.
@@ -392,6 +436,8 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
 
     Arguments:
     MMTK_trajectory: An MMTK trajectory
+    Settings:
+    slice - a slice to be applied to the MMTK trajectory before conversion
     """
 
     # This currently exists as a separate function so that saved MMTK trajectories can be tested
@@ -404,7 +450,7 @@ def convert_trajectory(MMTK_trajectory, **kwargs):
                  MMTK_trajectory.universe.atomList()]
 
     configurations = []
-    slce = kwargs.get('slice')
+    slce = settings.get('slice')
     if slce:
         for i in range(slce.start, slce.stop, slce.step):
             configurations.append(convert_configuration(MMTK_trajectory[i],
