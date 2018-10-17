@@ -126,11 +126,11 @@ class AbstractSQw(Observable):
         self._origin = 'MD'
         self.trajectory = MD_input
         self.t = self.trajectory.times - self.trajectory.times[0]
-        self.universe_cell = params.get('cell')
+        self.universe_dims = self.trajectory.dims
         self.t_res = params['t_resolution']
         self._set_weights()
 
-        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_cell)
+        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
                                  * UNIT_VECTOR)
 
         # Overwrite independent variable 'Q' if it already exists
