@@ -1,10 +1,9 @@
 """A module for storing atomic interaction functions
 
-Contains abstract class InteractionFunction for defining the form interaction
-function classes must take.  All functions describing atomic interactions must
-be added to this module in order to be called by a universe.  If needed, the
-interaction function classes can be extended to contain actual function
-definitions.
+Contains class InteractionFunction from which all interaction function classes
+must derive.  All functions describing atomic interactions must be added to this
+module in order to be called by a universe.  If needed, the interaction function
+classes can be extended to contain actual function definitions.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
@@ -75,8 +74,9 @@ class Parameter(object):
     def constraints(self, constraints):
 
         """
-        Checks if constraints are a 2 element tuple of floats, that lower is
-        less than or equal to upper, and that self.value is within them
+        Checks if constraints are a 2 element tuple of floats, that the zeroeth
+        element is less than or equal to the first, and that self.value is
+        within them, if it exists
         """
 
         self._constraints = constraints
@@ -186,6 +186,9 @@ class InteractionFunction(object):
 
         """
         Sets the parent interaction for all parameters
+
+        Arguments:
+        interaction - an interaction
         """
 
         for param in self.params:
@@ -214,6 +217,7 @@ class LennardJones(InteractionFunction):
 
     def __init__(self, sigma, eta):
 
+        # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]
         super(self.__class__, self).__init__(args, locals())
 
@@ -225,6 +229,7 @@ class Coulomb(InteractionFunction):
 
     def __init__(self, charge):
 
+        # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]
         super(self.__class__, self).__init__(args, locals())
 
