@@ -94,7 +94,11 @@ class MDMCControl(object):
             self.minimizer.step(FoM)
             count += 1
 
-        self.minimizer.reset_params()
+        try:
+            self.minimizer.reset_params()
+        except TypeError:
+            pass
+
         print self.fit_params
 
     def generate_FoM(self):
