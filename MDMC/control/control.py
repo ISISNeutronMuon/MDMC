@@ -93,7 +93,9 @@ class MDMCControl(object):
             self.minimizer.step(FoM)
             count += 1
 
+        # Try/except accounts for n_steps = -1
         try:
+            # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
         except TypeError:
             pass
@@ -128,6 +130,14 @@ class MDMCControl(object):
 
         """
         Creates an observable of the specified type and reads in data from file
+
+        Arguments:
+        type - string specifying the type of the observable
+        reader - string specifying the type of the reader
+        file_name - string with the absolute or relative path and the file name
+
+        Returns:
+        Observable of type 'type'
         """
 
         observable = ObservableFactory.create_observable(type)
@@ -138,10 +148,14 @@ class MDMCControl(object):
 
         """
         Creates a observable without data but with independent variables
-        specified from another observable
+        specified from another observable.  This is a placeholder in which
+        the observable can be calculated from an MD trajectory.
 
-        This is a placeholder in which the the observable can be calculated from
-        an MD trajectory
+        Arguments:
+        exp_observable - an observable with defined independent variables
+
+        Returns:
+        An observable with only independent variables and origin = 'MD'
         """
 
         observable = ObservableFactory.create_observable(exp_observable.name)
@@ -153,6 +167,10 @@ class MDMCControl(object):
 
         """
         Calculates all of the observables from the MD trajectory/configurations
+
+        Arguments:
+        MD_engine - an MDEngine object
+        observable_pairs - a list of observable pairs
         """
 
         for pair in observable_pairs:
