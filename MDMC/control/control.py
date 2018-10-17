@@ -20,8 +20,6 @@ class MDMCControl(object):
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
-    # TODO: Change __init__ so that a minimizer instance is passed
-    # TODO: Find a better solution for passing settings for refinement - or can it be avoided altogether?
     def __init__(self, MD_engine, exp_datasets, fit_params, MC_norm=1.,
         minimizer_type='MMC', FoM_type='standard', **settings):
 
