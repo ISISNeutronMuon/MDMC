@@ -133,7 +133,7 @@ class MMC(Minimizer):
 
     def change_state(self):
 
-        prob = min(1, np.exp(self.FoM_old - self.FoM) / self.MC_norm)
+        prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
         return True if prob > np.random.random() else False
 
     def change_parameters(self, params):
