@@ -250,14 +250,26 @@ class Trajectory(AtomCollection):
     @data.setter
     def data(self, configurations):
 
-    # TODO: Test that all configurations have the same atoms
-
         self._data = np.array(
             [(i, config.time, config) for
             i, config in enumerate(configurations, 1)],
             dtype = [('frame', 'int64'),
             ('time', 'float64'),
             ('configuration', 'object')])
+
+        for datum in self._data:
+            if datum['frame']==1:
+                config0 = datum['configuration']
+            else:
+                self.validate_config(datum['configuration'], validator=config0)
+
+    def validate_config(self, config, validator):
+
+        try:
+            assert len(config.atom_list) == len(validator.atom_list)
+        except AssertionError:
+            raise AssertionError('Configurations do not contain the same number'
+                                 ' of atoms')
 
     def __getitem__(self, item):
 
