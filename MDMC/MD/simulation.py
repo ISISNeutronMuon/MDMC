@@ -4,13 +4,15 @@
 
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:01:04"""
 
-from enum import Enum
-import itertools
 from copy import deepcopy
+import itertools
+
+from enum import Enum
 import numpy as np
 
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
+
 
 Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
                        'rhombic_dodecahedron', 'truncated_octahedron'])
