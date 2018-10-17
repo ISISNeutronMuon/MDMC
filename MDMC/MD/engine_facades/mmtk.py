@@ -63,6 +63,10 @@ class MMTKEngine(MDEngine):
         **settings, with defaults of 100 and 0.05 AA.
 
         MMTK.Trajectory.Trajectory() is called with a temporary file.
+
+        Arguments:
+        traj_step - the number of simulation steps between each trajectory
+        output
         """
 
         # TODO: Add in additional actions. Change so that TranslationRemover can be deselected
@@ -71,6 +75,7 @@ class MMTKEngine(MDEngine):
                                       * MMTK.Units.K)
         self.time_step = settings.get('time_step', 1) * MMTK.Units.fs
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
+        self.traj_step = settings['traj_step']
 
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
