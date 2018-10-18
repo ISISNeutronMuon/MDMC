@@ -342,6 +342,11 @@ class Group(StructuralUnit):
     velocity - center of mass translational velocity
     """
 
+    def __init__(self):
+
+        raise NotImplementedError
+
+
 class Molecule(StructuralUnit):
 
     """
@@ -350,20 +355,18 @@ class Molecule(StructuralUnit):
     Must be declared with at least 2 atoms and one interaction.
 
     Attributes:
-    position - center of mass position
-    velocity - center of mass translational velocity
+    Settings:
+    interactions - a list of objects with base class Interaction
     """
 
-    # TODO: Make Molecule init from list of atoms/groups and also list of element symbols (both with list of bonds)
-    # TODO: Create method for adding atoms/groups after init
-    def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None, **kwargs):
+    def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None, **settings):
 
-        self._structure_list = kwargs['atoms']
+        self._structure_list = settings['atoms']
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
         super(Molecule,self).__init__(position, velocity, name)
-        self.interactions = kwargs['interactions']
+        self.interactions = settings['interactions']
 
     @property
     def position(self):
@@ -391,11 +394,18 @@ class Molecule(StructuralUnit):
 
     def _set_subunit_positions(self):
 
+        """
+        Sets the position of all subunits in the global frame
+        """
+
         for atom in self.atom_list:
             atom.position = self.position + self._CoM_frame_positions[atom]
 
-    # TODO: Improve implementation which determines atomic positions relative to molecular CoM
     def _calc_CoM(self):
+
+        """
+        Calculate the position of the center of mass of the molecule
+        """
 
         mass = 0.
         weighted_positions = np.zeros(3)
@@ -406,12 +416,15 @@ class Molecule(StructuralUnit):
 
     def _calc_subunit_position_in_CoM_frame(self):
 
+        """
+        Calculate the position of all subunits in the Molecule CoM frame
+        """
+
         self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
         for atom in self.atom_list:
             self._CoM_frame_positions[atom] = atom.position - CoM
 
-    # TODO: Not sure this method is necessary!
     @property
     def bounding_box(self):
 
@@ -420,7 +433,21 @@ class Molecule(StructuralUnit):
 
 class BoundingBox(object):
 
+    """
+    A box with the minimum and maximum extents of the atoms
+
+    Attributes:
+    min - a NumPy array with the minimum extent
+    max - a NumPy array with the maximum extent
+    """
+
     def __init__(self, position, atom_list):
+
+        """
+        Arguments:
+        position - a NumPy array with the position of the structural unit
+        atom_list - a list of the atoms which comprise the structural unit
+        """
 
         self.min = position
         self.max = position
@@ -429,7 +456,6 @@ class BoundingBox(object):
             self.max = np.maximum(self.max, atom.position)
 
 
-# TODO: Separate interactions into own module
 class Interaction:
 
     """
@@ -439,10 +465,14 @@ class Interaction:
     atoms.
 
     Attributes:
-    atoms
+    atom_list - a list of the atoms which possess the interaction
     function - A class of bond interaction function (e.g. harmonic
     potential)
-    parameters - bond interaction parameters
+    function_name - the name of the interaction function
+    ID - a unique integer
+    universe - the universe the interaction belongs to
+    name - the name of the interaction
+    params - bond interaction parameters
     """
 
     __metaclass__ = ABCMeta
@@ -464,6 +494,9 @@ class Interaction:
         (and associated parameters) are shared for all Interactions which only
         differ on the specific atoms on which they act (not on the element
         types).
+
+        Arguments:
+        memo - the memo dict
         """
 
         cls = self.__class__
@@ -502,7 +535,6 @@ class Interaction:
 
         return [atom.ID for atom in self.atom_list]
 
-    # TODO: Make IDs unique prime numbers
     def _generate_ID(self):
 
         self.ID = reduce(lambda x,y: x*y, self.atom_IDs())
@@ -543,6 +575,11 @@ class Dispersion(Interaction):
 
     def __init__(self, atom):
 
+        """
+        Arguments:
+        atom - at Atom object
+        """
+
         super(Dispersion,self).__init__(atom)
 
 
@@ -557,6 +594,11 @@ class Coulombic(Interaction):
 
     def __init__(self, atom):
 
+        """
+        Arguments:
+        atom - at Atom object
+        """
+
         super(Coulombic,self).__init__(atom)
 
 class Bond(Interaction):
@@ -566,6 +608,11 @@ class Bond(Interaction):
     """
 
     def __init__(self, atom1, atom2):
+
+        """
+        Arguments:
+        atom1, atom2 - at Atom object
+        """
 
         super(Bond,self).__init__(atom1,atom2)
 
@@ -579,6 +626,11 @@ class BondAngle(Interaction):
     """
 
     def __init__(self, atoms):
+
+        """
+        Arguments:
+        atoms - a list of 3 or 4 atoms
+        """
 
         self._validate_atoms(atoms)
         super(BondAngle,self).__init__(*atoms)
