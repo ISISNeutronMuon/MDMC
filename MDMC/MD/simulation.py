@@ -301,7 +301,11 @@ class NVESimulation(object):
 
         """
         Returns:
-        MDMC trajectory calculated during the MD simulation run
+        MDMC trajectory calculated during the MD simulation run or None if no
+        trajectory exists
         """
 
-        return self.engine.convert_trajectory()
+        try:
+            return self.engine.convert_trajectory()
+        except AttributeError:
+            return None
