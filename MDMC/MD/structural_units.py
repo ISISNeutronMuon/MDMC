@@ -15,17 +15,20 @@ import numpy as np
 
 import MDMC.common.atom_properties as atom_properties
 
-# TODO: Create pattern to recursively update attributes of subunits e.g. when molecule has universe updated, so do all atoms belonging to it
-# TODO: Change structural unit to structure
+
 class StructuralUnit:
+
     """Abstract base class for all structural units
 
  	Attributes:
  	ID - a unique identifier for each structural unit
-    type - type of structural unit
-    position - Position of center of mass
+    universe - the universe to which the structural unit belongs
+    structure_type - type of structural unit
+    name - a string specifying the name of the structure
+    position - position of center of mass
     velocity - average velocity
-    bonds - list of all
+    bonds - list of all bonds
+    parent - the structural unit to which this unit belongs
     """
 
     __metaclass__ = ABCMeta
@@ -36,7 +39,13 @@ class StructuralUnit:
 
     def __init__(self, position, velocity, name):
 
-        # TODO: Add init docstring
+        """
+        Attributes:
+        position - a tuple or NumPy array specifying the position
+        velocity - a tuple of NumPy array specifying the velocity
+        name - a string specifying the name
+        """
+
         self.ID = self._generate_ID()
         self._interactions = set()
         self.universe = None
@@ -45,9 +54,15 @@ class StructuralUnit:
         self.name = name
         self.parent = self
 
-    # TODO: Implement __copy__
-
     def __deepcopy__(self, memo):
+
+        """
+        Copies the StructuralUnit and all attributes, except ID which is
+        generated
+
+        Arguments:
+        memo - the memo dict
+        """
 
         cls = self.__class__
         structural_unit = cls.__new__(cls)
@@ -86,7 +101,6 @@ class StructuralUnit:
 
         self._velocity = np.array(velocity)
 
-    # TODO: Create structure list so that this makes more sense
     @property
     def atom_list(self):
 
@@ -132,7 +146,7 @@ class StructuralUnit:
         Translate the structural unit by the specified displacement
 
         Arguments:
-        Displacement - three dimensional array
+        Displacement - three element tuple or NumPy array
         """
 
         self.position = self.position + np.array(displacement)
@@ -165,6 +179,13 @@ class StructuralUnit:
         return next(self._ID_generator)
 
     def add_interaction(self, interaction):
+
+        """
+        Adds an interaction to the structural unit
+
+        Arguments:
+        interaction - any object with base class Interaction
+        """
 
         self._interactions.add(interaction)
 
@@ -207,6 +228,9 @@ class StructuralUnit:
         Checks if the specified position is within the bounds of the structural
         unit's universe, if it is associated with one
 
+        Arguments:
+        position - 3 element tuple or NumPy array
+
         Returns:
         True if position is within universe or there is no associated universe.
         False if structural unit has an associated universe but the position is
@@ -214,12 +238,14 @@ class StructuralUnit:
         """
 
         try:
+            # (0,0,0) is defined as the origin for all universes
             if np.any(position < np.array([0,0,0])) or \
                 np.any(position > self.universe.dims):
                 return False
             else:
                 return True
         except AttributeError:
+            # Not a member of a universe
             return True
 
 
@@ -229,10 +255,8 @@ class Atom(StructuralUnit):
     A single atom
 
     Attributes:
-    position - three dimensional array of the position in simulation box
-    velocity - three dimensional array of the velocity
-    element - atomic element
-    mass - atomic mass (amu). Can either be specified of determined from lookup.
+    element - string specifying the atomic element label
+    mass - float specifying the atomic mass (amu)
     """
 
     def __init__(self, element, position=(0,0,0), velocity=(0,0,0), **kwargs):
@@ -242,6 +266,12 @@ class Atom(StructuralUnit):
 
         The Coulombic interaction value (i.e. charge) is set when a force field
         is applied to the universe.
+
+        Arguments:
+        element - string specifying the atomic element label
+        Settings:
+        mass - float specifying the atomic mass. If not provided a lookup table
+        will be used.
         """
 
         super(Atom,self).__init__(position, velocity, name=element)
@@ -278,7 +308,7 @@ class Atom(StructuralUnit):
             for interaction in self.interactions:
                 if type(interaction) == Coulombic:
                     # Zero index parameter can be used as there should only be
-                    # one parameter as each atom only has a single charge 
+                    # one parameter as each atom only has a single charge
                     return interaction.params[0].value
             else:
                 return None
