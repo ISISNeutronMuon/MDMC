@@ -13,9 +13,22 @@ class MDMCControl(object):
 
     """
     Controls the MDMC refinement
+
+    Attributes:
+    MD_engine - the MD engine which runs the simulation.  This contains the
+    universe and the simulation parameters.
+    exp_datasets - a list of dictionaries defining each experimental dataset
+    fit_params - a set of the parameters which will be fit during the refinement
+    minimizer - the Minimizer object which drives the refinement
+    settings - a dictionary of the settings for the MD and minimization
+    observable_pairs - a list of ObservablePair objects, each of which contains
+    one experimental observable and one observable calculated from MD
+    FoM_calculator - the object which calculates the FoM float for all
+    observable pairs
+    MD_steps - the number of steps the MD performs for each step of the
+    refinement
     """
 
-    # TODO: Better implementation of minimizer instantiation - maybe factory pattern
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
