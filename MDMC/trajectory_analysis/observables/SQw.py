@@ -111,23 +111,24 @@ class AbstractSQw(Observable):
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
 
-    def calculate_from_MD(self, MD_input, **params):
+    def calculate_from_MD(self, MD_input, **settings):
 
         """
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
 
         Independent variables can either be set previously or defined within
-        params
+        settings
 
         Arguments:
         n_Q_vectors - The maximum number of Q vectors for any Q value
+
         """
 
         self._origin = 'MD'
         self.trajectory = MD_input
         self.t = self.trajectory.times - self.trajectory.times[0]
         self.universe_dims = self.trajectory.dims
-        self.t_res = params['t_resolution']
+        self.t_res = settings['t_resolution']
         self._set_weights()
 
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
@@ -135,18 +136,18 @@ class AbstractSQw(Observable):
 
         # Overwrite independent variable 'Q' if it already exists
         try:
-            self.independent_variables = {'Q':np.array(params['Q_values'])}
+            self.independent_variables = {'Q':np.array(settings['Q_values'])}
         except KeyError:
             pass
 
-        self.isotropic = params.get('isotropic', True)
+        self.isotropic = settings.get('isotropic', True)
         if not self.isotropic:
-            self.direction = np.array(params.get('direction', [1, 0, 0]))
+            self.direction = np.array(settings.get('direction', [1, 0, 0]))
 
-        self.n_Q_vectors = params.get('n_Q_vectors', 30)
+        self.n_Q_vectors = settings.get('n_Q_vectors', 30)
         if not hasattr(self, 'Q_vectors'):
             try:
-                self.Q_vectors = params['Q_vectors']
+                self.Q_vectors = settings['Q_vectors']
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
