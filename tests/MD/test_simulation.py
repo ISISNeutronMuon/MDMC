@@ -123,8 +123,9 @@ def test_spce_water_molecule(universe, water_molecule):
 
     # A list of dictionaries with each dictionary containing a Parameter type
     # and the correspoding Parameter value
-    params = [{p.name:p.value} for function in functions
-              for p in function.params]
+    params = []
+    for function in functions:
+        {p.name:p.value for p in function.params}
 
     # Test interaction parameters
     SPCEparams = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
