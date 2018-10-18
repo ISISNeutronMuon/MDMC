@@ -19,14 +19,19 @@ TEMPERATURE = 310
 N_STEPS = 2
 INTEGRATOR = 'velocity_verlet'
 LJ_OPTIONS = 1.2
-ES_OPTIONS = {'method':'ewald'}
+ES_OPTIONS = 'ewald'
+TRAJ_STEP = 500
 
 @pytest.fixture
 def water_MMTK_NVE(water_SPCE_universe):
-    return sim.NVESimulation(water_SPCE_universe, engine="mmtk",
-        time_step = TIME_STEP, temperature = TEMPERATURE,
-        integrator = INTEGRATOR, lj_options = LJ_OPTIONS,
-        es_options = ES_OPTIONS)
+    return sim.NVESimulation(water_SPCE_universe,
+                             engine="mmtk",
+                             time_step=TIME_STEP,
+                             temperature=TEMPERATURE,
+                             integrator=INTEGRATOR,
+                             lj_options=LJ_OPTIONS,
+                             es_options=ES_OPTIONS,
+                             traj_step=TRAJ_STEP)
 
 # TODO: When support for more MD engines is added, parameterize these tests
 def test_MMTK_universe_setup(water_MMTK_NVE):
