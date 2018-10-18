@@ -127,7 +127,15 @@ class AbstractSQw(Observable):
         self._origin = 'MD'
         self.trajectory = MD_input
         self.t = self.trajectory.times - self.trajectory.times[0]
-        self.universe_dims = self.trajectory.dims
+        try:
+            self.universe_dims = self.trajectory.dims
+        except AttributeError:
+            try:
+                self.universe_dims = np.array(settings['dims'])
+            except KeyError:
+                raise AttributeError('Either trajectory requires a dims'
+                ' attribute or dims must be passed when calling'
+                ' calculate_from_MD')
         self.t_res = settings['t_resolution']
         self._set_weights()
 
