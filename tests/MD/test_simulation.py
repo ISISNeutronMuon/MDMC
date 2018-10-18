@@ -50,9 +50,9 @@ def water_molecule(atom):
     return water_molecule
 
 @pytest.fixture
-def water_SPCE_universe(water_molecule, universe):
+def water_SPCE_universe(water_molecule):
 
-    water_universe = deepcopy(universe)
+    water_universe = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
     water_universe.fill(water_molecule, force_field=ff.SPCE,
                         num_density=WATER_NUM_DENSITY)
     return water_universe
