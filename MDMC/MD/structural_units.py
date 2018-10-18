@@ -6,11 +6,12 @@ defined.  All shared behaviour is included within the StructuralUnit base class.
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 
 from abc import ABCMeta, abstractmethod
-import numpy as np
+from copy import deepcopy
 from functools import reduce
 from itertools import count
 import weakref
-from copy import deepcopy
+
+import numpy as np
 
 import MDMC.common.atom_properties as atom_properties
 
