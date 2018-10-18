@@ -60,7 +60,7 @@ class Universe(object):
             else:
                 raise TypeError("Only dimensions of cubic Universes can be"
                                 " specified with a float")
-        elif isinstance(dims, float) or isinstance(dims, np.ndarray):
+        elif isinstance(dims, (list, tuple, np.ndarray)):
             if len(dims) == 3:
                 self._dims = np.array(dims)
             else:
