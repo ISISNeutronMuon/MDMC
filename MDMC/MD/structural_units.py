@@ -259,7 +259,7 @@ class Atom(StructuralUnit):
     mass - float specifying the atomic mass (amu)
     """
 
-    def __init__(self, element, position=(0,0,0), velocity=(0,0,0), **kwargs):
+    def __init__(self, element, position=(0,0,0), velocity=(0,0,0), **settings):
 
         """
         init with position, velocity, element, mass and a non-bonded interaction
@@ -276,12 +276,7 @@ class Atom(StructuralUnit):
 
         super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
-        self.mass = kwargs.get('mass', None)
-        if self.mass is None:
-            try:
-                self.mass = atom_properties.MASS[element]
-            except KeyError:
-                raise KeyError("The mass of that element is not tabulated")
+        self.mass = settings.get('mass', None)
         self.add_interaction(Coulombic(self))
 
     @property
@@ -314,6 +309,27 @@ class Atom(StructuralUnit):
                 return None
         except AttributeError:
             return None
+
+    @property
+    def mass(self):
+
+        return self._mass
+
+    @mass.setter
+    def mass(self, mass):
+
+        """
+        Either assigns mass to self._mass or uses lookup table to determine
+        mass if it is unspecified
+        """
+
+        if mass is None:
+            try:
+                self._mass = atom_properties.MASS[self.element]
+            except KeyError:
+                raise KeyError("The mass of that element is not tabulated")
+        else:
+            self._mass = mass
 
 
 class Group(StructuralUnit):
