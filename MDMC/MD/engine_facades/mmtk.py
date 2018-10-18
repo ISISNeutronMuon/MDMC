@@ -357,24 +357,23 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
             return (0., 0., 0.)
         return (0., 0.)
 
-        def parse_ff_option(self, option):
+    def parse_ff_option(self, option):
 
-            """
-            Parses forcefield option, either electrostatic or LJ
+        """
+        Parses forcefield option, either electrostatic or LJ
 
-            option - a float specifying the cutoff, a string specifying the
-            method for calculating the cutoff or None
-            """
+        option - a float specifying the cutoff, a string specifying the
+        method for calculating the cutoff or None
+        """
 
-            if isinstance(option, float):
-                return option * Units.Ang
-            elif isinstance(option, str):
-                return {'method':option}
-            elif option is None:
-                return option
-            else:
-                raise TypeError('Invalid forcefield option (es or lj) specified'
-                               )
+        if isinstance(option, float):
+            return option * Units.Ang
+        elif isinstance(option, str):
+            return {'method':option}
+        elif option is None:
+            return option
+        else:
+            raise TypeError('Invalid forcefield option (es or lj) specified')
 
 
 class MMTKAtom(MMTK.ChemicalObjects.Atom):
