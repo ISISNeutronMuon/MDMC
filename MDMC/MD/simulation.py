@@ -84,6 +84,31 @@ class Universe(object):
 
         return np.prod(self.dims)
 
+    @property
+    def element_list(self):
+
+        return [atom.element for atom in self.atom_list]
+
+    @property
+    def element_dict(self):
+
+        """
+        Returns a dictionary of all elements and a single atom of that
+        element type. This is required for MD engines which assign the same
+        potential parameters for all identical element types.
+        """
+
+        return {atom.element:atom for atom in self.atom_list}
+
+    @property
+    def atom_list(self):
+        return self.configuration.atom_list
+
+    @property
+    def molecule_list(self):
+
+        return self.configuration.molecule_list
+
     def add_structural_unit(self, structural_unit, force_field=None):
 
         """
@@ -149,10 +174,6 @@ class Universe(object):
                 new_unit.position = position
                 self.add_structural_unit(new_unit)
 
-    @property
-    def atom_list(self):
-        return self.configuration.atom_list
-
     def add_force_field(self, force_field, *interactions):
 
         """
@@ -164,27 +185,6 @@ class Universe(object):
             self.force_fields = force_field(self.interactions)
         else:
             self.force_fields = force_field(*interactions)
-
-    @property
-    def element_list(self):
-
-        return [atom.element for atom in self.atom_list]
-
-    @property
-    def element_dict(self):
-
-        """
-        Returns a dictionary of all elements and a single atom of that
-        element type. This is required for MD engines which assign the same
-        potential parameters for all identical element types.
-        """
-
-        return {atom.element:atom for atom in self.atom_list}
-
-    @property
-    def molecule_list(self):
-
-        return self.configuration.molecule_list
 
 
 def _primitive_cubic(dimensions, number):
