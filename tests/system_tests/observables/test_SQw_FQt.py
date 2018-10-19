@@ -23,7 +23,7 @@ import MDMC.trajectory_analysis.observables.obs_factory as of
 from tests.test_data import data
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
-CELL = (3.94221067, 3.94221067, 3.94221067)
+DIMS = (3.94221067, 3.94221067, 3.94221067)
 T_RESOLUTION = 30.999425
 
 # As all FQt should be normalised to 1, the absolute tolerance for
@@ -117,7 +117,7 @@ def SQw_obs(trajectory, Q_values):
     """
 
     SQw = of.ObservableFactory.create_observable('SQw')
-    SQw.calculate_from_MD(trajectory, Q_values=Q_values, cell=CELL,
+    SQw.calculate_from_MD(trajectory, Q_values=Q_values, dims=DIMS,
                           t_resolution=T_RESOLUTION)
     return SQw
 
@@ -132,7 +132,7 @@ def SQw_incoh_obs(trajectory, Q_values):
     """
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
-    SQw_incoh.calculate_from_MD(trajectory, Q_values=Q_values, cell=CELL,
+    SQw_incoh.calculate_from_MD(trajectory, Q_values=Q_values, dims=DIMS,
                                 t_resolution=T_RESOLUTION)
     return SQw_incoh
 
@@ -147,7 +147,7 @@ def SQw_coh_obs(trajectory, Q_values):
     """
 
     SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
-    SQw_coh.calculate_from_MD(trajectory, Q_values=Q_values, cell=CELL,
+    SQw_coh.calculate_from_MD(trajectory, Q_values=Q_values, dims=DIMS,
                               t_resolution=T_RESOLUTION)
     return SQw_coh
 
