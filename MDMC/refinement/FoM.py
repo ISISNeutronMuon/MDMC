@@ -59,7 +59,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     def calculate_single_FoM(self, obs_pair):
 
-        return np.sum(obs_pair.calculate_diffence() ** 2
+        return np.sum(obs_pair.calculate_difference() ** 2
                       * obs_pair.weight / obs_pair.calculate_errors())
 
 
@@ -106,14 +106,84 @@ class ObservablePair(object):
         self.validate_obs(MD_obs, 'MD')
         self._MD_obs = MD_obs
 
+    @property
+    def weight(self):
+
+        return self._weight
+
+    @weight.setter
+    def weight(self, weight):
+
+        try:
+            weight = float(weight)
+        except ValueError:
+            raise TypeError('weight must be a float')
+        self.validate_weight(weight)
+        self._weight = weight
+
     def validate_obs(self, obs, origin):
 
         """
-        Performs all applicable checks to test the validity of an observable
+        Performs checks to test the validity of an observable
+
+        Arguments:
+        obs - an osbervable
+        origin - a string specifying the origin of the observable ('experiment'
+        or 'MD')
         """
 
-        if obs.origin != origin:
-            raise ValueError('The observable does not have the correct origin')
+        # Check origin is correct
+        assert obs.origin == origin, ('The observable does not have the correct'
+                                      ' origin')
+
+        try:
+            if obs.origin == 'MD':
+                other_obs = self.exp_obs
+            else:
+                other_obs = self.MD_obs
+        except AttributeError:
+            other_obs = None
+
+        # Check independent variables are identical, check dependent variables
+        # have the same shapes, check errors have the same shapes, check
+        # observables have the same type
+        if other_obs:
+            indep_e_mess = 'Independent variables must be identical'
+            assert (obs.independent_variables.keys() ==
+                    other_obs.independent_variables.keys()), indep_e_mess
+            for k in obs.independent_variables.keys():
+                assert np.all(obs.independent_variables[k] ==
+                              other_obs.independent_variables[k]), indep_e_mess
+
+            dep_e_mess = 'Dependent variables must have the same shape'
+            assert (obs.dependent_variables.keys() ==
+                    other_obs.dependent_variables.keys()), dep_e_mess
+            for k in obs.dependent_variables:
+                assert (np.shape(obs.dependent_variables[k]) ==
+                        np.shape(other_obs.dependent_variables[k])), dep_e_mess
+
+            err_e_mess = 'Errors must have the same shape'
+            assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess
+            for k in obs.errors:
+                assert (np.shape(obs.errors[k]) ==
+                        np.shape(other_obs.errors[k])), err_e_mess
+
+            assert isinstance(obs, type(other_obs)), ('Observables are not of'
+                                                      ' the same type')
+
+    def validate_weight(self, weight):
+
+        """
+        Performs checks to test the validity of the weight
+
+        Arguments:
+        weight - the weight attribute
+        """
+
+        assert weight > 0. and weight != np.float('inf'), ('Weight must be a '
+                                                           'finite non-negative'
+                                                           ' float')
+
 
     def check_types(self):
 
@@ -157,7 +227,7 @@ class ObservablePair(object):
 
         raise NotImplementedError
 
-    def calculate_diffence(self):
+    def calculate_difference(self):
 
         """
         Assumes a single dependent variable for each observable
