@@ -120,8 +120,12 @@ class AbstractSQw(Observable):
         settings
 
         Arguments:
-        n_Q_vectors - The maximum number of Q vectors for any Q value
-
+        MD_input - an MD trajectory
+        Settings:
+        n_Q_vectors - an integer specifying maximum number of Q vectors for any
+        Q value
+        dims - a 3 element tuple or NumPy array of floats specifying the
+        dimenions of the universe
         """
 
         self._origin = 'MD'
