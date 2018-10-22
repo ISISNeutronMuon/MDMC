@@ -69,13 +69,13 @@ class MMTKEngine(MDEngine):
 
         """
 
-        # TODO: Add in additional actions. Change so that TranslationRemover can be deselected
         self.temperature = settings.get('temperature', 300) * MMTK.Units.K
         self.temperature_variation = (settings.get('temperature_variation', 10.)
                                       * MMTK.Units.K)
         self.time_step = settings.get('time_step', 1) * MMTK.Units.fs
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
         self.traj_step = settings['traj_step']
+        self.rigid = settings.get('rigid', False)
 
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
@@ -95,6 +95,9 @@ class MMTKEngine(MDEngine):
         # the trajectory before each run
         self._set_trajectory_output()
         actions = [self.trajectory_output, TranslationRemover()]
+
+        if self.rigid:
+            self.universe.setBondConstraints()
 
         if equilibration:
             actions.append(VelocityScaler(self.temperature,

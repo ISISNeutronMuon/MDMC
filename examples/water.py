@@ -40,7 +40,8 @@ md_engine = sim.NVESimulation(universe,
                               lj_options=12,
                               es_options='ewald',
                               minimizer='steepest_descent',
-                              traj_step=1057)
+                              traj_step=1057,
+                              rigid=True)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
