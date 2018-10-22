@@ -4,8 +4,8 @@ Includes calculation from MD trajectory and reading from experimental data file.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 16:34:02"""
 
-import pytest
 import numpy as np
+import pytest
 
 import MDMC.trajectory_analysis.observables.obs_factory as of
 
@@ -34,7 +34,6 @@ def SQw_from_MD(trajectory, universe):
     return SQw
 
 # TODO: Test for consistency by comparing S(Q,w) where w = 0 with S(Q)
-# TODO: Add plain text files with expected values of E and SQw and then compare with parsed values
 
 
 def test_from_data(SQw_from_data):
