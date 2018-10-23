@@ -155,18 +155,23 @@ class ObservablePair(object):
                 assert np.all(obs.independent_variables[k] ==
                               other_obs.independent_variables[k]), indep_e_mess
 
-            dep_e_mess = 'Dependent variables must have the same shape'
-            assert (obs.dependent_variables.keys() ==
-                    other_obs.dependent_variables.keys()), dep_e_mess
-            for k in obs.dependent_variables:
-                assert (np.shape(obs.dependent_variables[k]) ==
-                        np.shape(other_obs.dependent_variables[k])), dep_e_mess
+            # Try/except deals with empty observable case (no dependent
+            # variables and errors)
+            try:
+                dep_e_mess = 'Dependent variables must have the same shape'
+                assert (obs.dependent_variables.keys() ==
+                        other_obs.dependent_variables.keys()), dep_e_mess
+                for k in obs.dependent_variables:
+                    assert (np.shape(obs.dependent_variables[k]) ==
+                            np.shape(other_obs.dependent_variables[k])), dep_e_mess
 
-            err_e_mess = 'Errors must have the same shape'
-            assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess
-            for k in obs.errors:
-                assert (np.shape(obs.errors[k]) ==
-                        np.shape(other_obs.errors[k])), err_e_mess
+                err_e_mess = 'Errors must have the same shape'
+                assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess
+                for k in obs.errors:
+                    assert (np.shape(obs.errors[k]) ==
+                            np.shape(other_obs.errors[k])), err_e_mess
+            except AttributeError:
+                pass
 
             assert isinstance(obs, type(other_obs)), ('Observables are not of'
                                                       ' the same type')
@@ -183,7 +188,6 @@ class ObservablePair(object):
         assert weight > 0. and weight != np.float('inf'), ('Weight must be a '
                                                            'finite non-negative'
                                                            ' float')
-
 
     def check_types(self):
 
