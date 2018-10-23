@@ -148,7 +148,8 @@ class MMTKEngine(MDEngine):
     # TODO: Unite convert trajectory methods once testing is complete
     def convert_trajectory(self):
 
-        return convert_trajectory(self.trajectory)
+        return convert_trajectory(self.trajectory,
+                                  MDMC_universe=self.universe.MDMC_universe)
 
 class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
@@ -465,6 +466,7 @@ def convert_trajectory(MMTK_trajectory, **settings):
     # For the same reason the ability to filter the trajectories is provided
 
     universe_dims = MMTK_trajectory.universe.cellParameters()
+    MDMC_universe = settings.get('MDMC_universe', None)
 
     # List of atom element and masses as ordered in configuration
     atom_list = [(atom.type.symbol, atom.mass()) for atom in
@@ -476,24 +478,27 @@ def convert_trajectory(MMTK_trajectory, **settings):
         for i in range(slce.start, slce.stop, slce.step):
             configurations.append(convert_configuration(MMTK_trajectory[i],
                                                         universe_dims,
+                                                        MDMC_universe,
                                                         atom_list))
     else:
         for MMTK_frame in MMTK_trajectory:
             configurations.append(convert_configuration(MMTK_frame,
                                                         universe_dims,
+                                                        MDMC_universe,
                                                         atom_list))
 
     return MDMCt.Trajectory(*configurations)
 
 
-def convert_configuration(MMTK_frame, uni_dims, atom_list=None):
+def convert_configuration(MMTK_frame, uni_dims, MDMC_universe, atom_list=None):
 
     """
     Builds an MDMC configuration from an MMTK configuration.
 
     Arguments:
     MMTK_frame - A frame of an MMTK trajectory ir a configuration
-    uni_dims - a vector of the MDMC universe dimensions
+    uni_dims - a vector of the MMTK universe dimensions
+    MDMC_universe - an MDMC universe
     atom_list - a list of the atoms in the configuration
     """
 
@@ -509,7 +514,9 @@ def convert_configuration(MMTK_frame, uni_dims, atom_list=None):
         position = coordinate_transform(MMTK_position,
                                         uni_dims,
                                         from_MDMC=False)
-        atoms.append(MDMCs.Atom(symbol, position=position, mass=mass))
+        atom = MDMCs.Atom(symbol, position=position, mass=mass)
+        atom.universe = MDMC_universe
+        atoms.append(atom)
     return MDMCt.TemporalConfiguration(MMTK_frame['time'], *atoms)
 
 
