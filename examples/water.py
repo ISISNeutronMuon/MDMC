@@ -8,7 +8,6 @@ from scipy.interpolate import interp2d
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 import MDMC.MD.force_fields as ff
-import MDMC.refinement.minimizer as minim
 from MDMC.control.control import MDMCControl
 
 from tests.test_data import data
