@@ -44,7 +44,7 @@ md_engine = sim.NVESimulation(universe,
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
-md_engine.run(n_steps=2000)
+md_engine.run(n_steps=5000)
 
 # Setup refinement
 
