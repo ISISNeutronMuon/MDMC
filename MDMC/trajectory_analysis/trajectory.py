@@ -43,7 +43,6 @@ class Configuration(AtomCollection):
     """
 
     # TODO: Consider how wraparound for periodic objects will work
-    # TODO: Consider storage of weakref to each atom - fine for configuration but requires a complete atom object for each atom in every configuration in a trajectory
 
     def __init__(self, *structural_units, **kwargs):
 
@@ -53,9 +52,12 @@ class Configuration(AtomCollection):
         """
 
         try:
-            self.universe = structural_units[0].universe
-        except IndexError:
-            self.universe = kwargs.get('universe', None)
+            self.universe = kwargs['universe']
+        except KeyError:
+            try:
+                self.universe = structural_units[0].universe
+            except IndexError:
+                self.universe = None
         self.data = structural_units
         self.element_set = set(self.element_list)
 
@@ -202,8 +204,8 @@ class TemporalConfiguration(Configuration):
     A configuration which has a time associated with it
     """
 
-    def __init__(self, time, *structural_units):
-        super(TemporalConfiguration, self).__init__(*structural_units)
+    def __init__(self, time, *structural_units, **kwargs):
+        super(TemporalConfiguration, self).__init__(*structural_units, **kwargs)
         self.time = time
 
     def __add__(self, configuration):
