@@ -37,10 +37,17 @@ class Reader:
 
         pass
 
-    @abstractproperty
+    @property
     def data(self):
 
-        pass
+        """
+        A dictionary of dictionaries containing the independent variables,
+        dependent variables and the associated errors.
+        """
+
+        return {"independent":self.independent_variables,
+                "dependent":self.dependent_variables,
+                "errors":self.errors}
 
     @abstractproperty
     def independent_variables(self):

@@ -22,13 +22,20 @@ MASS = {
 
 """
 Neutron scattering lengths are taken from Neutron News, Vol. 3, No. 3, 1992,
-pp. 29-37.
+pp. 29-37.  All values are in fm.
 """
 
 B_COH = {
+    'H':-3.7390,
 
+
+
+
+    'O':5.803
 }
 
 B_INCOH = {
+    'H':25.27229286,
 
+    'O':0.
 }

@@ -1,13 +1,10 @@
 """Tests for the calculation of RDF from MD trajectory
 
-DESCRIPTION
-
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 16:46:16"""
 
 import pytest
 
-from MDMC.src.trajectory_analysis.observables.obs_factory import \
-    ObservableFactory
+import MDMC.src.trajectory_analysis.observables.obs_factory as of
 from MDMC.src.trajectory_analysis.trajectory import Configuration, Trajectory,\
     Histogram
 
@@ -24,13 +21,13 @@ def reader():
 
 @pytest.fixture
 def MD_RDF(histogram):
-    RDF = ObservableFactory.create_observable("RDF")
+    RDF = of.ObservableFactory.create_observable("RDF")
     RDF.calculate_from_MD(histogram)
     return RDF
 
 @pytest.fixture
 def file_RDF():
-    RDF = ObservableFactory.create_observable("RDF")
+    RDF = of.ObservableFactory.create_observable("RDF")
     RDF.read_from_file(reader, FILE_NAME)
     return RDF
 

@@ -13,11 +13,37 @@ from MDMC.src.utilities import plot
 
 from timeit import timeit
 from copy import deepcopy
-import numpy as np
-
 
 from MMTK import *
 from MMTK.Minimization import SteepestDescentMinimizer
+
+from netCDF4 import Dataset
+from MDMC.tests.test_data import data
+import numpy as np
+
+file = Dataset(data.OBS_DATA['SQw_coh'],'r')
+Q_ref = np.array(file.variables['q'][:])
+w_ref = np.array(file.variables['angular_frequency'][:])
+t_ref = np.array(file.variables['time'][:])
+FQt_ref = np.array(file.variables['Fqt-total'][:])
+SQw_ref = np.array(file.variables['Sqw-total'][:])
+
+from MMTK.Trajectory import Trajectory
+import MDMC.src.trajectory_analysis.observables.obs_factory as of
+import MDMC.src.MD.engine_facades.mmtk as mmtk
+import numpy as np
+import nMOLDYN.Mathematics.ReciprocalSpace as RS
+
+trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
+MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':100})
+SQw = of.ObservableFactory.create_observable('SQw')
+cell = trajectory.universe.cellParameters()
+Q_vectors_dict = RS.QVectors(trajectory.universe, '3d isotropic', Q_ref, 0.1, 50).qVectors
+Q_vectors = np.array([np.array(Q_vectors_dict[i]) for i in sorted(Q_vectors_dict.keys())])
+SQw.calculate_from_MD(MDMC_traj, Q_values=Q_ref, Q_vectors=Q_vectors, cell=cell, t_resolution=30.999425)
+
+from MDMC.src.utilities import plot
+plot.plot3d_surface([t_ref, Q_ref, SQw.FQt])
 
 
 from MMTK.Trajectory import Trajectory
@@ -26,12 +52,13 @@ import MDMC.src.MD.engine_facades.mmtk as mmtk
 import numpy as np
 
 trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
-MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':100})
-SQw = of.ObservableFactory.create_observable('SQw')
+MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':10})
+SQwinc = of.ObservableFactory.create_observable('SQw_incoh')
 n_Q = 10
 Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
 cell = trajectory.universe.cellParameters()
-SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell, isotropic = False)
+SQwinc.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell)
+
 
 
 UNIVERSE_DIMS = (10.,10.,10.)
@@ -96,8 +123,8 @@ histo2 = tr.Histogram(traj3, r = [0., 20., 0.5], time = [0., t_max, 1.])
 # file = open("/Users/thomasfarmer/Documents/QENS/Model_System_Data/Water/Bertil_Halle_data/in5_data/test2_dat_LAMP")
 # lamp.parse_indep_var(file)
 
-SQwfile = eof.ObservableFactory.create_observable('SQw')
-SQwfile.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
+SQwfile = of.ObservableFactory.create_observable('SQw')
+SQwfile.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
 
 SQw = eof.ObservableFactory.create_observable('SQw')
 n_Q = 10
@@ -265,3 +292,20 @@ SQw2.calculate_from_MD(MDMC_traj2, Q_values = Q_values2, cell = trajectory2.univ
 #     zerolinecolor='rgb(255, 255, 255)', title = 'S(Qw) /arb')), showlegend = False, height = 1000, width = 1000)
 # fig=go.Figure(data=[surf]+lines ,layout = layout)
 # py.offline.plot(fig)
+
+
+# To create zipped and pickled trajectory for test data
+
+from MMTK.Trajectory import Trajectory
+import MDMC.src.MD.engine_facades.mmtk as mmtk
+import zlib
+import cPickle as pickle
+
+FILE_NAME = '/Users/thomasfarmer/Documents/GitHub/MDMCv0.2_pilot/MDMC/tests/test_data/MDMC_objects/trajectory.zip'
+MMTK_traj = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
+MDMC_traj = mmtk.convert_trajectory(MMTK_traj, slice={'start':50,'stop':5010,'step':100})
+pickled = pickle.dumps(MDMC_traj)
+compressed = zlib.compress(pickled, 2)
+file = open(FILE_NAME, 'w')
+file.write(compressed)
+file.close()

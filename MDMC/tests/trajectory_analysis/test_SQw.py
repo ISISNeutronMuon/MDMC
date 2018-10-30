@@ -7,7 +7,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 16:34:02"""
 import pytest
 import numpy as np
 
-import MDMC.src.trajectory_analysis.observables.obs_factory as eof
+import MDMC.src.trajectory_analysis.observables.obs_factory as of
 
 from MDMC.tests.test_data import data
 from MDMC.tests.trajectory_analysis.test_histogram import trajectory
@@ -16,17 +16,19 @@ from MDMC.tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
 
 @pytest.fixture
 def SQw_from_data():
-    SQw = eof.ObservableFactory.create_observable('SQw')
-    SQw.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
+    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
     return SQw
 
 @pytest.fixture
 def SQw_from_MD(trajectory, universe):
-    SQw = eof.ObservableFactory.create_observable('SQw')
+    SQw = of.ObservableFactory.create_observable('SQw')
     cell = universe.dims
     n_Q = 10
+    t_resolution = 30.999425
     Q_values = [2 * np.pi * i / cell[0] for i in range(1,n_Q+1)]
-    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = cell)
+    SQw.calculate_from_MD(trajectory, Q_values = Q_values, cell = cell,
+                          t_resolution=t_resolution)
     return SQw
 
 # TODO: Test for consistency by comparing S(Q,w) where w = 0 with S(Q)

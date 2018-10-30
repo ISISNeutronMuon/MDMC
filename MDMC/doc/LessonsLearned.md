@@ -1,5 +1,13 @@
 # MDMC v0.2 (Pilot) Lessons Learned
 
+# After Meeting 2 (Copenhagen)
+
+### Refinement against total, coherent and incoherent dynamics structure factors
+Typically neutron data will be compared against the calculated total DSF, as this is what is being measured; however, if it is known that either the coherent or incoherent terms will dominate then it might be preferable to refine the MD against whichever term dominates, as calculation of this term might be significantly quicker than calculating the total DSF.  For example, for water (calculated with nMOLDYN) the contribution of the DCSF to the total is <0.1 % for almost all Q,w, and only rises to 0.8% at low Q, **without even taking into consideration the scattering cross sections.**
+
+![alt-text](https://github.com/MDMCproject/MDMCv0.2_pilot/blob/SQw-development/MDMC/doc/SQw_incoherent_percentage_of_SQw_total.png "SQw incoherent percentage of SQw total")
+
+
 ## MMTK
 
 ### Forcefields

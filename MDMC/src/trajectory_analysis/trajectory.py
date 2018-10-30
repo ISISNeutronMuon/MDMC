@@ -21,6 +21,7 @@ class Configuration(object):
     def __init__(self, *structural_units):
         self.structures_list = list(structural_units)
         self.data = self.create_config_array(*structural_units)
+        self.element_set = set(self.element_list)
 
     @property
     def atom_list(self):
@@ -38,6 +39,11 @@ class Configuration(object):
         return self.data['velocity']
 
     @property
+    def element_list(self):
+
+        return [atom.element for atom in self.atom_list]
+
+    @property
     def molecule_list(self):
 
         return self.filter_structures(lambda x: x.structure_type == 'Molecule')
@@ -45,11 +51,11 @@ class Configuration(object):
     def create_config_array(self, *structural_units):
 
         return np.array([(atom, atom.position, atom.velocity)
-            for unit in structural_units
-            for atom in unit.atom_list],
-            dtype=[('atom','object'),
-            ('position','object'),
-            ('velocity','object')])
+                         for unit in structural_units
+                         for atom in unit.atom_list],
+                         dtype=[('atom','object'),
+                         ('position','object'),
+                         ('velocity','object')])
 
     def add_structural_units(self, *structural_units):
 
@@ -67,9 +73,27 @@ class Configuration(object):
 
         return self.__class__(*structures_list)
 
+    def __sub__(self, configuration):
+
+        """
+        Returns a new configuration from the difference of configurations
+        """
+
+        raise NotImplementedError
+
     def __len__(self):
 
         return len(self.atom_list)
+
+    def __getitem__(self, item):
+
+        """
+        Returns:
+        A numpy void containing a slice from the data. The same fields can be
+        accessed with 'atom', 'position', and 'velocity'.
+        """
+
+        return self.data[item]
 
     def filter_structures(self, predicate):
 
@@ -102,7 +126,7 @@ class Configuration(object):
 
         Arguments:
         element: elemental symbol of the same format as is used for creating
-                  atoms
+                 atoms
         """
 
         return self.filter_atoms(lambda x: x.element == element)
@@ -191,10 +215,31 @@ class Trajectory(object):
     def atoms(self):
 
         """
-        Returns atoms from the frame 0 configuration
+        Returns:
+        Atoms from the frame 0 configuration
         """
 
         return self.data['configuration'][0].atom_list
+
+    @property
+    def element_set(self):
+
+        """
+        Returns:
+        Set of elements from the frame 0 configuration
+        """
+
+        return self.data['configuration'][0].element_set
+
+    @property
+    def element_list(self):
+
+        """
+        Returns:
+        List of elements from the frame 0 configuration
+        """
+
+        return self.data['configuration'][0].element_list
 
     @property
     def configurations(self):

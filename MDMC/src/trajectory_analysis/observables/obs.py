@@ -51,15 +51,30 @@ class Observable:
     @abstractproperty
     def independent_variables(self):
 
+        """
+        Return:
+        Dictionary of independent variables
+        """
+
         pass
 
     @abstractproperty
     def dependent_variables(self):
 
+        """
+        Return:
+        Dictionary of dependent variables
+        """
+
         pass
 
     @abstractproperty
     def errors(self):
+
+        """
+        Return:
+        Dictionary of errors on the dependent variables
+        """
 
         pass
 
