@@ -1,0 +1,162 @@
+"""Readers for dynamic data
+
+AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 14:38:55"""
+
+import numpy as np
+
+from MDMC.readers.readers import Reader
+
+# TODO: Determine if base class for dynamic data is required
+
+class LAMPSQw(Reader):
+
+    def open(self, file_name):
+
+        """
+        LAMP's ascii output uses three files: 1 for independent variables and
+        parameters (..._LAMP), another for dependent variables
+        (..._LAMPascii), and a third for the errors in the dependent variables
+        (...LAMPascii_e)
+        """
+
+        self.file_indep = open(file_name)
+        self.file_dep = open(file_name + 'ascii')
+        self.file_dep_err = open(file_name + 'ascii_e')
+
+    def parse(self):
+
+        """
+        Parse into SQW format
+
+        E is the energy transfer (in meV)
+        Q is wavevector transfer (in AA^-1)
+        """
+
+        self.E, self.Q = self.parse_indep_var(self.file_indep)
+        self.SQw = self.parse_dep_var(self.file_dep)
+        self.SQw_err = self.parse_dep_var(self.file_dep_err)
+
+        # LAMP sets errors -1 if the corresponding datum is 0.  Change these to
+        # inf so that error calculations can still be performed on them but
+        # result in inf.
+        self.SQw_err[np.where(self.SQw_err < 0.)] = np.float('inf')
+
+    @property
+    def independent_variables(self):
+
+        """
+        A dictionary containing Q and E
+        """
+
+        return {"Q":self.Q, "E":self.E}
+
+    @property
+    def dependent_variables(self):
+
+        """
+        A dictionary containing SQw
+        """
+
+        return {"SQw":self.SQw}
+
+    @property
+    def errors(self):
+
+        """
+        A dictionary containing the error associated with SQw
+        """
+
+        return {"SQw":self.SQw_err}
+
+    def parse_indep_var(self, file):
+
+        """
+        Parses the independent variables
+
+        Splits the file so that the data can be extracted into a numpy array by
+        self._get_data
+
+        Parameters:
+        file - open file containing independent data
+        """
+
+        def get_n_elements(line):
+            for i in line.split(" "):
+                try:
+                    return np.int64(i)
+                except ValueError:
+                    pass
+
+        for line in file:
+            if "X_SIZE" in line:
+                self._X_dim = get_n_elements(line)
+            elif "Y_SIZE" in line:
+                self._Y_dim = get_n_elements(line)
+                break
+
+        for line in file:
+            if "X_COORDINATES" in line:
+                _ = next(file)
+                break
+
+        file_split = iter([str for line in file for str in line.split(" ")
+            if "Y_COORDINATES" not in line])
+
+        X = self._get_data(file_split, self._X_dim)
+        Y = self._get_data(file_split, self._Y_dim)
+
+        return X, Y
+
+    def parse_dep_var(self, file):
+
+        """
+        Parses the dependent variables or their errors.
+
+        Parameters:
+        file - open file containing independent data
+        """
+
+        file_split = iter([str for line in file for str in line.split(" ")])
+        dep = self._get_data(file_split, self._Y_dim, self._X_dim)
+        return dep
+
+    def _make_float(self, i):
+
+        """
+        Returns:
+        A non-negative float, if the input can be converted to a float.
+        """
+
+        try:
+            return np.float64(i)
+        except ValueError:
+            pass
+
+    def _get_data(self, str_iter, *dims):
+
+        """
+        Iterates over an iterator from a file and extracts the numerical values
+        as data.
+        """
+
+        def get_row_data(dim):
+
+            row_data = np.empty(dim)
+
+            for j in range(dim):
+                datum = None
+                while datum is None:
+                    datum = self._make_float(next(str_iter))
+                row_data[j] = datum
+
+            return row_data
+
+        var = np.empty(dims)
+
+        if len(dims) == 1:
+            var = get_row_data(dims[0])
+        else:
+            for k in range(dims[0]):
+                var[k] = get_row_data(dims[1])
+
+        return var
