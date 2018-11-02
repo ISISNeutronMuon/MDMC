@@ -16,7 +16,7 @@ class ForceFieldFactory(object):
     """
 
     @staticmethod
-    def create_facade(module_name):
+    def create_force_field(module_name):
         module = import_module('.' + module_name, __package__)
 
         classes = getmembers(module, lambda m: (isclass(m)
