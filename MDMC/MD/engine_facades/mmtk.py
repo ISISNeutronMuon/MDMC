@@ -379,6 +379,13 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
         if interaction_type == MDMCs.Dispersion:
             return (0., 0., 0.)
+
+        # For bond constraints applied to water, MMTK requires a bond to be
+        # defined between the two hydrogen atoms.  This bond only has a defined
+        # length and not a strength.
+        if interaction_type == MDMCs.Bond and elements == ['H', 'H']:
+            return(0.163298086184, 0.)
+
         return (0., 0.)
 
     def parse_ff_option(self, option):
