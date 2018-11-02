@@ -67,7 +67,6 @@ class MMTKEngine(MDEngine):
         time_step - float time step in units of fs (default 1 fs)
         minimizer_step_size - float minimizer distance step in units of AA
         (default 0.05 AA)
-
         """
 
         self.temperature = settings.get('temperature', 300) * MMTK.Units.K
