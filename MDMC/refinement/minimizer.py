@@ -161,8 +161,6 @@ class MMC(Minimizer):
         for i, param in enumerate(params):
             param.value += param.value * changes[i]
 
-        return params
-
     def reset_params(self):
 
         for i, param in enumerate(self.params):
