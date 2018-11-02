@@ -11,6 +11,7 @@ from enum import Enum
 import numpy as np
 
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
+from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -46,7 +47,7 @@ class Universe(object):
         else:
             self.configuration = Configuration(universe=self)
         self._interactions = set()
-        self.force_fields = force_field
+        self.force_fields = ForceFieldFactory.create_force_field(force_field)
 
     @property
     def dims(self):
@@ -186,10 +187,12 @@ class Universe(object):
         interactions - any objects with base class Interaction
         """
 
+        self.force_fields = ForceFieldFactory.create_force_field(force_field)
+
         if not interactions:
-            self.force_fields = force_field(self.interactions)
+            self.force_fields.parameterize_interactions(self.interactions)
         else:
-            self.force_fields = force_field(*interactions)
+            self.force_fields.parameterize_interactions(*interactions)
 
 
 def _primitive_cubic(dimensions, number):
