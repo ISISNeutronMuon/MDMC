@@ -8,10 +8,11 @@ import weakref
 import MMTK
 from MMTK import Units
 from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
-                            TranslationRemover
+                            TranslationRemover, BarostatReset
 from MMTK.ForceFields import SPCEFF
 from MMTK.Minimization import SteepestDescentMinimizer, \
                                 ConjugateGradientMinimizer
+from MMTK.Environment import AndersenBarostat, NoseThermostat
 import numpy as np
 from Scientific._vector import Vector
 
@@ -76,6 +77,8 @@ class MMTKEngine(MDEngine):
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
         self.traj_step = settings['traj_step']
         self.rigid = settings.get('rigid', False)
+        self.thermostat = settings.get('thermostat', None)
+        self.pressure = settings.get('pressure', None)
 
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
@@ -95,6 +98,18 @@ class MMTKEngine(MDEngine):
         # the trajectory before each run
         self._set_trajectory_output()
         actions = [self.trajectory_output, TranslationRemover()]
+
+        if self.thermostat:
+            self.universe.thermostat = NoseThermostat(self.temperature,
+                                                      relaxation_time= \
+                                                          100.*Units.fs)
+
+        if self.pressure:
+            self.pressure *= Units.atm
+            self.universe.barostat = AndersenBarostat(self.pressure,
+                                                      relaxation_time= \
+                                                          100.*Units.fs)
+            actions.append(BarostatReset(0, None, 10))
 
         if self.rigid:
             self.universe.setBondConstraints()

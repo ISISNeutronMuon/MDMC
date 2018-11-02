@@ -31,7 +31,7 @@ water_mol = su.Molecule(position=(0, 0, 0),
 universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0333679)
 
 # MD Engine setup
-md_engine = sim.NVESimulation(universe,
+md_engine = sim.Simulation(universe,
                               engine="mmtk",
                               time_step=1,
                               temperature=263.,
@@ -44,7 +44,7 @@ md_engine = sim.NVESimulation(universe,
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
-md_engine.run(n_steps=5000)
+md_engine.run(n_steps=5000, equilibration=True)
 
 # Setup refinement
 

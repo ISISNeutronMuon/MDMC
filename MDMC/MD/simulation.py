@@ -225,10 +225,13 @@ class EnergyMinimizer(object):
 
         raise NotImplementedError
 
-class NVESimulation(object):
+class Simulation(object):
 
     """
-    Molecular dynamics engine for NVE ensemble
+    Molecular dynamics engine for any ensemble
+
+    Ensemble is defined by whether thermostats is included and a pressure is
+    defined
 
     Attributes:
     universe - an MDMC universe with force field and atomic configuration
@@ -255,6 +258,9 @@ class NVESimulation(object):
         Settings:
         lj_options - Options for Lennard-Jones interactions
         es_options - Options for electrostatic interactions
+        thermostat - boolean defining if a thermostat is applied
+        pressure - float specifying the pressure.  If this is defined then a
+        barostat is applied.
         """
 
         self.universe = universe
