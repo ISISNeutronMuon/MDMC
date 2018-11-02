@@ -36,7 +36,7 @@ class Universe(object):
         Arguments:
         dimensions - single float for cubic universe or 3 element list of floats
         shape - member of shape enum
-        force_field - a subclass of MDMC.MD.force_fields.ff.ForceField 
+        force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
         structures - a list of structures
         """
 
@@ -47,7 +47,7 @@ class Universe(object):
         else:
             self.configuration = Configuration(universe=self)
         self._interactions = set()
-        self.force_fields = ForceFieldFactory.create_force_field(force_field)
+        self.force_fields = force_field
 
     @property
     def dims(self):
@@ -111,6 +111,20 @@ class Universe(object):
     def molecule_list(self):
 
         return self.configuration.molecule_list
+
+    @property
+    def force_fields(self):
+
+        return self._force_fields
+
+    @force_fields.setter
+    def force_fields(self, force_field):
+
+        if force_field:
+            self._force_fields = ForceFieldFactory.create_force_field(
+                force_field)
+        else:
+            self._force_fields = None
 
     def add_structural_unit(self, structural_unit, force_field=None):
 
@@ -187,7 +201,7 @@ class Universe(object):
         interactions - any objects with base class Interaction
         """
 
-        self.force_fields = ForceFieldFactory.create_force_field(force_field)
+        self.force_fields = force_field
 
         if not interactions:
             self.force_fields.parameterize_interactions(self.interactions)
