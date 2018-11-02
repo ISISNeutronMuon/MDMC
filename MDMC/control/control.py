@@ -102,6 +102,7 @@ class MDMCControl(object):
         while count < n_steps and not self.minimizer.has_converged():
 
             FoM = self.generate_FoM()
+            print self.MD_engine.engine.universe.energy()
             self.minimizer.step(FoM)
             count += 1
 
@@ -112,7 +113,7 @@ class MDMCControl(object):
         except TypeError:
             pass
 
-        print self.fit_params
+        print np.array([p.value for p in self.fit_params])
 
     def generate_FoM(self):
 
