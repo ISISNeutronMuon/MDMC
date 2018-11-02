@@ -17,11 +17,10 @@ class Minimizer:
 
     __metaclass__ = ABCMeta
 
-    DISTRIBUTION = {'normal':np.random.normal,
-                    'uniform':np.random.uniform}
+    DISTRIBUTION = {'uniform':np.random.uniform}
 
     def __init__(self, MC_norm, params, config_reset=False,
-                 distribution='normal'):
+                 distribution='uniform'):
 
         """
         Arguments:
