@@ -77,13 +77,15 @@ class MMTKEngine(MDEngine):
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
         self.traj_step = settings['traj_step']
         self.rigid = settings.get('rigid', False)
+        self.threads = settings.get('threads', 1)
         self.thermostat = settings.get('thermostat', None)
         self.pressure = settings.get('pressure', None)
 
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
-                step_size=settings.get('minimizer_step_size', 0.05)*Units.Ang)
+                step_size=settings.get('minimizer_step_size', 0.05)*Units.Ang,
+                threads=self.threads)
         else:
             self.universe.initializeVelocitiesToTemperature(self.temperature)
 
@@ -118,9 +120,11 @@ class MMTKEngine(MDEngine):
             actions.append(VelocityScaler(self.temperature,
                                           self.temperature_variation))
 
+
         self.integrator = self.integrator_type(self.universe,
                                                delta_t=self.time_step,
-                                               actions=actions)
+                                               actions=actions,
+                                               threads=self.threads)
         self.integrator(steps = n_steps)
 
     def _set_trajectory_output(self):
@@ -165,6 +169,7 @@ class MMTKEngine(MDEngine):
 
         return convert_trajectory(self.trajectory,
                                   MDMC_universe=self.universe.MDMC_universe)
+
 
 class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 

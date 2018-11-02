@@ -40,7 +40,8 @@ md_engine = sim.Simulation(universe,
                               es_options='ewald',
                               minimizer='steepest_descent',
                               traj_step=1057,
-                              rigid=True)
+                              rigid=True,
+                              threads=4)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
