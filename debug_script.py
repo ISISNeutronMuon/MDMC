@@ -28,7 +28,7 @@ water_mol = su.Molecule(position=(0, 0, 0),
                                       su.BondAngle(atoms=[H1, O, H2])],
                         name='water')
 # Has a smaller number density
-universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0335)
+universe.fill(water_mol, force_field="SPCE", num_density=0.0335)
 
 # Randomly change parameters by +/- value * fac
 # fac = 0.2
@@ -136,7 +136,7 @@ water_mol = su.Molecule(position=(0, 0, 0),
                                       su.Dispersion(O),
                                       su.BondAngle(atoms=[H1, O, H2])],
                         name='water')
-universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0333679)
+universe.fill(water_mol, force_field="SPCE", num_density=0.0333679)
 
 # MD Engine setup
 md_engine = sim.NVESimulation(universe,
@@ -253,9 +253,9 @@ water_molecule = su.Molecule(position=WATER_POSITION,velocity=WATER_VELOCITY,ato
 water_molecule.add_interaction(su.BondAngle(atoms=[H1,O,H2]))
 
 # universe.add_structural_unit(water_molecule)
-# universe.add_force_field(ff.SPCE)
+# universe.add_force_field("SPCE")
 
-universe.fill(water_molecule,force_field=ff.SPCE,num_density=WATER_NUM_DENSITY)
+universe.fill(water_molecule,force_field="SPCE",num_density=WATER_NUM_DENSITY)
 
 NVESim = sim.NVESimulation(universe,'mmtk',time_step = TIME_STEP,
     temperature = TEMPERATURE, integrator = INTEGRATOR,
@@ -339,14 +339,14 @@ t = np.fft.fftfreq(w.size, w[1] - w[2])
 # uni.addObject(water_mmtk)
 
 # universe.add_structural_unit(water_molecule)
-# universe.add_force_field(ff.SPCE)
+# universe.add_force_field("SPCE")
 # for interaction in universe.interaction_set():
 #     print(interaction)
 #     print(interaction.function)
 #     print(interaction.function.params)
 #     print()
 # def time_fill():
-#     universe.fill(water_molecule,force_field=ff.SPCE,num_density=WATER_NUM_DENSITY)
+#     universe.fill(water_molecule,force_field="SPCE",num_density=WATER_NUM_DENSITY)
 #
 # print(timeit(time_fill,number=1))
 # print(len(universe.configuration))
