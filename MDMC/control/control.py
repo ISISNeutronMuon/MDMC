@@ -2,6 +2,8 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-6-18 15:47:47"""
 
+from copy import deepcopy
+
 import numpy as np
 
 from MDMC.refinement import minimizer, FoM
@@ -176,7 +178,8 @@ class MDMCControl(object):
 
         observable = ObservableFactory.create_observable(exp_observable.name)
         observable.origin = 'MD'
-        observable.independent_variables = exp_observable.independent_variables
+        observable.independent_variables = deepcopy(
+            exp_observable.independent_variables)
         return observable
 
     def _calculate_observables(self, MD_engine, observable_pairs):
