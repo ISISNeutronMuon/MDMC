@@ -3,7 +3,10 @@
 Each force field consists of a combination of interaction functions, and also
 the values of the parameters within these functions.  In this instance water
 models (such as SPCE and TIP3P) are also defined as force fields, even though
-the parameter sets are restricted to describing water.
+the parameter sets are restricted to describing water.  Each force field module
+is self contained, although adding a new force field may require changes to the
+MD engine facades, so that a correspondence is established between the MDMC
+force field and the MD engine equivalent.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-4 17:38:48"""
 
