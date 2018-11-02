@@ -304,6 +304,26 @@ def test_error_calculation(SQw_dict):
                   (ERR_NEG ** 2 + ERR_NEG ** 2) ** 0.5)
 
 
+def test_FOM_calculation(pairs):
+
+    """
+    Tests that the FoM calculation is valid for a pair of observables i.e. it is
+    a non-negative float
+    """
+
+    pass
+
+
+def test_multiple_FOM_calculation(pairs):
+
+    """
+    Tests that the FoM calculation is valid for for multiple pairs of
+    observables
+    """
+
+    pass
+
+
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
 
     """
