@@ -1,5 +1,203 @@
 """Script for running debug"""
 
+import numpy as np
+from scipy.interpolate import interp2d
+
+import MDMC.MD.simulation as sim
+import MDMC.MD.structural_units as su
+import MDMC.MD.force_fields as ff
+import MDMC.refinement.minimizer as minim
+from MDMC.control.control import MDMCControl
+
+from tests.test_data import data
+
+# Build universe
+# Cubic universe of side 9.32 A is 27 water molecules, 24.86 is 512 water molecules
+side = 9.32
+universe = sim.Universe(dimensions=(side, side, side),
+                        shape=sim.Shape.orthorhombic)
+H1 = su.Atom('H', mass=1.008)
+H2 = su.Atom('H', position=(1.51390, 0., 0.), mass=1.008)
+O = su.Atom('O', position=(0.75695, 0., 0.58588), mass=16.000)
+water_mol = su.Molecule(position=(0, 0, 0),
+                        velocity=(0, 0, 0),
+                        atoms=[H1, H2, O],
+                        interactions=[su.Bond(H1, O),
+                                      su.Bond(H2, O),
+                                      su.Dispersion(O),
+                                      su.BondAngle(atoms=[H1, O, H2])],
+                        name='water')
+# Has a smaller number density
+universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0335)
+
+# Randomly change parameters by +/- value * fac
+# fac = 0.2
+# for p in universe.parameters:
+#     if p.interactions_name != 'Coulombic' and p.interactions_name != 'BondAngle':
+#         p.value = p.value + p.value * (np.random.random() * (fac * 2) - fac)
+#     else:
+#         p.fixed = True
+
+# MD Engine setup
+md_engine = sim.NVESimulation(universe,
+                              engine="mmtk",
+                              time_step=1.0,
+                              temperature=263.,
+                              integrator='velocity_verlet',
+                              lj_options=1.2,
+                              es_options='ewald',
+                              minimizer='steepest_descent',
+                              traj_step=500)
+
+# Energy Minimization and equilibration
+md_engine.minimize(n_steps=5000)
+print "Minimization Complete"
+
+md_engine.run(n_steps=5000, equilibration=True)
+print "Equilibration Complete"
+
+# Setup refinement
+
+# exp_datasets is a list of dictionaries with one dictionary per experimental dataset
+exp_datasets = [{'file_name':'/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/nMOLDYN-3.0.8/RunFiles/water/spce/for_MDMC/testing_MDMC_output/NVE/DISF_water27_15000steps_spce.nc',
+                 'type':'SQw',
+                 'reader':'netCDF',
+                 'weight':1.}]
+
+# Fit parameters is a set of all unique fit parameters in the universe which can then be filtered.
+fit_params = set([p for p in universe.parameters if p.fixed is False])
+control = MDMCControl(MD_engine=md_engine,
+                      exp_datasets=exp_datasets,
+                      fit_params=fit_params,
+                      MC_norm=1,
+                      minimizer_type="MMC",
+                      MD_steps=15000,
+                      t_resolution=114.,
+                      cell=md_engine.universe.dims)
+
+# Run refinement
+control.refine(n_steps=0)
+
+from MMTK.Trajectory import Trajectory
+import MDMC.trajectory_analysis.observables.obs_factory as of
+import MDMC.MD.engine_facades.mmtk as mmtk
+import numpy as np
+
+trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/263K/water343_108929steps_spce.nc")
+MDMC_traj = mmtk.convert_trajectory(trajectory, slice=slice(0, 723, 7)) # (0, 1547, 15) for 1.5 fs step size
+SQw = of.ObservableFactory.create_observable('SQw')
+cell = trajectory.universe.cellParameters() * 10.
+n_Q = 10
+Q_values = np.arange(0.3, 3.6, 0.1)
+SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell, t_resolution = 141.)
+
+from netCDF4 import Dataset
+
+file = Dataset('/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/nMOLDYN-3.0.8/RunFiles/water/spce/263K/DISF_water343_108929steps_spce.nc', 'r')
+Q_ref = np.array(file.variables['q'][:])
+w_ref = np.array(file.variables['angular_frequency'][:])
+t_ref = np.array(file.variables['time'][:])
+FQt_ref = np.array(file.variables['Fqt-total'][:])
+SQw_ref = np.array(file.variables['Sqw-total'][:])
+
+import numpy as np
+from scipy.interpolate import interp2d
+
+import MDMC.MD.simulation as sim
+import MDMC.MD.structural_units as su
+import MDMC.MD.force_fields as ff
+import MDMC.refinement.minimizer as minim
+from MDMC.control.control import MDMCControl
+
+from tests.test_data import data
+
+# Build universe
+universe = sim.Universe(dimensions=(9.32, 9.32, 9.32), shape=sim.Shape.orthorhombic)
+H1 = su.Atom('H', mass=1.008)
+H2 = su.Atom('H', position=(1.51390, 0., 0.), mass=1.008)
+O = su.Atom('O', position=(0.75695, 0., 0.58588), mass=16.000)
+water_mol = su.Molecule(position=(0, 0, 0),
+                        velocity=(0, 0, 0),
+                        atoms=[H1, H2, O],
+                        interactions=[su.Bond(H1, O),
+                                      su.Bond(H2, O),
+                                      su.Dispersion(O),
+                                      su.BondAngle(atoms=[H1, O, H2])],
+                        name='water')
+universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0333679)
+
+# MD Engine setup
+md_engine = sim.NVESimulation(universe,
+                              engine="mmtk",
+                              time_step=1,
+                              temperature=263.,
+                              integrator='velocity_verlet',
+                              lj_options=1.2,
+                              es_options={'method':'ewald'},
+                              minimizer='steepest_descent')
+
+# Energy Minimization and equilibration
+md_engine.minimize(n_steps=10000)
+md_engine.run(n_steps=200)
+
+# Setup refinement
+
+# exp_datasets is a list of dictionaries with one dictionary per experimental dataset
+exp_datasets = [{'file_name':data.READER_DATA['LAMPSQw'],
+                 'type':'SQw',
+                 'reader':'LAMPSQw',
+                 'weight':1.}]
+
+# Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
+fit_params = universe.parameters
+control = MDMCControl(MD_engine=md_engine,
+                      exp_datasets=exp_datasets,
+                      fit_params=fit_params,
+                      MC_norm=1,
+                      minimizer_type="MMC",
+                      MD_steps=103,
+                      t_resolution=30.)
+
+# Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
+# a non-uniform E step.
+# To account for this, a limited E is used and undefined errors are set to zero
+# for the purposes of interpolation.
+# This should really be performed before the data is read into control - the
+# final step is a reflection of this as the MD observable is changed to match
+# the new independent variables of the experimental observable
+exp_obs = control.observable_pairs[0].exp_obs
+Q = exp_obs.Q
+E_range = (exp_obs.E >=0)
+E = exp_obs.E[E_range]
+SQw = np.array([Sw[E_range] for Sw in exp_obs.SQw])
+SQw_err = np.array([Sw_err[E_range] for Sw_err
+                          in exp_obs.SQw_err])
+SQw_fun = interp2d(E, Q, SQw)
+SQw_err_zero = SQw_err
+SQw_err_zero[SQw_err == np.float('inf')] = 0
+SQw_err_fun = interp2d(E, Q, SQw_err_zero)
+# Use the largest step size from the E data for the uniform step size
+E_step = max([E[i] - E[i-1] for i in np.arange(len(E) - 1) + 1])
+E_uniform = np.arange(E[0], E[-1], E_step)
+SQw_uniform = SQw_fun(E_uniform, Q)
+SQw_err_uniform = SQw_err_fun(E_uniform, Q)
+SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
+control.observable_pairs[0].exp_obs.independent_variables = {'E':E_uniform,
+                                                             'Q':Q}
+control.observable_pairs[0].exp_obs._dependent_variables = {'SQw':SQw_uniform}
+control.observable_pairs[0].exp_obs._errors = {'SQw':SQw_err_uniform}
+control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
+                                                            'Q':Q}
+
+# Run refinement
+control.refine(n_steps=0)
+
+
+
+
+
+
+
 import MDMC.MD.interaction_functions as ifu
 import MDMC.MD.structural_units as su
 import MDMC.MD.simulation as sim
@@ -52,18 +250,7 @@ NVESim = sim.NVESimulation(universe,'mmtk',time_step = TIME_STEP,
     lj_options=LJ_OPTIONS,es_options=ES_OPTIONS, minimizer = MINIM,
     minimizer_steps = MINIM_STEPS, minimizer_step_size = MINIM_STEP_SIZE)
 
-from MMTK.Trajectory import Trajectory
-import MDMC.trajectory_analysis.observables.obs_factory as of
-import MDMC.MD.engine_facades.mmtk as mmtk
-import numpy as np
 
-trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
-MDMC_traj = mmtk.convert_trajectory(trajectory, slice={'start':50,'stop':5010,'step':100})
-SQw = of.ObservableFactory.create_observable('SQw')
-n_Q = 10
-Q_values = [2 * np.pi * i / trajectory.universe.cellParameters()[0] for i in range(1,n_Q+1)]
-cell = trajectory.universe.cellParameters()
-SQw.calculate_from_MD(MDMC_traj, Q_values = Q_values, cell = cell)
 
 conf1a = deepcopy(universe.configuration)
 conf1b = deepcopy(universe.configuration)
@@ -91,8 +278,9 @@ histo2 = tr.Histogram(traj3, r = [0., 20., 0.5], time = [0., t_max, 1.])
 # file = open("/Users/thomasfarmer/Documents/QENS/Model_System_Data/Water/Bertil_Halle_data/in5_data/test2_dat_LAMP")
 # lamp.parse_indep_var(file)
 
-SQwfile = eof.ObservableFactory.create_observable('SQw')
-SQwfile.read_from_file(reader='LAMPSQw', file_name=data.data['LAMPSQw'])
+from tests.test_data import data
+SQwfile = of.ObservableFactory.create_observable('SQw')
+SQwfile.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
 
 SQw = eof.ObservableFactory.create_observable('SQw')
 n_Q = 10
@@ -232,7 +420,7 @@ import MDMC.MD.engine_facades.mmtk as mmtk
 import numpy as np
 
 trajectory2 = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
-MDMC_traj2 = mmtk.convert_trajectory(trajectory2, slice={'start':50,'stop':5010,'step':10})
+MDMC_traj2 = mmtk.convert_trajectory(trajectory2, slice=slice(50, 5010, 10))
 SQw2 = of.ObservableFactory.create_observable('SQw')
 n_Q = 10
 Q_values2 = [2 * np.pi * i / trajectory2.universe.cellParameters()[0] for i in range(1,n_Q+1)]
@@ -268,7 +456,7 @@ from MMTK.Trajectory import Trajectory
 import MDMC.MD.engine_facades.mmtk as mmtk
 from tests.test_data import data
 MMTK_trajectory = Trajectory(None, "/Users/thomasfarmer/Library/virtualenv/virtualenvMMTK/bin/MMTK-2.7.10/Simulations/Water/spce/for_MDMC/water2048_50000steps_spce.nc")
-trajectory = mmtk.convert_trajectory(MMTK_trajectory, slice={'start':50,'stop':5010,'step':100})
+trajectory = mmtk.convert_trajectory(MMTK_trajectory, slice=slice(50, 5010, 100))
 pickled_trajectory = pickle.dumps(trajectory)
 compressed_trajectory = zlib.compress(pickled_trajectory)
 file = open(data.OBJECT_DATA['trajectory'], 'w')
