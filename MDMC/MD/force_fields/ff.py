@@ -36,9 +36,9 @@ class ForceField:
         """
 
         for interaction in interactions:
-            self.parameterize_interaction(interaction)
+            self._parameterize_interaction(interaction)
 
-    def parameterize_interaction(self, interaction):
+    def _parameterize_interaction(self, interaction):
 
         """
         Parameterizes the interaction with the parameters specified in the
