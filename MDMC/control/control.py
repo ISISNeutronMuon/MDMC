@@ -192,6 +192,8 @@ class MDMCControl(object):
         observable_pairs - a list of observable pairs
         """
 
+        # slc = self._calculate_trajectory_slice(self.observable_pairs[0].exp_obs,
+        # )
         trj = MD_engine.engine.convert_trajectory()
         for pair in observable_pairs:
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
@@ -219,3 +221,26 @@ class MDMCControl(object):
         """
 
         raise NotImplementedError
+    #
+    # def _calculate_trajectory_slice(self, exp_obs, traj_step):
+    #
+    #     """
+    #     Calculates the slice of the trajectory that is required for calculating
+    #     the MD observables for the same independent variables as the
+    #     experimental observables
+    #
+    #     Arugments:
+    #     exp_obs - an observable with origin='experiment'
+    #     traj_step - the integer step size of the MD trajectory captures
+    #
+    #     Returns:
+    #     A slice
+    #     """
+    #
+    #     n_steps = len(exp_obs.E)
+    #
+    #     start = 0
+    #     stop = self.MD_steps / traj_step
+    #     step = int(round((self.MD_steps - start) / n_steps))
+    #
+    #     return slice(start, stop + 1, step)
