@@ -87,8 +87,9 @@ class StructuralUnit:
         structural units universe
         """
 
-        if not self.valid_position(position):
-            print "Warning: Structural unit lies outside of the universe bounds"
+        # if not self.valid_position(position):
+        #     raise RuntimeWarning("Warning: Structural unit lies outside of the"
+        #                          "universe bounds")
         self._position = np.array(position)
 
     @property
