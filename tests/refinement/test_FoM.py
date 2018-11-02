@@ -32,7 +32,7 @@ Checks that the weight is a non-negative float
 FoM calculators:
 Test the following:
 
-Returns a non-negative number
+Returns a non-negative float
 Can deal with multiple obs_pair inputs
 """
 
@@ -76,6 +76,39 @@ def SQw_dict():
 
     return {'dep':DEP, 'err':ERR, 'from_exp':from_exp,
             'from_MD':from_MD}
+
+PAIRS_INFO = [(('experiment',
+                np.arange(-5., 5.5, 0.5),
+                np.random.random_sample(21) * np.random.random_integers(1, 1e9),
+                'err1'),
+               ('MD', 'indep2', 'dep2', 'err1')
+              ),
+              (('experiment', 'indep1', 'dep1', 'err1'),
+               ('MD', 'indep2', 'dep2', 'err1')
+              ),
+              (('experiment', 'indep1', 'dep1', 'err1'),
+               ('MD', 'indep2', 'dep2', 'err1')
+              ),
+              ]
+              
+@pytest.fixture
+def pairs():
+
+    obs_pairs = []
+    for pair_info in PAIRS_INFO:
+
+        obs_duo = []
+        for obs_info in pair_info:
+            obs = of.ObservableFactory.create_observable('SQw')
+            obs._origin = obs_info[0]
+            obs.independent_variables = {'indep':obs_info[0]}
+            obs._dependent_variables = {'dep':obs_info[1]}
+            obs._errors = {'err':obs_info[2]}
+
+            obs_duo.append(obs)
+
+        obs_pairs.append(fom.ObservablePair(pair[0], pair[1], weight=1.)
+
 
 def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_MD,
                                             observable_pair):
