@@ -14,11 +14,9 @@ class ObservableFactory(object):
     def create_observable(module_name):
         module = import_module('.' + module_name, __package__)
 
-        classes = getmembers(module, lambda m: (
-                                        isclass(m)
-                                        and not isabstract(m)
-                                        and issubclass(m, Observable
-                                        )))
+        classes = getmembers(module, lambda m: (isclass(m)
+                                                and not isabstract(m)
+                                                and issubclass(m, Observable)))
         observable = classes[0][1]()
         observable.name = module_name
         return observable

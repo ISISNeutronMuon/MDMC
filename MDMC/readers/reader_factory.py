@@ -19,9 +19,8 @@ class ReaderFactory(object):
     def create_reader(module_name):
         module = import_module('.' + module_name, __package__)
 
-        classes = getmembers(module, lambda m: (
-                                        isclass(m)
-                                        and not isabstract(m)
-                                        and issubclass(m, Reader)))
+        classes = getmembers(module, lambda m: (isclass(m)
+                                                and not isabstract(m)
+                                                and issubclass(m, Reader)))
 
         return classes[0][1]()
