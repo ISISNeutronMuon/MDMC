@@ -10,7 +10,7 @@ force field and the MD engine equivalent.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-4 17:38:48"""
 
-from abc import ABCMeta,abstractmethod
+from abc import ABCMeta, abstractproperty
 
 
 class ForceField:
@@ -24,6 +24,17 @@ class ForceField:
     """
 
     __metaclass__ = ABCMeta
+
+    @abstractproperty
+    def interaction_dictionary(self):
+
+        """
+        Returns a dictionary with keys of (Interaction:Elements) where Elements
+        is an ordered tuple of elemental symbols, and values of interaction
+        Functions.
+        """
+
+        raise NotImplementedError
 
     def parameterize_interactions(self, interactions):
 

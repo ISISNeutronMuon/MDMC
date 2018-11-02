@@ -15,29 +15,32 @@ class SPCE(ForceField):
     SPCE force field - LJ,Coulombic, fixed bond lengths and angles
     """
 
-    # Parameters from:
-    # O. Telemann, B. Jonsson, S. Engstrom
-    # Mol. Phys. 60(1), 193-203 (1987)
+    @property
+    def interaction_dictionary(self):
 
-    # Charge Params
-    q_O = -0.8476       # e
-    q_H = abs(q_O/2)    # e
+        # Parameters from:
+        # O. Telemann, B. Jonsson, S. Engstrom
+        # Mol. Phys. 60(1), 193-203 (1987)
 
-    # LJ Params
-    sigma = 3.166       # angstrom
-    eta = 0.6502        # kJ mol^-1
+        # Charge Params
+        q_O = -0.8476       # e
+        q_H = abs(q_O/2)    # e
 
-    # Bond Params
-    r_OH = 1.000       # angstrom
-    f_OH = 4637.       #  kJ mol^-1 A^-2
+        # LJ Params
+        sigma = 3.166       # angstrom
+        eta = 0.6502        # kJ mol^-1
 
-    # Bond Angle Params
-    a_HOH = 109.47    # deg
-    f_HOH = 383.      # kJ mol^-1 rad^2
+        # Bond Params
+        r_OH = 1.000       # angstrom
+        f_OH = 4637.       #  kJ mol^-1 A^-2
 
-    interaction_dictionary = {
-        (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
-        (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-        (su.Dispersion, ('O',)):ifu.LennardJones(eta, sigma),
-        (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
-        (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
+        # Bond Angle Params
+        a_HOH = 109.47    # deg
+        f_HOH = 383.      # kJ mol^-1 rad^2
+
+        return {
+            (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
+            (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
+            (su.Dispersion, ('O',)):ifu.LennardJones(eta, sigma),
+            (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
+            (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
