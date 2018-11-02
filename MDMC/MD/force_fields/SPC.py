@@ -38,6 +38,3 @@ class SPC(ForceField):
         (su.Dispersion, ('O',)):ifu.LennardJones(sigma, eta),
         (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
         (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
-
-    def __init__(self, interactions):
-        super(SPC, self).__init__(interactions)

@@ -25,9 +25,12 @@ class ForceField:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, interactions):
+    def parameterize_interactions(self, interactions):
 
         """
+        Parameterizes the interactions with the parameters speicifed in the
+        interaction dictionary
+
         Arguments:
         interactions - a list of interactions
         """

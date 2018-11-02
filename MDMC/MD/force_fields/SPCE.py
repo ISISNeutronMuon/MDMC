@@ -41,6 +41,3 @@ class SPCE(ForceField):
         (su.Dispersion, ('O',)):ifu.LennardJones(eta, sigma),
         (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
         (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
-
-    def __init__(self, interactions):
-        super(SPCE, self).__init__(interactions)
