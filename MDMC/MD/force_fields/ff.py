@@ -43,7 +43,7 @@ class ForceField:
         """
 
         int_type = type(interaction)
-        elements = interaction._element_tuple()
+        elements = interaction.element_tuple()
         try:
             interaction.function = self.interaction_dictionary[
                 (int_type, elements)]

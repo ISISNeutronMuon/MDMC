@@ -555,7 +555,7 @@ class Interaction:
 
         return sorted(self.element_list())
 
-    def _element_tuple(self):
+    def element_tuple(self):
 
         return tuple(self.element_list())
 
