@@ -77,19 +77,19 @@ def SQw_dict():
     return {'dep':DEP, 'err':ERR, 'from_exp':from_exp,
             'from_MD':from_MD}
 
+
 PAIRS_INFO = [(('experiment',
                 np.arange(-5., 5.5, 0.5),
                 np.random.random_sample(21) * np.random.random_integers(1, 1e9),
-                'err1'),
-               ('MD', 'indep2', 'dep2', 'err1')
+                np.random.random_sample(21) * np.random.random_integers(1, 1e9)
+               ),
+               ('MD',
+                np.arange(-5, 5.5, 0.5),
+                np.random.random_sample(21) * np.random.random_integers(1, 1e9),
+                np.random.random_sample(21) * np.random.random_integers(1, 1e9)
+               ),
               ),
-              (('experiment', 'indep1', 'dep1', 'err1'),
-               ('MD', 'indep2', 'dep2', 'err1')
-              ),
-              (('experiment', 'indep1', 'dep1', 'err1'),
-               ('MD', 'indep2', 'dep2', 'err1')
-              ),
-              ]
+             ]
 
 @pytest.fixture
 def pairs():
@@ -101,13 +101,15 @@ def pairs():
         for obs_info in pair_info:
             obs = of.ObservableFactory.create_observable('SQw')
             obs._origin = obs_info[0]
-            obs.independent_variables = {'indep':obs_info[0]}
-            obs._dependent_variables = {'dep':obs_info[1]}
-            obs._errors = {'err':obs_info[2]}
+            obs.independent_variables = {'indep':obs_info[1]}
+            obs._dependent_variables = {'dep':obs_info[2]}
+            obs._errors = {'err':obs_info[3]}
 
             obs_duo.append(obs)
 
-        obs_pairs.append(fom.ObservablePair(pair[0], pair[1], weight=1.)
+        obs_pairs.append(fom.ObservablePair(obs_duo[0], obs_duo[1], weight=1.))
+
+    return obs_pairs
 
 
 def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_MD,
