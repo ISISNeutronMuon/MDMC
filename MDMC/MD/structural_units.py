@@ -555,7 +555,6 @@ class Interaction:
 
         return sorted(self.element_list())
 
-    # TODO: Currently defined so that force_field INTERACTION can be hashed - change this
     def _element_tuple(self):
 
         return tuple(self.element_list())
