@@ -24,10 +24,23 @@ class ForceField:
 
     def __init__(self, interactions):
 
+        """
+        Arguments:
+        interactions - a list of interactions
+        """
+
         for interaction in interactions:
             self.parameterize_interaction(interaction)
 
     def parameterize_interaction(self, interaction):
+
+        """
+        Parameterizes the interaction with the parameters specified in the
+        interaction dictionary
+
+        Arguments:
+        interaction - a subclass of MDMC.MD.structural_units.Interaction
+        """
 
         int_type = type(interaction)
         elements = interaction._element_tuple()
