@@ -127,11 +127,13 @@ class MDMCControl(object):
         self._calculate_observables(self.MD_engine, self.observable_pairs)
 
         # TODO: Remove arbitrary normalization
-        for pair in observable_pairs:
-            pair.exp_obs._dependent_variables['SQw'] /= \
-                np.max(pair.exp_obs._dependent_variables['SQw'])
-            pair.MD_obs._dependent_variables['SQw'] /= \
-                np.max(pair.MD_obs._dependent_variables['SQw'])
+        for pair in self.observable_pairs:
+            exp_norm = np.max(pair.exp_obs._dependent_variables['SQw'])
+            md_norm = np.max(pair.MD_obs._dependent_variables['SQw'])
+            pair.exp_obs._dependent_variables['SQw'] /= exp_norm
+            pair.exp_obs._errors['SQw'] /= exp_norm
+            pair.MD_obs._dependent_variables['SQw'] /= md_norm
+            pair.MD_obs._errors['SQw'] /= md_norm
 
         return self._calculate_FoM()
 
