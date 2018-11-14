@@ -325,12 +325,8 @@ class AbstractSQw(Observable):
         """
 
         # Functions other than Gaussians must be FFT before multiplication
-        # As self.FQt is only half of the full (symmetric) FQt, only the
-        # positive half of each resolution function is required.  Functions of
-        # of odd length so that window[N_t] = 1
-        N_t = np.shape(FQt)[1]
         N_Q = np.shape(FQt)[0]
-        window = function(2 * N_t + 1, params['sigma'])[N_t:-1]
+        window = function(self.t, params['sigma'], norm=False)
 
         # Tile the window so that it is applied for all Q values
         return np.tile(window, [N_Q, 1]) * FQt
