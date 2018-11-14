@@ -13,6 +13,7 @@ from MMTK.ForceFields import SPCEFF
 from MMTK.Minimization import SteepestDescentMinimizer, \
                                 ConjugateGradientMinimizer
 from MMTK.Environment import AndersenBarostat, NoseThermostat
+from MMTK.Trajectory import StandardLogOutput
 import numpy as np
 from Scientific._vector import Vector
 
@@ -99,7 +100,7 @@ class MMTKEngine(MDEngine):
         # Including the trajectory and integrator setup before running resets
         # the trajectory before each run
         self._set_trajectory_output()
-        actions = [self.trajectory_output, TranslationRemover()]
+        actions = [self.trajectory_output, TranslationRemover(), StandardLogOutput()]
 
         if self.thermostat:
             self.universe.thermostat = NoseThermostat(self.temperature,
