@@ -367,7 +367,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
                     parameters = interaction.function.params_values
                     # Converting from Angstroms to nm for bonds and LJ
                     if interaction_type == MDMCs.Dispersion:
-                        parameters[1] /= 10.
+                        parameters[1] *= 0.1
                         return tuple(parameters) + (0,)
                     if interaction_type == MDMCs.Bond:
                         parameters[0] *= 0.1
