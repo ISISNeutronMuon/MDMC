@@ -48,6 +48,9 @@ class Minimizer:
         self.params = params
         self.MC_norm = MC_norm
 
+        # Records if most recent step changed the state
+        self.state_changed = None
+
     @abstractmethod
     def step(self):
 
@@ -134,12 +137,14 @@ class MMC(Minimizer):
             self.FoM_old = self.FoM
             self.params_old_values = np.array([param.value
                                                for param in self.params])
+            self.state_changed = True
 
         else:
             print 'Rejected'
             history.append('Rejected')
             self.FoM = self.FoM_old
             self.reset_params()
+            self.state_changed = False
 
         self.history.append(history)
         self.change_parameters(self.params)
