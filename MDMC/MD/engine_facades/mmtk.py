@@ -111,15 +111,15 @@ class MMTKEngine(MDEngine):
             self.universe.barostat = AndersenBarostat(self.pressure * Units.atm,
                                                       relaxation_time= \
                                                           100.*Units.fs)
-            actions.append(BarostatReset(0, None, 10))
 
         if self.rigid:
             self.universe.setBondConstraints()
 
-        if equilibration:
+        if equilibration and not self.thermostat:
             actions.append(VelocityScaler(self.temperature,
                                           self.temperature_variation))
-
+            if self.pressure:
+                actions.append(BarostatReset(100, None, 10))
 
         self.integrator = self.integrator_type(self.universe,
                                                delta_t=self.time_step,
