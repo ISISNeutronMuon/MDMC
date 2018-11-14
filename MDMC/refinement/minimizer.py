@@ -19,8 +19,7 @@ class Minimizer:
 
     DISTRIBUTION = {'uniform':np.random.uniform}
 
-    def __init__(self, MC_norm, params, config_reset=False,
-                 distribution='uniform'):
+    def __init__(self, MC_norm, params, distribution='uniform'):
 
         """
         Arguments:
@@ -48,7 +47,6 @@ class Minimizer:
         self.params_old_values = None
         self.params = params
         self.MC_norm = MC_norm
-        self.config_reset = config_reset
 
     @abstractmethod
     def step(self):
