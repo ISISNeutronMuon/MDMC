@@ -166,7 +166,8 @@ class InteractionFunction(object):
         """
         Arguments:
         names - a list of names of the parameters of the interaction function
-        val_dict - a dictionary of name:value pairs
+        val_dict - a dictionary of name:value pairs. Currently this must be
+        ordered alphabetically.
         """
 
         names = list(names)
@@ -185,7 +186,7 @@ class InteractionFunction(object):
     @params.setter
     def params(self, value):
 
-        self._params = np.array(value)
+        self._params = np.array(sorted(value, key=lambda p:p.name))
 
     @property
     def params_values(self):
@@ -235,7 +236,7 @@ class LennardJones(InteractionFunction):
     Dispersive Lennard-Jones interaction
     """
 
-    def __init__(self, sigma, eta):
+    def __init__(self, eta, sigma):
 
         # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]
