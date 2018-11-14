@@ -396,7 +396,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         option - a float specifying the cutoff, a string specifying the
         method for calculating the cutoff or None
         """
-
+        try:
+            option = float(option)
+        except:
+            pass
         if isinstance(option, float):
             return option * Units.Ang
         elif isinstance(option, str):
