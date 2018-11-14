@@ -112,7 +112,15 @@ class MDMCControl(object):
             self.minimizer.step(FoM)
             count += 1
 
-        # Try/except accounts for n_steps = -1
+            if self.reset_config:
+                if self.minimizer.state_changed:
+                    # Set MD engine to remember new config
+                    self.MD_engine.engine.save_config()
+                else:
+                    # Set MD engine to reset to old config
+                    self.MD_engine.engine.reset_config()
+
+        # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
