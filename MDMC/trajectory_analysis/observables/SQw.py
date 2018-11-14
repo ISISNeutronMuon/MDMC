@@ -156,7 +156,7 @@ class AbstractSQw(Observable):
         if not self.isotropic:
             self.direction = np.array(settings.get('direction', [1, 0, 0]))
 
-        self.n_Q_vectors = settings.get('n_Q_vectors', 30)
+        self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if not hasattr(self, 'Q_vectors'):
             try:
                 self.Q_vectors = settings['Q_vectors']
