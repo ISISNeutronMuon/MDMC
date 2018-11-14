@@ -2,11 +2,20 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 14:48:12"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, abstractproperty
 
 class MDEngine:
 
     __metaclass__ = ABCMeta
+
+    @abstractproperty
+    def saved_config(self):
+
+        """
+        A saved configuration of the atomic positions
+        """
+
+        pass
 
     @abstractmethod
     def setup_universe(self, universe, **settings):
@@ -81,6 +90,22 @@ class MDEngine:
 
         """
         Updates the MD engine force field parameters from the universe
+        """
+
+        pass
+
+    @abstractmethod
+    def save_config(self):
+
+        """
+        Sets self.saved_config to the current configuration
+        """
+
+    @abstractmethod
+    def reset_config(self):
+
+        """
+        Resets the configuration of the simulation to that in saved_config
         """
 
         pass

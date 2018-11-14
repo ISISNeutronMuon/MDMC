@@ -19,8 +19,7 @@ class Minimizer:
 
     DISTRIBUTION = {'uniform':np.random.uniform}
 
-    def __init__(self, MC_norm, params, config_reset=False,
-                 distribution='uniform'):
+    def __init__(self, MC_norm, params, distribution='uniform'):
 
         """
         Arguments:
@@ -48,7 +47,9 @@ class Minimizer:
         self.params_old_values = None
         self.params = params
         self.MC_norm = MC_norm
-        self.config_reset = config_reset
+
+        # Records if most recent step changed the state
+        self.state_changed = None
 
     @abstractmethod
     def step(self):
@@ -136,12 +137,14 @@ class MMC(Minimizer):
             self.FoM_old = self.FoM
             self.params_old_values = np.array([param.value
                                                for param in self.params])
+            self.state_changed = True
 
         else:
             print 'Rejected'
             history.append('Rejected')
             self.FoM = self.FoM_old
             self.reset_params()
+            self.state_changed = False
 
         self.history.append(history)
         self.change_parameters(self.params)

@@ -2,6 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 11:07:19"""
 
+from copy import deepcopy
 from tempfile import TemporaryFile
 import weakref
 
@@ -39,6 +40,11 @@ class MMTKEngine(MDEngine):
     Facade for MMTK
     """
 
+    @property
+    def saved_config(self):
+
+        return self._saved_config
+
     # TODO: Enable different universe types
     def setup_universe(self, universe, **settings):
 
@@ -71,6 +77,7 @@ class MMTKEngine(MDEngine):
         pressure - float pressure in units of atm
         """
 
+        self._saved_config = None
         self.temperature = settings.get('temperature', 300) * MMTK.Units.K
         self.temperature_variation = (settings.get('temperature_variation', 10.)
                                       * MMTK.Units.K)
@@ -125,7 +132,7 @@ class MMTKEngine(MDEngine):
                                                delta_t=self.time_step,
                                                actions=actions,
                                                threads=self.threads)
-        self.integrator(steps = n_steps)
+        self.integrator(steps=n_steps)
 
     def _set_trajectory_output(self):
 
@@ -169,6 +176,16 @@ class MMTKEngine(MDEngine):
 
         return convert_trajectory(self.trajectory,
                                   MDMC_universe=self.universe.MDMC_universe)
+
+    def save_config(self):
+
+        self._saved_config = deepcopy(self.universe.configuration())
+
+    def reset_config(self):
+
+        # Configuration versions must agree before setting
+        self._saved_config.version = self.universe.configuration().version
+        self.universe.setConfiguration(self.saved_config)
 
 
 class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):

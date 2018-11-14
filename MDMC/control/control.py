@@ -35,7 +35,8 @@ class MDMCControl(object):
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
     def __init__(self, MD_engine, exp_datasets, fit_params, MC_norm=1.,
-        minimizer_type='MMC', FoM_type='standard', **settings):
+                 minimizer_type='MMC', FoM_type='standard',
+                 reset_config = True, **settings):
 
         """
         Creates experimental observables from datasets and placeholders for
@@ -65,6 +66,8 @@ class MDMCControl(object):
         fit_params - a list of all parameters which will be refined
         minimizier_type - a string with the minimizer type. 'MMC' is the default
         FoM_type - a string with the type of Figure of Merit calculation
+        reset_config - a boolean which determines if the configuration is reset
+        to the end of the last accepted state
         """
 
         self.MD_engine = MD_engine
@@ -72,6 +75,7 @@ class MDMCControl(object):
         self.fit_params = fit_params
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
                                                              self.fit_params)
+        self.reset_config = reset_config
         self.settings = settings
 
         self.observable_pairs = []
@@ -108,7 +112,15 @@ class MDMCControl(object):
             self.minimizer.step(FoM)
             count += 1
 
-        # Try/except accounts for n_steps = -1
+            if self.reset_config:
+                if self.minimizer.state_changed:
+                    # Set MD engine to remember new config
+                    self.MD_engine.engine.save_config()
+                else:
+                    # Set MD engine to reset to old config
+                    self.MD_engine.engine.reset_config()
+
+        # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
