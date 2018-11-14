@@ -8,7 +8,7 @@ from scipy.interpolate import interp2d
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 from MDMC.control.control import MDMCControl
-
+from MDMC.MD import force_fields as ff
 from tests.test_data import data
 
 # Build universe
