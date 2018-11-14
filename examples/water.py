@@ -7,9 +7,8 @@ from scipy.interpolate import interp2d
 
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
-import MDMC.MD.force_fields as ff
 from MDMC.control.control import MDMCControl
-
+from MDMC.MD import force_fields as ff
 from tests.test_data import data
 
 # Build universe
@@ -17,8 +16,8 @@ from tests.test_data import data
 # 18.6270199 A is 216 water molecules
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
-side = 21.75
-universe = sim.Universe(dimensions=(side, side, side),
+SIDE = 21.75
+universe = sim.Universe(dimensions=(SIDE, SIDE, SIDE),
                         shape=sim.Shape.orthorhombic)
 H1 = su.Atom('H', mass=1.008)
 H2 = su.Atom('H', position=(1.51390, 0., 0.), mass=1.008)
@@ -35,16 +34,16 @@ universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0333679)
 
 # MD Engine setup
 md_engine = sim.Simulation(universe,
-                              engine="mmtk",
-                              time_step=1,
-                              temperature=263.,
-                              integrator='velocity_verlet',
-                              lj_options=12,
-                              es_options='ewald',
-                              minimizer='steepest_descent',
-                              traj_step=1057,
-                              rigid=True,
-                              threads=4)
+                           engine="mmtk",
+                           time_step=1,
+                           temperature=263.,
+                           integrator='velocity_verlet',
+                           lj_options=12.,
+                           es_options='ewald',
+                           minimizer='steepest_descent',
+                           traj_step=1057,
+                           rigid=True,
+                           threads=4)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
@@ -84,7 +83,7 @@ E_range = (exp_obs.E >=0)
 E = exp_obs.E[E_range]
 SQw = np.array([Sw[E_range] for Sw in exp_obs.SQw[Q_slice]])
 SQw_err = np.array([Sw_err[E_range] for Sw_err
-                          in exp_obs.SQw_err[Q_slice]])
+                    in exp_obs.SQw_err[Q_slice]])
 SQw_fun = interp2d(E, Q, SQw)
 SQw_err_zero = SQw_err
 SQw_err_zero[SQw_err == np.float('inf')] = 0

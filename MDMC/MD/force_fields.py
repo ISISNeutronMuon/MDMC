@@ -57,8 +57,8 @@ class SPCE(ForceField):
     q_H = abs(q_O/2)    # e
 
     # LJ Params
-    sigma = 3.166       # angstrom
     eta = 0.6502        # kJ mol^-1
+    sigma = 3.166       # angstrom
 
     # Bond Params
     r_OH = 1.000       # angstrom

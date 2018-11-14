@@ -90,7 +90,7 @@ PAIRS_INFO = [(('experiment',
                ('MD', 'indep2', 'dep2', 'err1')
               ),
               ]
-              
+
 @pytest.fixture
 def pairs():
 

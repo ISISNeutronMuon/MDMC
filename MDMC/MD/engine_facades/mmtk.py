@@ -13,6 +13,7 @@ from MMTK.ForceFields import SPCEFF
 from MMTK.Minimization import SteepestDescentMinimizer, \
                                 ConjugateGradientMinimizer
 from MMTK.Environment import AndersenBarostat, NoseThermostat
+from MMTK.Trajectory import StandardLogOutput
 import numpy as np
 from Scientific._vector import Vector
 
@@ -67,7 +68,7 @@ class MMTKEngine(MDEngine):
         time_step - float time step in units of fs (default 1 fs)
         minimizer_step_size - float minimizer distance step in units of AA
         (default 0.05 AA)
-
+        pressure - float pressure in units of atm
         """
 
         self.temperature = settings.get('temperature', 300) * MMTK.Units.K
@@ -99,7 +100,7 @@ class MMTKEngine(MDEngine):
         # Including the trajectory and integrator setup before running resets
         # the trajectory before each run
         self._set_trajectory_output()
-        actions = [self.trajectory_output, TranslationRemover()]
+        actions = [self.trajectory_output, TranslationRemover(), StandardLogOutput()]
 
         if self.thermostat:
             self.universe.thermostat = NoseThermostat(self.temperature,
@@ -107,19 +108,18 @@ class MMTKEngine(MDEngine):
                                                           100.*Units.fs)
 
         if self.pressure:
-            self.pressure *= Units.atm
-            self.universe.barostat = AndersenBarostat(self.pressure,
+            self.universe.barostat = AndersenBarostat(self.pressure * Units.atm,
                                                       relaxation_time= \
                                                           100.*Units.fs)
-            actions.append(BarostatReset(0, None, 10))
 
         if self.rigid:
             self.universe.setBondConstraints()
 
-        if equilibration:
+        if equilibration and not self.thermostat:
             actions.append(VelocityScaler(self.temperature,
                                           self.temperature_variation))
-
+            if self.pressure:
+                actions.append(BarostatReset(100, None, 10))
 
         self.integrator = self.integrator_type(self.universe,
                                                delta_t=self.time_step,
@@ -193,7 +193,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         self._MDMC_universe = weakref.ref(universe)
         dims = self.MDMC_universe.dims[0] / 10.
 
-        ls = self.parse_ff_option(settings.get('ls_options'))
+        lj = self.parse_ff_option(settings.get('lj_options'))
         es = self.parse_ff_option(settings.get('es_options'))
 
         if universe.force_fields is None:
@@ -201,7 +201,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         else:
             super(MMTKCubicUniverse, self).__init__(
                 dims,
-                UNIVERSE_FF[type(universe.force_fields)](ls, es))
+                UNIVERSE_FF[type(universe.force_fields)](lj, es))
         self.assign_lj_parameters()
         self.assign_bond_parameters()
         self.assign_bond_angle_parameters()
@@ -367,7 +367,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
                     parameters = interaction.function.params_values
                     # Converting from Angstroms to nm for bonds and LJ
                     if interaction_type == MDMCs.Dispersion:
-                        parameters[1] /= 10.
+                        parameters[1] *= 0.1
                         return tuple(parameters) + (0,)
                     if interaction_type == MDMCs.Bond:
                         parameters[0] *= 0.1
@@ -396,7 +396,10 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         option - a float specifying the cutoff, a string specifying the
         method for calculating the cutoff or None
         """
-
+        try:
+            option = float(option)
+        except:
+            pass
         if isinstance(option, float):
             return option * Units.Ang
         elif isinstance(option, str):

@@ -156,7 +156,7 @@ class AbstractSQw(Observable):
         if not self.isotropic:
             self.direction = np.array(settings.get('direction', [1, 0, 0]))
 
-        self.n_Q_vectors = settings.get('n_Q_vectors', 30)
+        self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if not hasattr(self, 'Q_vectors'):
             try:
                 self.Q_vectors = settings['Q_vectors']
@@ -294,7 +294,7 @@ class AbstractSQw(Observable):
         """
 
         FQt_res = self._apply_instrument_resolution(self.FQt,
-                                                    {'sigma':self.t_res})
+                                                    sigma=self.t_res)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
@@ -311,7 +311,7 @@ class AbstractSQw(Observable):
         return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
                 / len(FQt_mirror))
 
-    def _apply_instrument_resolution(self, FQt, params, function=gaussian):
+    def _apply_instrument_resolution(self, FQt, function=gaussian, **params):
 
         """
         Applies the specified resolution function to the S(Q,w) data
@@ -325,12 +325,8 @@ class AbstractSQw(Observable):
         """
 
         # Functions other than Gaussians must be FFT before multiplication
-        # As self.FQt is only half of the full (symmetric) FQt, only the
-        # positive half of each resolution function is required.  Functions of
-        # of odd length so that window[N_t] = 1
-        N_t = np.shape(FQt)[1]
         N_Q = np.shape(FQt)[0]
-        window = function(2 * N_t + 1, params['sigma'])[N_t:-1]
+        window = function(self.t, params['sigma'], norm=False)
 
         # Tile the window so that it is applied for all Q values
         return np.tile(window, [N_Q, 1]) * FQt
