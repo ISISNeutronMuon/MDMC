@@ -24,7 +24,7 @@ TRAJ_STEP = 500
 
 @pytest.fixture
 def water_MMTK_NVE(water_SPCE_universe):
-    return sim.NVESimulation(water_SPCE_universe,
+    return sim.Simulation(water_SPCE_universe,
                              engine="mmtk",
                              time_step=TIME_STEP,
                              temperature=TEMPERATURE,
