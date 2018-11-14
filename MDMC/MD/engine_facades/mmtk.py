@@ -68,7 +68,7 @@ class MMTKEngine(MDEngine):
         time_step - float time step in units of fs (default 1 fs)
         minimizer_step_size - float minimizer distance step in units of AA
         (default 0.05 AA)
-
+        pressure - float pressure in units of atm
         """
 
         self.temperature = settings.get('temperature', 300) * MMTK.Units.K
@@ -108,8 +108,7 @@ class MMTKEngine(MDEngine):
                                                           100.*Units.fs)
 
         if self.pressure:
-            self.pressure *= Units.atm
-            self.universe.barostat = AndersenBarostat(self.pressure,
+            self.universe.barostat = AndersenBarostat(self.pressure * Units.atm,
                                                       relaxation_time= \
                                                           100.*Units.fs)
             actions.append(BarostatReset(0, None, 10))
