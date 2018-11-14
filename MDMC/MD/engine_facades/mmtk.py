@@ -193,7 +193,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         self._MDMC_universe = weakref.ref(universe)
         dims = self.MDMC_universe.dims[0] / 10.
 
-        ls = self.parse_ff_option(settings.get('ls_options'))
+        lj = self.parse_ff_option(settings.get('lj_options'))
         es = self.parse_ff_option(settings.get('es_options'))
 
         if universe.force_fields is None:
@@ -201,7 +201,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         else:
             super(MMTKCubicUniverse, self).__init__(
                 dims,
-                UNIVERSE_FF[type(universe.force_fields)](ls, es))
+                UNIVERSE_FF[type(universe.force_fields)](lj, es))
         self.assign_lj_parameters()
         self.assign_bond_parameters()
         self.assign_bond_angle_parameters()
