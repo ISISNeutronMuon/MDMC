@@ -32,7 +32,8 @@ class SQwIncoherent(AbstractSQw):
         FQt_single_Q = np.zeros(len(self.trajectory.times))
         for i in np.arange(n_atoms):
             rho_atom = [rho_t[i] for rho_t in rho]
-            FQt_single_Q_atom = correlation(rho_atom, normalise=True)
+            FQt_single_Q_atom = correlation(rho_atom,
+                                            normalise=True)[:len(self.t)]
             FQt_single_Q += FQt_single_Q_atom * self.weights[i]
 
         # Normalise to the number of orthogonal vectors
