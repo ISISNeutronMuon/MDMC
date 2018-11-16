@@ -5,6 +5,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
+from numpy.testing import assert_allclose
 
 from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h_bar
@@ -117,7 +118,7 @@ class AbstractSQw(Observable):
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
 
         Independent variables can either be set previously or defined within
-        settings
+        settings.
 
         Arguments:
         MD_input - an MD trajectory
@@ -146,6 +147,18 @@ class AbstractSQw(Observable):
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
                                  * UNIT_VECTOR)
 
+        dt = self.t[1] - self.t[0]
+        # Test that, if there is an existing E, it is consistent with E
+        # calculated from trajectory times
+        try:
+            assert_allclose(self._calculate_E(len(self.E), dt),
+                            self.E,
+                            rtol=1e-7,
+                            err_msg=("Set E values and calculated E values are"
+                                     " not consistent"))
+        except AttributeError:
+            self.independent_variables['E'] = self._calculate_E(len(self.t), dt)
+
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables = {'Q':np.array(settings['Q_values'])}
@@ -165,11 +178,6 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
-        dt = self.t[1] - self.t[0]
-
-        self.independent_variables['E'] = (h_bar * 1e15 * np.pi
-                                           * np.arange(len(self.t))
-                                           / (len(self.t) * dt))
         self._dependent_variables = {'SQw':self._calculate_SQw()}
         self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
@@ -181,6 +189,21 @@ class AbstractSQw(Observable):
         """
 
         pass
+
+    def _calculate_E(self, nE, dt):
+
+        """
+        Calculates E from trajectory times
+
+        Arguments:
+        nE - the number of E values to be calculated
+        dt - the step size of the time
+
+        Returns:
+        An array of floats specifying the energy
+        """
+
+        return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt)
 
     def calculate_FQt(self):
 
@@ -308,7 +331,7 @@ class AbstractSQw(Observable):
         # factor of 0.5 accounting for the fft over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
-        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
+        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.E)])
                 / len(FQt_mirror))
 
     def _apply_instrument_resolution(self, FQt, function=gaussian, **params):
@@ -326,7 +349,7 @@ class AbstractSQw(Observable):
 
         # Functions other than Gaussians must be FFT before multiplication
         N_Q = np.shape(FQt)[0]
-        window = function(self.t, params['sigma'], norm=False)
+        window = function(self.E, params['sigma'], norm=False)
 
         # Tile the window so that it is applied for all Q values
         return np.tile(window, [N_Q, 1]) * FQt
@@ -347,6 +370,13 @@ class SQw(AbstractSQw):
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
+        """
+        The length of the correlations is bounded by the length of the energies
+        rather the times, as this allows energies to be calculated from
+        trajectories with longer timescales than is required by the energy
+        resolution.
+        """
+
         rho = self._calculate_rho(Q_vector)
 
         elements = self.trajectory.element_set
@@ -359,7 +389,8 @@ class SQw(AbstractSQw):
                                              for rho_t in rho])
             n_atoms += np.shape(indexes)[1]
 
-        FQt_single_Q = np.zeros(len(self.t))
+        # Calculates the coherent contribution to SQw
+        FQt_single_Q = np.zeros(len(self.E))
         for element1 in elements:
             for element2 in elements:
 
@@ -367,13 +398,15 @@ class SQw(AbstractSQw):
                                 * self.weights[element2]['coh'] \
                                 * correlation(rho_element[element1],
                                               rho_element[element2],
-                                              normalise=True)
+                                              normalise=True)[:len(self.E)]
 
+        # Calculates the incoherent contribution to SQw
         incoh_weights = [self.weights[atom.element]['incoh'] for atom
                         in self.trajectory.atoms]
         for i in np.arange(n_atoms):
             rho_atom = np.array([rho_t[i] for rho_t in rho])
-            FQt_single_Q_atom = correlation(rho_atom, normalise=True)
+            FQt_single_Q_atom = correlation(rho_atom,
+                                            normalise=True)[:len(self.E)]
             FQt_single_Q += FQt_single_Q_atom * incoh_weights[i]**2
 
         # Normalise to the number of orthogonal vectors
