@@ -20,6 +20,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
+from MDMC.common.constants import h_bar
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.test_data import data
 
@@ -41,7 +42,7 @@ def trajectory():
 
 
 @pytest.fixture(scope="module")
-def independent_variables():
+def independent_variables(trajectory):
 
     """
     Calculate the independent variables
@@ -52,9 +53,13 @@ def independent_variables():
     Dictionary of independent variables required for SQw, SQw_coh, and SQw_incoh
     """
 
+    # Use half the trajectory steps to calculate the Energies
+    n = len(trajectory.times) / 2
+    dt = trajectory.times[1] - trajectory.times[0]
+    E = h_bar * 1e15 * np.pi * np.arange(n) / (n * dt)
     Q = np.arange(1.6, 21, 1.6)
-    E = np.arange()
 
+    return {'E':E, 'Q':Q}
     """
     Tests the total SQw with times shorter than provided the trajectory
 
