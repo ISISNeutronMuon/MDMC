@@ -60,7 +60,17 @@ def independent_variables(trajectory):
     Q = np.arange(1.6, 21, 1.6)
 
     return {'E':E, 'Q':Q}
+
+
+@pytest.fixture(params=['SQw', 'SQw_coh', 'SQw_incoh'])
+def SQw_type(request):
+
     """
+    SQw_type is parameterized with the strings required to create SQw, SQw_coh
+    and SQw_incoh observable types
+    """
+
+    return request.param
     Tests the total SQw with times shorter than provided the trajectory
 
     Three SQw are calculated, one using the full trajectory, one using the first
