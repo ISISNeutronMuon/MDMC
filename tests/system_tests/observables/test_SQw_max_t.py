@@ -5,7 +5,8 @@ The maximum time, t, for a required trajectory for calculating SQw depends on
 the SQw energy step size, dE.  If the trajectory provided has a larger t than is
 required by dE, SQw must still be calculated for dE step sizes.  These unit
 tests ensure that SQw is the same (within uncertainty) independent of the
-trajectory length, it the same energies are specified.
+trajectory length, it the same energies are specified.  THIS MODULE COULD BE
+PARAMETERIZED TO TEST OTHER OBSERVABLES
 
 AUTHOR :    Thomas Farmer        START DATE :    15/11/2018, 17:11:21"""
 
@@ -27,9 +28,10 @@ from tests.test_data import data
 def trajectory():
 
     """
-    Read the trajectory
+    Trajectory is read, unzipped and unpickled.
 
-    Trajectory is unzipped and unpickled.
+    Returns:
+    Trajectory
     """
 
     compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'r').read()
@@ -42,14 +44,23 @@ def trajectory():
 def independent_variables():
 
     """
-    Returns the independent variables required for SQw, SQw_coh, and SQw_incoh
+    Calculate the independent variables
+
+    E is equivalent to the times from half the trajectory length
+
+    Returns:
+    Dictionary of independent variables required for SQw, SQw_coh, and SQw_incoh
     """
 
     Q = np.arange(1.6, 21, 1.6)
     E = np.arange()
 
     """
-    Read trajectory into REPL.
-    Create SQw with half of the trajectory.
-    Determine E values - use these above.
+    Tests the total SQw with times shorter than provided the trajectory
+
+    Three SQw are calculated, one using the full trajectory, one using the first
+    half of the trajectory, and one using the second half of the trajectory.
+    All SQw are calculated for the same values of Q and E.  The SQw calculated
+    from the total trajectory is tested for consistency with the two half
+    trajectory SQws.
     """
