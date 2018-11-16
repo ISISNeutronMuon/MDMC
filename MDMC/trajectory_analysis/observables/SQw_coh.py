@@ -22,6 +22,13 @@ class SQwCoherent(AbstractSQw):
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
+        """
+        The length of the correlations is bounded by the length of the energies
+        rather the times, as this allows energies to be calculated from
+        trajectories with longer timescales than is required by the energy
+        resolution.
+        """
+
         rho = self._calculate_rho(Q_vector)
 
         elements = self.trajectory.element_set
@@ -34,14 +41,14 @@ class SQwCoherent(AbstractSQw):
                                              for rho_t in rho])
             n_atoms += np.shape(indexes)[1]
 
-        FQt_single_Q = np.zeros(len(self.t))
+        FQt_single_Q = np.zeros(len(self.E))
         for element1 in elements:
             for element2 in elements:
                 FQt_single_Q += self.weights[element1] \
                                 * self.weights[element2] \
                                 * correlation(rho_element[element1],
                                               rho_element[element2],
-                                              normalise=True)[:len(self.t)]
+                                              normalise=True)[:len(self.E)]
 
         # Normalise to the number of orthogonal vectors
         try:

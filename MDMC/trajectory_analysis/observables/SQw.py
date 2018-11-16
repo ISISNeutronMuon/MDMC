@@ -370,6 +370,13 @@ class SQw(AbstractSQw):
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
+        """
+        The length of the correlations is bounded by the length of the energies
+        rather the times, as this allows energies to be calculated from
+        trajectories with longer timescales than is required by the energy
+        resolution.
+        """
+
         rho = self._calculate_rho(Q_vector)
 
         elements = self.trajectory.element_set
@@ -383,7 +390,7 @@ class SQw(AbstractSQw):
             n_atoms += np.shape(indexes)[1]
 
         # Calculates the coherent contribution to SQw
-        FQt_single_Q = np.zeros(len(self.t))
+        FQt_single_Q = np.zeros(len(self.E))
         for element1 in elements:
             for element2 in elements:
 
@@ -391,7 +398,7 @@ class SQw(AbstractSQw):
                                 * self.weights[element2]['coh'] \
                                 * correlation(rho_element[element1],
                                               rho_element[element2],
-                                              normalise=True)[:len(self.t)]
+                                              normalise=True)[:len(self.E)]
 
         # Calculates the incoherent contribution to SQw
         incoh_weights = [self.weights[atom.element]['incoh'] for atom
@@ -399,7 +406,7 @@ class SQw(AbstractSQw):
         for i in np.arange(n_atoms):
             rho_atom = np.array([rho_t[i] for rho_t in rho])
             FQt_single_Q_atom = correlation(rho_atom,
-                                            normalise=True)[:len(self.t)]
+                                            normalise=True)[:len(self.E)]
             FQt_single_Q += FQt_single_Q_atom * incoh_weights[i]**2
 
         # Normalise to the number of orthogonal vectors
