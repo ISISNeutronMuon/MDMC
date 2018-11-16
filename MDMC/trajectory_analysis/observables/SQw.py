@@ -359,6 +359,7 @@ class SQw(AbstractSQw):
                                              for rho_t in rho])
             n_atoms += np.shape(indexes)[1]
 
+        # Calculates the coherent contribution to SQw
         FQt_single_Q = np.zeros(len(self.t))
         for element1 in elements:
             for element2 in elements:
@@ -367,13 +368,15 @@ class SQw(AbstractSQw):
                                 * self.weights[element2]['coh'] \
                                 * correlation(rho_element[element1],
                                               rho_element[element2],
-                                              normalise=True)
+                                              normalise=True)[:len(self.t)]
 
+        # Calculates the incoherent contribution to SQw
         incoh_weights = [self.weights[atom.element]['incoh'] for atom
                         in self.trajectory.atoms]
         for i in np.arange(n_atoms):
             rho_atom = np.array([rho_t[i] for rho_t in rho])
-            FQt_single_Q_atom = correlation(rho_atom, normalise=True)
+            FQt_single_Q_atom = correlation(rho_atom,
+                                            normalise=True)[:len(self.t)]
             FQt_single_Q += FQt_single_Q_atom * incoh_weights[i]**2
 
         # Normalise to the number of orthogonal vectors

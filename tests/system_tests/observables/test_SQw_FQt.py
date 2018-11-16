@@ -96,7 +96,7 @@ def trajectory():
     """
     Read the trajectory
 
-    trajectory is unzipped and unpickled.
+    Trajectory is unzipped and unpickled.
     """
 
     compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'r').read()
