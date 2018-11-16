@@ -331,7 +331,7 @@ class AbstractSQw(Observable):
         # factor of 0.5 accounting for the fft over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
-        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.t)])
+        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.E)])
                 / len(FQt_mirror))
 
     def _apply_instrument_resolution(self, FQt, function=gaussian, **params):
@@ -349,7 +349,7 @@ class AbstractSQw(Observable):
 
         # Functions other than Gaussians must be FFT before multiplication
         N_Q = np.shape(FQt)[0]
-        window = function(self.t, params['sigma'], norm=False)
+        window = function(self.E, params['sigma'], norm=False)
 
         # Tile the window so that it is applied for all Q values
         return np.tile(window, [N_Q, 1]) * FQt
