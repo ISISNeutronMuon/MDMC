@@ -5,6 +5,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 from abc import ABCMeta, abstractmethod
 
 import numpy as np
+from numpy.testing import assert_allclose
 
 from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h_bar
@@ -117,7 +118,7 @@ class AbstractSQw(Observable):
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
 
         Independent variables can either be set previously or defined within
-        settings
+        settings.
 
         Arguments:
         MD_input - an MD trajectory
@@ -146,6 +147,18 @@ class AbstractSQw(Observable):
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
                                  * UNIT_VECTOR)
 
+        dt = self.t[1] - self.t[0]
+        # Test that, if there is an existing E, it is consistent with E
+        # calculated from trajectory times
+        try:
+            assert_allclose(self._calculate_E(len(self.E), dt),
+                            self.E,
+                            rtol=1e-7,
+                            err_msg=("Set E values and calculated E values are"
+                                     " not consistent"))
+        except AttributeError:
+            self.independent_variables['E'] = self._calculate_E(len(self.t), dt)
+
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables = {'Q':np.array(settings['Q_values'])}
@@ -165,11 +178,6 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
-        dt = self.t[1] - self.t[0]
-
-        self.independent_variables['E'] = (h_bar * 1e15 * np.pi
-                                           * np.arange(len(self.t))
-                                           / (len(self.t) * dt))
         self._dependent_variables = {'SQw':self._calculate_SQw()}
         self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
