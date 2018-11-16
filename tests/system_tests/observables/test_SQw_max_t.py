@@ -71,6 +71,11 @@ def SQw_type(request):
     """
 
     return request.param
+
+
+def test_SQw_max_t(trajectory, independent_variables, SQw_type):
+
+    """
     Tests the total SQw with times shorter than provided the trajectory
 
     Three SQw are calculated, one using the full trajectory, one using the first
@@ -79,3 +84,30 @@ def SQw_type(request):
     from the total trajectory is tested for consistency with the two half
     trajectory SQws.
     """
+
+    T_RES = 30.
+    DIMS = [39.42210674, 39.42210674, 39.42210674]
+
+    SQw_full = ObservableFactory.create_observable(SQw_type)
+    SQw_1 = ObservableFactory.create_observable(SQw_type)
+    SQw_2 = ObservableFactory.create_observable(SQw_type)
+
+    for SQw in [SQw_full, SQw_1, SQw_2]:
+        SQw.independent_variables = independent_variables
+
+    n = len(trajectory.times) / 2
+    SQw_full.calculate_from_MD(trajectory, t_resolution = T_RES, dims=DIMS)
+    SQw_1.calculate_from_MD(trajectory[:n], t_resolution = T_RES, dims=DIMS)
+    SQw_2.calculate_from_MD(trajectory[n:], t_resolution = T_RES, dims=DIMS)
+
+    # Calculate the total standard deviation for the two half runs and test that
+    # the total run is within a factor of 3
+    SQw_1_2_mean = np.mean([SQw_1.SQw, SQw_2.SQw], axis=0)
+    stdev = np.std([SQw_1.SQw, SQw_2.SQw], axis=0)
+    stdev_total = np.sum(stdev)
+    stdev_full = np.std([SQw_1_2_mean, SQw_full.SQw], axis=0)
+    assert np.sum(stdev_full) < 3 * stdev_total
+
+    # Test that the stdev for each Q,w value for the total run is within a
+    # factor of 2 of the maximum standard deviation of any point
+    assert stdev_full < 2 * np.max(stdev)
