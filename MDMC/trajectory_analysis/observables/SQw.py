@@ -182,6 +182,21 @@ class AbstractSQw(Observable):
 
         pass
 
+    def _calculate_E(self, nE, dt):
+
+        """
+        Calculates E from trajectory times
+
+        Arguments:
+        nE - the number of E values to be calculated
+        dt - the step size of the time
+
+        Returns:
+        An array of floats specifying the energy
+        """
+
+        return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt)
+
     def calculate_FQt(self):
 
         """
