@@ -41,7 +41,7 @@ class SQwCoherent(AbstractSQw):
                                 * self.weights[element2] \
                                 * correlation(rho_element[element1],
                                               rho_element[element2],
-                                              normalise=True)
+                                              normalise=True)[:len(self.t)]
 
         # Normalise to the number of orthogonal vectors
         try:
