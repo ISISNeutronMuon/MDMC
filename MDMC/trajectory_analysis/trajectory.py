@@ -358,7 +358,7 @@ class Trajectory(AtomCollection):
 
     def __len__(self):
 
-        return sum([len(config) for config in self.data['configuration']])
+        return len(self.times)
 
 
 class DistanceData(object):
