@@ -96,9 +96,9 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
         SQw.independent_variables = independent_variables
 
     n = len(trajectory.times) / 2
-    SQw_full.calculate_from_MD(trajectory, t_resolution = T_RES, dims=DIMS)
-    SQw_1.calculate_from_MD(trajectory[:n], t_resolution = T_RES, dims=DIMS)
-    SQw_2.calculate_from_MD(trajectory[n:], t_resolution = T_RES, dims=DIMS)
+    SQw_full.calculate_from_MD(trajectory, t_resolution=T_RES, dims=DIMS)
+    SQw_1.calculate_from_MD(trajectory[:n], t_resolution=T_RES, dims=DIMS)
+    SQw_2.calculate_from_MD(trajectory[n:], t_resolution=T_RES, dims=DIMS)
 
     # Calculate the total standard deviation for the two half runs and test that
     # the total run is within a factor of 3
@@ -110,4 +110,4 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
 
     # Test that the stdev for each Q,w value for the total run is within a
     # factor of 2 of the maximum standard deviation of any point
-    assert stdev_full < 2 * np.max(stdev)
+    assert np.all(stdev_full < 2 * np.max(stdev))
