@@ -30,24 +30,28 @@ water_mol = su.Molecule(position=(0, 0, 0),
                                       su.Dispersion(O),
                                       su.BondAngle(atoms=[H1, O, H2])],
                         name='water')
-universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0333679)
+universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0335)
 
 # MD Engine setup
 md_engine = sim.Simulation(universe,
                            engine="mmtk",
-                           time_step=1,
+                           time_step=2.114,
                            temperature=263.,
                            integrator='velocity_verlet',
                            lj_options=12.,
                            es_options='ewald',
                            minimizer='steepest_descent',
-                           traj_step=1057,
+                           traj_step=500,
                            rigid=True,
                            threads=4)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
-md_engine.run(n_steps=5000, equilibration=True)
+print "Minimization Complete"
+print md_engine.engine.universe.energy()
+md_engine.run(n_steps=25000, equilibration=True)
+print "Equilibration Complete"
+print md_engine.engine.universe.energy()
 
 # Setup refinement
 
@@ -58,13 +62,17 @@ exp_datasets = [{'file_name':data.READER_DATA['LAMPSQw'],
                  'weight':1.}]
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
-fit_params = universe.parameters
+for p in universe.parameters:
+    if p.interactions_name != 'Dispersion':
+        p.fixed = True
+
+fit_params = set([p for p in universe.parameters if p.fixed is False])
 control = MDMCControl(MD_engine=md_engine,
                       exp_datasets=exp_datasets,
                       fit_params=fit_params,
                       MC_norm=1,
                       minimizer_type="MMC",
-                      MD_steps=108929,
+                      MD_steps=208000,
                       t_resolution=114.)
 
 # Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
@@ -102,4 +110,4 @@ control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
                                                             'Q':Q}
 
 # Run refinement
-control.refine(n_steps=1)
+control.refine(n_steps=0)
