@@ -3,7 +3,7 @@
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 11:07:19"""
 
 from copy import deepcopy
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 import weakref
 
 import MMTK
@@ -140,7 +140,10 @@ class MMTKEngine(MDEngine):
         Creates a temporary file in which to output MMTK trajectories
         """
 
-        trajectory_file = TemporaryFile()
+        # NamedTemporaryFile instead of TemporaryFile avoids issues with
+        # multiple instaces of MMTKEngine all creating TemporaryFile in the same
+        # directory
+        trajectory_file = NamedTemporaryFile()
         self.trajectory = MMTK.Trajectory.Trajectory(self.universe,
                                                      trajectory_file.name,
                                                      mode='w')
