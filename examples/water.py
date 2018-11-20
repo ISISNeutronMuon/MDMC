@@ -35,7 +35,7 @@ universe.fill(water_mol, force_field=ff.SPCE, num_density=0.0335)
 # MD Engine setup
 md_engine = sim.Simulation(universe,
                            engine="mmtk",
-                           time_step=2.114,
+                           time_step=1.057564,
                            temperature=263.,
                            integrator='velocity_verlet',
                            lj_options=12.,
