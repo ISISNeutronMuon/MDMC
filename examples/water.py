@@ -63,7 +63,7 @@ exp_datasets = [{'file_name':data.READER_DATA['LAMPSQw'],
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters:
-    if p.interactions_name != 'Dispersion':
+    if p.name != 'eta':
         p.fixed = True
 
 fit_params = set([p for p in universe.parameters if p.fixed is False])
