@@ -153,7 +153,7 @@ class AbstractSQw(Observable):
         try:
             assert_allclose(self._calculate_E(len(self.E), dt),
                             self.E,
-                            rtol=1e-7,
+                            rtol=1e-5,
                             err_msg=("Set E values and calculated E values are"
                                      " not consistent"))
         except AttributeError:
