@@ -98,7 +98,8 @@ SQw_err_zero[SQw_err == np.float('inf')] = 0
 SQw_err_fun = interp2d(E, Q, SQw_err_zero)
 # Use the largest step size from the E data for the uniform step size
 E_step = max([E[i] - E[i-1] for i in np.arange(len(E) - 1) + 1])
-E_uniform = np.arange(E[0], E[-1], E_step)
+# Currently forced to start from E = 0. due to limitations of SQw calculation
+E_uniform = np.arange(0., E[-1] - E[0], E_step )
 SQw_uniform = SQw_fun(E_uniform, Q)
 SQw_err_uniform = SQw_err_fun(E_uniform, Q)
 SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
