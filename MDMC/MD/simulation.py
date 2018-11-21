@@ -11,6 +11,7 @@ from enum import Enum
 import numpy as np
 
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
+from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -35,6 +36,8 @@ class Universe(object):
         Arguments:
         dimensions - single float for cubic universe or 3 element list of floats
         shape - member of shape enum
+        force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
+        structures - a list of structures
         """
 
         self.shape = shape
@@ -108,6 +111,20 @@ class Universe(object):
     def molecule_list(self):
 
         return self.configuration.molecule_list
+
+    @property
+    def force_fields(self):
+
+        return self._force_fields
+
+    @force_fields.setter
+    def force_fields(self, force_field):
+
+        if force_field:
+            self._force_fields = ForceFieldFactory.create_force_field(
+                force_field)
+        else:
+            self._force_fields = None
 
     def add_structural_unit(self, structural_unit, force_field=None):
 
@@ -184,10 +201,12 @@ class Universe(object):
         interactions - any objects with base class Interaction
         """
 
+        self.force_fields = force_field
+
         if not interactions:
-            self.force_fields = force_field(self.interactions)
+            self.force_fields.parameterize_interactions(self.interactions)
         else:
-            self.force_fields = force_field(*interactions)
+            self.force_fields.parameterize_interactions(*interactions)
 
 
 def _primitive_cubic(dimensions, number):

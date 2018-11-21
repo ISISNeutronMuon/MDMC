@@ -9,7 +9,6 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-import MDMC.MD.force_fields as ff
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 
@@ -53,7 +52,7 @@ def water_molecule(atom):
 def water_SPCE_universe(water_molecule):
 
     water_universe = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
-    water_universe.fill(water_molecule, force_field=ff.SPCE,
+    water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
     return water_universe
 
@@ -111,7 +110,7 @@ def test_add_molecule(universe, water_molecule):
 def test_spce_water_molecule(universe, water_molecule):
 
     universe.add_structural_unit(water_molecule)
-    universe.add_force_field(ff.SPCE)
+    universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
     function_names = [function.__class__.__name__ for function in functions]
