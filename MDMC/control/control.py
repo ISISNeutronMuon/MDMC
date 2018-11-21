@@ -110,6 +110,7 @@ class MDMCControl(object):
             FoM = self.generate_FoM()
             print self.MD_engine.engine.universe.energy()
             self.minimizer.step(FoM)
+            self.MD_engine.engine.update_parameters()
             count += 1
 
             if self.reset_config:
@@ -124,6 +125,7 @@ class MDMCControl(object):
         try:
             # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
+            self.MD_engine.engine.update_parameters()
         except TypeError:
             pass
 
