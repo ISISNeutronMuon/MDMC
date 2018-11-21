@@ -143,6 +143,7 @@ class AbstractSQw(Observable):
                 ' calculate_from_MD')
         self.t_res = settings['t_resolution']
         self._set_weights()
+        self.independent_variables = {}
 
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
                                  * UNIT_VECTOR)
@@ -161,7 +162,7 @@ class AbstractSQw(Observable):
 
         # Overwrite independent variable 'Q' if it already exists
         try:
-            self.independent_variables = {'Q':np.array(settings['Q_values'])}
+            self.independent_variables['Q'] = np.array(settings['Q_values'])
         except KeyError:
             pass
 
