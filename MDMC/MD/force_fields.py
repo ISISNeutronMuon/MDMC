@@ -57,7 +57,7 @@ class SPCE(ForceField):
     q_H = abs(q_O/2)    # e
 
     # LJ Params
-    eta = 0.6502        # kJ mol^-1
+    epsilon = 0.6502        # kJ mol^-1
     sigma = 3.166       # angstrom
 
     # Bond Params
@@ -70,7 +70,7 @@ class SPCE(ForceField):
 
     interaction_dictionary = {(su.Coulombic, ('O',)):ifu.Coulomb(q_O),
         (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-        (su.Dispersion, ('O',)):ifu.LennardJones(eta, sigma),
+        (su.Dispersion, ('O',)):ifu.LennardJones(epsilon, sigma),
         (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
         (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
 
@@ -90,7 +90,7 @@ class SPC(ForceField):
 
     # LJ Params
     sigma = 3.166       # angstrom
-    eta = 0.6502        # kJ mol^-1
+    epsilon = 0.6502        # kJ mol^-1
 
     # Bond Params
     r_OH = 1.000       # angstrom
@@ -105,6 +105,6 @@ class SPC(ForceField):
 
     interaction_dictionary = {(su.Coulombic, ('O',)):ifu.Coulomb(q_O),
         (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-        (su.Dispersion, ('O',)):ifu.LennardJones(sigma, eta),
+        (su.Dispersion, ('O',)):ifu.LennardJones(sigma, epsilon),
         (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
         (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}

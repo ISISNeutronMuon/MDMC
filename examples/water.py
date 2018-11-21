@@ -41,7 +41,7 @@ md_engine = sim.Simulation(universe,
                            lj_options=12.,
                            es_options='ewald',
                            minimizer='steepest_descent',
-                           traj_step=500,
+                           traj_step=1000,
                            rigid=True,
                            threads=4)
 
@@ -63,7 +63,7 @@ exp_datasets = [{'file_name':data.READER_DATA['LAMPSQw'],
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters:
-    if p.name != 'eta':
+    if p.name != 'epsilon':
         p.fixed = True
 
 fit_params = set([p for p in universe.parameters if p.fixed is False])
