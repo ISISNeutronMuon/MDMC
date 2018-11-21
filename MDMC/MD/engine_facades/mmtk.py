@@ -19,7 +19,7 @@ import numpy as np
 from Scientific._vector import Vector
 
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.force_fields import SPCE
+from MDMC.MD.force_fields.SPCE import SPCE
 from MDMC.MD.simulation import Shape
 import MDMC.MD.structural_units as MDMCs
 import MDMC.trajectory_analysis.trajectory as MDMCt
