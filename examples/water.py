@@ -41,7 +41,7 @@ md_engine = sim.Simulation(universe,
                            lj_options=12.,
                            es_options='ewald',
                            minimizer='steepest_descent',
-                           traj_step=500,
+                           traj_step=1000,
                            rigid=True,
                            threads=4)
 
