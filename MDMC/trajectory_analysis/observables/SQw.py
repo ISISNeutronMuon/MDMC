@@ -154,7 +154,10 @@ class AbstractSQw(Observable):
                 ' calculate_from_MD')
         self.t_res = settings['t_resolution']
         self._set_weights()
-        self.independent_variables = {}
+
+        # Create independent_variables dictionary if it doesn't exist
+        if not hasattr(self, 'independent_variables'):
+            self.independent_variables = {}
 
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
                                  * UNIT_VECTOR)
