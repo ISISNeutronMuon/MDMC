@@ -16,6 +16,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 import ast
 from inspect import getargspec, getmembers
 import operator
+import warnings
 import weakref
 
 import numpy as np
@@ -67,7 +68,9 @@ class Parameter(object):
         """
 
         if hasattr(self, 'fixed') and self.fixed:
-            print "Unable to change fixed parameter"
+            warnings.warn("Unable to change fixed parameter")
+        elif hasattr(self, 'tie') and self.tie is not None:
+            warnings.warn("Unable to change tied parameter")
         else:
             if self.constraints is not None:
                 self.validate_value(value, self.constraints)
