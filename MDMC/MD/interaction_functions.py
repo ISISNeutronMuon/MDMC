@@ -32,8 +32,7 @@ class Parameter(object):
     dictionary methods.
     """
 
-    def __init__(self, value, name, fixed=False, constraints=None,
-                tie_string=None):
+    def __init__(self, value, name, fixed=False, constraints=None):
 
         """
         Arguments:
@@ -42,8 +41,6 @@ class Parameter(object):
         fixed - boolean specifying whether or not the value can be changed
         constraints - 2 element tuple (lower, upper) specifying the closed range
         in which value can be set
-        tie_string - string which specifies a tie to one or more other
-        parameters
         """
 
         self.name = name
@@ -53,7 +50,6 @@ class Parameter(object):
         self.interactions_name = None
         self.functions_name = None
         self._interactions = []
-        # self.tie = Tie(tie_string)
 
     @property
     def value(self):
@@ -166,42 +162,6 @@ class Parameter(object):
         if self.value > constraints[0] or self.value < constraints[1]:
             raise ValueError("Value must be within constraints")
 
-
-
-
-# class Tie(object):
-#
-#     """
-#     A class which returns tie to one or more parameters
-#     """
-#
-#     def __init__(self, tie_string):
-#
-#         """
-#         tie_string - string which specifies a tie to one or more other
-#         parameters
-#         """
-#
-#         self.func = self.parse_tie_string(tie_string)
-#
-#     def parse_tie_string(self, tie_string):
-#
-#         """
-#         Parses a string into a tie
-#
-#         CURRENTLY ONLY PARSES STRINGS THAT CONTAIN A SINGLE OTHER PARAMETER
-#         """
-#
-#         splt = tie_string.split()
-#         for i in range(len(splt)):
-#             try:
-#                 splt[i] = float(splt[i])
-#             except ValueError:
-#                 pass
-#
-#         def func():
-#
-#             return eval(splt)
 
 class InteractionFunction(object):
 
