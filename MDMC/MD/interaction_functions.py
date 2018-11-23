@@ -52,6 +52,7 @@ class Parameter(object):
         self.interactions_name = None
         self.functions_name = None
         self._interactions = []
+        self._tie = None
 
     @property
     def value(self):
@@ -133,7 +134,10 @@ class Parameter(object):
     @property
     def tie(self):
 
-        return eval(compile(self._tie, '', 'eval'))
+        if self._tie is None:
+            return None
+        else:
+            return eval(compile(self._tie, '', 'eval'))
 
     def set_tie(self, parameter, expr):
 
