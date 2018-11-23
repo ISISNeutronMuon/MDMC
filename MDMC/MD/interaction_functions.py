@@ -13,6 +13,7 @@ Contains filters for filtering list of parameters based on a predicate.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
+import ast
 from inspect import getargspec, getmembers
 import operator
 import weakref
@@ -54,6 +55,8 @@ class Parameter(object):
     @property
     def value(self):
 
+        if hasattr(self, 'tie') and self.tie is not None:
+            return self.tie
         return self._value
 
     @value.setter
@@ -124,7 +127,26 @@ class Parameter(object):
 
         self._interactions.append(weakref.ref(interaction))
 
+    @property
+    def tie(self):
 
+        return eval(compile(self._tie, '', 'eval'))
+
+    def set_tie(self, parameter, expr):
+
+        """
+        This ties the parameter's value to the value of another parameter
+
+        Arguments:
+        parameter - a Parameter object
+        expr - a mathematical expression
+
+        Example:
+        set_tie(p1, "* 2") means this parameter's value will return p1.value * 2
+        """
+
+        self._tie_param = weakref.ref(parameter)
+        self._tie = ast.parse('self._tie_param().value' + expr, mode='eval')
 
     def __repr__(self):
 
