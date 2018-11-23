@@ -13,7 +13,7 @@ import MDMC.MD.interaction_functions as ifu
 class SPC(ForceField):
 
     """
-    SPC force field - LJ,Coulombic, fixed bond lengths and angles
+    SPC force field - LJ, Coulombic, fixed bond lengths and angles
     """
 
     @property
@@ -25,7 +25,7 @@ class SPC(ForceField):
 
         # LJ Params
         sigma = 3.166       # angstrom
-        eta = 0.6502        # kJ mol^-1
+        epsilon = 0.6502        # kJ mol^-1
 
         # Bond Params
         r_OH = 1.000       # angstrom
@@ -38,6 +38,6 @@ class SPC(ForceField):
         return {
             (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
             (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-            (su.Dispersion, ('O',)):ifu.LennardJones(sigma, eta),
+            (su.Dispersion, ('O',)):ifu.LennardJones(epsilon, sigma),
             (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
             (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
