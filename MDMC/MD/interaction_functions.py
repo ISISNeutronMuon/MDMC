@@ -5,10 +5,18 @@ must derive.  All functions describing atomic interactions must be added to this
 module in order to be called by a universe.  If needed, the interaction function
 classes can be extended to contain actual function definitions.
 
+Contains class Parameter, which defines the name and value of each
+parameter which belongs to an InteractionFunction, and whether the parameter is
+fixed, has constraints or is tied.
+
+Contains filters for filtering list of parameters based on a predicate.
+
 AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
 
+import ast
 from inspect import getargspec, getmembers
 import operator
+import warnings
 import weakref
 
 import numpy as np
@@ -48,6 +56,8 @@ class Parameter(object):
     @property
     def value(self):
 
+        if hasattr(self, 'tie') and self.tie is not None:
+            return self.tie
         return self._value
 
     @value.setter
@@ -58,7 +68,9 @@ class Parameter(object):
         """
 
         if hasattr(self, 'fixed') and self.fixed:
-            print "Unable to change fixed parameter"
+            warnings.warn("Unable to change fixed parameter")
+        elif hasattr(self, 'tie') and self.tie is not None:
+            warnings.warn("Unable to change tied parameter")
         else:
             if self.constraints is not None:
                 self.validate_value(value, self.constraints)
@@ -117,6 +129,27 @@ class Parameter(object):
             self.functions_name = interaction.function_name
 
         self._interactions.append(weakref.ref(interaction))
+
+    @property
+    def tie(self):
+
+        return eval(compile(self._tie, '', 'eval'))
+
+    def set_tie(self, parameter, expr):
+
+        """
+        This ties the parameter's value to the value of another parameter
+
+        Arguments:
+        parameter - a Parameter object
+        expr - a mathematical expression
+
+        Example:
+        set_tie(p1, "* 2") means this parameter's value will return p1.value * 2
+        """
+
+        self._tie_param = weakref.ref(parameter)
+        self._tie = ast.parse('self._tie_param().value' + expr, mode='eval')
 
     def __repr__(self):
 
@@ -236,7 +269,7 @@ class LennardJones(InteractionFunction):
     Dispersive Lennard-Jones interaction
     """
 
-    def __init__(self, eta, sigma):
+    def __init__(self, epsilon, sigma):
 
         # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]

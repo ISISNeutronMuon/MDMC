@@ -128,7 +128,7 @@ def test_spce_water_molecule(universe, water_molecule):
 
     # Test interaction parameters
     SPCEparams = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
-                  {'sigma':3.166, 'eta':0.6502},
+                  {'sigma':3.166, 'epsilon':0.6502},
                   {'equilibrium_state':1.000, 'potential_strength':4637.},
                   {'equilibrium_state':1.000, 'potential_strength':4637.},
                   {'equilibrium_state':109.47, 'potential_strength':383.}]
