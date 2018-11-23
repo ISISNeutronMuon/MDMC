@@ -62,8 +62,10 @@ class AbstractSQw(Observable):
         Returns:
         1D array of Q floats
         """
-
-        return self.independent_variables['Q']
+        try:
+            return self.independent_variables['Q']
+        except KeyError:
+            raise AttributeError
 
     @property
     def E(self):
@@ -73,7 +75,10 @@ class AbstractSQw(Observable):
         1D array of energy floats
         """
 
-        return self.independent_variables['E']
+        try:
+            return self.independent_variables['E']
+        except KeyError:
+            raise AttributeError
 
     @property
     def w(self):
@@ -93,7 +98,10 @@ class AbstractSQw(Observable):
         2D array of S(Q,w) floats
         """
 
-        return self.dependent_variables['SQw']
+        try:
+            return self.dependent_variables['SQw']
+        except KeyError:
+            raise AttributeError
 
     @property
     def SQw_err(self):
@@ -103,7 +111,10 @@ class AbstractSQw(Observable):
         2D array of S(Q,w) errors
         """
 
-        return self.errors['SQw']
+        try:
+            return self.errors['SQw']
+        except KeyError:
+            raise AttributeError
 
     def read_from_file(self, reader, file_name):
 
@@ -144,6 +155,10 @@ class AbstractSQw(Observable):
         self.t_res = settings['t_resolution']
         self._set_weights()
 
+        # Create independent_variables dictionary if it doesn't exist
+        if not hasattr(self, 'independent_variables'):
+            self.independent_variables = {}
+
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
                                  * UNIT_VECTOR)
 
@@ -161,7 +176,7 @@ class AbstractSQw(Observable):
 
         # Overwrite independent variable 'Q' if it already exists
         try:
-            self.independent_variables = {'Q':np.array(settings['Q_values'])}
+            self.independent_variables['Q'] = np.array(settings['Q_values'])
         except KeyError:
             pass
 

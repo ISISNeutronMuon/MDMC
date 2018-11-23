@@ -19,7 +19,7 @@ import numpy as np
 from Scientific._vector import Vector
 
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.force_fields import SPCE
+from MDMC.MD.force_fields.SPCE import SPCE
 from MDMC.MD.simulation import Shape
 import MDMC.MD.structural_units as MDMCs
 import MDMC.trajectory_analysis.trajectory as MDMCt
@@ -50,6 +50,7 @@ class MMTKEngine(MDEngine):
 
         self.universe = MMTKCubicUniverse(universe, **settings)
         self.build_configuration(universe)
+        self.universe.assign_charges()
 
     def setup_simulation(self, **settings):
 
@@ -157,7 +158,7 @@ class MMTKEngine(MDEngine):
         self.universe.assign_lj_parameters()
         self.universe.assign_bond_parameters()
         self.universe.assign_bond_angle_parameters()
-        for mol in self.universe:
+        for mol in self.universe.objectList():
             mol.assign_charge()
 
     def build_configuration(self, MDMC_universe):
@@ -226,6 +227,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         self.assign_bond_parameters()
         self.assign_bond_angle_parameters()
 
+
     @property
     def MDMC_universe(self):
 
@@ -243,6 +245,11 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
 
         raise NotImplementedError
+
+    def assign_charges(self):
+
+        for mol in self.objectList():
+            mol.assign_charge()
 
     def assign_lj_parameters(self):
 
@@ -486,13 +493,15 @@ class MMTKMolecule(MMTK.ChemicalObjects.Molecule):
         CURRENTLY ONLY APPLIES TO SPCE CHARGES
         """
 
+        charge_dict = getattr(self, 'spce_charge')
+
         for atom in self.atomList():
             for MDMC_atom in self.MDMC_obj.atom_list:
                 if atom.type.symbol == MDMC_atom.element:
-                    atom.topLevelChemicalObject().spce_charge[
-                        atom.topLevelChemicalObject().getReference(atom)] = \
-                        MDMC_atom.charge
+                    charge_dict[self.getReference(atom)] = MDMC_atom.charge
                     break
+
+        setattr(self, 'spce_charge', charge_dict)
 
     def update_MDMC_obj(self):
         pass
