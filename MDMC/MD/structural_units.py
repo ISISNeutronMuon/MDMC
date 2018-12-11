@@ -362,7 +362,8 @@ class Molecule(StructuralUnit):
     interactions - a list of objects with base class Interaction
     """
 
-    def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None, **settings):
+    def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None,
+                 **settings):
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:

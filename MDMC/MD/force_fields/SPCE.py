@@ -28,16 +28,16 @@ class SPCE(ForceField):
         q_H = abs(q_O/2)    # e
 
         # LJ Params
-        sigma = 3.166       # angstrom
-        epsilon = 0.6502        # kJ mol^-1
+        sigma = 3.166       # AA
+        epsilon = 0.6502    # kJ mol^-1
 
         # Bond Params
-        r_OH = 1.000       # angstrom
-        f_OH = 4637.       #  kJ mol^-1 A^-2
+        r_OH = 1.000        # AA
+        f_OH = 4637.        # kJ mol^-1 AA^-2
 
         # Bond Angle Params
-        a_HOH = 109.47    # deg
-        f_HOH = 383.      # kJ mol^-1 rad^2
+        a_HOH = 109.47      # deg
+        f_HOH = 383.        # kJ mol^-1 rad^-2
 
         return {
             (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
