@@ -58,7 +58,7 @@ class Parameter(object):
     @property
     def value(self):
 
-        if hasattr(self, 'tie') and self.tie is not None:
+        if self.tied:
             return self.tie
         return self._value
 
@@ -71,7 +71,7 @@ class Parameter(object):
 
         if hasattr(self, 'fixed') and self.fixed:
             warnings.warn("Unable to change fixed parameter")
-        elif hasattr(self, 'tie') and self.tie is not None:
+        elif self.tied:
             warnings.warn("Unable to change tied parameter")
         else:
             if self.constraints is not None:
@@ -135,10 +135,28 @@ class Parameter(object):
     @property
     def tie(self):
 
+        """
+        Returns:
+        The Parameter object that this Parameter is tied to, or None
+        """
+
         if self._tie is None:
             return None
         else:
             return eval(compile(self._tie, '', 'eval'))
+
+    @property
+    def tied(self):
+
+        """
+        Returns:
+        True if this Parameter is tied to another Parameter, else False
+        """
+
+        if hasattr(self, 'tie') and self.tie is not None:
+            return True
+        else:
+            return False
 
     def set_tie(self, parameter, expr):
 
@@ -160,20 +178,19 @@ class Parameter(object):
 
         """
         Returns:
-        The class name and a string of a dictionary containing public attributes
-        including properties
+        The Parameter name and a dictionary containing properties and their
+        values, except self.interactions and self.tie
         """
 
-        # Determine which attributes are in the form of properties, and include
-        # add these to public attributes in __dict__
+        # Determine which attributes are in the form of properties
         properties = getmembers(self.__class__,
                                 lambda o: isinstance(o, property))
-        prop_str = [str(p[0]) for p in properties]
-        rpr = {k:v for k,v in self.__dict__.items() if '_' not in k[0]}
-        for p in prop_str:
-            rpr[p] = getattr(self, p)
+        excluded = ['interactions', 'tie']
+        rpr = {p[0]:getattr(self, p[0]) for p in properties
+               if p[0] not in excluded}
 
-        return '<{name} {rpr}>'.format(name=self.__class__.__name__, rpr=rpr)
+        return '{name} = {rpr}'.format(name=self.name.replace('_', ' '),
+                                       rpr=rpr)
 
     def __getitem__(self, key):
 
