@@ -34,7 +34,8 @@ class Universe(object):
 
         """
         Arguments:
-        dimensions - single float for cubic universe or 3 element list of floats
+        dimensions - single float for cubic universe or 3 element list of
+        floats, with units of AA.
         shape - member of shape enum
         force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
         structures - a list of structures
@@ -278,8 +279,8 @@ class Simulation(object):
         lj_options - Options for Lennard-Jones interactions
         es_options - Options for electrostatic interactions
         thermostat - boolean defining if a thermostat is applied
-        pressure - float specifying the pressure.  If this is defined then a
-        barostat is applied.
+        pressure - float specifying the pressure in units of atm.  If this is
+        defined then a barostat is applied.
         """
 
         self.universe = universe

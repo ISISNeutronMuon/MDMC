@@ -205,6 +205,14 @@ class TemporalConfiguration(Configuration):
     """
 
     def __init__(self, time, *structural_units, **kwargs):
+
+        """
+        Arguments:
+        time - a float specifying a time in units of fs
+        structural_units - one or more objects with a base class of
+        StructuralUnit
+        """
+
         super(TemporalConfiguration, self).__init__(*structural_units, **kwargs)
         self.time = time
 
@@ -235,7 +243,7 @@ class Trajectory(AtomCollection):
     A Trajectory is a collection of TimedConfigurations
 
     Attributes:
-    data: an ordered array of frames, times and TimedConfigurations
+    data: an ordered array of frames, times (in fs) and TimedConfigurations
     configurations: TimedConfigurations
     """
 
@@ -290,6 +298,11 @@ class Trajectory(AtomCollection):
 
     @property
     def times(self):
+
+        """
+        Returns:
+        a float specifying the time in fs
+        """
 
         return self.data['time']
 
@@ -426,10 +439,17 @@ class Histogram(object):
 
     @property
     def histograms(self):
+
         return self.data['histogram']
 
     @property
     def times(self):
+
+        """
+        Returns:
+        a float specifying the time in fs
+        """
+
         return self.data['time']
 
     def _calculate_histogram(self, input, axis_bins):
@@ -502,6 +522,7 @@ class Histogram(object):
         return histogram_sum
 
     def _calc_n_bins(self, axis_bins):
+        
         return int((axis_bins[1] - axis_bins[0]) / axis_bins[2])
 
     def filter_histogram_by_time(self, start, end):

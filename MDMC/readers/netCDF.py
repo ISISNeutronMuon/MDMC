@@ -16,9 +16,20 @@ class netCDF(Reader):
 
     def open(self, file_name):
 
+        """
+        Opens the file for parsing
+        """
+
         self.file = Dataset(file_name, 'r')
 
     def parse(self):
+
+        """
+        Parse into SQw format
+
+        E is the energy transfer (in meV)
+        Q is wavevector transfer (in AA^-1)
+        """
 
         self.E = np.array(self.file.variables['angular_frequency']) * 1e15 * h_bar
         Q = self.file.variables['q']
@@ -32,14 +43,26 @@ class netCDF(Reader):
     @property
     def independent_variables(self):
 
+        """
+        A dictionary containing Q (in AA^-1) and E (meV)
+        """
+
         return {"Q":self.Q, "E":self.E}
 
     @property
     def dependent_variables(self):
 
+        """
+        A dictionary containing SQw (in arb)
+        """
+
         return {"SQw":self.SQw}
 
     @property
     def errors(self):
+
+        """
+        A dictionary containing the error associated with SQw (in arb)
+        """
 
         return {"SQw":self.SQw_err}

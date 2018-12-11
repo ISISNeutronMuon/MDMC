@@ -35,7 +35,7 @@ class AbstractSQw(Observable):
 
         """
         Return:
-        Dictionary of independent variables Q and E
+        Dictionary of independent variables Q (in AA^-1) and E (in meV)
         """
 
         return self._independent_variables
@@ -60,7 +60,7 @@ class AbstractSQw(Observable):
 
         """
         Returns:
-        1D array of Q floats
+        1D array of Q floats (in AA^-1)
         """
         try:
             return self.independent_variables['Q']
@@ -72,7 +72,7 @@ class AbstractSQw(Observable):
 
         """
         Returns:
-        1D array of energy floats
+        1D array of energy floats (in meV)
         """
 
         try:
@@ -85,7 +85,8 @@ class AbstractSQw(Observable):
 
         """
         Returns:
-        1D array of angular frequency floats, calculated from E
+        1D array of angular frequency floats in units of rad ps^-1, calculated
+        from E
         """
 
         return self.E / (h_bar * 1e15)
@@ -95,7 +96,7 @@ class AbstractSQw(Observable):
 
         """
         Returns:
-        2D array of S(Q,w) floats
+        2D array of S(Q,w) floats with arbitrary units
         """
 
         try:
@@ -108,7 +109,7 @@ class AbstractSQw(Observable):
 
         """
         Returns:
-        2D array of S(Q,w) errors
+        2D array of S(Q,w) errors with arbitrary units
         """
 
         try:
@@ -137,7 +138,7 @@ class AbstractSQw(Observable):
         n_Q_vectors - an integer specifying maximum number of Q vectors for any
         Q value
         dims - a 3 element tuple or NumPy array of floats specifying the
-        dimenions of the universe
+        dimenions of the universe in units of AA
         """
 
         self._origin = 'MD'
@@ -212,10 +213,10 @@ class AbstractSQw(Observable):
 
         Arguments:
         nE - the number of E values to be calculated
-        dt - the step size of the time
+        dt - the step size of the time in fs
 
         Returns:
-        An array of floats specifying the energy
+        An array of floats specifying the energy in units of meV
         """
 
         return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt)

@@ -42,7 +42,8 @@ class Parameter(object):
         name - a string specifying the name
         fixed - boolean specifying whether or not the value can be changed
         constraints - 2 element tuple (lower, upper) specifying the closed range
-        in which value can be set
+        in which value can be set. Constraints must have the same units as
+        value.
         """
 
         self.name = name
@@ -262,6 +263,13 @@ class HarmonicPotential(InteractionFunction):
 
     def __init__(self, equilibrium_state, potential_strength):
 
+        """
+        Arguments:
+        equilibrium_state - in units of AA (linear) or deg (angular)
+        potential_strength - in units of kJ mol^-1 AA^-2 (linear) or
+        kJ mol^-1 rad^-2 (angular)
+        """
+
         # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]
         super(self.__class__, self).__init__(args, locals())
@@ -275,6 +283,12 @@ class LennardJones(InteractionFunction):
 
     def __init__(self, epsilon, sigma):
 
+        """
+        Arguments:
+        epsilon - in units of kJ mol^-1
+        sigma - in units of AA
+        """
+
         # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]
         super(self.__class__, self).__init__(args, locals())
@@ -286,6 +300,11 @@ class Coulomb(InteractionFunction):
     """
 
     def __init__(self, charge):
+
+        """
+        Arguments:
+        charge - in units of e
+        """
 
         # Get the __init__ argument list except the zeroeth index which is self
         args = getargspec(self.__class__.__init__).args[1:]

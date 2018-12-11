@@ -19,6 +19,9 @@ class XML_SQw(Reader):
         Parses the xml file
 
         Currently only parses SQw files
+
+        E is the energy transfer (in meV)
+        Q is wavevector transfer (in AA^-1)
         """
 
         self._tree = ET.parse(self.file)
@@ -56,7 +59,7 @@ class XML_SQw(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q and E
+        A dictionary containing Q (in AA^-1) and E (meV)
         """
 
         return {"Q":self.Q, "w":self.w}
@@ -65,7 +68,7 @@ class XML_SQw(Reader):
     def dependent_variables(self):
 
         """
-        A dictionary containing SQw
+        A dictionary containing SQw (in arb)
         """
 
         return {"SQw":self.SQw}
@@ -74,7 +77,7 @@ class XML_SQw(Reader):
     def errors(self):
 
         """
-        A dictionary containing the error associated with SQw
+        A dictionary containing the error associated with SQw (in arb)
         """
 
         return {"SQw":self.SQw_err}

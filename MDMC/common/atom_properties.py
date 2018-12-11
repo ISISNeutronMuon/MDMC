@@ -4,7 +4,8 @@ AUTHOR :    Thomas Farmer        START DATE :    04/07/2018, 11:04:45"""
 
 """
 Atomic masses are taken from IUPAC 2013.  In instances where IUPAC specifies a
-range of accepted values rather than a single value, the mean is taken.
+range of accepted values rather than a single value, the mean is taken.  All
+values are in amu.
 """
 
 MASS = {

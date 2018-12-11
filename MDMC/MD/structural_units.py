@@ -25,8 +25,8 @@ class StructuralUnit:
     universe - the universe to which the structural unit belongs
     structure_type - type of structural unit
     name - a string specifying the name of the structure
-    position - position of center of mass
-    velocity - average velocity
+    position - position of center of mass in units of AA
+    velocity - average velocity in units of AA fs^-1
     bonds - list of all bonds
     parent - the structural unit to which this unit belongs
     """
@@ -40,9 +40,10 @@ class StructuralUnit:
     def __init__(self, position, velocity, name):
 
         """
-        Attributes:
-        position - a tuple or NumPy array specifying the position
-        velocity - a tuple of NumPy array specifying the velocity
+        Arguments:
+        position - a tuple or NumPy array specifying the position in units of AA
+        velocity - a tuple of NumPy array specifying the velocity in units of
+        AA fs^-1
         name - a string specifying the name
         """
 
@@ -207,7 +208,8 @@ class StructuralUnit:
 
         """
         Returns:
-        Position in parent CoM frame or None if it has no parent structure.
+        Position in parent CoM frame with units of AA, or None if it has no
+        parent structure
         """
 
         if self.top_level_structure() is self:
@@ -230,7 +232,7 @@ class StructuralUnit:
         unit's universe, if it is associated with one
 
         Arguments:
-        position - 3 element tuple or NumPy array
+        position - 3 element tuple or NumPy array with units of AA
 
         Returns:
         True if position is within universe or there is no associated universe.
@@ -268,13 +270,16 @@ class Atom(StructuralUnit):
         init with position, velocity, element, mass and a non-bonded interaction
 
         The Coulombic interaction value (i.e. charge) is set when a force field
-        is applied to the universe.
+        is applied to the universe, in units of e.
 
         Arguments:
         element - string specifying the atomic element label
+        position - a tuple or NumPy array specifying the position in units of AA
+        velocity - a tuple of NumPy array specifying the velocity in units of
+        AA fs^-1
         Settings:
-        mass - float specifying the atomic mass. If not provided a lookup table
-        will be used.
+        mass - float specifying the atomic mass in amu. If not provided a lookup
+        table will be used.
         """
 
         super(Atom,self).__init__(position, velocity, name=element)
@@ -298,8 +303,8 @@ class Atom(StructuralUnit):
         """
         Returns:
         If a force field has been defined then the charge parameter will have
-        been set, and is returned.  If no charge parameter exists then None is
-        returned.
+        been set, and is returned in units of e. If no charge parameter exists
+        then None is returned.
         """
 
         try:
@@ -341,8 +346,8 @@ class Group(StructuralUnit):
     Two or more atoms that form a subset of a molcule
 
  	Attributes:
- 	position - center of mass position
-    velocity - center of mass translational velocity
+ 	position - center of mass position in units of AA
+    velocity - center of mass translational velocity in units of AA fs^-1
     """
 
     def __init__(self):
@@ -358,12 +363,26 @@ class Molecule(StructuralUnit):
     Must be declared with at least 2 atoms and one interaction.
 
     Attributes:
-    Settings:
-    interactions - a list of objects with base class Interaction
+    position - center of mass position in units of AA
+    velocity - center of mass velocity in units of AA fs^-1
+    interactions - a set of interactions that involve any of the atoms within
+    the Molecule
     """
 
     def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None,
                  **settings):
+
+        """
+        Arguments:
+        position - a tuple or NumPy array specifying the center of mass position
+        in units of AA
+        velocity - a tuple of NumPy array specifying the center of mass velocity
+        in units of AA fs^-1
+        name - a string specifying the name of the Molecule
+        Settings:
+        interactions - a set or list of interactions acting on atoms within the
+        Molecule
+        """
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:
@@ -399,7 +418,7 @@ class Molecule(StructuralUnit):
     def _set_subunit_positions(self):
 
         """
-        Sets the position of all subunits in the global frame
+        Sets the position of all subunits in the global frame in units of AA
         """
 
         for atom in self.atom_list:
@@ -408,7 +427,8 @@ class Molecule(StructuralUnit):
     def _calc_CoM(self):
 
         """
-        Calculate the position of the center of mass of the molecule
+        Returns:
+        position of the center of mass of the molecule in units of AA
         """
 
         mass = 0.
@@ -421,7 +441,8 @@ class Molecule(StructuralUnit):
     def _calc_subunit_position_in_CoM_frame(self):
 
         """
-        Calculate the position of all subunits in the Molecule CoM frame
+        Calculate the position of all subunits in the Molecule CoM frame in
+        units of AA
         """
 
         self._CoM_frame_positions = {}
@@ -449,8 +470,10 @@ class BoundingBox(object):
 
         """
         Arguments:
-        position - a NumPy array with the position of the structural unit
-        atom_list - a list of the atoms which comprise the structural unit
+        position - a NumPy array with the position of the structural unit in
+        units of AA
+        atom_list - a list of the atoms which comprise the structural unit in
+        units of AA
         """
 
         self.min = position

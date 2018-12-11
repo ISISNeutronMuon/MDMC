@@ -26,7 +26,7 @@ class LAMPSQw(Reader):
     def parse(self):
 
         """
-        Parse into SQW format
+        Parse into SQw format
 
         E is the energy transfer (in meV)
         Q is wavevector transfer (in AA^-1)
@@ -45,7 +45,7 @@ class LAMPSQw(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q and E
+        A dictionary containing Q (in AA^-1) and E (meV)
         """
 
         return {"Q":self.Q, "E":self.E}
@@ -54,7 +54,7 @@ class LAMPSQw(Reader):
     def dependent_variables(self):
 
         """
-        A dictionary containing SQw
+        A dictionary containing SQw (in arb)
         """
 
         return {"SQw":self.SQw}
@@ -63,7 +63,7 @@ class LAMPSQw(Reader):
     def errors(self):
 
         """
-        A dictionary containing the error associated with SQw
+        A dictionary containing the error associated with SQw (in arb)
         """
 
         return {"SQw":self.SQw_err}
