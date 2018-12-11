@@ -189,7 +189,7 @@ class Parameter(object):
         Validates the parameter value by testing if it is within
         """
 
-        if self.value > constraints[0] or self.value < constraints[1]:
+        if self.value < constraints[0] or self.value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
 
