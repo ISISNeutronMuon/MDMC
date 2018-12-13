@@ -8,6 +8,64 @@ AUTHOR :    Thomas Farmer        START DATE :    12/12/2018, 11:06:51"""
 import numpy as np
 
 
+CODATA_VERSION = '2014'
+
+
+CODATA = {
+
+    # CODATA 2014 taken from ASE.units, originally from:
+    # http://arxiv.org/pdf/1507.07956.pdf
+    '2014': {'_c': 299792458.,
+             '_mu0': 4.0e-7 * np.pi,
+             '_Grav': 6.67408e-11,
+             '_hplanck': 6.626070040e-34,
+             '_e': 1.6021766208e-19,
+             '_me': 9.10938356e-31,
+             '_mp': 1.672621898e-27,
+             '_Nav': 6.022140857e23,
+             '_k': 1.38064852e-23,
+             '_amu': 1.660539040e-27}
+}
+
+
+class Unit(str):
+
+    """
+    A class for defining unit strings
+
+    It possesses additional * and / operands so that combined units can be
+    returned.
+    """
+
+    def __mul__(self, other):
+
+        """
+        Appends a single space and other to the unit string
+        """
+
+        return self + ' ' + other
+
+    def __div__(self, other):
+
+        """
+        Appends ' / ' and other to the unit string
+        """
+
+        return self + ' / ' + other
+
+
+# Define the unit system used in MDMC
+SYSTEM = {
+    'LENGTH':Unit('Ang'),
+    'TIME':Unit('fs'),
+    "MASS":Unit('amu'),
+    "CHARGE":Unit("e"),
+    "ANGLES":Unit('rad'),
+    "TEMPERATURE":Unit('K'),
+    "AMOUNT":Unit('mol')
+}
+
+
 class UnitFloat(float):
 
     """
