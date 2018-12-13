@@ -66,6 +66,39 @@ SYSTEM = {
 }
 
 
+def create_units(codata_version):
+
+    """
+    Creates a dictionary of units based on the CODATA version.
+
+    Arguments:
+    codata_version - str specifying the CODATA version to be used
+
+    Returns:
+    dictionary containing (unit, conversion factor) pairs
+    """
+
+    # SYSTEM units are defined to 1.0
+    units = {unit:1.0 for unit in SYSTEM.values()}
+
+    # CODATA version
+    codata = CODATA[codata_version]
+
+    # Length
+    units['m'] = 1e10
+    units['nm'] = 10.
+
+    # Time
+    units['ns'] = 1e6
+    units['ps'] = 1e3
+
+    # Mass
+    units['kg'] = 1. / codata['_amu']
+
+    # Energy
+
+    return units
+
 class UnitFloat(float):
 
     """
@@ -135,3 +168,8 @@ def unit_array(obj, unit, dtype=None):
     unit_arr = obj.view(UnitNDArray)
     unit_arr.unit = unit
     return unit_arr
+
+
+# Update the module scope to include the SYSTEM and units keys
+globals().update(SYSTEM)
+globals().update(create_units(CODATA_VERSION))
