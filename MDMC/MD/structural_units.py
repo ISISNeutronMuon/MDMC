@@ -14,6 +14,8 @@ import weakref
 import numpy as np
 
 import MDMC.common.atom_properties as atom_properties
+from MDMC.common.decorators import unit_decorator
+from MDMC.common import units
 
 
 class StructuralUnit:
@@ -81,6 +83,7 @@ class StructuralUnit:
         return self._position
 
     @position.setter
+    @unit_decorator(unit=units.LENGTH)
     def position(self, position):
 
         """
@@ -91,7 +94,7 @@ class StructuralUnit:
         # if not self.valid_position(position):
         #     raise RuntimeWarning("Warning: Structural unit lies outside of the"
         #                          "universe bounds")
-        self._position = np.array(position)
+        self._position = position
 
     @property
     def velocity(self):
@@ -99,9 +102,10 @@ class StructuralUnit:
         return self._velocity
 
     @velocity.setter
+    @unit_decorator(unit=units.LENGTH / units.TIME)
     def velocity(self, velocity):
 
-        self._velocity = np.array(velocity)
+        self._velocity = velocity
 
     @property
     def atom_list(self):
