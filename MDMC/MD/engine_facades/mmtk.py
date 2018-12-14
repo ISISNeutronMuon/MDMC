@@ -100,7 +100,7 @@ class MMTKEngine(MDEngine):
 
     def minimize(self, n_steps):
 
-        self.minimizer(steps = n_steps, step_size = 0.05*Units.Ang)
+        self.minimizer(steps=n_steps, step_size=0.05*Units.Ang)
         self.universe.initializeVelocitiesToTemperature(self.temperature)
 
     def run(self, n_steps, equilibration=False):
