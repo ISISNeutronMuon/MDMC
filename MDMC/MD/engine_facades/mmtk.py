@@ -114,10 +114,9 @@ class MMTKEngine(MDEngine):
         """
 
         self._saved_config = None
-        self.temperature = settings.get('temperature', 300) * MMTK.Units.K
-        self.temperature_variation = (settings.get('temperature_variation', 10.)
-                                      * MMTK.Units.K)
-        self.time_step = settings.get('time_step', 1) * MMTK.Units.fs
+        self.temperature = settings.get('temperature', 300)
+        self.temperature_variation = settings.get('temperature_variation', 10.)
+        self.time_step = settings.get('time_step', 1)
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
         self.traj_step = settings['traj_step']
         self.rigid = settings.get('rigid', False)
@@ -167,7 +166,8 @@ class MMTKEngine(MDEngine):
                 actions.append(BarostatReset(100, None, 10))
 
         self.integrator = self.integrator_type(self.universe,
-                                               delta_t=self.time_step,
+                                               delta_t=(self.time_step
+                                                        *MMTKUnits.fs),
                                                actions=actions,
                                                threads=self.threads)
         self.integrator(steps=n_steps)
