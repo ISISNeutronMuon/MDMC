@@ -18,6 +18,8 @@ from MMTK.Trajectory import StandardLogOutput
 import numpy as np
 from Scientific._vector import Vector
 
+from MDMC.common.decorators import unit_decorator
+from MDMC.common import units
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.force_fields.SPCE import SPCE
 from MDMC.MD.simulation import Shape
@@ -44,6 +46,39 @@ class MMTKEngine(MDEngine):
     def saved_config(self):
 
         return self._saved_config
+
+    @property
+    def temperature(self):
+
+        return self._temperature
+
+    @temperature.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature(self, value):
+
+        self._temperature = value
+
+    @property
+    def time_step(self):
+
+        return self._time_step
+
+    @time_step.setter
+    @unit_decorator(unit=units.TIME)
+    def time_step(self, value):
+
+        self._time_step = value
+
+    @property
+    def pressure(self):
+
+        return self._pressure
+
+    @pressure.setter
+    @unit_decorator(unit=units.PRESSURE)
+    def pressure(self, value):
+
+        self._pressure = value
 
     # TODO: Enable different universe types
     def setup_universe(self, universe, **settings):
