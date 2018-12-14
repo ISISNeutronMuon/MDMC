@@ -58,11 +58,11 @@ class Unit(str):
 SYSTEM = {
     'LENGTH':Unit('Ang'),
     'TIME':Unit('fs'),
-    "MASS":Unit('amu'),
-    "CHARGE":Unit("e"),
-    "ANGLES":Unit('rad'),
-    "TEMPERATURE":Unit('K'),
-    "AMOUNT":Unit('mol')
+    'MASS':Unit('amu'),
+    'CHARGE':Unit('e'),
+    'ANGLES':Unit('rad'),
+    'TEMPERATURE':Unit('K'),
+    'AMOUNT':Unit('mol')
 }
 
 
