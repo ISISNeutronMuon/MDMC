@@ -24,12 +24,12 @@ class SPC(ForceField):
         q_H = abs(q_O/2)    # e
 
         # LJ Params
-        sigma = 3.166       # AA
+        sigma = 3.166       # Ang
         epsilon = 0.6502    # kJ mol^-1
 
         # Bond Params
-        r_OH = 1.000        # AA
-        f_OH = 4637.        # kJ mol^-1 AA^-2
+        r_OH = 1.000        # Ang
+        f_OH = 4637.        # kJ mol^-1 Ang^-2
 
         # Bond Angle Params
         a_HOH = 109.47      # deg
