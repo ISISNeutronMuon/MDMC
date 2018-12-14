@@ -279,7 +279,7 @@ class Simulation(object):
         lj_options - Options for Lennard-Jones interactions
         es_options - Options for electrostatic interactions
         thermostat - boolean defining if a thermostat is applied
-        pressure - float specifying the pressure in units of atm.  If this is
+        pressure - float specifying the pressure in units of Pa.  If this is
         defined then a barostat is applied.
         """
 
