@@ -62,7 +62,8 @@ SYSTEM = {
     'CHARGE':Unit('e'),
     'ANGLES':Unit('rad'),
     'TEMPERATURE':Unit('K'),
-    'AMOUNT':Unit('mol')
+    'AMOUNT':Unit('mol'),
+    'PRESSURE':Unit('Pa')
 }
 
 
