@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 import weakref
 
 import MMTK
-from MMTK import Units
+from MMTK import Units as MMTKUnits
 from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
                             TranslationRemover, BarostatReset
 from MMTK.ForceFields import SPCEFF
@@ -128,14 +128,15 @@ class MMTKEngine(MDEngine):
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
-                step_size=settings.get('minimizer_step_size', 0.05)*Units.Ang,
+                step_size=(settings.get('minimizer_step_size', 0.05)
+                           * MMTKUnits.Ang),
                 threads=self.threads)
         else:
             self.universe.initializeVelocitiesToTemperature(self.temperature)
 
     def minimize(self, n_steps):
 
-        self.minimizer(steps=n_steps, step_size=0.05*Units.Ang)
+        self.minimizer(steps=n_steps, step_size=0.05*MMTKUnits.Ang)
         self.universe.initializeVelocitiesToTemperature(self.temperature)
 
     def run(self, n_steps, equilibration=False):
@@ -148,12 +149,13 @@ class MMTKEngine(MDEngine):
         if self.thermostat:
             self.universe.thermostat = NoseThermostat(self.temperature,
                                                       relaxation_time= \
-                                                          100.*Units.fs)
+                                                          100.*MMTKUnits.fs)
 
         if self.pressure:
-            self.universe.barostat = AndersenBarostat(self.pressure * Units.Pa,
+            self.universe.barostat = AndersenBarostat((self.pressure
+                                                       *MMTKUnits.Pa),
                                                       relaxation_time= \
-                                                          100.*Units.fs)
+                                                          100.*MMTKUnits.fs)
 
         if self.rigid:
             self.universe.setBondConstraints()
@@ -463,7 +465,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         except:
             pass
         if isinstance(option, float):
-            return option * Units.Ang
+            return option * MMTKUnits.Ang
         elif isinstance(option, str):
             return {'method':option}
         elif option is None:
