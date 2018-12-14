@@ -116,6 +116,26 @@ class UnitFloat(float):
         float.__init__(value)
         self.unit = unit
 
+    def __deepcopy__(self, memo):
+
+        """
+        Copies the UnitFloat and all attributes
+
+        This method is required because otherwise the float.__deepcopy__ is
+        used, which attempts to create a new UnitFloat class using only 2
+        argument i.e. the value.  UnitFloat.__new__ takes exactly 3 arguments.
+
+        It simply creates a new UnitFloat and sets all of its attributes to
+        deepcopies of the current attributes (along with updating the memo).
+        """
+
+        cls = self.__class__
+        unit_float = cls.__new__(cls, self.real, self.unit)
+        memo[id(self)] = unit_float
+        for k, v in self.__dict__.items():
+            setattr(unit_float, k, deepcopy(v, memo))
+        return memo
+
     def __repr__(self):
 
         return repr(self.real) + ' ' + self.unit
