@@ -288,7 +288,7 @@ class Atom(StructuralUnit):
 
         super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
-        self.mass = settings.get('mass', None)
+        self.mass = settings.get('mass', atom_properties.MASS[self.element])
         self.add_interaction(Coulombic(self))
 
     @property
@@ -328,6 +328,7 @@ class Atom(StructuralUnit):
         return self._mass
 
     @mass.setter
+    @unit_decorator(unit=units.MASS)
     def mass(self, mass):
 
         """
@@ -335,13 +336,7 @@ class Atom(StructuralUnit):
         mass if it is unspecified
         """
 
-        if mass is None:
-            try:
-                self._mass = atom_properties.MASS[self.element]
-            except KeyError:
-                raise KeyError("The mass of that element is not tabulated")
-        else:
-            self._mass = mass
+        self._mass = mass
 
 
 class Group(StructuralUnit):
@@ -401,9 +396,10 @@ class Molecule(StructuralUnit):
         return self._position
 
     @position.setter
+    @unit_decorator(unit=units.LENGTH)
     def position(self, position):
 
-        self._position = np.array(position)
+        self._position = position
         self._set_subunit_positions()
 
     @property
@@ -485,6 +481,28 @@ class BoundingBox(object):
         for atom in atom_list:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
+
+    @property
+    def min(self):
+
+        return self._min
+
+    @min.setter
+    @unit_decorator(unit=units.LENGTH)
+    def min(self, value):
+
+        self._min = value
+
+    @property
+    def max(self):
+
+        return self._max
+
+    @max.setter
+    @unit_decorator(unit=units.LENGTH)
+    def max(self, value):
+
+        self._max = value
 
 
 class Interaction:
