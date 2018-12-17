@@ -134,6 +134,8 @@ class UnitFloat(float):
 
     def __new__(cls, value, unit):
 
+        if value is None:
+            return None
         return float.__new__(cls, value)
 
     def __init__(self, value, unit):
@@ -210,6 +212,9 @@ def unit_array(obj, unit, dtype=None):
     unit - a string specifying the unit of the array
     dtype - the desired data-type for the array
     """
+
+    if obj is None:
+        return None
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):
