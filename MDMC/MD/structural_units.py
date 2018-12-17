@@ -557,7 +557,13 @@ class Interaction:
                 setattr(interaction, k, getattr(self, k))
             else:
                 setattr(interaction, k, deepcopy(v, memo))
-        interaction.function.set_params_interactions(interaction)
+
+        # Set interactions for parameters if interaction.function has been
+        # defined
+        try:
+            interaction.function.set_params_interactions(interaction)
+        except AttributeError:
+            pass
         return interaction
 
     @property
