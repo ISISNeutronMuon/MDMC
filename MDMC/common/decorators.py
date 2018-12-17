@@ -28,3 +28,34 @@ def unit_decorator(unit):
                 return func(self, unit_array(value, unit))
         return wrapper
     return decorator
+
+
+def unit_decorator_getter(unit):
+
+    """
+    Decorates property.getter methods to add units to the return value. These
+    units are displayed when either repr or str is called.
+
+    Suitable for use with setter methods that either take floats (or objects
+    that can be cast to floats), or NumPy arrays (or objects that can be cast
+    to NumPy arrays). This method exists for properties which have no setter
+    method.
+
+    Arguments:
+    unit - string specifying the unit or None. If None then self.unit is used,
+    which enables classes to have properties with units defined at runtime.
+    """
+
+    def decorator(func):
+        def unit_creator(self, unit):
+            try:
+                return UnitFloat(func(self), unit)
+            except TypeError:
+                return unit_array(func(self), unit)
+
+        def wrapper(self):
+            if unit is None:
+                return unit_creator(self, self.unit)
+            return unit_creator(self, unit)
+        return wrapper
+    return decorator
