@@ -21,6 +21,10 @@ import weakref
 
 import numpy as np
 
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common import units
+
+
 class Parameter(object):
 
     """
@@ -47,6 +51,7 @@ class Parameter(object):
         """
 
         self.name = name
+        self.unit = value.unit
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
@@ -79,6 +84,7 @@ class Parameter(object):
             self._value = value
 
     @property
+    @unit_decorator_getter(unit=None)
     def constraints(self):
 
         return self._constraints
