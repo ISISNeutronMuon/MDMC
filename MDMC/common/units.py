@@ -72,10 +72,13 @@ SYSTEM = {
     'TIME':Unit('fs'),
     'MASS':Unit('amu'),
     'CHARGE':Unit('e'),
-    'ANGLES':Unit('rad'),
+    'ANGLE':Unit('deg'),
     'TEMPERATURE':Unit('K'),
     'AMOUNT':Unit('mol'),
-    'PRESSURE':Unit('Pa')
+    'ENERGY':Unit('kJ'),
+    'PRESSURE':Unit('Pa'),
+    'ENERGY_TRANSFER':Unit('meV'),
+    'ARBITRARY':Unit('arb')
 }
 
 
