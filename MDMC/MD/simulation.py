@@ -10,6 +10,8 @@ import itertools
 from enum import Enum
 import numpy as np
 
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common import units
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
@@ -56,6 +58,7 @@ class Universe(object):
         return self._dims
 
     @dims.setter
+    @unit_decorator(unit=units.LENGTH)
     def dims(self, dims):
 
         if isinstance(dims, float):
@@ -84,6 +87,7 @@ class Universe(object):
                     for param in interaction.params])
 
     @property
+    @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
 
         return np.prod(self.dims)
