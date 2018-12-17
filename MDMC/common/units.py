@@ -159,7 +159,7 @@ class UnitFloat(float):
         memo[id(self)] = unit_float
         for k, v in self.__dict__.items():
             setattr(unit_float, k, deepcopy(v, memo))
-        return memo
+        return unit_float
 
     def __repr__(self):
 
