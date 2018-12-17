@@ -1,7 +1,8 @@
 """Module for all unit definitions and operations
 
 This includes defining units used in MDMC, converting units, and subclassing
-data strucures (float, NumPy array) so that they have a unit attribute
+data strucures (float, NumPy array) so that they have a unit attribute.  This
+style follows that of the Atomic Simulation Environment.
 
 AUTHOR :    Thomas Farmer        START DATE :    12/12/2018, 11:06:51"""
 
