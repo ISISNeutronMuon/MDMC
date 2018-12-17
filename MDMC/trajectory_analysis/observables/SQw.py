@@ -124,6 +124,17 @@ class AbstractSQw(Observable):
         except KeyError:
             raise AttributeError
 
+    @property
+    def t(self):
+
+        return self._t
+
+    @t.setter
+    @unit_decorator(unit=units.TIME)
+    def t(self, value):
+
+        self._t = value
+
     def read_from_file(self, reader, file_name):
 
         super(AbstractSQw, self).read_from_file(reader, file_name)
