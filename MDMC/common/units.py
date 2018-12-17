@@ -120,6 +120,14 @@ class UnitFloat(float):
     """
     Subclasses float so that it contains a unit attribute which is returned when
     __repr__ or __str__ are called
+
+    Attributes:
+    unit - a string specifying the unit
+
+    NB:
+    As both __repr__ and __deepcopy__ rely on the float being real, this class
+    is not compatible with complex numbers.  This should be immaterial as no
+    quantity which possesses units is complex.
     """
 
     def __new__(cls, value, unit):
@@ -188,11 +196,15 @@ def unit_array(obj, unit, dtype=None):
     sequence
 
     This mimics the manner in which numpy creates arrays (although is in python
-    not C), except several arguments are excluded
+    not C), except several arguments are excluded.
+
+    Also, unlike np.array(None), passing obj=None to unit_array results in None
+    being returned. This allows classes to have properties with units which can
+    be either have a value or be undefined.
 
     Arguments:
     object - an array or array-like object (e.g. any object derived from
-    collections.Sequence)
+    collections.Sequence). If None, then None is returned.
     unit - a string specifying the unit of the array
     dtype - the desired data-type for the array
     """
