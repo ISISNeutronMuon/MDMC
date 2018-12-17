@@ -216,7 +216,7 @@ class InteractionFunction(object):
     Base class for interaction functions, which can be user supplied
     """
 
-    def __init__(self, names, val_dict):
+    def __init__(self, val_dict):
 
         """
         Arguments:
@@ -225,8 +225,8 @@ class InteractionFunction(object):
         ordered alphabetically.
         """
 
-        names = list(names)
-        self.params = [Parameter(val_dict[name], name) for name in names]
+        self.params = [Parameter(value, name) for name, value
+                       in val_dict.items() if name != 'self']
 
     @property
     def params(self):
@@ -282,14 +282,12 @@ class HarmonicPotential(InteractionFunction):
 
         """
         Arguments:
-        equilibrium_state - in units of AA (linear) or deg (angular)
-        potential_strength - in units of kJ mol^-1 AA^-2 (linear) or
+        equilibrium_state - in units of Ang (linear) or deg (angular)
+        potential_strength - in units of kJ mol^-1 Ang^-2 (linear) or
         kJ mol^-1 rad^-2 (angular)
         """
 
-        # Get the __init__ argument list except the zeroeth index which is self
-        args = getargspec(self.__class__.__init__).args[1:]
-        super(self.__class__, self).__init__(args, locals())
+        super(self.__class__, self).__init__(locals())
 
 
 class LennardJones(InteractionFunction):
@@ -303,12 +301,11 @@ class LennardJones(InteractionFunction):
         """
         Arguments:
         epsilon - in units of kJ mol^-1
-        sigma - in units of AA
+        sigma - in units of Ang
         """
 
-        # Get the __init__ argument list except the zeroeth index which is self
-        args = getargspec(self.__class__.__init__).args[1:]
-        super(self.__class__, self).__init__(args, locals())
+        super(self.__class__, self).__init__(locals())
+
 
 class Coulomb(InteractionFunction):
 
@@ -323,9 +320,8 @@ class Coulomb(InteractionFunction):
         charge - in units of e
         """
 
-        # Get the __init__ argument list except the zeroeth index which is self
-        args = getargspec(self.__class__.__init__).args[1:]
-        super(self.__class__, self).__init__(args, locals())
+        super(self.__class__, self).__init__(locals())
+
 
 def filter_parameters(parameters, predicate):
 
