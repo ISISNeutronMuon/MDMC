@@ -54,6 +54,17 @@ class Unit(str):
 
         return self.__class__(self + ' / ' + other)
 
+    def __pow__(self, other):
+
+        """
+        Appends ' ^ ' and other to the unit string
+        """
+
+        try:
+            return self.__class__(self + ' ^ ' + other)
+        except TypeError:
+            return self.__class__(self + ' ^ ' + str(other))
+
 
 # Define the unit system used in MDMC
 SYSTEM = {
