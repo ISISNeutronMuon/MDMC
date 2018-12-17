@@ -5,8 +5,11 @@
 import numpy as np
 from netCDF4 import Dataset
 
-from MDMC.readers.readers import Reader
+from MDMC.common import units
+from MDMC.common.decorators import unit_decorator
 from MDMC.common.constants import h_bar
+from MDMC.readers.readers import Reader
+
 
 class netCDF(Reader):
 
@@ -28,7 +31,7 @@ class netCDF(Reader):
         Parse into SQw format
 
         E is the energy transfer (in meV)
-        Q is wavevector transfer (in AA^-1)
+        Q is wavevector transfer (in Ang^-1)
         """
 
         self.E = np.array(self.file.variables['angular_frequency']) * 1e15 * h_bar
@@ -44,7 +47,7 @@ class netCDF(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q (in AA^-1) and E (meV)
+        A dictionary containing Q (in Ang^-1) and E (meV)
         """
 
         return {"Q":self.Q, "E":self.E}
@@ -66,3 +69,33 @@ class netCDF(Reader):
         """
 
         return {"SQw":self.SQw_err}
+
+    @property
+    def E(self):
+
+        """
+        Energy transfer, E, in meV
+        """
+
+        return self._E
+
+    @E.setter
+    @unit_decorator(unit=units.ENERGY_TRANSFER)
+    def E(self, value):
+
+        self._E = value
+
+    @property
+    def Q(self):
+
+        """
+        Momentum transfer, Q, in Ang^-1
+        """
+
+        return self._Q
+
+    @Q.setter
+    @unit_decorator(unit=units.LENGTH ** -1)
+    def Q(self, value):
+
+        self._Q = value
