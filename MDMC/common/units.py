@@ -44,7 +44,7 @@ class Unit(str):
         Appends a single space and other to the unit string
         """
 
-        return self + ' ' + other
+        return self.__class__(self + ' ' + other)
 
     def __div__(self, other):
 
@@ -52,7 +52,7 @@ class Unit(str):
         Appends ' / ' and other to the unit string
         """
 
-        return self + ' / ' + other
+        return self.__class__(self + ' / ' + other)
 
 
 # Define the unit system used in MDMC
