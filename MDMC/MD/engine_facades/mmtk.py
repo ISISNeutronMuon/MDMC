@@ -59,6 +59,17 @@ class MMTKEngine(MDEngine):
         self._temperature = value
 
     @property
+    def temperature_variation(self):
+
+        return self._temperature_variation
+
+    @temperature_variation.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature_variation(self, value):
+
+        self._temperature_variation = value
+
+    @property
     def time_step(self):
 
         return self._time_step
