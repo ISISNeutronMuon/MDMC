@@ -167,6 +167,10 @@ class UnitFloat(float):
 
         return repr(self.real) + ' ' + self.unit
 
+    def __str__(self):
+
+        return  self.__repr__()
+
 
 class UnitNDArray(np.ndarray):
 
@@ -192,6 +196,10 @@ class UnitNDArray(np.ndarray):
         except TypeError:
             return super(UnitNDArray, self).__repr__()
 
+    def __str__(self):
+
+        return  self.__repr__()
+        
 
 def unit_array(obj, unit, dtype=None):
 
