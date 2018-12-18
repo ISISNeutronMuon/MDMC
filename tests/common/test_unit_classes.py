@@ -94,7 +94,7 @@ def test_str_equals_repr(uclass):
                                      (np.mean, ()),
                                      (np.power, (2., )),
                                      (correlation, ())
-                                     ])
+                                    ])
 def test_array_operations(op, args, uarray):
 
     """
