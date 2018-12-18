@@ -79,8 +79,8 @@ def test_MMTK_simulation_setup(water_MMTK_NVE):
 
     assert water_MMTK_NVE.engine.integrator_type ==  VelocityVerletIntegrator
     assert water_MMTK_NVE.engine.time_step == TIME_STEP / 1000.
-    assert TEMPERATURE - 60. < water_MMTK_NVE.engine.universe.temperature() < \
-        TEMPERATURE + 60.
+    assert TEMPERATURE - 90. < water_MMTK_NVE.engine.universe.temperature() < \
+        TEMPERATURE + 90.
 
 # def test_MMTK_simulation_run(water_MMTK_NVE):
 #
