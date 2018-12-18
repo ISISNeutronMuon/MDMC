@@ -17,13 +17,10 @@ from MDMC.MD.engine_facades.mmtk import MMTKEngine
 from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond
 from MDMC.MD.simulation import Universe, Shape
+from MDMC.readers.reader_factory import ReaderFactory
 
 
 """
-Parameter:
-value
-constraints
-
 Readers (LAMPSQW, netCDF, xml_SQw):
 E
 Q
@@ -159,7 +156,7 @@ def test_Parameter_units():
     Test the units of:
 
     value
-    constraints
+    constraints - initialized to None, initialized to FLOAT, and set to FLOAT
     """
 
     # Values passed to Parameter must have units
@@ -184,10 +181,59 @@ def test_Parameter_units():
     check_Parameter_properties(param1, FLOAT, CONSTRAINTS)
 
 
+Q_UNIT = units.LENGTH ** -1
+E_UNIT = units.ENERGY_TRANSFER
+READERS_TEST_INFO = [('LAMPSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
+                                  {'name':'E', 'value':LIST, 'unit':E_UNIT}]
+                     ),
+                     ('netCDF', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
+                                 {'name':'E', 'value':LIST, 'unit':E_UNIT}]
+                     ),
+                     ('xml_SQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
+                                  {'name':'E', 'value':LIST, 'unit':E_UNIT}]
+                     )]
+
+@pytest.fixture(params=READERS_TEST_INFO)
+def reader_info(request):
+
+    """
+    Parameterized reader instantiation
+
+    Returns:
+    A dictionary of the name of the reader, a reader with the properties set,
+    and the names, values and units of the properties for testing
+    """
+
+    reader = ReaderFactory.create_reader(request.param[0])
+    for prop in request.param[1]:
+        setattr(reader, prop['name'], prop['value'])
+
+    return {'reader_name':request.param[0],
+            'reader':reader,
+            'properties':request.param[1]}
+
+
+def test_Reader_units(reader_info):
+
+    """
+    Test the units for all Readers:
+    """
+    # try:
+    for prop in reader_info['properties']:
+        check_property(getattr(reader_info['reader'], prop['name']),
+                       prop['value'],
+                       prop['unit'],
+                       units.UnitFloat if isinstance(prop['unit'], float)
+                       else units.unit_array)
+    # except AssertionError:
+    #     raise AssertionError(ERROR_MESSAGE.format(reader_info['reader_name']))
+
+
 def check_property(prop, value, unit, cls):
 
     """
     Checks if the property is a float or array with the correct representation
+    and value
 
     Arguments:
     prop - the property to be checked
@@ -200,7 +246,8 @@ def check_property(prop, value, unit, cls):
         expected = None
     else:
         expected = cls(value, unit)
+    assert repr(prop) == repr(expected)
     try:
-        assert prop == expected
-    except ValueError:
         assert all(prop == expected)
+    except TypeError:
+        assert prop == expected
