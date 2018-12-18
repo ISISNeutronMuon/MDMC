@@ -143,6 +143,18 @@ class UnitFloat(float):
         float.__init__(value)
         self.unit = unit
 
+    @property
+    def unit(self):
+
+        return self._unit
+
+    @unit.setter
+    def unit(self, value):
+
+        if not (isinstance(value, str) or value is None):
+            raise TypeError('unit must be a string')
+        self._unit = Unit(value)
+
     def __deepcopy__(self, memo):
 
         """
@@ -153,7 +165,8 @@ class UnitFloat(float):
         argument i.e. the value.  UnitFloat.__new__ takes exactly 3 arguments.
 
         It simply creates a new UnitFloat and sets all of its attributes to
-        deepcopies of the current attributes (along with updating the memo).
+        deepcopies of the current attributes (where possible), along with
+        updating the memo.
         """
 
         cls = self.__class__
@@ -190,6 +203,18 @@ class UnitNDArray(np.ndarray):
     def __array_finalize__(self, obj):
         self.unit = getattr(obj, 'unit', None)
 
+    @property
+    def unit(self):
+
+        return self._unit
+
+    @unit.setter
+    def unit(self, value):
+
+        if not (isinstance(value, str) or value is None):
+            raise TypeError('unit must be a string')
+        self._unit = Unit(value)
+
     def __repr__(self):
         try:
             return super(UnitNDArray, self).__repr__() + ' ' + self.unit
@@ -199,7 +224,7 @@ class UnitNDArray(np.ndarray):
     def __str__(self):
 
         return  self.__repr__()
-        
+
 
 def unit_array(obj, unit, dtype=None):
 
@@ -223,6 +248,9 @@ def unit_array(obj, unit, dtype=None):
 
     if obj is None:
         return None
+
+    if not isinstance(unit, str):
+        raise TypeError('unit must be a string')
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):
