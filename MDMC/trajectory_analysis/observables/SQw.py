@@ -135,6 +135,17 @@ class AbstractSQw(Observable):
 
         self._t = value
 
+    @property
+    def t_res(self):
+
+        return self._t_res
+
+    @t_res.setter
+    @unit_decorator(unit=units.TIME)
+    def t_res(self, value):
+
+        self._t_res = value
+
     def read_from_file(self, reader, file_name):
 
         super(AbstractSQw, self).read_from_file(reader, file_name)
