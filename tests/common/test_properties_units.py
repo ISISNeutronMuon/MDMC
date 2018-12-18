@@ -21,10 +21,6 @@ from MDMC.readers.reader_factory import ReaderFactory
 
 
 """
-Readers (LAMPSQW, netCDF, xml_SQw):
-E
-Q
-
 SQw:
 E
 Q
@@ -218,15 +214,15 @@ def test_Reader_units(reader_info):
     """
     Test the units for all Readers:
     """
-    # try:
-    for prop in reader_info['properties']:
-        check_property(getattr(reader_info['reader'], prop['name']),
-                       prop['value'],
-                       prop['unit'],
-                       units.UnitFloat if isinstance(prop['unit'], float)
-                       else units.unit_array)
-    # except AssertionError:
-    #     raise AssertionError(ERROR_MESSAGE.format(reader_info['reader_name']))
+    try:
+        for prop in reader_info['properties']:
+            check_property(getattr(reader_info['reader'], prop['name']),
+                           prop['value'],
+                           prop['unit'],
+                           units.UnitFloat if isinstance(prop['unit'], float)
+                           else units.unit_array)
+    except AssertionError:
+        raise AssertionError(ERROR_MESSAGE.format(reader_info['reader_name']))
 
 
 def check_property(prop, value, unit, cls):
