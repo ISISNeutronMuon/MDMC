@@ -7,6 +7,7 @@ style follows that of the Atomic Simulation Environment.
 AUTHOR :    Thomas Farmer        START DATE :    12/12/2018, 11:06:51"""
 
 from copy import deepcopy
+from numbers import Number
 
 import numpy as np
 
@@ -60,7 +61,17 @@ class Unit(str):
 
         """
         Appends ' ^ ' and other to the unit string
+
+        Arguments:
+        other - a numeric type (inherits from numbers.Number)
         """
+
+        if not isinstance(other, Number):
+            try:
+                other = float(other)
+            except (TypeError, ValueError) as _:
+                raise TypeError('Only numeric types can be used as a power for'
+                                ' Units')
 
         try:
             return self.__class__(self + ' ^ ' + other)
