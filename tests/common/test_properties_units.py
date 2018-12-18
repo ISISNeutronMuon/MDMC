@@ -18,16 +18,8 @@ from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond
 from MDMC.MD.simulation import Universe, Shape
 from MDMC.readers.reader_factory import ReaderFactory
+from MDMC.trajectory_analysis.observables.SQw import SQw
 
-
-"""
-SQw:
-E
-Q
-SQw
-SQw_err
-time
-"""
 
 FLOAT = 50.0
 LIST = [FLOAT, FLOAT, FLOAT]
@@ -225,6 +217,39 @@ def test_Reader_units(reader_info):
         raise AssertionError(ERROR_MESSAGE.format(reader_info['reader_name']))
 
 
+def test_SQw_units():
+
+    """
+    Test the units of:
+
+    E
+    Q
+    SQw
+    SQw_err
+    time
+    t_res
+    """
+
+    sqw = SQw()
+    sqw.independent_variables = {'E':LIST,'Q':LIST}
+    sqw._dependent_variables = {'SQw':[LIST, LIST, LIST]}
+    sqw._errors = {'SQw':[LIST, LIST, LIST]}
+    sqw.t = LIST
+    sqw.t_res = FLOAT
+
+    try:
+        check_property(sqw.E, LIST, units.ENERGY_TRANSFER, units.unit_array)
+        check_property(sqw.Q, LIST, units.LENGTH ** -1, units.unit_array)
+        check_property(sqw.SQw, [LIST, LIST, LIST], units.ARBITRARY,
+                       units.unit_array)
+        check_property(sqw.SQw_err, [LIST, LIST, LIST], units.ARBITRARY,
+                       units.unit_array)
+        check_property(sqw.t, LIST, units.TIME, units.unit_array)
+        check_property(sqw.t_res, FLOAT, units.TIME, units.UnitFloat)
+    except AssertionError:
+        raise AssertionError(ERROR_MESSAGE.format('SQw'))
+
+
 def check_property(prop, value, unit, cls):
 
     """
@@ -244,6 +269,6 @@ def check_property(prop, value, unit, cls):
         expected = cls(value, unit)
     assert repr(prop) == repr(expected)
     try:
-        assert all(prop == expected)
+        assert np.all(prop == expected)
     except TypeError:
         assert prop == expected
