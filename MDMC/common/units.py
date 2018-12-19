@@ -89,6 +89,7 @@ SYSTEM = {
     'TEMPERATURE':Unit('K'),
     'AMOUNT':Unit('mol'),
     'ENERGY':Unit('kJ'),
+    'FORCE':Unit('kJ / mol Ang'),
     'PRESSURE':Unit('Pa'),
     'ENERGY_TRANSFER':Unit('meV'),
     'ARBITRARY':Unit('arb')
@@ -123,10 +124,21 @@ def create_units(codata_version):
 
     # Mass
     units['kg'] = 1. / codata['_amu']
+    units['g'] = units['kg'] * 1000.
 
     # Energy
+    units['J'] = units['kJ'] * 1000.
+    units['kcal'] = units['kJ'] / 4.184
+
+    # Force
+    units['kcal / mol Ang'] = units['kJ / mol Ang'] / 4.184
+
+    # Pressure
+    units['atm'] = units['Pa'] / 101325.
+    units['bar'] = units['Pa'] / 1e5
 
     return units
+
 
 class UnitFloat(float):
 
