@@ -213,6 +213,9 @@ class UnitNDArray(np.ndarray):
     """
     Subclasses ndarray so that it contains a unit attribute which is returned
     when __repr__ or __str__ are called
+
+    Attributes:
+    unit - a string or Unit which specifies the unit
     """
 
     def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0,
@@ -265,7 +268,7 @@ def unit_array(obj, unit, dtype=None):
     Arguments:
     object - an array or array-like object (e.g. any object derived from
     collections.Sequence). If None, then None is returned.
-    unit - a string specifying the unit of the array
+    unit - a string or Unit which specifies the unit of the array
     dtype - the desired data-type for the array
     """
 
