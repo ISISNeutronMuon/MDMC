@@ -147,7 +147,7 @@ class UnitFloat(float):
     __repr__ or __str__ are called
 
     Attributes:
-    unit - a string specifying the unit
+    unit - a string or Unit which specifies the unit
 
     NB:
     As both __repr__ and __deepcopy__ rely on the float being real, this class
