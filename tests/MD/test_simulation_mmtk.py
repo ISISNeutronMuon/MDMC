@@ -73,11 +73,14 @@ def test_MMTK_simulation_setup(water_MMTK_NVE):
     temperature, which can actually deviate from the specified temperature
     significantly for small systems.  Therefore the temperature is tested within
     a temperature range.
+    The factor of 1000 accounts for the fact that in MDMC timesteps are
+    specified in fs, whereas they are specified in ps in MMTK.
     """
 
     assert water_MMTK_NVE.engine.integrator_type ==  VelocityVerletIntegrator
-    assert TEMPERATURE - 60. < water_MMTK_NVE.engine.universe.temperature() < \
-        TEMPERATURE + 60.
+    assert water_MMTK_NVE.engine.time_step == TIME_STEP / 1000.
+    assert TEMPERATURE - 90. < water_MMTK_NVE.engine.universe.temperature() < \
+        TEMPERATURE + 90.
 
 
 # def test_MMTK_simulation_run(water_MMTK_NVE):
