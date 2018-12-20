@@ -62,6 +62,7 @@ def test_create_universe(universe):
     assert UNIVERSE_SHAPE == universe.shape
     npt.assert_array_equal(UNIVERSE_DIMS, universe.dims)
 
+
 def test_create_atom(atom):
 
     npt.assert_array_equal((0., 0., 0.), atom.position)
@@ -70,15 +71,94 @@ def test_create_atom(atom):
     assert atom.mass == 1.008
     assert su.Coulombic == type(atom.interactions.pop())
 
+
+@pytest.mark.parametrize("unit, fixed_attr",
+                         [(atom(),
+                           ['ID', 'parent', '_interactions']),
+                          (water_molecule(atom()),
+                           ['ID', 'parent', '_interactions', '_structure_list',
+                            '_CoM_frame_positions'])
+                         ]
+                        )
+def test_copy_structural_unit(unit, fixed_attr):
+
+    """
+    As __deepcopy__ has been implemented for StructuralUnit, this tests that the
+    correct attributes are copied and others are modified
+
+    Checks that for all structural units which are not subunits (which is all
+    units in this case) self.parent is self
+    """
+
+    cpy_unit = deepcopy(unit)
+    for attr in unit.__dict__:
+        if attr in fixed_attr:
+            assert getattr(cpy_unit, attr) != getattr(unit, attr)
+        elif attr is 'parent':
+            assert attr is unit
+        else:
+            assert np.all(getattr(cpy_unit, attr) == getattr(unit, attr))
+
+
+def test_unique_ID(water_SPCE_universe):
+
+    """
+    Tests that each StructuralUnit in water_SPCE_universe has a unique ID
+
+    Also creates copies of an atom and a molecule and tests that their IDs are
+    unique
+    """
+
+    IDs = []
+    for unit in list(water_SPCE_universe.structure_list):
+        IDs.append(unit.ID)
+
+    assert len(IDs) == len(set(IDs))
+
+    cpy_atom = deepcopy(water_SPCE_universe.atom_list[0])
+    assert cpy_atom.ID not in IDs
+
+    cpy_molecule = deepcopy(water_SPCE_universe.molecule_list[0])
+    assert cpy_molecule.ID not in IDs + [cpy_atom.ID]
+
+
+def test_structure_parent():
+
+    """
+    Tests that a structure which is not a subunit has itself as a parent
+
+    Tests that when an atom is added to a molecule, its parent attribute changes
+
+    Tests that atoms of copied molecules have the correct parent
+    """
+
+    atom = su.Atom('H')
+    assert atom.parent is atom
+    cpy_atom = deepcopy(atom)
+
+    atoms = [atom, cpy_atom]
+    molecule = su.Molecule(position=WATER_POSITION, atoms=atoms,
+                           interactions=[su.Bond(*atoms)],
+                           name='water')
+    for atom in atoms:
+        assert atom.parent is molecule
+
+    cpy_molecule = deepcopy(molecule)
+    for atom in cpy_molecule.atom_list:
+        assert atom.parent is cpy_molecule
+
+
 def test_atom_list(atom):
 
     assert atom in atom.atom_list
+
 
 def test_add_atom(universe, atom):
 
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
     assert su.Coulombic == type(universe.interactions.pop())
+
 
 def test_add_molecule(universe, water_molecule):
 
@@ -106,6 +186,7 @@ def test_add_molecule(universe, water_molecule):
         interaction_elements.append(interaction.sorted_element_list())
     assert sorted([['H', 'H', 'O'], ['H', 'O'], ['H', 'O'], ['O'], ['O'], ['H'],
                    ['H']]) == sorted(interaction_elements)
+
 
 def test_spce_water_molecule(universe, water_molecule):
 
@@ -137,6 +218,7 @@ def test_spce_water_molecule(universe, water_molecule):
         # Remove the instance so that multiple identical instances are tested
         SPCEparams.remove(param)
 
+
 def test_spce_water_box(water_SPCE_universe):
 
     n_molecules_xyz = np.array(UNIVERSE_DIMS) * WATER_NUM_DENSITY**(1./3.)
@@ -155,3 +237,27 @@ def test_spce_water_box(water_SPCE_universe):
     #         for z in np.arange(0, UNIVERSE_DIMS[2], intermol_dist[2]):
     #             calc_positions.append([x, y, z])
     # assert sorted(calc_positions) == water_positions
+
+
+def test_universe_membership(water_SPCE_universe):
+
+    """
+    Tests that structures that have been added to a universe have that universe
+    as self.universe
+
+    Tests that structures that have not been added to a universe have
+    self.universe == None
+
+    Does not test for the effects of copying a StructuralUnit, as this is
+    tested in test_copy_structural_unit
+    """
+
+    uni_false = sim.Universe(5.)
+    for structure in water_SPCE_universe.structure_list:
+        print structure.universe
+        assert structure.universe == water_SPCE_universe
+        assert structure.universe != uni_false
+
+    atom_false = su.Atom('H')
+    assert atom.universe is None
+
