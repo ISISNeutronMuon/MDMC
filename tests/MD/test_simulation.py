@@ -100,7 +100,7 @@ def test_copy_structural_unit(unit, changed_attr):
             assert np.all(getattr(cpy_unit, attr) == getattr(unit, attr))
 
 
-def test_unique_ID(water_SPCE_universe):
+def test_structure_unique_ID(water_SPCE_universe):
 
     """
     Tests that each StructuralUnit in water_SPCE_universe has a unique ID
