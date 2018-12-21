@@ -238,11 +238,23 @@ def test_spce_water_molecule(universe, water_molecule):
 
 def test_spce_water_box(water_SPCE_universe):
 
+    """
+    Tests for correct number of interactions
+    """
+
     n_molecules_xyz = np.array(UNIVERSE_DIMS) * WATER_NUM_DENSITY**(1./3.)
     n_molecules = np.prod(n_molecules_xyz.astype(int))
 
     assert int(n_molecules) == \
         len(water_SPCE_universe.configuration.molecule_list)
+
+    # Number of interactions, relative to number of atoms, N:
+    # Coulombic = N
+    # Dispersion = N/3
+    # Bond = 2N/3
+    # BondAngle = N/3
+    N = len(water_SPCE_universe.atom_list)
+    assert len(water_SPCE_universe.interactions) == 7*N/3
 
     # TODO: Test for correct positions
     # water_positions = sorted([list(structural_unit.position) for structural_unit
