@@ -4,6 +4,7 @@
 
 from collections import Counter
 from copy import deepcopy
+from itertools import permutations
 
 import numpy as np
 import numpy.testing as npt
@@ -336,4 +337,70 @@ def test_atom_add_interaction(atom):
         atom.add_interaction(su.Bond)
         atom.add_interaction(su.Bond(atom, deepcopy(atom)))
 
+
+def test_molecule_add_interaction():
+
+    """
+    Tests how interactions are added to Molecule objects
+
+    Molecule objects should only be able to add interactions that apply to atoms
+    that are in the molecule
+    """
+
+    H1 = su.atom('H')
+    H2 = su.Atom('H', position=H2_POSITION)
+    O = su.Atom('O', position=O_POSITION)
+    water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
+                                 interactions=[su.Bond(H1, O), su.Bond(H2, O)],
+                                 name='water')
+    water_molecule.add_interaction(su.Dispersion, element='H')
+    water_molecule.add_interaction(su.BondAngle(atoms=[H1, O, H2]))
+
+    with pytest.raises(TypeError):
+        water_molecule.add_interaction(su.Dispersion)
+
+
+def test_valid_position(atom):
+
+    """
+    Tests if StructuralUnit.valid_position returns True if an atom is either not
+    in a universe or within the bounds of the universe, and False otherwise
+    """
+
+    assert atom.universe is None
+    assert atom.valid_position()
+
+    atom.position = [0., 0., 0.]
+    uni = sim.Universe(5.0)
+    uni.add_structural_unit(atom)
+    assert atom.valid_position()
+
+    atom.position = [3., 3., 3.]
+    assert atom.valid_position()
+
+    atom.position = [5., 5., 5.]
+    assert atom.valid_position()
+
+    lt_dims = list(set(permutations([-3., 3., 3.])))
+    gt_dims = list(set(permutations([5.1, 3., 3.])))
+    invalid_positions = lt_dims + gt_dims
+    for position in invalid_positions:
+        atom.position = position
+        assert atom.valid_position() is False
+
+
+def test_molecule_subunit_positions(water_molecule):
+
+    """
+    Tests that the positions of atoms belonging to a molecule are set correctly
+    when the molecule's position is set
+    """
+
+    rel_pos = {}
+    for atom in water_molecule.atom_list:
+        rel_pos[atom] = (atom.position - water_molecule.position)
+
+    water_molecule.translate([1.2, 1.4, 1.6])
+    for atom in water_molecule.atom_list:
+        assert all(atom.position == water_molecule.position + rel_pos[atom])
 
