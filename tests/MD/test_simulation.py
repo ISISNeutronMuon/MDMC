@@ -148,6 +148,23 @@ def test_structure_parent():
         assert atom.parent is cpy_molecule
 
 
+def test_top_level_structure(water_molecule):
+
+    """
+    Tests that the top_level_structure method returns self (if not a subunit),
+    or the parent which returns self
+
+    Tests for a free atom, an atom in a molecule, a molecule
+    """
+
+    atom = su.Atom('H')
+    assert atom.top_level_structure is atom
+    assert water_molecule.top_level_structure is water_molecule
+
+    for atom in water_molecule.atom_list:
+        assert atom.top_level_structure is water_molecule
+
+
 def test_atom_list(atom):
 
     assert atom in atom.atom_list
@@ -260,4 +277,51 @@ def test_universe_membership(water_SPCE_universe):
 
     atom_false = su.Atom('H')
     assert atom.universe is None
+
+
+@pytest.mark.parametrize("unit", [atom(), water_molecule(atom())])
+def test_translate(unit, universe):
+
+    """
+    Tests that the translate method changes the position of an atom, a molecule,
+    and the corresponding positions in the universe which they belong to
+    """
+
+    def positions_in_universe(positions, universe):
+        # List construction due to ambiguity with array in array
+        uni_positions = [list(position) for position
+                         in universe.configuration.atom_positions]
+        for position in positions:
+            assert list(position) in uni_positions
+
+    unit_position = unit.position
+    atom_positions = [atom.position for atom in unit.atom_list]
+    universe.add_structural_unit(unit)
+    positions_in_universe(atom_positions, universe)
+
+    DISPLACEMENT = np.array([1.0, 1.5, -2.0])
+    unit.translate(DISPLACEMENT)
+    atom_positions = [atom.position for atom in unit.atom_list]
+    assert np.all(unit.position == unit_position + DISPLACEMENT)
+    positions_in_universe(atom_positions, universe)
+
+
+def test_atom_add_interaction(atom):
+
+    """
+    Tests how interactions are added to Atom objects
+
+    Atom objects should only be able to add interactions that only apply to it
+    (this should only be non-bonded interactions, e.g. Coulombic)
+    """
+
+    # Atoms are initialized with a single Coulombic interaction
+    assert len(atom.interactions) == 1
+    assert list(atom.interactions)[0].name == 'Coulombic'
+
+    atom.add_interaction(su.Dispersion)
+    with pytest.raises(TypeError):
+        atom.add_interaction(su.Bond)
+        atom.add_interaction(su.Bond(atom, deepcopy(atom)))
+
 
