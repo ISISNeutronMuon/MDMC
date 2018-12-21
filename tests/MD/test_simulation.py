@@ -4,6 +4,7 @@
 
 from collections import Counter
 from copy import deepcopy
+from inspect import getargspec
 from itertools import permutations
 
 import numpy as np
@@ -404,3 +405,65 @@ def test_molecule_subunit_positions(water_molecule):
     for atom in water_molecule.atom_list:
         assert all(atom.position == water_molecule.position + rel_pos[atom])
 
+
+def test_copy_interaction(water_SPCE_universe):
+
+    """
+    As __deepcopy__ has been implemented for Interaction, this tests that the
+    correct attributes are copied and others are modified
+
+    This includes when the interaction is copied when an atom is deepcopied
+    """
+
+    inter = list(water_SPCE_universe.interactions)[0]
+    cpy_inter = deepcopy(inter)
+    changed_attr = ['_atom_list']
+    for attr in inter.__dict__:
+        if attr in changed_attr:
+            assert getattr(cpy_inter, attr) != getattr(inter, attr)
+        else:
+            assert np.all(getattr(cpy_inter, attr) == getattr(inter, attr))
+
+    # Test interaction has references to the correct atom if the atom is copied
+    atom = deepcopy(water_SPCE_universe.atom_list[0])
+    for inter in atom.interactions:
+        assert atom in inter.atom_list
+
+
+@pytest.mark.parametrize("BondInt", [su.Bond, su.BondAngle])
+def test_bonded_interaction(BondInt, atom):
+
+    """
+    Tests that only the correct number of atoms can be used for the interaction
+
+    Tests that atoms added to bonded interactions are unique i.e. there are no
+    duplicates
+    """
+
+    # -1 to account for self
+    argspec = getargspec(BondInt.__init__)
+    n_atoms = len(argspec.args) - 1
+    atoms = [atom]
+    for i in range(n_atoms-1):
+        atoms.append(deepcopy(atom))
+
+    # Test correct number and values of atoms (i.e. no duplicates)
+    valid_bond = BondInt(*atoms)
+
+    # Test incorrect number of atoms
+    with pytest.raises(TypeError):
+        if argspec.varargs:
+            additional_atoms = 2
+        else:
+            additional_atoms = 1
+        for i in range(additional_atoms):
+            atoms.append(deepcopy(atom))
+        invalid_bond = BondInt(*atoms)
+
+    # Test duplicates
+    atoms_duplicate = []
+    for i in range(n_atoms):
+        atoms_duplicate.append(atom)
+
+    with pytest.raises(ValueError):
+        invalid_bond = BondInt(*atoms_duplicate)
