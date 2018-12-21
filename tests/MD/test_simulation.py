@@ -72,7 +72,7 @@ def test_create_atom(atom):
     assert su.Coulombic == type(atom.interactions.pop())
 
 
-@pytest.mark.parametrize("unit, fixed_attr",
+@pytest.mark.parametrize("unit, changed_attr",
                          [(atom(),
                            ['ID', 'parent', '_interactions']),
                           (water_molecule(atom()),
@@ -80,7 +80,7 @@ def test_create_atom(atom):
                             '_CoM_frame_positions'])
                          ]
                         )
-def test_copy_structural_unit(unit, fixed_attr):
+def test_copy_structural_unit(unit, changed_attr):
 
     """
     As __deepcopy__ has been implemented for StructuralUnit, this tests that the
@@ -92,7 +92,7 @@ def test_copy_structural_unit(unit, fixed_attr):
 
     cpy_unit = deepcopy(unit)
     for attr in unit.__dict__:
-        if attr in fixed_attr:
+        if attr in changed_attr:
             assert getattr(cpy_unit, attr) != getattr(unit, attr)
         elif attr is 'parent':
             assert attr is unit
