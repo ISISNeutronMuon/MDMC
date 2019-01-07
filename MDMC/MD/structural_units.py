@@ -625,7 +625,7 @@ class Dispersion(Interaction):
         atom - at Atom object
         """
 
-        super(Dispersion,self).__init__(atom)
+        super(Dispersion, self).__init__(atom)
 
 
 class Coulombic(Interaction):
@@ -644,7 +644,7 @@ class Coulombic(Interaction):
         atom - at Atom object
         """
 
-        super(Coulombic,self).__init__(atom)
+        super(Coulombic, self).__init__(atom)
 
 class Bond(Interaction):
 
@@ -659,7 +659,7 @@ class Bond(Interaction):
         atom1, atom2 - at Atom object
         """
 
-        super(Bond,self).__init__(atom1,atom2)
+        super(Bond, self).__init__(atom1, atom2)
 
 
 class BondAngle(Interaction):
