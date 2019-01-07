@@ -110,6 +110,7 @@ class Universe(object):
 
     @property
     def atom_list(self):
+
         return self.configuration.atom_list
 
     @property
