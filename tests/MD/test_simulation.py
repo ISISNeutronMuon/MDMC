@@ -285,12 +285,11 @@ def test_universe_membership(water_SPCE_universe):
 
     uni_false = sim.Universe(5.)
     for structure in water_SPCE_universe.structure_list:
-        print structure.universe
         assert structure.universe == water_SPCE_universe
         assert structure.universe != uni_false
 
     atom_false = su.Atom('H')
-    assert atom.universe is None
+    assert atom_false.universe is None
 
 
 @pytest.mark.parametrize("unit", [atom(), water_molecule(atom())])
