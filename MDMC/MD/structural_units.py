@@ -340,8 +340,10 @@ class Atom(StructuralUnit):
 
         Arguments:
         interaction - any class dervied from Interaction, or any object with
-        base class Interaction.  If an interaction object is passed then this
-        atom must be in the interaction.atom_list.
+        base class Interaction.  If an interaction class is passed then it must
+        be a non-bonded Interaction i.e. only takes a single atom as an
+        argument. If an interaction object is passed then this atom must be in
+        the interaction.atom_list.
         """
 
         if isclass(interaction):
@@ -438,10 +440,11 @@ class Molecule(StructuralUnit):
 
         Arguments:
         interaction - any class dervied from Interaction, or any object with
-        base class Interaction. If a class derived from Interaction is passed, a
-        single keyword specifying which atoms in the Molecule the Interaction is
-        applied to must also be passed. If an interaction object is passed then
-        all atoms of the interaction must belong to the Molecule.
+        base class Interaction. If a class derived from Interaction is passed,
+        it must be a non-bonded class and a single keyword specifying which
+        atoms in the Molecule the Interaction is applied to must also be passed.
+        If an interaction object is passed then all atoms of the interaction
+        must belong to the Molecule.
 
         Settings:
         element - a string specifying an atomic element label
