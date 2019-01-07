@@ -229,14 +229,15 @@ class StructuralUnit:
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
-    def valid_position(self, position):
+    def valid_position(self, position=None):
 
         """
         Checks if the specified position is within the bounds of the structural
         unit's universe, if it is associated with one
 
         Arguments:
-        position - 3 element tuple or NumPy array with units of AA
+        position - 3 element tuple or NumPy array with units of Ang or None.  If
+        None then Atom's position is used.
 
         Returns:
         True if position is within universe or there is no associated universe.
@@ -244,6 +245,8 @@ class StructuralUnit:
         not within its bounds.
         """
 
+        if position is None:
+            position = self.position
         try:
             # (0,0,0) is defined as the origin for all universes
             if (np.any(position < np.array([0,0,0])) or
