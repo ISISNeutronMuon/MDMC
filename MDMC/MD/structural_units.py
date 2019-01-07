@@ -185,17 +185,6 @@ class StructuralUnit:
 
         return next(self._ID_generator)
 
-    def add_interaction(self, interaction):
-
-        """
-        Adds an interaction to the structural unit
-
-        Arguments:
-        interaction - any object with base class Interaction
-        """
-
-        self._interactions.add(interaction)
-
     def top_level_structure(self):
 
         """
