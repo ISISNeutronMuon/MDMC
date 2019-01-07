@@ -119,8 +119,8 @@ class MMTKEngine(MDEngine):
         traj_step - the number of simulation steps between each trajectory
         output
         time_step - float time step in units of fs (default 1 fs)
-        minimizer_step_size - float minimizer distance step in units of AA
-        (default 0.05 AA)
+        minimizer_step_size - float minimizer distance step in units of Ang
+        (default 0.05 Ang)
         pressure - float pressure in units of Pa
         """
 
@@ -253,9 +253,9 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         Arguments:
         universe - an MDMC universe
         Settings:
-        lj_options - Either a float specifying the cutoff in AA or a string
+        lj_options - Either a float specifying the cutoff in Ang or a string
         specifying the cutoff type
-        es_options - Either a float specifying the cutoff in AA or a string
+        es_options - Either a float specifying the cutoff in Ang or a string
         specifying the cutoff type
         """
 

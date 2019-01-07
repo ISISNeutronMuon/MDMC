@@ -27,8 +27,8 @@ class StructuralUnit:
     universe - the universe to which the structural unit belongs
     structure_type - type of structural unit
     name - a string specifying the name of the structure
-    position - position of center of mass in units of AA
-    velocity - average velocity in units of AA fs^-1
+    position - position of center of mass in units of Ang
+    velocity - average velocity in units of Ang fs^-1
     bonds - list of all bonds
     parent - the structural unit to which this unit belongs
     """
@@ -43,9 +43,10 @@ class StructuralUnit:
 
         """
         Arguments:
-        position - a tuple or NumPy array specifying the position in units of AA
+        position - a tuple or NumPy array specifying the position in units of
+        Ang
         velocity - a tuple of NumPy array specifying the velocity in units of
-        AA fs^-1
+        Ang fs^-1
         name - a string specifying the name
         """
 
@@ -212,7 +213,7 @@ class StructuralUnit:
 
         """
         Returns:
-        Position in parent CoM frame with units of AA, or None if it has no
+        Position in parent CoM frame with units of Ang, or None if it has no
         parent structure
         """
 
@@ -281,9 +282,10 @@ class Atom(StructuralUnit):
 
         Arguments:
         element - string specifying the atomic element label
-        position - a tuple or NumPy array specifying the position in units of AA
+        position - a tuple or NumPy array specifying the position in units of
+        Ang
         velocity - a tuple of NumPy array specifying the velocity in units of
-        AA fs^-1
+        Ang fs^-1
         Settings:
         mass - float specifying the atomic mass in amu. If not provided a lookup
         table will be used.
@@ -348,8 +350,8 @@ class Group(StructuralUnit):
     Two or more atoms that form a subset of a molcule
 
  	Attributes:
- 	position - center of mass position in units of AA
-    velocity - center of mass translational velocity in units of AA fs^-1
+ 	position - center of mass position in units of Ang
+    velocity - center of mass translational velocity in units of Ang fs^-1
     """
 
     def __init__(self):
@@ -365,8 +367,8 @@ class Molecule(StructuralUnit):
     Must be declared with at least 2 atoms and one interaction.
 
     Attributes:
-    position - center of mass position in units of AA
-    velocity - center of mass velocity in units of AA fs^-1
+    position - center of mass position in units of Ang
+    velocity - center of mass velocity in units of Ang fs^-1
     interactions - a set of interactions that involve any of the atoms within
     the Molecule
     """
@@ -377,9 +379,9 @@ class Molecule(StructuralUnit):
         """
         Arguments:
         position - a tuple or NumPy array specifying the center of mass position
-        in units of AA
+        in units of Ang
         velocity - a tuple of NumPy array specifying the center of mass velocity
-        in units of AA fs^-1
+        in units of Ang fs^-1
         name - a string specifying the name of the Molecule
         Settings:
         interactions - a set or list of interactions acting on atoms within the
@@ -421,7 +423,7 @@ class Molecule(StructuralUnit):
     def _set_subunit_positions(self):
 
         """
-        Sets the position of all subunits in the global frame in units of AA
+        Sets the position of all subunits in the global frame in units of Ang
         """
 
         for atom in self.atom_list:
@@ -431,7 +433,7 @@ class Molecule(StructuralUnit):
 
         """
         Returns:
-        position of the center of mass of the molecule in units of AA
+        position of the center of mass of the molecule in units of Ang
         """
 
         mass = 0.
@@ -445,7 +447,7 @@ class Molecule(StructuralUnit):
 
         """
         Calculate the position of all subunits in the Molecule CoM frame in
-        units of AA
+        units of Ang
         """
 
         self._CoM_frame_positions = {}
@@ -474,9 +476,9 @@ class BoundingBox(object):
         """
         Arguments:
         position - a NumPy array with the position of the structural unit in
-        units of AA
+        units of Ang
         atom_list - a list of the atoms which comprise the structural unit in
-        units of AA
+        units of Ang
         """
 
         self.min = position

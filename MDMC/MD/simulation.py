@@ -37,7 +37,7 @@ class Universe(object):
         """
         Arguments:
         dimensions - single float for cubic universe or 3 element list of
-        floats, with units of AA.
+        floats, with units of Ang.
         shape - member of shape enum
         force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
         structures - a list of structures
