@@ -160,11 +160,11 @@ def test_top_level_structure(water_molecule):
     """
 
     atom = su.Atom('H')
-    assert atom.top_level_structure is atom
-    assert water_molecule.top_level_structure is water_molecule
+    assert atom.top_level_structure() is atom
+    assert water_molecule.top_level_structure() is water_molecule
 
     for atom in water_molecule.atom_list:
-        assert atom.top_level_structure is water_molecule
+        assert atom.top_level_structure() is water_molecule
 
 
 def test_atom_list(atom):
