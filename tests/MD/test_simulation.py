@@ -4,6 +4,8 @@
 
 from collections import Counter
 from copy import deepcopy
+from inspect import getargspec
+from itertools import permutations
 
 import numpy as np
 import numpy.testing as npt
@@ -62,6 +64,7 @@ def test_create_universe(universe):
     assert UNIVERSE_SHAPE == universe.shape
     npt.assert_array_equal(UNIVERSE_DIMS, universe.dims)
 
+
 def test_create_atom(atom):
 
     npt.assert_array_equal((0., 0., 0.), atom.position)
@@ -70,15 +73,111 @@ def test_create_atom(atom):
     assert atom.mass == 1.008
     assert su.Coulombic == type(atom.interactions.pop())
 
+
+@pytest.mark.parametrize("unit, changed_attr",
+                         [(atom(),
+                           ['ID', 'parent', '_interactions']),
+                          (water_molecule(atom()),
+                           ['ID', 'parent', '_interactions', '_structure_list',
+                            '_CoM_frame_positions'])
+                         ]
+                        )
+def test_copy_structural_unit(unit, changed_attr):
+
+    """
+    As __deepcopy__ has been implemented for StructuralUnit, this tests that the
+    correct attributes are copied and others are modified
+
+    Checks that for all structural units which are not subunits (which is all
+    units in this case) self.parent is self
+    """
+
+    cpy_unit = deepcopy(unit)
+    for attr in unit.__dict__:
+        if attr in changed_attr:
+            assert getattr(cpy_unit, attr) != getattr(unit, attr)
+        elif attr is 'parent':
+            assert attr is unit
+        else:
+            assert np.all(getattr(cpy_unit, attr) == getattr(unit, attr))
+
+
+def test_structure_unique_ID(water_SPCE_universe):
+
+    """
+    Tests that each StructuralUnit in water_SPCE_universe has a unique ID
+
+    Also creates copies of an atom and a molecule and tests that their IDs are
+    unique
+    """
+
+    IDs = []
+    for unit in list(water_SPCE_universe.structure_list):
+        IDs.append(unit.ID)
+
+    assert len(IDs) == len(set(IDs))
+
+    cpy_atom = deepcopy(water_SPCE_universe.atom_list[0])
+    assert cpy_atom.ID not in IDs
+
+    cpy_molecule = deepcopy(water_SPCE_universe.molecule_list[0])
+    assert cpy_molecule.ID not in IDs + [cpy_atom.ID]
+
+
+def test_structure_parent():
+
+    """
+    Tests that a structure which is not a subunit has itself as a parent
+
+    Tests that when an atom is added to a molecule, its parent attribute changes
+
+    Tests that atoms of copied molecules have the correct parent
+    """
+
+    atom = su.Atom('H')
+    assert atom.parent is atom
+    cpy_atom = deepcopy(atom)
+
+    atoms = [atom, cpy_atom]
+    molecule = su.Molecule(position=WATER_POSITION, atoms=atoms,
+                           interactions=[su.Bond(*atoms)],
+                           name='water')
+    for atom in atoms:
+        assert atom.parent is molecule
+
+    cpy_molecule = deepcopy(molecule)
+    for atom in cpy_molecule.atom_list:
+        assert atom.parent is cpy_molecule
+
+
+def test_top_level_structure(water_molecule):
+
+    """
+    Tests that the top_level_structure method returns self (if not a subunit),
+    or the parent which returns self
+
+    Tests for a free atom, an atom in a molecule, a molecule
+    """
+
+    atom = su.Atom('H')
+    assert atom.top_level_structure() is atom
+    assert water_molecule.top_level_structure() is water_molecule
+
+    for atom in water_molecule.atom_list:
+        assert atom.top_level_structure() is water_molecule
+
+
 def test_atom_list(atom):
 
     assert atom in atom.atom_list
+
 
 def test_add_atom(universe, atom):
 
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
     assert su.Coulombic == type(universe.interactions.pop())
+
 
 def test_add_molecule(universe, water_molecule):
 
@@ -106,6 +205,7 @@ def test_add_molecule(universe, water_molecule):
         interaction_elements.append(interaction.sorted_element_list())
     assert sorted([['H', 'H', 'O'], ['H', 'O'], ['H', 'O'], ['O'], ['O'], ['H'],
                    ['H']]) == sorted(interaction_elements)
+
 
 def test_spce_water_molecule(universe, water_molecule):
 
@@ -137,13 +237,26 @@ def test_spce_water_molecule(universe, water_molecule):
         # Remove the instance so that multiple identical instances are tested
         SPCEparams.remove(param)
 
+
 def test_spce_water_box(water_SPCE_universe):
+
+    """
+    Tests for correct number of interactions
+    """
 
     n_molecules_xyz = np.array(UNIVERSE_DIMS) * WATER_NUM_DENSITY**(1./3.)
     n_molecules = np.prod(n_molecules_xyz.astype(int))
 
     assert int(n_molecules) == \
         len(water_SPCE_universe.configuration.molecule_list)
+
+    # Number of interactions, relative to number of atoms, N:
+    # Coulombic = N
+    # Dispersion = N/3
+    # Bond = 2N/3
+    # BondAngle = N/3
+    N = len(water_SPCE_universe.atom_list)
+    assert len(water_SPCE_universe.interactions) == 7*N/3
 
     # TODO: Test for correct positions
     # water_positions = sorted([list(structural_unit.position) for structural_unit
@@ -155,3 +268,202 @@ def test_spce_water_box(water_SPCE_universe):
     #         for z in np.arange(0, UNIVERSE_DIMS[2], intermol_dist[2]):
     #             calc_positions.append([x, y, z])
     # assert sorted(calc_positions) == water_positions
+
+
+def test_universe_membership(water_SPCE_universe):
+
+    """
+    Tests that structures that have been added to a universe have that universe
+    as self.universe
+
+    Tests that structures that have not been added to a universe have
+    self.universe == None
+
+    Does not test for the effects of copying a StructuralUnit, as this is
+    tested in test_copy_structural_unit
+    """
+
+    uni_false = sim.Universe(5.)
+    for structure in water_SPCE_universe.structure_list:
+        print structure.universe
+        assert structure.universe == water_SPCE_universe
+        assert structure.universe != uni_false
+
+    atom_false = su.Atom('H')
+    assert atom.universe is None
+
+
+@pytest.mark.parametrize("unit", [atom(), water_molecule(atom())])
+def test_translate(unit, universe):
+
+    """
+    Tests that the translate method changes the position of an atom, a molecule,
+    and the corresponding positions in the universe which they belong to
+    """
+
+    def positions_in_universe(positions, universe):
+        # List construction due to ambiguity with array in array
+        uni_positions = [list(position) for position
+                         in universe.configuration.atom_positions]
+        for position in positions:
+            assert list(position) in uni_positions
+
+    unit_position = unit.position
+    atom_positions = [atom.position for atom in unit.atom_list]
+    universe.add_structural_unit(unit)
+    positions_in_universe(atom_positions, universe)
+
+    DISPLACEMENT = np.array([1.0, 1.5, -2.0])
+    unit.translate(DISPLACEMENT)
+    atom_positions = [atom.position for atom in unit.atom_list]
+    assert np.all(unit.position == unit_position + DISPLACEMENT)
+    positions_in_universe(atom_positions, universe)
+
+
+def test_atom_add_interaction(atom):
+
+    """
+    Tests how interactions are added to Atom objects
+
+    Atom objects should only be able to add interactions that only apply to it
+    (this should only be non-bonded interactions, e.g. Coulombic)
+    """
+
+    # Atoms are initialized with a single Coulombic interaction
+    assert len(atom.interactions) == 1
+    assert list(atom.interactions)[0].name == 'Coulombic'
+
+    atom.add_interaction(su.Dispersion)
+    with pytest.raises(TypeError):
+        atom.add_interaction(su.Bond)
+        atom.add_interaction(su.Bond(atom, deepcopy(atom)))
+
+
+def test_molecule_add_interaction():
+
+    """
+    Tests how interactions are added to Molecule objects
+
+    Molecule objects should only be able to add interactions that apply to atoms
+    that are in the molecule
+    """
+
+    H1 = su.atom('H')
+    H2 = su.Atom('H', position=H2_POSITION)
+    O = su.Atom('O', position=O_POSITION)
+    water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
+                                 interactions=[su.Bond(H1, O), su.Bond(H2, O)],
+                                 name='water')
+    water_molecule.add_interaction(su.Dispersion, element='H')
+    water_molecule.add_interaction(su.BondAngle(atoms=[H1, O, H2]))
+
+    with pytest.raises(TypeError):
+        water_molecule.add_interaction(su.Dispersion)
+
+
+def test_valid_position(atom):
+
+    """
+    Tests if StructuralUnit.valid_position returns True if an atom is either not
+    in a universe or within the bounds of the universe, and False otherwise
+    """
+
+    assert atom.universe is None
+    assert atom.valid_position()
+
+    atom.position = [0., 0., 0.]
+    uni = sim.Universe(5.0)
+    uni.add_structural_unit(atom)
+    assert atom.valid_position()
+
+    atom.position = [3., 3., 3.]
+    assert atom.valid_position()
+
+    atom.position = [5., 5., 5.]
+    assert atom.valid_position()
+
+    lt_dims = list(set(permutations([-3., 3., 3.])))
+    gt_dims = list(set(permutations([5.1, 3., 3.])))
+    invalid_positions = lt_dims + gt_dims
+    for position in invalid_positions:
+        atom.position = position
+        assert atom.valid_position() is False
+
+
+def test_molecule_subunit_positions(water_molecule):
+
+    """
+    Tests that the positions of atoms belonging to a molecule are set correctly
+    when the molecule's position is set
+    """
+
+    rel_pos = {}
+    for atom in water_molecule.atom_list:
+        rel_pos[atom] = (atom.position - water_molecule.position)
+
+    water_molecule.translate([1.2, 1.4, 1.6])
+    for atom in water_molecule.atom_list:
+        assert all(atom.position == water_molecule.position + rel_pos[atom])
+
+
+def test_copy_interaction(water_SPCE_universe):
+
+    """
+    As __deepcopy__ has been implemented for Interaction, this tests that the
+    correct attributes are copied and others are modified
+
+    This includes when the interaction is copied when an atom is deepcopied
+    """
+
+    inter = list(water_SPCE_universe.interactions)[0]
+    cpy_inter = deepcopy(inter)
+    changed_attr = ['_atom_list']
+    for attr in inter.__dict__:
+        if attr in changed_attr:
+            assert getattr(cpy_inter, attr) != getattr(inter, attr)
+        else:
+            assert np.all(getattr(cpy_inter, attr) == getattr(inter, attr))
+
+    # Test interaction has references to the correct atom if the atom is copied
+    atom = deepcopy(water_SPCE_universe.atom_list[0])
+    for inter in atom.interactions:
+        assert atom in inter.atom_list
+
+
+@pytest.mark.parametrize("BondInt", [su.Bond, su.BondAngle])
+def test_bonded_interaction(BondInt, atom):
+
+    """
+    Tests that only the correct number of atoms can be used for the interaction
+
+    Tests that atoms added to bonded interactions are unique i.e. there are no
+    duplicates
+    """
+
+    # -1 to account for self
+    argspec = getargspec(BondInt.__init__)
+    n_atoms = len(argspec.args) - 1
+    atoms = [atom]
+    for i in range(n_atoms-1):
+        atoms.append(deepcopy(atom))
+
+    # Test correct number and values of atoms (i.e. no duplicates)
+    valid_bond = BondInt(*atoms)
+
+    # Test incorrect number of atoms
+    with pytest.raises(TypeError):
+        if argspec.varargs:
+            additional_atoms = 2
+        else:
+            additional_atoms = 1
+        for i in range(additional_atoms):
+            atoms.append(deepcopy(atom))
+        invalid_bond = BondInt(*atoms)
+
+    # Test duplicates
+    atoms_duplicate = []
+    for i in range(n_atoms):
+        atoms_duplicate.append(atom)
+
+    with pytest.raises(ValueError):
+        invalid_bond = BondInt(*atoms_duplicate)
