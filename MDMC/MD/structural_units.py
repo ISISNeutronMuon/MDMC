@@ -518,7 +518,6 @@ class Interaction:
     function - A class of bond interaction function (e.g. harmonic
     potential)
     function_name - the name of the interaction function
-    ID - a unique integer
     universe - the universe the interaction belongs to
     name - the name of the interaction
     params - bond interaction parameters
@@ -528,10 +527,9 @@ class Interaction:
 
     def __init__(self, atom, *atoms):
 
-        self._atom_list = [atom] + list(atoms)
+        self.atom_list = [atom] + list(atoms)
         self.function = None
         self.function_name = None
-        self._generate_ID()
         self.universe = None
         self._add_interaction_atoms()
         self.name = self.__class__.__name__
@@ -572,10 +570,11 @@ class Interaction:
         return self._atom_list
 
     @atom_list.setter
-    def atom_list(self, structures):
+    def atom_list(self, atoms):
 
-        for structure in structures:
-            self._atom_list.extend(structure.atom_list)
+        if len(set(atoms)) != len(atoms):
+            raise ValueError('Each atom must be unique')
+        self._atom_list = atoms
 
     @property
     def params(self):
@@ -585,14 +584,6 @@ class Interaction:
         except AttributeError:
             raise AttributeError('Interaction has no params as no force field'
                                  ' has been defined on it')
-
-    def atom_IDs(self):
-
-        return [atom.ID for atom in self.atom_list]
-
-    def _generate_ID(self):
-
-        self.ID = reduce(lambda x,y: x*y, self.atom_IDs())
 
     def element_list(self):
 
@@ -634,7 +625,7 @@ class Dispersion(Interaction):
         atom - at Atom object
         """
 
-        super(Dispersion,self).__init__(atom)
+        super(Dispersion, self).__init__(atom)
 
 
 class Coulombic(Interaction):
@@ -653,7 +644,7 @@ class Coulombic(Interaction):
         atom - at Atom object
         """
 
-        super(Coulombic,self).__init__(atom)
+        super(Coulombic, self).__init__(atom)
 
 class Bond(Interaction):
 
@@ -668,7 +659,7 @@ class Bond(Interaction):
         atom1, atom2 - at Atom object
         """
 
-        super(Bond,self).__init__(atom1,atom2)
+        super(Bond, self).__init__(atom1, atom2)
 
 
 class BondAngle(Interaction):
@@ -679,15 +670,16 @@ class BondAngle(Interaction):
     (rotation around central bond - dihedral or torsional rotation)
     """
 
-    def __init__(self, atoms):
+    def __init__(self, atom1, atom2, atom3, *atom4):
 
         """
         Arguments:
-        atoms - a list of 3 or 4 atoms
+        atom1, atom2, atom3 - an Atom object
+        *atom4 - one or more Atom objects
         """
 
-        self._validate_atoms(atoms)
-        super(BondAngle,self).__init__(*atoms)
+        self._validate_atoms(atom4)
+        super(BondAngle, self).__init__(atom1, atom2, atom3, *atom4)
 
     def _validate_atoms(self, atoms):
 
@@ -696,8 +688,5 @@ class BondAngle(Interaction):
         interaction
         """
 
-        n_atoms = len(atoms)
-        if n_atoms == 3 or n_atoms == 4:
-            pass
-        else:
-            raise ValueError("BondAngle only accepts three or four atoms")
+        if len(atoms) > 1:
+            raise TypeError("BondAngle only accepts three or four atoms")
