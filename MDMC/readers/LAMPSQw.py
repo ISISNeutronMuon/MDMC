@@ -4,6 +4,8 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 14:38:55"""
 
 import numpy as np
 
+from MDMC.common import units
+from MDMC.common.decorators import unit_decorator
 from MDMC.readers.readers import Reader
 
 # TODO: Determine if base class for dynamic data is required
@@ -29,7 +31,7 @@ class LAMPSQw(Reader):
         Parse into SQw format
 
         E is the energy transfer (in meV)
-        Q is wavevector transfer (in AA^-1)
+        Q is wavevector transfer (in Ang^-1)
         """
 
         self.E, self.Q = self.parse_indep_var(self.file_indep)
@@ -45,7 +47,7 @@ class LAMPSQw(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q (in AA^-1) and E (meV)
+        A dictionary containing Q (in Ang^-1) and E (meV)
         """
 
         return {"Q":self.Q, "E":self.E}
@@ -67,6 +69,36 @@ class LAMPSQw(Reader):
         """
 
         return {"SQw":self.SQw_err}
+
+    @property
+    def E(self):
+
+        """
+        Energy transfer, E, in meV
+        """
+
+        return self._E
+
+    @E.setter
+    @unit_decorator(unit=units.ENERGY_TRANSFER)
+    def E(self, value):
+
+        self._E = value
+
+    @property
+    def Q(self):
+
+        """
+        Momentum transfer, Q, in Ang^-1
+        """
+
+        return self._Q
+
+    @Q.setter
+    @unit_decorator(unit=units.LENGTH ** -1)
+    def Q(self, value):
+
+        self._Q = value
 
     def parse_indep_var(self, file):
 

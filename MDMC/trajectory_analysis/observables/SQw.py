@@ -7,8 +7,10 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 from numpy.testing import assert_allclose
 
+from MDMC.common import units
 from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h_bar
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.common.resolution_functions import gaussian
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -35,7 +37,7 @@ class AbstractSQw(Observable):
 
         """
         Return:
-        Dictionary of independent variables Q (in AA^-1) and E (in meV)
+        Dictionary of independent variables Q (in Ang^-1) and E (in meV)
         """
 
         return self._independent_variables
@@ -56,11 +58,12 @@ class AbstractSQw(Observable):
         return self._errors
 
     @property
+    @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
 
         """
         Returns:
-        1D array of Q floats (in AA^-1)
+        1D array of Q floats (in Ang^-1)
         """
         try:
             return self.independent_variables['Q']
@@ -68,6 +71,7 @@ class AbstractSQw(Observable):
             raise AttributeError
 
     @property
+    @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
     def E(self):
 
         """
@@ -81,6 +85,7 @@ class AbstractSQw(Observable):
             raise AttributeError
 
     @property
+    @unit_decorator_getter(unit=units.ANGLE / 'ps')
     def w(self):
 
         """
@@ -92,6 +97,7 @@ class AbstractSQw(Observable):
         return self.E / (h_bar * 1e15)
 
     @property
+    @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw(self):
 
         """
@@ -105,6 +111,7 @@ class AbstractSQw(Observable):
             raise AttributeError
 
     @property
+    @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw_err(self):
 
         """
@@ -116,6 +123,28 @@ class AbstractSQw(Observable):
             return self.errors['SQw']
         except KeyError:
             raise AttributeError
+
+    @property
+    def t(self):
+
+        return self._t
+
+    @t.setter
+    @unit_decorator(unit=units.TIME)
+    def t(self, value):
+
+        self._t = value
+
+    @property
+    def t_res(self):
+
+        return self._t_res
+
+    @t_res.setter
+    @unit_decorator(unit=units.TIME)
+    def t_res(self, value):
+
+        self._t_res = value
 
     def read_from_file(self, reader, file_name):
 
@@ -138,7 +167,7 @@ class AbstractSQw(Observable):
         n_Q_vectors - an integer specifying maximum number of Q vectors for any
         Q value
         dims - a 3 element tuple or NumPy array of floats specifying the
-        dimenions of the universe in units of AA
+        dimenions of the universe in units of Ang
         """
 
         self._origin = 'MD'

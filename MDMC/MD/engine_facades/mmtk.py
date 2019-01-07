@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 import weakref
 
 import MMTK
-from MMTK import Units
+from MMTK import Units as MMTKUnits
 from MMTK.Dynamics import VelocityVerletIntegrator, VelocityScaler, \
                             TranslationRemover, BarostatReset
 from MMTK.ForceFields import SPCEFF
@@ -18,6 +18,8 @@ from MMTK.Trajectory import StandardLogOutput
 import numpy as np
 from Scientific._vector import Vector
 
+from MDMC.common.decorators import unit_decorator
+from MDMC.common import units
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.force_fields.SPCE import SPCE
 from MDMC.MD.simulation import Shape
@@ -44,6 +46,50 @@ class MMTKEngine(MDEngine):
     def saved_config(self):
 
         return self._saved_config
+
+    @property
+    def temperature(self):
+
+        return self._temperature
+
+    @temperature.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature(self, value):
+
+        self._temperature = value
+
+    @property
+    def temperature_variation(self):
+
+        return self._temperature_variation
+
+    @temperature_variation.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature_variation(self, value):
+
+        self._temperature_variation = value
+
+    @property
+    def time_step(self):
+
+        return self._time_step
+
+    @time_step.setter
+    @unit_decorator(unit=units.TIME)
+    def time_step(self, value):
+
+        self._time_step = value
+
+    @property
+    def pressure(self):
+
+        return self._pressure
+
+    @pressure.setter
+    @unit_decorator(unit=units.PRESSURE)
+    def pressure(self, value):
+
+        self._pressure = value
 
     # TODO: Enable different universe types
     def setup_universe(self, universe, **settings):
@@ -75,14 +121,13 @@ class MMTKEngine(MDEngine):
         time_step - float time step in units of fs (default 1 fs)
         minimizer_step_size - float minimizer distance step in units of AA
         (default 0.05 AA)
-        pressure - float pressure in units of atm
+        pressure - float pressure in units of Pa
         """
 
         self._saved_config = None
-        self.temperature = settings.get('temperature', 300) * MMTK.Units.K
-        self.temperature_variation = (settings.get('temperature_variation', 10.)
-                                      * MMTK.Units.K)
-        self.time_step = settings.get('time_step', 1) * MMTK.Units.fs
+        self.temperature = settings.get('temperature', 300)
+        self.temperature_variation = settings.get('temperature_variation', 10.)
+        self.time_step = settings.get('time_step', 1)
         self.integrator_type = UNIVERSE_INT[settings['integrator']]
         self.traj_step = settings['traj_step']
         self.rigid = settings.get('rigid', False)
@@ -93,14 +138,15 @@ class MMTKEngine(MDEngine):
         if 'minimizer' in settings:
             self.minimizer = UNIVERSE_MINIM[settings['minimizer']](
                 self.universe,
-                step_size=settings.get('minimizer_step_size', 0.05)*Units.Ang,
+                step_size=(settings.get('minimizer_step_size', 0.05)
+                           * MMTKUnits.Ang),
                 threads=self.threads)
         else:
             self.universe.initializeVelocitiesToTemperature(self.temperature)
 
     def minimize(self, n_steps):
 
-        self.minimizer(steps = n_steps, step_size = 0.05*Units.Ang)
+        self.minimizer(steps=n_steps, step_size=0.05*MMTKUnits.Ang)
         self.universe.initializeVelocitiesToTemperature(self.temperature)
 
     def run(self, n_steps, equilibration=False):
@@ -113,12 +159,13 @@ class MMTKEngine(MDEngine):
         if self.thermostat:
             self.universe.thermostat = NoseThermostat(self.temperature,
                                                       relaxation_time= \
-                                                          100.*Units.fs)
+                                                          100.*MMTKUnits.fs)
 
         if self.pressure:
-            self.universe.barostat = AndersenBarostat(self.pressure * Units.atm,
+            self.universe.barostat = AndersenBarostat((self.pressure
+                                                       *MMTKUnits.Pa),
                                                       relaxation_time= \
-                                                          100.*Units.fs)
+                                                          100.*MMTKUnits.fs)
 
         if self.rigid:
             self.universe.setBondConstraints()
@@ -130,7 +177,8 @@ class MMTKEngine(MDEngine):
                 actions.append(BarostatReset(100, None, 10))
 
         self.integrator = self.integrator_type(self.universe,
-                                               delta_t=self.time_step,
+                                               delta_t=(self.time_step
+                                                        *MMTKUnits.fs),
                                                actions=actions,
                                                threads=self.threads)
         self.integrator(steps=n_steps)
@@ -428,7 +476,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         except:
             pass
         if isinstance(option, float):
-            return option * Units.Ang
+            return option * MMTKUnits.Ang
         elif isinstance(option, str):
             return {'method':option}
         elif option is None:
