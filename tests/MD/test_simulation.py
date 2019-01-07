@@ -347,13 +347,13 @@ def test_molecule_add_interaction():
     that are in the molecule
     """
 
-    H1 = su.atom('H')
+    H1 = su.Atom('H')
     H2 = su.Atom('H', position=H2_POSITION)
     O = su.Atom('O', position=O_POSITION)
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
                                  interactions=[su.Bond(H1, O), su.Bond(H2, O)],
                                  name='water')
-    water_molecule.add_interaction(su.Dispersion, element='H')
+    water_molecule.add_interaction(su.Dispersion, element='O')
     water_molecule.add_interaction(su.BondAngle(H1, O, H2))
 
     with pytest.raises(TypeError):
