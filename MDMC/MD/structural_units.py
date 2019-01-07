@@ -8,6 +8,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from functools import reduce
+from inspect import isclass
 from itertools import count
 import weakref
 
@@ -283,7 +284,7 @@ class Atom(StructuralUnit):
         super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
         self.mass = settings.get('mass', atom_properties.MASS[self.element])
-        self.add_interaction(Coulombic(self))
+        self.add_interaction(Coulombic)
 
     @property
     def atom_list(self):
@@ -331,6 +332,25 @@ class Atom(StructuralUnit):
         """
 
         self._mass = mass
+
+    def add_interaction(self, interaction):
+
+        """
+        Adds an interaction to the atom
+
+        Arguments:
+        interaction - any class dervied from Interaction, or any object with
+        base class Interaction.  If an interaction object is passed then this
+        atom must be in the interaction.atom_list.
+        """
+
+        if isclass(interaction):
+            interaction = interaction(self)
+        else:
+            assert self in interaction.atom_list, ('This atom must belong to'
+                                                   ' the interaction')
+
+        self._interactions.add(interaction)
 
 
 class Group(StructuralUnit):
