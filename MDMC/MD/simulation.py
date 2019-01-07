@@ -110,12 +110,36 @@ class Universe(object):
 
     @property
     def atom_list(self):
+
         return self.configuration.atom_list
 
     @property
     def molecule_list(self):
 
         return self.configuration.molecule_list
+
+    @property
+    def structure_list(self):
+
+        """
+        Returns all structural units that exist in the Universe.  This includes
+        all structural units that are a subunit of another structure belonging
+        to the universe.
+        """
+
+        def add_all_parents(unit):
+
+            parent = unit.parent
+            parents = [parent]
+            if parent is not parent.top_level_structure():
+                parents += add_all_parents(parent)
+            return parents
+
+        structural_units = []
+        for atom in self.atom_list:
+            structural_units = add_all_parents(atom)
+
+        return structural_units
 
     @property
     def force_fields(self):
