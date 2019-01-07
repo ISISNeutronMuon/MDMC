@@ -159,7 +159,7 @@ class StructuralUnit:
         self.position = self.position + np.array(displacement)
 
     @abstractmethod
-    def add_interaction(self):
+    def add_interaction(self, interaction):
 
         raise NotImplementedError
 
