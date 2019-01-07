@@ -670,15 +670,16 @@ class BondAngle(Interaction):
     (rotation around central bond - dihedral or torsional rotation)
     """
 
-    def __init__(self, atoms):
+    def __init__(self, atom1, atom2, atom3, *atom4):
 
         """
         Arguments:
-        atoms - a list of 3 or 4 atoms
+        atom1, atom2, atom3 - an Atom object
+        *atom4 - one or more Atom objects
         """
 
-        self._validate_atoms(atoms)
-        super(BondAngle,self).__init__(*atoms)
+        self._validate_atoms(atom4)
+        super(BondAngle, self).__init__(atom1, atom2, atom3, *atom4)
 
     def _validate_atoms(self, atoms):
 
@@ -687,8 +688,5 @@ class BondAngle(Interaction):
         interaction
         """
 
-        n_atoms = len(atoms)
-        if n_atoms == 3 or n_atoms == 4:
-            pass
-        else:
-            raise ValueError("BondAngle only accepts three or four atoms")
+        if len(atoms) > 1:
+            raise TypeError("BondAngle only accepts three or four atoms")
