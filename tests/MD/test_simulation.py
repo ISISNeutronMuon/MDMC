@@ -47,7 +47,7 @@ def water_molecule(atom):
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
                                  interactions=[su.Bond(H1, O), su.Bond(H2, O),
                                                su.Dispersion(O)], name='water')
-    water_molecule.add_interaction(su.BondAngle(atoms=[H1, O, H2]))
+    water_molecule.add_interaction(su.BondAngle(H1, O, H2))
     return water_molecule
 
 @pytest.fixture
@@ -355,7 +355,7 @@ def test_molecule_add_interaction():
                                  interactions=[su.Bond(H1, O), su.Bond(H2, O)],
                                  name='water')
     water_molecule.add_interaction(su.Dispersion, element='H')
-    water_molecule.add_interaction(su.BondAngle(atoms=[H1, O, H2]))
+    water_molecule.add_interaction(su.BondAngle(H1, O, H2))
 
     with pytest.raises(TypeError):
         water_molecule.add_interaction(su.Dispersion)
