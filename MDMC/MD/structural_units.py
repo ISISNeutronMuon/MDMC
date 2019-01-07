@@ -506,7 +506,7 @@ class Molecule(StructuralUnit):
     @property
     def bounding_box(self):
 
-        return BoundingBox(self.position, self.atom_list)
+        return BoundingBox(self.atom_list)
 
 
 class BoundingBox(object):
