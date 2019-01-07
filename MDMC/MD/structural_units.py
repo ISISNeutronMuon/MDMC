@@ -519,6 +519,38 @@ class BoundingBox(object):
         self._max = value
 
 
+def filter_atoms(atoms, predicate):
+
+    """
+    Filters a list of atoms with a given predicate
+
+    Arguments:
+    parameters - a list of atoms
+    predicate - a function that returns a boolean
+
+    Returns:
+    a list of atoms which meet the condition of the predicate
+    """
+
+    return filter(predicate, atoms)
+
+
+def filter_atoms_element(atoms, element):
+
+    """
+    Filters a list of atoms based on the atomic element
+
+    Arguments:
+    atoms - a list of atoms
+    element - a string specifying the atomic element label
+
+    Returns:
+    a list of atoms of a specific element
+    """
+
+    return filter(lambda a: a.element == element, atoms)
+
+
 class Interaction:
 
     """
@@ -616,7 +648,6 @@ class Interaction:
 
         return tuple(self.element_list())
 
-    # TODO: Ensure this doesn't get called when interactions are added with a call to self from an atom object
     def _add_interaction_atoms(self):
 
         for atom in self.atom_list:
