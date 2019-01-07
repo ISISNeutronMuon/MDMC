@@ -506,7 +506,7 @@ class Molecule(StructuralUnit):
     @property
     def bounding_box(self):
 
-        return BoundingBox(self.position, self.atom_list)
+        return BoundingBox(self.atom_list)
 
 
 class BoundingBox(object):
@@ -519,18 +519,17 @@ class BoundingBox(object):
     max - a NumPy array with the maximum extent
     """
 
-    def __init__(self, position, atom_list):
+    def __init__(self, atom_list):
 
         """
         Arguments:
-        position - a NumPy array with the position of the structural unit in
-        units of Ang
         atom_list - a list of the atoms which comprise the structural unit in
         units of Ang
         """
 
-        self.min = position
-        self.max = position
+        # Start with arbitrary min and max from the positions of the atoms in
+        # the atom list
+        self.min = self.max = atom_list.pop().position
         for atom in atom_list:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
