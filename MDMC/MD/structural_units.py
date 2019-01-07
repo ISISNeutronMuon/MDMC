@@ -8,6 +8,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 from abc import ABCMeta, abstractmethod
 from copy import deepcopy
 from functools import reduce
+from inspect import isclass
 from itertools import count
 import weakref
 
@@ -159,7 +160,7 @@ class StructuralUnit:
         self.position = self.position + np.array(displacement)
 
     @abstractmethod
-    def add_interaction(self):
+    def add_interaction(self, interaction):
 
         raise NotImplementedError
 
@@ -184,17 +185,6 @@ class StructuralUnit:
         """
 
         return next(self._ID_generator)
-
-    def add_interaction(self, interaction):
-
-        """
-        Adds an interaction to the structural unit
-
-        Arguments:
-        interaction - any object with base class Interaction
-        """
-
-        self._interactions.add(interaction)
 
     def top_level_structure(self):
 
@@ -294,7 +284,7 @@ class Atom(StructuralUnit):
         super(Atom,self).__init__(position, velocity, name=element)
         self.element = element
         self.mass = settings.get('mass', atom_properties.MASS[self.element])
-        self.add_interaction(Coulombic(self))
+        self.add_interaction(Coulombic)
 
     @property
     def atom_list(self):
@@ -342,6 +332,27 @@ class Atom(StructuralUnit):
         """
 
         self._mass = mass
+
+    def add_interaction(self, interaction):
+
+        """
+        Adds an interaction to the atom
+
+        Arguments:
+        interaction - any class dervied from Interaction, or any object with
+        base class Interaction.  If an interaction class is passed then it must
+        be a non-bonded Interaction i.e. only takes a single atom as an
+        argument. If an interaction object is passed then this atom must be in
+        the interaction.atom_list.
+        """
+
+        if isclass(interaction):
+            interaction = interaction(self)
+        else:
+            assert self in interaction.atom_list, ('This atom must belong to'
+                                                   ' the interaction')
+
+        self._interactions.add(interaction)
 
 
 class Group(StructuralUnit):
@@ -415,10 +426,47 @@ class Molecule(StructuralUnit):
     @interactions.setter
     def interactions(self, interactions):
 
-        self._interactions = set(interactions)
+        self._interactions = set()
+        for interaction in interactions:
+            self.add_interaction(interaction)
         for atom in self.atom_list:
             for interaction in atom.interactions:
                 self._interactions.add(interaction)
+
+    def add_interaction(self, interaction, **settings):
+
+        """
+        Adds an interaction to the Molecule
+
+        Arguments:
+        interaction - any class dervied from Interaction, or any object with
+        base class Interaction. If a class derived from Interaction is passed,
+        it must be a non-bonded class and a single keyword specifying which
+        atoms in the Molecule the Interaction is applied to must also be passed.
+        If an interaction object is passed then all atoms of the interaction
+        must belong to the Molecule.
+
+        Settings:
+        element - a string specifying an atomic element label
+        """
+
+        if isclass(interaction):
+            if not settings:
+                raise TypeError('If a interaction is a class then a keyword'
+                                ' specifying which atoms it applies to must'
+                                ' also be passed')
+            # Determine which filter to use - currently only element filter
+            if settings.get('element'):
+                func = filter_atoms_element
+                condition = settings['element']
+            for atom in func(self.atom_list, condition):
+                self._interactions.add(interaction(atom))
+        else:
+            for atom in interaction.atom_list:
+                assert atom in self.atom_list, ('All atoms in the interaction'
+                                                ' atom_list must belong to the'
+                                                ' the molecule')
+            self._interactions.add(interaction)
 
     def _set_subunit_positions(self):
 
@@ -508,6 +556,38 @@ class BoundingBox(object):
     def max(self, value):
 
         self._max = value
+
+
+def filter_atoms(atoms, predicate):
+
+    """
+    Filters a list of atoms with a given predicate
+
+    Arguments:
+    parameters - a list of atoms
+    predicate - a function that returns a boolean
+
+    Returns:
+    a list of atoms which meet the condition of the predicate
+    """
+
+    return filter(predicate, atoms)
+
+
+def filter_atoms_element(atoms, element):
+
+    """
+    Filters a list of atoms based on the atomic element
+
+    Arguments:
+    atoms - a list of atoms
+    element - a string specifying the atomic element label
+
+    Returns:
+    a list of atoms of a specific element
+    """
+
+    return filter(lambda a: a.element == element, atoms)
 
 
 class Interaction:
@@ -607,7 +687,6 @@ class Interaction:
 
         return tuple(self.element_list())
 
-    # TODO: Ensure this doesn't get called when interactions are added with a call to self from an atom object
     def _add_interaction_atoms(self):
 
         for atom in self.atom_list:
