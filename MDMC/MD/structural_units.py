@@ -424,10 +424,46 @@ class Molecule(StructuralUnit):
     @interactions.setter
     def interactions(self, interactions):
 
-        self._interactions = set(interactions)
+        self._interactions = set()
+        for interaction in interactions:
+            self.add_interaction(interaction)
         for atom in self.atom_list:
             for interaction in atom.interactions:
                 self._interactions.add(interaction)
+
+    def add_interaction(self, interaction, **settings):
+
+        """
+        Adds an interaction to the Molecule
+
+        Arguments:
+        interaction - any class dervied from Interaction, or any object with
+        base class Interaction. If a class derived from Interaction is passed, a
+        single keyword specifying which atoms in the Molecule the Interaction is
+        applied to must also be passed. If an interaction object is passed then
+        all atoms of the interaction must belong to the Molecule.
+
+        Settings:
+        element - a string specifying an atomic element label
+        """
+
+        if isclass(interaction):
+            if not settings:
+                raise TypeError('If a interaction is a class then a keyword'
+                                ' specifying which atoms it applies to must'
+                                ' also be passed')
+            # Determine which filter to use - currently only element filter
+            if settings.get('element'):
+                func = filter_atoms_element
+                condition = settings['element']
+            for atom in func(self.atom_list, condition):
+                self._interactions.add(interaction(atom))
+        else:
+            for atom in interaction.atom_list:
+                assert atom in self.atom_list, ('All atoms in the interaction'
+                                                ' atom_list must belong to the'
+                                                ' the molecule')
+            self._interactions.add(interaction)
 
     def _set_subunit_positions(self):
 
