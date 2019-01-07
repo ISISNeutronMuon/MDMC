@@ -527,7 +527,7 @@ class Interaction:
 
     def __init__(self, atom, *atoms):
 
-        self._atom_list = [atom] + list(atoms)
+        self.atom_list = [atom] + list(atoms)
         self.function = None
         self.function_name = None
         self.universe = None
@@ -570,10 +570,11 @@ class Interaction:
         return self._atom_list
 
     @atom_list.setter
-    def atom_list(self, structures):
+    def atom_list(self, atoms):
 
-        for structure in structures:
-            self._atom_list.extend(structure.atom_list)
+        if len(set(atoms)) != len(atoms):
+            raise ValueError('Each atom must be unique')
+        self._atom_list = atoms
 
     @property
     def params(self):
