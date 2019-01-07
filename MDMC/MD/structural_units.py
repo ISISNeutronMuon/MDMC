@@ -518,7 +518,6 @@ class Interaction:
     function - A class of bond interaction function (e.g. harmonic
     potential)
     function_name - the name of the interaction function
-    ID - a unique integer
     universe - the universe the interaction belongs to
     name - the name of the interaction
     params - bond interaction parameters
@@ -531,7 +530,6 @@ class Interaction:
         self._atom_list = [atom] + list(atoms)
         self.function = None
         self.function_name = None
-        self._generate_ID()
         self.universe = None
         self._add_interaction_atoms()
         self.name = self.__class__.__name__
@@ -585,14 +583,6 @@ class Interaction:
         except AttributeError:
             raise AttributeError('Interaction has no params as no force field'
                                  ' has been defined on it')
-
-    def atom_IDs(self):
-
-        return [atom.ID for atom in self.atom_list]
-
-    def _generate_ID(self):
-
-        self.ID = reduce(lambda x,y: x*y, self.atom_IDs())
 
     def element_list(self):
 
