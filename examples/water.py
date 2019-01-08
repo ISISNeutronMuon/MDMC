@@ -28,7 +28,7 @@ water_mol = su.Molecule(position=(0, 0, 0),
                         interactions=[su.Bond(H1, O),
                                       su.Bond(H2, O),
                                       su.Dispersion(O),
-                                      su.BondAngle(atoms=[H1, O, H2])],
+                                      su.BondAngle(H1, O, H2)],
                         name='water')
 universe.fill(water_mol, force_field="SPCE", num_density=0.0335)
 
