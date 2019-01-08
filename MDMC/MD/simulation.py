@@ -137,9 +137,10 @@ class Universe(object):
 
         structural_units = []
         for atom in self.atom_list:
-            structural_units = add_all_parents(atom)
+            structural_units += add_all_parents(atom)
 
-        return structural_units
+        structural_units += list(self.atom_list)
+        return list(set(structural_units))
 
     @property
     def force_fields(self):
