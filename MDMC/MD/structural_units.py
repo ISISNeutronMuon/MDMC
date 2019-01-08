@@ -148,6 +148,11 @@ class StructuralUnit:
         except TypeError:
             self._universe = None
 
+        # Set the universe of all subunits
+        if not isinstance(self, Atom):
+            for atom in self.atom_list:
+                atom.universe = universe
+
     def translate(self, displacement):
 
         """
