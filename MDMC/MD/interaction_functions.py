@@ -235,8 +235,12 @@ class InteractionFunction(object):
         ordered alphabetically.
         """
 
-        self.params = [Parameter(value, name) for name, value
-                       in val_dict.items() if name != 'self']
+        try:
+            self.params = [Parameter(value, name) for name, value
+                           in val_dict.items() if name != 'self']
+        except AttributeError:
+            self.params = [Parameter(value[0], name, unit=value[1]) for
+                           name, value in val_dict.items() if name != 'self']
 
     @property
     def params(self):
