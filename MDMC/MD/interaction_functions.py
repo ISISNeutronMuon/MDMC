@@ -71,6 +71,7 @@ class Parameter(object):
         return self._value
 
     @value.setter
+    @unit_decorator(unit=None)
     def value(self, value):
 
         """
