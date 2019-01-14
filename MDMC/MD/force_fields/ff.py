@@ -64,7 +64,6 @@ class ForceField:
         try:
             interaction.function = self.interaction_dictionary[
                 (int_type, elements)]
-            interaction.function_name = interaction.function.name
             interaction.function.set_params_interactions(interaction)
         except KeyError:
             raise KeyError("This force field does not have defined interactions"
