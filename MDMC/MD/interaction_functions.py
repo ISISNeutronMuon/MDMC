@@ -50,7 +50,8 @@ class Parameter(object):
         value.
 
         Settings:
-        unit - a string specifying the unit
+        unit - a string specifying the unit. If this is not provided then the
+        unit will be taken from the object passed as value.
         """
 
         self.name = name
@@ -232,7 +233,13 @@ class InteractionFunction(object):
         Arguments:
         names - a list of names of the parameters of the interaction function
         val_dict - a dictionary of name:value pairs. Currently this must be
-        ordered alphabetically.
+        ordered alphabetically. value must either be a object with a value and a
+        unit (e.g. a UnitFloat object), or a (float, str) tuple, where float is
+        the value and str is the unit.  For example, the following are
+        equivalent:
+
+        HarmonicPotential(UnitFloat(1.0, 'Ang'), UnitFloat(2.0, 'kJ'))
+        HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
         """
 
         try:
