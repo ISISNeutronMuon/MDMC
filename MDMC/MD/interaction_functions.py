@@ -38,7 +38,7 @@ class Parameter(object):
     dictionary methods.
     """
 
-    def __init__(self, value, name, fixed=False, constraints=None):
+    def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
         """
         Arguments:
@@ -48,10 +48,13 @@ class Parameter(object):
         constraints - 2 element tuple (lower, upper) specifying the closed range
         in which value can be set. Constraints must have the same units as
         value.
+
+        Settings:
+        unit - a string specifying the unit
         """
 
         self.name = name
-        self.unit = value.unit
+        self.unit = settings['unit'] if 'unit' in settings else value.unit
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
