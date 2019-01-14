@@ -34,11 +34,16 @@ def unit_decorator(unit):
     """
 
     def decorator(func):
-        def wrapper(self, value):
+        def unit_creator(self, value, unit):
             try:
                 return func(self, UnitFloat(value, unit))
             except TypeError:
                 return func(self, unit_array(value, unit))
+
+        def wrapper(self, value):
+            if unit is None:
+                return unit_creator(self, value, self.unit)
+            return unit_creator(self, value, unit)
         return wrapper
     return decorator
 
