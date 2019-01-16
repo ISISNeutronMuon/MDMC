@@ -296,9 +296,9 @@ class CompositeStructuralUnit(StructuralUnit):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(unit, k, self._generate_ID())
-            if k == '_interaction_pairs':
+            elif k == '_interaction_pairs':
                 pass
-            if k == '_structure_list':
+            elif k == '_structure_list':
                 # Seperate structures into atoms and composites
                 atoms, composites = [], []
                 for s in self._structure_list:
@@ -403,7 +403,7 @@ class Atom(StructuralUnit):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(atom, k, self._generate_ID())
-            if k == '_interaction_pairs':
+            elif k == '_interaction_pairs':
                 self.copy_interactions(atom, memo)
             else:
                 setattr(atom, k, deepcopy(v, memo))
