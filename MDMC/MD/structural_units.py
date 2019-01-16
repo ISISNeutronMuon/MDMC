@@ -59,26 +59,6 @@ class StructuralUnit:
         self.name = name
         self.parent = self
 
-    def __deepcopy__(self, memo):
-
-        """
-        Copies the StructuralUnit and all attributes, except ID which is
-        generated
-
-        Arguments:
-        memo - the memo dict
-        """
-
-        cls = self.__class__
-        structural_unit = cls.__new__(cls)
-        memo[id(self)] = structural_unit
-        for k, v in self.__dict__.items():
-            if k == 'ID':
-                setattr(structural_unit, k, self._generate_ID())
-            else:
-                setattr(structural_unit, k, deepcopy(v, memo))
-        return structural_unit
-
     @property
     def position(self):
 
