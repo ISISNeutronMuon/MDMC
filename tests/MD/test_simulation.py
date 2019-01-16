@@ -71,7 +71,6 @@ def test_create_atom(atom):
     npt.assert_array_equal((0., 0., 0.), atom.velocity)
     assert atom.element == 'H'
     assert atom.mass == 1.008
-    assert su.Coulombic == type(atom.interactions.pop())
 
 
 @pytest.mark.parametrize("unit, changed_attr",
