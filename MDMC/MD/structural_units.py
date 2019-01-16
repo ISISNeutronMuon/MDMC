@@ -835,7 +835,22 @@ class Interaction:
             raise ValueError(err_msg)
 
 
-class Dispersion(Interaction):
+class NonBondedInteraction(Interaction):
+
+    """
+    Base class for non-bonded interactions
+    """
+
+    __metaclass__ = ABCMeta
+
+    def __init__(self, *atom_tuples, **settings):
+
+        if isinstance(atom_tuples[0], Atom):
+            atom_tuples = tuple((atom, ) for atom in atom_tuples)
+        super(NonBondedInteraction, self).__init__(*atom_tuples, **settings)
+
+
+class Dispersion(NonBondedInteraction):
 
     """
     A non-bonded dispersive interaction - either LJ or Buckingham
@@ -854,7 +869,7 @@ class Dispersion(Interaction):
         super(Dispersion, self).__init__(atom)
 
 
-class Coulombic(Interaction):
+class Coulombic(NonBondedInteraction):
 
     """
     A non-bonded coulombic interaction - either normal or modified Coulomb
