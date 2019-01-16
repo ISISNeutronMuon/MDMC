@@ -599,6 +599,14 @@ class Interaction:
     """
     Base class for interactions, both bonded, non-bonded and constraints
 
+    Each different interaction should have an Interaction object. This object
+    contains a list of all of the atoms (or atom pairs, triplets or quadruplets,
+    dependeing on the type of interaction) for which this Interaction applies.
+    For example, an Ocoulombic interaction would contain a list of tuples where
+    each tuple contains a different O atom, and a HObond interaction would
+    contain a list of tuples where each tuple contains a different H and O pair.
+    Interaction objects can be sliced to return a sublist of the tuples.
+
     When atoms are passed to interactions, the interaction is also added to the
     atoms.
 
