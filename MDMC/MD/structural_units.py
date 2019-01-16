@@ -688,16 +688,44 @@ class Interaction:
         return interaction
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
-        return self._atom_list
+        return self._atoms
 
-    @atom_list.setter
-    def atom_list(self, atoms):
+    @atoms.setter
+    def atoms(self, atom_tuples):
 
-        if len(set(atoms)) != len(atoms):
-            raise ValueError('Each atom must be unique')
-        self._atom_list = atoms
+        """
+        Arugments:
+        atom_tuples - a list of tuples containing one or more atoms.  Each tuple
+        contains all of the atoms involved in one example of the interaction.
+        For example for a non-bonded interaction each tuple would contain a
+        single atom, and for a BondAngle interaction each tuple would contain 3
+        or 4 atoms.
+        """
+
+        # Check for duplicate tuples in list
+        self._check_duplicates(atom_tuples, 'Each tuple in the list of atom'
+                                            ' tuples must be unique')
+        # Check for duplicate atoms in each tuple
+        try:
+            for tpl in atom_tuples:
+                self._check_duplicates(tpl, 'Each atom in an atom tuple must be'
+                                            ' unique')
+        # try/except accounts for single atom passed rather than (atom,) tuple
+        # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
+        except TypeError:
+            if len(atom_tuples) == 1 and isinstance(atom_tuples[0], Atom):
+                atom_tuples = [(atom_tuples[0],)]
+            else:
+                raise TypeError('atom_tuples must be [(atom, ...), ...]')
+        # Only assign interaction to atoms after these validation steps
+        self._atoms = []
+        for tpl in atom_tuples:
+            # Each tuple is appended individually so that it can be easily added
+            # to ._interaction_pairs for every atom in the tuple
+            self._atoms.append(tpl)
+            self._add_interaction_atoms(tpl)
 
     @property
     def params(self):
@@ -716,9 +744,44 @@ class Interaction:
         except AttributeError:
             return None
 
+    def add_atoms(self, *atoms, **settings):
+
+        """
+        Add atoms which are all involved in one example of this interaction
+
+        Arguments:
+        *atoms - one or more Atom objects
+
+        Settings:
+        from_structure - a boolean specifying if this method has been called
+        from a structural unit
+        """
+
+        self._check_duplicates(atoms, 'Each atom in an atom tuple must be'
+                                      ' unique')
+        if atoms in self.atoms:
+            raise ValueError('This interaction has already been applied to this'
+                             ' atom(s)')
+
+        self._atoms.append(atoms)
+        from_structure = settings.get('from_structure', False)
+        if not from_structure:
+            for atom in atoms:
+                atom.add_interaction(self, from_interaction=True)
+
     def element_list(self):
 
-        return [atom.element for atom in self.atom_list]
+        """
+        Returns:
+        A list of elements for which the Interaction applies or None if the
+        Interaction has not been applied to any atoms
+        """
+
+        try:
+            # Each tuple should contain the same elements, so first tuple's used
+            return [atom.element for atom in self.atoms[0]]
+        except AttributeError:
+            return None
 
     def sorted_element_list(self):
 
@@ -733,10 +796,14 @@ class Interaction:
 
         return tuple(self.element_list())
 
-    def _add_interaction_atoms(self):
+    def _add_interaction_atoms(self, atoms):
 
-        for atom in self.atom_list:
-            atom.add_interaction(self)
+        for atom in atoms:
+            atom.add_interaction(self, from_interaction=True)
+
+    def _check_duplicates(self, struct, err_msg):
+        if len(set(struct)) != len(struct):
+            raise ValueError(err_msg)
 
 
 class Dispersion(Interaction):
