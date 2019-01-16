@@ -237,8 +237,8 @@ class StructuralUnit:
             position = self.position
         try:
             # (0,0,0) is defined as the origin for all universes
-            if (np.any(position < np.array([0,0,0])) or
-                np.any(position > self.universe.dims)):
+            if (np.any(position < np.array([0, 0, 0])) or
+                    np.any(position > self.universe.dims)):
                 return False
             elif np.any(position == np.float('nan')):
                 raise ValueError('position of {0} is underdefined'.format(self))
@@ -362,7 +362,8 @@ class Atom(StructuralUnit):
     mass - float specifying the atomic mass (amu)
     """
 
-    def __init__(self, element, position=(0,0,0), velocity=(0,0,0), **settings):
+    def __init__(self, element, position=(0, 0, 0), velocity=(0, 0, 0),
+                 **settings):
 
         """
         init with position, velocity, element, mass and a non-bonded interaction
@@ -381,7 +382,7 @@ class Atom(StructuralUnit):
         table will be used.
         """
 
-        super(Atom,self).__init__(position, velocity, name=element)
+        super(Atom, self).__init__(position, velocity, name=element)
         self.element = element
         self.mass = settings.get('mass', atom_properties.MASS[self.element])
         self.add_interaction(Coulombic)
@@ -525,17 +526,23 @@ class Molecule(StructuralUnit):
         velocity - a tuple of NumPy array specifying the center of mass velocity
         in units of Ang fs^-1
         name - a string specifying the name of the Molecule
+
         Settings:
-        interactions - a set or list of interactions acting on atoms within the
+        interactions - a list of interactions acting on atoms within the
         Molecule
+
+        interactions keyword provides a convenience for declaring interactions
+        on atoms when a Molecule is initialized. It is not required and is
+        exactly equivalent to initializing the interactions prior to the
+        Molecule.
         """
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
-        super(Molecule,self).__init__(position, velocity, name)
         self.interactions = settings['interactions']
+        super(Molecule, self).__init__(position, velocity, name)
 
     @property
     def position(self):
