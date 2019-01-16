@@ -283,6 +283,95 @@ class StructuralUnit:
             self._interaction_pairs.append((interaction, interaction.atoms[-1]))
 
 
+class CompositeStructuralUnit(StructuralUnit):
+
+    """
+    Base class for structural units comprised of more than one atom
+    """
+
+    __metaclass__ = ABCMeta
+
+    def __init__(self, position, velocity, name):
+
+        super(CompositeStructuralUnit, self).__init__(position, velocity, name)
+
+    def __deepcopy__(self, memo):
+
+        """
+        Copies the StructuralUnit and all attributes, except ID which is
+        generated
+
+        This will not currently work if the composite strucural unit has any
+        bonded interactions with atoms external to it (e.g. it may cause issues
+        for copying molecules with groups)
+
+
+        Arguments:
+        memo - the memo dict
+        """
+
+        cls = self.__class__
+        unit = cls.__new__(cls)
+        memo[id(self)] = unit
+        for k, v in self.__dict__.items():
+            if k == 'ID':
+                setattr(unit, k, self._generate_ID())
+            if k == '_interaction_pairs':
+                pass
+            if k == '_structure_list':
+                # Seperate structures into atoms and composites
+                atoms, composites = [], []
+                for s in self._structure_list:
+                    (atoms if isinstance(s, Atom) else composites).append(s)
+
+                # Create dict to map from current to new structures. This is
+                # used both for creating interactions with correct new atoms,
+                # and preserving the structures ordering in unit._structure_list
+                struct_map = {}
+                for atom in atoms:
+                    # Add atom's interactions to memo so that these are not
+                    # copied
+                    for inter in atom.interactions:
+                        memo[id(inter)] = inter
+                    new_atom = deepcopy(atom, memo)
+                    struct_map[atom] = new_atom
+
+                # Create interactions
+                for inter, pair in self.interaction_pairs:
+                    # try/except accounts for interactions associated with atoms
+                    # that are in a composite subunit
+                    try:
+                        new_pair = [struct_map[atom] for atom in pair]
+                        inter.add_atoms(*new_pair)
+                    except KeyError:
+                        pass
+
+                for composite in composites:
+                    new_composite = deepcopy(composite, memo)
+                    struct_map[composite] = new_composite
+
+                # List comprehension orders structures
+                setattr(unit, k, [struct_map[s] for s in self._structure_list])
+            else:
+                setattr(unit, k, deepcopy(v, memo))
+        return unit
+
+    @property
+    def structure_list(self):
+
+        """
+        A list of all structural units that are subunits of this composite
+        structural unit
+        """
+
+        return self._structure_list
+
+    @structure_list.setter
+    def structure_list(self, value):
+
+        self._structure_list = value
+
+
 class Atom(StructuralUnit):
 
     """
