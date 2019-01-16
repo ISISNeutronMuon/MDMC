@@ -386,6 +386,29 @@ class Atom(StructuralUnit):
         self.element = element
         self.mass = settings.get('mass', atom_properties.MASS[self.element])
 
+    def __deepcopy__(self, memo):
+
+        """
+        Copies the Atom and all attributes, except ID which is generated
+
+
+
+        Arguments:
+        memo - the memo dict
+        """
+
+        cls = self.__class__
+        atom = cls.__new__(cls)
+        memo[id(self)] = atom
+        for k, v in self.__dict__.items():
+            if k == 'ID':
+                setattr(atom, k, self._generate_ID())
+            if k == '_interaction_pairs':
+                self.copy_interactions(atom, memo)
+            else:
+                setattr(atom, k, deepcopy(v, memo))
+        return atom
+
     @property
     def atom_list(self):
 
