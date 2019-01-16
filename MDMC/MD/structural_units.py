@@ -859,14 +859,14 @@ class Dispersion(NonBondedInteraction):
     interaction functions.
     """
 
-    def __init__(self, atom):
+    def __init__(self, *atom_tuples, **settings):
 
         """
         Arguments:
-        atom - at Atom object
+        atom_tuples - at Atom object
         """
 
-        super(Dispersion, self).__init__(atom)
+        super(Dispersion, self).__init__(*atom_tuples, **settings)
 
 
 class Coulombic(NonBondedInteraction):
@@ -878,14 +878,14 @@ class Coulombic(NonBondedInteraction):
     interaction functions.
     """
 
-    def __init__(self, atom):
+    def __init__(self, *atom_tuples, **settings):
 
         """
         Arguments:
         atom - at Atom object
         """
 
-        super(Coulombic, self).__init__(atom)
+        super(Coulombic, self).__init__(*atom_tuples, **settings)
 
 class Bond(Interaction):
 
