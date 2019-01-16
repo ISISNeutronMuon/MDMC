@@ -614,12 +614,47 @@ class Interaction:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, atom, *atoms):
+    def __init__(self, *atom_tuples, **settings):
 
-        self.atom_list = [atom] + list(atoms)
-        self.function = None
+        """
+        Arguments:
+        atom_tuples - One or more tuples consisting of one or more Atom objects.
+        Each tuple contains all of the atoms involved in a single interaction.
+        For example:
+
+        H1 = Atom('H')
+        H2 = Atom('H')
+        O = Atom('O')
+
+        For non-bonded interactions both of the following are equivalent
+        (applying a Dispersion interaction to both H atoms):
+
+        H_dispersive = Dispersion((H1, ), (H2, ))
+        H_dispersive = Dispersion(H1, H2)
+
+        For bonded interactions both of the following are equivalent:
+
+        HO_bond = Bond((H1, O))
+        HO_bond = Bond(H1, O)
+
+        However when multiple bonds are initialized within a single Bond object
+        (e.g. creating a Bond between each H and O for a single water molecule),
+        tuples must be used to separate the bonds:
+
+        HO_bond = Bond((H1, O), (H2,O))
+
+        whereas the following is not valid:
+
+        HO_bond = Bond(H1, O, H2, O)
+        TypeError: object of type 'Atom' has no len()
+
+        Settings:
+        function - a class of bond interaction function (e.g. HarmonicPotential)
+        """
+
+        self.atoms = list(atom_tuples)
+        self.function = settings.get('function', None)
         self.universe = None
-        self._add_interaction_atoms()
         self.name = self.__class__.__name__
 
     def __deepcopy__(self, memo):
