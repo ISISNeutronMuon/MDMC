@@ -52,7 +52,7 @@ class StructuralUnit:
         """
 
         self.ID = self._generate_ID()
-        self._interactions = set()
+        self._interaction_pairs = []
         self.universe = None
         self.position = position
         self.velocity = velocity
@@ -164,19 +164,31 @@ class StructuralUnit:
 
         self.position = self.position + np.array(displacement)
 
-    @abstractmethod
-    def add_interaction(self, interaction):
-
-        raise NotImplementedError
-
     @property
     def interactions(self):
 
         """
-        A set of the interactions acting on the structural unit
+        A list of the interactions acting on the structural unit
         """
 
-        return self._interactions
+        return [pair[0] for pair in self._interaction_pairs]
+
+    @property
+    def interaction_pairs(self):
+
+        """
+        A list of (interaction, atoms) pairs acting on the structural unit,
+        where atoms is a tuple of all atoms for that specific interaction
+
+        Example:
+        For an O Atom with two bonds, one to H1 and one to H2:
+
+        print(O.interaction_pairs)
+        [(Bond, (H1, O)),
+         (Bond, (H2, O))]
+        """
+
+        return self._interaction_pairs
 
     @property
     def structure_type(self):
@@ -255,6 +267,20 @@ class StructuralUnit:
         except AttributeError:
             # Not a member of a universe
             return True
+
+    def add_interaction(self, interaction):
+
+        """
+        Adds an interaction to the Molecule, if it has not previously been added
+        for this combination of atoms
+
+        Arguments:
+        interaction - any object of any class derived from Interaction
+        """
+
+        pair = (interaction, interaction.atoms[-1])
+        if pair not in self.interaction_pairs:
+            self._interaction_pairs.append((interaction, interaction.atoms[-1]))
 
 
 class Atom(StructuralUnit):
@@ -338,7 +364,7 @@ class Atom(StructuralUnit):
 
         self._mass = mass
 
-    def add_interaction(self, interaction):
+    def add_interaction(self, interaction, from_interaction=False):
 
         """
         Adds an interaction to the atom
@@ -349,16 +375,47 @@ class Atom(StructuralUnit):
         be a non-bonded Interaction i.e. only takes a single atom as an
         argument. If an interaction object is passed then this atom must be in
         the interaction.atom_list.
+        from_interaction - a boolean specifying if this method has been called
+        from an interaction
         """
 
-        if isclass(interaction):
-            interaction = interaction(self)
-        else:
-            assert self in interaction.atom_list, ('This atom must belong to'
-                                                   ' the interaction')
+        # The tuple most recently added to interaction.atoms should always
+        # contain self
+        assert self in interaction.atoms[-1], ('incorrect atom_tuple passed to'
+                                               ' atom')
+        if not from_interaction:
+            interaction.add_atoms((self, ), from_structure=True)
+        super(Atom, self).add_interaction(interaction)
 
-        self._interactions.add(interaction)
+    def copy_interactions(self, atom, memo={}):
 
+        """
+        This replicates the interactions from self for atom, but with self
+        substituted by atom in the atoms attribute for each interaction.  These
+        interactions are added to any that already exist for the atom object.
+
+        Passing the memo dictionary enables specific interactions to be excluded
+        from being copied, duplicating the behaviour of __deepcopy__
+
+        Arguments:
+        atom - an atom object for which self.interactions are replicated
+        memo - the memo dictionary
+        """
+
+        # if/else required for deepcopy (where _interaction_pairs attribute
+        # doesn't exist). try/except not valid due to order of operations in
+        # add_atoms method.
+        if not hasattr(atom, '_interaction_pairs'):
+            atom._interaction_pairs = []
+        for inter, atoms in self.interaction_pairs:
+            if id(inter) not in memo:
+                # Maintains order of atoms except with substitution
+                new_atoms = [atom if a == self else a for a in atoms]
+
+                # Use add_atoms method to update attribute rather than setattr.
+                # This ensures interaction is added to all other atoms as well
+                inter.add_atoms(*new_atoms)
+                memo[id(inter)] = inter
 
 class Group(StructuralUnit):
 
@@ -426,52 +483,13 @@ class Molecule(StructuralUnit):
     @property
     def interactions(self):
 
-        return self._interactions
+        return [pair[0] for pair in self.interaction_pairs]
 
-    @interactions.setter
-    def interactions(self, interactions):
+    @property
+    def interaction_pairs(self):
 
-        self._interactions = set()
-        for interaction in interactions:
-            self.add_interaction(interaction)
-        for atom in self.atom_list:
-            for interaction in atom.interactions:
-                self._interactions.add(interaction)
-
-    def add_interaction(self, interaction, **settings):
-
-        """
-        Adds an interaction to the Molecule
-
-        Arguments:
-        interaction - any class dervied from Interaction, or any object with
-        base class Interaction. If a class derived from Interaction is passed,
-        it must be a non-bonded class and a single keyword specifying which
-        atoms in the Molecule the Interaction is applied to must also be passed.
-        If an interaction object is passed then all atoms of the interaction
-        must belong to the Molecule.
-
-        Settings:
-        element - a string specifying an atomic element label
-        """
-
-        if isclass(interaction):
-            if not settings:
-                raise TypeError('If a interaction is a class then a keyword'
-                                ' specifying which atoms it applies to must'
-                                ' also be passed')
-            # Determine which filter to use - currently only element filter
-            if settings.get('element'):
-                func = filter_atoms_element
-                condition = settings['element']
-            for atom in func(self.atom_list, condition):
-                self._interactions.add(interaction(atom))
-        else:
-            for atom in interaction.atom_list:
-                assert atom in self.atom_list, ('All atoms in the interaction'
-                                                ' atom_list must belong to the'
-                                                ' the molecule')
-            self._interactions.add(interaction)
+        return list(set([pair for atom in self.atom_list
+                         for pair in atom.interaction_pairs]))
 
     def _set_subunit_positions(self):
 
