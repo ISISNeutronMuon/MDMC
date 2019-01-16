@@ -931,14 +931,16 @@ class Bond(BondedInteraction):
     A bond between any two atoms. Requires exactly two atoms.
     """
 
-    def __init__(self, atom1, atom2):
+    def __init__(self, *atom_tuples, **settings):
 
         """
         Arguments:
         atom1, atom2 - at Atom object
         """
 
-        super(Bond, self).__init__(atom1, atom2)
+        settings['n_atoms'] = (2, )
+        super(Bond, self).__init__(*atom_tuples, **settings)
+
 
 class BondAngle(BondedInteraction):
 
@@ -949,7 +951,7 @@ class BondAngle(BondedInteraction):
     (rotation around central bond - dihedral or torsional rotation)
     """
 
-    def __init__(self, atom1, atom2, atom3, *atom4):
+    def __init__(self, *atom_tuples, **settings):
 
         """
         Arguments:
@@ -957,15 +959,5 @@ class BondAngle(BondedInteraction):
         *atom4 - one or more Atom objects
         """
 
-        self._validate_atoms(atom4)
-        super(BondAngle, self).__init__(atom1, atom2, atom3, *atom4)
-
-    def _validate_atoms(self, atoms):
-
-        """
-        Validates that the correct number of atoms have been passed to the
-        interaction
-        """
-
-        if len(atoms) > 1:
-            raise TypeError("BondAngle only accepts three or four atoms")
+        settings['n_atoms'] = (3, 4)
+        super(BondAngle, self).__init__(*atom_tuples, **settings)
