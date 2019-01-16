@@ -887,7 +887,45 @@ class Coulombic(NonBondedInteraction):
 
         super(Coulombic, self).__init__(*atom_tuples, **settings)
 
-class Bond(Interaction):
+
+class BondedInteraction(Interaction):
+
+    """
+    Base class for bonded interactions
+    """
+
+    __metaclass__ = ABCMeta
+
+    def __init__(self, *atom_tuples, **settings):
+
+        """
+        Settings:
+        n_atoms - an integer specifying the number of atoms to which this
+        interaction applies, for example 2 for a Bond.
+        """
+
+        if isinstance(atom_tuples[0], Atom):
+            atom_tuples = (atom_tuples, )
+        if settings.get('n_atoms'):
+            # This ensures that BondedInteractions can also be __init__ with 0
+            # atoms
+            for tpl in atom_tuples:
+                self._validate_atoms(tpl, settings.get('n_atoms'))
+        super(BondedInteraction, self).__init__(*atom_tuples, **settings)
+
+    def _validate_atoms(self, atoms, n_atoms):
+
+        """
+        Validates that the correct number of atoms have been passed to the
+        interaction
+        """
+
+        if len(atoms) not in n_atoms:
+            raise TypeError("This interaction only accepts {0} atoms".format(
+                n_atoms))
+
+
+class Bond(BondedInteraction):
 
     """
     A bond between any two atoms. Requires exactly two atoms.
@@ -902,8 +940,8 @@ class Bond(Interaction):
 
         super(Bond, self).__init__(atom1, atom2)
 
+class BondAngle(BondedInteraction):
 
-class BondAngle(Interaction):
     """
     A bond angle between any two bonds
 
