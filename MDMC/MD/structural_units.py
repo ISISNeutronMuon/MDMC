@@ -385,7 +385,6 @@ class Atom(StructuralUnit):
         super(Atom, self).__init__(position, velocity, name=element)
         self.element = element
         self.mass = settings.get('mass', atom_properties.MASS[self.element])
-        self.add_interaction(Coulombic)
 
     @property
     def atom_list(self):
