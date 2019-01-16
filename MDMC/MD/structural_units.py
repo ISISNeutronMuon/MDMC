@@ -487,7 +487,8 @@ class Atom(StructuralUnit):
                 inter.add_atoms(*new_atoms)
                 memo[id(inter)] = inter
 
-class Group(StructuralUnit):
+
+class Group(CompositeStructuralUnit):
 
     """
     Two or more atoms that form a subset of a molcule
@@ -502,7 +503,7 @@ class Group(StructuralUnit):
         raise NotImplementedError
 
 
-class Molecule(StructuralUnit):
+class Molecule(CompositeStructuralUnit):
 
     """
     Two or more bonded atoms, passed either as individual atoms or as groups
@@ -516,7 +517,7 @@ class Molecule(StructuralUnit):
     the Molecule
     """
 
-    def __init__(self, position=(0,0,0), velocity=(0,0,0), name=None,
+    def __init__(self, position=(0, 0, 0), velocity=(0, 0, 0), name=None,
                  **settings):
 
         """
@@ -541,7 +542,6 @@ class Molecule(StructuralUnit):
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
-        self.interactions = settings['interactions']
         super(Molecule, self).__init__(position, velocity, name)
 
     @property
