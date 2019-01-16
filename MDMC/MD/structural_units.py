@@ -207,7 +207,7 @@ class StructuralUnit:
         if self.top_level_structure() is self:
             raise AttributeError("This structure has no parent")
         else:
-            return self.position - parent._get_center_of_mass()
+            return self.position - self.parent._get_center_of_mass()
 
     def _added_to_structure(self):
 
