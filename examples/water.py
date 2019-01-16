@@ -25,8 +25,7 @@ O = su.Atom('O', position=(0.75695, 0., 0.58588), mass=16.000)
 water_mol = su.Molecule(position=(0, 0, 0),
                         velocity=(0, 0, 0),
                         atoms=[H1, H2, O],
-                        interactions=[su.Bond(H1, O),
-                                      su.Bond(H2, O),
+                        interactions=[su.Bond((H1, O), (H2, O)),
                                       su.Dispersion(O),
                                       su.BondAngle(H1, O, H2)],
                         name='water')
