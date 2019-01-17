@@ -143,7 +143,8 @@ class Parameter(object):
 
         """
         Returns:
-        The Parameter object that this Parameter is tied to, or None
+        The value of the Parameter object that this Parameter is tied to, or
+        None
         """
 
         if self._tie is None:
