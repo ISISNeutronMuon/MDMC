@@ -334,36 +334,19 @@ def test_atom_add_interaction(atom):
     (this should only be non-bonded interactions, e.g. Coulombic)
     """
 
-    # Atoms are initialized with a single Coulombic interaction
-    assert len(atom.interactions) == 1
-    assert list(atom.interactions)[0].name == 'Coulombic'
+    # Test that if atom.add_interaction called from interaction that the
+    # interaction includes the atom
+    coulombic = su.Coulombic()
+    with pytest.raises(ValueError):
+        atom.add_interaction(coulombic, from_interaction=True)
 
-    atom.add_interaction(su.Dispersion)
-    with pytest.raises(TypeError):
-        atom.add_interaction(su.Bond)
-        atom.add_interaction(su.Bond(atom, deepcopy(atom)))
+    # Test that atom gets added to interaction
+    atom.add_interaction(coulombic)
+    assert atom in coulombic.atoms[-1]
 
-
-def test_molecule_add_interaction():
-
-    """
-    Tests how interactions are added to Molecule objects
-
-    Molecule objects should only be able to add interactions that apply to atoms
-    that are in the molecule
-    """
-
-    H1 = su.Atom('H')
-    H2 = su.Atom('H', position=H2_POSITION)
-    O = su.Atom('O', position=O_POSITION)
-    water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
-                                 interactions=[su.Bond(H1, O), su.Bond(H2, O)],
-                                 name='water')
-    water_molecule.add_interaction(su.Dispersion, element='O')
-    water_molecule.add_interaction(su.BondAngle(H1, O, H2))
-
-    with pytest.raises(TypeError):
-        water_molecule.add_interaction(su.Dispersion)
+    cpy_atom = deepcopy(atom)
+    bond = su.Bond(atom, cpy_atom)
+    assert atom.interaction_pairs[-1] == (bond, (atom, cpy_atom))
 
 
 def test_valid_position(atom):
