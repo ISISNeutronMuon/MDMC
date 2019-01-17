@@ -396,6 +396,26 @@ class Atom(StructuralUnit):
                 setattr(atom, k, deepcopy(v, memo))
         return atom
 
+    def __repr__(self):
+
+        """
+        Returns the element, mass, charge, universe, position, velocity and
+        names of all interactions that apply to this atom
+        """
+
+        return ('{0} atom,'
+                '  ID: {1}'
+                '  charge: {2},'
+                '  interactions: {3}'.format(self.element,
+                                             self.ID,
+                                             self.charge,
+                                             [i.name for i
+                                              in self.interactions]))
+
+    def __str__(self):
+
+        return '{0}'.format(self.element)
+
     @property
     def atom_list(self):
 
@@ -830,6 +850,28 @@ class Interaction:
     #
     #     del self._atoms[key]
 
+    def __repr__(self):
+
+        try:
+            params = self.params
+        except AttributeError:
+            params = None
+
+        return ('{0}'
+                '  function: {1},'
+                '  parameters: {2},'
+                '  universe: {3},'
+                '  elements: {4},'
+                '  atoms: {5}'.format(self.name,
+                                      self.function,
+                                      params,
+                                      self.universe,
+                                      self.element_list(),
+                                      self.atoms))
+
+    def __str__(self):
+
+        return self.__repr__
 
     @property
     def atoms(self):
