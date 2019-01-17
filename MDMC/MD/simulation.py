@@ -49,7 +49,7 @@ class Universe(object):
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
-        self._interactions = set()
+        self._interaction_pairs = set()
         self.force_fields = force_field
 
     @property
@@ -78,7 +78,29 @@ class Universe(object):
     @property
     def interactions(self):
 
-        return self._interactions
+        """
+        A list of interactions in the universe
+        """
+
+        return [pair[0] for pair in self.interaction_pairs]
+
+    @property
+    def interaction_pairs(self):
+
+        """
+        A list of (interaction, atoms) pairs in the universe, where atoms is a
+        tuple of all atoms for that specific interaction
+
+        Example:
+        For an O Atom with two bonds, one to H1 and one to H2:
+
+        print(O.interaction_pairs)
+        [(Bond, (H1, O)),
+         (Bond, (H2, O))]
+        """
+
+        # self._interaction_pairs is a set to avoid double counting of bonds etc
+        return list(self._interaction_pairs)
 
     @property
     def parameters(self):
@@ -166,7 +188,7 @@ class Universe(object):
         structural_unit.universe = self
         self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
-            self._interactions.update(atom.interactions)
+            self._interaction_pairs.update(atom.interaction_pairs)
         if force_field:
             self.add_force_field(force_field, structural_unit.interactions)
 
