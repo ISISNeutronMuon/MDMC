@@ -5,7 +5,7 @@ defined.  All shared behaviour is included within the StructuralUnit base class.
 
 AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractproperty
 from copy import deepcopy
 from functools import reduce
 from inspect import isclass
@@ -52,7 +52,6 @@ class StructuralUnit:
         """
 
         self.ID = self._generate_ID()
-        self._interaction_pairs = []
         self.universe = None
         self.position = position
         self.velocity = velocity
@@ -151,9 +150,9 @@ class StructuralUnit:
         A list of the interactions acting on the structural unit
         """
 
-        return [pair[0] for pair in self._interaction_pairs]
+        return [pair[0] for pair in self.interaction_pairs]
 
-    @property
+    @abstractproperty
     def interaction_pairs(self):
 
         """
@@ -168,7 +167,7 @@ class StructuralUnit:
          (Bond, (H2, O))]
         """
 
-        return self._interaction_pairs
+        pass
 
     @property
     def structure_type(self):
@@ -369,6 +368,7 @@ class Atom(StructuralUnit):
         """
 
         super(Atom, self).__init__(position, velocity, name=element)
+        self._interaction_pairs = []
         self.element = element
         self.mass = settings.get('mass', atom_properties.MASS[self.element])
 
@@ -386,6 +386,7 @@ class Atom(StructuralUnit):
         cls = self.__class__
         atom = cls.__new__(cls)
         memo[id(self)] = atom
+        atom._interaction_pairs = []
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(atom, k, self._generate_ID())
@@ -441,6 +442,23 @@ class Atom(StructuralUnit):
         """
 
         self._mass = mass
+
+    @property
+    def interaction_pairs(self):
+
+        """
+        A list of (interaction, atoms) pairs acting on the structural unit,
+        where atoms is a tuple of all atoms for that specific interaction
+
+        Example:
+        For an O Atom with two bonds, one to H1 and one to H2:
+
+        print(O.interaction_pairs)
+        [(Bond, (H1, O)),
+         (Bond, (H2, O))]
+        """
+
+        return self._interaction_pairs
 
     def add_interaction(self, interaction, from_interaction=False):
 
@@ -566,11 +584,6 @@ class Molecule(CompositeStructuralUnit):
 
         self._position = position
         self._set_subunit_positions()
-
-    @property
-    def interactions(self):
-
-        return [pair[0] for pair in self.interaction_pairs]
 
     @property
     def interaction_pairs(self):
