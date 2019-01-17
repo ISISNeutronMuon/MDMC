@@ -59,11 +59,10 @@ class ForceField:
         interaction - a subclass of MDMC.MD.structural_units.Interaction
         """
 
-        int_type = type(interaction)
         elements = interaction.element_tuple()
         try:
             interaction.function = self.interaction_dictionary[
-                (int_type, elements)]
+                (type(interaction), elements)]
             interaction.function.set_params_interactions(interaction)
         except KeyError:
             raise KeyError("This force field does not have defined interactions"
