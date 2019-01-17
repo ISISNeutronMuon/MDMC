@@ -172,7 +172,7 @@ class StructuralUnit:
     @property
     def structure_type(self):
 
-         return self.__class__.__name__
+        return self.__class__.__name__
 
     def _generate_ID(self):
 
@@ -422,8 +422,7 @@ class Atom(StructuralUnit):
                     # Zero index parameter can be used as there should only be
                     # one parameter as each atom only has a single charge
                     return interaction.params[0].value
-            else:
-                return None
+            return None
         except AttributeError:
             return None
 
