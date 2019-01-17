@@ -248,20 +248,6 @@ class StructuralUnit:
             # Not a member of a universe
             return True
 
-    def add_interaction(self, interaction):
-
-        """
-        Adds an interaction to the Molecule, if it has not previously been added
-        for this combination of atoms
-
-        Arguments:
-        interaction - any object of any class derived from Interaction
-        """
-
-        pair = (interaction, interaction.atoms[-1])
-        if pair not in self.interaction_pairs:
-            self._interaction_pairs.append((interaction, interaction.atoms[-1]))
-
 
 class CompositeStructuralUnit(StructuralUnit):
 
@@ -473,11 +459,14 @@ class Atom(StructuralUnit):
 
         # The tuple most recently added to interaction.atoms should always
         # contain self
-        assert self in interaction.atoms[-1], ('incorrect atom_tuple passed to'
-                                               ' atom')
-        if not from_interaction:
-            interaction.add_atoms((self, ), from_structure=True)
-        super(Atom, self).add_interaction(interaction)
+        if from_interaction:
+            if not interaction.atoms or not self in interaction.atoms[-1]:
+                raise ValueError('incorrect atom_tuple passed to atom')
+        else:
+            interaction.add_atoms(self, from_structure=True)
+        pair = (interaction, interaction.atoms[-1])
+        if pair not in self.interaction_pairs:
+            self._interaction_pairs.append((interaction, interaction.atoms[-1]))
 
     def copy_interactions(self, atom, memo={}):
 
