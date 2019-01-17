@@ -434,8 +434,7 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         elements = list(elements)
         for interaction in self.MDMC_universe.interactions:
             if isinstance(interaction, interaction_type):
-                int_elements = [atom.element for atom
-                                in interaction.atom_list]
+                int_elements = interaction.element_list()
                 if len(elements) == 2:
                     int_elements = sorted(int_elements)
                 if int_elements == elements:
