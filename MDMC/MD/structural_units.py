@@ -840,6 +840,7 @@ class Interaction:
     #
     #     del self._atoms[key]
 
+
     @property
     def atoms(self):
 
@@ -888,6 +889,16 @@ class Interaction:
         except AttributeError:
             raise AttributeError('Interaction has no params as no force field'
                                  ' has been defined on it')
+
+    @property
+    def function(self):
+
+        return self._function
+
+    @function.setter
+    def function(self, value):
+
+        self._function = value
 
     @property
     def function_name(self):
