@@ -43,10 +43,13 @@ def water_molecule(atom):
     H1 = atom
     H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
     O = su.Atom('O', position=O_POSITION, mass=O_MASS)
+    H_coulombic = su.Coulombic(H1, H2)
+    O_coulombic = su.Coulombic(O)
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
                                  interactions=[su.Bond((H1, O), (H2, O)),
-                                               su.Dispersion(O)], name='water')
-    water_molecule.add_interaction(su.BondAngle(H1, O, H2))
+                                               su.Dispersion(O),
+                                               su.BondAngle(H1, O, H2)],
+                                 name='water')
     return water_molecule
 
 @pytest.fixture
