@@ -210,11 +210,8 @@ class Universe(object):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structural_unit(structural_unit)
+                self.add_structural_unit(structural_unit, force_field)
                 structural_unit.position = position
-                if force_field:
-                    self.add_force_field(force_field,
-                                         structural_unit.interactions)
             else:
                 new_unit = deepcopy(structural_unit)
                 new_unit.position = position
