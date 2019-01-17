@@ -781,35 +781,24 @@ class Interaction:
         self.universe = None
         self.name = self.__class__.__name__
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo={}):
 
         """
-        Prevents deepcopy of function (type InteractionFunction) as the function
-        (and associated parameters) are shared for all Interactions which only
-        differ on the specific atoms on which they act (not on the element
-        types).
+        Interactions cannot be copied
 
         Arguments:
         memo - the memo dict
         """
 
-        cls = self.__class__
-        interaction = cls.__new__(cls)
-        memo[id(self)] = interaction
-        shallow_copy_attr = ['function','function_name']
-        for k, v in self.__dict__.items():
-            if k in shallow_copy_attr:
-                setattr(interaction, k, getattr(self, k))
-            else:
-                setattr(interaction, k, deepcopy(v, memo))
+        raise AttributeError('Interactions cannot be copied')
 
-        # Set interactions for parameters if interaction.function has been
-        # defined
-        try:
-            interaction.function.set_params_interactions(interaction)
-        except AttributeError:
-            pass
-        return interaction
+    def __copy__(self):
+
+        """
+        Interactions cannot be copied
+        """
+
+        self.__deepcopy__()
 
     def __len__(self):
 
