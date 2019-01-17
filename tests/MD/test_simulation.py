@@ -218,9 +218,13 @@ def test_spce_water_molecule(universe, water_molecule):
     function_names = [function.__class__.__name__ for function in functions]
 
     # Test interaction functions
-    assert Counter(['Coulomb', 'Coulomb', 'Coulomb', 'LennardJones',
-                    'HarmonicPotential', 'HarmonicPotential',
-                    'HarmonicPotential']) == Counter(function_names)
+    assert Counter(function_names) == Counter(['Coulomb',
+                                               'Coulomb',
+                                               'Coulomb',
+                                               'HarmonicPotential',
+                                               'HarmonicPotential',
+                                               'HarmonicPotential',
+                                               'LennardJones'])
 
     # A list of dictionaries with each dictionary containing a Parameter type
     # and the correspoding Parameter value
