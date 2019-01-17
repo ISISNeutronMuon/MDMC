@@ -933,7 +933,7 @@ class Interaction:
         try:
             # Each tuple should contain the same elements, so first tuple's used
             return [atom.element for atom in self.atoms[0]]
-        except AttributeError:
+        except (AttributeError, IndexError):
             return None
 
     def sorted_element_list(self):
