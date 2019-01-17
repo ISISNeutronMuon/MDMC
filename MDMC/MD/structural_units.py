@@ -969,7 +969,7 @@ class NonBondedInteraction(Interaction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        if isinstance(atom_tuples[0], Atom):
+        if atom_tuples and isinstance(atom_tuples[0], Atom):
             atom_tuples = tuple((atom, ) for atom in atom_tuples)
         super(NonBondedInteraction, self).__init__(*atom_tuples, **settings)
 
@@ -1028,7 +1028,7 @@ class BondedInteraction(Interaction):
         interaction applies, for example 2 for a Bond.
         """
 
-        if isinstance(atom_tuples[0], Atom):
+        if atom_tuples and isinstance(atom_tuples[0], Atom):
             atom_tuples = (atom_tuples, )
         if settings.get('n_atoms'):
             # This ensures that BondedInteractions can also be __init__ with 0
