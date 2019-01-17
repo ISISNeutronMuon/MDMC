@@ -15,7 +15,8 @@ from tests.MD.test_simulation_mmtk import water_MMTK_NVE
 from MDMC.common import units
 from MDMC.MD.engine_facades.mmtk import MMTKEngine
 from MDMC.MD.interaction_functions import Parameter
-from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond
+from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond, \
+                                     Coulombic
 from MDMC.MD.simulation import Universe, Shape
 from MDMC.readers.reader_factory import ReaderFactory
 from MDMC.trajectory_analysis.observables.SQw import SQw
@@ -58,7 +59,7 @@ def test_Atom_units(atom, universe):
     charge
     """
 
-    atom2 = deepcopy(atom)
+    atom_coulombic = Coulombic(atom)
 
     try:
         check_property(atom.position, LIST, units.LENGTH, units.unit_array)

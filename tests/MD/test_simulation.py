@@ -172,6 +172,7 @@ def test_atom_list(atom):
 
 def test_add_atom(universe, atom):
 
+    atom_coulombic = su.Coulombic(atom)
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
     assert su.Coulombic == type(universe.interactions.pop())
