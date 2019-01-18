@@ -29,6 +29,18 @@ class Universe(object):
     Attributes:
     shape - member of the Shape enum
     dims - array of dimensions
+    interactions - a list of interactions which exist in the universe
+    interaction_pairs - a list of (interaction, atoms) tuples where atoms is a
+    list of atoms to which the interaction applies
+    parameters - a list of interaction potential parameters
+    volume - The volume of the universe
+    element_list - A list of the elements in the universe
+    element_dict - A dictionary of element:atom, where atom is a single atom of
+    the specified element
+    atom_list - a list of the atoms in the universe
+    molecule_list - a list of the molecules in the universe
+    structure_list - a list of the structural units in the universe
+    force_fields - a list of the force fields that apply to the universe
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,

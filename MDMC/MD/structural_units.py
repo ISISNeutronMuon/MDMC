@@ -22,14 +22,19 @@ class StructuralUnit:
     """Abstract base class for all structural units
 
  	Attributes:
- 	ID - a unique identifier for each structural unit
-    universe - the universe to which the structural unit belongs
-    structure_type - type of structural unit
+ 	ID - a unique identifier for each StructuralUnit
+    universe - the universe to which the StructuralUnit belongs
+    structure_type - type of StructuralUnit
     name - a string specifying the name of the structure
     position - position of center of mass in units of Ang
     velocity - average velocity in units of Ang fs^-1
     bonds - list of all bonds
-    parent - the structural unit to which this unit belongs
+    parent - the StructuralUnit to which this unit belongs
+    atom_list - a list of atoms belonging to the StructuralUnit
+    interactions - a list of interactions acting on the StructuralUnit
+    interaction_pairs - a list of (interaction, atoms) tuples where atoms is a
+    list of atoms to which the interaction applies. At least one of these atoms
+    belongs to the StructuralUnit
     """
 
     __metaclass__ = ABCMeta
@@ -67,7 +72,7 @@ class StructuralUnit:
 
         """
         Provides a warning if the specified position is not within the
-        structural units universe
+        StructuralUnit's universe
         """
 
         # if not self.valid_position(position):
@@ -145,7 +150,7 @@ class StructuralUnit:
     def interactions(self):
 
         """
-        A list of the interactions acting on the structural unit
+        A list of the interactions acting on the StructuralUnit
         """
 
         return [pair[0] for pair in self.interaction_pairs]
@@ -154,7 +159,7 @@ class StructuralUnit:
     def interaction_pairs(self):
 
         """
-        A list of (interaction, atoms) pairs acting on the structural unit,
+        A list of (interaction, atoms) pairs acting on the StructuralUnit,
         where atoms is a tuple of all atoms for that specific interaction
 
         Example:
@@ -170,12 +175,20 @@ class StructuralUnit:
     @property
     def structure_type(self):
 
+        """
+        Returns:
+        string specifying the name of the class
+        """
+
         return self.__class__.__name__
 
     def _generate_ID(self):
 
         """
-        Uses class attribute to generate a unique ID for each structural unit
+        Uses class attribute to generate a unique ID for each StructuralUnit
+
+        Returns:
+        unique integer
         """
 
         return next(self._ID_generator)
@@ -184,7 +197,7 @@ class StructuralUnit:
 
         """
         Returns:
-        Highest level structural unit of which it is a member
+        Highest level StructuralUnit of which it is a member
         """
 
         if issubclass(type(self.parent),StructuralUnit) \
@@ -209,7 +222,7 @@ class StructuralUnit:
     def _added_to_structure(self):
 
         """
-        Method is called if it becomes subunit of another structural_unit
+        Method is called if it becomes subunit of another StructuralUnit
         """
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
@@ -217,8 +230,8 @@ class StructuralUnit:
     def valid_position(self, position=None):
 
         """
-        Checks if the specified position is within the bounds of the structural
-        unit's universe, if it is associated with one
+        Checks if the specified position is within the bounds of the
+        StructuralUnit's universe, if it is associated with one
 
         Arguments:
         position - 3 element tuple or NumPy array with units of Ang or None.  If
@@ -226,7 +239,7 @@ class StructuralUnit:
 
         Returns:
         True if position is within universe or there is no associated universe.
-        False if structural unit has an associated universe but the position is
+        False if StructuralUnit has an associated universe but the position is
         not within its bounds.
         """
 
@@ -250,6 +263,10 @@ class CompositeStructuralUnit(StructuralUnit):
 
     """
     Base class for structural units comprised of more than one atom
+
+    Attributes:
+    structure_list - a list of all of the StructuralUnits belonging to the
+    CompositeStructuralUnit
     """
 
     __metaclass__ = ABCMeta
@@ -261,10 +278,10 @@ class CompositeStructuralUnit(StructuralUnit):
     def __deepcopy__(self, memo):
 
         """
-        Copies the StructuralUnit and all attributes, except ID which is
-        generated
+        Copies the CompositeStructuralUnit and all attributes, except ID which
+        is generated
 
-        This will not currently work if the composite strucural unit has any
+        This will not currently work if the CompositeStructuralUnit has any
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
@@ -323,8 +340,8 @@ class CompositeStructuralUnit(StructuralUnit):
     def structure_list(self):
 
         """
-        A list of all structural units that are subunits of this composite
-        structural unit
+        A list of all StructuralUnits that are subunits of this
+        CompositeStructuralUnit
         """
 
         return self._structure_list
@@ -343,6 +360,7 @@ class Atom(StructuralUnit):
     Attributes:
     element - string specifying the atomic element label
     mass - float specifying the atomic mass (amu)
+    charge - float specifying the charge (e) if one has been applied to the Atom
     """
 
     def __init__(self, element, position=(0, 0, 0), velocity=(0, 0, 0),
@@ -375,7 +393,9 @@ class Atom(StructuralUnit):
         """
         Copies the Atom and all attributes, except ID which is generated
 
-
+        Interactions are copied but the copied atom is substituted for the
+        original atom.  For BondedInteractions this means that the copied atom
+        will be bonded to all atoms to which the original atom is bonded.
 
         Arguments:
         memo - the memo dict
@@ -554,13 +574,15 @@ class Molecule(CompositeStructuralUnit):
     """
     Two or more bonded atoms, passed either as individual atoms or as groups
 
-    Must be declared with at least 2 atoms and one interaction.
+    Must be declared with at least 2 atoms.
 
     Attributes:
     position - center of mass position in units of Ang
     velocity - center of mass velocity in units of Ang fs^-1
     interactions - a set of interactions that involve any of the atoms within
     the Molecule
+    bounding_box - a BoundingBox specifying the lower and upper extents of the
+    Molecule
     """
 
     def __init__(self, position=(0, 0, 0), velocity=(0, 0, 0), name=None,
@@ -605,6 +627,18 @@ class Molecule(CompositeStructuralUnit):
     @property
     def interaction_pairs(self):
 
+        """
+        A list of (interaction, atoms) pairs acting on the StructuralUnit,
+        where atoms is a tuple of all atoms for that specific interaction
+
+        Example:
+        For an O Atom with two bonds, one to H1 and one to H2:
+
+        print(O.interaction_pairs)
+        [(Bond, (H1, O)),
+         (Bond, (H2, O))]
+        """
+
         return list(set([pair for atom in self.atom_list
                          for pair in atom.interaction_pairs]))
 
@@ -646,6 +680,11 @@ class Molecule(CompositeStructuralUnit):
     @property
     def bounding_box(self):
 
+        """
+        Returns:
+        BoundingBox specifying the lower and upper extents of the Molecule
+        """
+
         return BoundingBox(self.atom_list)
 
 
@@ -663,7 +702,7 @@ class BoundingBox(object):
 
         """
         Arguments:
-        atom_list - a list of the atoms which comprise the structural unit in
+        atom_list - a list of the Atoms which comprise the StructuralUnit in
         units of Ang
         """
 
@@ -734,25 +773,25 @@ class Interaction:
     """
     Base class for interactions, both bonded, non-bonded and constraints
 
-    Each different interaction should have an Interaction object. This object
-    contains a list of all of the atoms (or atom pairs, triplets or quadruplets,
-    dependeing on the type of interaction) for which this Interaction applies.
-    For example, an Ocoulombic interaction would contain a list of tuples where
-    each tuple contains a different O atom, and a HObond interaction would
-    contain a list of tuples where each tuple contains a different H and O pair.
-    Interaction objects can be sliced to return a sublist of the tuples.
+    Each different type of interaction should have an Interaction object. This
+    object contains a list of all of the atoms (or atom pairs, triplets or
+    quadruplets,  dependeing on the type of interaction) for which this
+    Interaction applies. For example, an Ocoulombic interaction would contain a
+    list of tuples where each tuple contains a different O atom, and a HObond
+    interaction would contain a list of tuples where each tuple contains a
+    different H and O pair. Interaction objects can be sliced to return a
+    sublist of the tuples.
 
-    When atoms are passed to interactions, the interaction is also added to the
-    atoms.
+    When Atoms are passed to Interactions, the Interaction is also added to the
+    Atoms.
 
     Attributes:
-    atom_list - a list of the atoms which possess the interaction
-    function - A class of bond interaction function (e.g. harmonic
-    potential)
-    function_name - the name of the interaction function
-    universe - the universe the interaction belongs to
-    name - the name of the interaction
-    params - bond interaction parameters
+    atom_list - a list of the Atoms to which the Interaction is applied
+    function - A class of InteractionFunction (e.g. HarmonicPotential)
+    function_name - the name of the InteractionFunction
+    universe - the Universe the interaction belongs to
+    name - the name of the Interaction
+    params - Interaction parameters
     """
 
     __metaclass__ = ABCMeta
@@ -981,12 +1020,19 @@ class Interaction:
 
         """
         Returns:
-        Elements sorted alphabetically
+        Elements sorted alphabetically, or None if the Interaction has not been
+        applied to any atoms
         """
 
         return sorted(self.element_list())
 
     def element_tuple(self):
+
+        """
+        Returns:
+        A tuple of element for which the Interaction applies, or None if the
+        Interaction has not been applied to any atoms
+        """
 
         return tuple(self.element_list())
 
@@ -1019,16 +1065,13 @@ class Dispersion(NonBondedInteraction):
 
     """
     A non-bonded dispersive interaction - either LJ or Buckingham
-
-    Requires only a single atom, and can only take non-bonded functions as
-    interaction functions.
     """
 
     def __init__(self, *atom_tuples, **settings):
 
         """
         Arguments:
-        atom_tuples - at Atom object
+        atom_tuples - one or more Atom objects
         """
 
         super(Dispersion, self).__init__(*atom_tuples, **settings)
@@ -1038,16 +1081,13 @@ class Coulombic(NonBondedInteraction):
 
     """
     A non-bonded coulombic interaction - either normal or modified Coulomb
-
-    Requires only a single atom, and can only take non-bonded functions as
-    interaction functions.
     """
 
     def __init__(self, *atom_tuples, **settings):
 
         """
         Arguments:
-        atom - at Atom object
+        atom_tuples - one or more Atom objects
         """
 
         super(Coulombic, self).__init__(*atom_tuples, **settings)
@@ -1064,6 +1104,27 @@ class BondedInteraction(Interaction):
     def __init__(self, *atom_tuples, **settings):
 
         """
+        Arguments:
+        atom_tuples - Either a list of atoms involved in a single interaction,
+        or a list of tuples, where each tuples contains all the Atoms involved
+        in that interaction. For example:
+
+        BondedInteraction(H1, O1, H2)
+
+        should be used for a single BondedInteraction applied to H1, O1 and H2
+        Atoms. Alternatively:
+
+        BondedInteraction((H1, O1, H2), (H3, O2, H4))
+
+        should be used for two BondedInteractions, one applied to H1, O1 and H2
+        Atoms, and the other applied to H3, O2 and H4 Atoms.
+
+        For three or more Atoms the order of the Atoms is important.  For
+        example the above BondedInteractions could bother specify a H-O-H
+        BondAngle, where the following would specify a H-H-O BondAngle:
+
+        BondAngle(H1, H2, O)
+
         Settings:
         n_atoms - an integer specifying the number of atoms to which this
         interaction applies, for example 2 for a Bond.
@@ -1093,15 +1154,10 @@ class BondedInteraction(Interaction):
 class Bond(BondedInteraction):
 
     """
-    A bond between any two atoms. Requires exactly two atoms.
+    A bond between any two atoms. Requires exactly two atoms in each atom_tuple.
     """
 
     def __init__(self, *atom_tuples, **settings):
-
-        """
-        Arguments:
-        atom1, atom2 - at Atom object
-        """
 
         settings['n_atoms'] = (2, )
         super(Bond, self).__init__(*atom_tuples, **settings)
@@ -1113,16 +1169,11 @@ class BondAngle(BondedInteraction):
     A bond angle between any two bonds
 
     Requires either three atoms (rotation around central atom) or four atoms
-    (rotation around central bond - dihedral or torsional rotation)
+    (rotation around central bond - dihedral or torsional rotation) in each
+    atom_tuple.
     """
 
     def __init__(self, *atom_tuples, **settings):
-
-        """
-        Arguments:
-        atom1, atom2, atom3 - an Atom object
-        *atom4 - one or more Atom objects
-        """
 
         settings['n_atoms'] = (3, 4)
         super(BondAngle, self).__init__(*atom_tuples, **settings)
