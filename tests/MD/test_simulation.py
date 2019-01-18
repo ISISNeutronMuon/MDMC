@@ -4,7 +4,6 @@
 
 from collections import Counter
 from copy import deepcopy
-from inspect import getargspec
 from itertools import permutations
 
 import numpy as np
@@ -44,10 +43,13 @@ def water_molecule(atom):
     H1 = atom
     H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
     O = su.Atom('O', position=O_POSITION, mass=O_MASS)
+    H_coulombic = su.Coulombic(H1, H2)
+    O_coulombic = su.Coulombic(O)
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
-                                 interactions=[su.Bond(H1, O), su.Bond(H2, O),
-                                               su.Dispersion(O)], name='water')
-    water_molecule.add_interaction(su.BondAngle(H1, O, H2))
+                                 interactions=[su.Bond((H1, O), (H2, O)),
+                                               su.Dispersion(O),
+                                               su.BondAngle(H1, O, H2)],
+                                 name='water')
     return water_molecule
 
 @pytest.fixture
@@ -71,7 +73,6 @@ def test_create_atom(atom):
     npt.assert_array_equal((0., 0., 0.), atom.velocity)
     assert atom.element == 'H'
     assert atom.mass == 1.008
-    assert su.Coulombic == type(atom.interactions.pop())
 
 
 @pytest.mark.parametrize("unit, changed_attr",
@@ -174,6 +175,7 @@ def test_atom_list(atom):
 
 def test_add_atom(universe, atom):
 
+    atom_coulombic = su.Coulombic(atom)
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
     assert su.Coulombic == type(universe.interactions.pop())
@@ -216,9 +218,13 @@ def test_spce_water_molecule(universe, water_molecule):
     function_names = [function.__class__.__name__ for function in functions]
 
     # Test interaction functions
-    assert Counter(['Coulomb', 'Coulomb', 'Coulomb', 'LennardJones',
-                    'HarmonicPotential', 'HarmonicPotential',
-                    'HarmonicPotential']) == Counter(function_names)
+    assert Counter(function_names) == Counter(['Coulomb',
+                                               'Coulomb',
+                                               'Coulomb',
+                                               'HarmonicPotential',
+                                               'HarmonicPotential',
+                                               'HarmonicPotential',
+                                               'LennardJones'])
 
     # A list of dictionaries with each dictionary containing a Parameter type
     # and the correspoding Parameter value
@@ -328,36 +334,19 @@ def test_atom_add_interaction(atom):
     (this should only be non-bonded interactions, e.g. Coulombic)
     """
 
-    # Atoms are initialized with a single Coulombic interaction
-    assert len(atom.interactions) == 1
-    assert list(atom.interactions)[0].name == 'Coulombic'
+    # Test that if atom.add_interaction called from interaction that the
+    # interaction includes the atom
+    coulombic = su.Coulombic()
+    with pytest.raises(ValueError):
+        atom.add_interaction(coulombic, from_interaction=True)
 
-    atom.add_interaction(su.Dispersion)
-    with pytest.raises(TypeError):
-        atom.add_interaction(su.Bond)
-        atom.add_interaction(su.Bond(atom, deepcopy(atom)))
+    # Test that atom gets added to interaction
+    atom.add_interaction(coulombic)
+    assert atom in coulombic.atoms[-1]
 
-
-def test_molecule_add_interaction():
-
-    """
-    Tests how interactions are added to Molecule objects
-
-    Molecule objects should only be able to add interactions that apply to atoms
-    that are in the molecule
-    """
-
-    H1 = su.Atom('H')
-    H2 = su.Atom('H', position=H2_POSITION)
-    O = su.Atom('O', position=O_POSITION)
-    water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
-                                 interactions=[su.Bond(H1, O), su.Bond(H2, O)],
-                                 name='water')
-    water_molecule.add_interaction(su.Dispersion, element='O')
-    water_molecule.add_interaction(su.BondAngle(H1, O, H2))
-
-    with pytest.raises(TypeError):
-        water_molecule.add_interaction(su.Dispersion)
+    cpy_atom = deepcopy(atom)
+    bond = su.Bond(atom, cpy_atom)
+    assert atom.interaction_pairs[-1] == (bond, (atom, cpy_atom))
 
 
 def test_valid_position(atom):
@@ -405,64 +394,48 @@ def test_molecule_subunit_positions(water_molecule):
         assert all(atom.position == water_molecule.position + rel_pos[atom])
 
 
-def test_copy_interaction(water_SPCE_universe):
-
-    """
-    As __deepcopy__ has been implemented for Interaction, this tests that the
-    correct attributes are copied and others are modified
-
-    This includes when the interaction is copied when an atom is deepcopied
-    """
-
-    inter = list(water_SPCE_universe.interactions)[0]
-    cpy_inter = deepcopy(inter)
-    changed_attr = ['_atom_list']
-    for attr in inter.__dict__:
-        if attr in changed_attr:
-            assert getattr(cpy_inter, attr) != getattr(inter, attr)
-        else:
-            assert np.all(getattr(cpy_inter, attr) == getattr(inter, attr))
-
-    # Test interaction has references to the correct atom if the atom is copied
-    atom = deepcopy(water_SPCE_universe.atom_list[0])
-    for inter in atom.interactions:
-        assert atom in inter.atom_list
-
-
-@pytest.mark.parametrize("BondInt", [su.Bond, su.BondAngle])
-def test_bonded_interaction(BondInt, atom):
+@pytest.mark.parametrize("Int, n_atoms", [(su.Coulombic, [1]),
+                                          (su.Dispersion, [1]),
+                                          (su.Bond, [2]),
+                                          (su.BondAngle, [3, 4])])
+def test_interactions(Int, n_atoms, atom):
 
     """
     Tests that only the correct number of atoms can be used for the interaction
 
-    Tests that atoms added to bonded interactions are unique i.e. there are no
+    Tests that atoms added to interactions are unique i.e. there are no
     duplicates
     """
 
-    # -1 to account for self
-    argspec = getargspec(BondInt.__init__)
-    n_atoms = len(argspec.args) - 1
-    atoms = [atom]
-    for i in range(n_atoms-1):
-        atoms.append(deepcopy(atom))
+    bonded = issubclass(Int, su.BondedInteraction)
 
-    # Test correct number and values of atoms (i.e. no duplicates)
-    valid_bond = BondInt(*atoms)
-
-    # Test incorrect number of atoms
-    with pytest.raises(TypeError):
-        if argspec.varargs:
-            additional_atoms = 2
-        else:
-            additional_atoms = 1
-        for i in range(additional_atoms):
+    for n in n_atoms:
+        atoms = []
+        for _ in range(n):
             atoms.append(deepcopy(atom))
-        invalid_bond = BondInt(*atoms)
 
-    # Test duplicates
+        # Test correct number and values of atoms (i.e. no duplicates)
+        valid_bond = Int(*atoms)
+        assert len(valid_bond.atoms[-1]) == n
+
+    # Test zero atoms
+    empty_bond = Int()
+    assert len(empty_bond.atoms) == 0
+
+    # Test duplicates for bonded interactions
     atoms_duplicate = []
-    for i in range(n_atoms):
+    n_duplicates = max(n_atoms) if bonded else max(n_atoms) + 1
+    for _ in range(n_duplicates):
         atoms_duplicate.append(atom)
 
     with pytest.raises(ValueError):
-        invalid_bond = BondInt(*atoms_duplicate)
+        invalid_bond = Int(*atoms_duplicate)
+
+    # Test incorrect number of atoms for bonded interactions
+    if bonded:
+        for n in [min(n_atoms) - 1, max(n_atoms) + 1]:
+            atoms = []
+            for _ in range(n):
+                atoms.append(deepcopy(atom))
+            with pytest.raises(TypeError):
+                invalid_bond = Int(*atoms)
