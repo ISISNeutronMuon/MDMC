@@ -38,7 +38,7 @@ class Parameter(object):
     dictionary methods.
     """
 
-    def __init__(self, value, name, fixed=False, constraints=None):
+    def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
         """
         Arguments:
@@ -48,10 +48,14 @@ class Parameter(object):
         constraints - 2 element tuple (lower, upper) specifying the closed range
         in which value can be set. Constraints must have the same units as
         value.
+
+        Settings:
+        unit - a string specifying the unit. If this is not provided then the
+        unit will be taken from the object passed as value.
         """
 
         self.name = name
-        self.unit = value.unit
+        self.unit = settings['unit'] if 'unit' in settings else value.unit
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
@@ -68,6 +72,7 @@ class Parameter(object):
         return self._value
 
     @value.setter
+    @unit_decorator(unit=None)
     def value(self, value):
 
         """
@@ -228,11 +233,21 @@ class InteractionFunction(object):
         Arguments:
         names - a list of names of the parameters of the interaction function
         val_dict - a dictionary of name:value pairs. Currently this must be
-        ordered alphabetically.
+        ordered alphabetically. value must either be a object with a value and a
+        unit (e.g. a UnitFloat object), or a (float, str) tuple, where float is
+        the value and str is the unit.  For example, the following are
+        equivalent:
+
+        HarmonicPotential(UnitFloat(1.0, 'Ang'), UnitFloat(2.0, 'kJ'))
+        HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
         """
 
-        self.params = [Parameter(value, name) for name, value
-                       in val_dict.items() if name != 'self']
+        try:
+            self.params = [Parameter(value, name) for name, value
+                           in val_dict.items() if name != 'self']
+        except AttributeError:
+            self.params = [Parameter(value[0], name, unit=value[1]) for
+                           name, value in val_dict.items() if name != 'self']
 
     @property
     def params(self):
