@@ -17,7 +17,8 @@ def unit_decorator(unit):
     to NumPy arrays)
 
     Arguments:
-    unit - string specifying the unit
+    unit - string specifying the unit. If None then self.unit is used, which
+    enables classes to have propertuies with units defined at runtime. 
 
     Example:
 
