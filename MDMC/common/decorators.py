@@ -17,7 +17,8 @@ def unit_decorator(unit):
     to NumPy arrays)
 
     Arguments:
-    unit - string specifying the unit
+    unit - string specifying the unit. If None then self.unit is used, which
+    enables classes to have propertuies with units defined at runtime. 
 
     Example:
 
@@ -34,11 +35,16 @@ def unit_decorator(unit):
     """
 
     def decorator(func):
-        def wrapper(self, value):
+        def unit_creator(self, value, unit):
             try:
                 return func(self, UnitFloat(value, unit))
             except TypeError:
                 return func(self, unit_array(value, unit))
+
+        def wrapper(self, value):
+            if unit is None:
+                return unit_creator(self, value, self.unit)
+            return unit_creator(self, value, unit)
         return wrapper
     return decorator
 
