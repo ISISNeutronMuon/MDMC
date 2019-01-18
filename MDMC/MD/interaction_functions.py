@@ -148,7 +148,8 @@ class Parameter(object):
 
         """
         Returns:
-        The Parameter object that this Parameter is tied to, or None
+        The value of the Parameter object that this Parameter is tied to, or
+        None
         """
 
         if self._tie is None:
@@ -190,18 +191,10 @@ class Parameter(object):
         """
         Returns:
         The Parameter name and a dictionary containing properties and their
-        values, except self.interactions and self.tie
+        values, except self.tie and self.interactions
         """
 
-        # Determine which attributes are in the form of properties
-        properties = getmembers(self.__class__,
-                                lambda o: isinstance(o, property))
-        excluded = ['interactions', 'tie']
-        rpr = {p[0]:getattr(self, p[0]) for p in properties
-               if p[0] not in excluded}
-
-        return '{name} = {rpr}'.format(name=self.name.replace('_', ' '),
-                                       rpr=rpr)
+        return self._get_attr_strings(['tie', 'interactions'])
 
     def __getitem__(self, key):
 
@@ -219,6 +212,17 @@ class Parameter(object):
 
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
+
+    def _get_attr_strings(self, excluded=[]):
+
+        # Determine which attributes are in the form of properties
+        properties = getmembers(self.__class__,
+                                lambda o: isinstance(o, property))
+        rpr = {p[0]:getattr(self, p[0]) for p in properties
+               if p[0] not in excluded}
+
+        return '{name} = {rpr}'.format(name=self.name.replace('_', ' '),
+                                       rpr=rpr)
 
 
 class InteractionFunction(object):

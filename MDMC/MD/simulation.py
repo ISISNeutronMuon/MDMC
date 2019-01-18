@@ -29,6 +29,18 @@ class Universe(object):
     Attributes:
     shape - member of the Shape enum
     dims - array of dimensions
+    interactions - a list of interactions which exist in the universe
+    interaction_pairs - a list of (interaction, atoms) tuples where atoms is a
+    list of atoms to which the interaction applies
+    parameters - a list of interaction potential parameters
+    volume - The volume of the universe
+    element_list - A list of the elements in the universe
+    element_dict - A dictionary of element:atom, where atom is a single atom of
+    the specified element
+    atom_list - a list of the atoms in the universe
+    molecule_list - a list of the molecules in the universe
+    structure_list - a list of the structural units in the universe
+    force_fields - a list of the force fields that apply to the universe
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
@@ -49,7 +61,7 @@ class Universe(object):
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
-        self._interactions = set()
+        self._interaction_pairs = set()
         self.force_fields = force_field
 
     @property
@@ -78,7 +90,29 @@ class Universe(object):
     @property
     def interactions(self):
 
-        return self._interactions
+        """
+        A list of interactions in the universe
+        """
+
+        return [pair[0] for pair in self.interaction_pairs]
+
+    @property
+    def interaction_pairs(self):
+
+        """
+        A list of (interaction, atoms) pairs in the universe, where atoms is a
+        tuple of all atoms for that specific interaction
+
+        Example:
+        For an O Atom with two bonds, one to H1 and one to H2:
+
+        print(O.interaction_pairs)
+        [(Bond, (H1, O)),
+         (Bond, (H2, O))]
+        """
+
+        # self._interaction_pairs is a set to avoid double counting of bonds etc
+        return list(self._interaction_pairs)
 
     @property
     def parameters(self):
@@ -166,7 +200,7 @@ class Universe(object):
         structural_unit.universe = self
         self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
-            self._interactions.update(atom.interactions)
+            self._interaction_pairs.update(atom.interaction_pairs)
         if force_field:
             self.add_force_field(force_field, structural_unit.interactions)
 
@@ -210,11 +244,8 @@ class Universe(object):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structural_unit(structural_unit)
+                self.add_structural_unit(structural_unit, force_field)
                 structural_unit.position = position
-                if force_field:
-                    self.add_force_field(force_field,
-                                         structural_unit.interactions)
             else:
                 new_unit = deepcopy(structural_unit)
                 new_unit.position = position
