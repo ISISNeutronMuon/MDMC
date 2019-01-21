@@ -16,6 +16,7 @@ AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 from lammps import PyLammps
 
 from MDMC.MD.engine_facades.facade import MDEngine
+from MDMC.MD.structural_units import BondedInteraction
 
 
 class LAMMPSEngine(MDEngine):
@@ -129,16 +130,22 @@ class LAMMPSEngine(MDEngine):
         xhi, yhi, zhi = universe.dims
         region_ID = 'universe'
         self.lmp.region(region_ID, 'block', xlo, xhi, ylo, yhi, zlo, zhi,
-                        'box')
+                        units='box')
         n_elements = len(universe.element_dict)
 
         # Determine number of bond and angle types
-        n_bond_types = 0
-        n_angle_types = 0
+        bonded_interaction_types = [i.name for i in universe.interactions
+                                    if issubclass(type(i), BondedInteraction)]
+        n_bond_types = bonded_interaction_types.count('Bond')
+        n_angle_types = bonded_interaction_types.count('BondAngle')
         n_dihedral_types = 0
         n_improper_types = 0
-        self.lmp.create_box(n_elements, region_ID, n_bond_types, n_angle_types,
-                            n_dihedral_types, n_improper_types)
+        self.lmp.create_box(n_elements,
+                            region_ID,
+                            nbondtypes=n_bond_types,
+                            nangletypes=n_angle_types,
+                            ndihedraltypes=n_dihedral_types,
+                            nimpropertypes=n_improper_types)
 
         # Remove when implementation complete
         raise NotImplementedError
