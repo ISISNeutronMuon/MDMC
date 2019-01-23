@@ -19,6 +19,7 @@ by PyLammps is incorrectly set to ndihedraltypes
 AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
+from collections import defaultdict
 from itertools import tee
 
 from lammps import PyLammps
@@ -168,6 +169,32 @@ class LAMMPSEngine(MDEngine):
                             nangletypes=n_angle_types,
                             ndihedraltypes=n_dihedral_types,
                             nimpropertypes=n_improper_types)
+    def _assign_atom_types(self, atoms):
+
+        """
+        Groups the atoms by element and interactions
+
+        Arguments:
+        atoms - a list of atoms
+
+        Returns:
+        dict with a key of ID (unique number) and a value of a list of all
+        atoms that have the same element and interactions
+        """
+
+        atom_types_interactions = defaultdict(list)
+        for atom in atoms:
+            key = (atom.element, ) + tuple(sorted(atom.interactions))
+            atom_types_interactions[key].append(atom)
+
+        type_ID = 1
+        atom_types = {}
+        for atom_type_group in atom_types_interactions.values():
+            atom_types[type_ID] = atom_type_group
+            type_ID += 1
+
+        return atom_types
+
     def _update_charges(self):
 
         for atom, L_atom in self.atom_dict.items():
