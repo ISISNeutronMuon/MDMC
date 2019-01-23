@@ -19,6 +19,8 @@ by PyLammps is incorrectly set to ndihedraltypes
 AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
+from itertools import tee
+
 from lammps import PyLammps
 
 from MDMC.MD.engine_facades.facade import MDEngine
@@ -175,3 +177,63 @@ def convert_units(self):
     """
 
     raise NotImplementedError
+def partition(items, predicate):
+
+    """
+    Partitions an iterable using a predicate
+
+    Arguments:
+    items - an iterable
+    predicate - a predicate that can be applied to items to returned True or
+    False
+
+    Returns:
+    A tuple of (gen_true, gen_false), where gen_true is a generator of all items
+    for which the predicate returned True, and gen_false is a generator of all
+    items for which the predicate returned False
+    """
+
+    a, b = tee((predicate(item), item) for item in items)
+    return ((item for pred, item in a if pred),
+            (item for pred, item in b if not pred))
+
+
+def partition_interactions(interactions, names, unpartitioned=False, lst=False):
+
+    """
+    Partitions an iterable of Interaction objects using a list of Interaction
+    names
+
+    This occurs by using partition to filter out one Interaction type for each
+    loop, so previously identified Interactions are no longer considered.
+
+    Arguments:
+    interactions - an iterable of Interaction objects
+    names - a list of names of Interaction classes
+    unpartitioned - a boolean
+    lst - a boolean
+
+    Returns:
+    A tuple of length len(names) where index n is a generator of all of the
+    Interaction objects which have the name specified by names[n]. For example:
+
+    bonds, angles = partition_interactions(interactions, ['Bond, BondAngle'])
+
+    If unpartitioned=True then a generator containing any Interaction objects
+    that did not have a name in names is returned as an additional item in the
+    tuple.
+    If lst=True then the returned n-length tuple contains lists of all of
+    the Interaction objects which have the name specified by names[n].
+    """
+
+    interaction_lst = [None] * len(names)
+    i = 0
+    for name in names:
+        predicate = lambda x, n=name: x.name == n
+        interaction_lst[i], interactions = partition(interactions, predicate)
+        i += 1
+    if unpartitioned:
+        interaction_lst += [interactions]
+    if lst:
+        interaction_lst = [list(i) for i in interaction_lst]
+    return tuple(interaction_lst)
