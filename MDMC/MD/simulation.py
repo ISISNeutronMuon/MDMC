@@ -111,7 +111,6 @@ class Universe(object):
          (Bond, (H2, O))]
         """
 
-        # self._interaction_pairs is a set to avoid double counting of bonds etc
         return list(self._interaction_pairs)
 
     @property

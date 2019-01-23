@@ -285,6 +285,7 @@ class CompositeStructuralUnit(StructuralUnit):
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
+        Interactions for Atoms may be reordered with respect to initial atoms
 
         Arguments:
         memo - the memo dict
