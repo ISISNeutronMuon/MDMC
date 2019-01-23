@@ -4,6 +4,9 @@ This is a facade to PyLammps (added in 30th-Jul-2016 version), a convenience
 wrapper for the LAMMPS Python interface i.e. where Python is extended with
 LAMMPS.
 
+Defining all interaction types requires that LAMMPS was built with the MOLECULE
+package.
+
 Note: When variables are either passed to or from PyLammps, the ctypes
 conversion can mean that they are unnecessarily cast, particularly from float to
 int.  This can cause issues as LAMMPS requires certain variables, e.g. number of
@@ -26,6 +29,13 @@ class LAMMPSEngine(MDEngine):
 
     """
     Facade for LAMMPS
+
+    Attributes:
+    atom_dict - a dictionary with {MDMC_atom: LAMMPS_atom}, where MDMC_atom is
+    an MDMC Atom object and LAMMPS_atom is the corresponding LAMMPS Atom object
+    atom_types - a dictionary with {type_ID: MDMC_atom_group}, where the type_ID
+    is a unique integer and MDMC_atom_group is a list of atoms which are
+    identical in terms of element and interactions
     """
 
     @property
@@ -125,8 +135,8 @@ class LAMMPSEngine(MDEngine):
         """
         Defines a region and creates a simulation box that fills this region
 
-        region
-        create_box
+        Arguments:
+        universe - a Universe object
         """
 
         xlo = ylo = zlo = 0.
@@ -158,6 +168,10 @@ def convert_units(self):
 
     """
     Converts between MDMC units and LAMMPS real units
+
+    Arguments:
+    value - a float specifying the value in MDMC units
+    unit - the unit of the value
     """
 
     raise NotImplementedError
