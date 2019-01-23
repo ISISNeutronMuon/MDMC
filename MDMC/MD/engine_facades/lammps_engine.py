@@ -72,6 +72,9 @@ class LAMMPSEngine(MDEngine):
         self.atom_dict = {}
         self.atom_types = {}
 
+        self._define_simulation_box(universe)
+        self._build_configuration(universe)
+        self.update_parameters(universe)
         raise NotImplementedError
 
     def setup_simulation(self, **settings):
@@ -181,6 +184,23 @@ class LAMMPSEngine(MDEngine):
                             'extra/dihedral/per/atom', max_dihedrals_per_atom,
                             'extra/improper/per/atom', max_improper_per_atom
                            )
+
+    def _build_configuration(self, universe):
+
+        """
+        Adds atoms to LAMMPS
+
+        Arguments:
+        universe - a Universe object
+        """
+
+        self.atom_types = self._assign_atom_types(universe.atom_list)
+
+        for type_ID, atom_type_group in self.atom_types.items():
+            self.lmp.mass(type_ID, atom_type_group[0].mass)
+            for atom in atom_type_group:
+                self.lmp.create_atoms(type_ID, 'single', *atom.position)
+                self.atom_dict[atom] = self.lmp.atoms[self.lmp.atoms.natoms - 1]
 
     def _max_n_interaction(self, atoms, name):
 
