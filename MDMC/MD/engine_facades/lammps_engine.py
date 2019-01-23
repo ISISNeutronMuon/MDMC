@@ -59,6 +59,8 @@ class LAMMPSEngine(MDEngine):
         bonded interactions
         """
 
+        self.universe = universe
+
         # Create a PyLammps wrapper to capture LAMMPS output
         self.lmp = PyLammps()
 
@@ -66,6 +68,8 @@ class LAMMPSEngine(MDEngine):
         self.lmp.atom_style(settings.get('atom_style', 'full'))
 
         self._define_simulation_box(universe)
+        self.atom_dict = {}
+        self.atom_types = {}
 
         raise NotImplementedError
 
