@@ -248,10 +248,12 @@ class InteractionFunction(object):
 
         try:
             self.params = [Parameter(value, name) for name, value
-                           in val_dict.items() if name != 'self']
+                           in val_dict.items()
+                           if name not in ['self','settings']]
         except AttributeError:
             self.params = [Parameter(value[0], name, unit=value[1]) for
-                           name, value in val_dict.items() if name != 'self']
+                           name, value in val_dict.items()
+                           if name not in ['self', 'settings']]
 
     @property
     def params(self):
@@ -321,15 +323,24 @@ class LennardJones(InteractionFunction):
     Dispersive Lennard-Jones interaction
     """
 
-    def __init__(self, epsilon, sigma):
+    def __init__(self, epsilon, sigma, **settings):
 
         """
         Arguments:
         epsilon - in units of kJ mol^-1
         sigma - in units of Ang
+
+        Settings:
+        cutoff - a float specifying the distance in Ang at which the potential
+        is cutoff
+        long_range_solver - a string specifying a long range solver, either
+        'PPPM', 'PME', or 'E', for Particle-Particle Particle-Mesh, Particle
+        Mesh Ewald, or Ewald solvers
         """
 
         super(self.__class__, self).__init__(locals())
+        self.cutoff = settings.get('cutoff', None)
+        self.solver = settings.get('long_range_solver', None)
 
 
 class Coulomb(InteractionFunction):
