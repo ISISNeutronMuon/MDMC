@@ -163,12 +163,40 @@ class LAMMPSEngine(MDEngine):
         n_angle_types = bonded_interaction_types.count('BondAngle')
         n_dihedral_types = 0
         n_improper_types = 0
+
+        # Determine max number of bonds and angles per atom
+        atoms = universe.atom_list
+        max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
+        max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
+        max_dihedrals_per_atom = 0
+        max_improper_per_atom = 0
         self.lmp.create_box(n_elements,
                             region_ID,
-                            nbondtypes=n_bond_types,
-                            nangletypes=n_angle_types,
-                            ndihedraltypes=n_dihedral_types,
-                            nimpropertypes=n_improper_types)
+                            'bond/types', n_bond_types,
+                            'angle/types', n_angle_types,
+                            'dihedral/types', n_dihedral_types,
+                            'improper/types', n_improper_types,
+                            'extra/bond/per/atom', max_bonds_per_atom,
+                            'extra/angle/per/atom', max_angles_per_atom,
+                            'extra/dihedral/per/atom', max_dihedrals_per_atom,
+                            'extra/improper/per/atom', max_improper_per_atom
+                           )
+
+    def _max_n_interaction(self, atoms, name):
+
+        """
+        Arguments:
+        atoms - a list of Atom objects
+        name - a string specifying an Interaction type, for example 'Bond'
+
+        Returns:
+        int specifying the maximum number of interactions with a given name that
+        any atom possesses
+        """
+
+        return max([len(filter(lambda i: i.name == 'Bond', atom.interactions))
+                    for atom in atoms])
+
     def _assign_atom_types(self, atoms):
 
         """
