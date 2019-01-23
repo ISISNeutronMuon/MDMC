@@ -127,6 +127,9 @@ class LAMMPSEngine(MDEngine):
     def update_parameters(self):
 
         raise NotImplementedError
+        self._update_charges(self.universe)
+        self._update_bonds(self.universe)
+        self._update_angles(self.universe)
 
     def save_config(self):
 
@@ -165,8 +168,44 @@ class LAMMPSEngine(MDEngine):
                             nangletypes=n_angle_types,
                             ndihedraltypes=n_dihedral_types,
                             nimpropertypes=n_improper_types)
+    def _update_charges(self):
 
-        # Remove when implementation complete
+        for atom, L_atom in self.atom_dict.items():
+            self.lmp.set('atom',
+                         L_atom.id,
+                         convert_units(atom.charge, atom.charge.unit))
+
+    def _update_bonds(self, bonds, coeffs=False):
+
+        """
+        Updates bonds in LAMMPS
+
+        Arguments:
+        bonds - a list of bonds
+        coeffs - a boolean specifying if the bond_coeffs are created
+        """
+
+        special = 'no'
+        for ID, bond in enumerate(bonds, start=1):
+            if coeffs:
+                self.lmp.bond_coeff(ID, *parse_bond_coefficients(
+                    parse_bonded_styles(bond.function_name), bond.parameters))
+
+            # Special triggers the internal interaction list in LAMMPS
+            # This must at least occur at the end, and is an expensive
+            # operation
+            if bond is bonds[-1]:
+                special = 'yes'
+            for atom_tpl in bond.atoms:
+                atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
+                self.lmp.create_bonds('single/bond',
+                                      ID,
+                                      *atom_IDs,
+                                      'special',
+                                      special)
+
+    def _update_angles(self, atoms):
+
         raise NotImplementedError
 
 
