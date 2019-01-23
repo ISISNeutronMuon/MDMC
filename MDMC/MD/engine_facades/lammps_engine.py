@@ -209,7 +209,7 @@ class LAMMPSEngine(MDEngine):
         raise NotImplementedError
 
 
-def convert_units(self):
+def convert_units(value, unit):
 
     """
     Converts between MDMC units and LAMMPS real units
