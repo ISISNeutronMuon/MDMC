@@ -220,6 +220,52 @@ def convert_units(value, unit):
     """
 
     raise NotImplementedError
+
+
+def parse_bonded_styles(style):
+
+    """
+    Converts MDMC InteractionFunction names for BondedInteractions to LAMMPS
+    bond styles
+
+    Arguments:
+    style - a string specifying the MDMC InteractionFunction name
+
+    Returns:
+    a string with the corresponding LAMMPS bond style
+    """
+
+    if style == 'HarmonicPotential':
+        return 'harmonic'
+    else:
+        raise NotImplementedError('This InteractionFunction has not been'
+                                  ' implemented in the LAMMPS facade')
+
+
+def parse_bond_coefficients(style, parameters):
+
+    """
+    Orders MDMC Parameters for input to LAMMPS bond_coeff
+
+    Arguments:
+    style - a string specifying the MDMC InteractionFunction name
+    parameters - a NumPy array of the parameters, as is stored in
+    InteractionFunction.params
+
+    Returns:
+    A list of style and parameters converted to the input format for LAMMPS
+    bond_coeff
+    """
+
+    parameters = {p.name:p.value for p in parameters}
+
+    if style == 'harmonic':
+        ordered_parameters = [parameters['potential_strength'],
+                              parameters['equilibrium_state']]
+
+    return [style] + ordered_parameters
+
+
 def partition(items, predicate):
 
     """
