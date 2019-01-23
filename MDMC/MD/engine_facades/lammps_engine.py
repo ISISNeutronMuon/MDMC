@@ -68,12 +68,12 @@ class LAMMPSEngine(MDEngine):
         self.lmp.units('real')
         self.lmp.atom_style(settings.get('atom_style', 'full'))
 
-        self._define_simulation_box(universe)
         self.atom_dict = {}
         self.atom_types = {}
 
         self._define_simulation_box(universe)
         self._build_configuration(universe)
+        self._add_topology(universe)
         self.update_parameters(universe)
         raise NotImplementedError
 
@@ -130,7 +130,6 @@ class LAMMPSEngine(MDEngine):
 
     def update_parameters(self):
 
-        raise NotImplementedError
         self._update_charges(self.universe)
         self._update_bonds(self.universe)
         self._update_angles(self.universe)
@@ -242,6 +241,42 @@ class LAMMPSEngine(MDEngine):
             type_ID += 1
 
         return atom_types
+
+    def _add_topology(self, universe):
+
+        IMPERR = ('This interaction type has not been implemented in the LAMMPS'
+                  ' facade')
+
+        # Coulombic interactions are disregarded as these are set in
+        # self._update_charges
+        bonds, angles, disps, _, others = partition_interactions(
+            set(universe.interactions),
+            ['Bond', 'BondAngle', 'Dispersion', 'Coulombic'],
+            unpartitioned=True,
+            lst=True)
+
+        if others:
+            raise NotImplementedError('Only bond, angle, dispersion and'
+                                      ' coulombic interactions are implemented'
+                                      ' in LAMMPS facade')
+
+        if disps:
+            self.lmp.pair_style('hybrid',
+                                *)
+
+        if bonds:
+            self.lmp.bond_style('hybrid',
+                                *[parse_bonded_styles(b.function_name)
+                                  for b in bonds])
+            self._update_bonds(bonds)
+
+        if angles:
+            self.lmp.angle_style('hybrid',
+                                 *[parse_bonded_styles(a.function_name)
+                                   for a in angles])
+            self._update_angles(angles)
+
+
 
     def _update_charges(self):
 
