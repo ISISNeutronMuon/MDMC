@@ -264,6 +264,7 @@ class LAMMPSEngine(MDEngine):
             self.lmp.pair_style('hybrid',
                                 *)
 
+
         if bonds:
             self.lmp.bond_style('hybrid',
                                 *[parse_bonded_styles(b.function_name)
@@ -284,6 +285,12 @@ class LAMMPSEngine(MDEngine):
             self.lmp.set('atom',
                          L_atom.id,
                          convert_units(atom.charge, atom.charge.unit))
+
+    def _update_dispersion(self, bonds):
+
+
+        # TODO: Consider if it's useful to start by explictly setting all interaction pairs to 0
+        raise NotImplementedError
 
     def _update_bonds(self, bonds, coeffs=False):
 
