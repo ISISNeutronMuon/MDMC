@@ -4,8 +4,9 @@
 
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:01:04"""
 
+from collections import defaultdict
 from copy import deepcopy
-import itertools
+from itertools import product, ifilterfalse, count
 
 from enum import Enum
 import numpy as np
@@ -57,6 +58,8 @@ class Universe(object):
 
         self.shape = shape
         self.dims = dimensions
+        self._atom_types = defaultdict(list)
+        self._atom_type_interactions = {}
         if structures:
             self.configuration = Configuration(structures)
         else:
@@ -190,6 +193,63 @@ class Universe(object):
         else:
             self._force_fields = None
 
+    @property
+    def atom_types(self):
+
+        return self._atom_types
+
+    @property
+    def atom_type_interactions(self):
+
+        return self._atom_type_interactions
+
+    def _update_atom_types(self, atom):
+
+        """
+        Adds the atom to atom_types dictionary
+
+        Arguments:
+        atom - an Atom object to add to the atom_types dictionary
+        """
+
+        inter_key = (atom.element, ) + tuple(sorted(atom.interactions))
+        if atom.atom_type:
+            atom_type = atom.atom_type
+            if atom_type not in self.atom_types:
+                self._update_atom_type_interactions(inter_key, atom_type)
+        else:
+            try:
+                atom_type = self.atom_type_interactions[inter_key]
+            except KeyError:
+                # Get lowest missing interger in self.atom_type_interactions
+                atom_type = next(ifilterfalse(set(
+                    self.atom_type_interactions.values()).__contains__,
+                                              count(1)))
+                self._update_atom_type_interactions(inter_key, atom_type)
+            atom.atom_type = atom_type
+        self._atom_types[atom_type].append(atom)
+
+
+    def _update_atom_type_interactions(self, key, atom_type):
+
+        """
+        Adds a new key:atom_type to atom_type_interactions, if the key does not
+        already exist
+
+        Arguments:
+        key - a tuple of (element, *interactions), where element is a string
+        specifying the atomic element, and *interactions is one or more
+        Interaction objects
+        atom_type - an integer specifying the atom type
+        """
+
+        if key not in self.atom_type_interactions:
+            self.atom_type_interactions[key] = atom_type
+        else:
+            raise TypeError('assignments cannot be made to'
+                            ' atom_type_interactions keys which already possess'
+                            ' values')
+
     def add_structural_unit(self, structural_unit, force_field=None):
 
         """
@@ -201,6 +261,7 @@ class Universe(object):
         self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
             self._interaction_pairs.update(atom.interaction_pairs)
+            self._update_atom_types(atom)
         if force_field:
             self.add_force_field(force_field, structural_unit.interactions)
 
@@ -238,7 +299,7 @@ class Universe(object):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
                                          endpoint=False))
 
-        positions = sorted(list(itertools.product(*positions)))
+        positions = sorted(list(product(*positions)))
 
         # Add the first structural unit and force field (if specified) before
         # copying the structural unit to fill the universe
