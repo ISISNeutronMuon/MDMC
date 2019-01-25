@@ -485,6 +485,18 @@ class Atom(StructuralUnit):
         self._mass = mass
 
     @property
+    def atom_type(self):
+
+        return self._atom_type
+
+    @atom_type.setter
+    def atom_type(self, value):
+
+        if self._atom_type:
+            raise AttributeError('Can\'t change atom_type once it has been set')
+        self._atom_type = value
+
+    @property
     def interaction_pairs(self):
 
         """
