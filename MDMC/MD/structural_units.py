@@ -386,7 +386,11 @@ class Atom(StructuralUnit):
         super(Atom, self).__init__(position, velocity, name=element)
         self._interaction_pairs = []
         self.element = element
-        self.mass = settings.get('mass', atom_properties.MASS[self.element])
+        try:
+            self.mass = settings['mass']
+        except KeyError:
+            self.mass = atom_properties.MASS[self.element]
+        self._atom_type = settings.get('atom_type', None)
 
     def __deepcopy__(self, memo):
 
