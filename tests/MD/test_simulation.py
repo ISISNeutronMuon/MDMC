@@ -36,7 +36,6 @@ def atom():
 
     return su.Atom('H', mass=H_MASS)
 
-# TODO: Combine with water box defined in test_structural_units
 @pytest.fixture
 def water_molecule(atom):
 
@@ -171,6 +170,19 @@ def test_top_level_structure(water_molecule):
 def test_atom_list(atom):
 
     assert atom in atom.atom_list
+
+
+def test_atom_type(atom):
+
+    """
+    Tests that atom_type can only be set if it has not previously been set
+    """
+
+    assert atom.atom_type is None
+    atom.atom_type = 1
+    assert atom.atom_type == 1
+    with pytest.raises(AttributeError):
+        atom.atom_type = 2
 
 
 def test_add_atom(universe, atom):
@@ -439,3 +451,24 @@ def test_interactions(Int, n_atoms, atom):
                 atoms.append(deepcopy(atom))
             with pytest.raises(TypeError):
                 invalid_bond = Int(*atoms)
+
+
+def test_universe_atom_types(water_molecule, universe):
+
+    """
+    Tests that Universe.atom_types is set correctly when atoms are added and
+    when interactions are added to the atoms
+    """
+
+    C = su.Atom('C', mass=12.0107, atom_type=2)
+    assert C.atom_type == 2
+    C_coulombic = su.Coulombic(C)
+    H1, H2, O = water_molecule.atom_list
+
+    assert len(universe.atom_types) == 0
+    universe.add_structural_unit(C)
+    universe.add_structural_unit(water_molecule)
+
+    for atom, atom_type in {C:2, H1:1, H2:1, O:3}.items():
+        assert atom.atom_type == atom_type
+        assert atom in universe.atom_types[atom_type]
