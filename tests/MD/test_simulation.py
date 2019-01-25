@@ -187,9 +187,20 @@ def test_atom_type(atom):
 
 def test_add_atom(universe, atom):
 
+    """
+    Tests that atom is added to Universe.atom_list
+
+    Tests that both Universe.atom_types and Atom.atom_type are updated
+
+    Tests that atom interactions are added to Universe.interactions
+    """
+
     atom_coulombic = su.Coulombic(atom)
+    assert len(universe.atom_types) == 0
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
+    assert atom.atom_type == 1
+    assert atom in universe.atom_types[1]
     assert su.Coulombic == type(universe.interactions.pop())
 
 
