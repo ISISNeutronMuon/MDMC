@@ -1046,14 +1046,61 @@ class Dispersion(NonBondedInteraction):
     A non-bonded dispersive interaction - either LJ or Buckingham
     """
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, universe, *atom_types, **settings):
 
         """
         Arguments:
-        atom_tuples - one or more Atom objects
+        universe - a Universe object
+        atom_types - one or two tuples containing one or more integers that
         """
 
-        super(Dispersion, self).__init__(*atom_tuples, **settings)
+        super(Dispersion, self).__init__(universe, **settings)
+        # Add tuples to short format of atom_types
+        if isinstance(atom_types[0], int):
+            if len(atom_types) == 1:
+                atom_types = ((atom_types[0], ), (atom_types[0], ))
+            elif len(atom_types) == 2:
+                atom_types = ((atom_types[0], ), (atom_types[1], ))
+        self._atom_types = atom_types
+        self._atoms = [tuple([atom for atom_type in tpl
+                              for atom in self.universe.atom_types[atom_type]])
+                       for tpl in self.atom_types]
+        for tpl in self.atoms:
+            for atom in tpl:
+                atom.add_interaction(self)
+
+    @property
+    def atom_types(self):
+
+        return self._atom_types
+
+    @property
+    def atoms(self):
+
+        """
+        Returns:
+        A list of two tuples, where each tuple contains a list atoms. Every atom
+        in the first tuple has a dispersion interaction with every atom in the
+        second tuple (excluding self interactions). This is the complete list of
+        possible dispersion interactions, i.e. it is only exactly correct if no
+        cutoff has been specified.
+        """
+
+        return self._atoms
+
+    def element_list(self):
+
+        """
+        Returns:
+        A list of elements for which the Interaction applies
+        """
+
+        # Each value in universe.atom_types dictionary contain list of atoms
+        # with same elements, so use index 0
+        # This is determined for all atom types in Dispersion interaction
+        return [self.universe.atom_types[atom_type][0].element
+                for tpl in self.atom_types
+                for atom_type in tpl]
 
 
 class Coulombic(NonBondedInteraction):
