@@ -928,13 +928,11 @@ class Interaction:
                 '  function: {1},'
                 '  parameters: {2},'
                 '  universe: {3},'
-                '  elements: {4},'
-                '  atoms: {5}'.format(self.name,
-                                      self.function,
-                                      params,
-                                      self.universe,
-                                      self.element_list(),
-                                      self.atoms))
+                '  elements: {4},'.format(self.name,
+                                          self.function,
+                                          params,
+                                          self.universe,
+                                          self.element_list()))
 
     def __str__(self):
 
