@@ -1126,6 +1126,36 @@ class Coulombic(NonBondedInteraction):
 
         super(Coulombic, self).__init__(universe, **settings)
 
+    def __len__(self):
+
+        """
+        Returns:
+        The number of interactions of this type that have been set
+        """
+
+        raise NotImplementedError
+
+    def __getitem__(self, key):
+
+        """
+        Returns:
+        The tuple of atoms at the specified index.  For a single index (as
+        opposed to a slice) this is a group of atoms for which there is one
+        instance of this interaction.
+        """
+
+        raise NotImplementedError
+
+    @property
+    def atoms(self):
+
+        raise NotImplementedError
+
+    @atoms.setter
+    def atoms(self, value):
+
+        raise NotImplementedError
+
 def _add_atom_types(self, *atom_types):
 
     """
