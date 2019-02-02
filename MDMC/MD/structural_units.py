@@ -857,7 +857,7 @@ class Interaction:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, **settings):
 
         """
         Arguments:
