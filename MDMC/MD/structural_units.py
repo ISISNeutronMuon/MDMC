@@ -970,24 +970,6 @@ class Interaction:
         except AttributeError:
             return None
 
-    def add_atoms(self, *atoms, **settings):
-
-        """
-        Add atoms which are all involved in one example of this interaction
-
-        Arguments:
-        *atoms - one or more Atom objects
-
-        Settings:
-        from_structure - a boolean specifying if this method has been called
-        from a structural unit
-        """
-
-        self._check_duplicates(atoms, 'Each atom in an atom tuple must be'
-                                      ' unique')
-        if atoms in self.atoms:
-            raise ValueError('This interaction has already been applied to this'
-                             ' atom(s)')
     @abstractproperty
     def universe(self):
 
@@ -1027,10 +1009,6 @@ class Interaction:
 
         for atom in atoms:
             atom.add_interaction(self, from_interaction=True)
-
-    def _check_duplicates(self, struct, err_msg):
-        if len(set(struct)) != len(struct):
-            raise ValueError(err_msg)
 
 
 class NonBondedInteraction(Interaction):
