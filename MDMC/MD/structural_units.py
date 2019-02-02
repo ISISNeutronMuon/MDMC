@@ -1024,6 +1024,10 @@ class NonBondedInteraction(Interaction):
         self.universe = universe
         super(NonBondedInteraction, self).__init__(**settings)
 
+    @abstractproperty
+    def atom_types(self):
+
+        raise NotImplementedError
 
 class Dispersion(NonBondedInteraction):
 
