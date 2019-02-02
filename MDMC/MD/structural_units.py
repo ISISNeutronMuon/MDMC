@@ -1029,6 +1029,17 @@ class NonBondedInteraction(Interaction):
 
         raise NotImplementedError
 
+    @property
+    def universe(self):
+
+        return self._universe()
+
+    @universe.setter
+    def universe(self, value):
+
+        self._universe = weakref.ref(value)
+
+
 class Dispersion(NonBondedInteraction):
 
     """
