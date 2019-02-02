@@ -895,9 +895,7 @@ class Interaction:
         function - a class of bond interaction function (e.g. HarmonicPotential)
         """
 
-        self.atoms = list(atom_tuples)
         self.function = settings.get('function', None)
-        self.universe = None
         self.name = self.__class__.__name__
 
     def __deepcopy__(self, memo={}):
