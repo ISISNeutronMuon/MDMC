@@ -1244,7 +1244,9 @@ class BondedInteraction(Interaction):
             # atoms
             for tpl in atom_tuples:
                 self._validate_atoms(tpl, settings.get('n_atoms'))
-        super(BondedInteraction, self).__init__(*atom_tuples, **settings)
+        self.atoms = list(atom_tuples)
+        super(BondedInteraction, self).__init__(**settings)
+
     def __len__(self):
 
         """
@@ -1264,6 +1266,68 @@ class BondedInteraction(Interaction):
         """
 
         return self.atoms[key]
+
+    @property
+    def atoms(self):
+
+        return self._atoms
+
+    @atoms.setter
+    def atoms(self, atom_tuples):
+
+        """
+        Arugments:
+        atom_tuples - a list of tuples containing one or more atoms.  Each tuple
+        contains all of the atoms involved in one example of the interaction.
+        For example a BondAngle interaction each tuple would contain 3 or 4
+        atoms.
+        """
+
+        # Check for duplicate tuples in list
+        self._check_duplicates(atom_tuples, 'Each tuple in the list of atom'
+                                            ' tuples must be unique')
+        # Check for duplicate atoms in each tuple
+        try:
+            for tpl in atom_tuples:
+                self._check_duplicates(tpl, 'Each atom in an atom tuple must be'
+                                            ' unique')
+        # try/except accounts for single atom passed rather than (atom,) tuple
+        # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
+        except TypeError:
+            if len(atom_tuples) == 1 and isinstance(atom_tuples[0], Atom):
+                atom_tuples = [(atom_tuples[0],)]
+            else:
+                raise TypeError('atom_tuples must be [(atom, ...), ...]')
+        # Only assign interaction to atoms after these validation steps
+        self._atoms = []
+        for tpl in atom_tuples:
+            # Each tuple is appended individually so that it can be easily added
+            # to ._bonded_interaction_pairs for every atom in the tuple
+            self._atoms.append(tpl)
+            self._add_interaction_atoms(tpl)
+
+    @property
+    def universe(self):
+
+        try:
+            return self.atoms[0][0].universe
+        except IndexError:
+            return None
+
+    def element_list(self):
+
+        """
+        Returns:
+        A list of elements for which the Interaction applies or None if the
+        Interaction has not been applied to any atoms
+        """
+
+        try:
+            # Each tuple should contain the same elements, so first tuple's used
+            return [atom.element for atom in self.atoms[0]]
+        except (AttributeError, IndexError):
+            return None
+
     def _validate_atoms(self, atoms, n_atoms):
 
         """
