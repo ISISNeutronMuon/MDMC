@@ -919,35 +919,6 @@ class Interaction:
 
         self.__deepcopy__()
 
-    def __len__(self):
-
-        """
-        Returns:
-        The number of interactions of this type that have been set
-        """
-
-        return len(self.atoms)
-
-    def __getitem__(self, key):
-
-        """
-        Returns:
-        The tuple of atoms at the specified index.  For a single index (as
-        opposed to a slice) this is a group of atoms for which there is one
-        instance of this interaction.
-        """
-
-        return self.atoms[key]
-
-    # Both of these need to be modified so that the atoms add the interaction
-    # def __setitem__(self, key, value):
-    #
-    #     self._atoms[key] = value
-    #
-    # def __delitem__(self, key):
-    #
-    #     del self._atoms[key]
-
     def __repr__(self):
 
         try:
@@ -1199,7 +1170,25 @@ class BondedInteraction(Interaction):
             for tpl in atom_tuples:
                 self._validate_atoms(tpl, settings.get('n_atoms'))
         super(BondedInteraction, self).__init__(*atom_tuples, **settings)
+    def __len__(self):
 
+        """
+        Returns:
+        The number of interactions of this type that have been set
+        """
+
+        return len(self.atoms)
+
+    def __getitem__(self, key):
+
+        """
+        Returns:
+        The tuple of atoms at the specified index.  For a single index (as
+        opposed to a slice) this is a group of atoms for which there is one
+        instance of this interaction.
+        """
+
+        return self.atoms[key]
     def _validate_atoms(self, atoms, n_atoms):
 
         """
