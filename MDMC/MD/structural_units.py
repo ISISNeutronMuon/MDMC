@@ -32,9 +32,9 @@ class StructuralUnit:
     parent - the StructuralUnit to which this unit belongs
     atom_list - a list of atoms belonging to the StructuralUnit
     interactions - a list of interactions acting on the StructuralUnit
-    interaction_pairs - a list of (interaction, atoms) tuples where atoms is a
-    list of atoms to which the interaction applies. At least one of these atoms
-    belongs to the StructuralUnit
+    bonded_interaction_pairs - a list of (interaction, atoms) tuples where atoms
+    is a list of atoms to which the bonded interaction applies. At least one of
+    these atoms belongs to the StructuralUnit
     """
 
     __metaclass__ = ABCMeta
@@ -200,7 +200,7 @@ class StructuralUnit:
         Highest level StructuralUnit of which it is a member
         """
 
-        if issubclass(type(self.parent),StructuralUnit) \
+        if issubclass(type(self.parent), StructuralUnit) \
         and self.parent is not self:
             return self.parent.top_level_structure()
         else:
