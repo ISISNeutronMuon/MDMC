@@ -1021,9 +1021,8 @@ class NonBondedInteraction(Interaction):
 
     def __init__(self, universe, *atom_types, **settings):
 
-        if atom_tuples and isinstance(atom_tuples[0], Atom):
-            atom_tuples = tuple((atom, ) for atom in atom_tuples)
-        super(NonBondedInteraction, self).__init__(*atom_tuples, **settings)
+        self.universe = universe
+        super(NonBondedInteraction, self).__init__(**settings)
 
 
 class Dispersion(NonBondedInteraction):
