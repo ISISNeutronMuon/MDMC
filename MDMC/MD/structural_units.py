@@ -1019,7 +1019,7 @@ class NonBondedInteraction(Interaction):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, universe, *atom_types, **settings):
 
         if atom_tuples and isinstance(atom_tuples[0], Atom):
             atom_tuples = tuple((atom, ) for atom in atom_tuples)
