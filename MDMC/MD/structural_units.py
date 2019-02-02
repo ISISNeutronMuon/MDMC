@@ -8,6 +8,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 from abc import ABCMeta, abstractproperty
 from copy import deepcopy
 from itertools import count
+from types import MethodType
 import weakref
 
 import numpy as np
@@ -1109,14 +1110,45 @@ class Coulombic(NonBondedInteraction):
     A non-bonded coulombic interaction - either normal or modified Coulomb
     """
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, universe=None, *atom_types, **settings):
 
         """
         Arguments:
-        atom_tuples - one or more Atom objects
+        atom_types - one or more integers specifying atom_types that exist in
+        the universe
+        atoms - one or more Atom objects
         """
 
-        super(Coulombic, self).__init__(*atom_tuples, **settings)
+        if atom_types:
+            self.add_atom_types = MethodType(_add_atom_types, self)
+        elif settings['atoms']:
+            self.add_atoms = MethodType(_add_atoms, self)
+
+        super(Coulombic, self).__init__(universe, **settings)
+
+def _add_atom_types(self, *atom_types):
+
+    """
+    Function for dynamically creating an add_atom_types method in Coulombic
+
+    Arguments:
+    atom_types - one or more integers specifying atom_types that exist in
+    universe of the Coulombic interaction
+    """
+
+    self._atom_types.append(*atom_types)
+
+
+def _add_atoms(self, *atoms):
+
+    """
+    Function for dynamically creating an add_atoms method in Coulombic
+
+    Arguments:
+    atoms - one or more atoms
+    """
+
+    self._atoms.append(*atoms)
 
 
 class BondedInteraction(Interaction):
