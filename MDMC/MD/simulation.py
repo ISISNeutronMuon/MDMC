@@ -31,8 +31,8 @@ class Universe(object):
     shape - member of the Shape enum
     dims - array of dimensions
     interactions - a list of interactions which exist in the universe
-    interaction_pairs - a list of (interaction, atoms) tuples where atoms is a
-    list of atoms to which the interaction applies
+    bonded_interaction_pairs - a list of (interaction, atoms) tuples where atoms
+    is a list of atoms to which the bonded interaction applies
     parameters - a list of interaction potential parameters
     volume - The volume of the universe
     element_list - A list of the elements in the universe
@@ -64,7 +64,8 @@ class Universe(object):
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
-        self._interaction_pairs = set()
+        self._bonded_interaction_pairs = set()
+        self._nonbonded_interactions = set()
         self.force_fields = force_field
 
     @property
@@ -97,10 +98,28 @@ class Universe(object):
         A list of interactions in the universe
         """
 
-        return [pair[0] for pair in self.interaction_pairs]
+        return self.bonded_interactions + self.nonbonded_interactions
 
     @property
-    def interaction_pairs(self):
+    def bonded_interactions(self):
+
+        """
+        A list of the bonded interactions in the universe
+        """
+
+        return [pair[0] for pair in self.bonded_interaction_pairs]
+
+    @property
+    def nonbonded_interactions(self):
+
+        """
+        A list of the nonbonded interactions in the universe
+        """
+
+        return list(self._nonbonded_interactions)
+
+    @property
+    def bonded_interaction_pairs(self):
 
         """
         A list of (interaction, atoms) pairs in the universe, where atoms is a
@@ -109,13 +128,14 @@ class Universe(object):
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
-        # self._interaction_pairs is a set to avoid double counting of bonds etc
-        return list(self._interaction_pairs)
+        # bonded_interaction_pairs is a set to avoid double counting of
+        # interactions
+        return list(self._bonded_interaction_pairs)
 
     @property
     def parameters(self):
@@ -260,8 +280,10 @@ class Universe(object):
         structural_unit.universe = self
         self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
-            self._interaction_pairs.update(atom.interaction_pairs)
+            self.add_bonded_interaction_pairs(atom.bonded_interaction_pairs)
+            self.add_nonbonded_interaction(atom.nonbonded_interactions)
             self._update_atom_types(atom)
+
         if force_field:
             self.add_force_field(force_field, structural_unit.interactions)
 
@@ -318,6 +340,7 @@ class Universe(object):
         Adds a force field to *interactions.  If no interactions are
         passed, the force field is applied to all interactions in the universe.
 
+        Arguments:
         force_field - the ForceField to be the interactions, or to all the
         interactions in the universe
         interactions - any objects with base class Interaction
@@ -329,6 +352,29 @@ class Universe(object):
             self.force_fields.parameterize_interactions(self.interactions)
         else:
             self.force_fields.parameterize_interactions(*interactions)
+
+    def add_bonded_interaction_pairs(self, bonded_interaction_pairs):
+
+        """
+        Adds one or more interaction pairs to the universe
+
+        Arguments:
+        bonded_interaction_pairs - A list of (interaction, atoms) pairs, where
+        atoms is a tuple of all atoms for that specific bonded interaction
+        """
+
+        self._bonded_interaction_pairs.update(bonded_interaction_pairs)
+
+    def add_nonbonded_interaction(self, nonbonded_interactions):
+
+        """
+        Adds one or more nonbonded interactions to the universe
+
+        Arguments:
+        nonbonded_interactions - a list of nonbonded interactions
+        """
+
+        self._nonbonded_interactions.update(nonbonded_interactions)
 
 
 def _primitive_cubic(dimensions, number):

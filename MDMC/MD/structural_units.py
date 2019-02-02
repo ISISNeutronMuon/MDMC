@@ -153,24 +153,42 @@ class StructuralUnit:
         A list of the interactions acting on the StructuralUnit
         """
 
-        return [pair[0] for pair in self.interaction_pairs]
+        return self.bonded_interactions + self.nonbonded_interactions
+
+    @property
+    def bonded_interactions(self):
+
+        """
+        A list of the bonded interactions acting on the StructuralUnit
+        """
+
+        return [pair[0] for pair in self.bonded_interaction_pairs]
 
     @abstractproperty
-    def interaction_pairs(self):
+    def nonbonded_interactions(self):
+
+        """
+        A list of the nonbonded interactions acting on the StructuralUnit
+        """
+
+        raise NotImplementedError
+
+    @abstractproperty
+    def bonded_interaction_pairs(self):
 
         """
         A list of (interaction, atoms) pairs acting on the StructuralUnit,
-        where atoms is a tuple of all atoms for that specific interaction
+        where atoms is a tuple of all atoms for that specific bonded interaction
 
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     def structure_type(self):
@@ -296,7 +314,8 @@ class CompositeStructuralUnit(StructuralUnit):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(unit, k, self._generate_ID())
-            elif k == '_interaction_pairs':
+            elif (k == '_bonded_interaction_pairs'
+                  or k == '_nonbonded_interactions'):
                 pass
             elif k == '_structure_list':
                 # Seperate structures into atoms and composites
@@ -315,9 +334,12 @@ class CompositeStructuralUnit(StructuralUnit):
                         memo[id(inter)] = inter
                     new_atom = deepcopy(atom, memo)
                     struct_map[atom] = new_atom
+                    # Add new atoms to nonbonded interactions
+                    for inter in atom.nonbonded_interactions:
+                        inter.add_atoms(new_atom)
 
                 # Create interactions
-                for inter, pair in self.interaction_pairs:
+                for inter, pair in self.bonded_interaction_pairs:
                     # try/except accounts for interactions associated with atoms
                     # that are in a composite subunit
                     try:
@@ -384,7 +406,8 @@ class Atom(StructuralUnit):
         """
 
         super(Atom, self).__init__(position, velocity, name=element)
-        self._interaction_pairs = []
+        self._nonbonded_interactions = []
+        self._bonded_interaction_pairs = []
         self.element = element
         try:
             self.mass = settings['mass']
@@ -408,11 +431,11 @@ class Atom(StructuralUnit):
         cls = self.__class__
         atom = cls.__new__(cls)
         memo[id(self)] = atom
-        atom._interaction_pairs = []
+        atom._bonded_interaction_pairs = []
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(atom, k, self._generate_ID())
-            elif k == '_interaction_pairs':
+            elif k == '_bonded_interaction_pairs':
                 self.copy_interactions(atom, memo)
             else:
                 setattr(atom, k, deepcopy(v, memo))
@@ -497,21 +520,30 @@ class Atom(StructuralUnit):
         self._atom_type = value
 
     @property
-    def interaction_pairs(self):
+    def nonbonded_interactions(self):
 
         """
-        A list of (interaction, atoms) pairs acting on the structural unit,
-        where atoms is a tuple of all atoms for that specific interaction
+        A list of NonBondedInteractions acting on the atom
+        """
+
+        return self._nonbonded_interactions
+
+    @property
+    def bonded_interaction_pairs(self):
+
+        """
+        A list of (interaction, atoms) pairs acting on the atom, where atoms is
+        a tuple of all atoms for that specific interaction
 
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
-        return self._interaction_pairs
+        return self._bonded_interaction_pairs
 
     def add_interaction(self, interaction, from_interaction=False):
 
@@ -528,16 +560,19 @@ class Atom(StructuralUnit):
         from an interaction
         """
 
-        # The tuple most recently added to interaction.atoms should always
-        # contain self
-        if from_interaction:
-            if not interaction.atoms or not self in interaction.atoms[-1]:
-                raise ValueError('incorrect atom_tuple passed to atom')
+        if issubclass(type(interaction), BondedInteraction):
+            # The tuple most recently added to interaction.atoms should always
+            # contain self
+            if from_interaction:
+                if not interaction.atoms or not self in interaction.atoms[-1]:
+                    raise ValueError('incorrect atom_tuple passed to atom')
+            else:
+                interaction.add_atoms(self, from_structure=True)
+            pair = (interaction, interaction.atoms[-1])
+            if pair not in self.bonded_interaction_pairs:
+                self._bonded_interaction_pairs.append((interaction, interaction.atoms[-1]))
         else:
-            interaction.add_atoms(self, from_structure=True)
-        pair = (interaction, interaction.atoms[-1])
-        if pair not in self.interaction_pairs:
-            self._interaction_pairs.append((interaction, interaction.atoms[-1]))
+            self._nonbonded_interactions.append(interaction)
 
     def copy_interactions(self, atom, memo={}):
 
@@ -554,12 +589,12 @@ class Atom(StructuralUnit):
         memo - the memo dictionary
         """
 
-        # if/else required for deepcopy (where _interaction_pairs attribute
+        # if/else required for deepcopy (where _bonded_interaction_pairs attribute
         # doesn't exist). try/except not valid due to order of operations in
         # add_atoms method.
-        if not hasattr(atom, '_interaction_pairs'):
-            atom._interaction_pairs = []
-        for inter, atoms in self.interaction_pairs:
+        if not hasattr(atom, '_bonded_interaction_pairs'):
+            atom._bonded_interaction_pairs = []
+        for inter, atoms in self.bonded_interaction_pairs:
             if id(inter) not in memo:
                 # Maintains order of atoms except with substitution
                 new_atoms = [atom if a == self else a for a in atoms]
@@ -641,7 +676,17 @@ class Molecule(CompositeStructuralUnit):
         self._set_subunit_positions()
 
     @property
-    def interaction_pairs(self):
+    def nonbonded_interactions(self):
+
+        """
+        A list of NonBondedInteractions acting on atoms of the Molecule
+        """
+
+        return list(set([inter for atom in self.atom_list
+                         for inter in atom.nonbonded_interactions]))
+
+    @property
+    def bonded_interaction_pairs(self):
 
         """
         A list of (interaction, atoms) pairs acting on the StructuralUnit,
@@ -650,13 +695,13 @@ class Molecule(CompositeStructuralUnit):
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
         return list(set([pair for atom in self.atom_list
-                         for pair in atom.interaction_pairs]))
+                         for pair in atom.bonded_interaction_pairs]))
 
     def _set_subunit_positions(self):
 
