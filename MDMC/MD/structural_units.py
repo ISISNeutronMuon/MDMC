@@ -1156,6 +1156,25 @@ class Coulombic(NonBondedInteraction):
 
         raise NotImplementedError
 
+    @property
+    def universe(self):
+
+        raise NotImplementedError
+
+    @universe.setter
+    def universe(self, value):
+
+        self._universe = value
+
+    def element_list(self):
+
+        """
+        Returns:
+        A list of elements for which the Interaction applies
+        """
+
+        raise NotImplementedError
+
 def _add_atom_types(self, *atom_types):
 
     """
