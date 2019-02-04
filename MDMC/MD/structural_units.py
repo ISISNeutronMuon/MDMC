@@ -452,6 +452,23 @@ class Atom(StructuralUnit):
                 setattr(atom, k, self._generate_ID())
             elif k == '_bonded_interaction_pairs':
                 self.copy_interactions(atom, memo)
+            elif k == '_nonbonded_interactions':
+                # All NonBondedInteractions use atom_types so as this will
+                # be the same for the new atom then these are automatically
+                # applied. The exception is Coulombic interactions initialized
+                # with atoms argument. In this case the new atom must be added
+                # to the atom_types.
+                atom._nonbonded_interactions = []
+                for inter in self.nonbonded_interactions:
+                    if isinstance(inter, Coulombic):
+                        # try/except account for Coulombic interactions
+                        # initialized with atom_types
+                        try:
+                            inter.add_atoms(atom)
+                        except AttributeError:
+                            atom.add_interaction(inter)
+                    else:
+                        atom.add_interaction(inter)
             else:
                 setattr(atom, k, deepcopy(v, memo))
         return atom
