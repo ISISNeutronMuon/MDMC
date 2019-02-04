@@ -1035,13 +1035,18 @@ class NonBondedInteraction(Interaction):
     @property
     def universe(self):
 
-        return self._universe()
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
 
     @universe.setter
     def universe(self, value):
 
-        self._universe = weakref.ref(value)
-
+        try:
+            self._universe = weakref.ref(value)
+        except TypeError:
+            self._universe = None
 
 class Dispersion(NonBondedInteraction):
 
@@ -1336,6 +1341,7 @@ class BondedInteraction(Interaction):
                 atom_tuples = [(atom_tuples[0],)]
             else:
                 raise TypeError('atom_tuples must be [(atom, ...), ...]')
+
         # Only assign interaction to atoms after these validation steps
         self._atoms = []
         for tpl in atom_tuples:
