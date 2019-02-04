@@ -473,6 +473,27 @@ class Atom(StructuralUnit):
         return [self]
 
     @property
+    def universe(self):
+
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
+
+    @universe.setter
+    def universe(self, value):
+
+        try:
+            self._universe = weakref.ref(value)
+
+            # Update universe for all interactions if not previously set
+            for inter in self.interactions:
+                if not inter.universe:
+                    inter.universe = value
+        except TypeError:
+            self._universe = None
+
+    @property
     def charge(self):
 
         """
