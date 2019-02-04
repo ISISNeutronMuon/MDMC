@@ -105,35 +105,15 @@ class StructuralUnit:
             atom_list.extend(structure.atom_list)
         return atom_list
 
-    @property
+    @abstractproperty
     def universe(self):
 
         """
         Returns:
-        A weakref to universe or None
+        The universe to which the atom belongs or None
         """
 
-        try:
-            return self._universe()
-        except TypeError:
-            return self._universe
-
-    @universe.setter
-    def universe(self, universe):
-
-        """
-        Sets self.universe to a weakref to universe or None
-        """
-
-        try:
-            self._universe = weakref.ref(universe)
-        except TypeError:
-            self._universe = None
-
-        # Set the universe of all subunits
-        if not isinstance(self, Atom):
-            for atom in self.atom_list:
-                atom.universe = universe
+        raise NotImplementedError
 
     def translate(self, displacement):
 
