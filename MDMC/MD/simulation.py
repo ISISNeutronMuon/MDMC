@@ -280,8 +280,8 @@ class Universe(object):
         structural_unit.universe = self
         self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
-            self.add_bonded_interaction_pairs(atom.bonded_interaction_pairs)
-            self.add_nonbonded_interaction(atom.nonbonded_interactions)
+            self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
+            self.add_nonbonded_interaction(*atom.nonbonded_interactions)
             self._update_atom_types(atom)
 
         if force_field:
@@ -353,7 +353,7 @@ class Universe(object):
         else:
             self.force_fields.parameterize_interactions(*interactions)
 
-    def add_bonded_interaction_pairs(self, bonded_interaction_pairs):
+    def add_bonded_interaction_pairs(self, *bonded_interaction_pairs):
 
         """
         Adds one or more interaction pairs to the universe
@@ -365,7 +365,7 @@ class Universe(object):
 
         self._bonded_interaction_pairs.update(bonded_interaction_pairs)
 
-    def add_nonbonded_interaction(self, nonbonded_interactions):
+    def add_nonbonded_interaction(self, *nonbonded_interactions):
 
         """
         Adds one or more nonbonded interactions to the universe
