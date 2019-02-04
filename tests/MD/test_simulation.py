@@ -290,13 +290,15 @@ def test_spce_water_box(water_SPCE_universe):
     assert int(n_molecules) == \
         len(water_SPCE_universe.configuration.molecule_list)
 
-    # Number of interactions, relative to number of atoms, N:
-    # Coulombic = N
-    # Dispersion = N/3
+    # Universe only keeps a reference to a single copy of each
+    # NonBondedInteraction. so the expected number of interactions, relative to
+    # number of atoms, N, is:
+    # Coulombic = 2
+    # Dispersion = 1
     # Bond = 2N/3
     # BondAngle = N/3
     N = len(water_SPCE_universe.atom_list)
-    assert len(water_SPCE_universe.interactions) == 7*N/3
+    assert len(water_SPCE_universe.interactions) == N + 3
 
     # TODO: Test for correct positions
     # water_positions = sorted([list(structural_unit.position) for structural_unit
