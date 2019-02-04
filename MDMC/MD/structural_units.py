@@ -56,7 +56,6 @@ class StructuralUnit:
         """
 
         self.ID = self._generate_ID()
-        self.universe = None
         self.position = position
         self.velocity = velocity
         self.name = name
@@ -293,6 +292,7 @@ class CompositeStructuralUnit(StructuralUnit):
     def __init__(self, position, velocity, name):
 
         super(CompositeStructuralUnit, self).__init__(position, velocity, name)
+        self.universe = None
 
     def __deepcopy__(self, memo):
 
@@ -406,6 +406,7 @@ class Atom(StructuralUnit):
         table will be used.
         """
 
+        self.universe = None
         super(Atom, self).__init__(position, velocity, name=element)
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
