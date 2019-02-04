@@ -46,7 +46,6 @@ def water_molecule(atom):
     O_coulombic = su.Coulombic(O)
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
                                  interactions=[su.Bond((H1, O), (H2, O)),
-                                               su.Dispersion(O),
                                                su.BondAngle(H1, O, H2)],
                                  name='water')
     return water_molecule
@@ -57,6 +56,9 @@ def water_SPCE_universe(water_molecule):
     water_universe = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
+    O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
+                       if atom.element == 'O')
+    O_dispersion = su.Dispersion(water_universe, O_atom_type)
     return water_universe
 
 
@@ -225,16 +227,25 @@ def test_add_molecule(universe, water_molecule):
 
     # Test interactions have expected element lists - 1 bond angle, 2 H-O bonds,
     # 1 dispersive on O, 1 Coulombic on O, and 2 Coulombic on H
+
+    # Add Dispersion interaction
+    O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
+                       if atom.element == 'O')
+    O_dispersion = su.Dispersion(universe, O_atom_type)
     interaction_elements = []
     for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
-    assert sorted([['H', 'H', 'O'], ['H', 'O'], ['H', 'O'], ['O'], ['O'], ['H'],
-                   ['H']]) == sorted(interaction_elements)
+    assert sorted([['H', 'H', 'O'], ['H', 'O'], ['H', 'O'], ['O', 'O'], ['O'],
+                   ['H'], ['H']]) == sorted(interaction_elements)
 
 
 def test_spce_water_molecule(universe, water_molecule):
 
     universe.add_structural_unit(water_molecule)
+    # Add Dispersion interaction
+    O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
+                       if atom.element == 'O')
+    O_dispersion = su.Dispersion(universe, O_atom_type)
     universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
@@ -418,7 +429,6 @@ def test_molecule_subunit_positions(water_molecule):
 
 
 @pytest.mark.parametrize("Int, n_atoms", [(su.Coulombic, [1]),
-                                          (su.Dispersion, [1]),
                                           (su.Bond, [2]),
                                           (su.BondAngle, [3, 4])])
 def test_interactions(Int, n_atoms, atom):
@@ -483,3 +493,38 @@ def test_universe_atom_types(water_molecule, universe):
     for atom, atom_type in {C:2, H1:1, H2:1, O:3}.items():
         assert atom.atom_type == atom_type
         assert atom in universe.atom_types[atom_type]
+
+
+@pytest.mark.parametrize("atom_types_init, atom_types_expected",
+                         [((1, ), ((1, ), (1, ))),
+                          (((1, ), (2, )), ((1, ), (2, ))),
+                          ((1, 2), ((1, ), (2, ))),
+                          (((1, 2), (3, )), ((1, 2), (3, ))),
+                          (((1, 2), (3, 4)), ((1, 2), (3, 4)))])
+def test_init_dispersion(atom_types_init, atom_types_expected,
+                         water_SPCE_universe):
+
+    """
+    Tests initializing a dispersion object with:
+
+    - 1 atom_type
+    - 2 atom_types (same atom_types)
+    - 2 atom_types (different atom_types)
+    - 2 atom_types (different atom_types, full tuple)
+    - 3 atom_types
+    - 4 atom_types
+    """
+
+    # Add more atoms with interactions to universe so that there are sufficient
+    # atom_types for all parameterizations
+    He = su.Atom('He', mass=2.)
+    He_coulombic = su.Coulombic(atoms=He)
+    C = su.Atom('C', mass=12.)
+    C_coulombic = su.Coulombic(atoms=C)
+
+    for atom in [He, C]:
+        water_SPCE_universe.add_structural_unit(atom)
+
+    disp = su.Dispersion(water_SPCE_universe, *atom_types_init)
+    assert disp.atom_types == atom_types_expected
+

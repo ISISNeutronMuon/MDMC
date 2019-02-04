@@ -42,6 +42,6 @@ class SPC(ForceField):
         return {
             (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
             (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-            (su.Dispersion, ('O',)):ifu.LennardJones(epsilon, sigma),
+            (su.Dispersion, ('O', 'O')):ifu.LennardJones(epsilon, sigma),
             (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
             (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
