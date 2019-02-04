@@ -1342,6 +1342,12 @@ class BondedInteraction(Interaction):
             self._atoms.append(tpl)
             self._add_interaction_atoms(tpl)
 
+            # Add interaction to Universe (pass if no universe exists)
+            try:
+                self._add_to_universe(self.universe, tpl)
+            except AttributeError:
+                pass
+
     @property
     def universe(self):
 
@@ -1400,9 +1406,21 @@ class BondedInteraction(Interaction):
             for atom in atoms:
                 atom.add_interaction(self, from_interaction=True)
 
+        if self.universe:
+            self._add_to_universe(self.universe, atoms)
+
     def _check_duplicates(self, struct, err_msg):
+
         if len(set(struct)) != len(struct):
             raise ValueError(err_msg)
+
+    def _add_to_universe(self, universe, tpl):
+
+        """
+        Adds interaction and atom tuple to universe
+        """
+
+        universe.add_bonded_interaction_pairs((self, tpl))
 
 
 class Bond(BondedInteraction):
