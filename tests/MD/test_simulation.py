@@ -249,7 +249,7 @@ def test_spce_water_molecule(universe, water_molecule):
     universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
-    function_names = [function.__class__.__name__ for function in functions]
+    function_names = [inter.function.name for inter in universe.interactions]
 
     # Test interaction functions
     assert Counter(function_names) == Counter(['Coulomb',
