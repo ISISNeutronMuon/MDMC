@@ -1023,6 +1023,8 @@ class NonBondedInteraction(Interaction):
     def __init__(self, universe, *atom_types, **settings):
 
         self.universe = universe
+        if self.universe:
+            self.universe.add_nonbonded_interaction(self)
         super(NonBondedInteraction, self).__init__(**settings)
 
     @abstractproperty
