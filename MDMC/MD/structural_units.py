@@ -520,6 +520,11 @@ class Atom(StructuralUnit):
             raise AttributeError('Can\'t change atom_type once it has been set')
         self._atom_type = value
 
+        # Update atom_types in Coulombic interactions
+        for inter in self.nonbonded_interactions:
+            if isinstance(inter, Coulombic) and value not in inter.atom_types:
+                inter._atom_types.append(value)
+
     @property
     def nonbonded_interactions(self):
 
