@@ -339,6 +339,38 @@ class CompositeStructuralUnit(StructuralUnit):
                 setattr(unit, k, deepcopy(v, memo))
         return unit
 
+
+    @property
+    def universe(self):
+
+        """
+        Returns:
+        The universe to which the atom belongs or None
+        """
+
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
+
+    @universe.setter
+    def universe(self, value):
+
+        """
+        Sets self.universe to a weakref to universe or None, and sets the
+        universe for all subunits
+        """
+
+        try:
+            self._universe = weakref.ref(value)
+        except TypeError:
+            self._universe = None
+
+        # If top level structure then set the universe of all subunits
+        if self.top_level_structure() == self:
+            for structure in self.structure_list:
+                structure.universe = value
+
     @property
     def structure_list(self):
 
