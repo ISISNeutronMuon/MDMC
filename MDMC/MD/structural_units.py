@@ -8,6 +8,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
 from abc import ABCMeta, abstractproperty
 from copy import deepcopy
 from itertools import count
+from types import MethodType
 import weakref
 
 import numpy as np
@@ -32,9 +33,9 @@ class StructuralUnit:
     parent - the StructuralUnit to which this unit belongs
     atom_list - a list of atoms belonging to the StructuralUnit
     interactions - a list of interactions acting on the StructuralUnit
-    interaction_pairs - a list of (interaction, atoms) tuples where atoms is a
-    list of atoms to which the interaction applies. At least one of these atoms
-    belongs to the StructuralUnit
+    bonded_interaction_pairs - a list of (interaction, atoms) tuples where atoms
+    is a list of atoms to which the bonded interaction applies. At least one of
+    these atoms belongs to the StructuralUnit
     """
 
     __metaclass__ = ABCMeta
@@ -55,7 +56,6 @@ class StructuralUnit:
         """
 
         self.ID = self._generate_ID()
-        self.universe = None
         self.position = position
         self.velocity = velocity
         self.name = name
@@ -105,35 +105,15 @@ class StructuralUnit:
             atom_list.extend(structure.atom_list)
         return atom_list
 
-    @property
+    @abstractproperty
     def universe(self):
 
         """
         Returns:
-        A weakref to universe or None
+        The universe to which the atom belongs or None
         """
 
-        try:
-            return self._universe()
-        except TypeError:
-            return self._universe
-
-    @universe.setter
-    def universe(self, universe):
-
-        """
-        Sets self.universe to a weakref to universe or None
-        """
-
-        try:
-            self._universe = weakref.ref(universe)
-        except TypeError:
-            self._universe = None
-
-        # Set the universe of all subunits
-        if not isinstance(self, Atom):
-            for atom in self.atom_list:
-                atom.universe = universe
+        raise NotImplementedError
 
     def translate(self, displacement):
 
@@ -153,24 +133,42 @@ class StructuralUnit:
         A list of the interactions acting on the StructuralUnit
         """
 
-        return [pair[0] for pair in self.interaction_pairs]
+        return self.bonded_interactions + self.nonbonded_interactions
+
+    @property
+    def bonded_interactions(self):
+
+        """
+        A list of the bonded interactions acting on the StructuralUnit
+        """
+
+        return [pair[0] for pair in self.bonded_interaction_pairs]
 
     @abstractproperty
-    def interaction_pairs(self):
+    def nonbonded_interactions(self):
+
+        """
+        A list of the nonbonded interactions acting on the StructuralUnit
+        """
+
+        raise NotImplementedError
+
+    @abstractproperty
+    def bonded_interaction_pairs(self):
 
         """
         A list of (interaction, atoms) pairs acting on the StructuralUnit,
-        where atoms is a tuple of all atoms for that specific interaction
+        where atoms is a tuple of all atoms for that specific bonded interaction
 
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     def structure_type(self):
@@ -200,7 +198,7 @@ class StructuralUnit:
         Highest level StructuralUnit of which it is a member
         """
 
-        if issubclass(type(self.parent),StructuralUnit) \
+        if issubclass(type(self.parent), StructuralUnit) \
         and self.parent is not self:
             return self.parent.top_level_structure()
         else:
@@ -274,6 +272,7 @@ class CompositeStructuralUnit(StructuralUnit):
     def __init__(self, position, velocity, name):
 
         super(CompositeStructuralUnit, self).__init__(position, velocity, name)
+        self.universe = None
 
     def __deepcopy__(self, memo):
 
@@ -297,7 +296,8 @@ class CompositeStructuralUnit(StructuralUnit):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(unit, k, self._generate_ID())
-            elif k == '_interaction_pairs':
+            elif (k == '_bonded_interaction_pairs'
+                  or k == '_nonbonded_interactions'):
                 pass
             elif k == '_structure_list':
                 # Seperate structures into atoms and composites
@@ -310,15 +310,16 @@ class CompositeStructuralUnit(StructuralUnit):
                 # and preserving the structures ordering in unit._structure_list
                 struct_map = {}
                 for atom in atoms:
-                    # Add atom's interactions to memo so that these are not
-                    # copied
+                    # Add atom's bonded interactions to memo so that these are
+                    # not copied
                     for inter in atom.interactions:
-                        memo[id(inter)] = inter
+                        if issubclass(type(inter), BondedInteraction):
+                            memo[id(inter)] = inter
                     new_atom = deepcopy(atom, memo)
                     struct_map[atom] = new_atom
 
                 # Create interactions
-                for inter, pair in self.interaction_pairs:
+                for inter, pair in self.bonded_interaction_pairs:
                     # try/except accounts for interactions associated with atoms
                     # that are in a composite subunit
                     try:
@@ -331,11 +332,44 @@ class CompositeStructuralUnit(StructuralUnit):
                     new_composite = deepcopy(composite, memo)
                     struct_map[composite] = new_composite
 
-                # List comprehension orders structures
+                # List comprehension ensures order of structures in new
+                # structure is the same as in original
                 setattr(unit, k, [struct_map[s] for s in self._structure_list])
             else:
                 setattr(unit, k, deepcopy(v, memo))
         return unit
+
+
+    @property
+    def universe(self):
+
+        """
+        Returns:
+        The universe to which the atom belongs or None
+        """
+
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
+
+    @universe.setter
+    def universe(self, value):
+
+        """
+        Sets self.universe to a weakref to universe or None, and sets the
+        universe for all subunits
+        """
+
+        try:
+            self._universe = weakref.ref(value)
+        except TypeError:
+            self._universe = None
+
+        # If top level structure then set the universe of all subunits
+        if self.top_level_structure() == self:
+            for structure in self.structure_list:
+                structure.universe = value
 
     @property
     def structure_list(self):
@@ -384,10 +418,16 @@ class Atom(StructuralUnit):
         table will be used.
         """
 
+        self.universe = None
         super(Atom, self).__init__(position, velocity, name=element)
-        self._interaction_pairs = []
+        self._nonbonded_interactions = []
+        self._bonded_interaction_pairs = []
         self.element = element
-        self.mass = settings.get('mass', atom_properties.MASS[self.element])
+        try:
+            self.mass = settings['mass']
+        except KeyError:
+            self.mass = atom_properties.MASS[self.element]
+        self._atom_type = settings.get('atom_type', None)
 
     def __deepcopy__(self, memo):
 
@@ -405,12 +445,29 @@ class Atom(StructuralUnit):
         cls = self.__class__
         atom = cls.__new__(cls)
         memo[id(self)] = atom
-        atom._interaction_pairs = []
+        atom._bonded_interaction_pairs = []
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(atom, k, self._generate_ID())
-            elif k == '_interaction_pairs':
+            elif k == '_bonded_interaction_pairs':
                 self.copy_interactions(atom, memo)
+            elif k == '_nonbonded_interactions':
+                # All NonBondedInteractions use atom_types so as this will
+                # be the same for the new atom then these are automatically
+                # applied. The exception is Coulombic interactions initialized
+                # with atoms argument. In this case the new atom must be added
+                # to the atom_types.
+                atom._nonbonded_interactions = []
+                for inter in self.nonbonded_interactions:
+                    if isinstance(inter, Coulombic):
+                        # try/except account for Coulombic interactions
+                        # initialized with atom_types
+                        try:
+                            inter.add_atoms(atom)
+                        except AttributeError:
+                            atom.add_interaction(inter)
+                    else:
+                        atom.add_interaction(inter)
             else:
                 setattr(atom, k, deepcopy(v, memo))
         return atom
@@ -444,6 +501,27 @@ class Atom(StructuralUnit):
         """
 
         return [self]
+
+    @property
+    def universe(self):
+
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
+
+    @universe.setter
+    def universe(self, value):
+
+        try:
+            self._universe = weakref.ref(value)
+
+            # Update universe for all interactions if not previously set
+            for inter in self.interactions:
+                if not inter.universe:
+                    inter.universe = value
+        except TypeError:
+            self._universe = None
 
     @property
     def charge(self):
@@ -482,21 +560,47 @@ class Atom(StructuralUnit):
         self._mass = mass
 
     @property
-    def interaction_pairs(self):
+    def atom_type(self):
+
+        return self._atom_type
+
+    @atom_type.setter
+    def atom_type(self, value):
+
+        if self._atom_type:
+            raise AttributeError('Can\'t change atom_type once it has been set')
+        self._atom_type = value
+
+        # Update atom_types in Coulombic interactions
+        for inter in self.nonbonded_interactions:
+            if isinstance(inter, Coulombic) and value not in inter.atom_types:
+                inter._atom_types.append(value)
+
+    @property
+    def nonbonded_interactions(self):
 
         """
-        A list of (interaction, atoms) pairs acting on the structural unit,
-        where atoms is a tuple of all atoms for that specific interaction
+        A list of NonBondedInteractions acting on the atom
+        """
+
+        return self._nonbonded_interactions
+
+    @property
+    def bonded_interaction_pairs(self):
+
+        """
+        A list of (interaction, atoms) pairs acting on the atom, where atoms is
+        a tuple of all atoms for that specific interaction
 
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
-        return self._interaction_pairs
+        return self._bonded_interaction_pairs
 
     def add_interaction(self, interaction, from_interaction=False):
 
@@ -513,16 +617,20 @@ class Atom(StructuralUnit):
         from an interaction
         """
 
-        # The tuple most recently added to interaction.atoms should always
-        # contain self
-        if from_interaction:
-            if not interaction.atoms or not self in interaction.atoms[-1]:
-                raise ValueError('incorrect atom_tuple passed to atom')
+        if issubclass(type(interaction), BondedInteraction):
+            # The tuple most recently added to interaction.atoms should always
+            # contain self
+            if from_interaction:
+                if not interaction.atoms or not self in interaction.atoms[-1]:
+                    raise ValueError('incorrect atom_tuple passed to atom')
+            else:
+                interaction.add_atoms(self, from_structure=True)
+            pair = (interaction, interaction.atoms[-1])
+            if pair not in self.bonded_interaction_pairs:
+                self._bonded_interaction_pairs.append((interaction, interaction.atoms[-1]))
         else:
-            interaction.add_atoms(self, from_structure=True)
-        pair = (interaction, interaction.atoms[-1])
-        if pair not in self.interaction_pairs:
-            self._interaction_pairs.append((interaction, interaction.atoms[-1]))
+            if interaction not in self.nonbonded_interactions:
+                self._nonbonded_interactions.append(interaction)
 
     def copy_interactions(self, atom, memo={}):
 
@@ -539,12 +647,12 @@ class Atom(StructuralUnit):
         memo - the memo dictionary
         """
 
-        # if/else required for deepcopy (where _interaction_pairs attribute
+        # if/else required for deepcopy (where _bonded_interaction_pairs attribute
         # doesn't exist). try/except not valid due to order of operations in
         # add_atoms method.
-        if not hasattr(atom, '_interaction_pairs'):
-            atom._interaction_pairs = []
-        for inter, atoms in self.interaction_pairs:
+        if not hasattr(atom, '_bonded_interaction_pairs'):
+            atom._bonded_interaction_pairs = []
+        for inter, atoms in self.bonded_interaction_pairs:
             if id(inter) not in memo:
                 # Maintains order of atoms except with substitution
                 new_atoms = [atom if a == self else a for a in atoms]
@@ -626,7 +734,17 @@ class Molecule(CompositeStructuralUnit):
         self._set_subunit_positions()
 
     @property
-    def interaction_pairs(self):
+    def nonbonded_interactions(self):
+
+        """
+        A list of NonBondedInteractions acting on atoms of the Molecule
+        """
+
+        return [inter for atom in self.atom_list
+                for inter in atom.nonbonded_interactions]
+
+    @property
+    def bonded_interaction_pairs(self):
 
         """
         A list of (interaction, atoms) pairs acting on the StructuralUnit,
@@ -635,13 +753,13 @@ class Molecule(CompositeStructuralUnit):
         Example:
         For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.interaction_pairs)
+        print(O.bonded_interaction_pairs)
         [(Bond, (H1, O)),
          (Bond, (H2, O))]
         """
 
         return list(set([pair for atom in self.atom_list
-                         for pair in atom.interaction_pairs]))
+                         for pair in atom.bonded_interaction_pairs]))
 
     def _set_subunit_positions(self):
 
@@ -797,7 +915,7 @@ class Interaction:
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, **settings):
 
         """
         Arguments:
@@ -835,9 +953,7 @@ class Interaction:
         function - a class of bond interaction function (e.g. HarmonicPotential)
         """
 
-        self.atoms = list(atom_tuples)
         self.function = settings.get('function', None)
-        self.universe = None
         self.name = self.__class__.__name__
 
     def __deepcopy__(self, memo={}):
@@ -859,35 +975,6 @@ class Interaction:
 
         self.__deepcopy__()
 
-    def __len__(self):
-
-        """
-        Returns:
-        The number of interactions of this type that have been set
-        """
-
-        return len(self.atoms)
-
-    def __getitem__(self, key):
-
-        """
-        Returns:
-        The tuple of atoms at the specified index.  For a single index (as
-        opposed to a slice) this is a group of atoms for which there is one
-        instance of this interaction.
-        """
-
-        return self.atoms[key]
-
-    # Both of these need to be modified so that the atoms add the interaction
-    # def __setitem__(self, key, value):
-    #
-    #     self._atoms[key] = value
-    #
-    # def __delitem__(self, key):
-    #
-    #     del self._atoms[key]
-
     def __repr__(self):
 
         try:
@@ -899,57 +986,20 @@ class Interaction:
                 '  function: {1},'
                 '  parameters: {2},'
                 '  universe: {3},'
-                '  elements: {4},'
-                '  atoms: {5}'.format(self.name,
-                                      self.function,
-                                      params,
-                                      self.universe,
-                                      self.element_list(),
-                                      self.atoms))
+                '  elements: {4}'.format(self.name,
+                                         self.function,
+                                         params,
+                                         self.universe,
+                                         self.element_list()))
 
     def __str__(self):
 
         return self.__repr__
 
-    @property
+    @abstractproperty
     def atoms(self):
 
-        return self._atoms
-
-    @atoms.setter
-    def atoms(self, atom_tuples):
-
-        """
-        Arugments:
-        atom_tuples - a list of tuples containing one or more atoms.  Each tuple
-        contains all of the atoms involved in one example of the interaction.
-        For example for a non-bonded interaction each tuple would contain a
-        single atom, and for a BondAngle interaction each tuple would contain 3
-        or 4 atoms.
-        """
-
-        # Check for duplicate tuples in list
-        self._check_duplicates(atom_tuples, 'Each tuple in the list of atom'
-                                            ' tuples must be unique')
-        # Check for duplicate atoms in each tuple
-        try:
-            for tpl in atom_tuples:
-                self._check_duplicates(tpl, 'Each atom in an atom tuple must be'
-                                            ' unique')
-        # try/except accounts for single atom passed rather than (atom,) tuple
-        # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
-        except TypeError:
-            if len(atom_tuples) == 1 and isinstance(atom_tuples[0], Atom):
-                atom_tuples = [(atom_tuples[0],)]
-            else:
-                raise TypeError('atom_tuples must be [(atom, ...), ...]')
-        # Only assign interaction to atoms after these validation steps
-        self._atoms = []
-        for tpl in atom_tuples:
-            # Each tuple is appended individually so that it can be easily added
-            # to ._interaction_pairs for every atom in the tuple
-            self._atoms.append(tpl)
-            self._add_interaction_atoms(tpl)
+        raise NotImplementedError
 
     @property
     def params(self):
@@ -978,44 +1028,20 @@ class Interaction:
         except AttributeError:
             return None
 
-    def add_atoms(self, *atoms, **settings):
+    @abstractproperty
+    def universe(self):
 
-        """
-        Add atoms which are all involved in one example of this interaction
+        raise NotImplementedError
 
-        Arguments:
-        *atoms - one or more Atom objects
-
-        Settings:
-        from_structure - a boolean specifying if this method has been called
-        from a structural unit
-        """
-
-        self._check_duplicates(atoms, 'Each atom in an atom tuple must be'
-                                      ' unique')
-        if atoms in self.atoms:
-            raise ValueError('This interaction has already been applied to this'
-                             ' atom(s)')
-
-        self._atoms.append(atoms)
-        from_structure = settings.get('from_structure', False)
-        if not from_structure:
-            for atom in atoms:
-                atom.add_interaction(self, from_interaction=True)
-
+    @abstractproperty
     def element_list(self):
 
         """
         Returns:
-        A list of elements for which the Interaction applies or None if the
-        Interaction has not been applied to any atoms
+        A list of elements for which the Interaction applies
         """
 
-        try:
-            # Each tuple should contain the same elements, so first tuple's used
-            return [atom.element for atom in self.atoms[0]]
-        except (AttributeError, IndexError):
-            return None
+        raise NotImplementedError
 
     def sorted_element_list(self):
 
@@ -1042,10 +1068,6 @@ class Interaction:
         for atom in atoms:
             atom.add_interaction(self, from_interaction=True)
 
-    def _check_duplicates(self, struct, err_msg):
-        if len(set(struct)) != len(struct):
-            raise ValueError(err_msg)
-
 
 class NonBondedInteraction(Interaction):
 
@@ -1055,12 +1077,33 @@ class NonBondedInteraction(Interaction):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, universe, *atom_types, **settings):
 
-        if atom_tuples and isinstance(atom_tuples[0], Atom):
-            atom_tuples = tuple((atom, ) for atom in atom_tuples)
-        super(NonBondedInteraction, self).__init__(*atom_tuples, **settings)
+        self.universe = universe
+        if self.universe:
+            self.universe.add_nonbonded_interaction(self)
+        super(NonBondedInteraction, self).__init__(**settings)
 
+    @abstractproperty
+    def atom_types(self):
+
+        raise NotImplementedError
+
+    @property
+    def universe(self):
+
+        try:
+            return self._universe()
+        except TypeError:
+            return self._universe
+
+    @universe.setter
+    def universe(self, value):
+
+        try:
+            self._universe = weakref.ref(value)
+        except TypeError:
+            self._universe = None
 
 class Dispersion(NonBondedInteraction):
 
@@ -1068,14 +1111,61 @@ class Dispersion(NonBondedInteraction):
     A non-bonded dispersive interaction - either LJ or Buckingham
     """
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, universe, *atom_types, **settings):
 
         """
         Arguments:
-        atom_tuples - one or more Atom objects
+        universe - a Universe object
+        atom_types - one or two tuples containing one or more integers that
         """
 
-        super(Dispersion, self).__init__(*atom_tuples, **settings)
+        super(Dispersion, self).__init__(universe, **settings)
+        # Add tuples to short format of atom_types
+        if isinstance(atom_types[0], int):
+            if len(atom_types) == 1:
+                atom_types = ((atom_types[0], ), (atom_types[0], ))
+            elif len(atom_types) == 2:
+                atom_types = ((atom_types[0], ), (atom_types[1], ))
+        self._atom_types = atom_types
+        self._atoms = [tuple([atom for atom_type in tpl
+                              for atom in self.universe.atom_types[atom_type]])
+                       for tpl in self.atom_types]
+        for tpl in self.atoms:
+            for atom in tpl:
+                atom.add_interaction(self)
+
+    @property
+    def atom_types(self):
+
+        return self._atom_types
+
+    @property
+    def atoms(self):
+
+        """
+        Returns:
+        A list of two tuples, where each tuple contains a list atoms. Every atom
+        in the first tuple has a dispersion interaction with every atom in the
+        second tuple (excluding self interactions). This is the complete list of
+        possible dispersion interactions, i.e. it is only exactly correct if no
+        cutoff has been specified.
+        """
+
+        return self._atoms
+
+    def element_list(self):
+
+        """
+        Returns:
+        A list of elements for which the Interaction applies
+        """
+
+        # Each value in universe.atom_types dictionary contain list of atoms
+        # with same elements, so use index 0
+        # This is determined for all atom types in Dispersion interaction
+        return [self.universe.atom_types[atom_type][0].element
+                for tpl in self.atom_types
+                for atom_type in tpl]
 
 
 class Coulombic(NonBondedInteraction):
@@ -1084,14 +1174,130 @@ class Coulombic(NonBondedInteraction):
     A non-bonded coulombic interaction - either normal or modified Coulomb
     """
 
-    def __init__(self, *atom_tuples, **settings):
+    def __init__(self, universe=None, *atom_types, **settings):
 
         """
         Arguments:
-        atom_tuples - one or more Atom objects
+        atom_types - one or more integers specifying atom_types that exist in
+        the universe
+        atoms - one or more Atom objects
         """
 
-        super(Coulombic, self).__init__(*atom_tuples, **settings)
+        if atom_types:
+            if not universe:
+                raise TypeError('Coulombic requires a universe when atom_types'
+                                ' are passed')
+            self.add_atom_types = MethodType(_add_atom_types, self)
+
+            self._atom_types = atom_types
+            self._atoms = [atom for atom_type in self.atom_types
+                           for atom in self.universe.atom_types[atom_type]]
+            # Add interaction to atoms
+            for atom in self.atoms:
+                atom.add_interaction(self)
+        else:
+            self.add_atoms = MethodType(_add_atoms, self)
+            try:
+                atoms = settings['atoms']
+            except KeyError:
+                raise TypeError('Coulombic takes either atom_types or atoms as'
+                                ' arguments')
+            # Account for init argument atoms=atom rather than atoms=[atom]
+            if isinstance(atoms, Atom):
+                atoms = [atoms]
+            self._atoms = []
+            self._atom_types = []
+            self.add_atoms(*atoms)
+
+            # Assumes all atoms are in the same universe (or None)
+            universe = self.atoms[0].universe
+
+        super(Coulombic, self).__init__(universe, **settings)
+
+    def __len__(self):
+
+        """
+        Returns:
+        The number of interactions of this type that have been set
+        """
+
+        return len(self.atoms)
+
+    def __getitem__(self, key):
+
+        """
+        Returns:
+        The tuple of atoms at the specified index.  For a single index (as
+        opposed to a slice) this is a group of atoms for which there is one
+        instance of this interaction.
+        """
+
+        return self.atoms[key]
+
+    @property
+    def atoms(self):
+
+        return self._atoms
+
+    @property
+    def atom_types(self):
+
+        """
+        Returns:
+        All atom_types to which the Coulombic interaction applies
+
+        If the interaction was initialized with the atoms argument, all
+        atom_types of the atoms to which the Coulombic interaction was applied
+        are returned; HOWEVER THE COULOMBIC INTERACTION IS NOT APPLIED TO ALL
+        ATOMS OF THESE ATOM_TYPES, ONLY THE ATOMS IN self.atoms
+        """
+
+        return self._atom_types
+
+    def element_list(self):
+
+        """
+        Returns:
+        A list of elements for which the Interaction applies
+        """
+
+        return list(set(atom.element for atom in self._atoms))
+
+
+def _add_atom_types(self, *atom_types):
+
+    """
+    Function for dynamically creating an add_atom_types method in Coulombic
+
+    Arguments:
+    atom_types - one or more integers specifying atom_types that exist in
+    universe of the Coulombic interaction
+    """
+
+    self._atom_types.append(*atom_types)
+
+
+def _add_atoms(self, *atoms):
+
+    """
+    Function for dynamically creating an add_atoms method in Coulombic
+
+    Adds atoms to Coulombic object and adds Coulombic object to atoms
+    nonbonded_interactions
+
+    Arguments:
+    atoms - one or more atoms
+    """
+
+
+    for atom in atoms:
+        # Add atom to interaction
+        self._atoms.append(atom)
+        # Add interaction to atom
+        atom.add_interaction(self, from_interaction=True)
+        # Add atom_type to interaction.atom_types
+        if atom.atom_type not in self.atom_types:
+            self._atom_types.append(atom.atom_type)
 
 
 class BondedInteraction(Interaction):
@@ -1138,7 +1344,96 @@ class BondedInteraction(Interaction):
             # atoms
             for tpl in atom_tuples:
                 self._validate_atoms(tpl, settings.get('n_atoms'))
-        super(BondedInteraction, self).__init__(*atom_tuples, **settings)
+        self.atoms = list(atom_tuples)
+        super(BondedInteraction, self).__init__(**settings)
+
+    def __len__(self):
+
+        """
+        Returns:
+        The number of interactions of this type that have been set
+        """
+
+        return len(self.atoms)
+
+    def __getitem__(self, key):
+
+        """
+        Returns:
+        The tuple of atoms at the specified index.  For a single index (as
+        opposed to a slice) this is a group of atoms for which there is one
+        instance of this interaction.
+        """
+
+        return self.atoms[key]
+
+    @property
+    def atoms(self):
+
+        return self._atoms
+
+    @atoms.setter
+    def atoms(self, atom_tuples):
+
+        """
+        Arugments:
+        atom_tuples - a list of tuples containing one or more atoms.  Each tuple
+        contains all of the atoms involved in one example of the interaction.
+        For example a BondAngle interaction each tuple would contain 3 or 4
+        atoms.
+        """
+
+        # Check for duplicate tuples in list
+        self._check_duplicates(atom_tuples, 'Each tuple in the list of atom'
+                                            ' tuples must be unique')
+        # Check for duplicate atoms in each tuple
+        try:
+            for tpl in atom_tuples:
+                self._check_duplicates(tpl, 'Each atom in an atom tuple must be'
+                                            ' unique')
+        # try/except accounts for single atom passed rather than (atom,) tuple
+        # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
+        except TypeError:
+            if len(atom_tuples) == 1 and isinstance(atom_tuples[0], Atom):
+                atom_tuples = [(atom_tuples[0],)]
+            else:
+                raise TypeError('atom_tuples must be [(atom, ...), ...]')
+
+        # Only assign interaction to atoms after these validation steps
+        self._atoms = []
+        for tpl in atom_tuples:
+            # Each tuple is appended individually so that it can be easily added
+            # to ._bonded_interaction_pairs for every atom in the tuple
+            self._atoms.append(tpl)
+            self._add_interaction_atoms(tpl)
+
+            # Add interaction to Universe (pass if no universe exists)
+            try:
+                self._add_to_universe(self.universe, tpl)
+            except AttributeError:
+                pass
+
+    @property
+    def universe(self):
+
+        try:
+            return self.atoms[0][0].universe
+        except IndexError:
+            return None
+
+    def element_list(self):
+
+        """
+        Returns:
+        A list of elements for which the Interaction applies or None if the
+        Interaction has not been applied to any atoms
+        """
+
+        try:
+            # Each tuple should contain the same elements, so first tuple's used
+            return [atom.element for atom in self.atoms[0]]
+        except (AttributeError, IndexError):
+            return None
 
     def _validate_atoms(self, atoms, n_atoms):
 
@@ -1150,6 +1445,47 @@ class BondedInteraction(Interaction):
         if len(atoms) not in n_atoms:
             raise TypeError("This interaction only accepts {0} atoms".format(
                 n_atoms))
+
+    def add_atoms(self, *atoms, **settings):
+
+        """
+        Add atoms which are all involved in one example of this interaction
+
+        Arguments:
+        *atoms - one or more Atom objects
+
+        Settings:
+        from_structure - a boolean specifying if this method has been called
+        from a structural unit
+        """
+
+        self._check_duplicates(atoms, 'Each atom in an atom tuple must be'
+                                      ' unique')
+        if atoms in self.atoms:
+            raise ValueError('This interaction has already been applied to this'
+                             ' atom(s)')
+
+        self._atoms.append(atoms)
+        from_structure = settings.get('from_structure', False)
+        if not from_structure:
+            for atom in atoms:
+                atom.add_interaction(self, from_interaction=True)
+
+        if self.universe:
+            self._add_to_universe(self.universe, atoms)
+
+    def _check_duplicates(self, struct, err_msg):
+
+        if len(set(struct)) != len(struct):
+            raise ValueError(err_msg)
+
+    def _add_to_universe(self, universe, tpl):
+
+        """
+        Adds interaction and atom tuple to universe
+        """
+
+        universe.add_bonded_interaction_pairs((self, tpl))
 
 
 class Bond(BondedInteraction):
