@@ -573,7 +573,8 @@ class Atom(StructuralUnit):
             if pair not in self.bonded_interaction_pairs:
                 self._bonded_interaction_pairs.append((interaction, interaction.atoms[-1]))
         else:
-            self._nonbonded_interactions.append(interaction)
+            if interaction not in self.nonbonded_interactions:
+                self._nonbonded_interactions.append(interaction)
 
     def copy_interactions(self, atom, memo={}):
 
