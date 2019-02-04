@@ -42,8 +42,8 @@ def water_molecule(atom):
     H1 = atom
     H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
     O = su.Atom('O', position=O_POSITION, mass=O_MASS)
-    H_coulombic = su.Coulombic(H1, H2)
-    O_coulombic = su.Coulombic(O)
+    H_coulombic = su.Coulombic(atoms=[H1, H2])
+    O_coulombic = su.Coulombic(atoms=O)
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
                                  interactions=[su.Bond((H1, O), (H2, O)),
                                                su.BondAngle(H1, O, H2)],
@@ -197,7 +197,7 @@ def test_add_atom(universe, atom):
     Tests that atom interactions are added to Universe.interactions
     """
 
-    atom_coulombic = su.Coulombic(atom)
+    atom_coulombic = su.Coulombic(atoms=atom)
     assert len(universe.atom_types) == 0
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
@@ -359,30 +359,6 @@ def test_translate(unit, universe):
     positions_in_universe(atom_positions, universe)
 
 
-def test_atom_add_interaction(atom):
-
-    """
-    Tests how interactions are added to Atom objects
-
-    Atom objects should only be able to add interactions that only apply to it
-    (this should only be non-bonded interactions, e.g. Coulombic)
-    """
-
-    # Test that if atom.add_interaction called from interaction that the
-    # interaction includes the atom
-    coulombic = su.Coulombic()
-    with pytest.raises(ValueError):
-        atom.add_interaction(coulombic, from_interaction=True)
-
-    # Test that atom gets added to interaction
-    atom.add_interaction(coulombic)
-    assert atom in coulombic.atoms[-1]
-
-    cpy_atom = deepcopy(atom)
-    bond = su.Bond(atom, cpy_atom)
-    assert atom.interaction_pairs[-1] == (bond, (atom, cpy_atom))
-
-
 def test_valid_position(atom):
 
     """
@@ -428,10 +404,9 @@ def test_molecule_subunit_positions(water_molecule):
         assert all(atom.position == water_molecule.position + rel_pos[atom])
 
 
-@pytest.mark.parametrize("Int, n_atoms", [(su.Coulombic, [1]),
-                                          (su.Bond, [2]),
+@pytest.mark.parametrize("Int, n_atoms", [(su.Bond, [2]),
                                           (su.BondAngle, [3, 4])])
-def test_interactions(Int, n_atoms, atom):
+def test_bonded_interactions(Int, n_atoms, atom):
 
     """
     Tests that only the correct number of atoms can be used for the interaction
@@ -439,8 +414,6 @@ def test_interactions(Int, n_atoms, atom):
     Tests that atoms added to interactions are unique i.e. there are no
     duplicates
     """
-
-    bonded = issubclass(Int, su.BondedInteraction)
 
     for n in n_atoms:
         atoms = []
@@ -457,7 +430,7 @@ def test_interactions(Int, n_atoms, atom):
 
     # Test duplicates for bonded interactions
     atoms_duplicate = []
-    n_duplicates = max(n_atoms) if bonded else max(n_atoms) + 1
+    n_duplicates = max(n_atoms)
     for _ in range(n_duplicates):
         atoms_duplicate.append(atom)
 
@@ -465,13 +438,12 @@ def test_interactions(Int, n_atoms, atom):
         invalid_bond = Int(*atoms_duplicate)
 
     # Test incorrect number of atoms for bonded interactions
-    if bonded:
-        for n in [min(n_atoms) - 1, max(n_atoms) + 1]:
-            atoms = []
-            for _ in range(n):
-                atoms.append(deepcopy(atom))
-            with pytest.raises(TypeError):
-                invalid_bond = Int(*atoms)
+    for n in [min(n_atoms) - 1, max(n_atoms) + 1]:
+        atoms = []
+        for _ in range(n):
+            atoms.append(deepcopy(atom))
+        with pytest.raises(TypeError):
+            invalid_bond = Int(*atoms)
 
 
 def test_universe_atom_types(water_molecule, universe):
@@ -483,7 +455,7 @@ def test_universe_atom_types(water_molecule, universe):
 
     C = su.Atom('C', mass=12.0107, atom_type=2)
     assert C.atom_type == 2
-    C_coulombic = su.Coulombic(C)
+    C_coulombic = su.Coulombic(atoms=C)
     H1, H2, O = water_molecule.atom_list
 
     assert len(universe.atom_types) == 0
