@@ -254,7 +254,6 @@ def test_spce_water_molecule(universe, water_molecule):
     # Test interaction functions
     assert Counter(function_names) == Counter(['Coulomb',
                                                'Coulomb',
-                                               'Coulomb',
                                                'HarmonicPotential',
                                                'HarmonicPotential',
                                                'HarmonicPotential',
