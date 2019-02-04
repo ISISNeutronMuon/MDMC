@@ -500,3 +500,39 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     disp = su.Dispersion(water_SPCE_universe, *atom_types_init)
     assert disp.atom_types == atom_types_expected
 
+
+def test_init_coulombic_atom_types():
+
+    """
+    Tests initializing a coulombic object with atom_types:
+
+    - 1 atom_type
+    - 2 atom_types (different)
+    """
+
+    pass
+
+
+def test_init_coulombic_atoms():
+
+    """
+    Tests initializing a coulombic object with atoms
+    """
+
+    pass
+
+
+def test_coulombic_add_atom_types():
+
+    """
+    Tests adding atom_types to a coulombic object
+    """
+
+    pass
+
+
+def test_coulombic_add_atoms():
+
+    """
+    Tests adding atoms to a coulombic object
+    """
