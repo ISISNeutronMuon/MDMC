@@ -59,7 +59,7 @@ def test_Atom_units(atom, universe):
     charge
     """
 
-    atom_coulombic = Coulombic(atom)
+    atom_coulombic = Coulombic(atoms=atom)
 
     try:
         check_property(atom.position, LIST, units.LENGTH, units.unit_array)
