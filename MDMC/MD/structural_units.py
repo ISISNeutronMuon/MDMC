@@ -309,15 +309,13 @@ class CompositeStructuralUnit(StructuralUnit):
                 # and preserving the structures ordering in unit._structure_list
                 struct_map = {}
                 for atom in atoms:
-                    # Add atom's interactions to memo so that these are not
-                    # copied
+                    # Add atom's bonded interactions to memo so that these are
+                    # not copied
                     for inter in atom.interactions:
-                        memo[id(inter)] = inter
+                        if issubclass(type(inter), BondedInteraction):
+                            memo[id(inter)] = inter
                     new_atom = deepcopy(atom, memo)
                     struct_map[atom] = new_atom
-                    # Add new atoms to nonbonded interactions
-                    for inter in atom.nonbonded_interactions:
-                        inter.add_atoms(new_atom)
 
                 # Create interactions
                 for inter, pair in self.bonded_interaction_pairs:
