@@ -1120,9 +1120,33 @@ class Coulombic(NonBondedInteraction):
         """
 
         if atom_types:
+            if not universe:
+                raise TypeError('Coulombic requires a universe when atom_types'
+                                ' are passed')
             self.add_atom_types = MethodType(_add_atom_types, self)
-        elif settings['atoms']:
+
+            self._atom_types = atom_types
+            self._atoms = [atom for atom_type in self.atom_types
+                           for atom in self.universe.atom_types[atom_type]]
+            # Add interaction to atoms
+            for atom in self.atoms:
+                atom.add_interaction(self)
+        else:
             self.add_atoms = MethodType(_add_atoms, self)
+            try:
+                atoms = settings['atoms']
+            except KeyError:
+                raise TypeError('Coulombic takes either atom_types or atoms as'
+                                ' arguments')
+            # Account for init argument atoms=atom rather than atoms=[atom]
+            if isinstance(atoms, Atom):
+                atoms = [atoms]
+            self._atoms = []
+            self._atom_types = []
+            self.add_atoms(*atoms)
+
+            # Assumes all atoms are in the same universe (or None)
+            universe = self.atoms[0].universe
 
         super(Coulombic, self).__init__(universe, **settings)
 
@@ -1133,7 +1157,7 @@ class Coulombic(NonBondedInteraction):
         The number of interactions of this type that have been set
         """
 
-        raise NotImplementedError
+        return len(self.atoms)
 
     def __getitem__(self, key):
 
@@ -1144,27 +1168,27 @@ class Coulombic(NonBondedInteraction):
         instance of this interaction.
         """
 
-        raise NotImplementedError
+        return self.atoms[key]
 
     @property
     def atoms(self):
 
-        raise NotImplementedError
-
-    @atoms.setter
-    def atoms(self, value):
-
-        raise NotImplementedError
+        return self._atoms
 
     @property
-    def universe(self):
+    def atom_types(self):
 
-        raise NotImplementedError
+        """
+        Returns:
+        All atom_types to which the Coulombic interaction applies
 
-    @universe.setter
-    def universe(self, value):
+        If the interaction was initialized with the atoms argument, all
+        atom_types of the atoms to which the Coulombic interaction was applied
+        are returned; HOWEVER THE COULOMBIC INTERACTION IS NOT APPLIED TO ALL
+        ATOMS OF THESE ATOM_TYPES, ONLY THE ATOMS IN self.atoms
+        """
 
-        self._universe = value
+        return self._atom_types
 
     def element_list(self):
 
@@ -1173,7 +1197,8 @@ class Coulombic(NonBondedInteraction):
         A list of elements for which the Interaction applies
         """
 
-        raise NotImplementedError
+        return list(set(atom.element for atom in self._atoms))
+
 
 def _add_atom_types(self, *atom_types):
 
@@ -1193,11 +1218,22 @@ def _add_atoms(self, *atoms):
     """
     Function for dynamically creating an add_atoms method in Coulombic
 
+    Adds atoms to Coulombic object and adds Coulombic object to atoms
+    nonbonded_interactions
+
     Arguments:
     atoms - one or more atoms
     """
 
-    self._atoms.append(*atoms)
+
+    for atom in atoms:
+        # Add atom to interaction
+        self._atoms.append(atom)
+        # Add interaction to atom
+        atom.add_interaction(self, from_interaction=True)
+        # Add atom_type to interaction.atom_types
+        if atom.atom_type not in self.atom_types:
+            self._atom_types.append(atom.atom_type)
 
 
 class BondedInteraction(Interaction):
