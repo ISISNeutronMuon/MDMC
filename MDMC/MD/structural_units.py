@@ -333,7 +333,8 @@ class CompositeStructuralUnit(StructuralUnit):
                     new_composite = deepcopy(composite, memo)
                     struct_map[composite] = new_composite
 
-                # List comprehension orders structures
+                # List comprehension ensures order of structures in new
+                # structure is the same as in original
                 setattr(unit, k, [struct_map[s] for s in self._structure_list])
             else:
                 setattr(unit, k, deepcopy(v, memo))
