@@ -683,8 +683,8 @@ class Molecule(CompositeStructuralUnit):
         A list of NonBondedInteractions acting on atoms of the Molecule
         """
 
-        return list(set([inter for atom in self.atom_list
-                         for inter in atom.nonbonded_interactions]))
+        return [inter for atom in self.atom_list
+                for inter in atom.nonbonded_interactions]
 
     @property
     def bonded_interaction_pairs(self):
