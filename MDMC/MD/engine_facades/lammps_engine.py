@@ -279,7 +279,31 @@ class LAMMPSEngine(MDEngine):
                                    for a in angles])
             self._update_angles(angles)
 
+    def _create_Coulombic(self, couls):
 
+        """
+        Creates the coulombic interactions in LAMMPS
+
+        AS MDMC CURRENTLY ONLY CONSIDERS COULOMBIC INTERACTIONS BETWEEN
+        LIKE-LIKE ATOMS, THE CROSS TERM IS INFERRED FROM THESE RATHER THAN
+        PASSED EXPLICITLY - THIS CAN LEAD TO UNPREDICTABLE BEHAVIOUR IF MORE
+        THAN ONE STYLE OF COULOMBIC INTERACTION IS USED.
+
+        Arguments:
+        couls - a list of coulombic interactions
+        """
+
+        # Coulombic interaction doesn't require parameter setting, as this is
+        # handled by the atom property charge
+        # As Coulombic interactions in MDMC only have one type, that interaction
+        # style (e.g. Coulomb) is applied to the interactions between that type
+        # and all other types (achieved in LAMMPS with '*' notation). As
+        # interactions are overwritten, it is the style of last atom_type
+        # that determines its unlike interactions.
+        for coul in couls:
+            for atom_type in coul.atom_types:
+                self.lmp.pair_coeff(atom_type, '*',
+                                    parse_nonbonded_styles(coul))
 
     def _update_charges(self):
 
