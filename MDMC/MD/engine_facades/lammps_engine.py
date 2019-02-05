@@ -318,7 +318,7 @@ class LAMMPSEngine(MDEngine):
         for atom, L_atom in self.atom_dict.items():
             self.lmp.set('atom',
                          L_atom.id,
-                         convert_units(atom.charge, atom.charge.unit))
+                         convert_unit(atom.charge, atom.charge.unit))
 
     def _update_dispersions(self, disps):
 
@@ -384,7 +384,8 @@ SYSTEM = {
     'PRESSURE':units.Unit('atm')
 }
 
-def convert_units(value, unit):
+
+def convert_unit(value, unit):
 
     """
     Converts between MDMC units and LAMMPS real units
@@ -397,18 +398,15 @@ def convert_units(value, unit):
     a float with the value in LAMMPS units
     """
 
-    if unit in units.SYSTEM.values():
-        for quantity, system_unit in units.SYSTEM.items():
-            if unit == system_unit:
-                lmp_value = getattr(units, SYSTEM[quantity]) * value
-    else:
-        pass
+    # As values must be unique in MDMC system of units dictionary
+    # (units.SYSTEM), the keys and values can be inverted
+    SYSTEM_INV = {unit:property for property, unit in units.SYSTEM.items()}
 
+    for component in unit.components['numerator']:
+        value *= getattr(units, SYSTEM[SYSTEM_INV[component]])
 
-    try:
-        return lmp_value
-    except NameError:
-        raise TypeError('This unit cannot be converted')
+    return value
+
 
 def parse_bonded_styles(interaction):
 
@@ -453,7 +451,7 @@ def parse_nonbonded_styles(interaction):
                                   ' implemented in the LAMMPS facade')
 
     if interaction.cutoff:
-        cutoff = convert_units(interaction.cutoff, interaction.cutoff.units)
+        cutoff = convert_unit(interaction.cutoff, interaction.cutoff.unit)
         if interaction.kspace_solver:
             lmp_str.append('long')
         else:
@@ -481,7 +479,7 @@ def parse_bond_coefficients(interaction):
     bond_coeff
     """
 
-    parameters = {p.name:convert_units(p.value, p.unit)
+    parameters = {p.name:convert_unit(p.value, p.unit)
                   for p in interaction.params}
     style = parse_bonded_styles(interaction)
 
@@ -505,7 +503,7 @@ def parse_dispersion_coefficients(interaction):
     pair_coeff
     """
 
-    parameters = {p.name:convert_units(p.value, p.unit)
+    parameters = {p.name:convert_unit(p.value, p.unit)
                   for p in interaction.params}
     style = parse_nonbonded_styles(interaction)
 
