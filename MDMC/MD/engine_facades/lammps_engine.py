@@ -361,6 +361,21 @@ class LAMMPSEngine(MDEngine):
         raise NotImplementedError
 
 
+# Define the unit system used in LAMMPS
+# NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
+# e.g. harmonic angle potential strength is in kcal / mol radian ^ 2
+SYSTEM = {
+    'LENGTH':units.Unit('Ang'),
+    'TIME':units.Unit('fs'),
+    'MASS':units.Unit('g / mol'),
+    'CHARGE':units.Unit('e'),
+    'ANGLE':units.Unit('deg'),
+    'TEMPERATURE':units.Unit('K'),
+    'ENERGY':units.Unit('kcal / mol'),
+    'FORCE':units.Unit('kcal / mol Ang'),
+    'PRESSURE':units.Unit('atm')
+}
+
 def convert_units(value, unit):
 
     """
