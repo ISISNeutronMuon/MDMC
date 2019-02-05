@@ -20,10 +20,11 @@ AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
 from collections import defaultdict
-from itertools import tee
+from itertools import product, tee
 
 from lammps import PyLammps
 
+from MDMC.common import units
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import BondedInteraction
 
