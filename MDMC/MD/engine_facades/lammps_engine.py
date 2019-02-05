@@ -392,20 +392,20 @@ def convert_units(value, unit):
     raise NotImplementedError
 
 
-def parse_bonded_styles(style):
+def parse_bonded_styles(interaction):
 
     """
     Converts MDMC InteractionFunction names for BondedInteractions to LAMMPS
     bond styles
 
     Arguments:
-    style - a string specifying the MDMC InteractionFunction name
+    interaction - an MDMC interaction
 
     Returns:
     a string with the corresponding LAMMPS bond style
     """
 
-    if style == 'HarmonicPotential':
+    if interaction.function_name == 'HarmonicPotential':
         return 'harmonic'
     else:
         raise NotImplementedError('This InteractionFunction has not been'
