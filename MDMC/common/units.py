@@ -40,6 +40,8 @@ class Unit(str):
 
     It possesses additional * and / operands so that combined units can be
     returned.
+
+    NON-INTEGER POWER OPERATIONS ARE CURRENTLY NOT IMPEMENTED
     """
 
     def __new__(cls, string, components=None):
