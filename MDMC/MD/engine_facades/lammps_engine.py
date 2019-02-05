@@ -421,6 +421,30 @@ def parse_bond_coefficients(style, parameters):
     return [style] + ordered_parameters
 
 
+def parse_dispersion_coefficients(interaction):
+
+    """
+    Orders MDMC Parameters for input to LAMMPS pair_coeff
+
+    Arguments:
+    interaction - an MDMC interaction object
+
+    Returns:
+    A list of style and parameters converted to the input format for LAMMPS
+    pair_coeff
+    """
+
+    parameters = {p.name:convert_units(p.value, p.unit)
+                  for p in interaction.params}
+    style = parse_nonbonded_styles(interaction)
+
+    if style == 'lj':
+        ordered_parameters = [parameters['epsilon'],
+                              parameters['sigma']]
+
+    return [style] + ordered_parameters
+
+
 def partition(items, predicate):
 
     """
