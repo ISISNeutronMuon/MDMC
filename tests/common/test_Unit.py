@@ -49,7 +49,7 @@ def test_multiply_Unit(unit):
     """
 
     multiply = unit * unit
-    assert multiply == STRING + ' ' + STRING
+    assert multiply == STRING + ' ^ 2'
     assert isinstance(multiply, Unit)
     with pytest.raises(TypeError):
         invalid = unit * 2
@@ -69,11 +69,11 @@ def test_divide_Unit(unit):
 
 
 @pytest.mark.parametrize("input,expected", [(2, ' ^ 2'),
-                                            (2.0, ' ^ 2.0'),
-                                            (np.float64(2.), ' ^ 2.0'),
+                                            (2.0, ' ^ 2'),
+                                            (np.float64(2.), ' ^ 2'),
                                             (unit(), TypeError),
                                             (STRING, TypeError),
-                                            ('2', ' ^ 2.0')])
+                                            ('2', ' ^ 2')])
 def test_power_Unit(unit, input, expected):
 
     """
