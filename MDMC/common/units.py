@@ -42,6 +42,22 @@ class Unit(str):
     returned.
     """
 
+    def __new__(cls, string, components=None):
+
+        """
+        Arguments:
+        string - a string specifying the unit
+        components - a defaultdict(list) specifying the numerator and
+        denominator components of the Unit
+        """
+
+        unit = super(Unit, cls).__new__(cls, string)
+        if not components:
+            components = defaultdict(list)
+            components['numerator'].append(string)
+        unit.components = components
+        return unit
+
     def __mul__(self, other):
 
         """
