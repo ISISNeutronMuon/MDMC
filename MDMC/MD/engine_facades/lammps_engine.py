@@ -250,9 +250,7 @@ class LAMMPSEngine(MDEngine):
         IMPERR = ('This interaction type has not been implemented in the LAMMPS'
                   ' facade')
 
-        # Coulombic interactions are disregarded as these are set in
-        # self._update_charges
-        bonds, angles, disps, _, others = partition_interactions(
+        bonds, angles, disps, couls, others = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
@@ -263,10 +261,17 @@ class LAMMPSEngine(MDEngine):
                                       ' coulombic interactions are implemented'
                                       ' in LAMMPS facade')
 
-        if disps:
-            self.lmp.pair_style('hybrid',
-                                *)
-
+        # LAMMPS uses pair_style for all nonbonded interactions, so dispersive
+        # and coulombic interactions are treated together. While multiple
+        # identical pair_styles can be used with the hybrid command, it is
+        # inefficient, so duplicates are removed with set.
+        nonbonded_styles = set([parse_nonbonded_styles(nb) for nb
+                                in disps + couls])
+        if nonbonded_styles:
+            self.lmp.pair_style('hybrid', *nonbonded_styles)
+            self._create_Coulombic()
+            self._update_charges()
+            self._update_dispersions()
 
         if bonds:
             self.lmp.bond_style('hybrid',
