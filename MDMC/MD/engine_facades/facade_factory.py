@@ -29,7 +29,7 @@ class MDEngineFacadeFactory(object):
 
         try:
             module = import_module('.' + module_name, __package__)
-        except ModuleNotFoundError:
+        except ImportError:
             module = MDEngineFacadeFactory._import_from_alias(module_name)
 
         classes = getmembers(module, lambda m: (isclass(m)
