@@ -307,6 +307,10 @@ class LAMMPSEngine(MDEngine):
 
     def _update_charges(self):
 
+        """
+        Updates the charges in LAMMPS
+        """
+
         for atom, L_atom in self.atom_dict.items():
             self.lmp.set('atom',
                          L_atom.id,
@@ -314,9 +318,14 @@ class LAMMPSEngine(MDEngine):
 
     def _update_dispersion(self, bonds):
 
+        """
+        Updates dispersion interactions in LAMMPS
 
         # TODO: Consider if it's useful to start by explictly setting all interaction pairs to 0
         raise NotImplementedError
+        Arguments:
+        disps - a list of dispersion interactions
+        """
 
     def _update_bonds(self, bonds, coeffs=False):
 
@@ -360,6 +369,9 @@ def convert_units(value, unit):
     Arguments:
     value - a float specifying the value in MDMC units
     unit - the unit of the value
+
+    Returns:
+    a float with the value in LAMMPS units
     """
 
     raise NotImplementedError
