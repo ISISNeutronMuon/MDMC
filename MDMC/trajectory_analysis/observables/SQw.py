@@ -85,7 +85,7 @@ class AbstractSQw(Observable):
             raise AttributeError
 
     @property
-    @unit_decorator_getter(unit=units.ANGLE / 'ps')
+    @unit_decorator_getter(unit=units.ANGLE / units.Unit('ps'))
     def w(self):
 
         """
