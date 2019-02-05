@@ -354,7 +354,8 @@ class LAMMPSEngine(MDEngine):
                 atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
                 self.lmp.create_bonds('single/bond',
                                       ID,
-                                      *atom_IDs,
+                                      atom_IDs[0],
+                                      atom_IDs[1],
                                       'special',
                                       special)
 
