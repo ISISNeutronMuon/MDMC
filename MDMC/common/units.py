@@ -6,6 +6,7 @@ style follows that of the Atomic Simulation Environment.
 
 AUTHOR :    Thomas Farmer        START DATE :    12/12/2018, 11:06:51"""
 
+from collections import Counter, defaultdict
 from copy import deepcopy
 from numbers import Number
 
@@ -39,28 +40,69 @@ class Unit(str):
 
     It possesses additional * and / operands so that combined units can be
     returned.
+
+    NON-INTEGER POWER OPERATIONS ARE CURRENTLY NOT IMPEMENTED
+
+    Attributes:
+    components - a defaultdict(list) containing the components of the unit,
+    separated into two lists (numerator and denominator) depending on which side
+    of the fraction each component is on.  If the Unit is a base unit i.e.
+    initialized using Unit(), then the components only has a numerator and this
+    is the Unit's string.  If it a combined unit (created by either __mul__,
+    __div__ or __pow__) then the units which combined to form it make up the
+    components.
     """
+
+    def __new__(cls, string, components=None):
+
+        """
+        Arguments:
+        string - a string specifying the unit
+        components - a defaultdict(list) specifying the numerator and
+        denominator components of the Unit
+        """
+
+        unit = super(Unit, cls).__new__(cls, string)
+        if not components:
+            components = defaultdict(list)
+            components['numerator'].append(string)
+        unit.components = components
+        return unit
 
     def __mul__(self, other):
 
         """
-        Appends a single space and other to the unit string
+        Multiplies the unit by unit
+
+        Arguments:
+        other - a unit
         """
 
-        return self.__class__(self + ' ' + other)
+        try:
+            components = self._calculate_components(other, 'mul')
+        except AttributeError:
+            raise TypeError('A Unit can only be multipled by another Unit')
+        return self.__class__(self._calculate_string(components), components)
 
     def __div__(self, other):
 
         """
-        Appends ' / ' and other to the unit string
+        Divides the unit by another unit
+
+        Arguments:
+        other - a unit
         """
 
-        return self.__class__(self + ' / ' + other)
+        try:
+            components = self._calculate_components(other, 'div')
+        except AttributeError:
+            raise TypeError('A Unit can only be divided by another Unit')
+        return self.__class__(self._calculate_string(components), components)
 
     def __pow__(self, other):
 
         """
-        Appends ' ^ ' and other to the unit string
+        Performs the power operation on the unit
 
         Arguments:
         other - a numeric type (inherits from numbers.Number)
@@ -73,10 +115,91 @@ class Unit(str):
                 raise TypeError('Only numeric types can be used as a power for'
                                 ' Units')
 
-        try:
-            return self.__class__(self + ' ^ ' + other)
-        except TypeError:
-            return self.__class__(self + ' ^ ' + str(other))
+        components = self._calculate_components(other, 'pow')
+        return self.__class__(self._calculate_string(components), components)
+
+    def _calculate_components(self, other, op):
+
+        """
+        Calculates the components for a new Unit generated from an operation
+
+        These components are separated into whether they are in the numerator or
+        the denominator of the new Unit
+
+        Arguments:
+        other - another Unit object
+        op - a string specifying an operation
+
+        Returns:
+        A defaultdict(list) containing the numerator and denominator of the
+        new Unit
+        """
+
+        components = deepcopy(self.components)
+        if op == 'mul':
+            components['numerator'] += other.components['numerator']
+            components['denominator'] += other.components['denominator']
+        if op == 'div':
+            components['numerator'] += other.components['denominator']
+            components['denominator'] += other.components['numerator']
+        if op == 'pow':
+            # Ensure other is an integer
+            other = int(other)
+            if other >= 1:
+                components['numerator'] *= other
+                components['denominator'] *= other
+            else:
+                numerator = components['numerator']
+                components['numerator'] = components['denominator'] * abs(other)
+                components['denominator'] = numerator * abs(other)
+
+        return components
+
+    def _calculate_string(self, components):
+
+        """
+        Calculates the string for a new Unit generated from an operation
+
+        Arguments:
+        components - a defaultdict(list) containing the numerator and
+        denominator of the new Unit
+
+        Returns:
+        A string specifying the new Unit
+        """
+
+        def _calculate_expr_string(expr):
+
+            """
+            Calculates the string from a list of components
+
+            Counter is used to determined the number of occurences of each unit
+            string and then create power notation if there is more than one
+            occurence.
+            """
+
+            component_powers = Counter(expr)
+            # List used rather than string so that sorting can be implemented
+            component_list = []
+            for comp, power in component_powers.items():
+                if power is 1:
+                    component_list.append(comp)
+                else:
+                    component_list.append(comp + ' ^ ' + str(power))
+            return ' '.join(component_list)
+
+        numerator = _calculate_expr_string(components['numerator'])
+        denominator = _calculate_expr_string(components['denominator'])
+
+        # Different string styles for the three cases of just numerator, just
+        # denominator, and both
+        if not components['numerator']:
+            return '1 / ' + denominator
+        else:
+            if not components['denominator']:
+                return numerator
+            else:
+                return numerator + ' / ' + denominator
 
 
 # Define the unit system used in MDMC
