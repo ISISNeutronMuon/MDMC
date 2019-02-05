@@ -64,7 +64,11 @@ class Unit(str):
         Appends a single space and other to the unit string
         """
 
-        return self.__class__(self + ' ' + other)
+        try:
+            components = self._calculate_components(other, 'mul')
+        except AttributeError:
+            raise TypeError('A Unit can only be multipled by another Unit')
+        return self.__class__(self._calculate_string(components), components)
 
     def __div__(self, other):
 
@@ -72,7 +76,11 @@ class Unit(str):
         Appends ' / ' and other to the unit string
         """
 
-        return self.__class__(self + ' / ' + other)
+        try:
+            components = self._calculate_components(other, 'div')
+        except AttributeError:
+            raise TypeError('A Unit can only be divided by another Unit')
+        return self.__class__(self._calculate_string(components), components)
 
     def __pow__(self, other):
 
@@ -90,10 +98,10 @@ class Unit(str):
                 raise TypeError('Only numeric types can be used as a power for'
                                 ' Units')
 
-        try:
-            return self.__class__(self + ' ^ ' + other)
-        except TypeError:
-            return self.__class__(self + ' ^ ' + str(other))
+        components = self._calculate_components(other, 'pow')
+        return self.__class__(self._calculate_string(components), components)
+
+
     def _calculate_components(self, other, op):
 
         """
