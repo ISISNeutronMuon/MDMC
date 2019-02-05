@@ -412,7 +412,8 @@ def parse_bond_coefficients(interaction):
     bond_coeff
     """
 
-    parameters = {p.name:p.value for p in parameters}
+    parameters = {p.name:convert_units(p.value, p.unit)
+                  for p in interaction.params}
     style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
