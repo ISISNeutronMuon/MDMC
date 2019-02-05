@@ -1,10 +1,3 @@
----
-name: Pull request
-title: ''
-assignees: TOFarmer
-
----
-
 **Description of work**
 
 A clear and concise description of the change.  Please include motivation and context.
