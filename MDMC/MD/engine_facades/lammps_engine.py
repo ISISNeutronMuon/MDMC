@@ -317,16 +317,20 @@ class LAMMPSEngine(MDEngine):
                          L_atom.id,
                          convert_units(atom.charge, atom.charge.unit))
 
-    def _update_dispersion(self, bonds):
+    def _update_dispersions(self, disps):
 
         """
         Updates dispersion interactions in LAMMPS
 
-        # TODO: Consider if it's useful to start by explictly setting all interaction pairs to 0
-        raise NotImplementedError
         Arguments:
         disps - a list of dispersion interactions
         """
+
+        for disp in disps:
+            atom_type_pairs = product(disps.atom_types[0], disps.atom_types[1])
+            for atom_type_pair in atom_type_pairs:
+                self.lmp.pair_coeff(atom_type_pair[0], atom_type_pair[1],
+                                    parse_dispersion_coefficients(disp))
 
     def _update_bonds(self, bonds, coeffs=False):
 
