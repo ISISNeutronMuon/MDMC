@@ -18,7 +18,7 @@ def unit_decorator(unit):
 
     Arguments:
     unit - string specifying the unit. If None then self.unit is used, which
-    enables classes to have propertuies with units defined at runtime. 
+    enables classes to have properties with units defined at runtime.
 
     Example:
 
@@ -29,7 +29,7 @@ def unit_decorator(unit):
             return self._position
 
         @position.setter
-        @unit_decorator(unit='Ang')
+        @unit_decorator(unit=Unit('Ang'))
         def position(self, value):
             self._position = value
     """
@@ -69,7 +69,7 @@ def unit_decorator_getter(unit):
     Class Universe(object):
 
         @property
-        @unit_decorator_getter(unit='Ang ^ 3')
+        @unit_decorator_getter(unit=Unit('Ang') ^ 3)
         def volume(self):
             return self.dims ** 3
     """
