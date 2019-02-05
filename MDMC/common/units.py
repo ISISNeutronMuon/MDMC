@@ -6,6 +6,7 @@ style follows that of the Atomic Simulation Environment.
 
 AUTHOR :    Thomas Farmer        START DATE :    12/12/2018, 11:06:51"""
 
+from collections import Counter, defaultdict
 from copy import deepcopy
 from numbers import Number
 
