@@ -94,6 +94,75 @@ class Unit(str):
             return self.__class__(self + ' ^ ' + other)
         except TypeError:
             return self.__class__(self + ' ^ ' + str(other))
+    def _calculate_components(self, other, op):
+
+        """
+        Calculates the components for a new Unit generated from an operation
+
+        Arguments:
+        other - another Unit object
+        op - a string specifying an operation
+
+        Returns:
+        A defaultdict(list) containing the numerator and denominator of the
+        new Unit
+        """
+
+        components = deepcopy(self.components)
+        if op == 'mul':
+            components['numerator'] += other.components['numerator']
+            components['denominator'] += other.components['denominator']
+        if op == 'div':
+            components['numerator'] += other.components['denominator']
+            components['denominator'] += other.components['numerator']
+        if op == 'pow':
+            # Ensure other is an integer
+            other = int(other)
+            if other >= 1:
+                components['numerator'] *= other
+                components['denominator'] *= other
+            else:
+                numerator = components['numerator']
+                components['numerator'] = components['denominator'] * abs(other)
+                components['denominator'] = numerator * abs(other)
+
+        return components
+
+    def _calculate_string(self, components):
+
+        """
+        Calculates the string for a new Unit generated from an operation
+
+        Arguments:
+        components - a defaultdict(list) containing the numerator and
+        denominator of the new Unit
+
+        Returns:
+        A string specifying the new Unit
+        """
+
+        def _calculate_expr_string(expr):
+
+            component_powers = Counter(expr)
+            # List used rather than string so that sorting can be implemented
+            component_list = []
+            for comp, power in component_powers.items():
+                if power is 1:
+                    component_list.append(comp)
+                else:
+                    component_list.append(comp + ' ^ ' + str(power))
+            return ' '.join(component_list)
+
+        numerator = _calculate_expr_string(components['numerator'])
+        denominator = _calculate_expr_string(components['denominator'])
+
+        if not components['numerator']:
+            return '1 / ' + denominator
+        else:
+            if not components['denominator']:
+                return numerator
+            else:
+                return numerator + ' / ' + denominator
 
 
 # Define the unit system used in MDMC
