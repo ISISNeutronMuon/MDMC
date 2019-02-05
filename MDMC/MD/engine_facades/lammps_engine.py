@@ -130,9 +130,11 @@ class LAMMPSEngine(MDEngine):
 
     def update_parameters(self):
 
-        self._update_charges(self.universe)
-        self._update_bonds(self.universe)
-        self._update_angles(self.universe)
+        raise NotImplementedError
+        # self._update_charges()
+        # self._update_bonds()
+        # self._update_angles()
+        # self._update_dispersion()
 
     def save_config(self):
 
