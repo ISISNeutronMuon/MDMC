@@ -270,14 +270,12 @@ class LAMMPSEngine(MDEngine):
 
         if bonds:
             self.lmp.bond_style('hybrid',
-                                *[parse_bonded_styles(b.function_name)
-                                  for b in bonds])
+                                *[parse_bonded_styles(b) for b in bonds])
             self._update_bonds(bonds)
 
         if angles:
             self.lmp.angle_style('hybrid',
-                                 *[parse_bonded_styles(a.function_name)
-                                   for a in angles])
+                                 *[parse_bonded_styles(a) for a in angles])
             self._update_angles(angles)
 
     def _create_Coulombic(self, couls):
@@ -345,8 +343,7 @@ class LAMMPSEngine(MDEngine):
         special = 'no'
         for ID, bond in enumerate(bonds, start=1):
             if coeffs:
-                self.lmp.bond_coeff(ID, *parse_bond_coefficients(
-                    parse_bonded_styles(bond.function_name), bond.parameters))
+                self.lmp.bond_coeff(ID, *parse_bond_coefficients(bond))
 
             # Special triggers the internal interaction list in LAMMPS
             # This must at least occur at the end, and is an expensive
