@@ -397,7 +397,7 @@ def parse_bonded_styles(style):
                                   ' implemented in the LAMMPS facade')
 
 
-def parse_bond_coefficients(style, parameters):
+def parse_bond_coefficients(interaction):
 
     """
     Orders MDMC Parameters for input to LAMMPS bond_coeff
@@ -413,6 +413,7 @@ def parse_bond_coefficients(style, parameters):
     """
 
     parameters = {p.name:p.value for p in parameters}
+    style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
         ordered_parameters = [parameters['potential_strength'],
