@@ -42,6 +42,15 @@ class Unit(str):
     returned.
 
     NON-INTEGER POWER OPERATIONS ARE CURRENTLY NOT IMPEMENTED
+
+    Attributes:
+    components - a defaultdict(list) containing the components of the unit,
+    separated into two lists (numerator and denominator) depending on which side
+    of the fraction each component is on.  If the Unit is a base unit i.e.
+    initialized using Unit(), then the components only has a numerator and this
+    is the Unit's string.  If it a combined unit (created by either __mul__,
+    __div__ or __pow__) then the units which combined to form it make up the
+    components.
     """
 
     def __new__(cls, string, components=None):
@@ -63,7 +72,10 @@ class Unit(str):
     def __mul__(self, other):
 
         """
-        Appends a single space and other to the unit string
+        Multiplies the unit by unit
+
+        Arguments:
+        other - a unit
         """
 
         try:
@@ -75,7 +87,10 @@ class Unit(str):
     def __div__(self, other):
 
         """
-        Appends ' / ' and other to the unit string
+        Divides the unit by another unit
+
+        Arguments:
+        other - a unit
         """
 
         try:
@@ -87,7 +102,7 @@ class Unit(str):
     def __pow__(self, other):
 
         """
-        Appends ' ^ ' and other to the unit string
+        Performs the power operation on the unit
 
         Arguments:
         other - a numeric type (inherits from numbers.Number)
@@ -103,11 +118,13 @@ class Unit(str):
         components = self._calculate_components(other, 'pow')
         return self.__class__(self._calculate_string(components), components)
 
-
     def _calculate_components(self, other, op):
 
         """
         Calculates the components for a new Unit generated from an operation
+
+        These components are separated into whether they are in the numerator or
+        the denominator of the new Unit
 
         Arguments:
         other - another Unit object
@@ -153,6 +170,14 @@ class Unit(str):
 
         def _calculate_expr_string(expr):
 
+            """
+            Calculates the string from a list of components
+
+            Counter is used to determined the number of occurences of each unit
+            string and then create power notation if there is more than one
+            occurence.
+            """
+
             component_powers = Counter(expr)
             # List used rather than string so that sorting can be implemented
             component_list = []
@@ -166,6 +191,8 @@ class Unit(str):
         numerator = _calculate_expr_string(components['numerator'])
         denominator = _calculate_expr_string(components['denominator'])
 
+        # Different string styles for the three cases of just numerator, just
+        # denominator, and both
         if not components['numerator']:
             return '1 / ' + denominator
         else:
