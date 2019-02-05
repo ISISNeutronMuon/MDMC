@@ -397,6 +397,42 @@ def parse_bonded_styles(style):
                                   ' implemented in the LAMMPS facade')
 
 
+def parse_nonbonded_styles(interaction):
+
+    """
+    Converts MDMC InteractionFunction names for NonBondedInteractions to LAMMPS
+    pair styles
+
+    Arguments:
+    interaction - an MDMC interaction
+
+    Returns:
+    a string with the correspoding LAMMPS pair style
+    """
+
+    lmp_str = []
+    if interaction.function_name == 'LennardJones':
+        lmp_str.append('lj')
+    elif interaction.function_name == 'Coulomb':
+        lmp_str.append('coul')
+    else:
+        raise NotImplementedError('This InteractionFunction has not been'
+                                  ' implemented in the LAMMPS facade')
+
+    if interaction.cutoff:
+        cutoff = convert_units(interaction.cutoff, interaction.cutoff.units)
+        if interaction.kspace_solver:
+            lmp_str.append('long')
+        else:
+            lmp_str.append('cut')
+        lmp_str.append(str(cutoff))
+    else:
+        raise NotImplementedError('This InteractionFunction has not been'
+                                  ' implemented in the LAMMPS facade')
+
+    return lmp_str
+
+
 def parse_bond_coefficients(interaction):
 
     """
