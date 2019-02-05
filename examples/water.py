@@ -22,14 +22,17 @@ universe = sim.Universe(dimensions=(SIDE, SIDE, SIDE),
 H1 = su.Atom('H', mass=1.008)
 H2 = su.Atom('H', position=(1.51390, 0., 0.), mass=1.008)
 O = su.Atom('O', position=(0.75695, 0., 0.58588), mass=16.000)
+H_coulombic = su.Coulombic(atoms=[H1, H2])
+O_coulombic = su.Coulombic(atoms=O)
 water_mol = su.Molecule(position=(0, 0, 0),
                         velocity=(0, 0, 0),
                         atoms=[H1, H2, O],
                         interactions=[su.Bond((H1, O), (H2, O)),
-                                      su.Dispersion(O),
                                       su.BondAngle(H1, O, H2)],
                         name='water')
-universe.fill(water_mol, force_field="SPCE", num_density=0.0335)
+universe.fill(water_mol, num_density=0.0335)
+O_dispersion = su.Dispersion(universe, O.atom_type)
+universe.add_force_field('SPCE')
 
 # MD Engine setup
 md_engine = sim.Simulation(universe,
