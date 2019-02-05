@@ -391,8 +391,18 @@ def convert_units(value, unit):
     a float with the value in LAMMPS units
     """
 
-    raise NotImplementedError
+    if unit in units.SYSTEM.values():
+        for quantity, system_unit in units.SYSTEM.items():
+            if unit == system_unit:
+                lmp_value = getattr(units, SYSTEM[quantity]) * value
+    else:
+        pass
 
+
+    try:
+        return lmp_value
+    except NameError:
+        raise TypeError('This unit cannot be converted')
 
 def parse_bonded_styles(interaction):
 
