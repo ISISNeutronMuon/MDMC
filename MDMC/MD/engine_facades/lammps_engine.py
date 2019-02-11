@@ -196,7 +196,7 @@ class LAMMPSEngine(MDEngine):
         universe - a Universe object
         """
 
-        self.atom_types = self._assign_atom_types(universe.atom_list)
+        self.atom_types = universe.atom_types
 
         for type_ID, atom_type_group in self.atom_types.items():
             self.lmp.mass(type_ID, atom_type_group[0].mass)
@@ -218,32 +218,6 @@ class LAMMPSEngine(MDEngine):
 
         return max([len(filter(lambda i: i.name == 'Bond', atom.interactions))
                     for atom in atoms])
-
-    def _assign_atom_types(self, atoms):
-
-        """
-        Groups the atoms by element and interactions
-
-        Arguments:
-        atoms - a list of atoms
-
-        Returns:
-        dict with a key of ID (unique number) and a value of a list of all
-        atoms that have the same element and interactions
-        """
-
-        atom_types_interactions = defaultdict(list)
-        for atom in atoms:
-            key = (atom.element, ) + tuple(sorted(atom.interactions))
-            atom_types_interactions[key].append(atom)
-
-        type_ID = 1
-        atom_types = {}
-        for atom_type_group in atom_types_interactions.values():
-            atom_types[type_ID] = atom_type_group
-            type_ID += 1
-
-        return atom_types
 
     def _add_topology(self, universe):
 
