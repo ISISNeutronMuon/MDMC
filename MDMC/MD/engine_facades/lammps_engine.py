@@ -20,7 +20,8 @@ AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
 from collections import defaultdict
-from itertools import product, tee
+from itertools import count, product, tee
+from tempfile import NamedTemporaryFile
 
 from lammps import PyLammps
 
