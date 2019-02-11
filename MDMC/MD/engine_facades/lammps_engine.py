@@ -131,7 +131,9 @@ class LAMMPSEngine(MDEngine):
 
     def convert_trajectory(self):
 
-        raise NotImplementedError
+        return convert_trajectory(self.trajectory_file.name,
+                                  self.atom_type_properties,
+                                  self.universe)
 
     def update_parameters(self):
 
@@ -563,3 +565,130 @@ def partition_interactions(interactions, names, unpartitioned=False, lst=False):
     if lst:
         interaction_lst = [list(i) for i in interaction_lst]
     return tuple(interaction_lst)
+
+
+def convert_trajectory(trajectory_file, atom_type_properties, universe=None,
+                       start=0, stop=None, step=1, scaled_positions=False,
+                       atom_IDs=None):
+
+    """
+    Converts between a LAMMPS trajectory dump and an MDMC trajectory
+
+    The LAMMPS dump must include at least id, atom_type, and xyz positions. The
+    xyz positions must be consecutive and in that order. The same is true of the
+    xyz components of the velocity, if they are provided.
+
+    Arguments:
+    trajectory_file - a string specifying the LAMMPS trajectory filename
+    atom_type_properties - a list of tuples (symbol, mass) for all atom_types
+    (ordered) by atom_type, where symbol is a string specifying the element of
+    the atom_type and mass is a float specifying the mass of the atom_type
+    universe - an MDMC universe
+    start - an integer specifying the first trajectory, inclusive
+    start - an integer specifying the last trajectory, exclusive
+    step - an integer specifying the step size between trajectories
+    scaled_positions - a boolean specifying if the LAMMPS trajectory file
+    provides the positions in scaled coordinates (i.e. xs, ys, yz)
+    atom_IDs - a list specifying the LAMMPS IDs of the atoms which should be
+    converted. If None then all atoms are converted.
+    """
+
+    def create_atom(line):
+        LAMMPS_ID = line[i_id]
+        atom_type = int(line[i_type])
+        # If distance units are same for MDMC and LAMMPS then
+        # don't call convert_units - currently hardcoded
+        # Same goes for velocity and time units
+        position = [float(splt) for splt in line[i_pos:i_pos+3]]
+        # Get symbol and mass from atom_type_properties
+        # Adjusted for 0 index
+        symbol, mass = atom_type_properties[atom_type-1]
+        atom = Atom(symbol, position=position, mass=mass)
+        atom.atom_type = atom_type
+        if universe:
+            atom.universe = universe
+        if i_vel is not None:
+            atom.velocity = [float(splt) for splt
+                             in line[i_vel:i_vel+3]]
+        return atom
+
+    # Change expected position string if scaled positions are used
+    pos_string = 'xs' if scaled_positions else 'x'
+
+    configs = []
+    config_iter = start
+    config_indexes = count(start, step)
+    next_iter = config_indexes.next()
+    with open(trajectory_file.name, 'r') as file_handler:
+        line = file_handler.readline()
+        while line:
+
+            if 'ITEM: TIMESTEP' in line:
+                line = file_handler.readline()
+                time_step = int(line.split()[0])
+
+            if 'ITEM: NUMBER OF ATOMS' in line:
+                line = file_handler.readline()
+                n_atoms = int(line.split()[0])
+                # Check that n_atoms is as expected, if a universe was passed
+                if universe:
+                    assert n_atoms == len(universe.atom_list)
+
+            if 'ITEM: BOX BOUNDS' in line:
+                # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
+                if 'xy' in line:
+                    raise TypeError('triclinic simulation boxes have not'
+                                    ' been implemented')
+                # Test dimensions are as expected, if a universe was passed
+                # CURRENTLY ASSUMES VOLUME IS CONSERVED
+                if universe:
+                    for i in range(3):
+                        line = file_handler.readline()
+                        min, max = [float(splt) for splt in line.split()]
+                        assert min == 0.0
+                        # unit is taken from array as dims is a UnitArray
+                        assert max == convert_unit(universe.dims[i],
+                                                   universe.dims.unit)
+
+            if 'ITEM: ATOMS' in line:
+
+                if config_iter == start:
+                    # Determine order of LAMMPS atom properties
+                    # Assumes that position components (x y z) and velocity
+                    # components (vx vy vz) are always adjacent and ordered as
+                    # shown
+                    splt = line.split()
+                    i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
+                                           in ['id', 'type', pos_string]]
+                    if 'vx' in splt:
+                        i_vel = splt.index('vx')
+                    else:
+                        i_vel = None
+
+                if config_iter == next_iter:
+                    # Create list of tuples of (LAMMPS_ID, atom) so that atoms are
+                    # reordered based on LAMMPS_ID
+                    lines = []
+                    for _ in range(n_atoms):
+                        line = file_handler.readline().split()
+                        # convert id to int
+                        line[i_id] = int(line[i_id])
+                        lines.append(line)
+                    # sort list based on id
+                    lines = sorted(lines, key=lambda x: x[i_id])
+
+                    atoms = []
+                    for line in lines:
+                        if not atom_IDs or line[i_id] in atom_IDs:
+                            atoms.append(create_atom(line))
+
+                    configs.append(TemporalConfiguration(time_step, *atoms))
+
+                    next_iter = config_indexes.next()
+                config_iter += 1
+                if config_iter >= stop:
+                    break
+
+
+            line = file_handler.readline()
+    return Trajectory(*configs)
