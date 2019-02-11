@@ -112,7 +112,7 @@ class LAMMPSEngine(MDEngine):
     def run(self, n_steps, equilibration):
 
         """
-        Potential order of commands for runnibg a LAMMPS simulation
+        Potential order of commands for running a LAMMPS simulation
 
         fix nve/nvt/npt
         fix temp/berendsen - if equilibrating with nve
@@ -379,8 +379,16 @@ def convert_unit(value, unit):
     # (units.SYSTEM), the keys and values can be inverted
     SYSTEM_INV = {unit:property for property, unit in units.SYSTEM.items()}
 
-    for component in unit.components['numerator']:
-        value *= getattr(units, SYSTEM[SYSTEM_INV[component]])
+    # Apply conversion factor from units module based on LAMMPS unit of property
+    # First try based on units module having exact unit
+    try:
+        value *= getattr(units, SYSTEM[SYSTEM_INV[unit]])
+    except (KeyError, AttributeError):
+        # Then try each component in turn
+        for component in unit.components['numerator']:
+            value *= getattr(units, SYSTEM[SYSTEM_INV[component]])
+        for component in unit.components['denominator']:
+            value /= getattr(units, SYSTEM[SYSTEM_INV[component]])
 
     return value
 
