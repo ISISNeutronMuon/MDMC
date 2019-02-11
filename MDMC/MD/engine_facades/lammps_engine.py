@@ -71,6 +71,7 @@ class LAMMPSEngine(MDEngine):
 
         self.atom_dict = {}
         self.atom_types = {}
+        self.atom_type_properties = []
 
         self._define_simulation_box(universe)
         self._build_configuration(universe)
@@ -200,6 +201,9 @@ class LAMMPSEngine(MDEngine):
         """
 
         self.atom_types = universe.atom_types
+        # Assume all atoms of the same type have the same element and mass
+        self.atom_type_properties = [(atom[0].element, atom[0].mass) for atom
+                                     in sorted(self.atom_types.values())]
 
         for type_ID, atom_type_group in self.atom_types.items():
             self.lmp.mass(type_ID, atom_type_group[0].mass)
