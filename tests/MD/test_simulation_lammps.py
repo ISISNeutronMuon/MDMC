@@ -66,6 +66,63 @@ def test_number_interactions_per_atom():
 
     pass
 
+
+def test_atom_type_properties():
+
+    """
+    Tests that element and mass are assigned to each list index correspond to
+    type equivalent to that index (-1 offset due to atom_type starting from 0)
+    """
+
+    pass
+
+
+def test_atom_type_mass():
+
+    """
+    Tests that the mass of each atom type is set correctly in LAMMPS
+    """
+
+    pass
+
+
+def test_atom_id():
+
+    """
+    Tests that atoms created in LAMMPS have the correct ID
+    """
+
+    pass
+
+
+def test_atom_type():
+
+    """
+    Tests that atoms created in LAMMPS have the correct atom types
+    """
+
+    pass
+
+
+def test_atom_position():
+
+    """
+    Tests that atoms created in LAMMPS have the correct position
+    """
+
+    pass
+
+
+def test_atom_in_molecule():
+
+    """
+    Tests that atoms in a molecule created in LAMMPS have the correct molecule
+    ID
+    """
+
+    pass
+
+
 def test_partion_interactions():
 
     """
