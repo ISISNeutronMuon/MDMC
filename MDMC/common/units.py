@@ -212,7 +212,7 @@ SYSTEM = {
     'TEMPERATURE':Unit('K'),
     'AMOUNT':Unit('mol'),
     'ENERGY':Unit('kJ'),
-    'FORCE':Unit('kJ / mol Ang'),
+    'FORCE':Unit('kJ') / (Unit('mol') * Unit('Ang')),
     'PRESSURE':Unit('Pa'),
     'ENERGY_TRANSFER':Unit('meV'),
     'ARBITRARY':Unit('arb')
@@ -254,7 +254,7 @@ def create_units(codata_version):
     units['kcal'] = units['kJ'] / 4.184
 
     # Force
-    units['kcal / mol Ang'] = units['kJ / mol Ang'] / 4.184
+    units['kcal / Ang mol'] = units['kJ / Ang mol'] / 4.184
 
     # Pressure
     units['atm'] = units['Pa'] / 101325.
