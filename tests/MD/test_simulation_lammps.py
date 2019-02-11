@@ -66,3 +66,37 @@ def test_number_interactions_per_atom():
 
     pass
 
+def test_partion_interactions():
+
+    """
+    Tests that MDMC universe interactions are partioned based on type
+    """
+
+    pass
+
+
+def test_unsupported_interactions():
+
+    """
+    Tests that if a universe passed to LAMMPSEngine._add_topology has any
+    interactions which have not been implemented in LAMMPS, NotImplementedError
+    is raised
+    """
+
+    pass
+
+
+def test_create_interaction_style():
+
+    """
+    Tests that all interactions are created with a hybrid style, for:
+
+    - bond
+    - angle
+    - dihedral
+    - improper
+
+    DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
+    """
+
+    pass
