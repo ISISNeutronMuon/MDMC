@@ -352,12 +352,12 @@ class LAMMPSEngine(MDEngine):
 SYSTEM = {
     'LENGTH':units.Unit('Ang'),
     'TIME':units.Unit('fs'),
-    'MASS':units.Unit('g / mol'),
+    'MASS':units.Unit('g') / units.Unit('mol'),
     'CHARGE':units.Unit('e'),
     'ANGLE':units.Unit('deg'),
     'TEMPERATURE':units.Unit('K'),
-    'ENERGY':units.Unit('kcal / mol'),
-    'FORCE':units.Unit('kcal / mol Ang'),
+    'ENERGY':units.Unit('kcal') / units.Unit('mol'),
+    'FORCE':units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
     'PRESSURE':units.Unit('atm')
 }
 
