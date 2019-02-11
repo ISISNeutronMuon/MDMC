@@ -14,7 +14,9 @@ A clear and concise description of what the problem is, including steps to repro
 What is the result you expect from running the steps described above?
 
 **Describe the actual result**
-What result were you expecting?
+What was the actual result.
+
+**Suggested fix**
 
 **Additional details**
 Add any other context or screenshots about the feature request here.
