@@ -228,7 +228,7 @@ class LAMMPSEngine(MDEngine):
         any atom possesses
         """
 
-        return max([len(filter(lambda i: i.name == 'Bond', atom.interactions))
+        return max([len(filter(lambda i: i.name == name, atom.interactions))
                     for atom in atoms])
 
     def _add_topology(self, universe):
