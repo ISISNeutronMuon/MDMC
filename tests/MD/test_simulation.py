@@ -523,6 +523,18 @@ def test_init_coulombic_atoms():
     pass
 
 
+def test_init_coulombic_with_charge():
+
+    """
+    Tests initializing a coulombic object with the charge keyword
+
+    Test if the correct InteractionFunction (with the correct parameter) is
+    created, and if the charge keyword renders the function keyword redundant.
+    """
+
+    pass
+
+
 def test_coulombic_add_atom_types():
 
     """

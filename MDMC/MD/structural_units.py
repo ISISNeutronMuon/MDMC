@@ -16,6 +16,7 @@ import numpy as np
 import MDMC.common.atom_properties as atom_properties
 from MDMC.common.decorators import unit_decorator
 from MDMC.common import units
+from MDMC.MD.interaction_functions import Coulomb
 
 
 class StructuralUnit:
@@ -1104,6 +1105,7 @@ class NonBondedInteraction(Interaction):
         except TypeError:
             self._universe = None
 
+
 class Dispersion(NonBondedInteraction):
 
     """
@@ -1179,6 +1181,20 @@ class Coulombic(NonBondedInteraction):
         Arguments:
         atom_types - one or more integers specifying atom_types that exist in
         the universe
+
+        Settings:
+        charge - a float specifying the charge parameter of the Coulombic
+        interaction, in units of e. If this argument is passed, the inteaction
+        function of this Coulombic object is set to a Coulomb interaction
+        function with this float as its parameter. For example, the following
+        initialization are equivalent:
+
+        O = Atom('O', atom_type=1)
+        O_coulombic = Coulombic(O.atom_type, charge=-0.84)
+        O_coulombic = Coulombic(O.atom_type, function=Coulomb(-0.84))
+
+        Passing a charge will overwrite any other interaction functions that are
+        set, i.e. it makes the function keyword redundant
         atoms - one or more Atom objects
         """
 
@@ -1186,6 +1202,7 @@ class Coulombic(NonBondedInteraction):
             if not universe:
                 raise TypeError('Coulombic requires a universe when atom_types'
                                 ' are passed')
+            super(Coulombic, self).__init__(universe, **settings)
             self.add_atom_types = MethodType(_add_atom_types, self)
 
             self._atom_types = atom_types
@@ -1210,8 +1227,13 @@ class Coulombic(NonBondedInteraction):
 
             # Assumes all atoms are in the same universe (or None)
             universe = self.atoms[0].universe
+            super(Coulombic, self).__init__(universe, **settings)
 
-        super(Coulombic, self).__init__(universe, **settings)
+        charge = settings.get('charge')
+        if charge:
+            # Initializes a Coulomb interaction function with charge and units
+            # and assigns it to self.function
+            self.function = Coulomb(units.UnitFloat(charge, units.CHARGE))
 
     def __len__(self):
 
