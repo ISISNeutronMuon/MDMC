@@ -123,6 +123,9 @@ class LAMMPSEngine(MDEngine):
         run
         """
 
+        self.trajectory_file = NamedTemporaryFile()
+        self.lmp.dump('traj1', 'all', 'custom', traj_step,
+                      self.trajectory_file.name, 'id', 'type', 'x', 'y', 'z')
         raise NotImplementedError
 
     def convert_trajectory(self):
