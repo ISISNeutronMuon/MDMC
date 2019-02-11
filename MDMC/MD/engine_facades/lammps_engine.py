@@ -27,7 +27,9 @@ from lammps import PyLammps
 
 from MDMC.common import units
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structural_units import BondedInteraction
+from MDMC.MD.structural_units import Atom, BondedInteraction
+from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
+    Trajectory
 
 
 class LAMMPSEngine(MDEngine):
