@@ -1186,6 +1186,7 @@ class Coulombic(NonBondedInteraction):
             if not universe:
                 raise TypeError('Coulombic requires a universe when atom_types'
                                 ' are passed')
+            super(Coulombic, self).__init__(universe, **settings)
             self.add_atom_types = MethodType(_add_atom_types, self)
 
             self._atom_types = atom_types
@@ -1210,8 +1211,8 @@ class Coulombic(NonBondedInteraction):
 
             # Assumes all atoms are in the same universe (or None)
             universe = self.atoms[0].universe
+            super(Coulombic, self).__init__(universe, **settings)
 
-        super(Coulombic, self).__init__(universe, **settings)
 
     def __len__(self):
 
