@@ -395,6 +395,55 @@ def _liquid_structure():
     raise NotImplementedError
 
 
+class KSpaceSolver(object):
+
+    """
+    Class describing the k-space solver that is applied to electrostatic and/or
+    dispersion interactions
+
+    Attributes:
+    solver - a string specifying the name of the solver. Solvers currently
+    supported (although not by all MD engines):
+
+    ewald
+    PPPM
+    """
+
+    SOLVERS = ['ewald', 'pppm']
+
+    def __init__(self, solver, **settings):
+
+        """
+        Different MD engines require different parameters to be specified for a
+        k-space solver to be used. These parameters are specified in settings,
+        which are grouped by engine.
+
+        Arguments:
+        solver - a string specifying the name of the solver
+
+        Settings:
+        LAMMPS:
+        accuracy - a float specifying the relative RMS error in per-atom forces
+        """
+
+        self.solver = solver
+        self.accuracy = settings.get('accuracy')
+
+    @property
+    def solver(self):
+
+        return self._solver
+
+    @solver.setter
+    def solver(self, value):
+
+        value = value.lower()
+        if value not in self.__class__.SOLVERS:
+            raise NotImplementedError('The solver type is not implemented for'
+                                      ' any MD engine')
+        self._solver = value
+
+
 class EnergyMinimizer(object):
 
     """
