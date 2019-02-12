@@ -61,6 +61,11 @@ def water_SPCE_universe(water_molecule):
     O_dispersion = su.Dispersion(water_universe, O_atom_type)
     return water_universe
 
+@pytest.fixture
+def kspace_solver():
+
+    return sim.KSpaceSolver(sim.KSpaceSolver.SOLVERS[0])
+
 
 def test_create_universe(universe):
 
