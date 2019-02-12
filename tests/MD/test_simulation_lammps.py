@@ -157,3 +157,94 @@ def test_create_interaction_style():
     """
 
     pass
+
+
+def test_create_coulombic_fatal_error():
+
+    """
+    Tests that setting Coulombic pair coefficients does not result in a fatal
+    error, where the LAMMPS Python interface causes Python to exit without
+    throwing an error, presumably due to a segfault
+
+    A more stringent test would check that the correct pair coefficients have
+    been set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    pass
+
+
+def test_atom_charge_set():
+
+    """
+    Tests that atom charges are set correctly
+    """
+
+    pass
+
+
+def test_atom_charges_update():
+
+    """
+    Tests that atom charges are updated correctly
+    """
+
+
+def test_create_bonds():
+
+    """
+    Tests that setting bond coefficients does not result in a fatal error, where
+    the LAMMPS Python interface causes Python to exit without throwing an error,
+    presumably due to a segfault
+
+    A more stringent test would check that the correct bond coefficients have
+    been set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    pass
+
+
+def test_update_bonds():
+
+    """
+    Tests that updating bond coefficients does not result in a fatal error,
+    where the LAMMPS Python interface causes Python to exit without throwing an
+    error, presumably due to a segfault
+
+    A more stringent test would check that the correct bond coefficients have
+    been set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    pass
+
+
+def test_create_angles():
+
+    """
+    Tests that setting angle coefficients does not result in a fatal error,
+    where the LAMMPS Python interface causes Python to exit without throwing an
+    error, presumably due to a segfault
+
+    A more stringent test would check that the correct angle coefficients have
+    been set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    pass
+
+
+def test_update_angles():
+
+    """
+    Tests that updating angle coefficients does not result in a fatal error,
+    where the LAMMPS Python interface causes Python to exit without throwing an
+    error, presumably due to a segfault
+
+    A more stringent test would check that the correct angle coefficients have
+    been set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    pass
