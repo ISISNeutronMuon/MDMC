@@ -21,6 +21,7 @@ AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 from collections import defaultdict
 from itertools import count, product, tee
+from random import randint
 from tempfile import NamedTemporaryFile
 
 from lammps import PyLammps
@@ -122,9 +123,46 @@ class LAMMPSEngine(MDEngine):
 
         fix shake (or rattle)
         fix momentum
+
+        Settings:
+        time_step - a float specifying the time step in fs (default is 1 fs)
+        skin - a float specifying the distance in Ang beyond the force cutoff
+        for which atom pairs are stored i.e. all atom pairs within
+        force cutoff + skin are stored in the neighbor list. The default is
+        2.0 Ang.
+        neighbor_steps - an integer specifying how the number of steps that can
+        elapse before the neighbor list is checked to see if it should be
+        rebuilt. A neighbor list is only rebuilt if an atom has moved more than
+        half the skin distance.
+        remove_linear_momentum - an integer specifying many steps elapse between
+        removing the linear momentum, or None. If None, the linear momentum of
+        the simulation is not removed. The default is 1 i.e. the linear momentum
+        is removed every step.
+        remove_angular_momentum - an integer specifying many steps elapse
+        between removing the angular momentum, or None. If None, the angular
+        momentum of the simulation is not removed. The default is None i.e. the
+        angular momentum is not removed.
         """
 
+        self.temperature = settings.get('temperature', 300)
+        self.time_step = settings.get('time_step', 1.0)
+
         self._saved_config = None
+
+        self.skin = settings.get('skin', 2.0)
+        self.neighbor_steps = settings.get('neighbor_steps', 1)
+
+        self.lin_momentum_steps = settings.get('remove_linear_momentum', 1)
+        self.ang_momentum_steps = settings.get('remove_angular_momentum')
+
+        self.lmp.velocity('all', 'create', self.temperature, randint(1, 9999))
+
+        self.lmp.neighbor(self.skin, 'bin')
+        self.lmp.neigh_modify('every', self.neighbor_steps, 'delay', 0, 'check',
+                              'yes')
+
+        self.lmp.timestep(self.time_step)
+
         raise NotImplementedError
 
     def minimize(self, n_steps):
