@@ -236,9 +236,6 @@ class LAMMPSEngine(MDEngine):
 
     def _add_topology(self, universe):
 
-        IMPERR = ('This interaction type has not been implemented in the LAMMPS'
-                  ' facade')
-
         bonds, angles, disps, couls, others = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'Dispersion', 'Coulombic'],
@@ -246,9 +243,8 @@ class LAMMPSEngine(MDEngine):
             lst=True)
 
         if others:
-            raise NotImplementedError('Only bond, angle, dispersion and'
-                                      ' coulombic interactions are implemented'
-                                      ' in LAMMPS facade')
+            raise NotImplementedError('This interaction type has not been'
+                                      ' implemented in the LAMMPS facade')
 
         # LAMMPS uses pair_style for all nonbonded interactions, so dispersive
         # and coulombic interactions are treated together. While multiple
