@@ -76,6 +76,9 @@ class LAMMPSEngine(MDEngine):
         self.atom_types = {}
         self.atom_type_properties = []
 
+        self.bond_ID = {}
+        self.angle_ID = {}
+
         self._define_simulation_box(universe)
         self._build_configuration(universe)
         self._add_topology(universe)
