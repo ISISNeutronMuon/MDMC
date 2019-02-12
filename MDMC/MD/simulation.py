@@ -470,6 +470,23 @@ class KSpaceSolver(object):
                                       ' any MD engine')
         self._solver = value
 
+    def __eq__(self, other):
+
+        """
+        Two KSpaceSolvers are equal if their __dict__ are equal
+        """
+
+        if not isinstance(other, self.__class__):
+            return False
+        for k, v in self.__dict__.items():
+            if v != getattr(other, k):
+                return False
+        return True
+
+    def __ne__(self, other):
+
+        return not self.__eq__(other)
+
 
 class EnergyMinimizer(object):
 
