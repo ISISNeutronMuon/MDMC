@@ -26,6 +26,7 @@ from tempfile import NamedTemporaryFile
 from lammps import PyLammps
 
 from MDMC.common import units
+from MDMC.common.decorators import unit_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom, BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
@@ -49,6 +50,28 @@ class LAMMPSEngine(MDEngine):
     def saved_config(self):
 
         raise NotImplementedError
+
+    @property
+    def time_step(self):
+
+        return self._time_step
+
+    @time_step.setter
+    @unit_decorator(unit=units.TIME)
+    def time_step(self, value):
+
+        self._time_step = value
+
+    @property
+    def temperature(self):
+
+        return self._temperature
+
+    @temperature.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature(self, value):
+
+        self._temperature = value
 
     def setup_universe(self, universe, **settings):
 
