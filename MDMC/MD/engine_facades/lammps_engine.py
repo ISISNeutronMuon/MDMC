@@ -506,16 +506,14 @@ def parse_nonbonded_styles(interaction):
 def parse_bonded_coefficients(interaction):
 
     """
-    Orders MDMC Parameters for input to LAMMPS bond_coeff
+    Orders MDMC Parameters for input to LAMMPS bond_coeff and angle_coeff
 
     Arguments:
-    style - a string specifying the MDMC InteractionFunction name
-    parameters - a NumPy array of the parameters, as is stored in
-    InteractionFunction.params
+    interaction - an MDMC interaction
 
     Returns:
     A list of style and parameters converted to the input format for LAMMPS
-    bond_coeff
+    bond_coeff and angle_coeff
     """
 
     parameters = {p.name:convert_unit(p.value, p.unit)
