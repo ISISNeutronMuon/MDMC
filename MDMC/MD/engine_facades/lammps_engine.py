@@ -262,7 +262,7 @@ class LAMMPSEngine(MDEngine):
             # Apply LAMMPS modifications to nonbonded interactions
             self._modify_nonbonded_styles(couls+disps)
             if self.universe.kspace_solver:
-                self.lmp.kspace_style(self._parse_kspace_solver(
+                self.lmp.kspace_style(_parse_kspace_solver(
                     self.universe.kspace_solver))
 
         if bonds:
