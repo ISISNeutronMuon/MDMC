@@ -582,3 +582,38 @@ def test_kspacesolver_solver_not_implemented():
     """
     with pytest.raises(NotImplementedError):
         kspace_solver = sim.KSpaceSolver('Unimplemented')
+
+
+def test_universe_multiple_solvers(kspace_solver):
+
+    """
+    Tests that both an electrostatic_solver and a dispersive solver can be
+    passed when initializing a Universe
+    """
+
+    uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                       electrostatic_solver=kspace_solver,
+                       dispersive_solver=kspace_solver)
+    assert uni.electrostatic_solver == kspace_solver
+    assert uni.dispersive_solver == kspace_solver
+
+
+def test_universe_multiple_solvers_error(kspace_solver):
+
+    """
+    Tests that if either electrostatic_solver or dispersive_solver and a
+    kspace_solver are passed when initializing a Universe, a ValueError is
+    raised.
+    """
+
+    with pytest.raises(ValueError):
+        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                           kspace_solver=kspace_solver,
+                           electrostatic_solver=kspace_solver)
+        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                           kspace_solver=kspace_solver,
+                           dispersive_solver=kspace_solver)
+        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                           kspace_solver=kspace_solver,
+                           electrostatic_solver=kspace_solver,
+                           dispersive_solver=kspace_solver)
