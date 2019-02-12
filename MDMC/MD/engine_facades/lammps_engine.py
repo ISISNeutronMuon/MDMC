@@ -551,6 +551,20 @@ def parse_dispersion_coefficients(interaction):
     return [style] + ordered_parameters
 
 
+def _parse_kspace_solver(self, solver):
+
+    """
+    Converts an MDMC kspace solver for input to LAMMPS kspace_style
+
+    solver - an MDMC kspace solver
+
+    Returns:
+    A list of style and parameters for input to LAMMPS kspace_style
+    """
+
+    pass
+
+
 def partition(items, predicate):
 
     """
