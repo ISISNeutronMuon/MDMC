@@ -549,3 +549,31 @@ def test_coulombic_add_atoms():
     """
     Tests adding atoms to a coulombic object
     """
+
+    pass
+
+
+@pytest.mark.parametrize("solver", ['ewald',
+                                    'pppm',
+                                    'EWALD'])
+def test_kspacesolver_solver_implemented(solver):
+
+    """
+    Tests setting the solver attribute of KSpaceSolver
+
+    - Tests solver in SOLVERS list
+    - Tests solver.lower() in SOLVERS list
+    """
+
+    kspace_solver = sim.KSpaceSolver(solver)
+    assert kspace_solver.solver == solver.lower()
+
+
+def test_kspacesolver_solver_not_implemented():
+
+    """
+    Tests setting the solver attribute of KSpaceSolver with a solver that has
+    not been implemented
+    """
+    with pytest.raises(NotImplementedError):
+        kspace_solver = sim.KSpaceSolver('Unimplemented')
