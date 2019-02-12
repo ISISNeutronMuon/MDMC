@@ -327,10 +327,24 @@ class LAMMPSEngine(MDEngine):
                 self.lmp.pair_coeff(atom_type_pair[0], atom_type_pair[1],
                                     parse_dispersion_coefficients(disp))
 
+    def _modify_nonbonded_styles(self, nonbonded_interactions):
 
         """
+        Applies modifications to nonbonded pair styles
 
         Arguments:
+        nonbonded_interactions - a list of nonbonded interactions which will
+        have modifications applied to the corresponding pair styles
+        """
+
+        for interaction in nonbonded_interactions:
+
+            if interaction.vdw_tail_correction:
+                self.lmp.pair_modify('pair',
+                                     parse_nonbonded_styles(interaction),
+                                     'tail',
+                                     'yes')
+
     def _create_bonds(self, bonds):
 
         """
