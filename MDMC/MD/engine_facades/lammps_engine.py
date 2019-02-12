@@ -350,9 +350,55 @@ class LAMMPSEngine(MDEngine):
                                       'special',
                                       special)
 
-    def _update_angles(self, atoms):
 
-        raise NotImplementedError
+    def _create_angles(self, angles):
+
+        """
+        Creates coefficients and angles in LAMMPS, and fills the angle_ID
+        dictionary with angle: ID pairs
+
+        Arguments:
+        angles - a list of bond angle interactions
+        """
+
+        special = 'no'
+        for ID, angle in enumerate(angles, start=1):
+            # Create the bond coefficients
+            self.lmp.angle_coeff(ID, *parse_bonded_coefficients(angle))
+
+            # Relate each bond with its ID
+            self.angle_ID[angle] = ID
+
+            # Create the angles
+            # Special triggers the internal interaction list in LAMMPS
+            # This must at least occur at the end, and is an expensive
+            # operation
+            if angle is angles[-1]:
+                special = 'yes'
+            for atom_tpl in angle.atoms:
+                atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
+                # angles are also created with lmp.create_bonds, just with a
+                # keyword of single/angle
+                self.lmp.create_bonds('single/angle',
+                                      ID,
+                                      atom_IDs[0],
+                                      atom_IDs[1],
+                                      'special',
+                                      special)
+
+    def _update_angles(self, angles):
+
+        """
+        Updates the angle coefficients, which are then applied to any angles
+        which have been previously set
+
+        Arguments:
+        angles - a list of bond angle interactions
+        """
+
+        for angle in angles:
+            self.lmp.angle_coeff(self.angle_ID[angle],
+                                 *parse_bonded_coefficients(angle))
 
 
 # Define the unit system used in LAMMPS
