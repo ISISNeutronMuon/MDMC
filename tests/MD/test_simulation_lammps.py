@@ -248,3 +248,43 @@ def test_update_angles():
     """
 
     pass
+
+
+def test_set_ksapce_solver_single_solver():
+
+    """
+    Tests setting the kspace solver if the Universe has a kspace_solver
+    """
+
+    pass
+
+
+def test_set_ksapce_solver_multiple_solvers():
+
+    """
+    Tests setting the kspace solver if the Universe has both an
+    electrostatic_solver and a dispersive_solver and they are equal
+    """
+
+    pass
+
+
+def test_set_ksapce_solver_single_solver_error():
+
+    """
+    Tests setting the kspace solver if the Universe only has an
+    electrostatic_solver or a dispersive_solver, which should result in a
+    TypeError
+    """
+
+    pass
+
+
+def test_set_ksapce_solver_multiple_solvers_error():
+
+    """
+    Tests setting the kspace solver if the Universe has both an
+    electrostatic_solver and a dispersive_solver and they are not equal
+    """
+
+    pass
