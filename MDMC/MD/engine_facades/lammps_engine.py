@@ -254,9 +254,16 @@ class LAMMPSEngine(MDEngine):
                                 in disps + couls])
         if nonbonded_styles:
             self.lmp.pair_style('hybrid', *nonbonded_styles)
-            self._create_Coulombic()
+            self._create_coulombic(couls)
             self._update_charges()
-            self._update_dispersions()
+            # Dispersion creation and updating are the same, so only an update
+            # method exists
+            self._update_dispersions(disps)
+            # Apply LAMMPS modifications to nonbonded interactions
+            self._modify_nonbonded_styles(couls+disps)
+            if self.universe.kspace_solver:
+                self.lmp.kspace_style(self._parse_kspace_solver(
+                    self.universe.kspace_solver))
 
         if bonds:
             self.lmp.bond_style('hybrid',
