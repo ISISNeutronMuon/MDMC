@@ -163,6 +163,8 @@ class LAMMPSEngine(MDEngine):
 
         self.lmp.timestep(self.time_step)
 
+        self._set_momentum_removers()
+
         raise NotImplementedError
 
     def minimize(self, n_steps):
@@ -531,6 +533,25 @@ class LAMMPSEngine(MDEngine):
             self.lmp.kspace_style(parse_kspace_solver(electrostatic))
         elif electrostatic or dispersive:
             raise err_single_kspace
+
+    def _set_momentum_removers(self):
+
+        """
+        Creates the fixes in LAMMPS which remove the linear and angular momentum
+        of the simulation
+        """
+
+        if self.lin_momentum_steps and (self.lin_momentum_steps
+                                        == self.ang_momentum_steps):
+            self.lmp.fix('RemoveMomentum', 'all', 'momentum',
+                         self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
+        elif self.lin_momentum_steps:
+            self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
+                         self.lin_momentum_steps, 'linear', 1, 1, 1)
+        elif self.ang_momentum_steps:
+            self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
+                         self.ang_momentum_steps, 'angular')
+
 
 # Define the unit system used in LAMMPS
 # NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
