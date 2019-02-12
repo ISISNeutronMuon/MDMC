@@ -42,10 +42,16 @@ class Universe(object):
     molecule_list - a list of the molecules in the universe
     structure_list - a list of the structural units in the universe
     force_fields - a list of the force fields that apply to the universe
+    kspace_solver - a KSpaceSolver object specifying the k-space solver to
+    be used for both electrostatic and dispersive interactions
+    electrostatic_solver - a KSpaceSolver object specifying the k-space
+    solver to be used for electrostatic interactions
+    dispersive_solver - a KSpaceSolver object specifying the k-space solver
+    to be used for dispersive interactions
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
-                 structures=None):
+                 structures=None, **settings):
 
         """
         Arguments:
@@ -54,6 +60,16 @@ class Universe(object):
         shape - member of shape enum
         force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
         structures - a list of structures
+
+        Settings:
+        kspace_solver - a KSpaceSolver object specifying the k-space solver to
+        be used for both electrostatic and dispersive interactions. If this is
+        passed then no electrostatic_solver or dispersive_solver may be
+        provided.
+        electrostatic_solver - a KSpaceSolver object specifying the k-space
+        solver to be used for electrostatic interactions
+        dispersive_solver - a KSpaceSolver object specifying the k-space solver
+        to be used for dispersive interactions
         """
 
         self.shape = shape
@@ -67,6 +83,17 @@ class Universe(object):
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         self.force_fields = force_field
+
+        self.kspace_solver = settings.get('kspace_solver')
+        self.electrostatic_solver = settings.get('electrostatic_solver')
+        self.dispersive_solver = settings.get('dispersive_solver')
+        # kspace_solver is mutually excusive with the other two solver
+        # attributes
+        if self.kspace_solver and (self.electrostatic_solver or
+                                   self.dispersive_solver):
+            raise ValueError('No other solver may be passed if kspace_solver is'
+                             ' passed')
+
 
     @property
     def dims(self):
@@ -393,6 +420,55 @@ def _liquid_structure():
     """
 
     raise NotImplementedError
+
+
+class KSpaceSolver(object):
+
+    """
+    Class describing the k-space solver that is applied to electrostatic and/or
+    dispersion interactions
+
+    Attributes:
+    solver - a string specifying the name of the solver. Solvers currently
+    supported (although not by all MD engines):
+
+    ewald
+    PPPM
+    """
+
+    SOLVERS = ['ewald', 'pppm']
+
+    def __init__(self, solver, **settings):
+
+        """
+        Different MD engines require different parameters to be specified for a
+        k-space solver to be used. These parameters are specified in settings,
+        which are grouped by engine.
+
+        Arguments:
+        solver - a string specifying the name of the solver
+
+        Settings:
+        LAMMPS:
+        accuracy - a float specifying the relative RMS error in per-atom forces
+        """
+
+        self.solver = solver
+        self.accuracy = settings.get('accuracy')
+
+    @property
+    def solver(self):
+
+        return self._solver
+
+    @solver.setter
+    def solver(self, value):
+
+        value = value.lower()
+        if value not in self.__class__.SOLVERS:
+            raise NotImplementedError('The solver type is not implemented for'
+                                      ' any MD engine')
+        self._solver = value
 
 
 class EnergyMinimizer(object):
