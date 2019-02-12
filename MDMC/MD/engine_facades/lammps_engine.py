@@ -320,21 +320,29 @@ class LAMMPSEngine(MDEngine):
                 self.lmp.pair_coeff(atom_type_pair[0], atom_type_pair[1],
                                     parse_dispersion_coefficients(disp))
 
-    def _update_bonds(self, bonds, coeffs=False):
 
         """
-        Updates bonds in LAMMPS
 
         Arguments:
-        bonds - a list of bonds
-        coeffs - a boolean specifying if the bond_coeffs are created
+    def _create_bonds(self, bonds):
+
+        """
+        Creates coefficients and bonds in LAMMPS, and fills the bond_ID
+        dictionary with bond: ID pairs
+
+        Arguments:
+        bonds - a list of bond interactions
         """
 
         special = 'no'
         for ID, bond in enumerate(bonds, start=1):
-            if coeffs:
-                self.lmp.bond_coeff(ID, *parse_bond_coefficients(bond))
+            # Create the bond coefficients
+            self.lmp.bond_coeff(ID, *parse_bonded_coefficients(bond))
 
+            # Relate each bond with its ID
+            self.bond_ID[bond] = ID
+
+            # Create the bonds
             # Special triggers the internal interaction list in LAMMPS
             # This must at least occur at the end, and is an expensive
             # operation
@@ -349,6 +357,19 @@ class LAMMPSEngine(MDEngine):
                                       'special',
                                       special)
 
+    def _update_bonds(self, bonds):
+
+        """
+        Updates the bond coefficients, which are then applied to any bonds which
+        have previously been set
+
+        Arguments:
+        bonds - a list of bond interactions
+        """
+
+        for bond in bonds:
+            self.lmp.bond_coeff(self.bond_ID[bond],
+                                *parse_bonded_coefficients(bond))
 
     def _create_angles(self, angles):
 
