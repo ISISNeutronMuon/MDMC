@@ -503,7 +503,7 @@ def parse_nonbonded_styles(interaction):
     return lmp_str
 
 
-def parse_bond_coefficients(interaction):
+def parse_bonded_coefficients(interaction):
 
     """
     Orders MDMC Parameters for input to LAMMPS bond_coeff
