@@ -284,9 +284,7 @@ class LAMMPSEngine(MDEngine):
             self._update_dispersions(disps)
             # Apply LAMMPS modifications to nonbonded interactions
             self._modify_nonbonded_styles(couls+disps)
-            if self.universe.kspace_solver:
-                self.lmp.kspace_style(parse_kspace_solver(
-                    self.universe.kspace_solver))
+            self._set_kspace_solver()
 
         if bonds:
             self.lmp.bond_style('hybrid',
@@ -464,6 +462,37 @@ class LAMMPSEngine(MDEngine):
             self.lmp.angle_coeff(self.angle_ID[angle],
                                  *parse_bonded_coefficients(angle))
 
+    def _set_kspace_solver(self):
+
+        """
+        Creates a k-space solve in LAMMPS using kspace_style, if one is required
+
+        Uses either the kspace_solver attribute or both the electrostatic_solver
+        and dispersive_solver attributes of the MDMC universe to set the
+        kspace_style. This is because LAMMPS only has a single solver which
+        applies to both interaction types.
+        """
+
+        err_single_kspace = TypeError('LAMMPS only accepts a single kspace'
+                                      ' solver which applies to both'
+                                      ' electrostatic and dispersive'
+                                      ' interactions')
+        kspace = self.universe.kspace_solver
+        electrostatic = self.universe.electrostatic_solver
+        dispersive = self.universe.dispersive_solver
+
+        if kspace:
+            self.lmp.kspace_style(parse_kspace_solver(kspace))
+        # Even though LAMMPS only accepts a single kspace solver (which applies
+        # to both electrostatic and dispersive interactions), allow the universe
+        # to have an electrostatic_solver and a dispersive_solver if these are
+        # the same
+        elif electrostatic and dispersive:
+            if electrostatic != dispersive:
+                raise err_single_kspace
+            self.lmp.kspace_style(parse_kspace_solver(electrostatic))
+        elif electrostatic or dispersive:
+            raise err_single_kspace
 
 # Define the unit system used in LAMMPS
 # NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
