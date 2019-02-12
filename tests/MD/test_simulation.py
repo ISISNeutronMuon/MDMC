@@ -61,6 +61,11 @@ def water_SPCE_universe(water_molecule):
     O_dispersion = su.Dispersion(water_universe, O_atom_type)
     return water_universe
 
+@pytest.fixture
+def kspace_solver():
+
+    return sim.KSpaceSolver(sim.KSpaceSolver.SOLVERS[0])
+
 
 def test_create_universe(universe):
 
@@ -549,3 +554,66 @@ def test_coulombic_add_atoms():
     """
     Tests adding atoms to a coulombic object
     """
+
+    pass
+
+
+@pytest.mark.parametrize("solver", ['ewald',
+                                    'pppm',
+                                    'EWALD'])
+def test_kspacesolver_solver_implemented(solver):
+
+    """
+    Tests setting the solver attribute of KSpaceSolver
+
+    - Tests solver in SOLVERS list
+    - Tests solver.lower() in SOLVERS list
+    """
+
+    kspace_solver = sim.KSpaceSolver(solver)
+    assert kspace_solver.solver == solver.lower()
+
+
+def test_kspacesolver_solver_not_implemented():
+
+    """
+    Tests setting the solver attribute of KSpaceSolver with a solver that has
+    not been implemented
+    """
+    with pytest.raises(NotImplementedError):
+        kspace_solver = sim.KSpaceSolver('Unimplemented')
+
+
+def test_universe_multiple_solvers(kspace_solver):
+
+    """
+    Tests that both an electrostatic_solver and a dispersive solver can be
+    passed when initializing a Universe
+    """
+
+    uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                       electrostatic_solver=kspace_solver,
+                       dispersive_solver=kspace_solver)
+    assert uni.electrostatic_solver == kspace_solver
+    assert uni.dispersive_solver == kspace_solver
+
+
+def test_universe_multiple_solvers_error(kspace_solver):
+
+    """
+    Tests that if either electrostatic_solver or dispersive_solver and a
+    kspace_solver are passed when initializing a Universe, a ValueError is
+    raised.
+    """
+
+    with pytest.raises(ValueError):
+        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                           kspace_solver=kspace_solver,
+                           electrostatic_solver=kspace_solver)
+        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                           kspace_solver=kspace_solver,
+                           dispersive_solver=kspace_solver)
+        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+                           kspace_solver=kspace_solver,
+                           electrostatic_solver=kspace_solver,
+                           dispersive_solver=kspace_solver)
