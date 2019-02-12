@@ -275,7 +275,7 @@ class LAMMPSEngine(MDEngine):
                                  *[parse_bonded_styles(a) for a in angles])
             self._update_angles(angles)
 
-    def _create_Coulombic(self, couls):
+    def _create_coulombic(self, couls):
 
         """
         Creates the coulombic interactions in LAMMPS
