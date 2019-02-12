@@ -42,10 +42,16 @@ class Universe(object):
     molecule_list - a list of the molecules in the universe
     structure_list - a list of the structural units in the universe
     force_fields - a list of the force fields that apply to the universe
+    kspace_solver - a KSpaceSolver object specifying the k-space solver to
+    be used for both electrostatic and dispersive interactions
+    electrostatic_solver - a KSpaceSolver object specifying the k-space
+    solver to be used for electrostatic interactions
+    dispersive_solver - a KSpaceSolver object specifying the k-space solver
+    to be used for dispersive interactions
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
-                 structures=None):
+                 structures=None, **settings):
 
         """
         Arguments:
@@ -54,6 +60,16 @@ class Universe(object):
         shape - member of shape enum
         force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
         structures - a list of structures
+
+        Settings:
+        kspace_solver - a KSpaceSolver object specifying the k-space solver to
+        be used for both electrostatic and dispersive interactions. If this is
+        passed then no electrostatic_solver or dispersive_solver may be
+        provided.
+        electrostatic_solver - a KSpaceSolver object specifying the k-space
+        solver to be used for electrostatic interactions
+        dispersive_solver - a KSpaceSolver object specifying the k-space solver
+        to be used for dispersive interactions
         """
 
         self.shape = shape
@@ -67,6 +83,17 @@ class Universe(object):
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         self.force_fields = force_field
+
+        self.kspace_solver = settings.get('kspace_solver')
+        self.electrostatic_solver = settings.get('electrostatic_solver')
+        self.dispersive_solver = settings.get('dispersive_solver')
+        # kspace_solver is mutually excusive with the other two solver
+        # attributes
+        if self.kspace_solver and (self.electrostatic_solver or
+                                   self.dispersive_solver):
+            raise ValueError('No other solver may be passed if kspace_solver is'
+                             ' passed')
+
 
     @property
     def dims(self):
