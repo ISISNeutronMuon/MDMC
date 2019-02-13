@@ -10,6 +10,69 @@ from MDMC.MD.simulation import ConstraintAlgorithm, Shake, Rattle
 from MDMC.MD.structural_units import Atom, Bond, BondAngle
 
 
+N_ATOMS = 10
+
+@pytest.fixture
+def atom:
+
+    """
+    A single H atom
+    """
+
+    return Atom('H')
+
+@pytest.fixture
+def atoms(atom):
+
+    """
+    A list of atoms
+    """
+
+    return [deepcopy(atom) for _ in range(N_ATOMS)]
+
+@pytest.fixture
+def bonds(atoms):
+
+    """
+    A list of bonds
+    """
+
+    return [Bond(atoms[i], atoms[i+1]) for i in range(0, len(atoms), 2)]
+
+@pytest.fixture
+def constrained_bonds(bonds):
+
+    """
+    A list of constrained bonds
+    """
+
+    for bond in bonds:
+        bond.constrained = True
+
+    return bonds
+
+@pytest.fixture
+def angles(atoms):
+
+    """
+    A list of bond angles
+    """
+
+    return [BondAngle(atoms[i], atoms[i+1], atoms[i+2]) for i
+            in range(0, len(atoms), 2)]
+
+@pytest.fixture
+def constrained_angles(angles):
+
+    """
+    A list of constrained bond angles
+    """
+
+    for angle in angles:
+        angle.constrained = True
+    return angles
+
+
 def test_universe_dims():
 
     """
