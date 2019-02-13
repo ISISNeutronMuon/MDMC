@@ -358,3 +358,92 @@ def test_set_ksapce_solver_multiple_solvers_error():
     """
 
     pass
+
+
+@pytest.mark.parametrize('constraint','name', [(Shake, 'shake'),
+                                               (Rattle, 'rattle')])
+def test_parse_constraint_algorithm_name(constraint, name):
+
+    """
+    Tests that passing different ConstraintAlgorithms produces the expected
+    algorithm name for the input to LAMMPS fix
+
+    Excluding the fix ID and and group-ID, the algorithm name is the index 0
+    entry submitted to LAMMPS fix
+    """
+
+    # constraint_algorithm = constraint(accuracy=1.0, max_iterations=1)
+    # assert name == lmp.parse_constraint(constraint_algorithm,)[0]
+    pass
+
+
+def test_parse_constraint_algorithm_unimplemented():
+
+    """
+    Tests that passing an ConstraintAlgorithm that is not implemented raises a
+    NotImplementedError
+    """
+
+    pass
+
+
+def test_parse_constraint_accuracy():
+
+    """
+    Tests that accuracy is correct in the input to LAMMPS fix
+
+    Excluding the fix ID and and group-ID, the accuracy is the index 1
+    entry submitted to LAMMPS fix
+    """
+
+    pass
+
+
+def test_parse_constraint_max_iterations():
+
+    """
+    Tests that the max number of iterations is correct in the input to LAMMPS
+    fix
+
+    Excluding the fix ID and and group-ID, the number of max iterations is the
+    index 2 entry submitted to LAMMPS fix
+    """
+
+    pass
+
+
+def test_parse_constraint_bonds():
+
+    """
+    Tests that the input to LAMMPS has the correct bond IDs
+    """
+
+    pass
+
+
+def test_parse_constraint_angles():
+
+    """
+    Tests that the input to LAMMPS has the correct angle IDs
+    """
+
+    pass
+
+
+def test_parse_constraint_bonds_angles():
+
+    """
+    Tests that the input to LAMMPS has the correct bond IDs and angle IDs
+    """
+
+    pass
+
+
+def test_parse_constraint_no_interactions():
+
+    """
+    Tests that if neither bonds or angles are provided when parsing the
+    constraint, a ValueError is raised
+    """
+
+    pass
