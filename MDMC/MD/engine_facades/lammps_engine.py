@@ -790,6 +790,9 @@ def parse_constraint(constraint_algorithm, interaction_ID_dict, bonds=[],
     lmp_str.append(constraint_algorithm.accuracy)
     lmp_str.append(constraint_algorithm.max_iter)
 
+    # Never display the constraint statistics
+    lmp_str.append(0)
+
     # Add bonds and their LAMMPS IDs and angles and their LAMMPS IDs
     if bonds:
         lmp_str.append('b')
