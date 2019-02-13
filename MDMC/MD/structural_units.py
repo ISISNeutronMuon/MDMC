@@ -1509,7 +1509,26 @@ class BondedInteraction(Interaction):
         universe.add_bonded_interaction_pairs((self, tpl))
 
 
-class Bond(BondedInteraction):
+class Constrainable(object):
+
+    """
+    A mixin class enabling classes inheriting from BondedInteraction to be
+    constrained
+
+    These constraints are then applied by a constraint algorithm (e.g. SHAKE),
+    which is specified in the Universe which the BondedInteraction belongs to.
+
+    Attributes:
+    constrained - a boolean specifying whether the object is constrained
+    """
+
+    def __init__(self, *atom_tuples, **settings):
+
+        self.constrained = settings.get('constrained', False)
+        super(Constrainable, self).__init__(*atom_tuples, **settings)
+
+
+class Bond(Constrainable, BondedInteraction):
 
     """
     A bond between any two atoms. Requires exactly two atoms in each atom_tuple.
@@ -1521,7 +1540,7 @@ class Bond(BondedInteraction):
         super(Bond, self).__init__(*atom_tuples, **settings)
 
 
-class BondAngle(BondedInteraction):
+class BondAngle(Constrainable, BondedInteraction):
 
     """
     A bond angle between any two bonds
