@@ -774,9 +774,9 @@ def parse_constraint(constraint_algorithm, bonds=[], angles=[]):
     lmp_str = []
 
     # Add algorithm name
-    if constraint_algorithm.name == 'SHAKE':
+    if constraint_algorithm.name.upper() == 'SHAKE':
         lmp_str.append('shake')
-    elif constraint_algorithm.name == 'RATTLE':
+    elif constraint_algorithm.name.upper() == 'RATTLE':
         lmp_str.append('rattle')
     else:
         raise NotImplementedError('This constraint is not implemented in the'
