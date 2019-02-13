@@ -766,8 +766,13 @@ def parse_constraint(constraint_algorithm, interaction_ID_dict, bonds=[],
     angles - a list of constrained BondAngles
 
     Returns:
-    A list of input parameters for LAMMPS fix:
-    algorithm name, accuracy, max iterations, 'b', bond IDs, 'a', angle IDs
+    A list of input parameters for LAMMPS fix, not including the first two
+    terms (fix ID, group-ID).  The output list is:
+
+    [algorithm name, accuracy, max iterations, 'b', bond IDs, 'a', angle IDs]
+
+    where the last four entries are optional, although a minimum of two is
+    required.
     """
 
     # Raise error if there is not at least one constrained interaction passed
