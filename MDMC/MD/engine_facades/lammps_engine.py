@@ -748,7 +748,8 @@ def parse_kspace_solver(solver):
     pass
 
 
-def parse_constraint(constraint_algorithm, bonds=[], angles=[]):
+def parse_constraint(constraint_algorithm, interaction_ID_dict, bonds=[],
+                     angles=[]):
 
     """
     Converts an MDMC constraint algorithm for input to LAMMPS fix, or raises a
@@ -758,6 +759,9 @@ def parse_constraint(constraint_algorithm, bonds=[], angles=[]):
 
     Arguments:
     constraint_algorithm - an object which derives from ConstraintAlgorithm
+    interaction_ID_dict - a dictionary with interaction: ID pairs where
+    interaction is either a Bond or BondAngle object and ID is the integer in
+    LAMMPS which refers to the interaction
     bonds - a list of constrained Bonds
     angles - a list of constrained BondAngles
 
@@ -789,8 +793,10 @@ def parse_constraint(constraint_algorithm, bonds=[], angles=[]):
     # Add bonds and their LAMMPS IDs and angles and their LAMMPS IDs
     if bonds:
         lmp_str.append('b')
+        lmp_str += [interaction_ID_dict[bond] for bond in bonds]
     if angles:
         lmp_str.append('a')
+        lmp_str += [interaction_ID_dict[angle] for angle in angles]
 
     return lmp_str
 
