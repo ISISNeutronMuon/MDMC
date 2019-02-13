@@ -48,6 +48,8 @@ class Universe(object):
     solver to be used for electrostatic interactions
     dispersive_solver - a KSpaceSolver object specifying the k-space solver
     to be used for dispersive interactions
+    constraint_algorithm - a string specifying the name of a constraint
+    algorithm to be applied to BondedInteractions
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
@@ -70,6 +72,12 @@ class Universe(object):
         solver to be used for electrostatic interactions
         dispersive_solver - a KSpaceSolver object specifying the k-space solver
         to be used for dispersive interactions
+        constraint_algorithm - a string specifying the name of a constraint
+        algorithm to be applied to BondedInteractions. The following constraints
+        can be applied:
+
+        SHAKE
+        RATTLE
         """
 
         self.shape = shape
@@ -93,6 +101,8 @@ class Universe(object):
                                    self.dispersive_solver):
             raise ValueError('No other solver may be passed if kspace_solver is'
                              ' passed')
+
+        self.constraint_algorithm = settings.get('constraint_algorithm')
 
 
     @property

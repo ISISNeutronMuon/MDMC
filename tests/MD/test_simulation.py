@@ -558,6 +558,45 @@ def test_coulombic_add_atoms():
     pass
 
 
+@pytest.mark.parametrize("bonded_interaction, n_atoms", [(su.Bond, 2),
+                                                         (su.BondAngle, 3)])
+def test_bonded_constraint_set_True(bonded_interaction, n_atoms, atom):
+
+    """
+    Tests that constraints can be applied to BondedInteractions
+    """
+
+    atoms = [deepcopy(atom) for i in range(n_atoms)]
+    b_i = bonded_interaction(*atoms, constrained=True)
+    assert b_i.constrained
+
+
+@pytest.mark.parametrize("bonded_interaction, n_atoms", [(su.Bond, 2),
+                                                         (su.BondAngle, 3)])
+def test_bonded_constraint_set_False(bonded_interaction, n_atoms, atom):
+
+    """
+    Tests that BondedInteractions can be unconstrained if set to False
+    """
+
+    atoms = [deepcopy(atom) for i in range(n_atoms)]
+    b_i = bonded_interaction(*atoms, constrained=False)
+    assert b_i.constrained is False
+
+
+@pytest.mark.parametrize("bonded_interaction, n_atoms", [(su.Bond, 2),
+                                                         (su.BondAngle, 3)])
+def test_bonded_constraint_unset(bonded_interaction, n_atoms, atom):
+
+    """
+    Tests that BondedInteractions are unconstrained if no constraint is applied
+    """
+
+    atoms = [deepcopy(atom) for i in range(n_atoms)]
+    b_i = bonded_interaction(*atoms)
+    assert b_i.constrained == False
+
+
 @pytest.mark.parametrize("solver", ['ewald',
                                     'pppm',
                                     'EWALD'])
