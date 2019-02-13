@@ -49,8 +49,9 @@ class Universe(object):
     solver to be used for electrostatic interactions
     dispersive_solver - a KSpaceSolver object specifying the k-space solver
     to be used for dispersive interactions
-    constraint_algorithm - a string specifying the name of a constraint
-    algorithm to be applied to BondedInteractions
+    constraint_algorithm - an object which has a  ConstraintAlgorithm base
+    class which specifies the constraint algorithm which will be applied to
+    constrained BondedInteractions.
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
