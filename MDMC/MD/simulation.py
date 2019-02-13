@@ -4,6 +4,7 @@
 
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:01:04"""
 
+from abc import ABCMeta, abstractproperty
 from collections import defaultdict
 from copy import deepcopy
 from itertools import product, ifilterfalse, count
@@ -48,8 +49,9 @@ class Universe(object):
     solver to be used for electrostatic interactions
     dispersive_solver - a KSpaceSolver object specifying the k-space solver
     to be used for dispersive interactions
-    constraint_algorithm - a string specifying the name of a constraint
-    algorithm to be applied to BondedInteractions
+    constraint_algorithm - an object which has a  ConstraintAlgorithm base
+    class which specifies the constraint algorithm which will be applied to
+    constrained BondedInteractions.
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
@@ -72,12 +74,9 @@ class Universe(object):
         solver to be used for electrostatic interactions
         dispersive_solver - a KSpaceSolver object specifying the k-space solver
         to be used for dispersive interactions
-        constraint_algorithm - a string specifying the name of a constraint
-        algorithm to be applied to BondedInteractions. The following constraints
-        can be applied:
-
-        SHAKE
-        RATTLE
+        constraint_algorithm - an object which has a  ConstraintAlgorithm base
+        class which specifies the constraint algorithm which will be applied to
+        constrained BondedInteractions.
         """
 
         self.shape = shape
@@ -479,6 +478,66 @@ class KSpaceSolver(object):
             raise NotImplementedError('The solver type is not implemented for'
                                       ' any MD engine')
         self._solver = value
+
+
+class ConstraintAlgorithm(object):
+
+    """
+    Class describing the algorithm and parameters which are applied to constrain
+    bonded interactions
+
+    Attributes:
+    name - a string specifying the name of the constraint algorithm
+    accuracy - a float specifying the accuracy (tolerance) of the applied
+    constraints
+    max_iterations - an integer specifying the maximum number of iterations that
+    can be used when calculating the additional force that is required to
+    constrain the atoms to satisfy the constraints on the bonded interactions
+    """
+
+    def __init__(self, accuracy, max_iterations):
+
+        self.accuracy = accuracy
+        self.max_iterations = max_iterations
+
+    @property
+    def name(self):
+
+        return self.__class__.__name__
+
+    @property
+    def max_iterations(self):
+
+        return self._max_iterations
+
+    @max_iterations.setter
+    def max_iterations(self, value):
+
+        self._max_iterations = int(value)
+
+
+class Shake(ConstraintAlgorithm):
+
+    """
+    Holds the parameters which are required for the SHAKE algorithm to be
+    applied to the constrained interactions
+    """
+
+    def __init__(self, accuracy, max_iterations):
+
+        super(Shake, self).__init__(accuracy, max_iterations)
+
+
+class Rattle(ConstraintAlgorithm):
+
+    """
+    Holds the parameters which are required for the RATTLE algorithm to be
+    applied to the constrained interactions
+    """
+
+    def __init__(self, accuracy, max_iterations):
+
+        super(Rattle, self).__init__(accuracy, max_iterations)
 
 
 class EnergyMinimizer(object):
