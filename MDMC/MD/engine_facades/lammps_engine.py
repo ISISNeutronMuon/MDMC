@@ -20,7 +20,7 @@ AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
 from collections import defaultdict
-from itertools import count, product, tee
+from itertools import chain, count, product, tee
 from random import randint
 from tempfile import NamedTemporaryFile
 
@@ -164,6 +164,8 @@ class LAMMPSEngine(MDEngine):
         self.lmp.timestep(self.time_step)
 
         self._set_momentum_removers()
+        if self.universe.constraint_algorithm:
+            self._apply_constraints()
 
         raise NotImplementedError
 
@@ -552,6 +554,33 @@ class LAMMPSEngine(MDEngine):
             self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
                          self.ang_momentum_steps, 'angular')
 
+    def _apply_constraints(self):
+
+        """
+        Adds a constraint fix to LAMMPS for all bonds and bond angles which are
+        constrained
+        """
+
+        # Sort bonded interactions in the Universe which are constrained into
+        # bonds and angles
+        b_inters = set(self.universe.bonded_interactions)
+        bonds, angles = partition_interactions([inter for inter
+                                                in b_inters
+                                                if inter.constrained],
+                                               ['Bond', 'BondAngle'])
+        algorithm = parse_constraint(self.universe.constraint_algorithm,
+                                     bonds,
+                                     angles)
+
+        # Create a group from all of the atom types in the constrained bonds and
+        # angles - the fix will be applied to this group
+        # chain is used to flatten inter.atoms, which is a list of tuples
+        atom_types = set([atom.atom_type for inter in [bonds+angles]
+                          for atom in chain.from_iterable(inter.atoms)])
+        constrain_group = 'constrain_group'
+        self.lmp.group(constrain_group, 'type', *atom_types)
+        self.lmp.fix('constrain', constrain_group, *algorithm)
+
 
 # Define the unit system used in LAMMPS
 # NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
@@ -709,6 +738,7 @@ def parse_kspace_solver(solver):
     """
     Converts an MDMC kspace solver for input to LAMMPS kspace_style
 
+    Arguments:
     solver - an MDMC kspace solver
 
     Returns:
@@ -716,6 +746,53 @@ def parse_kspace_solver(solver):
     """
 
     pass
+
+
+def parse_constraint(constraint_algorithm, bonds=[], angles=[]):
+
+    """
+    Converts an MDMC constraint algorithm for input to LAMMPS fix, or raises a
+    NotImplementedError if the algorithm does not exist within LAMMPS
+
+    At least one of bonds and angles must be passed
+
+    Arguments:
+    constraint_algorithm - an object which derives from ConstraintAlgorithm
+    bonds - a list of constrained Bonds
+    angles - a list of constrained BondAngles
+
+    Returns:
+    A list of input parameters for LAMMPS fix:
+    algorithm name, accuracy, max iterations, 'b', bond IDs, 'a', angle IDs
+    """
+
+    # Raise error if there is not at least one constrained interaction passed
+    if not (bonds or angles):
+        raise TypeError('A LAMMPS constraint fix must have constraints on at'
+                        ' least one bond or one bond angle')
+
+    lmp_str = []
+
+    # Add algorithm name
+    if constraint_algorithm.name == 'SHAKE':
+        lmp_str.append('shake')
+    elif constraint_algorithm.name == 'RATTLE':
+        lmp_str.append('rattle')
+    else:
+        raise NotImplementedError('This constraint is not implemented in the'
+                                  ' LAMMPS facade')
+
+    # Add accuracy and max iterations
+    lmp_str.append(constraint_algorithm.accuracy)
+    lmp_str.append(constraint_algorithm.max_iter)
+
+    # Add bonds and their LAMMPS IDs and angles and their LAMMPS IDs
+    if bonds:
+        lmp_str.append('b')
+    if angles:
+        lmp_str.append('a')
+
+    return lmp_str
 
 
 def partition(items, predicate):
