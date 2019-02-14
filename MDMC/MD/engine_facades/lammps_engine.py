@@ -793,8 +793,8 @@ def parse_constraint(constraint_algorithm, bonds=[], bond_ID_dict={}, angles=[],
                                   ' LAMMPS facade')
 
     # Add accuracy and max iterations
-    lmp_str.append(constraint_algorithm.accuracy)
-    lmp_str.append(constraint_algorithm.max_iter)
+    lmp_str.append(float(constraint_algorithm.accuracy))
+    lmp_str.append(int(constraint_algorithm.max_iterations))
 
     # Never display the constraint statistics
     lmp_str.append(0)
