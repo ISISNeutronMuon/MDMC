@@ -14,7 +14,7 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle
 N_ATOMS = 10
 
 @pytest.fixture
-def atom:
+def atom():
 
     """
     Returns:
@@ -65,7 +65,7 @@ def angles(atoms):
     """
 
     return [BondAngle(atoms[i], atoms[i+1], atoms[i+2]) for i
-            in range(0, len(atoms), 2)]
+            in range(0, len(atoms)-2, 3)]
 
 @pytest.fixture
 def constrained_angles(angles):
