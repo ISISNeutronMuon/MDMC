@@ -79,6 +79,27 @@ def constrained_angles(angles):
     return angles
 
 
+@pytest.fixture
+def bond_ID_dict(constrained_bonds):
+
+    """
+    Returns:
+    A dictionary of bond: ID pairs
+    """
+
+    return {bond: ID for ID, bond in enumerate(constrained_bonds)}
+
+@pytest.fixture
+def angle_ID_dict(constrained_angles):
+
+    """
+    Returns:
+    A dictionary of angle: ID pairs
+    """
+
+    return {angle: ID for ID, angle in enumerate(constrained_angles)}
+
+
 def test_universe_dims():
 
     """
