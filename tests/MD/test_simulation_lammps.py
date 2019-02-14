@@ -583,6 +583,16 @@ def test_convert_base_units_identity(value):
             assert lmp.convert_unit(value, unit) == value
 
 
+def test_convert_base_units():
+
+    """
+    Tests converting MDMC base units to LAMMPS base units, where the units are
+    not the same in the two systems
+    """
+
+    pass
+
+
 def test_convert_declared_compound_units():
 
     """
