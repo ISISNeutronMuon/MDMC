@@ -2,6 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    11/02/2019, 16:21:38"""
 
+from copy import deepcopy
 
 import pytest
 
