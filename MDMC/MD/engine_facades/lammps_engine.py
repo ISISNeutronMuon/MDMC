@@ -569,8 +569,8 @@ class LAMMPSEngine(MDEngine):
                                                 if inter.constrained],
                                                ['Bond', 'BondAngle'])
         algorithm = parse_constraint(self.universe.constraint_algorithm,
-                                     bonds,
-                                     angles)
+                                     bonds=bonds, bond_ID_dict=self.bond_ID,
+                                     angles=angles, angle_ID_dict=self.angle_ID)
 
         # Create a group from all of the atom types in the constrained bonds and
         # angles - the fix will be applied to this group
@@ -748,8 +748,8 @@ def parse_kspace_solver(solver):
     pass
 
 
-def parse_constraint(constraint_algorithm, interaction_ID_dict, bonds=[],
-                     angles=[]):
+def parse_constraint(constraint_algorithm, bonds=[], bond_ID_dict={}, angles=[],
+                     angle_ID_dict={}):
 
     """
     Converts an MDMC constraint algorithm for input to LAMMPS fix, or raises a
@@ -759,11 +759,12 @@ def parse_constraint(constraint_algorithm, interaction_ID_dict, bonds=[],
 
     Arguments:
     constraint_algorithm - an object which derives from ConstraintAlgorithm
-    interaction_ID_dict - a dictionary with interaction: ID pairs where
-    interaction is either a Bond or BondAngle object and ID is the integer in
-    LAMMPS which refers to the interaction
     bonds - a list of constrained Bonds
+    bond_ID_dict - a dictionary with bond: ID pairs where bond is a Bond object
+    and ID is the integer in LAMMPS which refers to the bond
     angles - a list of constrained BondAngles
+    angle_ID_dict - a dictionary with angle: ID pairs where angle is a BondAngle
+    object and ID is the integer in LAMMPS which refers to the angle
 
     Returns:
     A list of input parameters for LAMMPS fix, not including the first two
@@ -801,10 +802,10 @@ def parse_constraint(constraint_algorithm, interaction_ID_dict, bonds=[],
     # Add bonds and their LAMMPS IDs and angles and their LAMMPS IDs
     if bonds:
         lmp_str.append('b')
-        lmp_str += [interaction_ID_dict[bond] for bond in bonds]
+        lmp_str += [bond_ID_dict[bond] for bond in bonds]
     if angles:
         lmp_str.append('a')
-        lmp_str += [interaction_ID_dict[angle] for angle in angles]
+        lmp_str += [angle_ID_dict[angle] for angle in angles]
 
     return lmp_str
 
