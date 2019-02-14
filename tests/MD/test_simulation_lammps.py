@@ -16,6 +16,7 @@ N_ATOMS = 10
 def atom:
 
     """
+    Returns:
     A single H atom
     """
 
@@ -25,6 +26,7 @@ def atom:
 def atoms(atom):
 
     """
+    Returns:
     A list of atoms
     """
 
@@ -34,6 +36,7 @@ def atoms(atom):
 def bonds(atoms):
 
     """
+    Returns:
     A list of bonds
     """
 
@@ -43,6 +46,7 @@ def bonds(atoms):
 def constrained_bonds(bonds):
 
     """
+    Returns:
     A list of constrained bonds
     """
 
@@ -55,6 +59,7 @@ def constrained_bonds(bonds):
 def angles(atoms):
 
     """
+    Returns:
     A list of bond angles
     """
 
@@ -65,6 +70,7 @@ def angles(atoms):
 def constrained_angles(angles):
 
     """
+    Returns:
     A list of constrained bond angles
     """
 
