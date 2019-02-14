@@ -388,9 +388,10 @@ def test_set_ksapce_solver_multiple_solvers_error():
     pass
 
 
-@pytest.mark.parametrize('constraint','name', [(Shake, 'shake'),
-                                               (Rattle, 'rattle')])
-def test_parse_constraint_algorithm_name(constraint, name):
+@pytest.mark.parametrize('constraint, name', [(Shake, 'shake'),
+                                              (Rattle, 'rattle')])
+def test_parse_constraint_algorithm_name(constraint, name, constrained_bonds,
+                                         bond_ID_dict):
 
     """
     Tests that passing different ConstraintAlgorithms produces the expected
@@ -400,78 +401,143 @@ def test_parse_constraint_algorithm_name(constraint, name):
     entry submitted to LAMMPS fix
     """
 
-    # constraint_algorithm = constraint(accuracy=1.0, max_iterations=1)
-    # assert name == lmp.parse_constraint(constraint_algorithm,)[0]
-    pass
+    constraint_algorithm = constraint(accuracy=1.0, max_iterations=1)
+    assert name == lmp.parse_constraint(constraint_algorithm,
+                                        bonds=constrained_bonds,
+                                        bond_ID_dict=bond_ID_dict)[0]
 
 
-def test_parse_constraint_algorithm_unimplemented():
+def test_parse_constraint_algorithm_unimplemented(constrained_bonds,
+                                                  bond_ID_dict):
 
     """
     Tests that passing an ConstraintAlgorithm that is not implemented raises a
     NotImplementedError
     """
 
-    pass
+    constraint_algorithm = ConstraintAlgorithm(accuracy=1.0, max_iterations=1)
+    with pytest.raises(NotImplementedError):
+        invalid_constraint = lmp.parse_constraint(constraint_algorithm,
+                                                  bonds=constrained_bonds,
+                                                  bond_ID_dict=bond_ID_dict)
 
 
-def test_parse_constraint_accuracy():
+@pytest.mark.parametrize('accuracy', [1.0, 1e-4, 5])
+def test_parse_constraint_accuracy(accuracy, constrained_bonds,
+                                   bond_ID_dict):
 
     """
     Tests that accuracy is correct in the input to LAMMPS fix
 
     Excluding the fix ID and and group-ID, the accuracy is the index 1
-    entry submitted to LAMMPS fix
+    entry submitted to LAMMPS fix. The accuracy must be a float.
     """
 
-    pass
+    constraint_algorithm = Shake(accuracy=accuracy, max_iterations=1)
+    assert float(accuracy) == lmp.parse_constraint(constraint_algorithm,
+                                                   bonds=constrained_bonds,
+                                                   bond_ID_dict=bond_ID_dict)[1]
 
 
-def test_parse_constraint_max_iterations():
+@pytest.mark.parametrize('max_iter', [1, 5.4])
+def test_parse_constraint_max_iterations(max_iter, constrained_bonds,
+                                         bond_ID_dict):
 
     """
     Tests that the max number of iterations is correct in the input to LAMMPS
     fix
 
     Excluding the fix ID and and group-ID, the number of max iterations is the
-    index 2 entry submitted to LAMMPS fix
+    index 2 entry submitted to LAMMPS fix. The number of max iterations must be
+    an integer.
     """
 
-    pass
+    constraint_algorithm = Shake(accuracy=1.0, max_iterations=max_iter)
+    assert int(max_iter) == lmp.parse_constraint(constraint_algorithm,
+                                                 bonds=constrained_bonds,
+                                                 bond_ID_dict=bond_ID_dict)[2]
 
 
-def test_parse_constraint_bonds():
+def test_parse_constraint_bonds(constrained_bonds, bond_ID_dict):
 
     """
     Tests that the input to LAMMPS has the correct bond IDs
+
+    Excluding the fix ID and and group-ID, the declaration of bond constraints
+    (indicated by 'b') is the index 4 entry submitted to LAMMPS fix. Following
+    this the IDs of all of the constrained bonds must be listed.
     """
 
-    pass
+    constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
+    lmp_input = lmp.parse_constraint(constraint_algorithm,
+                                     bonds=constrained_bonds,
+                                     bond_ID_dict=bond_ID_dict)
+    assert lmp_input[4] == 'b'
+    assert sorted(lmp_input[5:]) == sorted([bond_ID_dict[bond] for bond
+                                            in constrained_bonds])
 
 
-def test_parse_constraint_angles():
+def test_parse_constraint_angles(constrained_angles, angle_ID_dict):
 
     """
     Tests that the input to LAMMPS has the correct angle IDs
+
+    Excluding the fix ID and and group-ID, the declaration of angle constraints
+    (indicated by 'a') is the index 4 entry submitted to LAMMPS fix, if no bonds
+    are included. Following this the IDs of all of the constrained angles must
+    be listed.
     """
 
-    pass
+    constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
+    lmp_input = lmp.parse_constraint(constraint_algorithm,
+                                     angles=constrained_angles,
+                                     angle_ID_dict=angle_ID_dict)
+    assert lmp_input[4] == 'a'
+    assert sorted(lmp_input[5:]) == sorted([angle_ID_dict[angle] for angle
+                                            in constrained_angles])
 
 
-def test_parse_constraint_bonds_angles():
+
+def test_parse_constraint_bonds_angles(constrained_bonds, constrained_angles,
+                                       bond_ID_dict, angle_ID_dict):
 
     """
     Tests that the input to LAMMPS has the correct bond IDs and angle IDs
+
+    Excluding the fix ID and and group-ID, the declaration of bond constraints
+    (indicated by 'b') is the index 4 entry submitted to LAMMPS fix. Following
+    this the IDs of all of the constrained bonds must be listed. The index
+    after this must be the declaration of angle constraints (indicated by 'a'),
+    and then the IDs of all of the constrained angles must be listed.
     """
 
-    pass
+    constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
+    lmp_input = lmp.parse_constraint(constraint_algorithm,
+                                     bonds=constrained_bonds,
+                                     bond_ID_dict=bond_ID_dict,
+                                     angles=constrained_angles,
+                                     angle_ID_dict=angle_ID_dict)
+    assert lmp_input[4] == 'b'
+    n_bonds = len(constrained_bonds)
+    assert sorted(lmp_input[5:5+n_bonds]) == sorted([bond_ID_dict[bond]
+                                                     for bond
+                                                     in constrained_bonds])
+    assert lmp_input[5+n_bonds] == 'a'
+    assert sorted(lmp_input[5+n_bonds+1:]) == sorted([angle_ID_dict[angle]
+                                                      for angle
+                                                      in constrained_angles])
 
 
-def test_parse_constraint_no_interactions():
+def test_parse_constraint_no_interactions(bond_ID_dict):
 
     """
     Tests that if neither bonds or angles are provided when parsing the
     constraint, a ValueError is raised
     """
+
+    constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
+    with pytest.raises(TypeError):
+        lmp_input = lmp.parse_constraint(constraint_algorithm,
+                                         bond_ID_dict=bond_ID_dict)
 
     pass
