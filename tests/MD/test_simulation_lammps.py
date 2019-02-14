@@ -568,4 +568,41 @@ def test_parse_constraint_no_IDs(arguments, request):
     with pytest.raises(KeyError):
         lmp_input = lmp.parse_constraint(constraint_algorithm, **arg_fixtures)
 
+
+def test_partition_single_interaction():
+
+    """
+    Tests using partition_interactions function to filter a single interaction
+    name from a list
+    """
+
     pass
+
+
+def test_partition_multiple_interactions():
+
+    """
+    Tests using partition_interactions function to partition multiple
+    interactions based on name
+    """
+
+    pass
+
+
+def test_partition_interactions_unpartitioned():
+
+    """
+    Tests that when unpartitioned=True is passed to partition_interactions, the
+    final entry returned is all interactions in input that did not have a name
+    in the names argument
+    """
+
+    pass
+
+
+def test_partion_interactions_return_list():
+
+    """
+    Tests that when lst=True is passed to partition_interactions, a tuple of
+    lists is returned, rather than a tuple of generators
+    """
