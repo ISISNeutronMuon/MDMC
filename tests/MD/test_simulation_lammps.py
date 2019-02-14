@@ -540,4 +540,32 @@ def test_parse_constraint_no_interactions(bond_ID_dict):
         lmp_input = lmp.parse_constraint(constraint_algorithm,
                                          bond_ID_dict=bond_ID_dict)
 
+
+@pytest.mark.parametrize('arguments', [{'bonds':'constrained_bonds'},
+                                       {'bonds':'constrained_bonds',
+                                        'angle_ID_dict':'angle_ID_dict'},
+                                       {'angles':'constrained_angles'},
+                                       {'angles':'constrained_angles',
+                                        'bond_ID_dict':'bond_ID_dict'}])
+def test_parse_constraint_no_IDs(arguments, request):
+
+    """
+    Tests that if a dictionary corresponding to interaction types is not passed,
+    a KeyError is raised
+
+    The following combinations are tested:
+    bonds, no ID dictionary
+    bonds, angle ID dictionary
+    angles, no ID dictionary
+    angles, bond ID dictionary
+    """
+
+    # As fixtures cannot be included in parameterization, the names of the
+    # fixtures are included instead - the return values of the fixtures are then
+    # recovered using request.getfixturevalue
+    arg_fixtures = {k:request.getfixturevalue(v) for k, v in arguments.items()}
+    constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
+    with pytest.raises(KeyError):
+        lmp_input = lmp.parse_constraint(constraint_algorithm, **arg_fixtures)
+
     pass
