@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import pytest
 
+from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp
 from MDMC.MD.simulation import ConstraintAlgorithm, Shake, Rattle
 from MDMC.MD.structural_units import Atom, Bond, BondAngle
@@ -569,13 +570,17 @@ def test_parse_constraint_no_IDs(arguments, request):
         lmp_input = lmp.parse_constraint(constraint_algorithm, **arg_fixtures)
 
 
-def test_convert_base_units():
+@pytest.mark.parametrize('value', [1.0, 2.0])
+def test_convert_base_units_identity(value):
 
     """
-    Tests converting MDMC base units to LAMMPS base units
+    Tests converting MDMC base units to LAMMPS base units, where the units are
+    the same
     """
 
-    pass
+    for unit in units.SYSTEM.keys():
+        if not unit.compound:
+            assert lmp.convert_unit(value, unit) == value
 
 
 def test_convert_declared_compound_units():
