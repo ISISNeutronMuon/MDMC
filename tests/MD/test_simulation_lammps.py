@@ -569,6 +569,38 @@ def test_parse_constraint_no_IDs(arguments, request):
         lmp_input = lmp.parse_constraint(constraint_algorithm, **arg_fixtures)
 
 
+def test_convert_base_units():
+
+    """
+    Tests converting MDMC base units to LAMMPS base units
+    """
+
+    pass
+
+
+def test_convert_declared_compound_units():
+
+    """
+    Tests converting between MDMC compound units (units made up of multiple base
+    units) that are declared in the units module to LAMMPS compound units
+    """
+
+    pass
+
+
+def test_convert_undeclared_compound_units():
+
+    """
+    Tests converting between MDMC compound units (units made up of multiple base
+    units) that are not declared in the units module to LAMMPS compound units.
+
+    In this case the unit conversion has to be calculated based on each of the
+    base units
+    """
+
+    pass
+
+
 def test_partition_single_interaction():
 
     """
