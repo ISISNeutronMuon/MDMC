@@ -46,6 +46,8 @@ class LAMMPSEngine(MDEngine):
     atom_types - a dictionary with {type_ID: MDMC_atom_group}, where the type_ID
     is a unique integer and MDMC_atom_group is a list of atoms which are
     identical in terms of element and interactions
+    system_state - a System object from the LAMMPS Python interface which
+    contains properties of the simulation box
     """
 
     @property
@@ -74,6 +76,11 @@ class LAMMPSEngine(MDEngine):
     def temperature(self, value):
 
         self._temperature = value
+
+    @property
+    def system_state(self):
+
+        return self.lmp.system
 
     def setup_universe(self, universe, **settings):
 
