@@ -805,9 +805,12 @@ def parse_kspace_solver(solver):
         lmp_str.append('ewald')
     elif solver.name.lower() == 'pppm':
         lmp_str.append('pppm')
+    else:
+        raise NotImplementedError('This k-space solver has not been implemented'
+                                  ' in the LAMMPS facade')
 
     # Add accuracy
-    lmp_str.append(solver.accracy)
+    lmp_str.append(solver.accuracy)
 
     return lmp_str
 
