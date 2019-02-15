@@ -613,50 +613,122 @@ def test_parse_constraint_no_IDs(arguments, request):
 
 
 @pytest.mark.parametrize('value', [1.0, 2.0])
-def test_convert_base_units_identity(value):
+def test_convert_mdmc_base_units_identity(value):
 
     """
     Tests converting MDMC base units to LAMMPS base units, where the units are
     the same
     """
 
-    for unit in units.SYSTEM.keys():
-        if not unit.compound:
+    for unit in units.SYSTEM.values():
+        if unit.components['numerator'][0] == unit \
+            and unit in lmp.SYSTEM.values():
             assert lmp.convert_unit(value, unit) == value
 
 
-def test_convert_base_units():
+@pytest.mark.parametrize('value', [1.0, 2.0])
+def test_convert_lammps_base_units_identity(value):
+
+    """
+    Tests converting LAMMPS base units to MDMC base units, where the units are
+    the same
+
+    The same units are converted as in test_convert_mdmc_base_units_identity,
+    except they are being converted from LAMMPS to MDMC
+    """
+
+    for unit in lmp.SYSTEM.values():
+        if unit.components['numerator'][0] == unit \
+            and unit in units.SYSTEM.values():
+            assert lmp.convert_unit(value, unit, to_LAMMPS=False) == value
+
+
+@pytest.mark.parametrize('mdmc_unit, lmp_value', [(units.Unit('Pa'),
+                                                   1 / 101325.),
+                                                  (units.Unit('kJ'),
+                                                   1 / 4.184),
+                                                  (units.Unit('amu'),
+                                                   1 / 1.660539040e-30)])
+def test_convert_mdmc_base_units(mdmc_unit, lmp_value):
 
     """
     Tests converting MDMC base units to LAMMPS base units, where the units are
     not the same in the two systems
     """
 
-    pass
+    assert np.isclose(lmp.convert_unit(1., mdmc_unit), lmp_value)
 
 
-def test_convert_declared_compound_units():
+@pytest.mark.parametrize('lmp_unit, mdmc_value', [(units.Unit('atm'), 101325.)])
+def test_convert_lammps_base_units(lmp_unit, mdmc_value):
+
+    """
+    Tests converting LAMMPS base units to MDMC base units, where the units are
+    not the same in the two systems
+    """
+
+    assert np.isclose(lmp.convert_unit(1., lmp_unit, to_LAMMPS=False),
+                      mdmc_value)
+
+
+@pytest.mark.parametrize('mdmc_unit, lmp_value',
+                         [(units.Unit('kJ') / units.Unit('mol'), 1 / 4.184),
+                          (units.Unit('Pa') * units.Unit('fs'), 1. / 101325),
+                          (units.Unit('amu') ** 2, 1 / (1.660539040e-30 ** 2)),
+                          (units.Unit('amu') ** -1, 1.660539040e-30),
+                          (units.SYSTEM['ENERGY'], 1 / 4.184),
+                          (units.SYSTEM['FORCE'], 1 / 4.184)])
+def test_convert_mdmc_compound_units(mdmc_unit, lmp_value):
 
     """
     Tests converting between MDMC compound units (units made up of multiple base
-    units) that are declared in the units module to LAMMPS compound units
+    units)
     """
 
-    pass
+    assert np.isclose(lmp.convert_unit(1., mdmc_unit), lmp_value)
 
 
-def test_convert_undeclared_compound_units():
+def test_convert_mdmc_angular_potential_strength():
+
+    """
+    Tests converting into LAMMPS angular potential strength units for harmonic
+    bond angles, which uses radians as the unit of angle, rather than degrees
+    """
+
+    mdmc_unit = units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2
+    lmp_value = 784.6095482819655
+    assert np.isclose(lmp.convert_unit(1., mdmc_unit), lmp_value)
+
+@pytest.mark.parametrize('lmp_unit, mdmc_value',
+                         [(units.Unit('kcal') / units.Unit('mol'), 4.184),
+                          (units.Unit('atm') * units.Unit('fs'), 101325.),
+                          (lmp.SYSTEM['MASS'] ** 2, (1.660539040e-30 **2)),
+                          (lmp.SYSTEM['MASS'] ** -1, 1. / 1.660539040e-30),
+                          (lmp.SYSTEM['ENERGY'], 4.184),
+                          (lmp.SYSTEM['FORCE'], 4.184)])
+def test_convert_lammps_compound_units(lmp_unit, mdmc_value):
 
     """
     Tests converting between MDMC compound units (units made up of multiple base
-    units) that are not declared in the units module to LAMMPS compound units.
-
-    In this case the unit conversion has to be calculated based on each of the
-    base units
+    units)
     """
 
-    pass
+    assert np.isclose(lmp.convert_unit(1., lmp_unit, to_LAMMPS=False),
+                      mdmc_value)
 
+
+def test_convert_mdmc_compound_equivalence():
+
+    """
+    Tests that converting an MDMC compound unit produces the same answer as
+    performing the conversions individually
+    """
+
+    p = units.SYSTEM['PRESSURE']
+    e = units.SYSTEM['ENERGY']
+
+    assert lmp.convert_unit(1., p / e) == (lmp.convert_unit(1., p)
+                                           / lmp.convert_unit(1., e))
 
 def test_partition_single_interaction():
 
