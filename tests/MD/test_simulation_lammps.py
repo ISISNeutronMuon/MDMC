@@ -105,6 +105,44 @@ def angle_ID_dict(constrained_angles):
 
     return {angle: ID for ID, angle in enumerate(constrained_angles)}
 
+@pytest.fixture
+def coulombics(atoms):
+
+    """
+    Returns:
+    A list of coulombic interactions
+    """
+
+    coulombic1  = Coulombic(atoms=[a for a in atoms if a.atom_type is 1])
+    coulombic2  = Coulombic(atoms=[a for a in atoms if a.atom_type is 2])
+    return [coulombic1, coulombic2]
+
+
+@pytest.fixture
+def dispersions(atoms, universe):
+
+    """
+    Returns:
+    A list of dispersion interactions
+    """
+
+    for atom in atoms:
+        universe.add_structural_unit(atom)
+
+    return [Dispersion(universe, 1, 2), Dispersion(universe, 2, 3),
+            Dispersion(universe, 3, 4)]
+
+
+@pytest.fixture
+def interactions(bonds, angles, coulombics, dispersions):
+
+    """
+    Returns:
+    A list of bond, angle, coulombic and dispersion interactions
+    """
+
+    return bonds + angles + coulombics + dispersions
+
 
 def test_universe_dims():
 
