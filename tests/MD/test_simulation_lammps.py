@@ -15,17 +15,18 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion
 
 
+UNIVERSE_DIM = 5.0
 N_ATOMS = 10
 
 @pytest.fixture
-def universe():
+def empty_universe():
 
     """
     Returns:
     A empty Universe object
     """
 
-    return Universe(dimensions=5.0)
+    return Universe(dimensions=UNIVERSE_DIM)
 
 @pytest.fixture
 def atoms():
@@ -35,20 +36,101 @@ def atoms():
     A list of atoms with 4 different atom_types
     """
 
-    atom_types = [1, 2, 3, 4] * (N_ATOMS / 4)
-    atom_types[len(atom_types):N_ATOMS] = [1, 2, 3, 4][:N_ATOMS-len(atom_types)]
-    return [Atom('H', atom_type=atom_types[i]) for i in range(N_ATOMS)]
+    symbols = ['H', 'O', 'C', 'N']
+    masses = [1.008, 16.000, 12.011, 14.007]
+    elements = symbols * (N_ATOMS / 4)
+    elements[len(elements):N_ATOMS] = symbols[:N_ATOMS-len(elements)]
+    atom_types = {symbol: n+1 for n, symbol in enumerate(symbols)}
+    atom_masses = {symbol: mass for symbol, mass in zip(symbols, masses)}
+
+    return [Atom(element, position=np.array([0.5 * i]*3),
+                 atom_type=atom_types[element], mass=atom_masses[element])
+            for i, element in enumerate(elements)]
 
 @pytest.fixture
-def bonds(atoms):
+def universe_interactions(empty_universe, atoms):
+
+    """
+    Returns:
+    A tuple of (universe, bonds, angles, coulombics, dispersions) where universe
+    is a Universe object with atoms and interactions, bonds is a list of Bond
+    objects, angles is a list of BondAngle objects, coulombics is a list of
+    Coulombic objects, and dispersions is a list of Dispersion objects.
+    """
+
+    for atom in atoms:
+        empty_universe.add_structural_unit(atom)
+
+    bonds = [Bond(atoms[i], atoms[i+1]) for i in range(0, len(atoms), 2)]
+    angles = [BondAngle(atoms[i], atoms[i+1], atoms[i+2]) for i
+              in range(0, len(atoms)-2, 3)]
+    coulombics, dispersions = [], []
+    for type in empty_universe.atom_types:
+        coulombics.append(Coulombic(empty_universe, type))
+        dispersions.append(Dispersion(empty_universe, type))
+
+    return (empty_universe, bonds, angles, coulombics, dispersions)
+
+@pytest.fixture
+def universe(universe_interactions):
+
+    """
+    Returns:
+    A Universe object with atoms, bonds, bond angles, coulombic and dispersion
+    interactions
+    """
+
+    return universe_interactions[0]
+
+@pytest.fixture
+def bonds(universe_interactions):
 
     """
     Returns:
     A list of bonds
     """
 
-    return [Bond(atoms[i], atoms[i+1]) for i in range(0, len(atoms), 2)]
+    return universe_interactions[1]
 
+@pytest.fixture
+def angles(universe_interactions):
+
+    """
+    Returns:
+    A list of bond angles
+    """
+
+    return universe_interactions[2]
+
+@pytest.fixture
+def coulombics(universe_interactions):
+
+    """
+    Returns:
+    A list of coulombic interactions
+    """
+
+    return universe_interactions[3]
+
+@pytest.fixture
+def dispersions(universe_interactions):
+
+    """
+    Returns:
+    A list of dispersion interactions
+    """
+
+    return universe_interactions[4]
+
+@pytest.fixture
+def interactions(bonds, angles, coulombics, dispersions):
+
+    """
+    Returns:
+    A list of bond, angle, coulombic and dispersion interactions
+    """
+
+    return bonds + angles + coulombics + dispersions
 @pytest.fixture
 def constrained_bonds(bonds):
 
@@ -63,17 +145,6 @@ def constrained_bonds(bonds):
     return bonds
 
 @pytest.fixture
-def angles(atoms):
-
-    """
-    Returns:
-    A list of bond angles
-    """
-
-    return [BondAngle(atoms[i], atoms[i+1], atoms[i+2]) for i
-            in range(0, len(atoms)-2, 3)]
-
-@pytest.fixture
 def constrained_angles(angles):
 
     """
@@ -84,7 +155,6 @@ def constrained_angles(angles):
     for angle in angles:
         angle.constrained = True
     return angles
-
 
 @pytest.fixture
 def bond_ID_dict(constrained_bonds):
@@ -106,53 +176,23 @@ def angle_ID_dict(constrained_angles):
 
     return {angle: ID for ID, angle in enumerate(constrained_angles)}
 
-@pytest.fixture
-def coulombics(atoms):
-
-    """
-    Returns:
-    A list of coulombic interactions
-    """
-
-    coulombic1  = Coulombic(atoms=[a for a in atoms if a.atom_type is 1])
-    coulombic2  = Coulombic(atoms=[a for a in atoms if a.atom_type is 2])
-    return [coulombic1, coulombic2]
-
-
-@pytest.fixture
-def dispersions(atoms, universe):
-
-    """
-    Returns:
-    A list of dispersion interactions
-    """
-
-    for atom in atoms:
-        universe.add_structural_unit(atom)
-
-    return [Dispersion(universe, 1, 2), Dispersion(universe, 2, 3),
-            Dispersion(universe, 3, 4)]
-
-
-@pytest.fixture
-def interactions(bonds, angles, coulombics, dispersions):
-
-    """
-    Returns:
-    A list of bond, angle, coulombic and dispersion interactions
-    """
-
-    return bonds + angles + coulombics + dispersions
-
-
 def test_universe_dims():
+@pytest.fixture
+def lammps_engine_box(universe):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
     correct universe dimensions
+    Returns:
+    A LAMMPSEngine where the simulation box has been setup
     """
 
     pass
+    lammps_engine = lmp.LAMMPSEngine()
+    lammps_engine._init_attributes(universe)
+    lammps_engine._define_simulation_box(universe)
+
+    return lammps_engine
 
 
 def test_universe_shape():
