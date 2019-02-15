@@ -268,6 +268,9 @@ def create_units(codata_version):
     units['atm'] = units['Pa'] / 101325.
     units['bar'] = units['Pa'] / 1e5
 
+    # Angle
+    units['rad'] = units['deg'] * np.pi / 180.
+
     return units
 
 
