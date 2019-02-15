@@ -597,32 +597,6 @@ def test_bonded_constraint_unset(bonded_interaction, n_atoms, atom):
     assert b_i.constrained == False
 
 
-@pytest.mark.parametrize("solver", ['ewald',
-                                    'pppm',
-                                    'EWALD'])
-def test_kspacesolver_solver_implemented(solver):
-
-    """
-    Tests setting the solver attribute of KSpaceSolver
-
-    - Tests solver in SOLVERS list
-    - Tests solver.lower() in SOLVERS list
-    """
-
-    kspace_solver = sim.KSpaceSolver(solver)
-    assert kspace_solver.solver == solver.lower()
-
-
-def test_kspacesolver_solver_not_implemented():
-
-    """
-    Tests setting the solver attribute of KSpaceSolver with a solver that has
-    not been implemented
-    """
-    with pytest.raises(NotImplementedError):
-        kspace_solver = sim.KSpaceSolver('Unimplemented')
-
-
 def test_universe_multiple_solvers(kspace_solver):
 
     """
