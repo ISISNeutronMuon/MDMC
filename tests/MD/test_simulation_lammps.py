@@ -4,12 +4,14 @@ AUTHOR :    Thomas Farmer        START DATE :    11/02/2019, 16:21:38"""
 
 from copy import deepcopy
 
+import numpy as np
 import pytest
 
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp
-from MDMC.MD.simulation import ConstraintAlgorithm, Shake, Rattle
-from MDMC.MD.structural_units import Atom, Bond, BondAngle
+from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe
+from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
+    Dispersion
 
 
 N_ATOMS = 10
