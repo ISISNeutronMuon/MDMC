@@ -64,7 +64,7 @@ def water_SPCE_universe(water_molecule):
 @pytest.fixture
 def kspace_solver():
 
-    return sim.KSpaceSolver(sim.KSpaceSolver.SOLVERS[0])
+    return sim.Ewald(accuracy=0.0001)
 
 
 def test_create_universe(universe):
