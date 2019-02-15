@@ -96,25 +96,11 @@ class LAMMPSEngine(MDEngine):
         bonded interactions
         """
 
-        self.universe = universe
-
-        # Create a PyLammps wrapper to capture LAMMPS output
-        self.lmp = PyLammps()
-
-        self.lmp.units('real')
-        self.lmp.atom_style(settings.get('atom_style', 'full'))
-
-        self.atom_dict = {}
-        self.atom_types = {}
-        self.atom_type_properties = []
-
-        self.bond_ID = {}
-        self.angle_ID = {}
-
-        self._define_simulation_box(universe)
-        self._build_configuration(universe)
-        self._add_topology(universe)
-        self.update_parameters(universe)
+        self._init_attributes(universe)
+        self._define_simulation_box(self.universe, **settings)
+        self._build_configuration(self.universe)
+        self._add_topology(self.universe)
+        self.update_parameters(self.universe)
         raise NotImplementedError
 
     def setup_simulation(self, **settings):
@@ -229,6 +215,32 @@ class LAMMPSEngine(MDEngine):
     def reset_config(self):
 
         raise NotImplementedError
+
+    def _init_attributes(self, universe, **settings):
+
+        """
+        Initializes all attributes/properties of the LAMMPSEngine
+
+        This partly takes the place of __init__ for LAMMPSEngine
+
+        Arguments:
+        universe - an MDMC Universe object
+        """
+
+        self.universe = universe
+
+        # Create a PyLammps wrapper to capture LAMMPS output
+        self.lmp = PyLammps()
+
+        self.lmp.units('real')
+        self.lmp.atom_style(settings.get('atom_style', 'full'))
+
+        self.atom_dict = {}
+        self.atom_types = {}
+        self.atom_type_properties = []
+
+        self.bond_ID = {}
+        self.angle_ID = {}
 
     def _define_simulation_box(self, universe):
 
