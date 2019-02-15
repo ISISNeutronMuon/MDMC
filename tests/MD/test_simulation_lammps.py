@@ -17,24 +17,26 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
 N_ATOMS = 10
 
 @pytest.fixture
-def atom():
+def universe():
 
     """
     Returns:
-    A single H atom
+    A empty Universe object
     """
 
-    return Atom('H')
+    return Universe(dimensions=5.0)
 
 @pytest.fixture
-def atoms(atom):
+def atoms():
 
     """
     Returns:
-    A list of atoms
+    A list of atoms with 4 different atom_types
     """
 
-    return [deepcopy(atom) for _ in range(N_ATOMS)]
+    atom_types = [1, 2, 3, 4] * (N_ATOMS / 4)
+    atom_types[len(atom_types):N_ATOMS] = [1, 2, 3, 4][:N_ATOMS-len(atom_types)]
+    return [Atom('H', atom_type=atom_types[i]) for i in range(N_ATOMS)]
 
 @pytest.fixture
 def bonds(atoms):
