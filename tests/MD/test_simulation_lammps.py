@@ -403,7 +403,7 @@ def test_parse_kspace_solver(solver_cls, accuracy, expected):
     kspace_style command
     """
 
-    solver = solver_cls(accuracy)
+    solver = solver_cls(accuracy=accuracy)
     assert lmp.parse_kspace_solver(solver) == expected
 
 
@@ -414,7 +414,7 @@ def test_parse_kspace_solver_unimplemented():
     NotImplementedError
     """
 
-    solver = KSpaceSolver(0.0001)
+    solver = KSpaceSolver(accuracy=0.0001)
     with pytest.raises(NotImplementedError):
         unimplemented_solver = lmp.parse_kspace_solver(solver)
 
