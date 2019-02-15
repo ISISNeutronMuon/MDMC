@@ -176,18 +176,14 @@ def angle_ID_dict(constrained_angles):
 
     return {angle: ID for ID, angle in enumerate(constrained_angles)}
 
-def test_universe_dims():
 @pytest.fixture
 def lammps_engine_box(universe):
 
     """
-    Tests that creating a simulation box from an MDMC universe results in the
-    correct universe dimensions
     Returns:
     A LAMMPSEngine where the simulation box has been setup
     """
 
-    pass
     lammps_engine = lmp.LAMMPSEngine()
     lammps_engine._init_attributes(universe)
     lammps_engine._define_simulation_box(universe)
@@ -195,27 +191,36 @@ def lammps_engine_box(universe):
     return lammps_engine
 
 
-def test_universe_shape():
-
-    """
-    Tests that creating a simulation box from MDMC universe results in the
-    correct universe shape
-    """
-
-    pass
-
-
-def test_number_elements():
+def test_universe_dims(lammps_engine_box):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
-    correct number of elements
+    correct universe dimensions
+
+    Lower dimensions should be 0.0
+    Upper dimensions should be equal to the MDMC universe dimensions
     """
 
-    pass
+    assert 0.0 == lammps_engine_box.system_state.xlo \
+               == lammps_engine_box.system_state.ylo \
+               == lammps_engine_box.system_state.zlo
+
+    assert 5.0 == lammps_engine_box.system_state.xhi \
+               == lammps_engine_box.system_state.yhi \
+               == lammps_engine_box.system_state.zhi
 
 
-def test_number_interaction_types():
+def test_number_atom_types(lammps_engine_box):
+
+    """
+    Tests that creating a simulation box from an MDMC universe results in the
+    correct number of atom types
+    """
+
+    assert lammps_engine_box.system_state.ntypes == 4
+
+
+def test_number_interaction_types(lammps_engine_box, bonds, angles):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
@@ -229,7 +234,8 @@ def test_number_interaction_types():
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    pass
+    assert lammps_engine_box.system_state.nbondtypes == len(bonds)
+    assert lammps_engine_box.system_state.nangletypes == len(angles)
 
 
 def test_number_interactions_per_atom():
