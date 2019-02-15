@@ -438,46 +438,64 @@ class KSpaceSolver(object):
     dispersion interactions
 
     Attributes:
-    solver - a string specifying the name of the solver. Solvers currently
-    supported (although not by all MD engines):
-
-    ewald
-    PPPM
+    accuracy - a float specifying the relative RMS error in per-atom forces
     """
 
     SOLVERS = ['ewald', 'pppm']
 
-    def __init__(self, solver, **settings):
+    def __init__(self, **settings):
 
         """
         Different MD engines require different parameters to be specified for a
-        k-space solver to be used. These parameters are specified in settings,
-        which are grouped by engine.
+        k-space solver to be used. These parameters are specified in settings.
 
         Arguments:
         solver - a string specifying the name of the solver
 
         Settings:
-        LAMMPS:
         accuracy - a float specifying the relative RMS error in per-atom forces
         """
 
-        self.solver = solver
         self.accuracy = settings.get('accuracy')
 
     @property
-    def solver(self):
+    def name(self):
 
-        return self._solver
+        return self.__class__.__name__
 
-    @solver.setter
-    def solver(self, value):
 
-        value = value.lower()
-        if value not in self.__class__.SOLVERS:
-            raise NotImplementedError('The solver type is not implemented for'
-                                      ' any MD engine')
-        self._solver = value
+class Ewald(KSpaceSolver):
+
+    """
+    Holds the parameters that are required for the Ewald solver to be applied to
+    both/either the electrostatic and/or dispersion interactions
+    """
+
+    def __init__(self, **settings):
+
+        """
+        Settings:
+        accuracy - a float specifying the relative RMS error in per-atom forces
+        """
+
+        super(Ewald, self).__init__(**settings)
+
+
+class PPPM(KSpaceSolver):
+
+    """
+    Holds the parameters that are required for the PPPM solver to be applied to
+    both/either the electrostatic and/or dispersion interactions
+    """
+
+    def __init__(self, **settings):
+
+        """
+        Settings:
+        accuracy - a float specifying the relative RMS error in per-atom forces
+        """
+
+        super(PPPM, self).__init__(**settings)
 
 
 class ConstraintAlgorithm(object):
