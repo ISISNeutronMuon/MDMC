@@ -730,27 +730,36 @@ def test_convert_mdmc_compound_equivalence():
     assert lmp.convert_unit(1., p / e) == (lmp.convert_unit(1., p)
                                            / lmp.convert_unit(1., e))
 
-def test_partition_single_interaction():
+
+def test_partition_single_interaction(interactions, bonds):
 
     """
     Tests using partition_interactions function to filter a single interaction
     name from a list
     """
 
-    pass
+    assert bonds == list(lmp.partition_interactions(interactions, ['Bond'])[0])
 
 
-def test_partition_multiple_interactions():
+def test_partition_multiple_interactions(interactions, bonds, angles,
+                                         coulombics):
 
     """
     Tests using partition_interactions function to partition multiple
     interactions based on name
     """
 
-    pass
+    p_bonds, p_angles, p_coulombics = lmp.partition_interactions(interactions,
+                                                                 ['Bond',
+                                                                  'BondAngle',
+                                                                  'Coulombic'])
+    assert list(p_bonds) == bonds
+    assert list(p_angles) == angles
+    assert list(p_coulombics) == coulombics
 
 
-def test_partition_interactions_unpartitioned():
+def test_partition_interactions_unpartitioned(interactions, bonds, angles,
+                                              coulombics, dispersions):
 
     """
     Tests that when unpartitioned=True is passed to partition_interactions, the
@@ -758,12 +767,22 @@ def test_partition_interactions_unpartitioned():
     in the names argument
     """
 
-    pass
+    _, _, _, p_dispersions = lmp.partition_interactions(interactions,
+                                                        ['Bond',
+                                                         'BondAngle',
+                                                         'Coulombic'],
+                                                        unpartitioned=True)
+    assert list(p_dispersions) == dispersions
 
 
-def test_partion_interactions_return_list():
+def test_partion_interactions_return_list(interactions, bonds, angles):
 
     """
     Tests that when lst=True is passed to partition_interactions, a tuple of
     lists is returned, rather than a tuple of generators
     """
+
+    assert (bonds, angles) == lmp.partition_interactions(interactions,
+                                                         ['Bond',
+                                                          'BondAngle'],
+                                                         lst=True)
