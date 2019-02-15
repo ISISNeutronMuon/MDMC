@@ -65,7 +65,8 @@ class Unit(str):
         unit = super(Unit, cls).__new__(cls, string)
         if not components:
             components = defaultdict(list)
-            components['numerator'].append(string)
+            components['numerator'].append(unit)
+            components['denominator'] = []
         unit.components = components
         return unit
 
