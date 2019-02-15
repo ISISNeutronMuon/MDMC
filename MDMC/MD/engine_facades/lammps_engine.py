@@ -20,6 +20,7 @@ AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
 from collections import defaultdict
+from copy import copy
 from itertools import chain, count, product, tee
 from random import randint
 from tempfile import NamedTemporaryFile
@@ -598,7 +599,7 @@ SYSTEM = {
 }
 
 
-def convert_unit(value, unit):
+def convert_unit(value, unit, to_LAMMPS=True):
 
     """
     Converts between MDMC units and LAMMPS real units
@@ -606,25 +607,68 @@ def convert_unit(value, unit):
     Arguments:
     value - a float specifying the value in MDMC units
     unit - the unit of the value
+    to_LAMMPS - a boolean specifying if the conversion is from MDMC units to
+    LAMMPS units
 
     Returns:
-    a float with the value in LAMMPS units
+    a float or array with the value in LAMMPS units if to_LAMMPS is True,
+    otherwise a float or array with the value in MDMC units
     """
 
-    # As values must be unique in MDMC system of units dictionary
-    # (units.SYSTEM), the keys and values can be inverted
-    SYSTEM_INV = {unit:property for property, unit in units.SYSTEM.items()}
+    def expand_components(unit):
 
-    # Apply conversion factor from units module based on LAMMPS unit of property
-    # First try based on units module having exact unit
-    try:
-        value *= getattr(units, SYSTEM[SYSTEM_INV[unit]])
-    except (KeyError, AttributeError):
-        # Then try each component in turn
-        for component in unit.components['numerator']:
-            value *= getattr(units, SYSTEM[SYSTEM_INV[component]])
-        for component in unit.components['denominator']:
-            value /= getattr(units, SYSTEM[SYSTEM_INV[component]])
+        """
+        Expands out the components of a unit, so that the unit is expressed
+        purely in terms of base units
+
+        Returns:
+        A tuple of (num, denom), where num is a list of all base units in the
+        numerator, and denom is a list of all base units in the denominator
+        """
+
+        num, denom = [], []
+        if unit.base:
+            num.append(unit)
+        else:
+            # tuple unpacking style below appends to num and denom lists
+            for comp in unit.components['numerator']:
+                num[len(num):], denom[len(denom):] = expand_components(comp)
+            for comp in unit.components['denominator']:
+                denom[len(denom):], num[len(num):] = expand_components(comp)
+
+        return num, denom
+
+    # Expand the unit in terms of its base units (for numerator and denominator)
+    if to_LAMMPS:
+        L_SYS = copy(SYSTEM)
+        # For angular potential strength LAMMPS requires the units in rad,
+        # rather than degrees (which is uses otherwise). Therefore if the unit
+        # is in MDMC angular potential strength units (energy / angle^2), the
+        # ANGLE entry in SYSTEM is replaced by radians.
+        if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
+            L_SYS['ANGLE'] = units.Unit('rad')
+
+        expanded_unit = expand_components(unit)
+        SYSTEM_INV = {unit:property for property, unit in units.SYSTEM.items()}
+        # Apply inversion to all components
+        unit_nums, unit_denoms = map(lambda comp_list: [L_SYS[SYSTEM_INV[comp]]
+                                                        for comp in comp_list],
+                                     expanded_unit)
+    else:
+        unit_denoms, unit_nums = expand_components(unit)
+
+    conv_nums, conv_denoms = [], []
+    for component in unit_nums:
+        conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
+            expand_components(component)
+    for component in unit_denoms:
+        conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
+            expand_components(component)
+
+    for component in conv_nums:
+        value *= getattr(units, component)
+    for component in conv_denoms:
+        value /= getattr(units, component)
 
     return value
 
