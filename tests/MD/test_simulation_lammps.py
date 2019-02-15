@@ -9,7 +9,8 @@ import pytest
 
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp
-from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe
+from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe, \
+    Ewald, PPPM, KSpaceSolver
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion
 
@@ -391,6 +392,33 @@ def test_update_angles():
     pass
 
 
+@pytest.mark.parametrize('solver_cls, accuracy, expected', [(PPPM, 0.001,
+                                                             ['pppm', 0.001]),
+                                                            (Ewald, 1e-05,
+                                                             ['ewald', 1e-05])])
+def test_parse_kspace_solver(solver_cls, accuracy, expected):
+
+    """
+    Tests that parsing the kspace solver returns the correct input for LAMMPS
+    kspace_style command
+    """
+
+    solver = solver_cls(accuracy)
+    assert lmp.parse_kspace_solver(solver) == expected
+
+
+def test_parse_kspace_solver_unimplemented():
+
+    """
+    Tests that parsing an unimplemented kspace solver raises a
+    NotImplementedError
+    """
+
+    solver = KSpaceSolver(0.0001)
+    with pytest.raises(NotImplementedError):
+        unimplemented_solver = lmp.parse_kspace_solver(solver)
+
+
 def test_set_ksapce_solver_single_solver():
 
     """
@@ -404,7 +432,7 @@ def test_set_ksapce_solver_multiple_solvers():
 
     """
     Tests setting the kspace solver if the Universe has both an
-    electrostatic_solver and a dispersive_solver and they are equal
+    electrostatic_solver and a dispersion_solver and they are equal
     """
 
     pass
@@ -414,7 +442,7 @@ def test_set_ksapce_solver_single_solver_error():
 
     """
     Tests setting the kspace solver if the Universe only has an
-    electrostatic_solver or a dispersive_solver, which should result in a
+    electrostatic_solver or a dispersion_solver, which should result in a
     TypeError
     """
 
@@ -425,7 +453,7 @@ def test_set_ksapce_solver_multiple_solvers_error():
 
     """
     Tests setting the kspace solver if the Universe has both an
-    electrostatic_solver and a dispersive_solver and they are not equal
+    electrostatic_solver and a dispersion_solver and they are not equal
     """
 
     pass
