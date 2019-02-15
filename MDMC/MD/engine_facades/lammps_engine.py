@@ -791,8 +791,18 @@ def parse_kspace_solver(solver):
     A list of style and parameters for input to LAMMPS kspace_style
     """
 
-    pass
+    lmp_str = []
 
+    # Add algorithm name
+    if solver.name.lower() == 'ewald':
+        lmp_str.append('ewald')
+    elif solver.name.lower() == 'pppm':
+        lmp_str.append('pppm')
+
+    # Add accuracy
+    lmp_str.append(solver.accracy)
+
+    return lmp_str
 
 def parse_constraint(constraint_algorithm, bonds=[], bond_ID_dict={}, angles=[],
                      angle_ID_dict={}):
