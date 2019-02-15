@@ -144,7 +144,15 @@ class Unit(str):
         new Unit
         """
 
-        components = deepcopy(self.components)
+        # Creating another defaultdict and then populating it by deepcopying
+        # every unit in the numerator and denominator avoids issues with
+        # multiple component dictionaries referencing the same object - this
+        # previously led to units which were base units being transformed into
+        # combined units as the lists in their components dictionary were
+        # modified
+        components = defaultdict(list)
+        for k, lst in self.components.items():
+            components[k] = [deepcopy(unit) for unit in lst]
         if op == 'mul':
             components['numerator'] += other.components['numerator']
             components['denominator'] += other.components['denominator']
