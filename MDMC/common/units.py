@@ -118,6 +118,14 @@ class Unit(str):
         components = self._calculate_components(other, 'pow')
         return self.__class__(self._calculate_string(components), components)
 
+    @property
+    def base(self):
+
+        if (not self.components['denominator']
+                and self.components['numerator'] == [self]):
+            return True
+        return False
+
     def _calculate_components(self, other, op):
 
         """
