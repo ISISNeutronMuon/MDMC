@@ -395,24 +395,74 @@ def test_unimplemented_interactions(lammps_engine_config, universe):
     with pytest.raises(NotImplementedError):
         lammps_engine_config._add_topology(universe)
 
-def test_partion_interactions():
+@pytest.mark.parametrize('interactions, expected',
+                         [('bonds', 'harmonic'),
+                          ('angles', 'harmonic')])
+def test_parse_bonded_styles(interactions, expected, request):
 
     """
-    Tests that MDMC universe interactions are partioned based on type
+    Tests that the return from parse_bonded_styles is the correct input for
+    creating a LAMMPS bond_style or angle_style
+
+    The parameters should be modified whenever a new bonded style is
+    implemented
     """
 
-    pass
+    # As fixtures cannot be included in parameterization, the names of the
+    # fixtures are included instead - the return values of the fixtures are then
+    # recovered using request.getfixturevalue
+    interactions = request.getfixturevalue(interactions)
+    # Test the first interaction in each list of interactions
+    assert lmp.parse_bonded_styles(interactions[0]) == expected
 
 
-def test_unsupported_interactions():
+@pytest.mark.parametrize('interactions, expected',
+                         [('dispersions', ['lj', 'long', 10.]),
+                          ('coulombics', ['coul', 'long', 8.0])])
+def test_parse_nonbonded_styles(interactions, expected, request):
 
     """
-    Tests that if a universe passed to LAMMPSEngine._add_topology has any
-    interactions which have not been implemented in LAMMPS, NotImplementedError
-    is raised
+    Tests that the return from parse_nonbonded_styles is the correct input for
+    creating a LAMMPS pair style
+
+    The parameters should be modified whenever a new nonbonded style is
+    implemented
     """
 
-    pass
+    # As fixtures cannot be included in parameterization, the names of the
+    # fixtures are included instead - the return values of the fixtures are then
+    # recovered using request.getfixturevalue
+    interactions = request.getfixturevalue(interactions)
+    # Test the first interaction in each list of interactions
+    assert lmp.parse_nonbonded_styles(interactions[0]) == expected
+
+
+@pytest.mark.parametrize('interaction, arguments, parser',
+                         [(Bond, ['atom_pair'], 'parse_bonded_styles'),
+                          (Dispersion, ['universe', 1], 'parse_nonbonded_styles')
+                         ])
+def test_parse_unimplemented_styles(interaction, arguments, parser, request):
+
+    """
+    Tests that parsing both bonded and nonbonded interactions with an
+    unimplemented function name raises a NotImplementedError
+    """
+
+    # As fixtures cannot be included in parameterization, the names of the
+    # fixtures are included instead - the return values of the fixtures are then
+    # recovered using request.getfixturevalue
+    # type checking enables arguments which are not dependent on fixtures (e.g.
+    # atom_type)
+    for i in range(len(arguments)):
+        if isinstance(arguments[i], str):
+            arguments[i] = request.getfixturevalue(arguments[i])
+
+    # Add interaction without defining InteractionFunction
+    undefined_interaction_function = interaction(*arguments)
+
+    with pytest.raises(NotImplementedError):
+        # Pass undefined_interaction_function as an argument to parser
+        getattr(lmp, parser)(undefined_interaction_function)
 
 
 def test_create_interaction_style():
