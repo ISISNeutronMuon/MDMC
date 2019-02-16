@@ -241,6 +241,12 @@ def test_number_atom_types(lammps_engine_box):
     assert lammps_engine_box.system_state.ntypes == 4
 
 
+
+    """
+    """
+
+
+
 def test_number_interaction_types(lammps_engine_box, bonds, angles):
 
     """
@@ -255,25 +261,11 @@ def test_number_interaction_types(lammps_engine_box, bonds, angles):
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    assert lammps_engine_box.system_state.nbondtypes == len(bonds)
-    assert lammps_engine_box.system_state.nangletypes == len(angles)
-
-
-def test_number_interactions_per_atom():
-
-    """
-    Tests that creating a simulation box from an MDMC universe results in the
-    correct allowed number of interactions per atom for each interaction type:
-
-    - bond
-    - angle
-    - dihedral
-    - improper
-
-    DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
-    """
-
-    pass
+    assert lammps_engine_box.system_state.nbondtypes == 2
+    # LAMMPS versions <= 20190104 have a bug which incorrectly assigns the
+    # number of angle types, so only test this if using a more recent version
+    if lammps_engine_box.lmp.lmp.version() > 20190104:
+        assert lammps_engine_box.system_state.nangletypes == 1
 
 
 def test_atom_type_properties():
