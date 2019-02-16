@@ -730,7 +730,7 @@ def parse_nonbonded_styles(interaction):
     interaction - an MDMC interaction
 
     Returns:
-    a string with the correspoding LAMMPS pair style
+    a list with the correspoding LAMMPS pair style
     """
 
     lmp_str = []
