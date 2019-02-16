@@ -67,9 +67,13 @@ def universe_interactions(empty_universe, atoms):
     for atom in atoms:
         empty_universe.add_structural_unit(atom)
 
-    bonds = [Bond(atoms[i], atoms[i+1]) for i in range(0, len(atoms), 2)]
-    angles = [BondAngle(atoms[i], atoms[i+1], atoms[i+2]) for i
-              in range(0, len(atoms)-2, 3)]
+    # Create 2 bonds for some atoms, and one angle, coulombic and dispersive
+    # interaction
+    bond1_atoms = [(atoms[i], atoms[i+1]) for i in range(0, len(atoms)-1, 2)]
+    bond2_atoms = [(atoms[i], atoms[i+2]) for i in range(0, len(atoms)-2, 3)]
+    bonds = [Bond(*bond1_atoms), Bond(*bond2_atoms)]
+    angles = [BondAngle(*[(atoms[i], atoms[i+1], atoms[i+2]) for i
+                         in range(0, len(atoms)-2, 3)])]
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, type))
