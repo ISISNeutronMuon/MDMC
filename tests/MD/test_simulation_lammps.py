@@ -357,22 +357,26 @@ def test_atom_ID(lammps_engine_config, universe):
                 == universe.atom_list[i].ID - offset)
 
 
-def test_atom_type():
+def test_atom_type(lammps_engine_config, universe):
 
     """
     Tests that atoms created in LAMMPS have the correct atom types
     """
 
-    pass
+    for i in range(len(universe.atom_list)):
+        assert (lammps_engine_config.lmp.atoms[i].type
+                == universe.atom_list[i].atom_type)
 
 
-def test_atom_position():
+def test_atom_position(lammps_engine_config, universe):
 
     """
     Tests that atoms created in LAMMPS have the correct position
     """
 
-    pass
+    for i in range(len(universe.atom_list)):
+        assert (np.array(lammps_engine_config.lmp.atoms[i].position)
+                == universe.atom_list[i].position).all()
 
 
 def test_atom_in_molecule():
