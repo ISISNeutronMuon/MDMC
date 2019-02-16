@@ -507,6 +507,19 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     assert disp.atom_types == atom_types_expected
 
 
+def test_dispersion_cutoff(water_SPCE_universe):
+
+    """
+    Tests that Dispersion can be initialized with a cutoff, and that not
+    specifying a cutoff results in a cutoff attribute set to None
+    """
+
+    cutoff_disp = su.Dispersion(water_SPCE_universe, 1, cutoff=5.0)
+    assert cutoff_disp.cutoff == 5.0
+    infinite_disp = su.Dispersion(water_SPCE_universe, 1)
+    assert infinite_disp.cutoff is None
+
+
 def test_init_coulombic_atom_types():
 
     """
