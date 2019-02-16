@@ -290,23 +290,32 @@ def test_number_interaction_types(lammps_engine_box, bonds, angles):
 #     assert lammps_engine_config.system_state.nangles == sum([len(a) for a
 #                                                                     in angles])
 
-def test_atom_type_properties():
+
+def test_atom_type_properties(lammps_engine_config, universe):
 
     """
-    Tests that element and mass are assigned to each list index correspond to
-    type equivalent to that index (-1 offset due to atom_type starting from 0)
+    Tests that element and mass are assigned to each list index corresponding to
+    atom type equivalent to that index (-1 offset due to atom_type starting from
+    1)
     """
 
-    pass
+    for atom_type, atoms in universe.atom_types.items():
+        assert (lammps_engine_config.atom_type_properties[atom_type - 1]
+                == (atoms[0].element, atoms[0].mass))
 
 
-def test_atom_type_mass():
+def test_atom_type_mass(lammps_engine_config, universe):
 
     """
     Tests that the mass of each atom type is set correctly in LAMMPS
+
+    Atoms are created in LAMMPS according to atom_type, so do not have the same
+    order as universe.atom_list
     """
 
-    pass
+    for i in range(len(universe.atom_list)):
+        assert (lammps_engine_config.lmp.atoms[i].mass
+                == universe.atom_list[i].mass)
 
 
 def test_atom_id():
