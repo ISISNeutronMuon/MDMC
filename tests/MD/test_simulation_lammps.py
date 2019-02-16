@@ -200,6 +200,17 @@ def lammps_engine_box(universe):
 
     return lammps_engine
 
+@pytest.fixture
+def lammps_engine_config(lammps_engine_box):
+
+    """
+    Returns:
+    A LAMMPSEngine where the atomic configuration has been added
+    """
+
+    lammps_engine_box._build_configuration(lammps_engine_box.universe)
+    return lammps_engine_box
+
 
 def test_universe_dims(lammps_engine_box):
 
