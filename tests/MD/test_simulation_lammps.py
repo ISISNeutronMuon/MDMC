@@ -379,14 +379,21 @@ def test_atom_position(lammps_engine_config, universe):
                 == universe.atom_list[i].position).all()
 
 
+def test_unimplemented_interactions(lammps_engine_config, universe):
 
     """
-    Tests that atoms in a molecule created in LAMMPS have the correct molecule
-    ID
+    Tests that if a universe passed to LAMMPSEngine._add_topology has any
+    interactions which have not been implemented in LAMMPS, NotImplementedError
+    is raised
     """
 
-    pass
+    # Add unimplemented interaction type to universe
+    class Unimplemented(Dispersion): pass
+    unimplemented_interaction = Unimplemented(universe, 1)
 
+    # Create LAMMPS topology from universe, raising NotImplementedError
+    with pytest.raises(NotImplementedError):
+        lammps_engine_config._add_topology(universe)
 
 def test_partion_interactions():
 
