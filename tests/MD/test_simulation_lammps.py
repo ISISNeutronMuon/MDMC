@@ -79,17 +79,29 @@ def universe_interactions(empty_universe, atoms):
     for atom in atoms:
         empty_universe.add_structural_unit(atom)
 
+    # Create InteractionFunctions for bonds, angles and dispersive interactions
+    bond1_harmonic = HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
+    bond2_harmonic = HarmonicPotential((2.0, 'Ang'), (4.0, 'kJ'))
+    angle_harmonic = HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
+
     # Create 2 bonds for some atoms, and one angle, coulombic and dispersive
     # interaction
     bond1_atoms = [(atoms[i], atoms[i+1]) for i in range(0, len(atoms)-1, 2)]
     bond2_atoms = [(atoms[i], atoms[i+2]) for i in range(0, len(atoms)-2, 3)]
-    bonds = [Bond(*bond1_atoms), Bond(*bond2_atoms)]
+    bonds = [Bond(*bond1_atoms, function=bond1_harmonic),
+             Bond(*bond2_atoms, function=bond2_harmonic)]
     angles = [BondAngle(*[(atoms[i], atoms[i+1], atoms[i+2]) for i
-                         in range(0, len(atoms)-2, 3)])]
+                          in range(0, len(atoms)-2, 3)],
+                        function=angle_harmonic)]
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
-        coulombics.append(Coulombic(empty_universe, type))
-        dispersions.append(Dispersion(empty_universe, type))
+        coulombics.append(Coulombic(empty_universe, type,
+                                    function=Coulomb((type*0.5, 'e'))))
+        dispersions.append(Dispersion(empty_universe, type,
+                                      function=LennardJones((type*0.1,
+                                                             'kJ / mol'),
+                                                            (type*1.0,
+                                                             'Ang'))))
 
     return (empty_universe, bonds, angles, coulombics, dispersions)
 
