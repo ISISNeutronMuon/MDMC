@@ -34,12 +34,18 @@ def atoms():
     """
     Returns:
     A list of atoms with 4 different atom_types
+
+    Ordering of atoms is to enable ease of comparison with atoms added to
+    LAMMPS, as this is done ordered by atom_type, rather than necessary the
+    order which atoms appear in universe.atom_list
     """
 
-    symbols = ['H', 'O', 'C', 'N']
-    masses = [1.008, 16.000, 12.011, 14.007]
+    symbols = ['C', 'H', 'N', 'O']
+    masses = [12.011, 1.008, 14.007, 16.000]
     elements = symbols * (N_ATOMS / 4)
     elements[len(elements):N_ATOMS] = symbols[:N_ATOMS-len(elements)]
+    # Sorted so that atoms of same type are grouped
+    elements = sorted(elements)
     atom_types = {symbol: n+1 for n, symbol in enumerate(symbols)}
     atom_masses = {symbol: mass for symbol, mass in zip(symbols, masses)}
 
