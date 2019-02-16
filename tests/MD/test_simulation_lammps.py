@@ -9,10 +9,12 @@ import pytest
 
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp
+from MDMC.MD.interaction_functions import HarmonicPotential, LennardJones, \
+    Coulomb
 from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe, \
     Ewald, PPPM, KSpaceSolver
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
-    Dispersion
+    Dispersion, NonBondedInteraction
 
 
 UNIVERSE_DIM = 5.0
