@@ -56,6 +56,16 @@ def atoms():
             for i, element in enumerate(elements)]
 
 @pytest.fixture
+def atom_pair(atoms):
+
+    """
+    Returns:
+    A tuple of two atoms from the atoms fixture
+    """
+
+    return tuple(atoms[:2])
+
+@pytest.fixture
 def universe_interactions(empty_universe, atoms):
 
     """
