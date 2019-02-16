@@ -259,7 +259,7 @@ class LAMMPSEngine(MDEngine):
         n_elements = len(universe.element_dict)
 
         # Determine number of bond and angle types
-        bonded_interaction_types = [i.name for i in universe.interactions
+        bonded_interaction_types = [i.name for i in set(universe.interactions)
                                     if issubclass(type(i), BondedInteraction)]
         n_bond_types = bonded_interaction_types.count('Bond')
         n_angle_types = bonded_interaction_types.count('BondAngle')
