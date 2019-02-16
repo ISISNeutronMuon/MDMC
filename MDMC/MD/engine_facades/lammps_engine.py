@@ -295,8 +295,12 @@ class LAMMPSEngine(MDEngine):
 
         self.atom_types = universe.atom_types
         # Assume all atoms of the same type have the same element and mass
-        self.atom_type_properties = [(atom[0].element, atom[0].mass) for atom
-                                     in sorted(self.atom_types.values())]
+        # Sort atoms based on atom_type (i.e. numerically starting at 1) so
+        # that it is possible to index into atom_type_properties with
+        # atom_type - 1 (where the -1 is to account for 0 indexing on lists)
+        self.atom_type_properties = [(atom[0].element, atom[0].mass)
+                                     for type, atom
+                                     in sorted(self.atom_types.items())]
 
         for type_ID, atom_type_group in self.atom_types.items():
             # The mass below has associated units, which causes a segfault when
