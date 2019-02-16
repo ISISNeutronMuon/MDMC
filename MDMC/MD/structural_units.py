@@ -1073,6 +1073,9 @@ class NonBondedInteraction(Interaction):
 
     """
     Base class for non-bonded interactions
+
+    Attributes:
+    cutoff - a distance in Ang at which the interaction potential is truncated
     """
 
     __metaclass__ = ABCMeta
@@ -1082,6 +1085,7 @@ class NonBondedInteraction(Interaction):
         self.universe = universe
         if self.universe:
             self.universe.add_nonbonded_interaction(self)
+        self.cutoff = settings.get('cutoff')
         super(NonBondedInteraction, self).__init__(**settings)
 
     @abstractproperty
@@ -1104,6 +1108,17 @@ class NonBondedInteraction(Interaction):
             self._universe = weakref.ref(value)
         except TypeError:
             self._universe = None
+
+    @property
+    def cutoff(self):
+
+        return self._cutoff
+
+    @cutoff.setter
+    @unit_decorator(unit=units.LENGTH)
+    def cutoff(self, value):
+
+        self._cutoff = value
 
 
 class Dispersion(NonBondedInteraction):
