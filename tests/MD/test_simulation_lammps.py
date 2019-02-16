@@ -318,13 +318,19 @@ def test_atom_type_mass(lammps_engine_config, universe):
                 == universe.atom_list[i].mass)
 
 
-def test_atom_id():
+def test_atom_ID(lammps_engine_config, universe):
 
     """
     Tests that atoms created in LAMMPS have the correct ID
     """
 
-    pass
+    # Atom IDs in universe are offset by some integer related to the number of
+    # time the atoms fixture is called. If this offset is subtracted, the IDs
+    # should agree exactly with the LAMMPS atom IDs
+    offset = universe.atom_list[0].ID - 1
+    for i in range(len(universe.atom_list)):
+        assert (lammps_engine_config.lmp.atoms[i].id
+                == universe.atom_list[i].ID - offset)
 
 
 def test_atom_type():
