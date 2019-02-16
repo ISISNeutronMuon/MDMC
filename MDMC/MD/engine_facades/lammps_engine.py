@@ -744,7 +744,7 @@ def parse_nonbonded_styles(interaction):
 
     if interaction.cutoff:
         cutoff = convert_unit(interaction.cutoff, interaction.cutoff.unit)
-        if interaction.kspace_solver:
+        if interaction.universe.kspace_solver:
             lmp_str.append('long')
         else:
             lmp_str.append('cut')
