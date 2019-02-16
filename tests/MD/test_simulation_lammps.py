@@ -379,7 +379,6 @@ def test_atom_position(lammps_engine_config, universe):
                 == universe.atom_list[i].position).all()
 
 
-def test_atom_in_molecule():
 
     """
     Tests that atoms in a molecule created in LAMMPS have the correct molecule
