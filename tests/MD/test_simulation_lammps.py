@@ -423,7 +423,7 @@ def test_parse_bonded_styles(interactions, expected, request):
                           ('coulombics', ['coul', 'cut', 8.0]),
                           ('dispersions', ['lj', 'long', 10.]),
                           ('coulombics', ['coul', 'long', 8.0])])
-def test_parse_nonbonded_styles(interactions, expected, request):
+def test_parse_nonbonded_styles(interactions, expected, universe, request):
 
     """
     Tests that the return from parse_nonbonded_styles is the correct input for
@@ -437,6 +437,9 @@ def test_parse_nonbonded_styles(interactions, expected, request):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     interactions = request.getfixturevalue(interactions)
+    # When testing for long interactions, add a kspace solver to the Universe
+    if 'long' in expected:
+        universe.kspace_solver = PPPM(accuracy=1e-4)
     # Test the first interaction in each list of interactions
     assert lmp.parse_nonbonded_styles(interactions[0]) == expected
 
