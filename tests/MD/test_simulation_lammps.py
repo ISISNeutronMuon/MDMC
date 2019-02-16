@@ -96,12 +96,14 @@ def universe_interactions(empty_universe, atoms):
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, type,
-                                    function=Coulomb((type*0.5, 'e'))))
+                                    function=Coulomb((type*0.5, 'e')),
+                                    cutoff=8.0))
         dispersions.append(Dispersion(empty_universe, type,
                                       function=LennardJones((type*0.1,
                                                              'kJ / mol'),
                                                             (type*1.0,
-                                                             'Ang'))))
+                                                             'Ang')),
+                                      cutoff=10.0))
 
     return (empty_universe, bonds, angles, coulombics, dispersions)
 
