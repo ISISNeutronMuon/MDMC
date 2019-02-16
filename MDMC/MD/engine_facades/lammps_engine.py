@@ -299,7 +299,9 @@ class LAMMPSEngine(MDEngine):
                                      in sorted(self.atom_types.values())]
 
         for type_ID, atom_type_group in self.atom_types.items():
-            self.lmp.mass(type_ID, atom_type_group[0].mass)
+            # The mass below has associated units, which causes a segfault when
+            # it is passed to LAMMPS - cast to float to remove units
+            self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
                 self.atom_dict[atom] = self.lmp.atoms[self.lmp.atoms.natoms - 1]
