@@ -419,7 +419,9 @@ def test_parse_bonded_styles(interactions, expected, request):
 
 
 @pytest.mark.parametrize('interactions, expected',
-                         [('dispersions', ['lj', 'long', 10.]),
+                         [('dispersions', ['lj', 'cut', 10.]),
+                          ('coulombics', ['coul', 'cut', 8.0]),
+                          ('dispersions', ['lj', 'long', 10.]),
                           ('coulombics', ['coul', 'long', 8.0])])
 def test_parse_nonbonded_styles(interactions, expected, request):
 
