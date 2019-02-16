@@ -748,7 +748,7 @@ def parse_nonbonded_styles(interaction):
             lmp_str.append('long')
         else:
             lmp_str.append('cut')
-        lmp_str.append(str(cutoff))
+        lmp_str.append(cutoff)
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
