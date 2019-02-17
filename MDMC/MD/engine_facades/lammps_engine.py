@@ -344,7 +344,9 @@ class LAMMPSEngine(MDEngine):
         nonbonded_styles = set([tuple(parse_nonbonded_styles(nb)) for nb
                                 in disps + couls])
         if nonbonded_styles:
-            self.lmp.pair_style('hybrid', *nonbonded_styles)
+            # Use chain to flatten set of tuples
+            self.lmp.pair_style('hybrid',
+                                *chain.from_iterable(nonbonded_styles))
             self._create_coulombic(couls)
             self._update_charges()
             # Dispersion creation and updating are the same, so only an update
