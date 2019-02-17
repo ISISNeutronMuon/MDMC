@@ -414,7 +414,7 @@ class LAMMPSEngine(MDEngine):
         """
 
         for disp in disps:
-            atom_type_pairs = product(disps.atom_types[0], disps.atom_types[1])
+            atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
             for atom_type_pair in atom_type_pairs:
                 self.lmp.pair_coeff(atom_type_pair[0], atom_type_pair[1],
                                     parse_dispersion_coefficients(disp))
@@ -738,9 +738,9 @@ def parse_nonbonded_styles(interaction):
 
     lmp_str = []
     if interaction.function_name == 'LennardJones':
-        lmp_str.append('lj')
+        lmp_str.append('lj/')
     elif interaction.function_name == 'Coulomb':
-        lmp_str.append('coul')
+        lmp_str.append('coul/')
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
@@ -748,9 +748,9 @@ def parse_nonbonded_styles(interaction):
     if interaction.cutoff:
         cutoff = convert_unit(interaction.cutoff, interaction.cutoff.unit)
         if interaction.universe.kspace_solver:
-            lmp_str.append('long')
+            lmp_str[-1] += 'long'
         else:
-            lmp_str.append('cut')
+            lmp_str[-1] += 'cut'
         lmp_str.append(cutoff)
     else:
         raise NotImplementedError('This InteractionFunction has not been'
