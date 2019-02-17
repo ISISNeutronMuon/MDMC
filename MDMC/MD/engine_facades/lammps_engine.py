@@ -401,6 +401,7 @@ class LAMMPSEngine(MDEngine):
         for atom, L_atom in self.atom_dict.items():
             self.lmp.set('atom',
                          L_atom.id,
+                         'charge',
                          convert_unit(atom.charge, atom.charge.unit))
 
     def _update_dispersions(self, disps):
