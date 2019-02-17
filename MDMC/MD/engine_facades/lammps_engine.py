@@ -341,7 +341,7 @@ class LAMMPSEngine(MDEngine):
         # and coulombic interactions are treated together. While multiple
         # identical pair_styles can be used with the hybrid command, it is
         # inefficient, so duplicates are removed with set.
-        nonbonded_styles = set([parse_nonbonded_styles(nb) for nb
+        nonbonded_styles = set([tuple(parse_nonbonded_styles(nb)) for nb
                                 in disps + couls])
         if nonbonded_styles:
             self.lmp.pair_style('hybrid', *nonbonded_styles)
