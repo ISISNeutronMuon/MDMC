@@ -390,7 +390,7 @@ class LAMMPSEngine(MDEngine):
         for coul in couls:
             for atom_type in coul.atom_types:
                 self.lmp.pair_coeff(atom_type, '*',
-                                    parse_nonbonded_styles(coul))
+                                    *parse_nonbonded_styles(coul))
 
     def _update_charges(self):
 
