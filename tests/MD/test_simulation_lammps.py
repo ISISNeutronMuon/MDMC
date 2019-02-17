@@ -483,7 +483,8 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
         getattr(lmp, parser)(undefined_interaction_function)
 
 
-def test_create_interaction_style():
+@pytest.mark.parametrize('system_attr', ['bond_style', 'angle_style', 'style'])
+def test_create_interaction_style(lammps_engine_topology, system_attr):
 
     """
     Tests that all interactions are created with a hybrid style, for:
@@ -492,11 +493,12 @@ def test_create_interaction_style():
     - angle
     - dihedral
     - improper
+    - nonbonded interactions
 
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    pass
+    assert getattr(lammps_engine_topology.system_state, system_attr) == 'hybrid'
 
 
 def test_create_coulombic_fatal_error():
