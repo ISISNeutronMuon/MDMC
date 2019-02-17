@@ -449,7 +449,7 @@ def test_parse_nonbonded_styles(interactions, expected, universe, request):
     # recovered using request.getfixturevalue
     interactions = request.getfixturevalue(interactions)
     # When testing for long interactions, add a kspace solver to the Universe
-    if 'long' in expected:
+    if 'long' in expected[0]:
         universe.kspace_solver = PPPM(accuracy=1e-4)
     # Test the first interaction in each list of interactions
     assert lmp.parse_nonbonded_styles(interactions[0]) == expected
