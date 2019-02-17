@@ -249,10 +249,14 @@ class InteractionFunction(object):
         try:
             self.params = [Parameter(value, name) for name, value
                            in val_dict.items()
-                           if name not in ['self','settings']]
+                           if name not in ['self', 'settings']]
         except AttributeError:
-            self.params = [Parameter(value[0], name, unit=value[1]) for
-                           name, value in val_dict.items()
+            # If value is a (float, str) tuple, create a UnitFloat object from
+            # this. Parameters should not be arrays, so UnitFloat can be used.
+            self.params = [Parameter(units.UnitFloat(value[0],
+                                                     units.Unit(value[1])),
+                                     name)
+                           for name, value in val_dict.items()
                            if name not in ['self', 'settings']]
 
     @property
@@ -268,7 +272,7 @@ class InteractionFunction(object):
     @params.setter
     def params(self, value):
 
-        self._params = np.array(sorted(value, key=lambda p:p.name))
+        self._params = np.array(sorted(value, key=lambda p: p.name))
 
     @property
     def params_values(self):
