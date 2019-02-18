@@ -620,7 +620,7 @@ def test_parse_kspace_solver_unimplemented():
         unimplemented_solver = lmp.parse_kspace_solver(solver)
 
 
-def test_set_ksapce_solver_single_solver():
+def test_set_kspace_solver_single_solver(lammps_engine_topology):
 
     """
     Tests setting the kspace solver if the Universe has a kspace_solver
@@ -629,7 +629,7 @@ def test_set_ksapce_solver_single_solver():
     pass
 
 
-def test_set_ksapce_solver_multiple_solvers():
+def test_set_kspace_solver_multiple_solvers():
 
     """
     Tests setting the kspace solver if the Universe has both an
@@ -639,7 +639,7 @@ def test_set_ksapce_solver_multiple_solvers():
     pass
 
 
-def test_set_ksapce_solver_single_solver_error():
+def test_set_kspace_solver_single_solver_error():
 
     """
     Tests setting the kspace solver if the Universe only has an
@@ -650,7 +650,7 @@ def test_set_ksapce_solver_single_solver_error():
     pass
 
 
-def test_set_ksapce_solver_multiple_solvers_error():
+def test_set_kspace_solver_multiple_solvers_error():
 
     """
     Tests setting the kspace solver if the Universe has both an
