@@ -103,7 +103,8 @@ def universe_interactions(empty_universe, atoms):
                                                              'kJ / mol'),
                                                             (type*1.0,
                                                              'Ang')),
-                                      cutoff=10.0))
+                                      cutoff=10.0,
+                                      vdw_tail_correction=True))
 
     return (empty_universe, bonds, angles, coulombics, dispersions)
 
