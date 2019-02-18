@@ -57,15 +57,35 @@ class Unit(str):
 
         """
         Arguments:
-        string - a string specifying the unit
+        string - a string specifying the unit, which can contain / to specify
+        divisors and ^ to specify powers. It cannot contain integers not
+        specifying powers, for example the following is not valid:
+
+        '1 / Ang'
+
+        It also does not accept negative powers, so to achieve a unit of
+        '1 / Ang' or Ang ^ -1, the Python power operation must be used:
+
+        negative_power_unit = Unit('Ang') ** -1
+
         components - a defaultdict(list) specifying the numerator and
         denominator components of the Unit
         """
 
+        if string is None:
+            return None
         unit = super(Unit, cls).__new__(cls, string)
         if not components:
             components = defaultdict(list)
-            components['numerator'].append(string)
+            # String is compound if it contains either ' ', '/' or '^' (e.g.
+            # 'Ang^2')
+            if any(x in string for x in [' ', '/', '^']):
+                num, denom = unit._parse_unit_string(string)
+                components['numerator'] = num
+                components['denominator'] = denom
+            else:
+                components['numerator'].append(unit)
+                components['denominator'] = []
         unit.components = components
         return unit
 
@@ -118,6 +138,14 @@ class Unit(str):
         components = self._calculate_components(other, 'pow')
         return self.__class__(self._calculate_string(components), components)
 
+    @property
+    def base(self):
+
+        if (not self.components['denominator']
+                and self.components['numerator'] == [self]):
+            return True
+        return False
+
     def _calculate_components(self, other, op):
 
         """
@@ -135,7 +163,15 @@ class Unit(str):
         new Unit
         """
 
-        components = deepcopy(self.components)
+        # Creating another defaultdict and then populating it by deepcopying
+        # every unit in the numerator and denominator avoids issues with
+        # multiple component dictionaries referencing the same object - this
+        # previously led to units which were base units being transformed into
+        # combined units as the lists in their components dictionary were
+        # modified
+        components = defaultdict(list)
+        for k, lst in self.components.items():
+            components[k] = [deepcopy(unit) for unit in lst]
         if op == 'mul':
             components['numerator'] += other.components['numerator']
             components['denominator'] += other.components['denominator']
@@ -280,7 +316,7 @@ SYSTEM = {
     'TEMPERATURE':Unit('K'),
     'AMOUNT':Unit('mol'),
     'ENERGY':Unit('kJ'),
-    'FORCE':Unit('kJ / mol Ang'),
+    'FORCE':Unit('kJ') / (Unit('mol') * Unit('Ang')),
     'PRESSURE':Unit('Pa'),
     'ENERGY_TRANSFER':Unit('meV'),
     'ARBITRARY':Unit('arb')
@@ -322,11 +358,14 @@ def create_units(codata_version):
     units['kcal'] = units['kJ'] / 4.184
 
     # Force
-    units['kcal / mol Ang'] = units['kJ / mol Ang'] / 4.184
+    units['kcal / Ang mol'] = units['kJ / Ang mol'] / 4.184
 
     # Pressure
     units['atm'] = units['Pa'] / 101325.
     units['bar'] = units['Pa'] / 1e5
+
+    # Angle
+    units['rad'] = units['deg'] * np.pi / 180.
 
     return units
 
