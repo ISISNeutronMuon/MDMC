@@ -1134,6 +1134,11 @@ class Dispersion(NonBondedInteraction):
         Arguments:
         universe - a Universe object
         atom_types - one or two tuples containing one or more integers that
+
+        Settings:
+        vdw_tail_correction - a boolean specifying if the tail correction to the
+        energy and pressure should be applied. This only affects the simulation
+        dynamics if it is constant pressure.
         """
 
         super(Dispersion, self).__init__(universe, **settings)
@@ -1150,6 +1155,8 @@ class Dispersion(NonBondedInteraction):
         for tpl in self.atoms:
             for atom in tpl:
                 atom.add_interaction(self)
+
+        vdw_tail_correction = settings.get('vdw_tail_correction', False)
 
     @property
     def atom_types(self):
