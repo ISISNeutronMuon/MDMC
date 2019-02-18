@@ -362,6 +362,7 @@ class LAMMPSEngine(MDEngine):
             self.lmp.bond_style('hybrid',
                                 *set(tuple([parse_bonded_styles(b)
                                             for b in bonds])))
+            self._create_bonds(bonds)
 
         if angles:
             # Set used to remove duplicate bond styles, which are not required
@@ -369,6 +370,7 @@ class LAMMPSEngine(MDEngine):
             self.lmp.angle_style('hybrid',
                                  *set(tuple([parse_bonded_styles(a)
                                              for a in angles])))
+            self._create_angles(angles)
 
     def _create_coulombic(self, couls):
 
