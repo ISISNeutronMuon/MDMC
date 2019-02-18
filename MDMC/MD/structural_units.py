@@ -245,8 +245,8 @@ class StructuralUnit:
         if position is None:
             position = self.position
         try:
-            # (0,0,0) is defined as the origin for all universes
-            if (np.any(position < np.array([0, 0, 0])) or
+            # (0., 0., 0.) is defined as the origin for all universes
+            if (np.any(position < np.array([0., 0., 0])) or
                     np.any(position > self.universe.dims)):
                 return False
             elif np.any(position == np.float('nan')):
@@ -398,7 +398,7 @@ class Atom(StructuralUnit):
     charge - float specifying the charge (e) if one has been applied to the Atom
     """
 
-    def __init__(self, element, position=(0, 0, 0), velocity=(0, 0, 0),
+    def __init__(self, element, position=(0., 0., 0.), velocity=(0., 0., 0.),
                  **settings):
 
         """
