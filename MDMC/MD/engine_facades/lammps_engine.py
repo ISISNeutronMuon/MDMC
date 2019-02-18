@@ -357,14 +357,18 @@ class LAMMPSEngine(MDEngine):
             self._set_kspace_solver()
 
         if bonds:
+            # Set used to remove duplicate bond styles, which are not required
+            # to be (and in fact cannot) be passed to LAMMPS bond_style
             self.lmp.bond_style('hybrid',
-                                *[parse_bonded_styles(b) for b in bonds])
-            self._update_bonds(bonds)
+                                *set(tuple([parse_bonded_styles(b)
+                                            for b in bonds])))
 
         if angles:
+            # Set used to remove duplicate bond styles, which are not required
+            # to be (and in fact cannot) be passed to LAMMPS angle_style
             self.lmp.angle_style('hybrid',
-                                 *[parse_bonded_styles(a) for a in angles])
-            self._update_angles(angles)
+                                 *set(tuple([parse_bonded_styles(a)
+                                             for a in angles])))
 
     def _create_coulombic(self, couls):
 
