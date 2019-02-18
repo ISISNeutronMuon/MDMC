@@ -57,16 +57,35 @@ class Unit(str):
 
         """
         Arguments:
-        string - a string specifying the unit
+        string - a string specifying the unit, which can contain / to specify
+        divisors and ^ to specify powers. It cannot contain integers not
+        specifying powers, for example the following is not valid:
+
+        '1 / Ang'
+
+        It also does not accept negative powers, so to achieve a unit of
+        '1 / Ang' or Ang ^ -1, the Python power operation must be used:
+
+        negative_power_unit = Unit('Ang') ** -1
+
         components - a defaultdict(list) specifying the numerator and
         denominator components of the Unit
         """
 
+        if string is None:
+            return None
         unit = super(Unit, cls).__new__(cls, string)
         if not components:
             components = defaultdict(list)
-            components['numerator'].append(unit)
-            components['denominator'] = []
+            # String is compound if it contains either ' ', '/' or '^' (e.g.
+            # 'Ang^2')
+            if any(x in string for x in [' ', '/', '^']):
+                num, denom = unit._parse_unit_string(string)
+                components['numerator'] = num
+                components['denominator'] = denom
+            else:
+                components['numerator'].append(unit)
+                components['denominator'] = []
         unit.components = components
         return unit
 
@@ -218,6 +237,74 @@ class Unit(str):
             else:
                 return numerator + ' / ' + denominator
 
+    def _parse_unit_string(self, unit_string):
+
+        """
+        Converts a unit string into a Unit objects
+
+        Arguments:
+        unit_string - a string specifying a unit
+
+        Returns:
+        A tuple of (numerator, denominator), where each is a list of Unit
+        objects for all of the base units. For example, a unit string of
+        'e ^ 2 mol / K ^ 3' returns:
+
+        ([Unit('e'), Unit('e'), Unit('mol')], [Unit('K'), Unit('K'), Unit('K')])
+        """
+
+        def parse_powers(string):
+
+            """
+            Arguments:
+            string - a compound unit string containing zero or more powers
+            (with powers specified by '^') but no denominators (i.e. '/'). For
+            example:
+
+            'Ang'
+            'Ang mol'
+            'Ang ^ 3'
+            'Ang ^ 2 mol'
+            'Ang ^ 2 mol kJ^2'
+
+            Returns:
+            A list with each all base units. For example:
+            'Ang ^ 2 mol kJ^2' returns [Unit('Ang'), Unit('Ang'), Unit('mol)',
+            Unit('kJ'), Unit('kJ')]
+            """
+
+            if '^' in string:
+                # Joining with ' ' before stripping out spaces means that
+                # 'Ang ^ 2' and 'Ang^2' are equivalent
+                string = ' '.join(string.split('^'))
+            splt_space = string.split(' ')
+            # Strip out spaces
+            strip = filter(lambda x: x != '', splt_space)
+            parsed = [Unit(strip[0])]
+            # For all elements apart from the first, determine it element is a
+            # digit. If so, append n-1 copies of the previous unit, where n is
+            # the integer value of the element. If not, append a Unit object
+            # initialized from the element (which should be a string specifying)
+            # a unit
+            for i in range(1, len(strip)):
+                element = strip[i]
+                if element.isdigit():
+                    for _ in range(int(element) - 1):
+                        parsed.append(Unit(strip[i-1]))
+                else:
+                    parsed.append(Unit(element))
+            return parsed
+
+        # Start by splitting the compound unit into a numerator and denominator
+        if '/' in unit_string:
+            num_string, denom_string = unit_string.split('/')
+            denom = parse_powers(denom_string)
+        else:
+            num_string = unit_string
+            denom = []
+        num = parse_powers(num_string)
+
+        return num, denom
 
 # Define the unit system used in MDMC
 SYSTEM = {

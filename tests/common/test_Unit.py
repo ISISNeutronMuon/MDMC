@@ -90,3 +90,26 @@ def test_power_Unit(unit, input, expected):
         power = unit ** input
         assert power == STRING + expected
         assert isinstance(power, Unit)
+
+
+@pytest.mark.parametrize("input, base, numerator, denominator",
+                         [('Ang', True, ['Ang'], []),
+                          ('Ang mol', False, ['Ang', 'mol'], []),
+                          ('Ang ^ 3', False, ['Ang', 'Ang', 'Ang'], []),
+                          ('Ang^3', False, ['Ang', 'Ang', 'Ang'], []),
+                          ('Ang^ 3', False, ['Ang', 'Ang', 'Ang'], []),
+                          ('Ang ^3', False, ['Ang', 'Ang', 'Ang'], []),
+                          ('Ang / mol', False, ['Ang'], ['mol']),
+                          ('e^2 K J^2', False, ['e', 'e', 'K', 'J', 'J'], []),
+                          ('e^2 K / J^2', False, ['e', 'e', 'K'], ['J', 'J'])])
+def test_determine_components(input, base, numerator, denominator):
+
+    """
+    Tests that the numerator and denominator components of a Unit are correctly
+    determined upon passing a string, and whether or not the Unit is base
+    """
+
+    t_unit = Unit(input)
+    assert t_unit.base == base
+    assert t_unit.components['numerator'] == numerator
+    assert t_unit.components['denominator'] == denominator
