@@ -423,7 +423,7 @@ class LAMMPSEngine(MDEngine):
             atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
             for atom_type_pair in atom_type_pairs:
                 self.lmp.pair_coeff(atom_type_pair[0], atom_type_pair[1],
-                                    parse_dispersion_coefficients(disp))
+                                    *parse_dispersion_coefficients(disp))
 
     def _modify_nonbonded_styles(self, nonbonded_interactions):
 
