@@ -779,6 +779,9 @@ def parse_bonded_coefficients(interaction):
     if style == 'harmonic':
         ordered_parameters = [parameters['potential_strength'],
                               parameters['equilibrium_state']]
+    else:
+        raise NotImplementedError('This InteractionFunction has not been'
+                                  ' implemented in the LAMMPS facade')
 
     return [style] + ordered_parameters
 
@@ -810,6 +813,9 @@ def parse_dispersion_coefficients(interaction):
         # apparent that this is typically, in which case this should be
         # refactored.
         style = style[0]
+    else:
+        raise NotImplementedError('This InteractionFunction has not been'
+                                  ' implemented in the LAMMPS facade')
     return [style] + ordered_parameters
 
 
