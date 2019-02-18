@@ -527,6 +527,7 @@ class LAMMPSEngine(MDEngine):
                                       ID,
                                       atom_IDs[0],
                                       atom_IDs[1],
+                                      atom_IDs[2],
                                       'special',
                                       special)
 
