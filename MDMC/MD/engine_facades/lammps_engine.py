@@ -436,12 +436,17 @@ class LAMMPSEngine(MDEngine):
         """
 
         for interaction in nonbonded_interactions:
-
-            if interaction.vdw_tail_correction:
-                self.lmp.pair_modify('pair',
-                                     parse_nonbonded_styles(interaction),
-                                     'tail',
-                                     'yes')
+            # try/except to account for nonbonded interaction types which do not
+            # the modification type defined
+            try:
+                # Applies the vdw tail correction to the energy and pressure
+                if interaction.vdw_tail_correction:
+                    self.lmp.pair_modify('pair',
+                                         parse_nonbonded_styles(interaction),
+                                         'tail',
+                                         'yes')
+            except AttributeError:
+                pass
 
     def _create_bonds(self, bonds):
 
