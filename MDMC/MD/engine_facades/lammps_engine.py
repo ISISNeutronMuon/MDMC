@@ -800,10 +800,16 @@ def parse_dispersion_coefficients(interaction):
                   for p in interaction.params}
     style = parse_nonbonded_styles(interaction)
 
-    if style == 'lj':
+    if 'lj' in style[0]:
         ordered_parameters = [parameters['epsilon'],
                               parameters['sigma']]
-
+        # If the style contain lj (e.g. lj/cut, lj/long) then it also includes a
+        # cutoff parameter, which cannot be specified when setting the
+        # pair_coeffs. Therefore only use the first element.
+        # When implementing more dispersion InteractionFunctions, it may become
+        # apparent that this is typically, in which case this should be
+        # refactored.
+        style = style[0]
     return [style] + ordered_parameters
 
 
