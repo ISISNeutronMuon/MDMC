@@ -201,6 +201,74 @@ class Unit(str):
             else:
                 return numerator + ' / ' + denominator
 
+    def _parse_unit_string(self, unit_string):
+
+        """
+        Converts a unit string into a Unit objects
+
+        Arguments:
+        unit_string - a string specifying a unit
+
+        Returns:
+        A tuple of (numerator, denominator), where each is a list of Unit
+        objects for all of the base units. For example, a unit string of
+        'e ^ 2 mol / K ^ 3' returns:
+
+        ([Unit('e'), Unit('e'), Unit('mol')], [Unit('K'), Unit('K'), Unit('K')])
+        """
+
+        def parse_powers(string):
+
+            """
+            Arguments:
+            string - a compound unit string containing zero or more powers
+            (with powers specified by '^') but no denominators (i.e. '/'). For
+            example:
+
+            'Ang'
+            'Ang mol'
+            'Ang ^ 3'
+            'Ang ^ 2 mol'
+            'Ang ^ 2 mol kJ^2'
+
+            Returns:
+            A list with each all base units. For example:
+            'Ang ^ 2 mol kJ^2' returns [Unit('Ang'), Unit('Ang'), Unit('mol)',
+            Unit('kJ'), Unit('kJ')]
+            """
+
+            if '^' in string:
+                # Joining with ' ' before stripping out spaces means that
+                # 'Ang ^ 2' and 'Ang^2' are equivalent
+                string = ' '.join(string.split('^'))
+            splt_space = string.split(' ')
+            # Strip out spaces
+            strip = filter(lambda x: x != '', splt_space)
+            parsed = [Unit(strip[0])]
+            # For all elements apart from the first, determine it element is a
+            # digit. If so, append n-1 copies of the previous unit, where n is
+            # the integer value of the element. If not, append a Unit object
+            # initialized from the element (which should be a string specifying)
+            # a unit
+            for i in range(1, len(strip)):
+                element = strip[i]
+                if element.isdigit():
+                    for _ in range(int(element) - 1):
+                        parsed.append(Unit(strip[i-1]))
+                else:
+                    parsed.append(Unit(element))
+            return parsed
+
+        # Start by splitting the compound unit into a numerator and denominator
+        if '/' in unit_string:
+            num_string, denom_string = unit_string.split('/')
+            denom = parse_powers(denom_string)
+        else:
+            num_string = unit_string
+            denom = []
+        num = parse_powers(num_string)
+
+        return num, denom
 
 # Define the unit system used in MDMC
 SYSTEM = {
