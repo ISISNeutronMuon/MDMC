@@ -248,7 +248,7 @@ def lammps_engine_topology(lammps_engine_config):
     """
 
     lammps_engine_config._add_topology(lammps_engine_config.universe)
-
+    return lammps_engine_config
 
 def test_universe_dims(lammps_engine_box):
 
