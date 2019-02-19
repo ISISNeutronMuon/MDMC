@@ -635,8 +635,8 @@ def test_parse_kspace_solver_unimplemented():
 
 @pytest.mark.parametrize('solver_cls, style', [(PPPM, 'pppm'),
                                                (Ewald, 'ewald')])
-def test_set_kspace_solver_single_solver(lammps_engine_config, universe,
-                                         dispersions, solver_cls, style):
+def test_set_kspace_solver_styles(lammps_engine_config, universe, dispersions,
+                                  solver_cls, style):
 
     """
     Tests setting the kspace solver if the Universe has a kspace_solver
