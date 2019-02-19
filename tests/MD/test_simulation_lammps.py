@@ -666,12 +666,27 @@ def test_set_kspace_solver_different_cutoffs(lammps_engine_config, universe,
         lammps_engine_config._add_topology(lammps_engine_config.universe)
 
 
+def test_set_kspace_solver_multiple_solvers(lammps_engine_config, universe,
+                                            dispersions):
 
     """
     Tests setting the kspace solver if the Universe has both an
     electrostatic_solver and a dispersion_solver and they are equal
     """
 
+    # Create a kspace solver and add it to the universe as both an
+    # electrostatic_solver and a dispersive_solver. Then create topology to set
+    # kspace style in LAMMPS.
+    solver = PPPM(accuracy=0.0001)
+    universe.electrostatic_solver = solver
+    universe.dispersive_solver = solver
+    # LAMMPS requires a single cutoff for LJ and coulombic long range
+    # interactions (i.e. kspace calculations), so change the cutoff for the
+    # Dispersion interactions
+    for dispersion in dispersions:
+        dispersion.cutoff = COULOMBIC_CUTOFF
+    lammps_engine_config._add_topology(lammps_engine_config.universe)
+    assert lammps_engine_config.system_state.kspace_style == 'pppm'
 
 
 def test_set_kspace_solver_single_solver_error():
