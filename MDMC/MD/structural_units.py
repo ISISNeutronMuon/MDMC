@@ -285,6 +285,7 @@ class CompositeStructuralUnit(StructuralUnit):
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
+        Interactions for Atoms may be reordered with respect to initial atoms
 
         Arguments:
         memo - the memo dict
@@ -535,7 +536,7 @@ class Atom(StructuralUnit):
 
         try:
             for interaction in self.interactions:
-                if type(interaction) == Coulombic:
+                if isinstance(interaction, Coulombic):
                     # Zero index parameter can be used as there should only be
                     # one parameter as each atom only has a single charge
                     return interaction.params[0].value
