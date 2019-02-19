@@ -585,7 +585,7 @@ class LAMMPSEngine(MDEngine):
         dispersive = self.universe.dispersive_solver
 
         if kspace:
-            self.lmp.kspace_style(parse_kspace_solver(kspace))
+            self.lmp.kspace_style(*parse_kspace_solver(kspace))
         # Even though LAMMPS only accepts a single kspace solver (which applies
         # to both electrostatic and dispersive interactions), allow the universe
         # to have an electrostatic_solver and a dispersive_solver if these are
