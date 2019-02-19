@@ -362,6 +362,7 @@ class LAMMPSEngine(MDEngine):
         # inefficient, so duplicates are removed with set.
         nonbonded_styles = parse_all_nonbonded_styles(disps+couls)
         if nonbonded_styles:
+            self._set_kspace_solver()
             self.lmp.pair_style('hybrid', *nonbonded_styles)
             self._create_coulombic(couls, disps)
             self._update_charges()
@@ -370,7 +371,6 @@ class LAMMPSEngine(MDEngine):
             self._update_dispersions(disps, couls)
             # Apply LAMMPS modifications to nonbonded interactions
             self._modify_nonbonded_styles(couls+disps)
-            self._set_kspace_solver()
 
         if bonds:
             # Set used to remove duplicate bond styles, which are not required
