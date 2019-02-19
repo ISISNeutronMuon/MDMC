@@ -19,6 +19,7 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
 
 UNIVERSE_DIM = 5.0
 N_ATOMS = 10
+COULOMBIC_CUTOFF = 8.0
 
 @pytest.fixture
 def empty_universe():
@@ -97,7 +98,7 @@ def universe_interactions(empty_universe, atoms):
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, type,
                                     function=Coulomb((type*0.5, 'e')),
-                                    cutoff=8.0))
+                                    cutoff=COULOMBIC_CUTOFF))
         dispersions.append(Dispersion(empty_universe, type,
                                       function=LennardJones((type*0.1,
                                                              'kJ / mol'),
@@ -105,7 +106,6 @@ def universe_interactions(empty_universe, atoms):
                                                              'Ang')),
                                       cutoff=10.0,
                                       vdw_tail_correction=True))
-
     return (empty_universe, bonds, angles, coulombics, dispersions)
 
 @pytest.fixture
