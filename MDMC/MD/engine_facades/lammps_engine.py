@@ -590,10 +590,13 @@ class LAMMPSEngine(MDEngine):
         """
         Creates a k-space solve in LAMMPS using kspace_style, if one is required
 
-        Uses either the kspace_solver attribute or both the electrostatic_solver
-        and dispersive_solver attributes of the MDMC universe to set the
-        kspace_style. This is because LAMMPS only has a single solver which
-        applies to both interaction types.
+        Uses either the kspace_solver, the electrostatic_solver or both the
+        electrostatic_solver and dispersive_solver attribute of the MDMC
+        universe to set the kspace_style. Note that LAMMPS does not support
+        different electrostatic and dispersive solvers. Setting with equivalent
+        electrostatic and dispserive solvers is equivalent to setting with
+        kspace_solver. LAMMPS also does not support just applying a dispersive
+        solver.
         """
 
         err_single_kspace = TypeError('LAMMPS only accepts a single kspace'
