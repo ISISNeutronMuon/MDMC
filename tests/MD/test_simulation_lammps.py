@@ -346,9 +346,6 @@ def test_atom_type_mass(lammps_engine_config, universe):
 
     """
     Tests that the mass of each atom type is set correctly in LAMMPS
-
-    Atoms are created in LAMMPS according to atom_type, so do not have the same
-    order as universe.atom_list
     """
 
     for i in range(len(universe.atom_list)):
