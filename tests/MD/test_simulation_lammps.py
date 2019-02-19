@@ -891,7 +891,7 @@ def test_parse_constraint_no_interactions(bond_ID_dict):
 
     """
     Tests that if neither bonds or angles are provided when parsing the
-    constraint, a ValueError is raised
+    constraint, a TypeError is raised
     """
 
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
