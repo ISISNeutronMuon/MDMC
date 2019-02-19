@@ -529,24 +529,34 @@ def test_create_topology_fatal_error(lammps_engine_config, universe):
     lammps_engine_config._add_topology(lammps_engine_config.universe)
 
 
-def test_atom_charge_set():
+def test_atom_charge_set(lammps_engine_topology, universe):
 
     """
     Tests that atom charges are set correctly
     """
 
-    pass
+    for i in range(len(universe.atom_list)):
+        assert (lammps_engine_topology.lmp.atoms[i].charge
+                == universe.atom_list[i].charge)
 
 
-def test_atom_charges_update():
+def test_atom_charges_update(lammps_engine_topology, universe):
 
     """
     Tests that atom charges are updated correctly
+
+    Change the charges on the atoms in the universe and test if LAMMPS charges
+    update after LAMMPEngine._update_charges is called
     """
 
-    """
+    # Change charges and update LAMMPSEngine
+    for atom in universe.atom_list:
+        atom.charge *= 2.
+    lammps_engine_topology._update_charges()
 
-
+    for i in range(len(universe.atom_list)):
+        assert (lammps_engine_topology.lmp.atoms[i].charge
+                == universe.atom_list[i].charge)
 
 
 def test_update_bonds():
