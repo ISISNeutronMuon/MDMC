@@ -579,16 +579,17 @@ def test_update_angles():
     pass
 
 
-def test_update_angles():
+def test_update_dispersions():
 
     """
-    Tests that updating angle coefficients does not result in a fatal error,
-    where the LAMMPS Python interface causes Python to exit without throwing an
-    error, presumably due to a segfault
+    Tests that updating dispersion coefficients does not result in a fatal
+    error,vwhere the LAMMPS Python interface causes Python to exit without
+    throwing an error, presumably due to a segfault
 
-    A more stringent test would check that the correct angle coefficients have
-    been set in LAMMPS, however there is no way to check this through the Python
-    interface. Therefore the minimum test of checking for a fatal error is used.
+    A more stringent test would check that the correct dispsersion coefficients
+    have been set in LAMMPS, however there is no way to check this through the
+    Python interface. Therefore the minimum test of checking for a fatal error
+    is used.
     """
 
     pass
