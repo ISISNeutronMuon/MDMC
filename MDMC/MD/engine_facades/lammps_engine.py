@@ -811,7 +811,11 @@ def parse_nonbonded_styles(interaction):
 
     if interaction.cutoff:
         cutoff = convert_unit(interaction.cutoff, interaction.cutoff.unit)
-        if interaction.universe.kspace_solver:
+        kspace = interaction.universe.kspace_solver
+        electrostatic = interaction.universe.electrostatic_solver
+        dispersive = interaction.universe.dispersive_solver
+        if kspace or (electrostatic and interaction.name == 'Coulombic') \
+            or (dispersive and interaction.name == 'Dispersion'):
             lmp_str[-1] += 'long'
         else:
             lmp_str[-1] += 'cut'
