@@ -791,6 +791,74 @@ def parse_nonbonded_styles(interaction):
     return lmp_str
 
 
+def parse_all_nonbonded_styles(interactions):
+
+    """
+    Converts all NonBondedInteractions to LAMMPS pair styles
+
+    This is required because LAMMPS frequently treats Coulombic and Disperion
+    interactions together; these cases need to be dealt with to generate the
+    correct input to LAMMPS pair styles.  For example, while the pair_styles
+    'lj/cut', 'coul/cut' and 'coul/long' can all be passed separately, 'lj/long'
+    only exists as part of other pair styles, such as 'lj/long/coul/long'.
+
+    IF A NONBONDED STYLE COULD FORM PART OF TWO PAIRS THEN THE FIRST PAIR THAT
+    OCCURS WILL BE USED (ALTHOUGH THIS SCENARIO SHOULD NOT OCCUR)
+
+    Arguments:
+    interactions - A list of MDMC NonBondedInteractions
+
+    Returns:
+    a list with all of the LAMMPS pair styles
+    """
+
+    # Set to remove duplicates
+    parsed_interactions = list(set([tuple(parse_nonbonded_styles(nb))
+                                    for nb in interactions]))
+    # Parsed interactions will be a list of tuple(style, parameters) e.g.
+    # ('lj/cut', cutoff). Chain from iterable to flatten this for ease of
+    # searching for pair styles
+    flat_interactions = list(chain.from_iterable(parsed_interactions))
+
+    # Check for coulombic and dispersion pairs that need to be combined
+    # Dispersion styles always precede coulombic styles in LAMMPS pair styles
+    disp_styles = ['lj/long']
+    coul_styles = ['coul/long']
+
+    lmp_str = []
+    # Iterate over all pairs - this will need refactoring if all disp styles
+    # cannot be combined with all coul styles
+    # While this is a very inefficient solution, there will be so few nonbonded
+    # styles it is irrelevant
+    for d_style in disp_styles:
+        for c_style in coul_styles:
+            if c_style in flat_interactions and d_style in flat_interactions:
+                # Iterate over all parsed interactions for each style
+                for int1 in parsed_interactions:
+                    for int2 in parsed_interactions:
+                        if d_style == int1[0] and c_style == int2[0]:
+                            lmp_str.append('/'.join([d_style, c_style]))
+                            if lmp_str[-1] == 'lj/long/coul/long':
+                                lmp_str.append('long long')
+                            lmp_str.append(int1[1])
+                            if int1[1] != int2[1]:
+                                if lmp_str[-2] == 'lj/long/coul/long':
+                                    raise ValueError('LAMMPS requires both'
+                                                     ' cutoffs to be the same'
+                                                     ' for long range LJ and'
+                                                     ' coulombic pair styles')
+                                lmp_str.append(int2[1])
+                            parsed_interactions.remove(int1)
+                            parsed_interactions.remove(int2)
+    # Include all pair styles that were not part of a merged pair i.e.
+    # everything left over in parsed_interactions
+    # Chain used to flatten list of tuples
+    try:
+        return list(chain.from_iterable(lmp_str + parsed_interactions))
+    except TypeError:
+        return lmp_str + parsed_interactions
+
+
 def parse_bonded_coefficients(interaction):
 
     """
