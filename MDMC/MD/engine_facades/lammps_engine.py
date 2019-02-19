@@ -886,37 +886,29 @@ def parse_bonded_coefficients(interaction):
     return [style] + ordered_parameters
 
 
-def parse_dispersion_coefficients(interaction):
+def parse_dispersion_coefficients(interaction, style):
 
     """
     Orders MDMC Parameters for input to LAMMPS pair_coeff
 
     Arguments:
     interaction - an MDMC interaction object
+    style - a LAMMPS pair_style
 
     Returns:
-    A list of style and parameters converted to the input format for LAMMPS
-    pair_coeff
+    A list of parameters converted to the input format for LAMMPS pair_coeff
     """
 
     parameters = {p.name:convert_unit(p.value, p.unit)
                   for p in interaction.params}
-    style = parse_nonbonded_styles(interaction)
 
-    if 'lj' in style[0]:
+    if 'lj' in style:
         ordered_parameters = [parameters['epsilon'],
                               parameters['sigma']]
-        # If the style contain lj (e.g. lj/cut, lj/long) then it also includes a
-        # cutoff parameter, which cannot be specified when setting the
-        # pair_coeffs. Therefore only use the first element.
-        # When implementing more dispersion InteractionFunctions, it may become
-        # apparent that this is typically, in which case this should be
-        # refactored.
-        style = style[0]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
-    return [style] + ordered_parameters
+    return ordered_parameters
 
 
 def parse_kspace_solver(solver):
