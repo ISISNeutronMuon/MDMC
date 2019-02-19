@@ -862,7 +862,7 @@ def parse_all_nonbonded_styles(interactions):
                                 lmp_str.append('long long')
                             lmp_str.append(int1[1])
                             if int1[1] != int2[1]:
-                                if lmp_str[-2] == 'lj/long/coul/long':
+                                if lmp_str[-3] == 'lj/long/coul/long':
                                     raise ValueError('LAMMPS requires both'
                                                      ' cutoffs to be the same'
                                                      ' for long range LJ and'
