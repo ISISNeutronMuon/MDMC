@@ -613,7 +613,7 @@ class LAMMPSEngine(MDEngine):
         elif electrostatic and dispersive:
             if electrostatic != dispersive:
                 raise err_single_kspace
-            self.lmp.kspace_style(parse_kspace_solver(electrostatic))
+            self.lmp.kspace_style(*parse_kspace_solver(electrostatic))
         elif electrostatic or dispersive:
             raise err_single_kspace
 
