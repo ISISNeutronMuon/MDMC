@@ -679,6 +679,41 @@ def test_set_kspace_solver_different_cutoffs(lammps_engine_config, universe,
         lammps_engine_config._add_topology(lammps_engine_config.universe)
 
 
+@pytest.mark.parametrize('solver_attr, expected',
+                         [('kspace_solver', 'pppm'),
+                          ('electrostatic_solver', 'pppm'),
+                          ('dispersive_solver', TypeError)])
+def test_set_kspace_solver_single_solver_error(lammps_engine_config, universe,
+                                               dispersions, solver_attr,
+                                               expected):
+
+    """
+    Tests setting the kspace solver with the different solver attributes that
+    exist for a universe (kspace_solver, electrostatic_solver,
+    dispersive_solver)
+
+    kspace_solver and electrostatic_solver are valid single solvers for LAMMPS,
+    however dispersive_solver must raise a TypeError
+    """
+
+    # Create a solver and add it to the universe as either a kspace_solver,
+    # electrostatic_solver or a dispersive_solver. Then create topology to set
+    # kspace style in LAMMPS.
+    solver = PPPM(accuracy=0.0001)
+    setattr(universe, solver_attr, solver)
+    # LAMMPS requires a single cutoff for LJ and coulombic long range
+    # interactions (i.e. kspace calculations), so change the cutoff for the
+    # Dispersion interactions
+    for dispersion in dispersions:
+        dispersion.cutoff = COULOMBIC_CUTOFF
+    if expected is TypeError:
+        with pytest.raises(expected):
+            lammps_engine_config._add_topology(lammps_engine_config.universe)
+    else:
+        lammps_engine_config._add_topology(lammps_engine_config.universe)
+        assert lammps_engine_config.system_state.kspace_style == expected
+
+
 def test_set_kspace_solver_multiple_solvers(lammps_engine_config, universe,
                                             dispersions):
 
@@ -700,17 +735,6 @@ def test_set_kspace_solver_multiple_solvers(lammps_engine_config, universe,
         dispersion.cutoff = COULOMBIC_CUTOFF
     lammps_engine_config._add_topology(lammps_engine_config.universe)
     assert lammps_engine_config.system_state.kspace_style == 'pppm'
-
-
-def test_set_kspace_solver_single_solver_error():
-
-    """
-    Tests setting the kspace solver if the Universe only has an
-    electrostatic_solver or a dispersion_solver, which should result in a
-    TypeError
-    """
-
-    pass
 
 
 def test_set_kspace_solver_multiple_solvers_error():
