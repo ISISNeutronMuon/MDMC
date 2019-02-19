@@ -599,26 +599,35 @@ class LAMMPSEngine(MDEngine):
         solver.
         """
 
-        err_single_kspace = TypeError('LAMMPS only accepts a single kspace'
-                                      ' solver which applies to both'
-                                      ' electrostatic and dispersive'
-                                      ' interactions')
         kspace = self.universe.kspace_solver
         electrostatic = self.universe.electrostatic_solver
         dispersive = self.universe.dispersive_solver
 
+
+        # LAMMPS supports a single kspace solver, which can be taken from kspace
+        # electrostatic or dispersive solvers of the universe. If any other
+        # solver is defined as well as kspace (which effecitvely defines both
+        # other solves), raise an error.
+        if kspace and (electrostatic or dispersive):
+            raise TypeError('kspace solver cannot be applied in conjunction'
+                            ' with either electrostatic or dispersive solvers')
         if kspace:
             self.lmp.kspace_style(*parse_kspace_solver(kspace))
-        # Even though LAMMPS only accepts a single kspace solver (which applies
-        # to both electrostatic and dispersive interactions), allow the universe
-        # to have an electrostatic_solver and a dispersive_solver if these are
-        # the same
-        elif electrostatic and dispersive:
-            if electrostatic != dispersive:
-                raise err_single_kspace
+        # If either an electrostatic or a dispersive solver has been defined,
+        # use this. If both have been defined, this is valid as long as they are
+        # equivalent.  If not, raise an error.
+        if electrostatic:
+            if dispersive and electrostatic != dispersive:
+                raise TypeError('LAMMPS only supports a single solver, so if'
+                                ' both dispersive and electrostatic solvers'
+                                ' have been defined then they must be'
+                                ' equivalent')
             self.lmp.kspace_style(*parse_kspace_solver(electrostatic))
-        elif electrostatic or dispersive:
-            raise err_single_kspace
+        elif dispersive:
+            raise TypeError('LAMMPS does not support only applying a dispersive'
+                            ' solver - it must be applied in conjunction with'
+                            ' an electrostatic solver')
+
 
     def _set_momentum_removers(self):
 
