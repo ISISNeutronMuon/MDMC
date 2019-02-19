@@ -620,13 +620,27 @@ def test_parse_kspace_solver_unimplemented():
         unimplemented_solver = lmp.parse_kspace_solver(solver)
 
 
-def test_set_kspace_solver_single_solver(lammps_engine_topology):
+@pytest.mark.parametrize('solver_cls, style', [(PPPM, 'pppm'),
+                                               (Ewald, 'ewald')])
+def test_set_kspace_solver_single_solver(lammps_engine_config, universe,
+                                         dispersions, solver_cls, style):
 
     """
     Tests setting the kspace solver if the Universe has a kspace_solver
     """
 
-    pass
+    # Create a kspace solver and add it to the universe of a LAMMPSEngine which
+    # has not had the topology created. Then create topology to set kspace style
+    # in LAMMPS.
+    solver = solver_cls(accuracy=0.0001)
+    universe.kspace_solver = solver
+    # LAMMPS requires a single cutoff for LJ and coulombic long range
+    # interactions (i.e. kspace calculations), so change the cutoff for the
+    # Dispersion interactions
+    for dispersion in dispersions:
+        dispersion.cutoff = COULOMBIC_CUTOFF
+    lammps_engine_config._add_topology(lammps_engine_config.universe)
+    assert lammps_engine_config.system_state.kspace_style == style
 
 
 def test_set_kspace_solver_multiple_solvers():
