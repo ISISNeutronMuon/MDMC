@@ -430,16 +430,29 @@ def test_parse_bonded_styles(interactions, expected, request):
     assert lmp.parse_bonded_styles(interactions[0]) == expected
 
 
-@pytest.mark.parametrize('interactions, expected',
-                         [('dispersions', ['lj/cut', 10.]),
-                          ('coulombics', ['coul/cut', 8.0]),
-                          ('dispersions', ['lj/long', 10.]),
-                          ('coulombics', ['coul/long', 8.0])])
-def test_parse_nonbonded_styles(interactions, expected, universe, request):
+@pytest.mark.parametrize('interactions, expected, solver_attr',
+                         [('dispersions', ['lj/cut', 10.], None),
+                          ('coulombics', ['coul/cut', 8.], None),
+                          ('dispersions', ['lj/long', 10.], 'kspace_solver'),
+                          ('coulombics', ['coul/long', 8.], 'kspace_solver'),
+                          ('dispersions', ['lj/long', 10.], 'dispersive_solver'),
+                          ('coulombics', ['coul/cut', 8.], 'dispersive_solver'),
+                          ('dispersions', ['lj/cut', 10.],
+                           'electrostatic_solver'),
+                          ('coulombics', ['coul/long', 8.],
+                           'electrostatic_solver')
+                         ])
+def test_parse_nonbonded_styles(interactions, expected, solver_attr, universe,
+                                request):
 
     """
     Tests that the return from parse_nonbonded_styles is the correct input for
     creating a LAMMPS pair style
+
+    The pair style is modified if a solver is provided:
+    - kspace_solver modifies both lj and coul
+    - dispersive_solver modifies lj
+    - coulombic_solver modifies coul
 
     The parameters should be modified whenever a new nonbonded style is
     implemented
@@ -449,9 +462,9 @@ def test_parse_nonbonded_styles(interactions, expected, universe, request):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     interactions = request.getfixturevalue(interactions)
-    # When testing for long interactions, add a kspace solver to the Universe
-    if 'long' in expected[0]:
-        universe.kspace_solver = PPPM(accuracy=1e-4)
+    # If a solver_attr is specified, add a PPPM solver to this attribute
+    if solver_attr:
+        setattr(universe, solver_attr, PPPM(accuracy=1e-4))
     # Test the first interaction in each list of interactions
     assert lmp.parse_nonbonded_styles(interactions[0]) == expected
 
