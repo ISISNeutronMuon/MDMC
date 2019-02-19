@@ -536,13 +536,28 @@ class Atom(StructuralUnit):
 
         try:
             for interaction in self.interactions:
-                if type(interaction) == Coulombic:
+                if isinstance(interaction, Coulombic):
                     # Zero index parameter can be used as there should only be
                     # one parameter as each atom only has a single charge
                     return interaction.params[0].value
             return None
         except AttributeError:
             return None
+
+    @charge.setter
+    @unit_decorator(unit=units.CHARGE)
+    def charge(self, value):
+
+        charge_set = False
+        for interaction in self.interactions:
+            if isinstance(interaction, Coulombic):
+                # Coulombic interactions only have a single parameter
+                interaction.params[0].value = value
+                charge_set = True
+        if not charge_set:
+            raise AttributeError('the atom must have a Coulombic interaction'
+                                 ' with an InteractionFunction before the'
+                                 ' charge can be set')
 
     @property
     def mass(self):
