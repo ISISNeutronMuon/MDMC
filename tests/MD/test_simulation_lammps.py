@@ -308,25 +308,25 @@ def test_number_interaction_types(lammps_engine_box, bonds, angles):
     if lammps_engine_box.lmp.lmp.version() > 20190104:
         assert lammps_engine_box.system_state.nangletypes == 1
 
-#
-# def test_number_interactions(lammps_engine_config, bonds, angles):
-#
-#     """
-#     Tests that creating a simulation box from an MDMC universe results in the
-#     correct allowed number of interactions per atom for each interaction type:
-#
-#     - bond
-#     - angle
-#     - dihedral
-#     - improper
-#
-#     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
-#     """
-#
-#     assert lammps_engine_config.system_state.nbonds == sum([len(b) for
-#                                                                    b in bonds])
-#     assert lammps_engine_config.system_state.nangles == sum([len(a) for a
-#                                                                     in angles])
+
+def test_number_interactions(lammps_engine_topology, bonds, angles):
+
+    """
+    Tests that creating a simulation box from an MDMC universe results in the
+    correct allowed number of interactions per atom for each interaction type:
+
+    - bond
+    - angle
+    - dihedral
+    - improper
+
+    DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
+    """
+
+    assert lammps_engine_topology.system_state.nbonds == sum([len(b) for
+                                                              b in bonds])
+    assert lammps_engine_topology.system_state.nangles == sum([len(a) for
+                                                               a in angles])
 
 
 def test_atom_type_properties(lammps_engine_config, universe):
