@@ -643,14 +643,35 @@ def test_set_kspace_solver_single_solver(lammps_engine_config, universe,
     assert lammps_engine_config.system_state.kspace_style == style
 
 
-def test_set_kspace_solver_multiple_solvers():
+@pytest.mark.parametrize('solver_cls, style', [(PPPM, 'pppm'),
+                                               (Ewald, 'ewald')])
+def test_set_kspace_solver_different_cutoffs(lammps_engine_config, universe,
+                                             dispersions, solver_cls, style):
+
+    """
+    Tests that if cutoffs for dispersion and coulombic interaction are different
+    it results in a ValueError
+    """
+
+    # Create a kspace solver and add it to the universe of a LAMMPSEngine which
+    # has not had the topology created. Then create topology to set kspace style
+    # in LAMMPS.
+    solver = solver_cls(accuracy=0.0001)
+    universe.kspace_solver = solver
+    # Set cutoffs for dispersion interactions to be different to cutoffs for
+    # coulombic interactions
+    for dispersion in dispersions:
+        dispersion.cutoff = COULOMBIC_CUTOFF + 2.0
+    with pytest.raises(ValueError):
+        lammps_engine_config._add_topology(lammps_engine_config.universe)
+
+
 
     """
     Tests setting the kspace solver if the Universe has both an
     electrostatic_solver and a dispersion_solver and they are equal
     """
 
-    pass
 
 
 def test_set_kspace_solver_single_solver_error():
