@@ -392,7 +392,7 @@ class LAMMPSEngine(MDEngine):
                                              for a in angles])))
             self._create_angles(angles)
 
-    def _create_coulombic(self, couls):
+    def _create_coulombic(self, couls, disps):
 
         """
         Creates the coulombic interactions in LAMMPS
@@ -404,6 +404,7 @@ class LAMMPSEngine(MDEngine):
 
         Arguments:
         couls - a list of coulombic interactions
+        disps - a list of dispersion interactions
         """
 
         # Coulombic interaction doesn't require parameter setting, as this is
@@ -413,10 +414,24 @@ class LAMMPSEngine(MDEngine):
         # and all other types (achieved in LAMMPS with '*' notation). As
         # interactions are overwritten, it is the style of last atom_type
         # that determines its unlike interactions.
+
+        all_styles = parse_all_nonbonded_styles(couls+disps)
         for coul in couls:
-            for atom_type in coul.atom_types:
-                self.lmp.pair_coeff(atom_type, '*',
-                                    *parse_nonbonded_styles(coul))
+            coul_style = parse_nonbonded_styles(coul)[0]
+            for style in all_styles:
+
+                # As is explained in the LAMMPSEngine docstring, pair_coeffs for
+                # coulombic interactions can only be set if the pair_style is
+                # not part of a combined pair_style (e.g. lj/long/coul/long).
+                # Therefore below the style of each coulombic interaction must
+                # exactly match one of all of the nonbonded styles in the
+                # simulation, otherwise the pair coeff is not set here; it is
+                # instead set by the corresponding dispersion interaction, which
+                # possesses the coefficients (parameters) which also need to be
+                # passed to pair_coeff.
+                if isinstance(style, str) and coul_style == style:
+                    for atom_type in coul.atom_types:
+                        self.lmp.pair_coeff(atom_type, '*', style)
 
     def _update_charges(self):
 
@@ -430,20 +445,29 @@ class LAMMPSEngine(MDEngine):
                          'charge',
                          convert_unit(atom.charge, atom.charge.unit))
 
-    def _update_dispersions(self, disps):
+    def _update_dispersions(self, disps, couls):
 
         """
         Updates dispersion interactions in LAMMPS
 
         Arguments:
         disps - a list of dispersion interactions
+        couls - a list of coulombic interactions
         """
+
+        all_styles = parse_all_nonbonded_styles(couls+disps)
 
         for disp in disps:
             atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
-            for atom_type_pair in atom_type_pairs:
-                self.lmp.pair_coeff(atom_type_pair[0], atom_type_pair[1],
-                                    *parse_dispersion_coefficients(disp))
+            disp_style = parse_nonbonded_styles(disp)[0]
+            for style in all_styles:
+                if isinstance(style, str) and disp_style in style:
+                    coeffs = parse_dispersion_coefficients(disp, disp_style)
+                    for atom_type_pair in atom_type_pairs:
+                        self.lmp.pair_coeff(atom_type_pair[0],
+                                            atom_type_pair[1],
+                                            style,
+                                            *coeffs)
 
     def _modify_nonbonded_styles(self, nonbonded_interactions):
 
