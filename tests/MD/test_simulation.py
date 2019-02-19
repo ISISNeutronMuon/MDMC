@@ -520,6 +520,32 @@ def test_dispersion_cutoff(water_SPCE_universe):
     assert infinite_disp.cutoff is None
 
 
+def test_charge_setting(water_SPCE_universe):
+
+    """
+    Tests that charges can be set from the atom.charge attribute, if the atom
+    already has a Coulombic interaction
+    """
+
+    atom = water_SPCE_universe.atom_list[0]
+    atom.charge = 5.0
+    assert atom.charge == 5.0
+
+
+def test_charge_setting_no_coulombic(atom):
+
+    """
+    Tests that setting the charge of an atom without a Coulombic interaction
+    raises an AttributeError
+    """
+
+    # Check that the charge is None, as it should be if it does not possess a
+    # Coulombic interaction
+    assert atom.charge is None
+    with pytest.raises(AttributeError):
+        atom.charge = 5.0
+
+
 def test_init_coulombic_atom_types():
 
     """

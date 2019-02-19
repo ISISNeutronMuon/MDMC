@@ -285,6 +285,7 @@ class CompositeStructuralUnit(StructuralUnit):
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
+        Interactions for Atoms may be reordered with respect to initial atoms
 
         Arguments:
         memo - the memo dict
@@ -535,13 +536,28 @@ class Atom(StructuralUnit):
 
         try:
             for interaction in self.interactions:
-                if type(interaction) == Coulombic:
+                if isinstance(interaction, Coulombic):
                     # Zero index parameter can be used as there should only be
                     # one parameter as each atom only has a single charge
                     return interaction.params[0].value
             return None
         except AttributeError:
             return None
+
+    @charge.setter
+    @unit_decorator(unit=units.CHARGE)
+    def charge(self, value):
+
+        charge_set = False
+        for interaction in self.interactions:
+            if isinstance(interaction, Coulombic):
+                # Coulombic interactions only have a single parameter
+                interaction.params[0].value = value
+                charge_set = True
+        if not charge_set:
+            raise AttributeError('the atom must have a Coulombic interaction'
+                                 ' with an InteractionFunction before the'
+                                 ' charge can be set')
 
     @property
     def mass(self):
@@ -1133,6 +1149,11 @@ class Dispersion(NonBondedInteraction):
         Arguments:
         universe - a Universe object
         atom_types - one or two tuples containing one or more integers that
+
+        Settings:
+        vdw_tail_correction - a boolean specifying if the tail correction to the
+        energy and pressure should be applied. This only affects the simulation
+        dynamics if it is constant pressure.
         """
 
         super(Dispersion, self).__init__(universe, **settings)
@@ -1149,6 +1170,8 @@ class Dispersion(NonBondedInteraction):
         for tpl in self.atoms:
             for atom in tpl:
                 atom.add_interaction(self)
+
+        vdw_tail_correction = settings.get('vdw_tail_correction', False)
 
     @property
     def atom_types(self):
