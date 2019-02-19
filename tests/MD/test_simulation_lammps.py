@@ -97,7 +97,7 @@ def universe_interactions(empty_universe, atoms):
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, type,
-                                    function=Coulomb((type*0.5, 'e')),
+                                    function=Coulomb((-1.0+type*0.5, 'e')),
                                     cutoff=COULOMBIC_CUTOFF))
         dispersions.append(Dispersion(empty_universe, type,
                                       function=LennardJones((type*0.1,
