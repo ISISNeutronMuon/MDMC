@@ -40,6 +40,26 @@ class LAMMPSEngine(MDEngine):
     """
     Facade for LAMMPS
 
+    One notable issue with creating the LAMMPS facade is that some pair_styles
+    are combinations of both dispersion and coulombic interactions. For example,
+    although LAMMPS has lj/cut, coul/cut, and coul/long, there is no lj/long
+    pair_style; it only exists in combination with coul/long
+    (i.e. lj/long/coul/long). This means that the facade has to not just parse
+    each nonbonded interaction, but also has to determine if that pair_style
+    should be combined with another pair_style (e.g. lj/long and coul/long have
+    to be combined before passing to pair_style and pair_coeff). An additional
+    complication of this is that when setting the coefficients (parameters) of
+    these interactions, they again have to be set together. So in theory a
+    coulombic interaction needs to know the dispersion interaction it has been
+    paired with an also pass those coefficients when calling pair_coeff. In
+    practice a simplification can be made, at least in the case of currently
+    implemented pair styles: As coulombic pair styles do no take any
+    coefficients, any coulombic pair styles that comprise a combined pair_style
+    can be ignored for the purposes of setting the coulombic pair_style; this
+    can be taken care of when pair_coeff is called from the correspoding
+    dispersion interaction, as this possesses the dispersion coefficients that
+    also need to be passed when the coefficients of this pair style are set.
+
     Attributes:
     atom_dict - a dictionary with {MDMC_atom: LAMMPS_atom}, where MDMC_atom is
     an MDMC Atom object and LAMMPS_atom is the corresponding LAMMPS Atom object
