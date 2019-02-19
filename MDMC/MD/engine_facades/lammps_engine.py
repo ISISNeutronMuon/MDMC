@@ -356,22 +356,18 @@ class LAMMPSEngine(MDEngine):
         if others:
             raise NotImplementedError('This interaction type has not been'
                                       ' implemented in the LAMMPS facade')
-
         # LAMMPS uses pair_style for all nonbonded interactions, so dispersive
         # and coulombic interactions are treated together. While multiple
         # identical pair_styles can be used with the hybrid command, it is
         # inefficient, so duplicates are removed with set.
-        nonbonded_styles = set([tuple(parse_nonbonded_styles(nb)) for nb
-                                in disps + couls])
+        nonbonded_styles = parse_all_nonbonded_styles(disps+couls)
         if nonbonded_styles:
-            # Use chain to flatten set of tuples
-            self.lmp.pair_style('hybrid',
-                                *chain.from_iterable(nonbonded_styles))
-            self._create_coulombic(couls)
+            self.lmp.pair_style('hybrid', *nonbonded_styles)
+            self._create_coulombic(couls, disps)
             self._update_charges()
             # Dispersion creation and updating are the same, so only an update
             # method exists
-            self._update_dispersions(disps)
+            self._update_dispersions(disps, couls)
             # Apply LAMMPS modifications to nonbonded interactions
             self._modify_nonbonded_styles(couls+disps)
             self._set_kspace_solver()
