@@ -376,11 +376,11 @@ class LAMMPSEngine(MDEngine):
         if nonbonded_styles:
             self._set_kspace_solver()
             self.lmp.pair_style('hybrid', *nonbonded_styles)
-            self._create_coulombic(couls, disps)
+            self._create_coulombic(couls)
             self._update_charges()
             # Dispersion creation and updating are the same, so only an update
             # method exists
-            self._update_dispersions(disps, couls)
+            self._update_dispersions(disps)
             # Apply LAMMPS modifications to nonbonded interactions
             self._modify_nonbonded_styles(couls+disps)
 
@@ -400,7 +400,7 @@ class LAMMPSEngine(MDEngine):
                                              for a in angles])))
             self._create_angles(angles)
 
-    def _create_coulombic(self, couls, disps):
+    def _create_coulombic(self, couls):
 
         """
         Creates the coulombic interactions in LAMMPS
@@ -412,7 +412,6 @@ class LAMMPSEngine(MDEngine):
 
         Arguments:
         couls - a list of coulombic interactions
-        disps - a list of dispersion interactions
         """
 
         # Coulombic interaction doesn't require parameter setting, as this is
@@ -423,7 +422,7 @@ class LAMMPSEngine(MDEngine):
         # interactions are overwritten, it is the style of last atom_type
         # that determines its unlike interactions.
 
-        all_styles = parse_all_nonbonded_styles(couls+disps)
+        all_styles = parse_all_nonbonded_styles(couls+self.disps)
         for coul in couls:
             coul_style = parse_nonbonded_styles(coul)[0]
             for style in all_styles:
@@ -453,17 +452,16 @@ class LAMMPSEngine(MDEngine):
                          'charge',
                          convert_unit(atom.charge, atom.charge.unit))
 
-    def _update_dispersions(self, disps, couls):
+    def _update_dispersions(self, disps):
 
         """
         Updates dispersion interactions in LAMMPS
 
         Arguments:
         disps - a list of dispersion interactions
-        couls - a list of coulombic interactions
         """
 
-        all_styles = parse_all_nonbonded_styles(couls+disps)
+        all_styles = parse_all_nonbonded_styles(disps+self.couls)
 
         for disp in disps:
             atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
