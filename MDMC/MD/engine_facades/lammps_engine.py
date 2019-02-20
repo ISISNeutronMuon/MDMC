@@ -225,11 +225,10 @@ class LAMMPSEngine(MDEngine):
 
     def update_parameters(self):
 
-        raise NotImplementedError
-        # self._update_charges()
-        # self._update_bonds()
-        # self._update_angles()
-        # self._update_dispersion()
+        self._update_charges()
+        self._update_bonds(self.bonds)
+        self._update_angles(self.angles)
+        self._update_dispersions(self.disps)
 
     def save_config(self):
 
@@ -262,6 +261,10 @@ class LAMMPSEngine(MDEngine):
         self.atom_types = {}
         self.atom_type_properties = []
 
+        self.bonds = []
+        self.angles = []
+        self.couls = []
+        self.disps = []
         self.bond_ID = {}
         self.angle_ID = {}
 
@@ -359,6 +362,12 @@ class LAMMPSEngine(MDEngine):
         if others:
             raise NotImplementedError('This interaction type has not been'
                                       ' implemented in the LAMMPS facade')
+
+        self.bonds = bonds
+        self.angles = angles
+        self.disps = disps
+        self.couls = couls
+
         # LAMMPS uses pair_style for all nonbonded interactions, so dispersive
         # and coulombic interactions are treated together. While multiple
         # identical pair_styles can be used with the hybrid command, it is
