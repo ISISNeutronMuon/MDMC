@@ -121,7 +121,6 @@ class LAMMPSEngine(MDEngine):
         self._build_configuration(self.universe)
         self._add_topology(self.universe)
         self.update_parameters(self.universe)
-        raise NotImplementedError
 
     def setup_simulation(self, **settings):
 
@@ -144,6 +143,9 @@ class LAMMPSEngine(MDEngine):
         for which atom pairs are stored i.e. all atom pairs within
         force cutoff + skin are stored in the neighbor list. The default is
         2.0 Ang.
+        traj_step - an integer specifying the number of time steps between
+        outputs of the trajectory e.g. 1 will record the trajectory at every
+        time step
         neighbor_steps - an integer specifying how the number of steps that can
         elapse before the neighbor list is checked to see if it should be
         rebuilt. A neighbor list is only rebuilt if an atom has moved more than
@@ -160,6 +162,7 @@ class LAMMPSEngine(MDEngine):
 
         self.temperature = settings.get('temperature', 300)
         self.time_step = settings.get('time_step', 1.0)
+        self.traj_step = settings['traj_step']
 
         self._saved_config = None
 
