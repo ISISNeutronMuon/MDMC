@@ -592,11 +592,25 @@ def test_update_individual_interactions(lammps_engine_topology,
     getattr(lammps_engine_topology, update_method)(interactions)
 
 
+def test_update_all_interactions(lammps_engine_topology, interactions):
 
     """
+    Tests that updating all interactions does not result in a fatal error, where
+    the LAMMPS Python interface causes Python to exit without throwing an error,
+    presumably due to a segfault
 
+    A more stringent test would check that the correct coefficients for each
+    interation have been set in LAMMPS, however there is no way to check this
+    through the Python interface. Therefore the minimum test of checking for a
+    fatal error is used.
     """
 
+    # Scale all parameters for all interactions
+    for interaction in interactions:
+        for param in interaction.params:
+            param.value *= 2
+
+    lammps_engine_topology.update_parameters()
 
 
 @pytest.mark.parametrize('solver_cls, accuracy, expected', [(PPPM, 0.001,
