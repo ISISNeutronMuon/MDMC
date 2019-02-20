@@ -168,6 +168,7 @@ def interactions(bonds, angles, coulombics, dispersions):
     """
 
     return bonds + angles + coulombics + dispersions
+
 @pytest.fixture
 def constrained_bonds(bonds):
 
@@ -559,50 +560,43 @@ def test_atom_charges_update(lammps_engine_topology, universe):
                 == universe.atom_list[i].charge)
 
 
-def test_update_bonds():
+@pytest.mark.parametrize('interaction_fixture, update_method',
+                         [('bonds', '_update_bonds'),
+                          ('angles', '_update_angles'),
+                          ('dispersions', '_update_dispersions')])
+def test_update_individual_interactions(lammps_engine_topology,
+                                        interaction_fixture, update_method,
+                                        request):
 
     """
-    Tests that updating bond coefficients does not result in a fatal error,
-    where the LAMMPS Python interface causes Python to exit without throwing an
-    error, presumably due to a segfault
-
-    A more stringent test would check that the correct bond coefficients have
-    been set in LAMMPS, however there is no way to check this through the Python
-    interface. Therefore the minimum test of checking for a fatal error is used.
-    """
-
-    pass
-
-
-def test_update_angles():
-
-    """
-    Tests that updating angle coefficients does not result in a fatal error,
-    where the LAMMPS Python interface causes Python to exit without throwing an
-    error, presumably due to a segfault
-
-    A more stringent test would check that the correct angle coefficients have
-    been set in LAMMPS, however there is no way to check this through the Python
-    interface. Therefore the minimum test of checking for a fatal error is used.
-    """
-
-    pass
-
-
-def test_update_dispersions():
-
-    """
-    Tests that updating dispersion coefficients does not result in a fatal
-    error,vwhere the LAMMPS Python interface causes Python to exit without
+    Tests that updating each individual interaction does not result in a fatal
+    error, where the LAMMPS Python interface causes Python to exit without
     throwing an error, presumably due to a segfault
 
-    A more stringent test would check that the correct dispsersion coefficients
-    have been set in LAMMPS, however there is no way to check this through the
-    Python interface. Therefore the minimum test of checking for a fatal error
-    is used.
+    A more stringent test would check that the correct coefficients for each
+    interation have been set in LAMMPS, however there is no way to check this
+    through the Python interface. Therefore the minimum test of checking for a
+    fatal error is used.
     """
 
-    pass
+    # As fixtures cannot be included in parameterization, the names of the
+    # fixtures are included instead - the return values of the fixtures are then
+    # recovered using request.getfixturevalue
+    interactions = request.getfixturevalue(interaction_fixture)
+
+    # Scale all parameters for all interactions
+    for interaction in interactions:
+        for param in interaction.params:
+            param.value *= 2
+
+    getattr(lammps_engine_topology, update_method)(interactions)
+
+
+
+    """
+
+    """
+
 
 
 @pytest.mark.parametrize('solver_cls, accuracy, expected', [(PPPM, 0.001,
