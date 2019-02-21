@@ -251,13 +251,6 @@ class LAMMPSEngine(MDEngine):
         """
 
         self.universe = universe
-
-        # Create a PyLammps wrapper to capture LAMMPS output
-        self.lmp = PyLammps()
-
-        self.lmp.units('real')
-        self.lmp.atom_style(settings.get('atom_style', 'full'))
-
         self.atom_dict = {}
         self.atom_types = {}
         self.atom_type_properties = []
@@ -268,6 +261,21 @@ class LAMMPSEngine(MDEngine):
         self.disps = []
         self.bond_ID = {}
         self.angle_ID = {}
+
+    def _init_lammps(self, **settings):
+
+        """
+        Creates a PyLammps wrapper and sets the system of units and atom style
+
+        Settings:
+        atom_style - a string specifying the LAMMPS atom_style, which determines
+        the properties that can be associated which the atoms (e.g. charge,
+        bonds)
+        """
+
+        self.lmp = PyLammps()
+        self.lmp.units('real')
+        self.lmp.atom_style(settings.get('atom_style', 'full'))
 
     def _define_simulation_box(self, universe):
 
