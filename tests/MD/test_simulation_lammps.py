@@ -968,6 +968,47 @@ def test_parse_constraint_no_IDs(arguments, request):
         lmp_input = lmp.parse_constraint(constraint_algorithm, **arg_fixtures)
 
 
+@pytest.mark.parametrize('temperature', [150., 300., 450.])
+def test_initialize_velocities(lammps_engine_topology, temperature):
+
+    """
+    Test that the velocities have been set correctly
+
+    Initialize the velocities by setting the temperature. Set the ensemble to
+    NVE and run for 0 steps. Test if the 0 step temperature is as expected.
+    """
+
+    lammps_engine_topology.temperature = temperature
+
+    # NVE ensemble used because it is the simplest to apply and velocity
+    # initialization is ensemble independent. It is applied directly through the
+    # LAMMPS interface i.e. by calling fix.
+    lammps_engine_topology.lmp.fix('integrate', 'all', 'nve')
+    lammps_engine_topology.lmp.run(0)
+    assert lammps_engine_topology.lmp.runs[0][0].Temp[0] == temperature
+
+
+@pytest.mark.parametrize('skin, neighbor_steps', [(1, 2),
+                                                  (1., 2.),
+                                                  (1., 2),
+                                                  (3., 100)])
+def test_set_neighbor_list_parameters(lammps_engine_topology, skin,
+                                      neighbor_steps):
+
+    """
+    Tests that setting neighbor list parameters does not result in a fatal
+    error, where the LAMMPS Python interface causes Python to exit without
+    throwing an error, presumably due to a segfault
+
+    A more stringent test would check that the neighbor list parameters have
+    been set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    lammps_engine_topology.skin = skin
+    lammps_engine_topology.neighbor_steps = neighbor_steps
+
+
 @pytest.mark.parametrize('value', [1.0, 2.0])
 def test_convert_mdmc_base_units_identity(value):
 
