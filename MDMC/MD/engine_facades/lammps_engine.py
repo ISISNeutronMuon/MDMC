@@ -896,18 +896,25 @@ class LAMMPSEngine(MDEngine):
         """
         Creates the fixes in LAMMPS which remove the linear and angular momentum
         of the simulation
+
+        Removes all pre-existing momentum remover fixes
         """
 
-        if self.lin_momentum_steps and (self.lin_momentum_steps
-                                        == self.ang_momentum_steps):
+        for name in self.fix_names:
+            if name in ['RemoveMomentum', 'RemoveLinearMomentum',
+                        'RemoveAngularMomentum']:
+                self.lmp.unfix(name)
+
+        if self.lin_momentum_steps == self.ang_momentum_steps is not None:
             self.lmp.fix('RemoveMomentum', 'all', 'momentum',
                          self.lin_momentum_steps, 'linear', 1, 1, 1, 'angular')
-        elif self.lin_momentum_steps:
-            self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
-                         self.lin_momentum_steps, 'linear', 1, 1, 1)
-        elif self.ang_momentum_steps:
-            self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
-                         self.ang_momentum_steps, 'angular')
+        else:
+            if self.lin_momentum_steps:
+                self.lmp.fix('RemoveLinearMomentum', 'all', 'momentum',
+                             self.lin_momentum_steps, 'linear', 1, 1, 1)
+            if self.ang_momentum_steps:
+                self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
+                             self.ang_momentum_steps, 'angular')
 
     def _apply_constraints(self):
 
