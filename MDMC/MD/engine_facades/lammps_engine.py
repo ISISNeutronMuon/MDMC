@@ -113,6 +113,38 @@ class LAMMPSEngine(MDEngine):
             pass
 
     @property
+    def skin(self):
+
+        return self._skin
+
+    @skin.setter
+    @unit_decorator(unit=units.LENGTH)
+    def skin(self, value):
+
+        self._skin = value
+        try:
+            # Set the neighor list parameters in the LAMMPS wrapper
+            self.lmp.neighbor(convert_unit(self._skin, self._skin.unit), 'bin')
+        except AttributeError:
+            pass
+
+    @property
+    def neighbor_steps(self):
+
+        return self._neighbor_steps
+
+    @neighbor_steps.setter
+    def neighbor_steps(self, value):
+
+        self._neighbor_steps = value
+        try:
+            # Set the modifiers to the neighbor list in the LAMMPS wrapper
+            self.lmp.neigh_modify('every', int(self.neighbor_steps), 'delay', 0,
+                                  'check', 'yes')
+        except TypeError:
+            pass
+
+    @property
     def system_state(self):
 
         return self.lmp.system
