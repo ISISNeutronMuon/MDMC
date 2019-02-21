@@ -240,6 +240,7 @@ class LAMMPSEngine(MDEngine):
         raise NotImplementedError
 
     def _init_attributes(self, universe, **settings):
+    def _init_attributes(self, universe):
 
         """
         Initializes all attributes/properties of the LAMMPSEngine
@@ -250,6 +251,7 @@ class LAMMPSEngine(MDEngine):
         universe - an MDMC Universe object
         """
 
+        # Universe setup attributes
         self.universe = universe
         self.atom_dict = {}
         self.atom_types = {}
@@ -261,6 +263,26 @@ class LAMMPSEngine(MDEngine):
         self.disps = []
         self.bond_ID = {}
         self.angle_ID = {}
+
+        # Simulation setup attributes
+        self.time_step = None
+        self.traj_step = None
+
+        self._saved_config = None
+
+        self.skin = None
+        self.neighbor_steps = None
+
+        self.lin_momentum_steps = None
+        self.ang_momentum_steps = None
+
+        self.temperature = None
+        self.pressure = None
+        self.t_damp = None
+        self.p_damp = None
+        self.t_window = None
+        self.t_fraction = None
+        self.rescale_step = None
 
     def _init_lammps(self, **settings):
 
