@@ -74,7 +74,7 @@ class LAMMPSEngine(MDEngine):
     @property
     def saved_config(self):
 
-        raise NotImplementedError
+        return self._saved_config
 
     @property
     def time_step(self):
@@ -431,11 +431,35 @@ class LAMMPSEngine(MDEngine):
 
     def save_config(self):
 
-        raise NotImplementedError
+        # It is not possible to deepcopy the LAMMPS wrapper atoms attribute, or
+        # the individual atoms, so instead this saves the x, y, z, mass and
+        # charge in a NumPy array with the indexes given by the atom ID (with a
+        # -1 offset due to zero index)
+        # The atoms attribute also is not iterable
+        n_atoms = self.system_state.natoms
+        atoms = np.zeros([n_atoms, 5])
+        for i in range(n_atoms):
+            atom = self.lmp.atoms[i]
+            atoms[atom.id-1, :] = ([component for component in atom.position]
+                                   + [atom.mass, atom.charge])
+        self._saved_config = atoms
 
     def reset_config(self):
 
-        raise NotImplementedError
+        # Raise an IndexError if the number of atoms has changed
+        n_atoms = self.system_state.natoms
+        if len(self.saved_config) != n_atoms:
+            raise IndexError('the number of atoms has changed during the'
+                             ' simulations')
+
+        # The LAMMPS wrapper does not allow the configuration to be updated
+        # simply by setting all atoms. Instead the position of the atoms must be
+        # reset.
+        index_components = list(enumerate(['x', 'y', 'z']))
+        for id_offset in range(n_atoms):
+            for index, component in index_components:
+                self.lmp.set('atom', id_offset+1, component,
+                             self.saved_config[id_offset][index])
 
     def _init_attributes(self, universe):
 
