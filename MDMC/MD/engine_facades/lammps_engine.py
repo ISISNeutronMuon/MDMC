@@ -177,6 +177,61 @@ class LAMMPSEngine(MDEngine):
         self._set_momentum_removers()
 
     @property
+    def pressure(self):
+
+        return self._pressure
+
+    @pressure.setter
+    @unit_decorator(unit=units.PRESSURE)
+    def pressure(self, value):
+
+        self._pressure = value
+
+    # Unit has to be applied to getter due to operation in setter
+    @property
+    @unit_decorator_getter(unit=units.TIME)
+    def t_damp(self):
+
+        return self._t_damp
+
+    @t_damp.setter
+    def t_damp(self, value):
+
+        try:
+            # LAMMPS requires t_damp to be given in units of time, but it is
+            # more natural to give it in units of steps - convert between them
+            # here
+            self._t_damp = value * self.time_step
+        except TypeError:
+            if value is None:
+                self._t_damp = value
+            else:
+                raise AttributeError('the time_step attribute must be set'
+                                     ' before t_damp')
+
+    # Unit has to be applied to getter due to operation in setter
+    @property
+    @unit_decorator_getter(unit=units.TIME)
+    def p_damp(self):
+
+        return self._p_damp
+
+    @p_damp.setter
+    def p_damp(self, value):
+
+        try:
+            # LAMMPS requires p_damp to be given in units of time, but it is
+            # more natural to give it in units of steps - convert between them
+            # here
+            self._p_damp = value * self.time_step
+        except TypeError:
+            if value is None:
+                self._p_damp = value
+            else:
+                raise AttributeError('the time_step attribute must be set'
+                                     ' before p_damp')
+
+    @property
     def system_state(self):
 
         return self.lmp.system
