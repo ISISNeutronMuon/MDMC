@@ -103,6 +103,22 @@ class LAMMPSEngine(MDEngine):
 
         return self.lmp.system
 
+    @property
+    def fixes(self):
+
+        return self.lmp.fixes
+
+    @property
+    def fix_styles(self):
+
+        return [fix['style'] for fix in self.fixes]
+
+    @property
+    def fix_names(self):
+
+        return [fix['name'] for fix in self.fixes]
+
+
     def setup_universe(self, universe, **settings):
 
         """
