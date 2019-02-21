@@ -379,15 +379,6 @@ class LAMMPSEngine(MDEngine):
         self.lin_momentum_steps = settings.get('remove_linear_momentum', 1)
         self.ang_momentum_steps = settings.get('remove_angular_momentum')
 
-        self.lmp.velocity('all', 'create', self.temperature, randint(1, 9999))
-
-        self.lmp.neighbor(self.skin, 'bin')
-        self.lmp.neigh_modify('every', self.neighbor_steps, 'delay', 0, 'check',
-                              'yes')
-
-        self.lmp.timestep(self.time_step)
-
-        self._set_momentum_removers()
         if self.universe.constraint_algorithm:
             self._apply_constraints()
 
