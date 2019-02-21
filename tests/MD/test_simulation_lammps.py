@@ -254,6 +254,24 @@ def lammps_engine_topology(lammps_engine_config):
     lammps_engine_config._add_topology(lammps_engine_config.universe)
     return lammps_engine_config
 
+
+@pytest.fixture
+def lammps_engine_setup(lammps_engine_topology):
+
+    """
+    Returns:
+    A LAMMPSEngine where the atomic configuration and the topology have been
+    added, and the simulation parameters have been set. This LAMMPSEngine is
+    ready to run a simulation.
+    """
+
+    # Simulation setup requires the traj_step attribute to be set. All other
+    # attributes that are required are set to defaults.
+    lammps_engine_topology.setup_simulation(traj_step=1)
+
+    return lammps_engine_topology
+
+
 def test_universe_dims(lammps_engine_box):
 
     """
