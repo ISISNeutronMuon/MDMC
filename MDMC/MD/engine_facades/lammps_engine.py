@@ -239,7 +239,6 @@ class LAMMPSEngine(MDEngine):
 
         raise NotImplementedError
 
-    def _init_attributes(self, universe, **settings):
     def _init_attributes(self, universe):
 
         """
