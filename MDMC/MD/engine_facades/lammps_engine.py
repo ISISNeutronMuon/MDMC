@@ -232,6 +232,31 @@ class LAMMPSEngine(MDEngine):
                                      ' before p_damp')
 
     @property
+    def t_fraction(self):
+
+        return self._t_fraction
+
+    @t_fraction.setter
+    def t_fraction(self, value):
+
+        # Must be a fraction
+        if value is None or 0. <= value <= 1.0:
+            self._t_fraction = value
+        else:
+            raise ValueError('the t_fraction must be between 0.0 and 1.0')
+
+    @property
+    def t_window(self):
+
+        return self._t_window
+
+    @t_window.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def t_window(self, value):
+
+        self._t_window = value
+
+    @property
     def system_state(self):
 
         return self.lmp.system
