@@ -321,8 +321,10 @@ class LAMMPSEngine(MDEngine):
         bonded interactions
         """
 
+        self._init_lammps(**settings)
+        # self.universe is set in _init_attributes
         self._init_attributes(universe)
-        self._define_simulation_box(self.universe, **settings)
+        self._define_simulation_box(self.universe)
         self._build_configuration(self.universe)
         self._add_topology(self.universe)
         self.update_parameters(self.universe)
