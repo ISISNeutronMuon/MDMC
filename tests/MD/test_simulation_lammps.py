@@ -1151,6 +1151,34 @@ def test_apply_thermostat_barostat(lammps_engine_topology, thermostat, barostat,
     assert styles == lammps_engine_topology.fix_styles
 
 
+
+@pytest.mark.parametrize('thermostat, barostat, add_args',
+                         [(None, None, {}),
+                          ('nose', None, {}),
+                          ('nose', 'nose', {'pressure':1.0})])
+def test_setup_simulation_run(lammps_engine_topology, thermostat, barostat,
+                              add_args):
+
+    """
+    Tests that the simulation setup can run an NVE, NVT and NPT simulation with
+    the default attribute values
+    """
+
+    # Simulation setup requires the traj_step attribute to be set, even though
+    # it is not being used in this test
+    # add_args is a dictionary of additional arguments that are required for the
+    # specific ensemble
+    lammps_engine_topology.setup_simulation(traj_step=1, thermostat=thermostat,
+                                            barostat=barostat, **add_args)
+
+    N_STEPS = 20
+    lammps_engine_topology.lmp.run(20)
+
+    # Test that the largest step number in the LAMMPS wrapper runs attribute
+    # (which records ThermoData from the previous run) is correct
+    assert max(lammps_engine_topology.lmp.runs[0][0].Step) == N_STEPS
+
+
 @pytest.mark.parametrize('value', [1.0, 2.0])
 def test_convert_mdmc_base_units_identity(value):
 
