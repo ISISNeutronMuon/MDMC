@@ -62,6 +62,32 @@ class LAMMPSEngine(MDEngine):
     also need to be passed when the coefficients of this pair style are set.
 
     Attributes:
+    saved_config - the configuration from the start of the run
+    time_step - a float specifying the simulation time step in fs
+    temperature - a float specifying the simulation temperature in K
+    skin - a float specifying the skin distance in Ang. This distance plus the
+    force cutoff distance determines which atom pairs are stored in the neighbor
+    list.
+    neighbor_steps - an integer specifying how many steps between neighbor list
+    updates
+    lin_momentum_steps - an int specifying how many steps between the linear
+    momentum being removed
+    ang_momentum_steps - an int specifying how many steps between the angular
+    momentum being removed
+    pressure - a float specifying the pressure in atm
+    t_damp - an int specifying over how many steps the temperature is relaxed by
+    the thermostat. This only applies to Nose-Hoover, Berendsen, Langevin
+    thermostats.
+    p_damp - an int specifying over how many steps the pressure is relaxed by
+    the barostat. This applies to all barostats.
+    t_fraction - a float between 0.0 and 1.0 specifying the magnitude rescale to
+    the target temperature, where 1.0 is rescale exactly to the target. This
+    only applies to rescale thermostat.
+    t_window - a float specifying the temperature window in K. If the
+    temperature varies from the target by greater than this value, the
+    temperature is rescaled. This only applies to rescale thermostats.
+    thermostat - a string specifying the thermostat
+    barostat - a string specifying the barostat
     atom_dict - a dictionary with {MDMC_atom: LAMMPS_atom}, where MDMC_atom is
     an MDMC Atom object and LAMMPS_atom is the corresponding LAMMPS Atom object
     atom_types - a dictionary with {type_ID: MDMC_atom_group}, where the type_ID
@@ -69,6 +95,12 @@ class LAMMPSEngine(MDEngine):
     identical in terms of element and interactions
     system_state - a System object from the LAMMPS Python interface which
     contains properties of the simulation box
+    fixes - a list of dictionaries specifying which LAMMPS fixes which are
+    applied
+    fix_styles - a list of strings specifying the styles of the LAMMPS fixes
+    which are applied
+    fix_names - a list of string specifying the names of the LAMMPS fixes which
+    are applied
     """
 
     @property
@@ -310,15 +342,15 @@ class LAMMPSEngine(MDEngine):
     def setup_universe(self, universe, **settings):
 
         """
-        Potential order of commands for setting up a LAMMPS universe:
+        Creates the simulation box, the atomic configuration, and the topology
+        in LAMMPS
 
-        units(=real)
-        atom_style (default = full)
+        Arguments:
+        universe - an MDMC Universe object
 
-        create_atoms
-
-        non-bonded interactions
-        bonded interactions
+        Settings:
+        atom_style - a LAMMPS atom_style string. The default setting of 'real'
+        will generally be appropriate.
         """
 
         self._init_lammps(**settings)
@@ -332,39 +364,8 @@ class LAMMPSEngine(MDEngine):
     def setup_simulation(self, **settings):
 
         """
-        Potential order of commands for setting up a LAMMPS simulation
-
-        velocity
-
-        neighbor
-        neigh_modify
-
-        timestep
-
-        fix shake (or rattle)
-        fix momentum
-
-        Settings:
-        time_step - a float specifying the time step in fs (default is 1 fs)
-        skin - a float specifying the distance in Ang beyond the force cutoff
-        for which atom pairs are stored i.e. all atom pairs within
-        force cutoff + skin are stored in the neighbor list. The default is
-        2.0 Ang.
-        traj_step - an integer specifying the number of time steps between
-        outputs of the trajectory e.g. 1 will record the trajectory at every
-        time step
-        neighbor_steps - an integer specifying how the number of steps that can
-        elapse before the neighbor list is checked to see if it should be
-        rebuilt. A neighbor list is only rebuilt if an atom has moved more than
-        half the skin distance.
-        remove_linear_momentum - an integer specifying many steps elapse between
-        removing the linear momentum, or None. If None, the linear momentum of
-        the simulation is not removed. The default is 1 i.e. the linear momentum
-        is removed every step.
-        remove_angular_momentum - an integer specifying many steps elapse
-        between removing the angular momentum, or None. If None, the angular
-        momentum of the simulation is not removed. The default is None i.e. the
-        angular momentum is not removed.
+        Sets simulation parameters in LAMMPS, such as the thermodynamic
+        variables, thermostat/barostat parameters and trajectory settings
         """
 
         self.temperature = settings.get('temperature', 300)
