@@ -26,9 +26,10 @@ from random import randint
 from tempfile import NamedTemporaryFile
 
 from lammps import PyLammps
+import numpy as np
 
 from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom, BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
