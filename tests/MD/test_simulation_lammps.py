@@ -1044,6 +1044,113 @@ def test_remove_momentum(lammps_engine_topology, momentum_steps,
         assert name in lammps_engine_topology.fix_names
 
 
+@pytest.mark.parametrize('thermostat, styles, attributes',
+                         [(None, ['nve'], {}),
+                          ('nose', ['nvt'],
+                           {'temperature':400., 'time_step':2., 't_damp':100}),
+                          ('berendsen', ['temp/berendsen'],
+                           {'temperature':400., 'time_step':2, 't_damp':100}),
+                          ('langevin', ['langevin'],
+                           {'temperature':400., 'time_step':2, 't_damp':100}),
+                          ('rescale', ['nve', 'temp/rescale'],
+                           {'temperature':100., 't_fraction':0.5,
+                            't_window':10., 'rescale_step':100})])
+def test_apply_thermostat(lammps_engine_topology, thermostat, styles,
+                          attributes):
+
+    """
+    Tests that applying a thermostat results in the correct fix being applying
+    to LAMMPS
+    """
+
+    # Set the attributes required for the specified thermostat
+    for attr, value in attributes.items():
+        setattr(lammps_engine_topology, attr, value)
+
+    # Add the thermostat
+    lammps_engine_topology.thermostat = thermostat
+
+    # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
+    # are correct
+    assert styles == lammps_engine_topology.fix_styles
+
+
+@pytest.mark.parametrize('barostat, styles',
+                         [(None, ['nve']),
+                          ('berendsen', ['press/berendsen']),
+                          ('nose', ['nph'])])
+def test_apply_barostat(lammps_engine_topology, barostat, styles):
+
+    """
+    Tests that applying a barostat results in the correct fix being applied to
+    LAMMPS
+    """
+
+    # Set the attributes required for all barostats and add the barostat
+    lammps_engine_topology.pressure = 10.
+    lammps_engine_topology.time_step = 2.0
+    lammps_engine_topology.p_damp = 1000
+    lammps_engine_topology.barostat = barostat
+
+    # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
+    # are correct
+    assert styles == lammps_engine_topology.fix_styles
+
+
+@pytest.mark.parametrize('thermostat, barostat, styles, attributes',
+                         [(None, None, ['nve'], {}),
+                          ('nose', 'nose', ['npt'],
+                           {'temperature':400., 't_damp':100, 'pressure':10.,
+                            'p_damp':1000}),
+                          ('berendsen', 'nose', ['temp/berendsen', 'nph'],
+                           {'temperature':400., 't_damp':100, 'pressure':10.,
+                            'p_damp':1000}),
+                          ('langevin', 'nose', ['langevin', 'nph'],
+                           {'temperature':400., 't_damp':100, 'pressure':10.,
+                            'p_damp':1000}),
+                          ('rescale', 'nose', ['nve', 'temp/rescale', 'nph'],
+                           {'temperature':400., 't_fraction':.5, 't_window':10.,
+                            'rescale_step':100, 'pressure':10., 'p_damp':1000}),
+                          ('nose', 'berendsen', ['nvt', 'press/berendsen'],
+                           {'temperature':400., 't_damp':100, 'pressure':10.,
+                            'p_damp':1000}),
+                          ('berendsen', 'berendsen', ['temp/berendsen',
+                                                      'press/berendsen'],
+                           {'temperature':400., 't_damp':100, 'pressure':10.,
+                            'p_damp':1000}),
+                          ('langevin', 'berendsen', ['langevin',
+                                                     'press/berendsen'],
+                           {'temperature':400., 't_damp':100, 'pressure':10.,
+                            'p_damp':1000}),
+                          ('rescale', 'berendsen', ['nve', 'temp/rescale',
+                                                    'press/berendsen'],
+                           {'temperature':400., 't_fraction':.5, 't_window':10.,
+                            'rescale_step':100, 'pressure':10., 'p_damp':1000})]
+                        )
+def test_apply_thermostat_barostat(lammps_engine_topology, thermostat, barostat,
+                                   styles, attributes):
+
+    """
+    Tests that applying both a thermostat and a barostat results in the correct
+    fixes being applied to LAMMPS
+    """
+
+    # The time_step must be assigned first
+    lammps_engine_topology.time_step = 2.0
+
+    # Set the attributes required by each thermostat/barostat pair
+    for attr, value in attributes.items():
+        setattr(lammps_engine_topology, attr, value)
+
+    # Add the thermostat and barostat
+    lammps_engine_topology.thermostat = thermostat
+    lammps_engine_topology.barostat = barostat
+
+    # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
+    # are correct
+    assert styles == lammps_engine_topology.fix_styles
+
+
 @pytest.mark.parametrize('value', [1.0, 2.0])
 def test_convert_mdmc_base_units_identity(value):
 
