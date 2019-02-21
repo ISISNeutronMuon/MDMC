@@ -617,17 +617,16 @@ class Simulation(object):
         """
         Initializes universe, engine and settings
 
-        Engine independent settings:
+        Settings:
         temperature - float specifying simulation temperature in K
         time_step - float specifying simulation timestep size in fs
         integrator - string specifying MD time integrator
-
-        Settings:
         lj_options - Options for Lennard-Jones interactions
         es_options - Options for electrostatic interactions
-        thermostat - boolean defining if a thermostat is applied
-        pressure - float specifying the pressure in units of Pa.  If this is
-        defined then a barostat is applied.
+        thermostat - string specifying the name of a thermostat e.g. Nose-Hoover
+        barostat - string specifying the name of a barostat e.g. Nose-Hoover
+        pressure - float specifying the pressure in units of Pa. This is requied
+        if a barostat is passed.
         """
 
         self.universe = universe
