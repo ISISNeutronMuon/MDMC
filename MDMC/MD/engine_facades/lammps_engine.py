@@ -97,6 +97,14 @@ class LAMMPSEngine(MDEngine):
     def temperature(self, value):
 
         self._temperature = value
+        try:
+            # Set the initial temperature in the LAMMPS wrapper
+            self.lmp.velocity('all', 'create',
+                              convert_unit(self._temperature,
+                                           self._temperature.unit),
+                              randint(1, 9999))
+        except AttributeError:
+            pass
 
     @property
     def system_state(self):
