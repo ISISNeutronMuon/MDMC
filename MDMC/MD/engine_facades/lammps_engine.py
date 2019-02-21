@@ -382,7 +382,14 @@ class LAMMPSEngine(MDEngine):
         if self.universe.constraint_algorithm:
             self._apply_constraints()
 
-        raise NotImplementedError
+        self.pressure = settings.get('pressure')
+        self.t_damp = settings.get('t_damp', 100)
+        self.p_damp = settings.get('p_damp', 1000)
+        self.t_window = settings.get('t_window')
+        self.t_fraction = settings.get('t_fraction')
+        self.rescale_step = settings.get('rescale_step')
+        self.thermostat = settings.get('thermostat')
+        self.barostat = settings.get('barostat')
 
     def minimize(self, n_steps):
 
