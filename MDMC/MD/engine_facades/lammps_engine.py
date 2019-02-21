@@ -145,6 +145,38 @@ class LAMMPSEngine(MDEngine):
             pass
 
     @property
+    def lin_momentum_steps(self):
+
+        return self._lin_momentum_steps
+
+    @lin_momentum_steps.setter
+    def lin_momentum_steps(self, value):
+
+        self._lin_momentum_steps = value
+        # Check for ang_momentum_steps as this is required for
+        # _set_momentum_removers
+        if not hasattr(self, '_ang_momentum_steps'):
+            self._ang_momentum_steps = None
+        # Set the momentum removers in the LAMMPS wrapper
+        self._set_momentum_removers()
+
+    @property
+    def ang_momentum_steps(self):
+
+        return self._ang_momentum_steps
+
+    @ang_momentum_steps.setter
+    def ang_momentum_steps(self, value):
+
+        self._ang_momentum_steps = value
+        # Check for lin_momentum_steps as this is required for
+        # _set_momentum_removers
+        if not hasattr(self, '_lin_momentum_steps'):
+            self._lin_momentum_steps = None
+        # Set the momentum removers in the LAMMPS wrapper
+        self._set_momentum_removers()
+
+    @property
     def system_state(self):
 
         return self.lmp.system
