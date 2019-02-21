@@ -943,6 +943,61 @@ class LAMMPSEngine(MDEngine):
         self.lmp.group(constrain_group, 'type', *atom_types)
         self.lmp.fix('constrain', constrain_group, *algorithm)
 
+    def _apply_ensemble(self):
+
+        """
+        Passes the required LAMMPS fixes to apply a specific thermodynamic
+        ensemble to the simulation
+
+        Removes all pre-existing thermostat and barostat fixes
+        """
+
+        # Remove thermostat and barostat fixes
+        for name in self.fix_names:
+            if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
+                        'p_berendsen', 'langevin', 'rescale']:
+                self.lmp.unfix(name)
+
+        if not self.thermostat and not self.barostat:
+            self.lmp.fix('nve', 'all', 'nve')
+        else:
+            if self.thermostat:
+                temp = convert_unit(self.temperature, self.temperature.unit)
+                if not self.thermostat == 'rescale':
+                    t_damp = convert_unit(self.t_damp, self.t_damp.unit)
+                    thermo_params = [temp, temp, t_damp]
+            if self.barostat:
+                press = convert_unit(self.pressure, self.pressure.unit)
+                p_damp = convert_unit(self.p_damp, self.p_damp.unit)
+                press_params = ['iso', press, press, p_damp]
+
+            # Apply thermostat
+            if self.thermostat == 'nose':
+                if self.barostat == 'nose':
+                    self.lmp.fix('npt', 'all', 'npt', 'temp',
+                                 *thermo_params + press_params)
+                else:
+                    self.lmp.fix('nvt', 'all', 'nvt', 'temp', *thermo_params)
+            elif self.thermostat == 'berendsen':
+                self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
+                             *thermo_params)
+            elif self.thermostat == 'langevin':
+                self.lmp.fix('langevin', 'all', 'langevin',
+                             *thermo_params + [randint(0, 9999)])
+            elif self.thermostat == 'rescale':
+                # temp/rescale does not do time integration so also requires nve
+                t_window = convert_unit(self.t_window, self.t_window.unit)
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('rescale', 'all', 'temp/rescale',
+                             self.rescale_step, temp, temp, t_window,
+                             self.t_fraction)
+            # Apply barostat
+            if self.barostat == 'berendsen':
+                self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
+                             *press_params)
+            elif self.barostat == 'nose' and not self.thermostat == 'nose':
+                self.lmp.fix('nph', 'all', 'nph', *press_params)
+
 
 # Define the unit system used in LAMMPS
 # NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
