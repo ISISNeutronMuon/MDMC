@@ -86,6 +86,12 @@ class LAMMPSEngine(MDEngine):
     def time_step(self, value):
 
         self._time_step = value
+        try:
+            # Set the timestep in LAMMPS wrapper
+            self.lmp.timestep(convert_unit(self._time_step,
+                                           self._time_step.unit))
+        except AttributeError:
+            pass
 
     @property
     def temperature(self):
