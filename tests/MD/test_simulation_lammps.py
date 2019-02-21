@@ -286,9 +286,9 @@ def test_universe_dims(lammps_engine_box):
                == lammps_engine_box.system_state.ylo \
                == lammps_engine_box.system_state.zlo
 
-    assert 5.0 == lammps_engine_box.system_state.xhi \
-               == lammps_engine_box.system_state.yhi \
-               == lammps_engine_box.system_state.zhi
+    assert UNIVERSE_DIM == lammps_engine_box.system_state.xhi \
+                        == lammps_engine_box.system_state.yhi \
+                        == lammps_engine_box.system_state.zhi
 
 
 def test_number_atom_types(lammps_engine_box):
