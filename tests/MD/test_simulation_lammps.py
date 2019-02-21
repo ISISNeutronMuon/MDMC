@@ -17,7 +17,7 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, NonBondedInteraction
 
 
-UNIVERSE_DIM = 5.0
+UNIVERSE_DIM = 50.0
 N_ATOMS = 10
 COULOMBIC_CUTOFF = 8.0
 
