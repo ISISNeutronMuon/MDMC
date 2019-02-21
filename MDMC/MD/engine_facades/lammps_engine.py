@@ -401,26 +401,20 @@ class LAMMPSEngine(MDEngine):
         Remove fix shake or rattle if they exist
         """
 
+        # Check fix styles for shake or rattle styles and remove them
+
+        # Reapply the same constraint
+
         raise NotImplementedError
 
-    def run(self, n_steps, equilibration):
+    def run(self, n_steps, equilibration=False):
 
-        """
-        Potential order of commands for running a LAMMPS simulation
-
-        fix nve/nvt/npt
-        fix temp/berendsen - if equilibrating with nve
-
-        dump atom
-        dump_modify sort
-
-        run
-        """
-
+        # Store the trajectory in a NamedTemporaryFile
         self.trajectory_file = NamedTemporaryFile()
-        self.lmp.dump('traj1', 'all', 'custom', traj_step,
+        # Custom trajectory output just saves the atom ID, type and positions
+        self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
                       self.trajectory_file.name, 'id', 'type', 'x', 'y', 'z')
-        raise NotImplementedError
+        self.lmp.run(n_steps)
 
     def convert_trajectory(self):
 
