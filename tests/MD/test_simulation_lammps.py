@@ -1009,6 +1009,41 @@ def test_set_neighbor_list_parameters(lammps_engine_topology, skin,
     lammps_engine_topology.neighbor_steps = neighbor_steps
 
 
+@pytest.mark.parametrize('momentum_steps, expected_names',
+                         [({'lin_momentum_steps':5},
+                           ['RemoveLinearMomentum']),
+                          ({'ang_momentum_steps':10},
+                           ['RemoveAngularMomentum']),
+                          ({'lin_momentum_steps':20, 'ang_momentum_steps':20},
+                           ['RemoveMomentum']),
+                          ({'lin_momentum_steps':15, 'ang_momentum_steps':20},
+                           ['RemoveLinearMomentum', 'RemoveAngularMomentum'])])
+def test_remove_momentum(lammps_engine_topology, momentum_steps,
+                         expected_names):
+
+    """
+    Tests that linear and/or angular momentum remover fixes are correctly
+    created
+    """
+
+    # Set momentum_step attributes and apply fixes. If a ValueError is expected,
+    # test for it here.
+    for attr, steps in momentum_steps.items():
+        setattr(lammps_engine_topology, attr, steps)
+
+    lammps_engine_topology._set_momentum_removers()
+
+    # The fix styles of all momentum removers should be 'momentum'. There
+    # should be one fix with this fix style.
+    assert (Counter(lammps_engine_topology.fix_styles)['momentum']
+            == len(expected_names))
+
+    # The name of the fix is defined by whether linear and/or angular
+    # momentum is removed
+    for name in expected_names:
+        assert name in lammps_engine_topology.fix_names
+
+
 @pytest.mark.parametrize('value', [1.0, 2.0])
 def test_convert_mdmc_base_units_identity(value):
 
