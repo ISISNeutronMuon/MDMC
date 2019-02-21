@@ -1151,6 +1151,47 @@ def test_apply_thermostat_barostat(lammps_engine_topology, thermostat, barostat,
     assert styles == lammps_engine_topology.fix_styles
 
 
+def test_save_config(lammps_engine_topology, universe):
+
+    """
+    Tests that the LAMMPS configuration is correctly saved, by checking the
+    positions, mass and charge of the LAMMPS wrapper atoms attribute
+    """
+
+    lammps_engine_topology.save_config()
+    # Positions should be the same as those of the MDMC universe atoms, which
+    # are also ordered by ID
+    for i in range(len(universe.atom_list)):
+        assert (np.array(lammps_engine_topology.saved_config[i][:3])
+                == universe.atom_list[i].position).all()
+
+
+def test_reset_config(lammps_engine_setup):
+
+    """
+    Tests that the reset_config method correctly changes the positions of the
+    LAMMPS wrapper atoms back to the saved values
+
+    To do this the config is saved, a short simulation is run, and the config
+    is reset
+    """
+
+    lammps_engine_setup.save_config()
+    lammps_engine_setup.lmp.run(100)
+
+    n_atoms = lammps_engine_setup.system_state.natoms
+    # Ensure that the atoms have moved from their starting positions - see atoms
+    # fixture for what the starting positions are
+    for i in range(n_atoms):
+        assert (np.array(lammps_engine_setup.lmp.atoms[i].position)
+                != np.array([0.5 * i]*3)).all()
+
+    lammps_engine_setup.reset_config()
+    for i in range(n_atoms):
+        assert (np.array(lammps_engine_setup.lmp.atoms[i].position)
+                == np.array([0.5 * i]*3)).all()
+
+
 
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
