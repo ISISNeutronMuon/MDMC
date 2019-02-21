@@ -2,6 +2,7 @@
 
 AUTHOR :    Thomas Farmer        START DATE :    11/02/2019, 16:21:38"""
 
+from collections import Counter
 from copy import deepcopy
 
 import numpy as np
@@ -15,6 +16,7 @@ from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe, \
     Ewald, PPPM, KSpaceSolver
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, NonBondedInteraction
+from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 UNIVERSE_DIM = 50.0
