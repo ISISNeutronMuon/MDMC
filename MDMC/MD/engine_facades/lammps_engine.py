@@ -257,6 +257,36 @@ class LAMMPSEngine(MDEngine):
         self._t_window = value
 
     @property
+    def thermostat(self):
+
+        return self._thermostat
+
+    @thermostat.setter
+    def thermostat(self, value):
+
+        self._thermostat = value
+        # Check for _barostat as this is required for _apply_ensemble
+        if not hasattr(self, '_barostat'):
+            self._barostat = None
+        # Set the thermostat and barostat in LAMMPS wrapper
+        self._apply_ensemble()
+
+    @property
+    def barostat(self):
+
+        return self._barostat
+
+    @barostat.setter
+    def barostat(self, value):
+
+        self._barostat = value
+        # Check for _thermostat as this is required for _apply_ensemble
+        if not hasattr(self, '_thermostat'):
+            self._thermostat = None
+        # Set the thermostat and barostat in LAMMPS wrapper
+        self._apply_ensemble()
+
+    @property
     def system_state(self):
 
         return self.lmp.system
