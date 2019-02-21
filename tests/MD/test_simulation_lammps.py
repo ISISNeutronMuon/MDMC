@@ -225,6 +225,7 @@ def lammps_engine_box(universe):
     """
 
     lammps_engine = lmp.LAMMPSEngine()
+    lammps_engine._init_lammps()
     lammps_engine._init_attributes(universe)
     lammps_engine._define_simulation_box(universe)
 
