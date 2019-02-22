@@ -1223,6 +1223,11 @@ def test_convert_trajectory_output(lammps_engine_setup):
     assert isinstance(lammps_engine_setup.convert_trajectory(), Trajectory)
 
 
+def test_minimize():
+
+    pass
+
+
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
                           ('nose', None, {}),
