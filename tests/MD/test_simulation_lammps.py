@@ -1151,6 +1151,23 @@ def test_apply_thermostat_barostat(lammps_engine_topology, thermostat, barostat,
     assert styles == lammps_engine_topology.fix_styles
 
 
+@pytest.mark.parametrize('n_steps', [1, 5, 10])
+def test_trajectory_output(lammps_engine_setup, n_steps):
+
+    """
+    Tests if a trajectory file of the correct length has been created by LAMMPS
+    wrapper
+    """
+
+    # lammps_engine_simulation is setup to output trajectory every step. Run for
+    # a total of n_steps
+    lammps_engine_setup.run(n_steps)
+
+    n_atoms = lammps_engine_setup.system_state.natoms
+    n_lines = (n_atoms + 9) * ((n_steps / lammps_engine_setup.traj_step) + 1)
+    assert len(lammps_engine_setup.trajectory_file.readlines()) == n_lines
+
+
 def test_save_config(lammps_engine_topology, universe):
 
     """
@@ -1191,6 +1208,19 @@ def test_reset_config(lammps_engine_setup):
         assert (np.array(lammps_engine_setup.lmp.atoms[i].position)
                 == np.array([0.5 * i]*3)).all()
 
+
+def test_convert_trajectory_output(lammps_engine_setup):
+
+    """
+    Tests that converting a trajectory results in an MDMC Trajectory object
+
+    This does not test the correctness of the converted trajectory, purely that
+    a trajectory can be converted with the correct type. The correctness of
+    the trajectory conversion is covered by a system test.
+    """
+
+    lammps_engine_setup.run(10)
+    assert isinstance(lammps_engine_setup.convert_trajectory(), Trajectory)
 
 
 @pytest.mark.parametrize('thermostat, barostat, add_args',
