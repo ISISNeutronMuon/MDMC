@@ -359,7 +359,7 @@ class LAMMPSEngine(MDEngine):
         self._define_simulation_box(self.universe)
         self._build_configuration(self.universe)
         self._add_topology(self.universe)
-        self.update_parameters(self.universe)
+        self.update_parameters()
 
     def setup_simulation(self, **settings):
 
