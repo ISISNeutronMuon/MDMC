@@ -1354,10 +1354,11 @@ def parse_constraint(constraint_algorithm, bonds=[], bond_ID_dict={}, angles=[],
     # Add bonds and their LAMMPS IDs and angles and their LAMMPS IDs
     if bonds:
         lmp_str.append('b')
-        lmp_str += [bond_ID_dict[bond] for bond in bonds]
+        lmp_str += [bond_ID_dict[bond] for bond in bonds if bond.constrained]
     if angles:
         lmp_str.append('a')
-        lmp_str += [angle_ID_dict[angle] for angle in angles]
+        lmp_str += [angle_ID_dict[angle] for angle in angles
+                    if angle.constrained]
 
     return lmp_str
 
