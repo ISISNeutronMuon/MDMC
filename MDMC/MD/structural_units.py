@@ -1355,7 +1355,7 @@ def _add_atoms(self, *atoms):
         # Add interaction to atom
         atom.add_interaction(self, from_interaction=True)
         # Add atom_type to interaction.atom_types
-        if atom.atom_type not in self.atom_types:
+        if atom.atom_type and atom.atom_type not in self.atom_types:
             self._atom_types.append(atom.atom_type)
 
 
