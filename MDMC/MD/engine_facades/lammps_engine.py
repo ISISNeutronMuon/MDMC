@@ -419,7 +419,7 @@ class LAMMPSEngine(MDEngine):
 
     def convert_trajectory(self):
 
-        return convert_trajectory(self.trajectory_file.name,
+        return convert_trajectory(self.trajectory_file,
                                   self.atom_type_properties,
                                   self.universe)
 
