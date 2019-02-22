@@ -103,14 +103,14 @@ class Universe(object):
 
         self.constraint_algorithm = settings.get('constraint_algorithm')
 
-
+    # Unit decorator on getter due to operations in setter
     @property
+    @unit_decorator_getter(unit=units.LENGTH)
     def dims(self):
 
         return self._dims
 
     @dims.setter
-    @unit_decorator(unit=units.LENGTH)
     def dims(self, dims):
 
         if isinstance(dims, float):
