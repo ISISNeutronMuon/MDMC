@@ -267,7 +267,7 @@ def lammps_engine_setup(lammps_engine_topology):
 
     # Simulation setup requires the traj_step attribute to be set. All other
     # attributes that are required are set to defaults.
-    lammps_engine_topology.setup_simulation(traj_step=1)
+    lammps_engine_topology.setup_simulation(traj_step=1, time_step=0.2)
 
     return lammps_engine_topology
 
