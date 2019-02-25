@@ -1223,9 +1223,29 @@ def test_convert_trajectory_output(lammps_engine_setup):
     assert isinstance(lammps_engine_setup.convert_trajectory(), Trajectory)
 
 
-def test_minimize():
+@pytest.mark.parametrize('args',
+                         [{'n_steps':1000},
+                          {'n_steps':1000, 'etol':0., 'ftol':1.e-8,
+                           'maxeval':1000},
+                          {'n_steps':5000, 'ftol':1.e-8, 'maxeval':500}])
+def test_minimize(args, lammps_engine_setup):
 
-    pass
+    """
+    Tests that the potential energy has been minimized
+
+    This does not test that the minimization reduces the potential energy into a
+    local minima, just that the potential energy of the system reduces
+
+    Parameterization tests for both default and non-default minimization
+    arguments
+    """
+
+    # LAMMPS needs to run for 0 steps to calculate energies - run directly using
+    # LAMMPS wrapper run so that any bugs in LAMMPSEngine.run do not affect test
+    lammps_engine_setup.lmp.run(0)
+    start_energy = lammps_engine_setup.lmp.eval('pe')
+    lammps_engine_setup.minimize(**args)
+    assert lammps_engine_setup.lmp.eval('pe') < start_energy
 
 
 @pytest.mark.parametrize('thermostat, barostat, add_args',
