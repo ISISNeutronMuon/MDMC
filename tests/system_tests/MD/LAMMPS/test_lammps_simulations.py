@@ -159,3 +159,15 @@ def NPT(universe):
     return md_engine
 
 
+def parameterize_decorator(func):
+
+    @pytest.mark.parametrize('ensemble, expected',
+                             [('NVE', NVE_EXPECTED),
+                              ('NVT', NVT_EXPECTED),
+                              ('NPT', NPT_EXPECTED)])
+    def wrapper(ensemble, expected, request):
+        func(ensemble, expected, request)
+
+    return wrapper
+
+
