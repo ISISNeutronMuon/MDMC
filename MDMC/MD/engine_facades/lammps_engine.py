@@ -410,6 +410,9 @@ class LAMMPSEngine(MDEngine):
 
     def run(self, n_steps, equilibration=False):
 
+        # Remove previous dumps if they exist
+        if 'traj1' in [dump['name'] for dump in self.lmp.dumps]:
+            self.lmp.undump('traj1')
         # Store the trajectory in a NamedTemporaryFile
         self.trajectory_file = NamedTemporaryFile()
         # Custom trajectory output just saves the atom ID, type and positions
