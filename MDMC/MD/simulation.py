@@ -351,7 +351,7 @@ class Universe(object):
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
         bounds = structural_unit.bounding_box
-        mn = np.array((0., 0., 0.))
+        mn = np.array((0., 0., 0.)) - bounds.min
         mx = self.dims
         for i in range(len(self.dims)):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
