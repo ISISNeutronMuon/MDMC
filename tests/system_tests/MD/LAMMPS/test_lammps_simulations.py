@@ -309,3 +309,23 @@ def test_kspace_correction_energy(ensemble, expected, request):
     assert_property(ensemble, expected, request, 'E_long')
 
 
+@parameterize_decorator
+def test_neighbor_builds(ensemble, expected, request):
+
+    """
+    Compare the number of times the neighbor list was built
+    """
+
+    assert_property(ensemble, expected, request, 'Nbuild')
+
+
+@parameterize_decorator
+def test_dangerous_neighbor_builds(ensemble, expected, request):
+
+    """
+    Compare the number of times a neighbor list build was dangerous
+    """
+
+    assert_property(ensemble, expected, request, 'Ndanger')
+
+
