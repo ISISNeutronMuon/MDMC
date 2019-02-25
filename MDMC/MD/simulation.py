@@ -645,7 +645,7 @@ class Simulation(object):
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps):
+    def minimize(self, n_steps, **settings):
 
         """
         Minimizes the MD simulation energy
@@ -654,7 +654,7 @@ class Simulation(object):
         n_steps - integer maximum number of steps to run the minimization
         """
 
-        self.engine.minimize(n_steps)
+        self.engine.minimize(n_steps, **settings)
 
     def run(self, n_steps, equilibration=False):
 
