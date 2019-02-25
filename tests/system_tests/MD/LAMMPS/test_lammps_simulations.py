@@ -204,3 +204,43 @@ def test_number_angles(ensemble, expected, request):
     assert_property(ensemble, expected, request, 'Angles')
 
 
+@parameterize_decorator
+def test_kinetic_energy(ensemble, expected, request):
+
+    """
+    Compare the kinetic energy with that calculated directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'KinEng')
+
+
+@parameterize_decorator
+def test_potential_energy(ensemble, expected, request):
+
+    """
+    Compare the potential energy with that calculated directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'PotEng')
+
+
+@parameterize_decorator
+def test_temperature(ensemble, expected, request):
+
+    """
+    Compare the temperature with that calculated directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'Temp')
+
+
+@parameterize_decorator
+def test_pressure(ensemble, expected, request):
+
+    """
+    Compare the pressure with that calculated directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'Press')
+
+
