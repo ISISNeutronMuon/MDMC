@@ -53,3 +53,109 @@ NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
                 'Nbuild':(417.04, 2.9), 'Ndanger':(0, 0)}
 
 
+# Use module scope so that the simulation only runs once for all functions
+@pytest.fixture(scope="module")
+def universe():
+
+    """
+    Returns:
+    An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
+    molecules at 300K using LAMMPS
+    """
+
+    universe = Universe(dimensions=DIMENSION)
+    H1 = Atom('H')
+    H2 = Atom('H', position=(1.51390, 0., 0.))
+    O = Atom('O', position=(0.75695, 0., 0.58588))
+    H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
+    O_coulombic = Coulombic(atoms=O, cutoff=10.)
+    water_mol = Molecule(position=(0, 0, 0),
+                         velocity=(0, 0, 0),
+                         atoms=[H1, H2, O],
+                         interactions=[Bond((H1, O), (H2, O), constrained=True),
+                                       BondAngle(H1, O, H2, constrained=True)],
+                         name='water')
+
+    shake = Shake(1e-4, 100)
+    universe.constraint_algorithm = shake
+    e_solver = PPPM(accuracy=1e-5)
+    universe.electrostatic_solver = e_solver
+    universe.fill(water_mol, num_density=0.0335)
+    O_dispersion = Dispersion(universe, O.atom_type, cutoff=10.)
+    universe.add_force_field('SPCE')
+
+    return universe
+
+@pytest.fixture(scope="module")
+def NVE(universe):
+
+    """
+    Returns:
+    An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
+    molecules at 300K using LAMMPS
+    """
+
+    md_engine = Simulation(universe,
+                           engine='lammps',
+                           time_step=1.,
+                           temperature=TEMPERATURE,
+                           traj_step=10)
+
+    # Manually select which properties to output from LAMMPS
+    set_thermo_style(md_engine)
+
+    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.run(MD_STEPS)
+    return md_engine
+
+
+@pytest.fixture(scope="module")
+def NVT(universe):
+
+    """
+    Returns:
+    An MDMC simulation object setup to run an NVT simulation of 216 SPCE water
+    molecules at 300K using LAMMPS
+    """
+
+    md_engine = Simulation(universe,
+                           engine='lammps',
+                           time_step=1.,
+                           temperature=TEMPERATURE,
+                           thermostat='nose',
+                           traj_step=10)
+
+    # Manually select which properties to output from LAMMPS
+    set_thermo_style(md_engine)
+
+    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.run(MD_STEPS)
+    return md_engine
+
+
+@pytest.fixture(scope="module")
+def NPT(universe):
+
+    """
+    Returns:
+    An MDMC simulation object setup to run an NPT simulation of 216 SPCE water
+    molecules at 300K using LAMMPS
+    """
+
+    md_engine = Simulation(universe,
+                           engine='lammps',
+                           time_step=1.,
+                           temperature=TEMPERATURE,
+                           pressure=1.0,
+                           thermostat='nose',
+                           barostat='nose',
+                           traj_step=10)
+
+    # Manually select which properties to output from LAMMPS
+    set_thermo_style(md_engine)
+
+    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.run(MD_STEPS)
+    return md_engine
+
+
