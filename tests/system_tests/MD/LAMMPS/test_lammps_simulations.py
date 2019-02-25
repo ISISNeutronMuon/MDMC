@@ -329,3 +329,53 @@ def test_dangerous_neighbor_builds(ensemble, expected, request):
     assert_property(ensemble, expected, request, 'Ndanger')
 
 
+def set_thermo_style(sim):
+
+    """
+    Applies a LAMMPS thermo_style to the LAMMPS wrapper in the MDMC Simulation
+    object so that the required properties can be determined
+    """
+
+    sim.engine.lmp.thermo_style('custom', 'step', 'temp', 'press', 'ke', 'pe',
+                                'atoms', 'bonds', 'angles', 'nbuild', 'ndanger',
+                                'vol', 'evdwl', 'ecoul', 'elong', 'ebond',
+                                'eangle')
+    # Set number of steps between logging thermo_style variables
+    sim.engine.lmp.thermo(THERMO_STEPS)
+
+
+def average_property(sim, prop):
+
+    """
+    Averages the property over all of the steps in the simulation
+
+    Arguments:
+    sim - a Simulation object
+    prop - a string specifying a LAMMPS simulation thermo_style property
+
+    Returns:
+    A float average of all of the values of prop during the simulation run
+    """
+
+    # runs[1] is the thermo_styles properties from the second time the run
+    # method of LAMMPS wrapper is called - this is the production run (index 0
+    # is the equilibration run)
+    return np.mean(getattr(sim.engine.lmp.runs[1].thermo, prop))
+
+
+def assert_property(ensemble, expected, request, property):
+
+    """
+    Performs an assertion on a property using an ensemble returned using request
+    """
+
+    # As fixtures cannot be included in parameterization, the names of the
+    # fixtures are included instead - the return values of the fixtures are then
+    # recovered using request.getfixturevalue
+    average = average_property(request.getfixturevalue(ensemble), property)
+
+    # expected[property][1] is the standard_deviation of the property. The
+    # absolute tolerance is set to 3 times this value.
+    # Small relative tolerance accounts for rounding differences
+    assert np.allclose(average, expected[property][0],
+                       atol=expected[property][1]*3, rtol=1e-8)
