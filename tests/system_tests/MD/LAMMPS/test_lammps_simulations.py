@@ -244,3 +244,68 @@ def test_pressure(ensemble, expected, request):
     assert_property(ensemble, expected, request, 'Press')
 
 
+@parameterize_decorator
+def test_volume(ensemble, expected, request):
+
+    """
+    Compare the simulation box volume with that calculated directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'Volume')
+
+
+@parameterize_decorator
+def test_bond_energy(ensemble, expected, request):
+
+    """
+    Compare the total energy of all bonds with that calculated directly from
+    LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'E_bond')
+
+
+@parameterize_decorator
+def test_angle_energy(ensemble, expected, request):
+
+    """
+    Compare the total energy of all bond angle with that calculated directly
+    from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'E_angle')
+
+
+@parameterize_decorator
+def test_vdw_energy(ensemble, expected, request):
+
+    """
+    Compare the total energy of the dispersive interactions with that calculated
+    directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'E_vdwl')
+
+
+@parameterize_decorator
+def test_coul_energy(ensemble, expected, request):
+
+    """
+    Compare the total energy of the coulombic interactions with that calculated
+    directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'E_coul')
+
+
+@parameterize_decorator
+def test_kspace_correction_energy(ensemble, expected, request):
+
+    """
+    Compare the total energy of the kspace correction with that calculated
+    directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'E_long')
+
+
