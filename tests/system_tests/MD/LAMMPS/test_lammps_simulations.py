@@ -171,3 +171,36 @@ def parameterize_decorator(func):
     return wrapper
 
 
+@parameterize_decorator
+def test_number_atoms(ensemble, expected, request):
+
+    """
+    Compare the total number of atoms in the simulation with that calculated
+    directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'Atoms')
+
+
+@parameterize_decorator
+def test_number_bonds(ensemble, expected, request):
+
+    """
+    Compare the total number of bonds in the simulation with that calculated
+    directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'Bonds')
+
+
+@parameterize_decorator
+def test_number_angles(ensemble, expected, request):
+
+    """
+    Compare the total number of angles in the simulation with that calculated
+    directly from LAMMPS
+    """
+
+    assert_property(ensemble, expected, request, 'Angles')
+
+
