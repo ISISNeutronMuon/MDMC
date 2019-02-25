@@ -392,21 +392,21 @@ class LAMMPSEngine(MDEngine):
         self.thermostat = settings.get('thermostat')
         self.barostat = settings.get('barostat')
 
-    def minimize(self, n_steps):
-
-        """
-        LAMMPS cannot minimize if constraints (SHAKE or RATTLE) are applied
-
-        Potential order of commands for minimizing a LAMMPS simulation
-
-        Remove fix shake or rattle if they exist
-        """
+    def minimize(self, n_steps, **settings):
 
         # Check fix styles for shake or rattle styles and remove them
+        if 'constrain' in self.fix_names:
+            self.lmp.unfix('constrain')
 
-        # Reapply the same constraint
+        self.lmp.minimize(settings.get('etol', 1.e-4),
+                          settings.get('ftol', 0.),
+                          n_steps,
+                          settings.get('maxeval', 10000))
 
-        raise NotImplementedError
+        # Reapply the constraints
+        if self.universe.constraint_algorithm:
+            self._apply_constraints()
+
 
     def run(self, n_steps, equilibration=False):
 
