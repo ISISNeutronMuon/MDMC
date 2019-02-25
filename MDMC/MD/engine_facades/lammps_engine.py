@@ -938,7 +938,7 @@ class LAMMPSEngine(MDEngine):
         # Create a group from all of the atom types in the constrained bonds and
         # angles - the fix will be applied to this group
         # chain is used to flatten inter.atoms, which is a list of tuples
-        atom_types = set([atom.atom_type for inter in [bonds+angles]
+        atom_types = set([atom.atom_type for inter in bonds+angles
                           for atom in chain.from_iterable(inter.atoms)])
         constrain_group = 'constrain_group'
         self.lmp.group(constrain_group, 'type', *atom_types)
