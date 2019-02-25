@@ -38,3 +38,18 @@ NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
                 'E_coul':(11601.41, 7.0), 'E_long':(-13226.34, 0.50),
                 'Nbuild':(922.24, 3.2), 'Ndanger':(0, 0)}
 
+NVT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
+                'Angles':(N_MOLECULES, 0), 'KinEng':(385.73, 1.2), 'PotEng':(-2408.00, 5.3),
+                'Temp':(300.24, 0.91), 'Press':(159.47, 132.7),
+                'Volume':(DIMENSION**3, 0), 'E_bond':(0, 0), 'E_angle':(0, 0),
+                'E_vdwl':(457.34, 5.4), 'E_coul':(10388.75, 10.1), 'E_long':(-13255.09, 0.09),
+                'Nbuild':(384.39, 2.4), 'Ndanger':(0, 0)}
+
+NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
+                'Angles':(N_MOLECULES, 0), 'KinEng':(385.33, 1.2), 'PotEng':(-2407.60, 6.3),
+                'Temp':(299.93, 0.90), 'Press':(-11.83, 34.4),
+                'Volume':(6470.59, 35.2), 'E_bond':(0, 0), 'E_angle':(0, 0),
+                'E_vdwl':(454.16, 4.1), 'E_coul':(10374.46, 22.4), 'E_long':(-13236.22, 24.5),
+                'Nbuild':(417.04, 2.9), 'Ndanger':(0, 0)}
+
+
