@@ -930,7 +930,7 @@ class LAMMPSEngine(MDEngine):
         bonds, angles = partition_interactions([inter for inter
                                                 in b_inters
                                                 if inter.constrained],
-                                               ['Bond', 'BondAngle'])
+                                               ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
                                      angles=angles, angle_ID_dict=self.angle_ID)
