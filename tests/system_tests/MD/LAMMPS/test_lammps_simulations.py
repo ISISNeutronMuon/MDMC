@@ -22,3 +22,18 @@ TEMPERATURE = 300.
 THERMO_STEPS = 100
 MD_STEPS = 1000
 
+# Each EXPECTED dictionary contains all of the required properties as keys. The
+# corresponding values are a tuple of (mean value, standard deviation),
+# where both the mean value and the standard deviation have been calculated from
+# 10 repeats (with different random velocity seeds) of an external LAMMPS
+# simulation with the same simulation parameters.
+#
+# The NVE temperature differs from the set value due to the effects of SHAKE
+NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
+                'Angles':(N_MOLECULES, 0), 'KinEng':(1523.88, 6.1),
+                'PotEng':(-1234.32, 4.8), 'Temp':(1186.15, 4.7),
+                'Press':(18105.41, 134.8), 'Volume':(DIMENSION**3, 0),
+                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(390.61, 3.5),
+                'E_coul':(11601.41, 7.0), 'E_long':(-13226.34, 0.50),
+                'Nbuild':(922.24, 3.2), 'Ndanger':(0, 0)}
+
