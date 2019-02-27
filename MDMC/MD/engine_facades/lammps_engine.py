@@ -24,6 +24,7 @@ from copy import copy
 from itertools import chain, count, product, tee
 from random import randint
 from tempfile import NamedTemporaryFile
+import warnings
 
 from lammps import PyLammps
 import numpy as np
@@ -741,16 +742,27 @@ class LAMMPSEngine(MDEngine):
         have modifications applied to the corresponding pair styles
         """
 
+        # Some pair styles cannot have vdw tail corrections - exclude these and
+        # warn about this exclusion
+        excluded = ['lj/long/coul/long']
+
         for interaction in nonbonded_interactions:
             # try/except to account for nonbonded interaction types which do not
             # the modification type defined
             try:
                 # Applies the vdw tail correction to the energy and pressure
                 if interaction.vdw_tail_correction:
-                    self.lmp.pair_modify('pair',
-                                         parse_nonbonded_styles(interaction)[0],
-                                         'tail',
-                                         'yes')
+                    all_nb = parse_all_nonbonded_styles(nonbonded_interactions)
+                    for style in excluded:
+                        if style in all_nb:
+                            warnings.warn('This pair style cannot have a vdw'
+                                          ' tail correction applied')
+                        else:
+                            self.lmp.pair_modify('pair',
+                                                 parse_nonbonded_styles(
+                                                     interaction)[0],
+                                                 'tail',
+                                                 'yes')
             except AttributeError:
                 pass
 
