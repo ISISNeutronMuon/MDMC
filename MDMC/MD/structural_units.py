@@ -1171,7 +1171,7 @@ class Dispersion(NonBondedInteraction):
             for atom in tpl:
                 atom.add_interaction(self)
 
-        vdw_tail_correction = settings.get('vdw_tail_correction', False)
+        self.vdw_tail_correction = settings.get('vdw_tail_correction', False)
 
     @property
     def atom_types(self):
