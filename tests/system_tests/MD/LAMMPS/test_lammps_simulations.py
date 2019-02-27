@@ -16,7 +16,7 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, Molecule
 
 N_MOLECULES = 216
-DIMENSION = 18.63
+DIMENSION = 18.60
 TEMPERATURE = 300.
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
