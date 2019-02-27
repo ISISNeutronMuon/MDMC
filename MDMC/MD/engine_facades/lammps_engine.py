@@ -710,7 +710,9 @@ class LAMMPSEngine(MDEngine):
         # interactions are overwritten, it is the style of last atom_type
         # that determines its unlike interactions.
 
-        all_styles = parse_all_nonbonded_styles(couls+self.disps)
+        all_styles = [style for style in
+                      parse_all_nonbonded_styles(couls+self.disps)
+                      if isinstance(style, str)]
         for coul in couls:
             coul_style = parse_nonbonded_styles(coul)[0]
             for style in all_styles:
@@ -724,7 +726,7 @@ class LAMMPSEngine(MDEngine):
                 # instead set by the corresponding dispersion interaction, which
                 # possesses the coefficients (parameters) which also need to be
                 # passed to pair_coeff.
-                if isinstance(style, str) and coul_style == style:
+                if coul_style == style:
                     for atom_type in coul.atom_types:
                         self.lmp.pair_coeff(atom_type, '*', style)
 
@@ -749,13 +751,15 @@ class LAMMPSEngine(MDEngine):
         disps - a list of dispersion interactions
         """
 
-        all_styles = parse_all_nonbonded_styles(disps+self.couls)
+        all_styles = [style for style in
+                      parse_all_nonbonded_styles(disps+self.couls)
+                      if isinstance(style, str)]
 
         for disp in disps:
             atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
             disp_style = parse_nonbonded_styles(disp)[0]
             for style in all_styles:
-                if isinstance(style, str) and disp_style in style:
+                if disp_style in style:
                     coeffs = parse_dispersion_coefficients(disp, disp_style)
 
                     # LAMMPS uses mixing rules to set coefficients for undefined
