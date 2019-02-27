@@ -147,9 +147,10 @@ def NPT(universe):
                            engine='lammps',
                            time_step=1.,
                            temperature=TEMPERATURE,
-                           pressure=1.0,
+                           pressure=101325.,
                            thermostat='nose',
                            barostat='nose',
+                           p_damp=100,
                            traj_step=10)
 
     # Manually select which properties to output from LAMMPS
