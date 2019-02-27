@@ -359,7 +359,7 @@ class LAMMPSEngine(MDEngine):
         self._init_attributes(universe)
         self._define_simulation_box(self.universe)
         self._build_configuration(self.universe)
-        self._add_topology(self.universe)
+        self._add_topology(self.universe, **settings)
         self.update_parameters()
 
     def setup_simulation(self, **settings):
@@ -489,6 +489,7 @@ class LAMMPSEngine(MDEngine):
         self.disps = []
         self.bond_ID = {}
         self.angle_ID = {}
+        self.nonbonded_mixing = None
 
         # Simulation setup attributes
         self.time_step = None
@@ -635,6 +636,7 @@ class LAMMPSEngine(MDEngine):
             self.lmp.pair_style('hybrid', *nonbonded_styles)
             self._create_coulombic(couls)
             self._update_charges()
+            self.nonbonded_mixing = settings.get('nonbonded_mixing')
             # Dispersion creation and updating are the same, so only an update
             # method exists
             self._update_dispersions(disps)
