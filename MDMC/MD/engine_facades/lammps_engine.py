@@ -427,15 +427,28 @@ class LAMMPSEngine(MDEngine):
 
     def run(self, n_steps, equilibration=False):
 
-        # Remove previous dumps if they exist
-        if 'traj1' in [dump['name'] for dump in self.lmp.dumps]:
-            self.lmp.undump('traj1')
-        # Store the trajectory in a NamedTemporaryFile
-        self.trajectory_file = NamedTemporaryFile()
-        # Custom trajectory output just saves the atom ID, type and positions
-        self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
-                      self.trajectory_file.name, 'id', 'type', 'x', 'y', 'z')
+        if not equilibration:
+            # Remove previous dumps if they exist
+            if 'traj1' in [dump['name'] for dump in self.lmp.dumps]:
+                self.lmp.undump('traj1')
+            # Store the trajectory in a NamedTemporaryFile
+            self.trajectory_file = NamedTemporaryFile()
+            # Custom trajectory output just saves the atom ID, type and
+            # positions
+            self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
+                          self.trajectory_file.name, 'id', 'type', 'x', 'y',
+                          'z')
+        else:
+            reset_to_nve = False
+            if self.thermostat is self.barostat is None:
+                # If NVE ensemble, add a berendsen thermostat for equilibration
+                reset_to_nve = True
+                self.thermostat = 'berendsen'
+
         self.lmp.run(n_steps)
+
+        if equilibration and reset_to_nve:
+            self.thermostat = None
 
     def convert_trajectory(self):
 
