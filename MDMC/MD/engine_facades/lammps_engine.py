@@ -748,7 +748,7 @@ class LAMMPSEngine(MDEngine):
                 # Applies the vdw tail correction to the energy and pressure
                 if interaction.vdw_tail_correction:
                     self.lmp.pair_modify('pair',
-                                         parse_nonbonded_styles(interaction),
+                                         parse_nonbonded_styles(interaction)[0],
                                          'tail',
                                          'yes')
             except AttributeError:
