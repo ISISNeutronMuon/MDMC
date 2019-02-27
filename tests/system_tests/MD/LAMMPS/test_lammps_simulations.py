@@ -20,8 +20,8 @@ DIMENSION = 18.60
 TEMPERATURE = 300.
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
-EQUILIBRIUM_STEPS = 1000
-MD_STEPS = 2000
+EQUILIBRIUM_STEPS = 10000
+MD_STEPS = 20000
 
 # Each EXPECTED dictionary contains all of the required properties as keys. The
 # corresponding values are a tuple of (mean value, standard deviation),
