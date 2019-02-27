@@ -65,8 +65,8 @@ def universe():
 
     universe = Universe(dimensions=DIMENSION)
     H1 = Atom('H')
-    H2 = Atom('H', position=(1.51390, 0., 0.))
-    O = Atom('O', position=(0.75695, 0., 0.58588))
+    H2 = Atom('H', position=(0., 1.63298, 0.))
+    O = Atom('O', position=(0., 0.81649, 0.57736))
     H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
     O_coulombic = Coulombic(atoms=O, cutoff=10.)
     water_mol = Molecule(position=(0, 0, 0),
