@@ -609,7 +609,7 @@ class LAMMPSEngine(MDEngine):
         return max([len(filter(lambda i: i.name == name, atom.interactions))
                     for atom in atoms])
 
-    def _add_topology(self, universe):
+    def _add_topology(self, universe, **settings):
 
         bonds, angles, disps, couls, others = partition_interactions(
             set(universe.interactions),
@@ -633,7 +633,7 @@ class LAMMPSEngine(MDEngine):
         nonbonded_styles = parse_all_nonbonded_styles(disps+couls)
         if nonbonded_styles:
             self._set_kspace_solver()
-            self.lmp.pair_style('hybrid', *nonbonded_styles)
+            self.lmp.pair_style('hybrid/overlay', *nonbonded_styles)
             self._create_coulombic(couls)
             self._update_charges()
             self.nonbonded_mixing = settings.get('nonbonded_mixing')
@@ -721,7 +721,7 @@ class LAMMPSEngine(MDEngine):
         """
 
         all_styles = parse_all_nonbonded_styles(disps+self.couls)
-
+        
         for disp in disps:
             atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
             disp_style = parse_nonbonded_styles(disp)[0]
