@@ -728,6 +728,31 @@ class LAMMPSEngine(MDEngine):
             for style in all_styles:
                 if isinstance(style, str) and disp_style in style:
                     coeffs = parse_dispersion_coefficients(disp, disp_style)
+
+                    # LAMMPS uses mixing rules to set coefficients for undefined
+                    # unlike atom_type pairs (e.g. if LJ interactions exist for
+                    # 1 1 and 2 2 atom types, but not for 1 2). For this to
+                    # occur, all i=j (i.e. like) interactions must be defined -
+                    # below these are all set to zero. These zero coeffs will
+                    # then be overwritten with the correct values (in the
+                    # atom_type_pair for loop) if they are defined in MDMC.
+                    zero_coeffs = [0. for _ in coeffs]
+                    if self.nonbonded_mixing:
+                        for atom_type in self.atom_types.keys():
+                            self.lmp.pair_coeff(atom_type,
+                                                atom_type,
+                                                style,
+                                                *zero_coeffs)
+                    # If not mixing is to occur, all permutations of atom types
+                    # have coefficients set to zero. Again, the zero coeffs will
+                    # be overwritten with the correct values (in the
+                    # atom_type_pair for loop) if they are defined in MDMC.
+                    else:
+                        self.lmp.pair_coeff('*',
+                                            '*',
+                                            style,
+                                            *zero_coeffs)
+
                     for atom_type_pair in atom_type_pairs:
                         self.lmp.pair_coeff(atom_type_pair[0],
                                             atom_type_pair[1],
