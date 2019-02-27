@@ -786,29 +786,76 @@ class LAMMPSEngine(MDEngine):
         have modifications applied to the corresponding pair styles
         """
 
+        # LAMMPS pair_modify is of the following form:
+        # pair_modify('pair', 'lj/cut', 'mix', 'geometric', 'tail', 'yes')
+        # pair_modify('coul/long', 'mix', 'arithmetic')
+        # where each pair style (lj/cut, coul/long etc) has any mix or tail
+        # keywords defined after the pair style. If the same pair_style occurs
+        # multiple times but with different modifiers
+        # (e.g. 'lj/cut', 'mix', 'geometric' and 'lj/cut', 'mix', 'arithmetic')
+        # whichever pair_modify occurs last will be applied to all identical
+        # pair_styles.
+
         # Some pair styles cannot have vdw tail corrections - exclude these and
         # warn about this exclusion
         excluded = ['lj/long/coul/long']
 
-        for interaction in nonbonded_interactions:
-            # try/except to account for nonbonded interaction types which do not
-            # the modification type defined
-            try:
-                # Applies the vdw tail correction to the energy and pressure
-                if interaction.vdw_tail_correction:
-                    all_nb = parse_all_nonbonded_styles(nonbonded_interactions)
-                    for style in excluded:
-                        if style in all_nb:
-                            warnings.warn('This pair style cannot have a vdw'
-                                          ' tail correction applied')
-                        else:
-                            self.lmp.pair_modify('pair',
-                                                 parse_nonbonded_styles(
-                                                     interaction)[0],
-                                                 'tail',
-                                                 'yes')
-            except AttributeError:
-                pass
+        # Determine all pair_styles by parsing all nonbonded styles and removing
+        # the numerical values (e.g. if a cutoff is defined). Parsing all
+        # nonbonded styles has the effect of combining some pair styles that
+        # cannot be passed to lammps individually (e.g. lj/long/coul/long)
+        all_styles = [style for style
+                      in parse_all_nonbonded_styles(nonbonded_interactions)
+                      if isinstance(style, str)]
+
+        all_inter_str = []
+        for inter in nonbonded_interactions:
+            inter_style = parse_nonbonded_styles(inter)[0]
+            # Effectively tests if the parsed pair style of an interaction
+            # occurs within a combined pair style (e.g. lj/long occurs within
+            # the combined style lj/long/coul/long) - the combined style is then
+            # used, as this is what will be recognised by LAMMPS
+            for style in all_styles:
+                if inter_style in style:
+                    inter_str = (style, )
+                    if self.nonbonded_mix:
+                        inter_str += ('mix', self.nonbonded_mix)
+                    # try/except to account for nonbonded interaction types
+                    # which do not have the modification type defined
+                    try:
+                        # Applies the vdw tail correction to the energy and
+                        # pressure
+                        if inter.vdw_tail_correction:
+                            # warn if user attempts to apply vdw tail correction
+                            # to a pair style that is not allowed by LAMMPS
+                            if style in excluded:
+                                warnings.warn('{0} pair style cannot have a'
+                                              ' vdw tail correction'
+                                              ' applied'.format(style))
+                            else:
+                                inter_str += ('tail', 'yes')
+                    except AttributeError:
+                        pass
+                    # If either a tail or a mix has been added to the inter_str
+                    # add this to the list of all_inter_str
+                    if inter_str != (style, ):
+                        all_inter_str.append(inter_str)
+        if all_inter_str:
+            # if there are multiple identical interaction types then the
+            # inter_str of each will be duplicated in all_inter_str e.g.
+            # inter_str == [('lj/cut', 'tail', 'yes'),
+            #               ('lj/cut', 'tail', 'yes')]
+            # Remove these duplicates with set
+            #
+            # It should then be possible (based on LAMMPS documentation) to pass
+            # this set (with tuples unpacked) at once to pair_modify - however
+            # LAMMPS has a bug preventing this. Instead pass these tuples
+            # individually. LAMMPS does not overwrite the affects of previous
+            # pair_modify commands, as long as they are applied to different
+            # pair_styles.
+            lmp_str = set(all_inter_str)
+            for pair_style in lmp_str:
+                self.lmp.pair_modify('pair', *pair_style)
 
     def _create_bonds(self, bonds):
 
