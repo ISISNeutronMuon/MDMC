@@ -70,6 +70,10 @@ class LAMMPSEngine(MDEngine):
     list.
     neighbor_steps - an integer specifying how many steps between neighbor list
     updates
+    nonbonded_mix - a string speciying which formula is used to determine the
+    i!=j mixing for nonbonded interactions, where i and j are atom types.
+    Options are geometric, arithmetic, sixthpower, where the formula for each
+    mixing style can be found in the LAMMPS documentation.
     lin_momentum_steps - an int specifying how many steps between the linear
     momentum being removed
     ang_momentum_steps - an int specifying how many steps between the angular
@@ -490,6 +494,7 @@ class LAMMPSEngine(MDEngine):
         # simply by setting all atoms. Instead the position of the atoms must be
         # reset.
         index_components = list(enumerate(['x', 'y', 'z']))
+        # LAMMPS IDs start at 1, so are offset from saved_config indexes
         for id_offset in range(n_atoms):
             for index, component in index_components:
                 self.lmp.set('atom', id_offset+1, component,
@@ -567,6 +572,7 @@ class LAMMPSEngine(MDEngine):
         xlo = ylo = zlo = 0.
         xhi, yhi, zhi = universe.dims
         region_ID = 'universe'
+        # 'block' gives a cuboidal universe
         self.lmp.region(region_ID, 'block', xlo, xhi, ylo, yhi, zlo, zhi,
                         units='box')
         n_elements = len(universe.element_dict)
@@ -662,6 +668,8 @@ class LAMMPSEngine(MDEngine):
         nonbonded_styles = parse_all_nonbonded_styles(disps+couls)
         if nonbonded_styles:
             self._set_kspace_solver()
+            # Using hybrid/overlay allows multiple pair styles to be used for
+            # the same pair of atom types
             self.lmp.pair_style('hybrid/overlay', *nonbonded_styles)
             self._create_coulombic(couls)
             self._update_charges()
@@ -674,7 +682,7 @@ class LAMMPSEngine(MDEngine):
 
         if bonds:
             # Set used to remove duplicate bond styles, which are not required
-            # to be (and in fact cannot) be passed to LAMMPS bond_style
+            # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
             self.lmp.bond_style('hybrid',
                                 *set(tuple([parse_bonded_styles(b)
                                             for b in bonds])))
@@ -682,7 +690,7 @@ class LAMMPSEngine(MDEngine):
 
         if angles:
             # Set used to remove duplicate bond styles, which are not required
-            # to be (and in fact cannot) be passed to LAMMPS angle_style
+            # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             self.lmp.angle_style('hybrid',
                                  *set(tuple([parse_bonded_styles(a)
                                              for a in angles])))
@@ -720,12 +728,12 @@ class LAMMPSEngine(MDEngine):
                 # As is explained in the LAMMPSEngine docstring, pair_coeffs for
                 # coulombic interactions can only be set if the pair_style is
                 # not part of a combined pair_style (e.g. lj/long/coul/long).
-                # Therefore below the style of each coulombic interaction must
-                # exactly match one of all of the nonbonded styles in the
-                # simulation, otherwise the pair coeff is not set here; it is
-                # instead set by the corresponding dispersion interaction, which
-                # possesses the coefficients (parameters) which also need to be
-                # passed to pair_coeff.
+                # Therefore the style of each coulombic interaction must exactly
+                # match one of all of the nonbonded styles in the simulation,
+                # otherwise the pair coeff is not set here; it is instead set by
+                # the corresponding dispersion interaction, which possesses the
+                # coefficients (parameters) which also need to be passed to
+                # pair_coeff.
                 if coul_style == style:
                     for atom_type in coul.atom_types:
                         self.lmp.pair_coeff(atom_type, '*', style)
@@ -751,6 +759,10 @@ class LAMMPSEngine(MDEngine):
         disps - a list of dispersion interactions
         """
 
+        # Determine all pair_styles by parsing all nonbonded styles and removing
+        # the numerical values (e.g. if a cutoff is defined). Parsing all
+        # nonbonded styles has the effect of combining some pair styles that
+        # cannot be passed to lammps individually (e.g. lj/long/coul/long)
         all_styles = [style for style in
                       parse_all_nonbonded_styles(disps+self.couls)
                       if isinstance(style, str)]
@@ -795,7 +807,9 @@ class LAMMPSEngine(MDEngine):
     def _modify_nonbonded_styles(self, nonbonded_interactions):
 
         """
-        Applies modifications to nonbonded pair styles
+        Applies modifications to nonbonded pair styles, such as the VdW tail
+        correction or setting a mixing style for interactions acting on unlike
+        atom type pairs
 
         Arguments:
         nonbonded_interactions - a list of nonbonded interactions which will
@@ -1058,7 +1072,8 @@ class LAMMPSEngine(MDEngine):
                                      angles=angles, angle_ID_dict=self.angle_ID)
 
         # Create a group from all of the atom types in the constrained bonds and
-        # angles - the fix will be applied to this group
+        # angles - the fix will be applied to this group. Applying constraint
+        # fix only to this group improves performance.
         # chain is used to flatten inter.atoms, which is a list of tuples
         atom_types = set([atom.atom_type for inter in bonds+angles
                           for atom in chain.from_iterable(inter.atoms)])
@@ -1138,7 +1153,8 @@ SYSTEM = {
     'CHARGE':units.Unit('e'),
     'ANGLE':units.Unit('deg'),
     'TEMPERATURE':units.Unit('K'),
-    # AMOUNT is required for unit conversion of energies to work
+    # AMOUNT is required for unit conversion of energies to work, even though
+    # it is not defined in LAMMPS
     'AMOUNT':units.Unit('mol'),
     'ENERGY':units.Unit('kcal') / units.Unit('mol'),
     'FORCE':units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
