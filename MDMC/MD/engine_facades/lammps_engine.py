@@ -1086,7 +1086,7 @@ class LAMMPSEngine(MDEngine):
         else:
             if self.thermostat:
                 temp = convert_unit(self.temperature, self.temperature.unit)
-                if not self.thermostat == 'rescale':
+                if self.thermostat != 'rescale':
                     t_damp = convert_unit(self.t_damp, self.t_damp.unit)
                     thermo_params = [temp, temp, t_damp]
             if self.barostat:
@@ -1102,9 +1102,13 @@ class LAMMPSEngine(MDEngine):
                 else:
                     self.lmp.fix('nvt', 'all', 'nvt', 'temp', *thermo_params)
             elif self.thermostat == 'berendsen':
+                # berendsen does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
                              *thermo_params)
             elif self.thermostat == 'langevin':
+                # langevin does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('langevin', 'all', 'langevin',
                              *thermo_params + [randint(0, 9999)])
             elif self.thermostat == 'rescale':
@@ -1118,7 +1122,9 @@ class LAMMPSEngine(MDEngine):
             if self.barostat == 'berendsen':
                 self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
                              *press_params)
-            elif self.barostat == 'nose' and not self.thermostat == 'nose':
+            elif self.barostat == 'nose' and self.thermostat != 'nose':
+                if 'nve' in self.fix_names:
+                    self.lmp.unfix('nve')
                 self.lmp.fix('nph', 'all', 'nph', *press_params)
 
 
