@@ -54,6 +54,22 @@ NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
                 'E_coul':(10390.32, 18.4), 'E_long':(-13254.11, 13.5),
                 'Nbuild':(415.84, 2.7), 'Ndanger':(0, 0)}
 
+NVE_UNCONSTRAINED_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
+                              'Bonds':(N_MOLECULES*2, 0),
+                              'Angles':(N_MOLECULES, 0),
+                              'KinEng':(1520.31, 5.4),
+                              'PotEng':(-1236.56, 4.5),
+                              'Temp':(1183.37, 4.2),
+                              'Press':(18177.22, 155.9),
+                              'Volume':(DIMENSION**3, 0),
+                              'E_bond':(0, 0),
+                              'E_angle':(0, 0),
+                              'E_vdwl':(393.75, 3.6),
+                              'E_coul':(11596.25, 5.6),
+                              'E_long':(-13226.57, 0.32),
+                              'Nbuild':(920.03, 3.8),
+                              'Ndanger':(0, 0)}
+
 
 # Use module scope so that the simulation only runs once for all functions
 @pytest.fixture(scope="module")
@@ -163,12 +179,41 @@ def NPT(universe):
     return md_engine
 
 
+@pytest.fixture(scope="module")
+def NVE_unconstrained(universe):
+
+    """
+    Returns:
+    An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
+    molecules at 300K using LAMMPS, without constrained bonds or bond angles
+    """
+
+    for interaction in universe.bonded_interactions:
+        interaction.constrained = False
+
+    # Reduced time_step is due to removal of constraints
+    md_engine = Simulation(universe,
+                           engine='lammps',
+                           time_step=0.05,
+                           temperature=TEMPERATURE,
+                           traj_step=10)
+
+    # Manually select which properties to output from LAMMPS
+    set_thermo_style(md_engine)
+
+    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.run(MD_STEPS)
+    return md_engine
+
+
 def parameterize_decorator(func):
 
     @pytest.mark.parametrize('ensemble, expected',
                              [('NVE', NVE_EXPECTED),
                               ('NVT', NVT_EXPECTED),
-                              ('NPT', NPT_EXPECTED)])
+                              ('NPT', NPT_EXPECTED),
+                              ('NVE_unconstrained', NVE_UNCONSTRAINED_EXPECTED)]
+                            )
     def wrapper(ensemble, expected, request):
         func(ensemble, expected, request)
 
