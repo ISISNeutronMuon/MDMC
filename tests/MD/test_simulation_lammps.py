@@ -516,8 +516,12 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
         getattr(lmp, parser)(undefined_interaction_function)
 
 
-@pytest.mark.parametrize('system_attr', ['bond_style', 'angle_style', 'style'])
-def test_create_interaction_style(lammps_engine_topology, system_attr):
+@pytest.mark.parametrize('system_attr, expected',
+                         [('bond_style', 'hybrid'),
+                          ('angle_style', 'hybrid'),
+                          ('style', 'hybrid/overlay')])
+def test_create_interaction_style(lammps_engine_topology, system_attr,
+                                  expected):
 
     """
     Tests that all interactions are created with a hybrid style, for:
@@ -531,7 +535,7 @@ def test_create_interaction_style(lammps_engine_topology, system_attr):
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    assert getattr(lammps_engine_topology.system_state, system_attr) == 'hybrid'
+    assert getattr(lammps_engine_topology.system_state, system_attr) == expected
 
 
 def test_create_topology_fatal_error(lammps_engine_config, universe):
