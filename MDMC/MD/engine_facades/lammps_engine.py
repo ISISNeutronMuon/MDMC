@@ -178,6 +178,23 @@ class LAMMPSEngine(MDEngine):
             pass
 
     @property
+    def nonbonded_mix(self):
+
+        return self._nonbonded_mix
+
+    @nonbonded_mix.setter
+    def nonbonded_mix(self, value):
+
+        if not value:
+            self._nonbonded_mix = value
+        else:
+            supported = ['geometric', 'arithmetic', 'sixthpower']
+            if value.lower() not in supported:
+                raise ValueError('The supported mixes are: {0}, {1}, {2}'
+                                 ''.format(*supported))
+            self._nonbonded_mix = value.lower()
+
+    @property
     def lin_momentum_steps(self):
 
         return self._lin_momentum_steps
@@ -489,7 +506,7 @@ class LAMMPSEngine(MDEngine):
         self.disps = []
         self.bond_ID = {}
         self.angle_ID = {}
-        self.nonbonded_mixing = None
+        self.nonbonded_mix = None
 
         # Simulation setup attributes
         self.time_step = None
@@ -636,7 +653,7 @@ class LAMMPSEngine(MDEngine):
             self.lmp.pair_style('hybrid/overlay', *nonbonded_styles)
             self._create_coulombic(couls)
             self._update_charges()
-            self.nonbonded_mixing = settings.get('nonbonded_mixing')
+            self.nonbonded_mix = settings.get('nonbonded_mix')
             # Dispersion creation and updating are the same, so only an update
             # method exists
             self._update_dispersions(disps)
@@ -721,7 +738,7 @@ class LAMMPSEngine(MDEngine):
         """
 
         all_styles = parse_all_nonbonded_styles(disps+self.couls)
-        
+
         for disp in disps:
             atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
             disp_style = parse_nonbonded_styles(disp)[0]
@@ -737,7 +754,7 @@ class LAMMPSEngine(MDEngine):
                     # then be overwritten with the correct values (in the
                     # atom_type_pair for loop) if they are defined in MDMC.
                     zero_coeffs = [0. for _ in coeffs]
-                    if self.nonbonded_mixing:
+                    if self.nonbonded_mix:
                         for atom_type in self.atom_types.keys():
                             self.lmp.pair_coeff(atom_type,
                                                 atom_type,
