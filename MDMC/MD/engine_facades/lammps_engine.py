@@ -19,7 +19,6 @@ by PyLammps is incorrectly set to ndihedraltypes
 AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 
-from collections import defaultdict
 from copy import copy
 from itertools import chain, count, product, tee
 from random import randint
