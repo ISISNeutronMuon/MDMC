@@ -638,6 +638,45 @@ def test_update_all_interactions(lammps_engine_topology, interactions):
     lammps_engine_topology.update_parameters()
 
 
+@pytest.mark.parametrize('mix', ['GEOMETRIC',
+                                 'geometric',
+                                 'arithmetic',
+                                 'SIXTHPOWER'])
+def test_mixing(lammps_engine_config, mix):
+
+    """
+    Tests that applying different nonbonded interaction mixing styles does not
+    result in a fatal error, where the LAMMPS Python interface causes Python to
+    exit without throwing an error, presumably due to a segfault
+
+    A more stringent test would check the that values of pair_modify have been
+    set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    lammps_engine_config._add_topology(lammps_engine_config.universe,
+                                       nonbonded_mix=mix)
+
+
+@pytest.mark.parametrize('mix', ['geometrix',
+                                 'equal'])
+def test_mixing_unimplemented(lammps_engine_config, mix):
+
+    """
+    Tests that applying different nonbonded interaction mixing styles does not
+    result in a fatal error, where the LAMMPS Python interface causes Python to
+    exit without throwing an error, presumably due to a segfault
+
+    A more stringent test would check the that values of pair_modify have been
+    set in LAMMPS, however there is no way to check this through the Python
+    interface. Therefore the minimum test of checking for a fatal error is used.
+    """
+
+    with pytest.raises(ValueError):
+        lammps_engine_config._add_topology(lammps_engine_config.universe,
+                                           nonbonded_mix=mix)
+
+
 @pytest.mark.parametrize('solver_cls, accuracy, expected', [(PPPM, 0.001,
                                                              ['pppm', 0.001]),
                                                             (Ewald, 1e-05,
