@@ -188,8 +188,18 @@ def NVE_unconstrained(universe):
     molecules at 300K using LAMMPS, without constrained bonds or bond angles
     """
 
+    # Remove constraints from bonds and angles and set potential strengths for
+    # those interactions according to SPC/Fd water model
     for interaction in universe.bonded_interactions:
         interaction.constrained = False
+        for param in interaction.params:
+            if param.name == 'potential_strength':
+                if interaction.name == 'Bond':
+                    param.value = 4410.7728 / 2
+                elif interaction.name == 'BondAngle':
+                    param.value = 317.5656 / 2
+    # Remove constraint algorithm from universe
+    universe.constraint_algorithm = None
 
     # Reduced time_step is due to removal of constraints
     md_engine = Simulation(universe,
