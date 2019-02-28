@@ -194,7 +194,7 @@ def NVE_unconstrained(universe):
     # Reduced time_step is due to removal of constraints
     md_engine = Simulation(universe,
                            engine='lammps',
-                           time_step=0.05,
+                           time_step=0.1,
                            temperature=TEMPERATURE,
                            traj_step=10)
 
