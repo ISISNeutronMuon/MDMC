@@ -47,7 +47,7 @@ class MDEngine:
         pass
 
     @abstractmethod
-    def minimize(self, n_steps):
+    def minimize(self, n_steps, **settings):
 
         """
         Minimizes the simulation energy
