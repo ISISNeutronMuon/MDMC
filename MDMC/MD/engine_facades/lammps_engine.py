@@ -1641,9 +1641,8 @@ def partition_interactions(interactions, names, unpartitioned=False, lst=False):
     return tuple(interaction_lst)
 
 
-def convert_trajectory(trajectory_file, atom_type_properties, universe=None,
-                       start=0, stop=None, step=1, scaled_positions=False,
-                       atom_IDs=None):
+def convert_trajectory(trajectory_file, atom_type_properties, start=0,
+                       stop=None, step=1, **settings):
 
     """
     Converts between a LAMMPS trajectory dump and an MDMC trajectory
@@ -1657,10 +1656,14 @@ def convert_trajectory(trajectory_file, atom_type_properties, universe=None,
     atom_type_properties - a list of tuples (symbol, mass) for all atom_types
     (ordered) by atom_type, where symbol is a string specifying the element of
     the atom_type and mass is a float specifying the mass of the atom_type
-    universe - an MDMC universe
+
     start - an integer specifying the first trajectory, inclusive
-    start - an integer specifying the last trajectory, exclusive
+    stop - an integer specifying the last trajectory, exclusive
     step - an integer specifying the step size between trajectories
+
+
+    Settings:
+    universe - an MDMC universe
     scaled_positions - a boolean specifying if the LAMMPS trajectory file
     provides the positions in scaled coordinates (i.e. xs, ys, yz)
     atom_IDs - a list specifying the LAMMPS IDs of the atoms which should be
@@ -1686,7 +1689,12 @@ def convert_trajectory(trajectory_file, atom_type_properties, universe=None,
         return atom
 
     # Change expected position string if scaled positions are used
-    pos_string = 'xs' if scaled_positions else 'x'
+    pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
+
+    universe = settings.get('universe')
+    # ID is an acronym
+    #pylint: disable=invalid-name
+    atom_IDs = settings.get('atom_IDs')
 
     configs = []
     config_iter = start
