@@ -674,7 +674,26 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             'extra/improper/per/atom', max_improper_per_atom
                            )
 
-    def _build_configuration(self, universe):
+    # ID is an acronym
+    #pylint: disable=invalid-name
+    def _create_lammps_region(self, universe, region_ID):
+
+        """
+        Create a geometry of the simulation box in LAMMPS
+
+        Arguments:
+        universe - an MDMC universe object
+        region_ID - a string with the region ID
+        """
+
+        xlo = ylo = zlo = 0.
+        xhi, yhi, zhi = universe.dims
+        region_ID = 'universe'
+        # 'block' gives a cuboidal universe
+        self.lmp.region(region_ID, 'block', xlo, xhi, ylo, yhi, zlo, zhi,
+                        units='box')
+
+    def _build_config(self, universe):
 
         """
         Adds atoms to LAMMPS
