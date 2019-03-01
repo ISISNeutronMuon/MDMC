@@ -1518,6 +1518,7 @@ def parse_kspace_solver(solver):
 def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
                      angles=None, angle_ID_dict=None):
     # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Converts an MDMC constraint algorithm for input to LAMMPS fix, or raises a
@@ -1569,9 +1570,13 @@ def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
 
     # Add bonds and their LAMMPS IDs and angles and their LAMMPS IDs
     if bonds:
+        if not bond_ID_dict:
+            bond_ID_dict = {}
         lmp_str.append('b')
         lmp_str += [bond_ID_dict[bond] for bond in bonds if bond.constrained]
     if angles:
+        if not angle_ID_dict:
+            angle_ID_dict = {}
         lmp_str.append('a')
         lmp_str += [angle_ID_dict[angle] for angle in angles
                     if angle.constrained]
@@ -1595,9 +1600,9 @@ def partition(items, predicate):
     items for which the predicate returned False
     """
 
-    a, b = tee((predicate(item), item) for item in items)
-    return ((item for pred, item in a if pred),
-            (item for pred, item in b if not pred))
+    iter_a, iter_b = tee((predicate(item), item) for item in items)
+    return ((item for pred, item in iter_a if pred),
+            (item for pred, item in iter_b if not pred))
 
 
 def partition_interactions(interactions, names, unpartitioned=False, lst=False):
