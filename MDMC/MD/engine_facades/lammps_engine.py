@@ -36,7 +36,78 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 
 
-class LAMMPSEngine(MDEngine):
+class PyLammpsAttribute(object):
+
+    """
+    An abstract class which has a PyLammps object as an attribute
+
+    It possesses attributes and methods relating to the PyLammps object
+
+    Attributes:
+    system_state - a System object from the LAMMPS Python interface which
+    contains properties of the simulation box
+    fixes - a list of dictionaries specifying which LAMMPS fixes which are
+    applied
+    fix_styles - a list of strings specifying the styles of the LAMMPS fixes
+    which are applied
+    fix_names - a list of string specifying the names of the LAMMPS fixes which
+    are applied
+    """
+
+    def __init__(self, lmp=None, atom_style='full'):
+
+        """
+        lmp - a PyLammps object
+        atom_style - a string specifying the LAMMPS atom_style, which determines
+        the properties that can be associated which the atoms (e.g. charge,
+        bonds)
+        """
+
+        if lmp:
+            self.lmp = lmp
+        else:
+            self.lmp = PyLammps()
+            self.lmp.units('real')
+            self.lmp.atom_style(atom_style)
+
+    @property
+    def system_state(self):
+
+        """
+        Get the PyLammps wrapper system state dictionary
+        """
+
+        return self.lmp.system
+
+    @property
+    def fixes(self):
+
+        """
+        Get the PyLammps wrapper list of fixes
+        """
+
+        return self.lmp.fixes
+
+    @property
+    def fix_styles(self):
+
+        """
+        Get a list of the styles of the fixes applied in LAMMPS
+        """
+
+        return [fix['style'] for fix in self.fixes]
+
+    @property
+    def fix_names(self):
+
+        """
+        Get a list of the names of the fixes applied in LAMMPS
+        """
+
+        return [fix['name'] for fix in self.fixes]
+
+
+class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     """
     Facade for LAMMPS
