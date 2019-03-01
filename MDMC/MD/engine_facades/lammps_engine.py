@@ -719,6 +719,34 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
                 self.atom_dict[atom] = self.lmp.atoms[self.lmp.atoms.natoms - 1]
 
+    def set_config(self, config):
+
+        """
+        Changes the positions of all of the atoms in the LAMMPS wrapper
+
+        Arguments:
+        config - a NumPy array with the configuration from the start of the run.
+        Each row of the array corresponds to the LAMMPS atom ID - 1 (offset is
+        due to array zero indexing) and the columns of the array are the x, y, z
+        components of the position, the mass and the charge of each atom.
+        """
+
+        # Raise an IndexError if the config is not the correct size
+        n_atoms = self.system_state.natoms
+        if len(config) != n_atoms:
+            raise IndexError('the new configuration does not specify the'
+                             ' correct number of atoms')
+
+        # The LAMMPS wrapper does not allow the configuration to be updated
+        # simply by setting all atoms. Instead the position of the atoms must be
+        # reset.
+        index_components = list(enumerate(['x', 'y', 'z']))
+        # LAMMPS IDs start at 1, so are offset from config indexes
+        for id_offset in range(n_atoms):
+            for index, component in index_components:
+                self.lmp.set('atom', id_offset+1, component,
+                             config[id_offset][index])
+
     def _max_n_interaction(self, atoms, name):
 
         """
