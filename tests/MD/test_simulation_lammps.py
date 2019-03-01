@@ -553,23 +553,6 @@ def test_create_interaction_style(lammps_engine_topology, system_attr,
     assert getattr(lammps_engine_topology.system_state, system_attr) == expected
 
 
-def test_create_topology_fatal_error(lammps_engine_config, universe):
-
-    """
-    Tests that creating the topology (setting pair styles and coefficients,
-    bond styles and coefficients, and angle styles and coefficients) does not
-    result in a fatal error, where the LAMMPS Python interface causes Python to
-    exit without throwing an error, presumably due to a segfault
-
-    A more stringent test would check that all of the correct coefficients have
-    been set in LAMMPS, however there is no way to check this through the Python
-    interface. Therefore the minimum test of checking for a fatal error is used.
-    """
-
-    # No asserts as failure is indicated by segfault i.e. pytest crashes
-    lammps_engine_config._add_topology(lammps_engine_config.universe)
-
-
 def test_atom_charge_set(lammps_engine_topology, universe):
 
     """
