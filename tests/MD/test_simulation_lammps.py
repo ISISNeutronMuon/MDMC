@@ -1326,8 +1326,8 @@ def test_convert_mdmc_base_units_identity(value):
 
     for unit in units.SYSTEM.values():
         if unit.components['numerator'][0] == unit \
-            and unit in lmp.SYSTEM.values():
-            assert lmp.convert_unit(value, unit) == value
+            and unit in lmp_eng.SYSTEM.values():
+            assert lmp_eng.convert_unit(value, unit) == value
 
 
 @pytest.mark.parametrize('value', [1.0, 2.0])
@@ -1341,10 +1341,10 @@ def test_convert_lammps_base_units_identity(value):
     except they are being converted from LAMMPS to MDMC
     """
 
-    for unit in lmp.SYSTEM.values():
+    for unit in lmp_eng.SYSTEM.values():
         if unit.components['numerator'][0] == unit \
             and unit in units.SYSTEM.values():
-            assert lmp.convert_unit(value, unit, to_LAMMPS=False) == value
+            assert lmp_eng.convert_unit(value, unit, to_lammps=False) == value
 
 
 @pytest.mark.parametrize('mdmc_unit, lmp_value', [(units.Unit('Pa'),
@@ -1360,7 +1360,7 @@ def test_convert_mdmc_base_units(mdmc_unit, lmp_value):
     not the same in the two systems
     """
 
-    assert np.isclose(lmp.convert_unit(1., mdmc_unit), lmp_value)
+    assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 
 @pytest.mark.parametrize('lmp_unit, mdmc_value', [(units.Unit('atm'), 101325.)])
@@ -1371,7 +1371,7 @@ def test_convert_lammps_base_units(lmp_unit, mdmc_value):
     not the same in the two systems
     """
 
-    assert np.isclose(lmp.convert_unit(1., lmp_unit, to_LAMMPS=False),
+    assert np.isclose(lmp_eng.convert_unit(1., lmp_unit, to_lammps=False),
                       mdmc_value)
 
 
@@ -1389,7 +1389,7 @@ def test_convert_mdmc_compound_units(mdmc_unit, lmp_value):
     units)
     """
 
-    assert np.isclose(lmp.convert_unit(1., mdmc_unit), lmp_value)
+    assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 
 def test_convert_mdmc_angular_potential_strength():
@@ -1401,15 +1401,15 @@ def test_convert_mdmc_angular_potential_strength():
 
     mdmc_unit = units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2
     lmp_value = 784.6095482819655
-    assert np.isclose(lmp.convert_unit(1., mdmc_unit), lmp_value)
+    assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 @pytest.mark.parametrize('lmp_unit, mdmc_value',
                          [(units.Unit('kcal') / units.Unit('mol'), 4.184),
                           (units.Unit('atm') * units.Unit('fs'), 101325.),
-                          (lmp.SYSTEM['MASS'] ** 2, (1.660539040e-30 **2)),
-                          (lmp.SYSTEM['MASS'] ** -1, 1. / 1.660539040e-30),
-                          (lmp.SYSTEM['ENERGY'], 4.184),
-                          (lmp.SYSTEM['FORCE'], 4.184)])
+                          (lmp_eng.SYSTEM['MASS'] ** 2, (1.660539040e-30 **2)),
+                          (lmp_eng.SYSTEM['MASS'] ** -1, 1. / 1.660539040e-30),
+                          (lmp_eng.SYSTEM['ENERGY'], 4.184),
+                          (lmp_eng.SYSTEM['FORCE'], 4.184)])
 def test_convert_lammps_compound_units(lmp_unit, mdmc_value):
 
     """
@@ -1417,7 +1417,7 @@ def test_convert_lammps_compound_units(lmp_unit, mdmc_value):
     units)
     """
 
-    assert np.isclose(lmp.convert_unit(1., lmp_unit, to_LAMMPS=False),
+    assert np.isclose(lmp_eng.convert_unit(1., lmp_unit, to_lammps=False),
                       mdmc_value)
 
 
@@ -1428,11 +1428,11 @@ def test_convert_mdmc_compound_equivalence():
     performing the conversions individually
     """
 
-    p = units.SYSTEM['PRESSURE']
-    e = units.SYSTEM['ENERGY']
+    P = units.SYSTEM['PRESSURE']
+    E = units.SYSTEM['ENERGY']
 
-    assert lmp.convert_unit(1., p / e) == (lmp.convert_unit(1., p)
-                                           / lmp.convert_unit(1., e))
+    assert lmp_eng.convert_unit(1., P / E) == (lmp_eng.convert_unit(1., P)
+                                               / lmp_eng.convert_unit(1., E))
 
 
 def test_partition_single_interaction(interactions, bonds):
@@ -1442,7 +1442,7 @@ def test_partition_single_interaction(interactions, bonds):
     name from a list
     """
 
-    assert bonds == list(lmp.partition_interactions(interactions, ['Bond'])[0])
+    assert bonds == list(lmp_eng.partition_interactions(interactions, ['Bond'])[0])
 
 
 def test_partition_multiple_interactions(interactions, bonds, angles,
@@ -1453,17 +1453,14 @@ def test_partition_multiple_interactions(interactions, bonds, angles,
     interactions based on name
     """
 
-    p_bonds, p_angles, p_coulombics = lmp.partition_interactions(interactions,
-                                                                 ['Bond',
-                                                                  'BondAngle',
-                                                                  'Coulombic'])
+    p_bonds, p_angles, p_coulombics = lmp_eng.partition_interactions(
+        interactions, ['Bond', 'BondAngle', 'Coulombic'])
     assert list(p_bonds) == bonds
     assert list(p_angles) == angles
     assert list(p_coulombics) == coulombics
 
 
-def test_partition_interactions_unpartitioned(interactions, bonds, angles,
-                                              coulombics, dispersions):
+def test_partition_interactions_unpartitioned(interactions, dispersions):
 
     """
     Tests that when unpartitioned=True is passed to partition_interactions, the
@@ -1471,11 +1468,11 @@ def test_partition_interactions_unpartitioned(interactions, bonds, angles,
     in the names argument
     """
 
-    _, _, _, p_dispersions = lmp.partition_interactions(interactions,
-                                                        ['Bond',
-                                                         'BondAngle',
-                                                         'Coulombic'],
-                                                        unpartitioned=True)
+    _, _, _, p_dispersions = lmp_eng.partition_interactions(interactions,
+                                                            ['Bond',
+                                                             'BondAngle',
+                                                             'Coulombic'],
+                                                            unpartitioned=True)
     assert list(p_dispersions) == dispersions
 
 
@@ -1486,7 +1483,7 @@ def test_partion_interactions_return_list(interactions, bonds, angles):
     lists is returned, rather than a tuple of generators
     """
 
-    assert (bonds, angles) == lmp.partition_interactions(interactions,
-                                                         ['Bond',
-                                                          'BondAngle'],
-                                                         lst=True)
+    assert (bonds, angles) == lmp_eng.partition_interactions(interactions,
+                                                             ['Bond',
+                                                              'BondAngle'],
+                                                             lst=True)
