@@ -1233,7 +1233,7 @@ SYSTEM = {
 }
 
 
-def convert_unit(value, unit, to_LAMMPS=True):
+def convert_unit(value, unit, to_lammps=True):
 
     """
     Converts between MDMC units and LAMMPS real units
@@ -1241,11 +1241,11 @@ def convert_unit(value, unit, to_LAMMPS=True):
     Arguments:
     value - a float specifying the value in MDMC units
     unit - the unit of the value
-    to_LAMMPS - a boolean specifying if the conversion is from MDMC units to
+    to_lammps - a boolean specifying if the conversion is from MDMC units to
     LAMMPS units
 
     Returns:
-    a float or array with the value in LAMMPS units if to_LAMMPS is True,
+    a float or array with the value in LAMMPS units if to_lammps is True,
     otherwise a float or array with the value in MDMC units
     """
 
@@ -1273,7 +1273,7 @@ def convert_unit(value, unit, to_LAMMPS=True):
         return num, denom
 
     # Expand the unit in terms of its base units (for numerator and denominator)
-    if to_LAMMPS:
+    if to_lammps:
         l_sys = copy(SYSTEM)
         # For angular potential strength LAMMPS requires the units in rad,
         # rather than degrees (which is uses otherwise). Therefore if the unit
@@ -1283,9 +1283,9 @@ def convert_unit(value, unit, to_LAMMPS=True):
             l_sys['ANGLE'] = units.Unit('rad')
 
         expanded_unit = expand_components(unit)
-        SYSTEM_INV = {unit:property for property, unit in units.SYSTEM.items()}
+        system_inv = {unit:property for property, unit in units.SYSTEM.items()}
         # Apply inversion to all components
-        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[SYSTEM_INV[comp]]
+        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
                                                         for comp in comp_list],
                                      expanded_unit)
     else:
@@ -1515,8 +1515,9 @@ def parse_kspace_solver(solver):
 
     return lmp_str
 
-def parse_constraint(constraint_algorithm, bonds=[], bond_ID_dict={}, angles=[],
-                     angle_ID_dict={}):
+def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
+                     angles=None, angle_ID_dict=None):
+    # ID is an acronym
 
     """
     Converts an MDMC constraint algorithm for input to LAMMPS fix, or raises a
