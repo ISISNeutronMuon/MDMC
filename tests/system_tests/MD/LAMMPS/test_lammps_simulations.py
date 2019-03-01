@@ -31,12 +31,12 @@ MD_STEPS = 20000
 #
 # The NVE temperature differs from the set value due to the effects of SHAKE
 NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(1520.31, 5.4),
-                'PotEng':(-1236.56, 4.5), 'Temp':(1183.37, 4.2),
-                'Press':(18177.22, 155.9), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(393.75, 3.6),
-                'E_coul':(11596.25, 5.6), 'E_long':(-13226.57, 0.32),
-                'Nbuild':(920.03, 3.8), 'Ndanger':(0, 0)}
+                'Angles':(N_MOLECULES, 0), 'KinEng':(1440.28, 3.9),
+                'PotEng':(-1282.70, 3.5), 'Temp':(1121.08, 3.0),
+                'Press':(16911.42, 116.1), 'Volume':(DIMENSION**3, 0),
+                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(382.69, 3.2),
+                'E_coul':(11562.59, 4.5), 'E_long':(-13227.98, 0.45),
+                'Nbuild':(896.46, 3.2), 'Ndanger':(0, 0)}
 
 NVT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
                 'Angles':(N_MOLECULES, 0), 'KinEng':(385.43, 0.98),
