@@ -218,6 +218,10 @@ def NVE_unconstrained(universe):
 
 def parameterize_decorator(func):
 
+    """
+    A decorator for parametrizing all tests with each ensemble
+    """
+
     @pytest.mark.parametrize('ensemble, expected',
                              [('NVE', NVE_EXPECTED),
                               ('NVT', NVT_EXPECTED),
