@@ -1671,6 +1671,25 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     """
 
     def create_atom(line):
+
+        """
+        Create an MDMC atom from a line in a LAMMPS dump (trajectory) file
+
+        At a minimum it will set the ID, atom_type and position of the atom. It
+        will also set the velocity if included in the line, and the universe, if
+        this was passed to convert_trajectory().
+
+        Arguments:
+        line - an array containing a line from the ATOMS sections of a LAMMPS
+        dump file. The array must contain the atom ID, the atom type, and the
+        x, y, and z (or scaled equivalents) components of the position, which
+        are assumed to be adjacent. It will also set the velocity of the atom
+        if this is included in the line.
+
+        Returns:
+        an MDMC atom object
+        """
+
         atom_type = int(line[i_type])
         # If distance units are same for MDMC and LAMMPS then
         # don't call convert_units - currently hardcoded
