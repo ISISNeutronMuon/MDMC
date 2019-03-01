@@ -1721,9 +1721,11 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     atom_IDs = settings.get('atom_IDs')
 
     configs = []
-    config_iter = start
-    config_indexes = count(start, step)
-    next_iter = config_indexes.next()
+    time_step_n = start
+    # Use count to create range so that stop can be undefined
+    time_step_indexes = count(start, step)
+    # next_time_step_n next attribute is assigned dynamically
+    next_time_step_n = time_step_indexes.next() #pylint: disable=no-member
     with open(trajectory_file.name, 'r') as file_handler:
         line = file_handler.readline()
         while line:
@@ -1749,20 +1751,24 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                 if universe:
                     for i in range(3):
                         line = file_handler.readline()
-                        min, max = [float(splt) for splt in line.split()]
-                        assert min == 0.0
-                        # unit is taken from array as dims is a UnitArray
-                        assert max == convert_unit(universe.dims[i],
-                                                   universe.dims.unit)
+                        dmin, dmax = [float(splt) for splt in line.split()]
+                        assert dmin == 0.0
+                        # unit is taken from universe dims (which is a
+                        # UnitArray)
+                        assert dmax == convert_unit(universe.dims[i],
+                                                    universe.dims.unit)
 
             if 'ITEM: ATOMS' in line:
-
-                if config_iter == start:
-                    # Determine order of LAMMPS atom properties
-                    # Assumes that position components (x y z) and velocity
-                    # components (vx vy vz) are always adjacent and ordered as
-                    # shown
+                if time_step_n == start:
+                    # LAMMPS dump files contain order of LAMMPS atom properties,
+                    # at each time step. As these should not change with time
+                    # step only determine this order for first required time
+                    # step. Assumes that position components (x y z) and
+                    # velocity components (vx vy vz) are always adjacent and
+                    # ordered as shown.
                     splt = line.split()
+                    # Requires id, type and position to be defined, velocity is
+                    # optional
                     i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
                                            in ['id', 'type', pos_string]]
                     if 'vx' in splt:
@@ -1770,30 +1776,37 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                     else:
                         i_vel = None
 
-                if config_iter == next_iter:
-                    # Create list of tuples of (LAMMPS_ID, atom) so that atoms are
-                    # reordered based on LAMMPS_ID
+                if time_step_n == next_time_step_n:
+                    # Reads all atom lines before creating any atoms. By
+                    # creating a list of tuples of (LAMMPS_ID, atom), this
+                    # allows the lines to be reordered based on LAMMPS_ID. This
+                    # is required as by default LAMMPS does not sort by ID, so
+                    # the same atom will not appear in the same place for each
+                    # time step.
                     lines = []
                     for _ in range(n_atoms):
                         line = file_handler.readline().split()
                         # convert id to int
                         line[i_id] = int(line[i_id])
                         lines.append(line)
-                    # sort list based on id
+                    # sort list of lists based on id
                     lines = sorted(lines, key=lambda x: x[i_id])
 
                     atoms = []
                     for line in lines:
+                        # Checks if only specific atom_IDs are required, and if
+                        # so, only creates atoms which have those IDs
                         if not atom_IDs or line[i_id] in atom_IDs:
                             atoms.append(create_atom(line))
 
                     configs.append(TemporalConfiguration(time_step, *atoms))
 
-                    next_iter = config_indexes.next()
-                config_iter += 1
-                if config_iter >= stop:
+                    # next_time_step_n next attribute is assigned dynamically
+                    #pylint: disable=no-member
+                    next_time_step_n = time_step_indexes.next()
+                time_step_n += 1
+                if time_step_n >= stop:
                     break
-
 
             line = file_handler.readline()
     return Trajectory(*configs)
