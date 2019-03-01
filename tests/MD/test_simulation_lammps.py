@@ -3,19 +3,18 @@
 AUTHOR :    Thomas Farmer        START DATE :    11/02/2019, 16:21:38"""
 
 from collections import Counter
-from copy import deepcopy
 
 import numpy as np
 import pytest
 
 from MDMC.common import units
-import MDMC.MD.engine_facades.lammps_engine as lmp
+import MDMC.MD.engine_facades.lammps_engine as lmp_eng
 from MDMC.MD.interaction_functions import HarmonicPotential, LennardJones, \
     Coulomb
 from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe, \
     Ewald, PPPM, KSpaceSolver
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
-    Dispersion, NonBondedInteraction
+    Dispersion
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
