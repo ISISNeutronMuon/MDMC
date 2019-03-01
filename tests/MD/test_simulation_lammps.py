@@ -306,26 +306,26 @@ def test_universe_dims(lammps_universe):
                         == lammps_universe.system_state.zhi
 
 
-def test_number_atom_types(lammps_engine_box):
+def test_number_atom_types(lammps_universe):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
     correct number of atom types
     """
 
-    assert lammps_engine_box.system_state.ntypes == 4
+    assert lammps_universe.system_state.ntypes == 4
 
 
-def test_number_atoms(lammps_engine_config, atoms):
+def test_number_atoms(lammps_universe, atoms):
 
     """
     Tests that the correct number of atoms has been added to LAMMPS
     """
 
-    assert lammps_engine_config.system_state.natoms == len(atoms)
+    assert lammps_universe.system_state.natoms == len(atoms)
 
 
-def test_number_interaction_types(lammps_engine_box, bonds, angles):
+def test_number_interaction_types(lammps_universe):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
@@ -339,14 +339,14 @@ def test_number_interaction_types(lammps_engine_box, bonds, angles):
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    assert lammps_engine_box.system_state.nbondtypes == 2
+    assert lammps_universe.system_state.nbondtypes == 2
     # LAMMPS versions <= 20190104 have a bug which incorrectly assigns the
     # number of angle types, so only test this if using a more recent version
-    if lammps_engine_box.lmp.lmp.version() > 20190104:
-        assert lammps_engine_box.system_state.nangletypes == 1
+    if lammps_universe.lmp.lmp.version() > 20190104:
+        assert lammps_universe.system_state.nangletypes == 1
 
 
-def test_number_interactions(lammps_engine_topology, bonds, angles):
+def test_number_interactions(lammps_universe, bonds, angles):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
@@ -360,13 +360,13 @@ def test_number_interactions(lammps_engine_topology, bonds, angles):
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    assert lammps_engine_topology.system_state.nbonds == sum([len(b) for
-                                                              b in bonds])
-    assert lammps_engine_topology.system_state.nangles == sum([len(a) for
-                                                               a in angles])
+    assert lammps_universe.system_state.nbonds == sum([len(b) for
+                                                       b in bonds])
+    assert lammps_universe.system_state.nangles == sum([len(a) for
+                                                        a in angles])
 
 
-def test_atom_type_properties(lammps_engine_config, universe):
+def test_atom_type_properties(lammps_universe, universe):
 
     """
     Tests that element and mass are assigned to each list index corresponding to
@@ -375,22 +375,22 @@ def test_atom_type_properties(lammps_engine_config, universe):
     """
 
     for atom_type, atoms in universe.atom_types.items():
-        assert (lammps_engine_config.atom_type_properties[atom_type - 1]
+        assert (lammps_universe.atom_type_properties[atom_type - 1]
                 == (atoms[0].element, atoms[0].mass))
 
 
-def test_atom_type_mass(lammps_engine_config, universe):
+def test_atom_type_mass(lammps_universe, universe):
 
     """
     Tests that the mass of each atom type is set correctly in LAMMPS
     """
 
     for i in range(len(universe.atom_list)):
-        assert (lammps_engine_config.lmp.atoms[i].mass
+        assert (lammps_universe.lmp.atoms[i].mass
                 == universe.atom_list[i].mass)
 
 
-def test_atom_ID(lammps_engine_config, universe):
+def test_atom_ID(lammps_universe, universe):
 
     """
     Tests that atoms created in LAMMPS have the correct ID
@@ -401,47 +401,49 @@ def test_atom_ID(lammps_engine_config, universe):
     # should agree exactly with the LAMMPS atom IDs
     offset = universe.atom_list[0].ID - 1
     for i in range(len(universe.atom_list)):
-        assert (lammps_engine_config.lmp.atoms[i].id
+        assert (lammps_universe.lmp.atoms[i].id
                 == universe.atom_list[i].ID - offset)
 
 
-def test_atom_type(lammps_engine_config, universe):
+def test_atom_type(lammps_universe, universe):
 
     """
     Tests that atoms created in LAMMPS have the correct atom types
     """
 
     for i in range(len(universe.atom_list)):
-        assert (lammps_engine_config.lmp.atoms[i].type
+        assert (lammps_universe.lmp.atoms[i].type
                 == universe.atom_list[i].atom_type)
 
 
-def test_atom_position(lammps_engine_config, universe):
+def test_atom_position(lammps_universe, universe):
 
     """
     Tests that atoms created in LAMMPS have the correct position
     """
 
     for i in range(len(universe.atom_list)):
-        assert (np.array(lammps_engine_config.lmp.atoms[i].position)
+        assert (np.array(lammps_universe.lmp.atoms[i].position)
                 == universe.atom_list[i].position).all()
 
 
-def test_unimplemented_interactions(lammps_engine_config, universe):
+def test_unimplemented_interactions(lammps_universe, universe):
 
     """
-    Tests that if a universe passed to LAMMPSEngine._add_topology has any
+    Tests that if a universe passed to LAMMPSUniverse._add_topology has any
     interactions which have not been implemented in LAMMPS, NotImplementedError
     is raised
     """
 
     # Add unimplemented interaction type to universe
+    # Dummy class which does not require docstring
+    #pylint: disable=missing-docstring, multiple-statements
     class Unimplemented(Dispersion): pass
     unimplemented_interaction = Unimplemented(universe, 1)
 
     # Create LAMMPS topology from universe, raising NotImplementedError
     with pytest.raises(NotImplementedError):
-        lammps_engine_config._add_topology(universe)
+        lammps_universe._add_topology(universe)
 
 @pytest.mark.parametrize('interactions, expected',
                          [('bonds', 'harmonic'),
@@ -461,7 +463,7 @@ def test_parse_bonded_styles(interactions, expected, request):
     # recovered using request.getfixturevalue
     interactions = request.getfixturevalue(interactions)
     # Test the first interaction in each list of interactions
-    assert lmp.parse_bonded_styles(interactions[0]) == expected
+    assert lmp_eng.parse_bonded_styles(interactions[0]) == expected
 
 
 @pytest.mark.parametrize('interactions, expected, solver_attr',
@@ -500,7 +502,7 @@ def test_parse_nonbonded_styles(interactions, expected, solver_attr, universe,
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
     # Test the first interaction in each list of interactions
-    assert lmp.parse_nonbonded_styles(interactions[0]) == expected
+    assert lmp_eng.parse_nonbonded_styles(interactions[0]) == expected
 
 
 @pytest.mark.parametrize('interaction, arguments, parser',
@@ -518,24 +520,24 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     # type checking enables arguments which are not dependent on fixtures (e.g.
-    # atom_type)
-    for i in range(len(arguments)):
-        if isinstance(arguments[i], str):
-            arguments[i] = request.getfixturevalue(arguments[i])
+    # atom_type which is equal to 1)
+    for index, arg in enumerate(arguments):
+        if isinstance(arg, str):
+            arguments[index] = request.getfixturevalue(arg)
 
     # Add interaction without defining InteractionFunction
     undefined_interaction_function = interaction(*arguments)
 
     with pytest.raises(NotImplementedError):
         # Pass undefined_interaction_function as an argument to parser
-        getattr(lmp, parser)(undefined_interaction_function)
+        getattr(lmp_eng, parser)(undefined_interaction_function)
 
 
 @pytest.mark.parametrize('system_attr, expected',
                          [('bond_style', 'hybrid'),
                           ('angle_style', 'hybrid'),
                           ('style', 'hybrid/overlay')])
-def test_create_interaction_style(lammps_engine_topology, system_attr,
+def test_create_interaction_style(lammps_universe, system_attr,
                                   expected):
 
     """
@@ -550,36 +552,36 @@ def test_create_interaction_style(lammps_engine_topology, system_attr,
     DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
     """
 
-    assert getattr(lammps_engine_topology.system_state, system_attr) == expected
+    assert getattr(lammps_universe.system_state, system_attr) == expected
 
 
-def test_atom_charge_set(lammps_engine_topology, universe):
+def test_atom_charge_set(lammps_universe, universe):
 
     """
     Tests that atom charges are set correctly
     """
 
     for i in range(len(universe.atom_list)):
-        assert (lammps_engine_topology.lmp.atoms[i].charge
+        assert (lammps_universe.lmp.atoms[i].charge
                 == universe.atom_list[i].charge)
 
 
-def test_atom_charges_update(lammps_engine_topology, universe):
+def test_atom_charges_update(lammps_universe, universe):
 
     """
     Tests that atom charges are updated correctly
 
     Change the charges on the atoms in the universe and test if LAMMPS charges
-    update after LAMMPEngine._update_charges is called
+    update after LAMMPUniverse._update_charges is called
     """
 
     # Change charges and update LAMMPSEngine
     for atom in universe.atom_list:
         atom.charge *= 2.
-    lammps_engine_topology._update_charges()
+    lammps_universe._update_charges()
 
     for i in range(len(universe.atom_list)):
-        assert (lammps_engine_topology.lmp.atoms[i].charge
+        assert (lammps_universe.lmp.atoms[i].charge
                 == universe.atom_list[i].charge)
 
 
@@ -587,7 +589,7 @@ def test_atom_charges_update(lammps_engine_topology, universe):
                          [('bonds', '_update_bonds'),
                           ('angles', '_update_angles'),
                           ('dispersions', '_update_dispersions')])
-def test_update_individual_interactions(lammps_engine_topology,
+def test_update_individual_interactions(lammps_universe,
                                         interaction_fixture, update_method,
                                         request):
 
@@ -612,10 +614,10 @@ def test_update_individual_interactions(lammps_engine_topology,
         for param in interaction.params:
             param.value *= 2
 
-    getattr(lammps_engine_topology, update_method)(interactions)
+    getattr(lammps_universe, update_method)(interactions)
 
 
-def test_update_all_interactions(lammps_engine_topology, interactions):
+def test_update_all_interactions(lammps_universe, interactions):
 
     """
     Tests that updating all interactions does not result in a fatal error, where
@@ -633,14 +635,14 @@ def test_update_all_interactions(lammps_engine_topology, interactions):
         for param in interaction.params:
             param.value *= 2
 
-    lammps_engine_topology.update_parameters()
+    lammps_universe.update_parameters()
 
 
 @pytest.mark.parametrize('mix', ['GEOMETRIC',
                                  'geometric',
                                  'arithmetic',
                                  'SIXTHPOWER'])
-def test_mixing(lammps_engine_config, mix):
+def test_mixing(mix, universe):
 
     """
     Tests that applying different nonbonded interaction mixing styles does not
@@ -652,13 +654,12 @@ def test_mixing(lammps_engine_config, mix):
     interface. Therefore the minimum test of checking for a fatal error is used.
     """
 
-    lammps_engine_config._add_topology(lammps_engine_config.universe,
-                                       nonbonded_mix=mix)
+    lammps_universe = lmp_eng.LAMMPSUniverse(universe, nonbonded_mix=mix)
 
 
 @pytest.mark.parametrize('mix', ['geometrix',
                                  'equal'])
-def test_mixing_unimplemented(lammps_engine_config, mix):
+def test_mixing_unimplemented(lammps_universe, mix):
 
     """
     Tests that applying different nonbonded interaction mixing styles does not
@@ -671,8 +672,8 @@ def test_mixing_unimplemented(lammps_engine_config, mix):
     """
 
     with pytest.raises(ValueError):
-        lammps_engine_config._add_topology(lammps_engine_config.universe,
-                                           nonbonded_mix=mix)
+        lammps_universe._add_topology(lammps_universe.universe,
+                                      nonbonded_mix=mix)
 
 
 @pytest.mark.parametrize('solver_cls, accuracy, expected', [(PPPM, 0.001,
@@ -687,7 +688,7 @@ def test_parse_kspace_solver(solver_cls, accuracy, expected):
     """
 
     solver = solver_cls(accuracy=accuracy)
-    assert lmp.parse_kspace_solver(solver) == expected
+    assert lmp_eng.parse_kspace_solver(solver) == expected
 
 
 def test_parse_kspace_solver_unimplemented():
@@ -699,13 +700,13 @@ def test_parse_kspace_solver_unimplemented():
 
     solver = KSpaceSolver(accuracy=0.0001)
     with pytest.raises(NotImplementedError):
-        unimplemented_solver = lmp.parse_kspace_solver(solver)
+        unimplemented_solver = lmp_eng.parse_kspace_solver(solver)
 
 
 @pytest.mark.parametrize('solver_cls, style', [(PPPM, 'pppm'),
                                                (Ewald, 'ewald')])
-def test_set_kspace_solver_styles(lammps_engine_config, universe, dispersions,
-                                  solver_cls, style):
+def test_set_kspace_solver_styles(populated_lammps_simulation, universe,
+                                  dispersions, solver_cls, style):
 
     """
     Tests setting the kspace solver if the Universe has a kspace_solver
@@ -715,29 +716,25 @@ def test_set_kspace_solver_styles(lammps_engine_config, universe, dispersions,
     # has not had the topology created. Then create topology to set kspace style
     # in LAMMPS.
     solver = solver_cls(accuracy=0.0001)
-    universe.kspace_solver = solver
+    populated_lammps_simulation.universe.kspace_solver = solver
     # LAMMPS requires a single cutoff for LJ and coulombic long range
     # interactions (i.e. kspace calculations), so change the cutoff for the
     # Dispersion interactions
-    for dispersion in dispersions:
-        dispersion.cutoff = COULOMBIC_CUTOFF
-    lammps_engine_config._add_topology(lammps_engine_config.universe)
-    assert lammps_engine_config.system_state.kspace_style == style
+    populated_lammps_simulation._set_kspace_solver()
+    assert populated_lammps_simulation.system_state.kspace_style == style
 
 
-@pytest.mark.parametrize('solver_cls, style', [(PPPM, 'pppm'),
-                                               (Ewald, 'ewald')])
-def test_set_kspace_solver_different_cutoffs(lammps_engine_config, universe,
-                                             dispersions, solver_cls, style):
+@pytest.mark.parametrize('solver_cls', [PPPM, Ewald])
+def test_set_different_cutoffs(lammps_universe, universe, dispersions,
+                               solver_cls):
 
     """
     Tests that if cutoffs for dispersion and coulombic interaction are different
     it results in a ValueError
     """
 
-    # Create a kspace solver and add it to the universe of a LAMMPSEngine which
-    # has not had the topology created. Then create topology to set kspace style
-    # in LAMMPS.
+    # Create a kspace solver and add it to an MDMC universe. Pass this universe
+    # to a LAMMPSUniverse._add_topology to set this kspace style in LAMMPS.
     solver = solver_cls(accuracy=0.0001)
     universe.kspace_solver = solver
     # Set cutoffs for dispersion interactions to be different to cutoffs for
@@ -745,16 +742,15 @@ def test_set_kspace_solver_different_cutoffs(lammps_engine_config, universe,
     for dispersion in dispersions:
         dispersion.cutoff = COULOMBIC_CUTOFF + 2.0
     with pytest.raises(ValueError):
-        lammps_engine_config._add_topology(lammps_engine_config.universe)
+        lammps_universe._add_topology(lammps_universe.universe)
 
 
 @pytest.mark.parametrize('solver_attr, expected',
                          [('kspace_solver', 'pppm'),
                           ('electrostatic_solver', 'pppm'),
                           ('dispersive_solver', TypeError)])
-def test_set_kspace_solver_single_solver_error(lammps_engine_config, universe,
-                                               dispersions, solver_attr,
-                                               expected):
+def test_set_kspace_solver_single_solver_error(populated_lammps_simulation,
+                                               solver_attr, expected):
 
     """
     Tests setting the kspace solver with the different solver attributes that
@@ -769,22 +765,16 @@ def test_set_kspace_solver_single_solver_error(lammps_engine_config, universe,
     # electrostatic_solver or a dispersive_solver. Then create topology to set
     # kspace style in LAMMPS.
     solver = PPPM(accuracy=0.0001)
-    setattr(universe, solver_attr, solver)
-    # LAMMPS requires a single cutoff for LJ and coulombic long range
-    # interactions (i.e. kspace calculations), so change the cutoff for the
-    # Dispersion interactions
-    for dispersion in dispersions:
-        dispersion.cutoff = COULOMBIC_CUTOFF
+    setattr(populated_lammps_simulation.universe, solver_attr, solver)
     if expected is TypeError:
         with pytest.raises(expected):
-            lammps_engine_config._add_topology(lammps_engine_config.universe)
+            populated_lammps_simulation._set_kspace_solver()
     else:
-        lammps_engine_config._add_topology(lammps_engine_config.universe)
-        assert lammps_engine_config.system_state.kspace_style == expected
+        populated_lammps_simulation._set_kspace_solver()
+        assert populated_lammps_simulation.system_state.kspace_style == expected
 
 
-def test_set_kspace_solver_multiple_solvers(lammps_engine_config, universe,
-                                            dispersions):
+def test_set_kspace_solver_multiple_solvers(populated_lammps_simulation):
 
     """
     Tests setting the kspace solver if the Universe has both an
@@ -792,23 +782,16 @@ def test_set_kspace_solver_multiple_solvers(lammps_engine_config, universe,
     """
 
     # Create a kspace solver and add it to the universe as both an
-    # electrostatic_solver and a dispersive_solver. Then create topology to set
-    # kspace style in LAMMPS.
+    # electrostatic_solver and a dispersive_solver. Then call set_kspace_solver
+    # to apply kspace style in LAMMPS.
     solver = PPPM(accuracy=0.0001)
-    universe.electrostatic_solver = solver
-    universe.dispersive_solver = solver
-    # LAMMPS requires a single cutoff for LJ and coulombic long range
-    # interactions (i.e. kspace calculations), so change the cutoff for the
-    # Dispersion interactions
-    for dispersion in dispersions:
-        dispersion.cutoff = COULOMBIC_CUTOFF
-    lammps_engine_config._add_topology(lammps_engine_config.universe)
-    assert lammps_engine_config.system_state.kspace_style == 'pppm'
+    populated_lammps_simulation.universe.electrostatic_solver = solver
+    populated_lammps_simulation.universe.dispersive_solver = solver
+    populated_lammps_simulation._set_kspace_solver()
+    assert populated_lammps_simulation.system_state.kspace_style == 'pppm'
 
 
-def test_set_kspace_solver_multiple_solvers_error(lammps_engine_config,
-                                                  universe,
-                                                  dispersions):
+def test_set_kspace_solver_multiple_solvers_error(populated_lammps_simulation):
 
     """
     Tests setting the kspace solver if the Universe has both an
@@ -816,16 +799,13 @@ def test_set_kspace_solver_multiple_solvers_error(lammps_engine_config,
     """
 
     # Create different kspace solvers for universe's electrostatic_solver and
-    # dispersive_solvers. Then create topology to set kspace style in LAMMPS.
+    # dispersive_solvers. Then call set_kspace_solver to apply kspace style in
+    # LAMMPS.
+    universe = populated_lammps_simulation.universe
     universe.electrostatic_solver = PPPM(accuracy=0.0001)
     universe.dispersive_solver = PPPM(accuracy=0.0005)
-    # LAMMPS requires a single cutoff for LJ and coulombic long range
-    # interactions (i.e. kspace calculations), so change the cutoff for the
-    # Dispersion interactions
-    for dispersion in dispersions:
-        dispersion.cutoff = COULOMBIC_CUTOFF
     with pytest.raises(TypeError):
-        lammps_engine_config._add_topology(lammps_engine_config.universe)
+        populated_lammps_simulation._set_kspace_solver()
 
 
 @pytest.mark.parametrize('constraint, name', [(Shake, 'shake'),
@@ -842,9 +822,9 @@ def test_parse_constraint_algorithm_name(constraint, name, constrained_bonds,
     """
 
     constraint_algorithm = constraint(accuracy=1.0, max_iterations=1)
-    assert name == lmp.parse_constraint(constraint_algorithm,
-                                        bonds=constrained_bonds,
-                                        bond_ID_dict=bond_ID_dict)[0]
+    assert name == lmp_eng.parse_constraint(constraint_algorithm,
+                                            bonds=constrained_bonds,
+                                            bond_ID_dict=bond_ID_dict)[0]
 
 
 def test_parse_constraint_algorithm_unimplemented(constrained_bonds,
@@ -857,81 +837,90 @@ def test_parse_constraint_algorithm_unimplemented(constrained_bonds,
 
     constraint_algorithm = ConstraintAlgorithm(accuracy=1.0, max_iterations=1)
     with pytest.raises(NotImplementedError):
-        invalid_constraint = lmp.parse_constraint(constraint_algorithm,
-                                                  bonds=constrained_bonds,
-                                                  bond_ID_dict=bond_ID_dict)
+        invalid_constraint = lmp_eng.parse_constraint(constraint_algorithm,
+                                                      bonds=constrained_bonds,
+                                                      bond_ID_dict=bond_ID_dict)
 
 
 @pytest.mark.parametrize('accuracy', [1.0, 1e-4, 5])
-def test_parse_constraint_accuracy(accuracy, constrained_bonds,
-                                   bond_ID_dict):
+def test_parse_constraint_accuracy(accuracy, constrained_bonds, bond_ID_dict):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that accuracy is correct in the input to LAMMPS fix
 
     Excluding the fix ID and and group-ID, the accuracy is the index 1
-    entry submitted to LAMMPS fix. The accuracy must be a float.
+    entry passed to a LAMMPS fix. The accuracy must be a float.
     """
 
     constraint_algorithm = Shake(accuracy=accuracy, max_iterations=1)
-    assert float(accuracy) == lmp.parse_constraint(constraint_algorithm,
-                                                   bonds=constrained_bonds,
-                                                   bond_ID_dict=bond_ID_dict)[1]
+    algorithm_accuracy = lmp_eng.parse_constraint(constraint_algorithm,
+                                                  bonds=constrained_bonds,
+                                                  bond_ID_dict=bond_ID_dict)[1]
+    assert float(accuracy) == algorithm_accuracy
 
 
 @pytest.mark.parametrize('max_iter', [1, 5.4])
 def test_parse_constraint_max_iterations(max_iter, constrained_bonds,
                                          bond_ID_dict):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that the max number of iterations is correct in the input to LAMMPS
     fix
 
     Excluding the fix ID and and group-ID, the number of max iterations is the
-    index 2 entry submitted to LAMMPS fix. The number of max iterations must be
+    index 2 entry passed to a LAMMPS fix. The number of max iterations must be
     an integer.
     """
 
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=max_iter)
-    assert int(max_iter) == lmp.parse_constraint(constraint_algorithm,
-                                                 bonds=constrained_bonds,
-                                                 bond_ID_dict=bond_ID_dict)[2]
+    algorithm_max_iter = lmp_eng.parse_constraint(constraint_algorithm,
+                                                  bonds=constrained_bonds,
+                                                  bond_ID_dict=bond_ID_dict)[2]
+    assert int(max_iter) == algorithm_max_iter
 
 
 def test_parse_constraint_bonds(constrained_bonds, bond_ID_dict):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that the input to LAMMPS has the correct bond IDs
 
     Excluding the fix ID and and group-ID, the declaration of bond constraints
-    (indicated by 'b') is the index 4 entry submitted to LAMMPS fix. Following
+    (indicated by 'b') is the index 4 entry passed to a LAMMPS fix. Following
     this the IDs of all of the constrained bonds must be listed.
     """
 
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
-    lmp_input = lmp.parse_constraint(constraint_algorithm,
-                                     bonds=constrained_bonds,
-                                     bond_ID_dict=bond_ID_dict)
+    lmp_input = lmp_eng.parse_constraint(constraint_algorithm,
+                                         bonds=constrained_bonds,
+                                         bond_ID_dict=bond_ID_dict)
     assert lmp_input[4] == 'b'
     assert sorted(lmp_input[5:]) == sorted([bond_ID_dict[bond] for bond
                                             in constrained_bonds])
 
 
 def test_parse_constraint_angles(constrained_angles, angle_ID_dict):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that the input to LAMMPS has the correct angle IDs
 
     Excluding the fix ID and and group-ID, the declaration of angle constraints
-    (indicated by 'a') is the index 4 entry submitted to LAMMPS fix, if no bonds
+    (indicated by 'a') is the index 4 entry passed to a LAMMPS fix, if no bonds
     are included. Following this the IDs of all of the constrained angles must
     be listed.
     """
 
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
-    lmp_input = lmp.parse_constraint(constraint_algorithm,
-                                     angles=constrained_angles,
-                                     angle_ID_dict=angle_ID_dict)
+    lmp_input = lmp_eng.parse_constraint(constraint_algorithm,
+                                         angles=constrained_angles,
+                                         angle_ID_dict=angle_ID_dict)
     assert lmp_input[4] == 'a'
     assert sorted(lmp_input[5:]) == sorted([angle_ID_dict[angle] for angle
                                             in constrained_angles])
@@ -940,23 +929,25 @@ def test_parse_constraint_angles(constrained_angles, angle_ID_dict):
 
 def test_parse_constraint_bonds_angles(constrained_bonds, constrained_angles,
                                        bond_ID_dict, angle_ID_dict):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that the input to LAMMPS has the correct bond IDs and angle IDs
 
     Excluding the fix ID and and group-ID, the declaration of bond constraints
-    (indicated by 'b') is the index 4 entry submitted to LAMMPS fix. Following
+    (indicated by 'b') is the index 4 entry passed to a LAMMPS fix. Following
     this the IDs of all of the constrained bonds must be listed. The index
     after this must be the declaration of angle constraints (indicated by 'a'),
     and then the IDs of all of the constrained angles must be listed.
     """
 
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
-    lmp_input = lmp.parse_constraint(constraint_algorithm,
-                                     bonds=constrained_bonds,
-                                     bond_ID_dict=bond_ID_dict,
-                                     angles=constrained_angles,
-                                     angle_ID_dict=angle_ID_dict)
+    lmp_input = lmp_eng.parse_constraint(constraint_algorithm,
+                                         bonds=constrained_bonds,
+                                         bond_ID_dict=bond_ID_dict,
+                                         angles=constrained_angles,
+                                         angle_ID_dict=angle_ID_dict)
     assert lmp_input[4] == 'b'
     n_bonds = len(constrained_bonds)
     assert sorted(lmp_input[5:5+n_bonds]) == sorted([bond_ID_dict[bond]
@@ -969,6 +960,8 @@ def test_parse_constraint_bonds_angles(constrained_bonds, constrained_angles,
 
 
 def test_parse_constraint_no_interactions(bond_ID_dict):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that if neither bonds or angles are provided when parsing the
@@ -977,8 +970,8 @@ def test_parse_constraint_no_interactions(bond_ID_dict):
 
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
     with pytest.raises(TypeError):
-        lmp_input = lmp.parse_constraint(constraint_algorithm,
-                                         bond_ID_dict=bond_ID_dict)
+        lmp_input = lmp_eng.parse_constraint(constraint_algorithm,
+                                             bond_ID_dict=bond_ID_dict)
 
 
 @pytest.mark.parametrize('arguments', [{'bonds':'constrained_bonds'},
@@ -988,6 +981,8 @@ def test_parse_constraint_no_interactions(bond_ID_dict):
                                        {'angles':'constrained_angles',
                                         'bond_ID_dict':'bond_ID_dict'}])
 def test_parse_constraint_no_IDs(arguments, request):
+    # ID is an acronym
+    #pylint: disable=invalid-name
 
     """
     Tests that if a dictionary corresponding to interaction types is not passed,
@@ -1006,11 +1001,12 @@ def test_parse_constraint_no_IDs(arguments, request):
     arg_fixtures = {k:request.getfixturevalue(v) for k, v in arguments.items()}
     constraint_algorithm = Shake(accuracy=1.0, max_iterations=1)
     with pytest.raises(KeyError):
-        lmp_input = lmp.parse_constraint(constraint_algorithm, **arg_fixtures)
+        lmp_input = lmp_eng.parse_constraint(constraint_algorithm,
+                                             **arg_fixtures)
 
 
 @pytest.mark.parametrize('temperature', [150., 300., 450.])
-def test_initialize_velocities(lammps_engine_topology, temperature):
+def test_initialize_velocities(universe, lammps_universe, temperature):
 
     """
     Test that the velocities have been set correctly
@@ -1019,22 +1015,19 @@ def test_initialize_velocities(lammps_engine_topology, temperature):
     NVE and run for 0 steps. Test if the 0 step temperature is as expected.
     """
 
-    lammps_engine_topology.temperature = temperature
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, lammps_universe.lmp,
+                                                 temperature=temperature,
+                                                 traj_step=10)
 
-    # NVE ensemble used because it is the simplest to apply and velocity
-    # initialization is ensemble independent. It is applied directly through the
-    # LAMMPS interface i.e. by calling fix.
-    lammps_engine_topology.lmp.fix('integrate', 'all', 'nve')
-    lammps_engine_topology.lmp.run(0)
-    assert lammps_engine_topology.lmp.runs[0][0].Temp[0] == temperature
+    lammps_simulation.lmp.run(0)
+    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
 
 
 @pytest.mark.parametrize('skin, neighbor_steps', [(1, 2),
                                                   (1., 2.),
                                                   (1., 2),
                                                   (3., 100)])
-def test_set_neighbor_list_parameters(lammps_engine_topology, skin,
-                                      neighbor_steps):
+def test_set_neighbor_list_parameters(lammps_universe, skin, neighbor_steps):
 
     """
     Tests that setting neighbor list parameters does not result in a fatal
@@ -1046,8 +1039,8 @@ def test_set_neighbor_list_parameters(lammps_engine_topology, skin,
     interface. Therefore the minimum test of checking for a fatal error is used.
     """
 
-    lammps_engine_topology.skin = skin
-    lammps_engine_topology.neighbor_steps = neighbor_steps
+    lammps_universe.skin = skin
+    lammps_universe.neighbor_steps = neighbor_steps
 
 
 @pytest.mark.parametrize('momentum_steps, expected_names',
@@ -1059,7 +1052,7 @@ def test_set_neighbor_list_parameters(lammps_engine_topology, skin,
                            ['RemoveMomentum']),
                           ({'lin_momentum_steps':15, 'ang_momentum_steps':20},
                            ['RemoveLinearMomentum', 'RemoveAngularMomentum'])])
-def test_remove_momentum(lammps_engine_topology, momentum_steps,
+def test_remove_momentum(populated_lammps_simulation, momentum_steps,
                          expected_names):
 
     """
@@ -1067,37 +1060,36 @@ def test_remove_momentum(lammps_engine_topology, momentum_steps,
     created
     """
 
-    # Set momentum_step attributes and apply fixes. If a ValueError is expected,
-    # test for it here.
+    # Set momentum_step attributes and apply fixes - ensure momentum_step
+    # attributes are both initially None.
+    populated_lammps_simulation.lin_momentum_steps = None
+    populated_lammps_simulation.ang_momentum_steps = None
     for attr, steps in momentum_steps.items():
-        setattr(lammps_engine_topology, attr, steps)
-
-    lammps_engine_topology._set_momentum_removers()
+        setattr(populated_lammps_simulation, attr, steps)
 
     # The fix styles of all momentum removers should be 'momentum'. There
     # should be one fix with this fix style.
-    assert (Counter(lammps_engine_topology.fix_styles)['momentum']
+    assert (Counter(populated_lammps_simulation.fix_styles)['momentum']
             == len(expected_names))
 
     # The name of the fix is defined by whether linear and/or angular
     # momentum is removed
     for name in expected_names:
-        assert name in lammps_engine_topology.fix_names
+        assert name in populated_lammps_simulation.fix_names
 
 
 @pytest.mark.parametrize('thermostat, styles, attributes',
                          [(None, ['nve'], {}),
                           ('nose', ['nvt'],
-                           {'temperature':400., 'time_step':2., 't_damp':100}),
+                           {'temperature':400., 't_damp':100}),
                           ('berendsen', ['nve', 'temp/berendsen'],
-                           {'temperature':400., 'time_step':2, 't_damp':100}),
+                           {'temperature':400., 't_damp':100}),
                           ('langevin', ['nve', 'langevin'],
-                           {'temperature':400., 'time_step':2, 't_damp':100}),
+                           {'temperature':400., 't_damp':100}),
                           ('rescale', ['nve', 'temp/rescale'],
                            {'temperature':100., 't_fraction':0.5,
                             't_window':10., 'rescale_step':100})])
-def test_apply_thermostat(lammps_engine_topology, thermostat, styles,
-                          attributes):
+def test_apply_thermostat(ensemble, thermostat, styles, attributes):
 
     """
     Tests that applying a thermostat results in the correct fix being applying
@@ -1106,21 +1098,21 @@ def test_apply_thermostat(lammps_engine_topology, thermostat, styles,
 
     # Set the attributes required for the specified thermostat
     for attr, value in attributes.items():
-        setattr(lammps_engine_topology, attr, value)
+        setattr(ensemble, attr, value)
 
     # Add the thermostat
-    lammps_engine_topology.thermostat = thermostat
+    ensemble.thermostat = thermostat
 
     # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
     # are correct
-    assert styles == lammps_engine_topology.fix_styles
+    assert styles == ensemble.fix_styles
 
 
 @pytest.mark.parametrize('barostat, styles',
                          [(None, ['nve']),
                           ('berendsen', ['press/berendsen']),
                           ('nose', ['nph'])])
-def test_apply_barostat(lammps_engine_topology, barostat, styles):
+def test_apply_barostat(ensemble, barostat, styles):
 
     """
     Tests that applying a barostat results in the correct fix being applied to
@@ -1128,14 +1120,13 @@ def test_apply_barostat(lammps_engine_topology, barostat, styles):
     """
 
     # Set the attributes required for all barostats and add the barostat
-    lammps_engine_topology.pressure = 10.
-    lammps_engine_topology.time_step = 2.0
-    lammps_engine_topology.p_damp = 1000
-    lammps_engine_topology.barostat = barostat
+    ensemble.pressure = 10.
+    ensemble.p_damp = 1000
+    ensemble.barostat = barostat
 
     # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
     # are correct
-    assert styles == lammps_engine_topology.fix_styles
+    assert styles == ensemble.fix_styles
 
 
 @pytest.mark.parametrize('thermostat, barostat, styles, attributes',
@@ -1168,7 +1159,7 @@ def test_apply_barostat(lammps_engine_topology, barostat, styles):
                            {'temperature':400., 't_fraction':.5, 't_window':10.,
                             'rescale_step':100, 'pressure':10., 'p_damp':1000})]
                         )
-def test_apply_thermostat_barostat(lammps_engine_topology, thermostat, barostat,
+def test_apply_thermostat_barostat(ensemble, thermostat, barostat,
                                    styles, attributes):
 
     """
@@ -1176,24 +1167,21 @@ def test_apply_thermostat_barostat(lammps_engine_topology, thermostat, barostat,
     fixes being applied to LAMMPS
     """
 
-    # The time_step must be assigned first
-    lammps_engine_topology.time_step = 2.0
-
     # Set the attributes required by each thermostat/barostat pair
     for attr, value in attributes.items():
-        setattr(lammps_engine_topology, attr, value)
+        setattr(ensemble, attr, value)
 
     # Add the thermostat and barostat
-    lammps_engine_topology.thermostat = thermostat
-    lammps_engine_topology.barostat = barostat
+    ensemble.thermostat = thermostat
+    ensemble.barostat = barostat
 
     # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
     # are correct
-    assert styles == lammps_engine_topology.fix_styles
+    assert styles == ensemble.fix_styles
 
 
 @pytest.mark.parametrize('n_steps', [1, 5, 10])
-def test_trajectory_output(lammps_engine_setup, n_steps):
+def test_trajectory_output(lammps_engine, n_steps):
 
     """
     Tests if a trajectory file of the correct length has been created by LAMMPS
@@ -1202,29 +1190,29 @@ def test_trajectory_output(lammps_engine_setup, n_steps):
 
     # lammps_engine_simulation is setup to output trajectory every step. Run for
     # a total of n_steps
-    lammps_engine_setup.run(n_steps)
+    lammps_engine.run(n_steps)
 
-    n_atoms = lammps_engine_setup.system_state.natoms
-    n_lines = (n_atoms + 9) * ((n_steps / lammps_engine_setup.traj_step) + 1)
-    assert len(lammps_engine_setup.trajectory_file.readlines()) == n_lines
+    n_atoms = lammps_engine.system_state.natoms
+    n_lines = (n_atoms + 9) * ((n_steps / lammps_engine.traj_step) + 1)
+    assert len(lammps_engine.trajectory_file.readlines()) == n_lines
 
 
-def test_save_config(lammps_engine_topology, universe):
+def test_save_config(lammps_engine, universe):
 
     """
     Tests that the LAMMPS configuration is correctly saved, by checking the
     positions, mass and charge of the LAMMPS wrapper atoms attribute
     """
 
-    lammps_engine_topology.save_config()
+    lammps_engine.save_config()
     # Positions should be the same as those of the MDMC universe atoms, which
     # are also ordered by ID
     for i in range(len(universe.atom_list)):
-        assert (np.array(lammps_engine_topology.saved_config[i][:3])
+        assert (np.array(lammps_engine.saved_config[i][:3])
                 == universe.atom_list[i].position).all()
 
 
-def test_reset_config(lammps_engine_setup):
+def test_reset_config(lammps_engine):
 
     """
     Tests that the reset_config method correctly changes the positions of the
@@ -1234,23 +1222,23 @@ def test_reset_config(lammps_engine_setup):
     is reset
     """
 
-    lammps_engine_setup.save_config()
-    lammps_engine_setup.lmp.run(100)
+    lammps_engine.save_config()
+    lammps_engine.lmp.run(10)
 
-    n_atoms = lammps_engine_setup.system_state.natoms
+    n_atoms = lammps_engine.system_state.natoms
     # Ensure that the atoms have moved from their starting positions - see atoms
     # fixture for what the starting positions are
     for i in range(n_atoms):
-        assert (np.array(lammps_engine_setup.lmp.atoms[i].position)
+        assert (np.array(lammps_engine.lmp.atoms[i].position)
                 != np.array([0.5 * i]*3)).all()
 
-    lammps_engine_setup.reset_config()
+    lammps_engine.reset_config()
     for i in range(n_atoms):
-        assert (np.array(lammps_engine_setup.lmp.atoms[i].position)
+        assert (np.array(lammps_engine.lmp.atoms[i].position)
                 == np.array([0.5 * i]*3)).all()
 
 
-def test_convert_trajectory_output(lammps_engine_setup):
+def test_convert_trajectory_output(lammps_engine):
 
     """
     Tests that converting a trajectory results in an MDMC Trajectory object
@@ -1260,8 +1248,8 @@ def test_convert_trajectory_output(lammps_engine_setup):
     the trajectory conversion is covered by a system test.
     """
 
-    lammps_engine_setup.run(10)
-    assert isinstance(lammps_engine_setup.convert_trajectory(), Trajectory)
+    lammps_engine.run(3)
+    assert isinstance(lammps_engine.convert_trajectory(), Trajectory)
 
 
 @pytest.mark.parametrize('args',
@@ -1269,7 +1257,7 @@ def test_convert_trajectory_output(lammps_engine_setup):
                           {'n_steps':1000, 'etol':0., 'ftol':1.e-8,
                            'maxeval':1000},
                           {'n_steps':5000, 'ftol':1.e-8, 'maxeval':500}])
-def test_minimize(args, lammps_engine_setup):
+def test_minimize(args, lammps_engine):
 
     """
     Tests that the potential energy has been minimized
@@ -1283,17 +1271,17 @@ def test_minimize(args, lammps_engine_setup):
 
     # LAMMPS needs to run for 0 steps to calculate energies - run directly using
     # LAMMPS wrapper run so that any bugs in LAMMPSEngine.run do not affect test
-    lammps_engine_setup.lmp.run(0)
-    start_energy = lammps_engine_setup.lmp.eval('pe')
-    lammps_engine_setup.minimize(**args)
-    assert lammps_engine_setup.lmp.eval('pe') < start_energy
+    lammps_engine.lmp.run(0)
+    start_energy = lammps_engine.lmp.eval('pe')
+    lammps_engine.minimize(**args)
+    assert lammps_engine.lmp.eval('pe') < start_energy
 
 
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
                           ('nose', None, {}),
                           ('nose', 'nose', {'pressure':1.0})])
-def test_setup_simulation_run(lammps_engine_topology, thermostat, barostat,
+def test_setup_simulation_run(lammps_engine, thermostat, barostat,
                               add_args):
 
     """
@@ -1305,15 +1293,16 @@ def test_setup_simulation_run(lammps_engine_topology, thermostat, barostat,
     # it is not being used in this test
     # add_args is a dictionary of additional arguments that are required for the
     # specific ensemble
-    lammps_engine_topology.setup_simulation(traj_step=1, thermostat=thermostat,
-                                            barostat=barostat, **add_args)
+    lammps_engine.setup_simulation(traj_step=1, time_step=1., temperature=300.,
+                                   thermostat=thermostat, barostat=barostat,
+                                   **add_args)
 
-    N_STEPS = 20
-    lammps_engine_topology.lmp.run(20)
+    n_steps = 20
+    lammps_engine.lmp.run(n_steps)
 
     # Test that the largest step number in the LAMMPS wrapper runs attribute
     # (which records ThermoData from the previous run) is correct
-    assert max(lammps_engine_topology.lmp.runs[0][0].Step) == N_STEPS
+    assert max(lammps_engine.lmp.runs[0][0].Step) == n_steps
 
 
 @pytest.mark.parametrize('value', [1.0, 2.0])
