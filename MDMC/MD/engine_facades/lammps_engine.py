@@ -1668,7 +1668,6 @@ def convert_trajectory(trajectory_file, atom_type_properties, universe=None,
     """
 
     def create_atom(line):
-        LAMMPS_ID = line[i_id]
         atom_type = int(line[i_type])
         # If distance units are same for MDMC and LAMMPS then
         # don't call convert_units - currently hardcoded
