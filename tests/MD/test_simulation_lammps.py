@@ -297,13 +297,13 @@ def test_universe_dims(lammps_universe):
     Upper dimensions should be equal to the MDMC universe dimensions
     """
 
-    assert 0.0 == lammps_engine_box.system_state.xlo \
-               == lammps_engine_box.system_state.ylo \
-               == lammps_engine_box.system_state.zlo
+    assert 0.0 == lammps_universe.system_state.xlo \
+               == lammps_universe.system_state.ylo \
+               == lammps_universe.system_state.zlo
 
-    assert UNIVERSE_DIM == lammps_engine_box.system_state.xhi \
-                        == lammps_engine_box.system_state.yhi \
-                        == lammps_engine_box.system_state.zhi
+    assert UNIVERSE_DIM == lammps_universe.system_state.xhi \
+                        == lammps_universe.system_state.yhi \
+                        == lammps_universe.system_state.zhi
 
 
 def test_number_atom_types(lammps_engine_box):
