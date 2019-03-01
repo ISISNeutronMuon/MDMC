@@ -426,7 +426,7 @@ def average_property(sim, prop):
     return np.mean(getattr(sim.engine.lmp.runs[1].thermo, prop))
 
 
-def assert_property(ensemble, expected, request, property):
+def assert_property(ensemble, expected, request, prop):
 
     """
     Performs an assertion on a property using an ensemble returned using request
@@ -435,10 +435,10 @@ def assert_property(ensemble, expected, request, property):
     # As fixtures cannot be included in parameterization, the names of the
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
-    average = average_property(request.getfixturevalue(ensemble), property)
+    average = average_property(request.getfixturevalue(ensemble), prop)
 
     # expected[property][1] is the standard_deviation of the property. The
     # absolute tolerance is set to 3 times this value.
     # Small relative tolerance accounts for rounding differences
-    assert np.allclose(average, expected[property][0],
-                       atol=expected[property][1]*3, rtol=1e-8)
+    assert np.allclose(average, expected[prop][0],
+                       atol=expected[prop][1]*3, rtol=1e-8)
