@@ -216,62 +216,78 @@ def angle_ID_dict(constrained_angles):
     return {angle: ID for ID, angle in enumerate(constrained_angles)}
 
 @pytest.fixture
-def lammps_engine_box(universe):
+def lammps_universe(universe):
 
     """
     Returns:
-    A LAMMPSEngine where the simulation box has been setup
-    """
-
-    lammps_engine = lmp.LAMMPSEngine()
-    lammps_engine._init_lammps()
-    lammps_engine._init_attributes(universe)
-    lammps_engine._define_simulation_box(universe)
-
-    return lammps_engine
-
-@pytest.fixture
-def lammps_engine_config(lammps_engine_box):
-
-    """
-    Returns:
-    A LAMMPSEngine where the atomic configuration has been added
-    """
-
-    lammps_engine_box._build_configuration(lammps_engine_box.universe)
-    return lammps_engine_box
-
-@pytest.fixture
-def lammps_engine_topology(lammps_engine_config):
-
-    """
-    Returns:
-    A LAMMPSEngine where the atomic configuration and the topology have been
+    A LAMMPSUniverse where the atomic configuration and the topology have been
     added
     """
 
-    lammps_engine_config._add_topology(lammps_engine_config.universe)
-    return lammps_engine_config
-
+    lammps_universe = lmp_eng.LAMMPSUniverse(universe)
+    return lammps_universe
 
 @pytest.fixture
-def lammps_engine_setup(lammps_engine_topology):
+def lammps_simulation(universe):
 
     """
     Returns:
-    A LAMMPSEngine where the atomic configuration and the topology have been
-    added, and the simulation parameters have been set. This LAMMPSEngine is
-    ready to run a simulation.
+    A LAMMPSSimulation where the simulation parameters have been set. The
+    PyLammps wrapper belonging to this LAMMPSSimulation does not have an atomic
+    configuration or topology, and so it not ready to run LAMMPS.
     """
 
     # Simulation setup requires the traj_step attribute to be set. All other
     # attributes that are required are set to defaults.
-    lammps_engine_topology.setup_simulation(traj_step=1, time_step=0.2)
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, traj_step=10)
+    return lammps_simulation
 
-    return lammps_engine_topology
+@pytest.fixture
+def populated_lammps_simulation(universe, lammps_universe):
+
+    """
+    Returns:
+    A LAMMPSSimulation which has a PyLammps wrapper where the atomic
+    configuration and the topology have been added, and the simulation
+    parameters have been set. The PyLammps wrapper is ready to run a LAMMPS
+    simulation.
+    """
+
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, lammps_universe.lmp,
+                                                 traj_step=10, time_step=1.)
+    return lammps_simulation
+
+@pytest.fixture
+def ensemble(populated_lammps_simulation):
+
+    """
+    Returns:
+    An Ensemble which has a PyLammps wrapper where the atomic
+    configuration and the topology have been added, and the simulation
+    parameters have been set. This is required for thermostat and barostats to
+    be added to the PyLammps wrapper through the ensemble.
+    """
+
+    populated_lammps_simulation.lin_momentum_steps = None
+    return lmp_eng.Ensemble(populated_lammps_simulation.lmp,
+                            time_step=1.)
+
+@pytest.fixture
+def lammps_engine(universe):
+
+    """
+    Returns:
+    A LAMMPSEngine which is ready to run a LAMMPS simulation with an NVE
+    ensemble.
+    """
+
+    lammps_engine = lmp_eng.LAMMPSEngine()
+    lammps_engine.setup_universe(universe)
+    lammps_engine.setup_simulation(traj_step=1, time_step=1.)
+    return lammps_engine
 
 
-def test_universe_dims(lammps_engine_box):
+def test_universe_dims(lammps_universe):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
