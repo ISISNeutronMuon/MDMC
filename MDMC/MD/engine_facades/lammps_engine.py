@@ -679,7 +679,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.set('atom',
                          lmp_atom.id,
                          'charge',
-                         convert_unit(atom.charge, atom.charge.unit))
+                         convert_unit(atom.charge))
 
     def _update_dispersions(self, disps):
 
@@ -1019,8 +1019,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         self._time_step = value
         try:
             # Set the timestep in LAMMPS wrapper
-            self.lmp.timestep(convert_unit(self._time_step,
-                                           self._time_step.unit))
+            self.lmp.timestep(convert_unit(self._time_step))
         except AttributeError:
             pass
 
@@ -1043,8 +1042,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
                 self.lmp.velocity('all', 'create',
-                                  convert_unit(self._temperature,
-                                               self._temperature.unit),
+                                  convert_unit(self._temperature),
                                   randint(1, 9999))
         except AttributeError:
             pass
@@ -1108,7 +1106,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         self._skin = value
         # Set the neighor list parameters in the LAMMPS wrapper
-        self.lmp.neighbor(convert_unit(self._skin, self._skin.unit), 'bin')
+        self.lmp.neighbor(convert_unit(self._skin), 'bin')
 
 
     @property
@@ -1496,13 +1494,13 @@ class Ensemble(PyLammpsAttribute):
             self.lmp.fix('nve', 'all', 'nve')
         else:
             if self.thermostat:
-                temp = convert_unit(self.temperature, self.temperature.unit)
+                temp = convert_unit(self.temperature)
                 if self.thermostat != 'rescale':
-                    t_damp = convert_unit(self.t_damp, self.t_damp.unit)
+                    t_damp = convert_unit(self.t_damp)
                     thermo_params = [temp, temp, t_damp]
             if self.barostat:
-                press = convert_unit(self.pressure, self.pressure.unit)
-                p_damp = convert_unit(self.p_damp, self.p_damp.unit)
+                press = convert_unit(self.pressure)
+                p_damp = convert_unit(self.p_damp)
                 press_params = ['iso', press, press, p_damp]
 
             # Apply thermostat
@@ -1524,7 +1522,7 @@ class Ensemble(PyLammpsAttribute):
                              *thermo_params + [randint(0, 9999)])
             elif self.thermostat == 'rescale':
                 # temp/rescale does not do time integration so also requires nve
-                t_window = convert_unit(self.t_window, self.t_window.unit)
+                t_window = convert_unit(self.t_window)
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('rescale', 'all', 'temp/rescale',
                              self.rescale_step, temp, temp, t_window,
@@ -1558,14 +1556,15 @@ SYSTEM = {
 }
 
 
-def convert_unit(value, unit, to_lammps=True):
+def convert_unit(value, unit=None, to_lammps=True):
 
     """
     Converts between MDMC units and LAMMPS real units
 
     Arguments:
     value - a float specifying the value in MDMC units
-    unit - the unit of the value
+    unit - the unit of the value. If no unit is passed, the value must possess a
+    unit attribute.
     to_lammps - a boolean specifying if the conversion is from MDMC units to
     LAMMPS units
 
@@ -1596,6 +1595,10 @@ def convert_unit(value, unit, to_lammps=True):
                 denom[len(denom):], num[len(num):] = expand_components(comp)
 
         return num, denom
+
+    # If no unit argument is passed, the value must possess a unit
+    if not unit:
+        unit = value.unit
 
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
@@ -1675,7 +1678,7 @@ def parse_nonbonded_styles(interaction):
                                   ' implemented in the LAMMPS facade')
 
     if interaction.cutoff:
-        cutoff = convert_unit(interaction.cutoff, interaction.cutoff.unit)
+        cutoff = convert_unit(interaction.cutoff)
         kspace = interaction.universe.kspace_solver
         electrostatic = interaction.universe.electrostatic_solver
         dispersive = interaction.universe.dispersive_solver
@@ -1773,7 +1776,7 @@ def parse_bonded_coefficients(interaction):
     bond_coeff and angle_coeff
     """
 
-    parameters = {p.name:convert_unit(p.value, p.unit)
+    parameters = {p.name:convert_unit(p.value)
                   for p in interaction.params}
     style = parse_bonded_styles(interaction)
 
@@ -1800,7 +1803,7 @@ def parse_dispersion_coefficients(interaction, style):
     A list of parameters converted to the input format for LAMMPS pair_coeff
     """
 
-    parameters = {p.name:convert_unit(p.value, p.unit)
+    parameters = {p.name:convert_unit(p.value)
                   for p in interaction.params}
 
     if 'lj' in style:
