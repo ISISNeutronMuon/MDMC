@@ -18,7 +18,6 @@ by PyLammps is incorrectly set to ndihedraltypes
 
 AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
-
 from copy import copy
 from itertools import chain, count, product, tee
 from random import randint
@@ -39,7 +38,7 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
 class PyLammpsAttribute(object):
 
     """
-    An abstract class which has a PyLammps object as an attribute
+    A class which has a PyLammps object as an attribute
 
     It possesses attributes and methods relating to the PyLammps object
 
