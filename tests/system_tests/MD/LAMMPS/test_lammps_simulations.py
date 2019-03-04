@@ -15,6 +15,11 @@ from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, Molecule
 
+
+# STDEV_FAC is the number of standard deviations within which the calculated
+# property must lie for it to be considered equivalent to the expected value
+# i.e. it is the tolerance of the assertion on the property
+STDEV_FAC = 3.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
@@ -449,7 +454,7 @@ def assert_property(ensemble, expected, request, prop):
     average = average_property(request.getfixturevalue(ensemble), prop)
 
     # expected[property][1] is the standard_deviation of the property. The
-    # absolute tolerance is set to 3 times this value.
+    # absolute tolerance is set to STDEV_FAC times this value.
     # Small relative tolerance accounts for rounding differences
     assert np.allclose(average, expected[prop][0],
-                       atol=expected[prop][1]*3, rtol=1e-8)
+                       atol=expected[prop][1]*STDEV_FAC, rtol=1e-8)
