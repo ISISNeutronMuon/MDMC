@@ -397,6 +397,9 @@ def set_thermo_style(sim):
     """
     Applies a LAMMPS thermo_style to the LAMMPS wrapper in the MDMC Simulation
     object so that the required properties can be determined
+
+    Arguments:
+    sim - an MDMC Simulation object
     """
 
     sim.engine.lmp.thermo_style('custom', 'step', 'temp', 'press', 'ke', 'pe',
@@ -430,6 +433,14 @@ def assert_property(ensemble, expected, request, prop):
 
     """
     Performs an assertion on a property using an ensemble returned using request
+
+    Arguments:
+    ensemble - an ensemble fixture (e.g. NVE, NPT)
+    expected - a dictionary of (name: value) where name is a string with the
+    thermodynamic/simulation property name and expected is the expected value of
+    that property
+    request - a pytest request object
+    prop - a string with the thermodynamic/simulation property to be tested
     """
 
     # As fixtures cannot be included in parameterization, the names of the
