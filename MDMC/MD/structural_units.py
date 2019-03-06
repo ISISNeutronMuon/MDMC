@@ -181,6 +181,12 @@ class StructuralUnit:
 
         return self.__class__.__name__
 
+    def copy(self, position):
+
+        structural_unit = deepcopy(self)
+        structural_unit.position = position
+        return structural_unit
+
     def _generate_ID(self):
 
         """
