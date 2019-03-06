@@ -5,10 +5,10 @@ An example MDMC script for optimizing spce parameters for water at 263 K
 import numpy as np
 from scipy.interpolate import interp2d
 
-import MDMC.MD.simulation as sim
-import MDMC.MD.structural_units as su
+from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
+from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
+    Dispersion, Molecule
 from MDMC.control.control import MDMCControl
-from MDMC.MD import force_fields as ff
 from tests.test_data import data
 
 # Build universe
@@ -17,43 +17,39 @@ from tests.test_data import data
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
 SIDE = 21.75
-universe = sim.Universe(dimensions=(SIDE, SIDE, SIDE),
-                        shape=sim.Shape.orthorhombic)
-H1 = su.Atom('H', mass=1.008)
-H2 = su.Atom('H', position=(1.51390, 0., 0.), mass=1.008)
-O = su.Atom('O', position=(0.75695, 0., 0.58588), mass=16.000)
-H_coulombic = su.Coulombic(atoms=[H1, H2])
-O_coulombic = su.Coulombic(atoms=O)
-water_mol = su.Molecule(position=(0, 0, 0),
-                        velocity=(0, 0, 0),
-                        atoms=[H1, H2, O],
-                        interactions=[su.Bond((H1, O), (H2, O)),
-                                      su.BondAngle(H1, O, H2)],
-                        name='water')
-universe.fill(water_mol, num_density=0.0335)
-O_dispersion = su.Dispersion(universe, O.atom_type)
+universe = Universe(dimensions=DIMENSION)
+H1 = Atom('H')
+H2 = Atom('H', position=(0., 1.63298, 0.))
+O = Atom('O', position=(0., 0.81649, 0.57736))
+H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
+O_coulombic = Coulombic(atoms=O, cutoff=10.)
+water_mol = Molecule(position=(0, 0, 0),
+                     velocity=(0, 0, 0),
+                     atoms=[H1, H2, O],
+                     interactions=[Bond((H1, O), (H2, O), constrained=True),
+                                   BondAngle(H1, O, H2, constrained=True)],
+                     name='water')
+shake = Shake(1e-4, 100)
+universe.constraint_algorithm = shake
+e_solver = PPPM(accuracy=1e-5)
+universe.electrostatic_solver = e_solver
+universe.fill(water_mol, num_density=0.03356718472021752)
+O_dispersion = Dispersion(universe, O.atom_type, cutoff=10.,
+                          vdw_tail_correction=True)
 universe.add_force_field('SPCE')
 
 # MD Engine setup
 md_engine = sim.Simulation(universe,
-                           engine="mmtk",
+                           engine="lammps",
                            time_step=1.057564,
                            temperature=263.,
-                           integrator='velocity_verlet',
-                           lj_options=12.,
-                           es_options='ewald',
-                           minimizer='steepest_descent',
-                           traj_step=1000,
-                           rigid=True,
-                           threads=4)
+                           traj_step=1000)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
 print "Minimization Complete"
-print md_engine.engine.universe.energy()
 md_engine.run(n_steps=25000, equilibration=True)
 print "Equilibration Complete"
-print md_engine.engine.universe.energy()
 
 # Setup refinement
 
