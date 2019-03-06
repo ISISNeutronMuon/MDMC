@@ -92,18 +92,21 @@ def test_create_atom(atom):
 def test_copy_structural_unit(unit, changed_attr):
 
     """
-    As __deepcopy__ has been implemented for StructuralUnit, this tests that the
-    correct attributes are copied and others are modified
+    Tests that structural_unit.copy copies the correct attributes and modifies
+    the other attributes
 
     Checks that for all structural units which are not subunits (which is all
     units in this case) self.parent is self
     """
 
-    cpy_unit = deepcopy(unit)
+    new_position = (5., 5., 5.)
+    cpy_unit = unit.copy(position=new_position)
     for attr in unit.__dict__:
-        if attr in changed_attr:
+        if attr == '_position':
+            assert all(getattr(cpy_unit, attr) == new_position)
+        elif attr in changed_attr:
             assert getattr(cpy_unit, attr) != getattr(unit, attr)
-        elif attr is 'parent':
+        elif attr == 'parent':
             assert attr is unit
         else:
             assert np.all(getattr(cpy_unit, attr) == getattr(unit, attr))
