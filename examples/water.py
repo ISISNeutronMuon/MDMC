@@ -16,8 +16,7 @@ from tests.test_data import data
 # 18.6270199 A is 216 water molecules
 # 21.731523217 is 343 water molecules
 # 24.83602653 is 512 water molecules
-SIDE = 21.75
-universe = Universe(dimensions=DIMENSION)
+universe = Universe(dimensions=21.75)
 H1 = Atom('H')
 H2 = Atom('H', position=(0., 1.63298, 0.))
 O = Atom('O', position=(0., 0.81649, 0.57736))
