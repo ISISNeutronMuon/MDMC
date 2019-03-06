@@ -30,7 +30,7 @@ class SPCE(ForceField):
 
         # LJ Params
         sigma = UnitFloat(3.166, units.LENGTH)       # Ang
-        epsilon = UnitFloat(0.6502, units.LENGTH)    # kJ mol^-1
+        epsilon = UnitFloat(0.6502, units.ENERGY / units.AMOUNT)    # kJ mol^-1
 
         # Bond Params
         r_OH = UnitFloat(1.000, units.LENGTH)        # Ang

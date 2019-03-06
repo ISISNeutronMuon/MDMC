@@ -103,14 +103,14 @@ class Universe(object):
 
         self.constraint_algorithm = settings.get('constraint_algorithm')
 
-
+    # Unit decorator on getter due to operations in setter
     @property
+    @unit_decorator_getter(unit=units.LENGTH)
     def dims(self):
 
         return self._dims
 
     @dims.setter
-    @unit_decorator(unit=units.LENGTH)
     def dims(self, dims):
 
         if isinstance(dims, float):
@@ -351,8 +351,8 @@ class Universe(object):
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
         bounds = structural_unit.bounding_box
-        mn = np.array((0., 0., 0.))
-        mx = self.dims
+        mn = np.array((0., 0., 0.)) - (bounds.min - structural_unit.position)
+        mx = self.dims - (bounds.min - structural_unit.position)
         for i in range(len(self.dims)):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
                                          endpoint=False))
@@ -497,6 +497,23 @@ class PPPM(KSpaceSolver):
 
         super(PPPM, self).__init__(**settings)
 
+    def __eq__(self, other):
+
+        """
+        Two KSpaceSolvers are equal if their __dict__ are equal
+        """
+
+        if not isinstance(other, self.__class__):
+            return False
+        for k, v in self.__dict__.items():
+            if v != getattr(other, k):
+                return False
+        return True
+
+    def __ne__(self, other):
+
+        return not self.__eq__(other)
+
 
 class ConstraintAlgorithm(object):
 
@@ -600,17 +617,16 @@ class Simulation(object):
         """
         Initializes universe, engine and settings
 
-        Engine independent settings:
+        Settings:
         temperature - float specifying simulation temperature in K
         time_step - float specifying simulation timestep size in fs
         integrator - string specifying MD time integrator
-
-        Settings:
         lj_options - Options for Lennard-Jones interactions
         es_options - Options for electrostatic interactions
-        thermostat - boolean defining if a thermostat is applied
-        pressure - float specifying the pressure in units of Pa.  If this is
-        defined then a barostat is applied.
+        thermostat - string specifying the name of a thermostat e.g. Nose-Hoover
+        barostat - string specifying the name of a barostat e.g. Nose-Hoover
+        pressure - float specifying the pressure in units of Pa. This is requied
+        if a barostat is passed.
         """
 
         self.universe = universe
@@ -629,7 +645,7 @@ class Simulation(object):
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps):
+    def minimize(self, n_steps, **settings):
 
         """
         Minimizes the MD simulation energy
@@ -638,7 +654,7 @@ class Simulation(object):
         n_steps - integer maximum number of steps to run the minimization
         """
 
-        self.engine.minimize(n_steps)
+        self.engine.minimize(n_steps, **settings)
 
     def run(self, n_steps, equilibration=False):
 

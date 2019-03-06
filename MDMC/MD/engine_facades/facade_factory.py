@@ -17,10 +17,37 @@ class MDEngineFacadeFactory(object):
 
     @staticmethod
     def create_facade(module_name):
-        module = import_module('.' + module_name, __package__)
+
+        """
+        Arguments:
+        module_name - a string specifying a module name in engine_facades.
+        Aliases to these module names are also valid.
+
+        Returns:
+        an object of a MD engine
+        """
+
+        try:
+            module = import_module('.' + module_name, __package__)
+        except ImportError:
+            module = MDEngineFacadeFactory._import_from_alias(module_name)
 
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, MDEngine)))
 
         return classes[0][1]()
+
+    @staticmethod
+    def _import_from_alias(alias):
+
+        """
+        Converts an alias into a module name
+        """
+
+        if alias.upper() == 'MMTK':
+            module_name = 'mmtk'
+        elif alias.upper() == 'LAMMPS' or alias.lower() == 'lammps_engine':
+            module_name = 'lammps_engine'
+
+        return import_module('.' + module_name, __package__)
