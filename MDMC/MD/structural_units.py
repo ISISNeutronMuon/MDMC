@@ -183,6 +183,18 @@ class StructuralUnit:
 
     def copy(self, position):
 
+        """
+        Copies the structural unit and sets the position
+
+        Arguments:
+        position - a list of floats specifying the position of the new
+        structural unit
+
+        Returns:
+        A structural unit with all non-unique attributes copied and a new
+        position
+        """
+
         structural_unit = deepcopy(self)
         structural_unit.position = position
         return structural_unit
@@ -392,6 +404,23 @@ class CompositeStructuralUnit(StructuralUnit):
     def structure_list(self, value):
 
         self._structure_list = value
+
+    def copy(self, position):
+    # pylint:disable=useless-super-delegation
+    # Docstring specific to CompositeStructuralUnit
+
+        """
+        Copies the CompositeStructuralUnit and all attributes, except ID which
+        is generated
+
+        This will not currently work if the CompositeStructuralUnit has any
+        bonded interactions with atoms external to it (e.g. it may cause issues
+        for copying molecules with groups)
+
+        Interactions for Atoms may be reordered with respect to initial atoms
+        """
+
+        return super(CompositeStructuralUnit, self).copy(position)
 
 
 class Atom(StructuralUnit):
@@ -623,6 +652,19 @@ class Atom(StructuralUnit):
         """
 
         return self._bonded_interaction_pairs
+
+    def copy(self, position):
+    # pylint:disable=useless-super-delegation
+    # Docstring specific to Atom
+        """
+        Copies the Atom and all attributes, except ID which is generated
+
+        Interactions are copied but the copied atom is substituted for the
+        original atom.  For BondedInteractions this means that the copied atom
+        will be bonded to all atoms to which the original atom is bonded.
+        """
+
+        return super(Atom, self).copy(position)
 
     def add_interaction(self, interaction, from_interaction=False):
 
