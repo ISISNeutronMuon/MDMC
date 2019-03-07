@@ -6,7 +6,6 @@
 
 from abc import ABCMeta, abstractproperty
 from collections import defaultdict
-from copy import deepcopy
 from itertools import product, ifilterfalse, count
 
 from enum import Enum
@@ -366,8 +365,7 @@ class Universe(object):
                 self.add_structural_unit(structural_unit, force_field)
                 structural_unit.position = position
             else:
-                new_unit = deepcopy(structural_unit)
-                new_unit.position = position
+                new_unit = structural_unit.copy(position)
                 self.add_structural_unit(new_unit)
 
     def add_force_field(self, force_field, *interactions):
