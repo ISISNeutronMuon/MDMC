@@ -3,7 +3,6 @@
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:05:13"""
 
 from collections import Counter
-from copy import deepcopy
 from itertools import permutations
 
 import numpy as np
@@ -127,10 +126,10 @@ def test_structure_unique_ID(water_SPCE_universe):
 
     assert len(IDs) == len(set(IDs))
 
-    cpy_atom = deepcopy(water_SPCE_universe.atom_list[0])
+    cpy_atom = water_SPCE_universe.atom_list[0].copy([1., 1., 1.])
     assert cpy_atom.ID not in IDs
 
-    cpy_molecule = deepcopy(water_SPCE_universe.molecule_list[0])
+    cpy_molecule = water_SPCE_universe.molecule_list[0].copy([5., 5., 5.])
     assert cpy_molecule.ID not in IDs + [cpy_atom.ID]
 
 
@@ -146,7 +145,7 @@ def test_structure_parent():
 
     atom = su.Atom('H')
     assert atom.parent is atom
-    cpy_atom = deepcopy(atom)
+    cpy_atom = atom.copy([1., 1., 1.])
 
     atoms = [atom, cpy_atom]
     molecule = su.Molecule(position=WATER_POSITION, atoms=atoms,
@@ -155,7 +154,7 @@ def test_structure_parent():
     for atom in atoms:
         assert atom.parent is molecule
 
-    cpy_molecule = deepcopy(molecule)
+    cpy_molecule = molecule.copy([5., 5., 5.])
     for atom in cpy_molecule.atom_list:
         assert atom.parent is cpy_molecule
 
@@ -427,7 +426,7 @@ def test_bonded_interactions(Int, n_atoms, atom):
     for n in n_atoms:
         atoms = []
         for _ in range(n):
-            atoms.append(deepcopy(atom))
+            atoms.append(atom.copy([1., 1., 1.]))
 
         # Test correct number and values of atoms (i.e. no duplicates)
         valid_bond = Int(*atoms)
@@ -450,7 +449,7 @@ def test_bonded_interactions(Int, n_atoms, atom):
     for n in [min(n_atoms) - 1, max(n_atoms) + 1]:
         atoms = []
         for _ in range(n):
-            atoms.append(deepcopy(atom))
+            atoms.append(atom.copy([1., 1., 1.]))
         with pytest.raises(TypeError):
             invalid_bond = Int(*atoms)
 
@@ -608,7 +607,7 @@ def test_bonded_constraint_set_True(bonded_interaction, n_atoms, atom):
     Tests that constraints can be applied to BondedInteractions
     """
 
-    atoms = [deepcopy(atom) for i in range(n_atoms)]
+    atoms = [atom.copy([1., 1., 1.]) for i in range(n_atoms)]
     b_i = bonded_interaction(*atoms, constrained=True)
     assert b_i.constrained
 
@@ -621,7 +620,7 @@ def test_bonded_constraint_set_False(bonded_interaction, n_atoms, atom):
     Tests that BondedInteractions can be unconstrained if set to False
     """
 
-    atoms = [deepcopy(atom) for i in range(n_atoms)]
+    atoms = [atom.copy([1., 1., 1.]) for i in range(n_atoms)]
     b_i = bonded_interaction(*atoms, constrained=False)
     assert b_i.constrained is False
 
@@ -634,7 +633,7 @@ def test_bonded_constraint_unset(bonded_interaction, n_atoms, atom):
     Tests that BondedInteractions are unconstrained if no constraint is applied
     """
 
-    atoms = [deepcopy(atom) for i in range(n_atoms)]
+    atoms = [atom.copy([1., 1., 1.]) for i in range(n_atoms)]
     b_i = bonded_interaction(*atoms)
     assert b_i.constrained == False
 

@@ -5,8 +5,6 @@ Molecule, BoundingBox, MMTKEngine, Parameter, LAMPSQW, netCDF, xml_SQw, SQw
 
 AUTHOR :    Thomas Farmer        START DATE :    17/12/2018, 13:12:24"""
 
-from copy import deepcopy
-
 import numpy as np
 import pytest
 
@@ -43,7 +41,7 @@ def universe():
 @pytest.fixture
 def molecule(atom):
 
-    atom2 = deepcopy(atom)
+    atom2 = atom.copy(atom.position)
     return Molecule(position=LIST, atoms=[atom, atom2], name='Test',
                     interactions=[Bond(atom, atom2)])
 

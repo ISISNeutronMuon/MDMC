@@ -11,8 +11,6 @@ ENSEMBLE
 
 AUTHOR :    Thomas Farmer        START DATE :    05/11/2018, 10:47:14"""
 
-from copy import deepcopy
-
 import pytest
 
 from MDMC.MD.simulation import Universe, Shape, Simulation
