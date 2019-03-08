@@ -2133,7 +2133,7 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                     #pylint: disable=no-member
                     next_time_step_n = time_step_indexes.next()
                 time_step_n += 1
-                if time_step_n >= stop:
+                if stop is not None and time_step_n >= stop:
                     break
 
             line = file_handler.readline()
