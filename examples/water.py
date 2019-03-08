@@ -38,7 +38,7 @@ O_dispersion = Dispersion(universe, O.atom_type, cutoff=10.,
 universe.add_force_field('SPCE')
 
 # MD Engine setup
-md_engine = sim.Simulation(universe,
+md_engine = Simulation(universe,
                            engine="lammps",
                            time_step=1.057564,
                            temperature=263.,
