@@ -39,10 +39,10 @@ universe.add_force_field('SPCE')
 
 # MD Engine setup
 md_engine = Simulation(universe,
-                           engine="lammps",
-                           time_step=1.057564,
-                           temperature=263.,
-                           traj_step=1000)
+                       engine="lammps",
+                       time_step=1.057564,
+                       temperature=263.,
+                       traj_step=1000)
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
