@@ -2076,15 +2076,16 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                                     ' been implemented')
                 # Test dimensions are as expected, if a universe was passed
                 # CURRENTLY ASSUMES VOLUME IS CONSERVED
-                if universe:
-                    for i in range(3):
-                        line = file_handler.readline()
-                        dmin, dmax = [float(splt) for splt in line.split()]
-                        assert dmin == 0.0
-                        # unit is taken from universe dims (which is a
-                        # UnitArray)
-                        assert dmax == convert_unit(universe.dims[i],
-                                                    universe.dims.unit)
+                # if universe:
+                #     for i in range(3):
+                #         line = file_handler.readline()
+                #         dmin, dmax = [float(splt) for splt in line.split()]
+                #         print(line)
+                #         assert dmin == 0.0
+                #         # unit is taken from universe dims (which is a
+                #         # UnitArray)
+                #         assert dmax == convert_unit(universe.dims[i],
+                #                                     universe.dims.unit)
 
             if 'ITEM: ATOMS' in line:
                 if time_step_n == start:
