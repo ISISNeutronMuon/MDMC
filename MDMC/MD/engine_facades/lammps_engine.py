@@ -1984,6 +1984,10 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     xyz positions must be consecutive and in that order. The same is true of the
     xyz components of the velocity, if they are provided.
 
+    LAMMPS dump files do not include the time that elapses in a single
+    simulation step (time_step) and so this must be passed in fs, otherwise it
+    defaults to 1.0 fs.
+
     Arguments:
     trajectory_file - a LAMMPS dump (trajectory) file
     atom_type_properties - a list of tuples (symbol, mass) for all atom_types
@@ -1994,8 +1998,9 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     stop - an integer specifying the last trajectory, exclusive
     step - an integer specifying the step size between trajectories
 
-
     Settings:
+    time_step - the amount of time that elapses in a single simulation step in
+    fs (defaults to 1.0 fs)
     universe - an MDMC universe
     scaled_positions - a boolean specifying if the LAMMPS trajectory file
     provides the positions in scaled coordinates (i.e. xs, ys, yz)
@@ -2039,6 +2044,14 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
             atom.velocity = [float(splt) for splt
                              in line[i_vel:i_vel+3]]
         return atom
+
+    # Warn if no time_step is specified
+    try:
+        time_step = settings['time_step']
+    except KeyError:
+        warnings.warn("Trajectory has no time step, defaulting to 1.0 fs")
+        time_step = 1.
+
 
     # Change expected position string if scaled positions are used
     pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
