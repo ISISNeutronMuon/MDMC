@@ -2049,18 +2049,22 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     atom_IDs = settings.get('atom_IDs')
 
     configs = []
-    time_step_n = start
+    frame_n = start
     # Use count to create range so that stop can be undefined
-    time_step_indexes = count(start, step)
-    # next_time_step_n next attribute is assigned dynamically
-    next_time_step_n = time_step_indexes.next() #pylint: disable=no-member
+    frame_indexes = count(start, step)
+    # next_frame_n next attribute is assigned dynamically
+    next_frame_n = frame_indexes.next() #pylint: disable=no-member
     with open(trajectory_file.name, 'r') as file_handler:
         line = file_handler.readline()
         while line:
 
+            # LAMMPS TIMESTEP is the number of time steps that have elapsed. To
+            # avoid confusion with time_step (the amount of time that elapses in
+            # a single simulation step, i.e. dt), these are referred to as
+            # frames.
             if 'ITEM: TIMESTEP' in line:
                 line = file_handler.readline()
-                time_step = int(line.split()[0])
+                frame = int(line.split()[0])
 
             if 'ITEM: NUMBER OF ATOMS' in line:
                 line = file_handler.readline()
@@ -2088,7 +2092,7 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                 #                                     universe.dims.unit)
 
             if 'ITEM: ATOMS' in line:
-                if time_step_n == start:
+                if frame_n == start:
                     # LAMMPS dump files contain order of LAMMPS atom properties,
                     # at each time step. As these should not change with time
                     # step only determine this order for first required time
@@ -2105,7 +2109,7 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                     else:
                         i_vel = None
 
-                if time_step_n == next_time_step_n:
+                if frame_n == next_frame_n:
                     # Reads all atom lines before creating any atoms. By
                     # creating a list of tuples of (LAMMPS_ID, atom), this
                     # allows the lines to be reordered based on LAMMPS_ID. This
@@ -2128,13 +2132,16 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                         if not atom_IDs or line[i_id] in atom_IDs:
                             atoms.append(create_atom(line))
 
-                    configs.append(TemporalConfiguration(time_step, *atoms))
+                    # Multiply the number of timesteps by dt to calculate the
+                    # elapsed time
+                    configs.append(TemporalConfiguration(frame * time_step,
+                                                         *atoms))
 
-                    # next_time_step_n next attribute is assigned dynamically
+                    # next_frame_n next attribute is assigned dynamically
                     #pylint: disable=no-member
-                    next_time_step_n = time_step_indexes.next()
-                time_step_n += 1
-                if stop is not None and time_step_n >= stop:
+                    next_frame_n = frame_indexes.next()
+                frame_n += 1
+                if stop is not None and frame_n >= stop:
                     break
 
             line = file_handler.readline()
