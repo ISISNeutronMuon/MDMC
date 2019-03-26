@@ -331,6 +331,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         return convert_trajectory(self.trajectory_file,
                                   self.lmp_universe.atom_type_properties,
+                                  time_step=self.time_step,
                                   universe=self.universe)
 
     def update_parameters(self):
