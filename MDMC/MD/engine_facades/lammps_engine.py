@@ -1985,7 +1985,7 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     xyz components of the velocity, if they are provided.
 
     Arguments:
-    trajectory_file - a string specifying the LAMMPS trajectory filename
+    trajectory_file - a LAMMPS dump (trajectory) file
     atom_type_properties - a list of tuples (symbol, mass) for all atom_types
     (ordered) by atom_type, where symbol is a string specifying the element of
     the atom_type and mass is a float specifying the mass of the atom_type
