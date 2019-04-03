@@ -164,10 +164,18 @@ class MMC(Minimizer):
 
     def change_parameters(self, params):
 
-        # Faster to generate all random numbers at once
-        changes = self.distribution(-self.max_param_change,
-                                    self.max_param_change,
-                                    len(params))
+        # Only calculate magnitude of parameter changes on rank 0 process, so
+        # that each process ends up with same parameters
+        if self.comm.rank == 0:
+            # Faster to generate all random numbers at once
+            changes = self.distribution(-self.max_param_change,
+                                        self.max_param_change,
+                                        len(params))
+        else:
+            changes = None
+        # Broadcast parameters changes to all processes
+        self.comm.bcast(changes, root=0)
+        # Change parameters by same amount on all processes
         for i, param in enumerate(params):
             param.value += param.value * changes[i]
 
