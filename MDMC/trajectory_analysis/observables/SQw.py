@@ -4,6 +4,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
 
 from abc import ABCMeta, abstractmethod
 
+from mpi4py import MPI
 import numpy as np
 from numpy.testing import assert_allclose
 
@@ -257,8 +258,26 @@ class AbstractSQw(Observable):
         all time intervals
         """
 
-        return np.array([self._calculate_FQt_single_Q(Q_vector)
-                for Q_vector in self.Q_vectors])
+        comm = MPI.COMM_WORLD
+        shape = list(np.shape(self.Q_vectors))
+        if shape[0] % comm.size != 0:
+            axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
+            Q_vectors = np.pad(self.Q_vectors, (axis_0-shape[0], 0), 'constant')
+            Q_vectors[:axis_0-shape[0]] = np.array([np.float('nan')] * 3)
+            shape = [axis_0] + shape[1:]
+        else:
+            Q_vectors = self.Q_vectors
+            axis_0 = shape[0]
+        Q_vectors = np.split(Q_vectors, comm.size)
+        Q_vectors = comm.scatter(Q_vectors, root=0)
+        FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
+                        in Q_vectors])
+
+        FQt = np.array(comm.allgather(FQt))
+        FQt_shape = np.shape(FQt)
+        FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
+
+        return FQt[axis_0 - shape[0]:]
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, Q_vector):
