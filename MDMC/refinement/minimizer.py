@@ -159,8 +159,16 @@ class MMC(Minimizer):
 
     def change_state(self):
 
-        prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-        return True if prob > np.random.random() else False
+        # Only determine if state will be changed on rank 0 process
+        if self.comm.rank == 0:
+            prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
+            change_state = True if prob > np.random.random() else False
+        else:
+            change_state = None
+        # Broadcast to all processes whether or not the state will be changed
+        self.comm.bcast(change_state, root=0)
+
+        return change_state
 
     def change_parameters(self, params):
 
