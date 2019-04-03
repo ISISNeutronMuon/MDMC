@@ -259,24 +259,45 @@ class AbstractSQw(Observable):
         """
 
         comm = MPI.COMM_WORLD
+        # Determine the shape of Q vectors array. If the number of processors
+        # (comm.size) is not a factor of the first index, mpi4py cannot split
+        # the number of Q vectors equally amongst the processors.
         shape = list(np.shape(self.Q_vectors))
         if shape[0] % comm.size != 0:
+            # Determine the smallest integer larger than the number of Q vectors
+            # that is exactly divisible by the number of processors
             axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
+            # Increase the size of Q vectors up to the required size by padding
+            # the start of the array with zeroes
             Q_vectors = np.pad(self.Q_vectors, (axis_0-shape[0], 0), 'constant')
+            # Change these zeroes to a 3 element array of nan's as this array
+            # size is the smallest that is valid for calculating rho in the
+            # _calculate_FQt_single_Q methods
             Q_vectors[:axis_0-shape[0]] = np.array([np.float('nan')] * 3)
-            shape = [axis_0] + shape[1:]
         else:
             Q_vectors = self.Q_vectors
             axis_0 = shape[0]
+        # Split the Q vectors into a single array of Q vectors for each
+        # processor
         Q_vectors = np.split(Q_vectors, comm.size)
+        # Scatter the Q vector arrays to all processors
         Q_vectors = comm.scatter(Q_vectors, root=0)
+        # Calculate FQt for each Q vector for all processors
         FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                         in Q_vectors])
 
+        # Gather the calculated FQt's together on every processor. This ensures
+        # that all other calculations can be performed on every processor, so
+        # no other methods in SQw need to be made MPI compliant.
         FQt = np.array(comm.allgather(FQt))
+        # Reshape FQt as gather doesn't join the arrays but just collects them
+        # as arrays within an array. This is equivalent to flattening the first
+        # index.
         FQt_shape = np.shape(FQt)
         FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
+        # Remove the padded elements at the start of FQt which will be filled
+        # with nan's
         return FQt[axis_0 - shape[0]:]
 
     @abstractmethod
