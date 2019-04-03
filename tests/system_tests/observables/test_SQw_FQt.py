@@ -23,7 +23,7 @@ import MDMC.trajectory_analysis.observables.obs_factory as of
 from tests.test_data import data
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
-DIMS = (3.94221067, 3.94221067, 3.94221067)
+DIMS = (39.4221067, 39.4221067, 39.4221067)
 T_RESOLUTION = 30.999425
 
 # As all FQt should be normalised to 1, the absolute tolerance for
