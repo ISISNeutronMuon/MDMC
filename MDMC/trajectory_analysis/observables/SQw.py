@@ -394,7 +394,7 @@ class AbstractSQw(Observable):
 
         # Functions other than Gaussians must be FFT before multiplication
         N_Q = np.shape(FQt)[0]
-        window = function(self.t, params['sigma'], norm=False)
+        window = function(self.t[:len(self.E)], params['sigma'], norm=False)
 
         # Tile the window so that it is applied for all Q values
         return np.tile(window, [N_Q, 1]) * FQt
