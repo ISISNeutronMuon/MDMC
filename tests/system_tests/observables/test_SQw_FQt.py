@@ -120,9 +120,18 @@ def trajectory():
     return trajectory
 
 @pytest.fixture(scope="module")
-def Q_values():
+def Q_vectors():
 
-    return np.arange(1.6, 21, 1.6)
+    """
+    Returns:
+    An array of arrays of Q vectors for each Q value
+
+    As Q vector calculations make a random selection of Q vectors from the set
+    of all valid Q vectors, the Q vectors are set to the same values as those
+    used in nMOLDYN when generating the incoherent FQt and SQw
+    """
+
+    return pickle.load(open(data.OBS_DATA['Q_vectors'], 'r'))
 
 @pytest.fixture(scope="module")
 def SQw_obs(trajectory, Q_values):
