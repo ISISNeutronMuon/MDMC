@@ -6,6 +6,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
 
 from abc import ABCMeta, abstractmethod
 
+from mpi4py import MPI
 import numpy as np
 
 
@@ -33,7 +34,14 @@ class Minimizer:
         selected
         """
 
-        self.distribution = self.__class__.DISTRIBUTION[distribution]
+        self.comm = MPI.COMM_WORLD
+
+        # Parameters are only changed by rank 0 process, and so only rank 0
+        # Minimizer needs a random distribution
+        if self.comm.rank == 0:
+            self.distribution = self.__class__.DISTRIBUTION[distribution]
+        else:
+            self.distribution = None
 
         # First MC step always changes state
         self.FoM_old = float('inf')
