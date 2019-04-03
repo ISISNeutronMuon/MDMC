@@ -6,6 +6,7 @@ AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
 
 from abc import ABCMeta, abstractmethod
 
+from mpi4py import MPI
 import numpy as np
 
 
@@ -33,7 +34,14 @@ class Minimizer:
         selected
         """
 
-        self.distribution = self.__class__.DISTRIBUTION[distribution]
+        self.comm = MPI.COMM_WORLD
+
+        # Parameters are only changed by rank 0 process, and so only rank 0
+        # Minimizer needs a random distribution
+        if self.comm.rank == 0:
+            self.distribution = self.__class__.DISTRIBUTION[distribution]
+        else:
+            self.distribution = None
 
         # First MC step always changes state
         self.FoM_old = float('inf')
@@ -151,15 +159,31 @@ class MMC(Minimizer):
 
     def change_state(self):
 
-        prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-        return True if prob > np.random.random() else False
+        # Only determine if state will be changed on rank 0 process
+        if self.comm.rank == 0:
+            prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
+            change_state = True if prob > np.random.random() else False
+        else:
+            change_state = None
+        # Broadcast to all processes whether or not the state will be changed
+        self.comm.bcast(change_state, root=0)
+
+        return change_state
 
     def change_parameters(self, params):
 
-        # Faster to generate all random numbers at once
-        changes = self.distribution(-self.max_param_change,
-                                    self.max_param_change,
-                                    len(params))
+        # Only calculate magnitude of parameter changes on rank 0 process, so
+        # that each process ends up with same parameters
+        if self.comm.rank == 0:
+            # Faster to generate all random numbers at once
+            changes = self.distribution(-self.max_param_change,
+                                        self.max_param_change,
+                                        len(params))
+        else:
+            changes = None
+        # Broadcast parameters changes to all processes
+        self.comm.bcast(changes, root=0)
+        # Change parameters by same amount on all processes
         for i, param in enumerate(params):
             param.value += param.value * changes[i]
 
