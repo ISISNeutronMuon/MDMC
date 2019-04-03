@@ -87,8 +87,23 @@ def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
     return FQt_coh_ref
 
 @pytest.fixture(scope="module")
-def SQw_coh_ref(coh_file):
-    return np.array(coh_file.variables['Sqw-total'][:])
+def SQw_coh_HH_ref(coh_file):
+    return np.array(coh_file.variables['Sqw-HH'][:])
+
+@pytest.fixture(scope="module")
+def SQw_coh_HO_ref(coh_file):
+    return np.array(coh_file.variables['Sqw-HO'][:])
+
+@pytest.fixture(scope="module")
+def SQw_coh_OO_ref(coh_file):
+    return np.array(coh_file.variables['Sqw-OO'][:])
+
+@pytest.fixture(scope="module")
+def SQw_coh_ref(SQw_coh_HH_ref, SQw_coh_HO_ref, SQw_coh_OO_ref):
+    SQw_coh_ref = (SQw_coh_HH_ref * ap.B_COH['H']**2 * N_H
+                   + SQw_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
+                   + SQw_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
+    return SQw_coh_ref
 
 @pytest.fixture(scope="module")
 def trajectory():
