@@ -272,21 +272,3 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
     assert_allclose(SQw_obs.SQw, SQw_ref, rtol=RTOL)
 
 
-def assert_allclose_chi2(actual, desired, chi2, rtol=1e-07, atol=0):
-
-    """
-    Arguments:
-    actual - an array to be tested
-    desired - a reference array of the same dimensions as actual
-    chi2 - a float specifying the maximum chi squared
-    rtol - a float specifying the relative tolerance
-    atol - a float specifying the absolute tolerance
-
-    Raises:
-    AssertionError if two objects do not have chi squared less than desired
-    maximum and are not equal within desired tolerance
-    """
-
-    test_chi2 = np.sum((actual - desired) ** 2 / np.absolute(desired))
-    assert test_chi2 < chi2, "Chi squared is greater than desired maximum"
-    assert_allclose(actual, desired, rtol, atol)
