@@ -23,14 +23,12 @@ import MDMC.trajectory_analysis.observables.obs_factory as of
 from tests.test_data import data
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
-DIMS = (3.94221067, 3.94221067, 3.94221067)
+DIMS = (39.4221067, 39.4221067, 39.4221067)
 T_RESOLUTION = 30.999425
 
-# As all FQt should be normalised to 1, the absolute tolerance for
-# comparisons with reference data is set.  As SQw data has been FFT, the effects
-# if noise are less significant, so relative tolerance can be used.
-ATOL = 0.015
-RTOL = 0.050
+# Absolute tolerance is included to account for rounding differences in nMOLDYN
+# and MDMC
+ATOL = 1e-7
 
 # Constants for correct normalisation relative to nMOLDYN FQt and SQw
 N_H = 4096
@@ -38,6 +36,7 @@ N_O = 2048
 N_TOTAL = N_H + N_O
 N_H_O = np.sqrt(N_H * N_O)
 B_FACTOR = (ap.B_INCOH['H']**2 * N_H + ap.B_INCOH['O']**2 * N_O) / N_TOTAL
+N_Q_VALUES = 13
 
 @pytest.fixture(scope="module")
 def incoh_file():
@@ -87,8 +86,23 @@ def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
     return FQt_coh_ref
 
 @pytest.fixture(scope="module")
-def SQw_coh_ref(coh_file):
-    return np.array(coh_file.variables['Sqw-total'][:])
+def SQw_coh_HH_ref(coh_file):
+    return np.array(coh_file.variables['Sqw-HH'][:])
+
+@pytest.fixture(scope="module")
+def SQw_coh_HO_ref(coh_file):
+    return np.array(coh_file.variables['Sqw-HO'][:])
+
+@pytest.fixture(scope="module")
+def SQw_coh_OO_ref(coh_file):
+    return np.array(coh_file.variables['Sqw-OO'][:])
+
+@pytest.fixture(scope="module")
+def SQw_coh_ref(SQw_coh_HH_ref, SQw_coh_HO_ref, SQw_coh_OO_ref):
+    SQw_coh_ref = (SQw_coh_HH_ref * ap.B_COH['H']**2 * N_H
+                   + SQw_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
+                   + SQw_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
+    return SQw_coh_ref
 
 @pytest.fixture(scope="module")
 def trajectory():
@@ -105,24 +119,33 @@ def trajectory():
     return trajectory
 
 @pytest.fixture(scope="module")
-def Q_values():
+def Q_vectors():
 
-    return np.arange(1.6, 21, 1.6)
+    """
+    Returns:
+    An array of arrays of Q vectors for each Q value
+
+    As Q vector calculations make a random selection of Q vectors from the set
+    of all valid Q vectors, the Q vectors are set to the same values as those
+    used in nMOLDYN when generating the incoherent FQt and SQw
+    """
+
+    return pickle.load(open(data.OBS_DATA['Q_vectors'], 'r'))
 
 @pytest.fixture(scope="module")
-def SQw_obs(trajectory, Q_values):
+def SQw_obs(trajectory, Q_vectors):
 
     """
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
     SQw = of.ObservableFactory.create_observable('SQw')
-    SQw.calculate_from_MD(trajectory, Q_values=Q_values, dims=DIMS,
+    SQw.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dims=DIMS,
                           t_resolution=T_RESOLUTION)
     return SQw
 
 @pytest.fixture(scope="module")
-def SQw_incoh_obs(trajectory, Q_values):
+def SQw_incoh_obs(trajectory, Q_vectors):
 
     """
     Setup the container for Q, time, w, incoherent FQt and incoherent SQt
@@ -132,12 +155,12 @@ def SQw_incoh_obs(trajectory, Q_values):
     """
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
-    SQw_incoh.calculate_from_MD(trajectory, Q_values=Q_values, dims=DIMS,
+    SQw_incoh.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dims=DIMS,
                                 t_resolution=T_RESOLUTION)
     return SQw_incoh
 
 @pytest.fixture(scope="module")
-def SQw_coh_obs(trajectory, Q_values):
+def SQw_coh_obs(trajectory, Q_vectors):
 
     """
     Setup the container for Q, time, w, coherent FQt and coherent SQt
@@ -147,21 +170,9 @@ def SQw_coh_obs(trajectory, Q_values):
     """
 
     SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
-    SQw_coh.calculate_from_MD(trajectory, Q_values=Q_values, dims=DIMS,
+    SQw_coh.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dims=DIMS,
                               t_resolution=T_RESOLUTION)
     return SQw_coh
-
-
-def test_Q(Q_ref, SQw_obs):
-
-    """
-    Test Q equivalence
-
-    Exact equivalence results in failed assertion due to rounding errors caused
-    by the range routine used in nMOLDYN
-    """
-
-    assert_allclose(SQw_obs.Q, Q_ref, atol=1e-07)
 
 
 def test_time(time_ref, SQw_obs):
@@ -206,7 +217,7 @@ def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
     """
 
     assert np.all(np.shape(SQw_coh_obs.FQt) == np.shape(FQt_coh_ref))
-    assert_allclose_chi2(SQw_coh_obs.FQt, FQt_coh_ref, 1., atol=1)
+    assert_allclose(SQw_coh_obs.FQt, FQt_coh_ref, atol=ATOL)
 
 
 def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
@@ -218,7 +229,8 @@ def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
     """
 
     assert np.all(np.shape(SQw_obs.FQt) == np.shape(FQt_incoh_ref))
-    FQt_ref = FQt_incoh_ref + FQt_coh_ref
+    # Coherent reference is already normalised - do the same for incoherent
+    FQt_ref = FQt_incoh_ref * B_FACTOR + FQt_coh_ref
     assert_allclose(SQw_obs.FQt, FQt_ref, atol=ATOL)
 
 
@@ -233,7 +245,12 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
     """
 
     assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
-    assert_allclose(SQw_incoh_obs.SQw / B_FACTOR, SQw_incoh_ref, rtol=RTOL)
+    # SQw is normalised to B_FACTOR / N_Q_VALUES.  The first term is due to
+    # nMOLDYN not including the incoherent weighting, and the second term is
+    # because MDMC normalises the FFT so that there is the same power in SQw as
+    # in FQt
+    assert_allclose(SQw_incoh_obs.SQw / (B_FACTOR / N_Q_VALUES),
+                    SQw_incoh_ref, atol=ATOL)
 
 
 def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
@@ -244,7 +261,7 @@ def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
     """
 
     assert np.all(np.shape(SQw_coh_obs.SQw) == np.shape(SQw_coh_ref))
-    assert_allclose(SQw_coh_obs.SQw, SQw_coh_ref, rtol=RTOL)
+    assert_allclose(SQw_coh_obs.SQw * N_Q_VALUES, SQw_coh_ref, atol=ATOL)
 
 
 def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
@@ -256,25 +273,5 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
     """
 
     assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
-    SQw_ref = SQw_incoh_ref + SQw_coh_ref
-    assert_allclose(SQw_obs.SQw, SQw_ref, rtol=RTOL)
-
-
-def assert_allclose_chi2(actual, desired, chi2, rtol=1e-07, atol=0):
-
-    """
-    Arguments:
-    actual - an array to be tested
-    desired - a reference array of the same dimensions as actual
-    chi2 - a float specifying the maximum chi squared
-    rtol - a float specifying the relative tolerance
-    atol - a float specifying the absolute tolerance
-
-    Raises:
-    AssertionError if two objects do not have chi squared less than desired
-    maximum and are not equal within desired tolerance
-    """
-
-    test_chi2 = np.sum((actual - desired) ** 2 / np.absolute(desired))
-    assert test_chi2 < chi2, "Chi squared is greater than desired maximum"
-    assert_allclose(actual, desired, rtol, atol)
+    SQw_ref = (SQw_incoh_ref * B_FACTOR + SQw_coh_ref) / N_Q_VALUES
+    assert_allclose(SQw_obs.SQw, SQw_ref, atol=ATOL)
