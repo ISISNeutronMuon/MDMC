@@ -38,9 +38,16 @@ for key in READER_DATA:
 #
 # Dynamic coherent structure factor (DCSF i.e. coherent SQw)
 # Same MD simulation and nMOLDYN parameters as DISF.
+#
+# Q_vectors - pickled
+# A list of lists of arrays. Each array is 3 dimensions and contains a single
+# Q vector. Each list contains a collection of Q vectors that have the same Q
+# value. These Q vectors were used in calculating the SQw_incoh and SQw_coh data
+# from nMOLDYN.
 
 OBS_DATA = {'SQw_incoh':'/nMOLDYN_DISF_water.nc',
-            'SQw_coh':'/nMOLDYN_DCSF_water.nc'}
+            'SQw_coh':'/nMOLDYN_DCSF_water.nc',
+            'Q_vectors':'/qVectors.dat'}
 
 # Add paths to data values
 for key in OBS_DATA:
