@@ -176,18 +176,6 @@ def SQw_coh_obs(trajectory, Q_values):
     return SQw_coh
 
 
-def test_Q(Q_ref, SQw_obs):
-
-    """
-    Test Q equivalence
-
-    Exact equivalence results in failed assertion due to rounding errors caused
-    by the range routine used in nMOLDYN
-    """
-
-    assert_allclose(SQw_obs.Q, Q_ref, atol=1e-07)
-
-
 def test_time(time_ref, SQw_obs):
 
     """
