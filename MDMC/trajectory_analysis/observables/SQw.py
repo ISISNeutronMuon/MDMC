@@ -270,10 +270,11 @@ class AbstractSQw(Observable):
             # Increase the size of Q vectors up to the required size by padding
             # the start of the array with zeroes
             Q_vectors = np.pad(self.Q_vectors, (axis_0-shape[0], 0), 'constant')
-            # Change these zeroes to a 3 element array of nan's as this array
-            # size is the smallest that is valid for calculating rho in the
-            # _calculate_FQt_single_Q methods
-            Q_vectors[:axis_0-shape[0]] = np.array([np.float('nan')] * 3)
+            # Change these zeroes to nan's as this can be passed to calculate
+            # rho in the _calculate_FQt_single_Q method, resulting in an array
+            # of nan's for each zero element.  These arrays are then removed
+            # after gathering.
+            Q_vectors[:axis_0-shape[0]] = np.float('nan')
         else:
             Q_vectors = self.Q_vectors
             axis_0 = shape[0]
