@@ -166,7 +166,7 @@ class MMC(Minimizer):
         else:
             change_state = None
         # Broadcast to all processes whether or not the state will be changed
-        self.comm.bcast(change_state, root=0)
+        change_state = self.comm.bcast(change_state, root=0)
 
         return change_state
 
@@ -182,7 +182,7 @@ class MMC(Minimizer):
         else:
             changes = None
         # Broadcast parameters changes to all processes
-        self.comm.bcast(changes, root=0)
+        changes = self.comm.bcast(changes, root=0)
         # Change parameters by same amount on all processes
         for i, param in enumerate(params):
             param.value += param.value * changes[i]
