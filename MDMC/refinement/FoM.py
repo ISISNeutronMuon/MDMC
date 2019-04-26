@@ -59,8 +59,8 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     def calculate_single_FoM(self, obs_pair):
 
-        return np.sum(obs_pair.calculate_difference() ** 2
-                      * obs_pair.weight / obs_pair.calculate_errors())
+        return obs_pair.weight * (np.sum(obs_pair.calculate_difference()
+                                         / obs_pair.calculate_errors()) ** 2)
 
 
 class ObservablePair(object):
