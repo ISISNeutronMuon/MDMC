@@ -22,7 +22,8 @@ READER_TEST_INFO contains the following:
 - Dependent data type
 """
 
-READERS_TEST_INFO = [('LAMPSQw', ['Q', 'E'], 'SQw')]
+READERS_TEST_INFO = [('LAMPSQw', ['Q', 'E'], 'SQw'),
+                     ('xml_SQw', ['Q', 'E'], 'SQw')]
 
 
 @pytest.fixture(params=READERS_TEST_INFO)
