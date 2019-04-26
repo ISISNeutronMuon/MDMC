@@ -20,8 +20,12 @@ _OBJECT_PATH = '/MDMC_objects'
 #
 # LAMPSQw
 # From Bertil Halle QENS water data on in5
+#
+# XML_SQw
+# Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
 
-READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP'}
+READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
+               'XML_SQw':'/Well_s_q_omega_Ar_data.xml'}
 
 # Add paths to data values
 for key in READER_DATA:
