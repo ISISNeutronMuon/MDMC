@@ -33,16 +33,21 @@ class XML_SQw(Reader):
         n_Q = float(self._root_dict['n-q-points'])
         n_w = float(self._root_dict['n-omega-points'])
 
-        self.Q = set()
-        self.w = set()
+        # Local variable Q is used for setting self.Q after all children of
+        # self._root have been parsed. This is required because a set cannot be
+        # passed to self.Q and then the add method called, because the unit
+        # decorator converts the set to an a UnitArray, which has no add method.
+        # as the
+        Q = set()
+        w = set()
         self.SQw = []
         self.SQw_err = []
 
         for child in self._root:
             if child.tag == 'SQomega':
                 child_dict = self.dict_from_element(child)
-                self.Q.add(float(child_dict['q']))
-                self.w.add(float(child_dict['omega']))
+                Q.add(float(child_dict['q']))
+                w.add(float(child_dict['omega']))
 
                 # Account for 'no data' in SQw
                 SQw = child_dict['S']
@@ -53,8 +58,8 @@ class XML_SQw(Reader):
                     self.SQw.append(float(SQw))
                     self.SQw_err.append(float(child_dict['error']))
 
-        self.Q = np.sort(np.array(list(self.Q)))
-        self.w = np.sort(np.array(list(self.w)))
+        self.Q = np.sort(np.array(list(Q)))
+        self.w = np.sort(np.array(list(w)))
         self.E = self.w * 1e15 * h_bar
         self.SQw = np.reshape(np.array(self.SQw), [n_w, n_Q])
         self.SQw_err = np.reshape(np.array(self.SQw_err), [n_w, n_Q])
