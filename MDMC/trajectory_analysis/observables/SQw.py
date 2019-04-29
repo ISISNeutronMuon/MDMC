@@ -249,7 +249,7 @@ class AbstractSQw(Observable):
         An array of floats specifying the energy in units of meV
         """
 
-        return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt)
+        return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt / 1000)
 
     def calculate_FQt(self):
 
@@ -411,7 +411,7 @@ class AbstractSQw(Observable):
 
         # Normalisation requires factor of dt
         # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
-        dt = self.t[1] - self.t[0]
+        dt = (self.t[1] - self.t[0]) / 1000.
 
         # FFT and reduce the temporal dimension back to that of F(Q,t), with the
         # factor of 0.5 accounting for the fft over the reflected F(Q,t)
@@ -435,7 +435,8 @@ class AbstractSQw(Observable):
 
         # Functions other than Gaussians must be FFT before multiplication
         N_Q = np.shape(FQt)[0]
-        window = function(self.t[:len(self.E)], params['sigma'], norm=False)
+        window = function(self.t[:len(self.E)] / 1000., params['sigma'],
+                          norm=False)
 
         # Tile the window so that it is applied for all Q values
         return np.tile(window, [N_Q, 1]) * FQt
