@@ -56,7 +56,7 @@ def independent_variables(trajectory):
     # Use half the trajectory steps to calculate the Energies
     n = len(trajectory.times) / 2
     dt = trajectory.times[1] - trajectory.times[0]
-    E = h_bar * 1e15 * np.pi * np.arange(n) / (n * dt)
+    E = h_bar * 1e18 * np.pi * np.arange(n) / (n * dt)
     Q = np.arange(1.6, 21, 1.6)
 
     return {'E':E, 'Q':Q}
