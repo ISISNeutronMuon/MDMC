@@ -181,7 +181,8 @@ def test_time(time_ref, SQw_obs):
     Test time equivalence
     """
 
-    assert np.all(SQw_obs.t == time_ref)
+    # Time in MDMC is in fs, in nMOLDYN is in ps, so factor of 1000 converts
+    assert np.all(SQw_obs.t / 1000. == time_ref)
 
 
 def test_w(w_ref, SQw_obs):
