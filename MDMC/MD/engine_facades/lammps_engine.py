@@ -301,6 +301,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # Reapply the constraints
         if self.universe.constraint_algorithm:
             self.lmp_universe.apply_constraints()
+            self.ensemble.apply_ensemble_fixes()
 
 
     def run(self, n_steps, equilibration=False):
@@ -1269,8 +1270,8 @@ class Ensemble(PyLammpsAttribute):
         # Requires a lmp object as thermostats cannot be applied before
         # configuration is defined
         super(Ensemble, self).__init__(lmp)
-        # Setting _thermostat and _barostat allows apply_ensemble to be called
-        # when setting self.temperature and self.pressure
+        # Setting _thermostat and _barostat allows apply_ensemble_fixes to be
+        # called when setting self.temperature and self.pressure
         self._thermostat = None
         self._barostat = None
         self.temperature = temperature
@@ -1315,7 +1316,7 @@ class Ensemble(PyLammpsAttribute):
     def temperature(self, value):
 
         self._temperature = value
-        self.apply_ensemble()
+        self.apply_ensemble_fixes()
 
     @property
     def pressure(self):
@@ -1331,7 +1332,7 @@ class Ensemble(PyLammpsAttribute):
     def pressure(self, value):
 
         self._pressure = value
-        self.apply_ensemble()
+        self.apply_ensemble_fixes()
 
     # Unit has to be applied to getter due to operation in setter
     @property
@@ -1453,7 +1454,7 @@ class Ensemble(PyLammpsAttribute):
                                  ' temperature')
         self._thermostat = value
         # Set the thermostat and barostat in LAMMPS wrapper
-        self.apply_ensemble()
+        self.apply_ensemble_fixes()
 
     @property
     def barostat(self):
@@ -1474,7 +1475,7 @@ class Ensemble(PyLammpsAttribute):
 
         self._barostat = value
         # Set the thermostat and barostat in LAMMPS wrapper
-        self.apply_ensemble()
+        self.apply_ensemble_fixes()
 
     def remove_ensemble_fixes(self):
 
