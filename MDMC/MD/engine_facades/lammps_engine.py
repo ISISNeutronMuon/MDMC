@@ -1476,7 +1476,24 @@ class Ensemble(PyLammpsAttribute):
         # Set the thermostat and barostat in LAMMPS wrapper
         self.apply_ensemble()
 
-    def apply_ensemble(self):
+    def remove_ensemble_fixes(self):
+
+        """
+        Removes all LAMMPS fixes relating to the ensemble i.e. removes all
+        thermostats and barostats
+
+        This must be done before thermostat and barostat fixes are added, so
+        that there is no conflict with existing thermostat and barostats fixes.
+        It is also required for Shake and Rattle fixes which cannot be added
+        after barostat fixes have been applied.
+        """
+
+        for name in self.fix_names:
+            if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
+                        'p_berendsen', 'langevin', 'rescale']:
+                self.lmp.unfix(name)
+
+    def apply_ensemble_fixes(self):
 
         """
         Passes the required LAMMPS fixes to apply a specific thermodynamic
@@ -1485,11 +1502,7 @@ class Ensemble(PyLammpsAttribute):
         Removes all pre-existing thermostat and barostat fixes
         """
 
-        # Remove thermostat and barostat fixes
-        for name in self.fix_names:
-            if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
-                        'p_berendsen', 'langevin', 'rescale']:
-                self.lmp.unfix(name)
+        self.remove_ensemble_fixes()
 
         if not self.thermostat and not self.barostat:
             self.lmp.fix('nve', 'all', 'nve')
