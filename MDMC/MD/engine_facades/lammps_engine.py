@@ -300,6 +300,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         # Reapply the constraints
         if self.universe.constraint_algorithm:
+            self.ensemble.remove_ensemble_fixes()
             self.lmp_universe.apply_constraints()
             self.ensemble.apply_ensemble_fixes()
 
