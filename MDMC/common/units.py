@@ -43,33 +43,59 @@ class Unit(str):
 
     NON-INTEGER POWER OPERATIONS ARE CURRENTLY NOT IMPEMENTED
 
-    Attributes:
-    components - a defaultdict(list) containing the components of the unit,
-    separated into two lists (numerator and denominator) depending on which side
-    of the fraction each component is on.  If the Unit is a base unit i.e.
-    initialized using Unit(), then the components only has a numerator and this
-    is the Unit's string.  If it a combined unit (created by either __mul__,
-    __div__ or __pow__) then the units which combined to form it make up the
-    components.
+    Parameters
+    ----------
+    string : str
+        The unit, which can contain / to specify divisors and ^ to specify
+        powers. It should not contain integers which are not used to specifying
+        powers (e.g. '1 / Ang').  It cannot not contain negative powers (e.g.
+        Ang ^ -1).
+    components : defaultdict(list), optional
+        Sets the components attribute (see Attributes).  Default is None.
+
+    Attributes
+    ----------
+    base
+    components - defaultdict(list)
+        Contains the components of the unit, separated into two lists (numerator
+        and denominator) depending on which side of the fraction each component
+        is on.  If the Unit is a base unit i.e. initialized using Unit(), then
+        the components only has a numerator and this is the Unit's string.
+        If it a combined unit (created by either __mul__, __div__ or __pow__)
+        then the units which combined to form it make up the components.
+
+    Examples
+    --------
+    Base units can be set:
+
+        time_unit = Unit('s')
+
+    Compound units can be set with spaces separating base units which are
+    multiplied:
+
+        charge_unit = Unit('A s')
+
+    Compound units can be set with / separating base units which are divided:
+
+        velocity_unit = Unit('m / s')
+
+    Units raised to a positive power can be set with ^:
+
+        volume_unit = Unit('Ang ^ 3')
+
+    Compound units can be set with a combination of these operands:
+
+        force_unit = Unit('kg m / s ^ 2')
+
+    To set an inverse unit, the power operation must be applied to a Unit:
+
+        frequency = Unit('s') ** -1
     """
 
     def __new__(cls, string, components=None):
 
         """
-        Arguments:
-        string - a string specifying the unit, which can contain / to specify
-        divisors and ^ to specify powers. It cannot contain integers not
-        specifying powers, for example the following is not valid:
 
-        '1 / Ang'
-
-        It also does not accept negative powers, so to achieve a unit of
-        '1 / Ang' or Ang ^ -1, the Python power operation must be used:
-
-        negative_power_unit = Unit('Ang') ** -1
-
-        components - a defaultdict(list) specifying the numerator and
-        denominator components of the Unit
         """
 
         if string is None:
@@ -92,10 +118,17 @@ class Unit(str):
     def __mul__(self, other):
 
         """
-        Multiplies the unit by unit
+        Multiplies the unit by another unit
 
-        Arguments:
-        other - a unit
+        Parameter
+        ---------
+        other : unit
+            The unit object to multiply by
+
+        Returns
+        -------
+        unit
+            A compound unit
         """
 
         try:
@@ -109,8 +142,15 @@ class Unit(str):
         """
         Divides the unit by another unit
 
-        Arguments:
-        other - a unit
+        Parameter
+        ---------
+        other : unit
+            The unit object to divide by
+
+        Returns
+        -------
+        unit
+            A compound unit
         """
 
         try:
@@ -124,8 +164,15 @@ class Unit(str):
         """
         Performs the power operation on the unit
 
-        Arguments:
-        other - a numeric type (inherits from numbers.Number)
+        Parameter
+        ---------
+        other : numeric (inherits from numbers.Number)
+            The number the unit is raised to the power of
+
+        Returns
+        -------
+        unit
+            A compound unit
         """
 
         if not isinstance(other, Number):
@@ -141,6 +188,16 @@ class Unit(str):
     @property
     def base(self):
 
+        """
+        Whether the unit is a base or compound unit
+
+        Returns
+        -------
+        bool
+            If True, unit is a base unit (only has a single element in the
+            components numerator list)
+        """
+
         if (not self.components['denominator']
                 and self.components['numerator'] == [self]):
             return True
@@ -152,15 +209,20 @@ class Unit(str):
         Calculates the components for a new Unit generated from an operation
 
         These components are separated into whether they are in the numerator or
-        the denominator of the new Unit
+        the denominator of the new Unit.
 
-        Arguments:
-        other - another Unit object
-        op - a string specifying an operation
+        Parameters
+        ----------
+        other : unit
+            the unit object which is operating on this unit object (i.e. self)
+        op : str
+            an operation, either 'mul', 'div', or 'pow'
 
-        Returns:
-        A defaultdict(list) containing the numerator and denominator of the
-        new Unit
+        Returns
+        -------
+        defaultdict(list)
+            contains the numerator and denominator of the new unit generated
+            from the operation
         """
 
         # Creating another defaultdict and then populating it by deepcopying
@@ -196,12 +258,15 @@ class Unit(str):
         """
         Calculates the string for a new Unit generated from an operation
 
-        Arguments:
-        components - a defaultdict(list) containing the numerator and
-        denominator of the new Unit
+        Parameters
+        ----------
+        components : defaultdict(list)
+            contains the numerator and denominator of the new unit
 
-        Returns:
-        A string specifying the new Unit
+        Returns
+        -------
+        str
+            the string representing the new unit
         """
 
         def _calculate_expr_string(expr):
@@ -240,37 +305,46 @@ class Unit(str):
     def _parse_unit_string(self, unit_string):
 
         """
-        Converts a unit string into a Unit objects
+        Converts a unit string into Unit objects
 
-        Arguments:
-        unit_string - a string specifying a unit
+        Parameters
+        ----------
+        unit_string : str
+            a string representing a unit
 
-        Returns:
-        A tuple of (numerator, denominator), where each is a list of Unit
-        objects for all of the base units. For example, a unit string of
-        'e ^ 2 mol / K ^ 3' returns:
+        Returns
+        -------
+        tuple
+            A tuple of (numerator, denominator), where each is a list of unit
+            objects for all of the base units.
 
-        ([Unit('e'), Unit('e'), Unit('mol')], [Unit('K'), Unit('K'), Unit('K')])
+        Example
+        -------
+        parse_unit_string('e mol / K ^ 2')
+
+        >>> ([Unit('e'), Unit('e'), Unit('mol')], [Unit('K'), Unit('K')])
         """
 
         def parse_powers(string):
 
             """
-            Arguments:
-            string - a compound unit string containing zero or more powers
-            (with powers specified by '^') but no denominators (i.e. '/'). For
-            example:
+            Parameters
+            ----------
+            string : str
+                a compound unit string containing zero or more powers
+                (with powers specified by '^') but no denominators (i.e. '/'),
+                such as 'Ang', 'Ang mol', 'Ang ^ 2 mol kJ^2'.
 
-            'Ang'
-            'Ang mol'
-            'Ang ^ 3'
-            'Ang ^ 2 mol'
-            'Ang ^ 2 mol kJ^2'
+            Returns
+            -------
+            list
+                contains all base units
 
-            Returns:
-            A list with each all base units. For example:
-            'Ang ^ 2 mol kJ^2' returns [Unit('Ang'), Unit('Ang'), Unit('mol)',
-            Unit('kJ'), Unit('kJ')]
+            Example
+            -------
+            parse_powers('Ang ^ 2 mol kJ^2')
+
+            >>> [Unit('Ang'), Unit('Ang'), Unit('mol)', Unit('kJ'), Unit('kJ')]
             """
 
             if '^' in string:
@@ -328,11 +402,15 @@ def create_units(codata_version):
     """
     Creates a dictionary of units based on the CODATA version.
 
-    Arguments:
-    codata_version - str specifying the CODATA version to be used
+    Parameters
+    ----------
+    codata_version : str
+        the CODATA version to be used
 
-    Returns:
-    dictionary containing (unit, conversion factor) pairs
+    Returns
+    -------
+    dict
+        contains (unit: conversion factor) pairs
     """
 
     # SYSTEM units are defined to 1.0
@@ -373,13 +451,23 @@ def create_units(codata_version):
 class UnitFloat(float):
 
     """
-    Subclasses float so that it contains a unit attribute which is returned when
-    __repr__ or __str__ are called
+    Subclasses float so that it contains a unit attribute
 
-    Attributes:
-    unit - a string or Unit which specifies the unit
+    Unit attribute is returned when __repr__ or __str__ are called.
 
-    NB:
+    Parameters
+    ----------
+    value : float
+        the value of the UnitFloat.
+    unit : unit, str
+        a unit or a string representing the unit.
+
+    Attributes
+    ----------
+    unit
+
+    Notes
+    -----
     As both __repr__ and __deepcopy__ rely on the float being real, this class
     is not compatible with complex numbers.  This should be immaterial as no
     quantity which possesses units is complex.
@@ -398,6 +486,17 @@ class UnitFloat(float):
 
     @property
     def unit(self):
+
+        """
+        Get or set the unit
+
+        Either a str or a unit can be passed to the setter.
+
+        Returns
+        -------
+        unit
+            The unit object equivalent to the passed unit parameter.
+        """
 
         return self._unit
 
@@ -441,11 +540,30 @@ class UnitFloat(float):
 class UnitNDArray(np.ndarray):
 
     """
-    Subclasses ndarray so that it contains a unit attribute which is returned
-    when __repr__ or __str__ are called
+    Subclasses ndarray so that it contains a unit attribute
 
-    Attributes:
-    unit - a string or Unit which specifies the unit
+    Unit attribute is returned when __repr__ or __str__ are called
+
+    Parameters
+    ----------
+    shape : tuple of ints
+        Shape of created array.
+    unit : unit, str
+        a unit or a string representing the unit.
+    dtype : data-type, optional
+        Any object that can be interpreted as a NumPy data type.
+    buffer : object exposing NumPy buffer interface, optional
+        Used to fill the array with data.
+    offset : int, optional
+        Offset of array data in buffe.r
+    strides : tuple of ints, optional
+        Strides of data in memory.
+    order : str, optional
+        Either 'C' for row-major or 'F' for column-major
+
+    Attributes
+    ----------
+    unit
     """
 
     def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0,
@@ -461,6 +579,17 @@ class UnitNDArray(np.ndarray):
 
     @property
     def unit(self):
+
+        """
+        Get or set the unit
+
+        Either a str or a unit can be passed to the setter.
+
+        Returns
+        -------
+        unit
+            The unit object equivalent to the passed unit parameter.
+        """
 
         return self._unit
 
@@ -495,11 +624,20 @@ def unit_array(obj, unit, dtype=None):
     being returned. This allows classes to have properties with units which can
     be either have a value or be undefined.
 
-    Arguments:
-    object - an array or array-like object (e.g. any object derived from
-    collections.Sequence). If None, then None is returned.
-    unit - a string or Unit which specifies the unit of the array
-    dtype - the desired data-type for the array
+    Parameters
+    ----------
+    object : None or array_like
+        An object derived from (collections.Sequence). If None, then None is
+        returned.
+    unit : unit, str
+        a unit or a string representing the unit.
+    dtype : data-type, optional
+        Any object that can be interpreted as a NumPy data type.
+
+    Returns
+    -------
+    UnitArray
+        A UnitArray object satisfying the specified requirements.
     """
 
     if obj is None:

@@ -18,11 +18,23 @@ def correlation(input1, input2=None, normalise=False):
     The Fast Correlation Algorithm (FCA) is utilised.  If only a single input is
     provided, the autocorrelation is calculated.
 
-    Arguments:
-    input1: A 1D series
-    input2: A 1D series
-    normalise: Normalise the correlation at each point to the number of
-    contributions to that point
+    Parameters
+    ----------
+    input1 : array
+        A 1D array of data.
+    input2 :  array, optional
+        A 1D array of data. If None, autocorrelation of input1 is calculated.
+        Default is None.
+    normalise : bool, optional
+        If True, the correlation is normalised at each point to the number of
+        contributions to that point. Default is False.
+
+    Returns
+    -------
+    array
+        A 1D array of the same length as the input1 containing the correlation
+        between input1 and input2 (or autocorrelation of input1 if input2 is
+        None)
     """
 
     N = len(input1)
@@ -37,7 +49,7 @@ def correlation(input1, input2=None, normalise=False):
     # Calculate the cyclic correlation function
     cyclic_corr = ifft(np.conjugate(fft1) * fft2, axis=0)
 
-    # Normalise for variable number of contributions to each timestep:
+    # Normalise for variable number of contributions to each correlation:
     # 1 / (N - m)
     # where m is the number of each individual step
     if normalise:
@@ -56,6 +68,20 @@ def convolution(input1, input2):
 
     """
     The convolution of two inputs
+
+    THIS FUNCTION HAS NOT BEEN IMPLEMENTED
+
+    Parameters
+    ----------
+    input1 : array
+        A 1D array of data.
+    input2 :  array
+        A 1D array of data.
+
+    Raises
+    -------
+    NotImplementedError
+        THIS FUNCTION HAS NOT BEEN IMPLEMENTED
     """
 
     raise NotImplementedError

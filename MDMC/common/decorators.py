@@ -8,20 +8,29 @@ from MDMC.common.units import UnitFloat, unit_array
 def unit_decorator(unit):
 
     """
-    Decorates property.setter methods to add units to the values which are
-    passed to them. These units are displayed when either repr or str is called
-    for the corresponding property.getter method.
+    Decorates property.setter methods to add units
+
+    Adds units to the values passed to property.setter methods. These units are
+    displayed when either repr or str is called for the corresponding
+    property.getter method.
 
     Suitable for use with setter methods that either take floats (or objects
     that can be cast to floats), or NumPy arrays (or objects that can be cast
     to NumPy arrays)
 
-    Arguments:
-    unit - string specifying the unit. If None then self.unit is used, which
-    enables classes to have properties with units defined at runtime.
+    Parameters
+    ----------
+    unit : string or None
+        The unit applied to the property. If None then self.unit is used, which
+        enables classes to have properties with units defined at runtime.
 
-    Example:
+    Returns
+    -------
+    function
+        A property.setter function with a value parameter which has a unit.
 
+    Example
+    -------
     Class Atom(StructuralUnit):
 
         @property
@@ -52,20 +61,30 @@ def unit_decorator(unit):
 def unit_decorator_getter(unit):
 
     """
-    Decorates property.getter methods to add units to the return value. These
-    units are displayed when either repr or str is called.
+    Decorates property.getter methods to add units
+
+    Adds units to the return values of property.getter methods. These units are
+    displayed when either repr or str is called.
 
     Suitable for use with setter methods that either take floats (or objects
     that can be cast to floats), or NumPy arrays (or objects that can be cast
     to NumPy arrays). This method exists for properties which have no setter
     method.
 
-    Arguments:
-    unit - string specifying the unit or None. If None then self.unit is used,
-    which enables classes to have properties with units defined at runtime.
+    Parameters
+    ----------
+    unit : string or None
+        The unit applied to the property. If None then self.unit is used, which
+    enables classes to have properties with units defined at runtime.
 
-    Example:
+    Returns
+    -------
+    function
+        A property.getter function with a return type which has a unit (e.g.
+        UnitFloat or UnitArray)
 
+    Example
+    -------
     Class Universe(object):
 
         @property
