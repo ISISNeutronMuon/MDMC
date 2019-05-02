@@ -2365,25 +2365,59 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     simulation step (time_step) and so this must be passed in fs, otherwise it
     defaults to 1.0 fs.
 
-    Arguments:
-    trajectory_file - a LAMMPS dump (trajectory) file
-    atom_type_properties - a list of tuples (symbol, mass) for all atom_types
-    (ordered) by atom_type, where symbol is a string specifying the element of
-    the atom_type and mass is a float specifying the mass of the atom_type
+    Parameters
+    ----------
+    trajectory_file : file
+        A LAMMPS dump (trajectory) file.
+    atom_type_properties : list of tuples
+        Each tuple is (symbol, mass) for all atom_types (ordered) by atom_type,
+        where symbol is a string specifying the element of the atom_type and
+        mass is a float specifying the mass of the atom_type.
+    start : int
+        The index of the first trajectory, inclusive.
+    stop : int
+        The index of the last trajectory, exclusive.
+    step : int
+        The step size between trajectories.
+    **settings
+        time_step : float
+            The simulation time step in fs
+        scaled_positions : bool
+            If the `trajectory_file` has scaled positions
+        universe : Universe
+            MDMC Universe against which to compare number of atoms in
+            `trajectory_file`.
+        atom_IDs : list
+            LAMMPS IDs of the atoms which should be included. If not passed
+            then all atoms are included in the converted trajectory.
 
-    start - an integer specifying the first trajectory, inclusive
-    stop - an integer specifying the last trajectory, exclusive
-    step - an integer specifying the step size between trajectories
+    Returns
+    -------
+    Trajectory
+        The MDMC Trajectory corresponding to the LAMMPS `trajectory_file`
 
-    Settings:
-    time_step - the amount of time that elapses in a single simulation step in
-    fs (defaults to 1.0 fs)
-    universe - an MDMC universe
-    scaled_positions - a boolean specifying if the LAMMPS trajectory file
-    provides the positions in scaled coordinates (i.e. xs, ys, yz)
-    atom_IDs - a list specifying the LAMMPS IDs of the atoms which should be
-    converted. If None then all atoms are converted.
+    Raises
+    ------
+    AssertionError
+        If `universe` is passed, and the number of atoms in the
+        `trajectory_file` is not the same as in the `universe`.
+    TypeError
+        If `trajectory_file` describes a triclinic universe.
+
+    Warnings
+    --------
+    warning.warn
+        If no `time_step` is passed, it is set to 1.0 fs.
     """
+
+    # Settings:
+    # time_step - the amount of time that elapses in a single simulation step in
+    # fs (defaults to 1.0 fs)
+    # universe - an MDMC universe
+    # scaled_positions - a boolean specifying if the LAMMPS trajectory file
+    # provides the positions in scaled coordinates (i.e. xs, ys, yz)
+    # atom_IDs - a list specifying the LAMMPS IDs of the atoms which should be
+    # converted. If None then all atoms are converted.
 
     def create_atom(line):
 
@@ -2394,15 +2428,19 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
         will also set the velocity if included in the line, and the universe, if
         this was passed to convert_trajectory().
 
-        Arguments:
-        line - an array containing a line from the ATOMS sections of a LAMMPS
-        dump file. The array must contain the atom ID, the atom type, and the
-        x, y, and z (or scaled equivalents) components of the position, which
-        are assumed to be adjacent. It will also set the velocity of the atom
-        if this is included in the line.
+        Parameters
+        ----------
+        line : array
+            Array containing a line from the ATOMS sections of a LAMMPS dump
+            file. The array must contain the atom ID, the atom type, and the
+            x, y, and z (or scaled equivalents) components of the position,
+            which are assumed to be adjacent. It will also set the velocity of
+            the atom if this is included in the line.
 
-        Returns:
-        an MDMC atom object
+        Returns
+        -------
+        Atom
+            MDMC Atom object corresponding to the `line`
         """
 
         atom_type = int(line[i_type])
