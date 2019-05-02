@@ -1105,26 +1105,31 @@ class LAMMPSSimulation(PyLammpsAttribute):
     The attributes and methods related running a simulation in LAMMPS using a
     LAMMPSUniverse object
 
-    Attributes:
-    universe - an MDMC Universe object
-    time_step - a float specifying the simulation time step in fs
-    traj_step - an integer specifying how many simulation steps elapse between
-    the trajectory being saved
-    temperature - a float specifying the simulation temperature in K
-    pressure - a float specifying the simulation pressure in atm
-    ensemble - an Ensemble object, which applies a thermostat and barostat to
-    the simulation
-    thermostat - a string specifying the thermostat
-    barostat - a string specifying the barostat
-    skin - a float specifying the skin distance in Ang. This distance plus the
-    force cutoff distance determines which atom pairs are stored in the neighbor
-    list.
-    neighbor_steps - an integer specifying how many steps between neighbor list
-    updates
-    lin_momentum_steps - an int specifying how many steps between the linear
-    momentum being removed
-    ang_momentum_steps - an int specifying how many steps between the angular
-    momentum being removed
+    Parameters
+    ----------
+    universe : Universe
+        The MDMC Universe used to create the LAMMPSUniverse.
+    lmp : PyLammps, optional
+        Set the lmp attribute to a PyLammps object. Default is None, which
+        results in a new PyLammps object being initialised.
+    **settings
+        temperature : float
+        time_step : float
+        traj_step : int
+        skin : float
+        neighbor_steps : int
+        remove_linear_momentum : int
+        remove_angular_momentum : int
+
+    Attributes
+    ----------
+    universe : Universe
+        An MDMC Universe object.
+    traj_step : int
+        Number of simulation steps that elapse between the trajectory being
+        stored.
+    ensemble : Ensemble
+        Simulation ensemble, which applies a thermostat and barostat.
     """
 
     def __init__(self, universe, lmp=None, **settings):
@@ -1155,6 +1160,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the simulation time step in fs
+
+        Returns
+        -------
+        float
+            Simulation time step in fs
         """
 
         return self._time_step
@@ -1175,6 +1185,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the temperature of the simulation in K
+
+        Returns
+        -------
+        float
+            Temperature in K
         """
 
         return self._temperature
@@ -1199,6 +1214,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the pressure of the simulation in atm
+
+        Returns
+        -------
+        float
+            Pressure in atm
         """
 
         return self.ensemble.pressure
@@ -1214,6 +1234,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the string which specifies the thermostat
+
+        Returns
+        -------
+        str
+            The thermostat name
         """
 
         return self.ensemble.thermostat
@@ -1228,6 +1253,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the string which specifies the barostat
+
+        Returns
+        -------
+        str
+            The barostat name
         """
 
         return self.ensemble.barostat
@@ -1241,8 +1271,14 @@ class LAMMPSSimulation(PyLammpsAttribute):
     def skin(self):
 
         """
-        Get or set the skin distance in Ang. This distance plus the force cutoff
-        distance determines which atom pairs are stored in the neighbour list.
+        Get or set the skin distance in Ang
+
+        Returns
+        -------
+        float
+            The skin distance in Ang. This distance plus the force cutoff
+            distance determines which atom pairs are stored in the neighbor
+            list.
         """
 
         return self._skin
@@ -1261,6 +1297,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the number of steps between neighbor list updates
+
+        Returns
+        -------
+        int
+            Number of steps between neighbor list updates
         """
 
         return self._neighbor_steps
@@ -1281,6 +1322,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the number of steps between resetting the linear momentum
+
+        Returns
+        -------
+        int
+            Number of steps between the linear momentum being removed
         """
 
         return self._lin_momentum_steps
@@ -1297,6 +1343,11 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         """
         Get or set the number of steps between resetting the angular momentum
+
+        Returns
+        -------
+        int
+            Number of steps between the angular momentum being removed
         """
 
         return self._ang_momentum_steps
@@ -1347,6 +1398,17 @@ class LAMMPSSimulation(PyLammpsAttribute):
         electrostatic and dispserive solvers is equivalent to setting with
         kspace_solver. LAMMPS also does not support just applying a dispersive
         solver.
+
+        Raises
+        ------
+        TypeError
+            If `self.universe` has both a `kspace_solver` and either an
+            `electrostatic_solver` or a `dispersive_solver`.
+        TypeError
+            If `self.universe` has a different `electrostatic_solver` and
+            `dispersive_solver`.
+        TypeError
+            If `self.universe` only has a `dispersive_solver`.
         """
 
         kspace = self.universe.kspace_solver
