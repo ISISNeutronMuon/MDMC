@@ -7,15 +7,16 @@ LAMMPS.
 Defining all interaction types requires that LAMMPS was built with the MOLECULE
 package.
 
-Note: When variables are either passed to or from PyLammps, the ctypes
+Notes
+-----
+When variables are either passed to or from PyLammps, the ctypes
 conversion can mean that they are unnecessarily cast, particularly from float to
 int.  This can cause issues as LAMMPS requires certain variables, e.g. number of
 steps, to be int.  Therefore it is always a good idea to be cast these variables
 when they are read from PyLammps e.g. int(lmp.variables['steps'].value).
 
-Note: A minor bug in LAMMPS (Dec 2018 version) means that nangletypes returned
-by PyLammps is incorrectly set to ndihedraltypes
-
+A minor bug in LAMMPS (Dec 2018 version) means that nangletypes returned
+by PyLammps is incorrectly set to ndihedraltypes."""
 
 from copy import copy
 from itertools import chain, count, product, tee
