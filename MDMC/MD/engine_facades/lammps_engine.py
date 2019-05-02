@@ -1840,16 +1840,23 @@ def convert_unit(value, unit=None, to_lammps=True):
     """
     Converts between MDMC units and LAMMPS real units
 
-    Arguments:
-    value - a float specifying the value in MDMC units
-    unit - the unit of the value. If no unit is passed, the value must possess a
-    unit attribute.
-    to_lammps - a boolean specifying if the conversion is from MDMC units to
-    LAMMPS units
+    Parameters
+    ----------
+    value : array_like or float_like
+        The value of the physical property to be converted, in MDMC units.
+        Must derive from either ndarray or float.
+    unit : Unit, optional
+        The unit of the value. If None, the value must possess a unit attribute
+        i.e. derive from UnitFloat or UnitArray. Default is None.
+    to_lammps : bool, optional
+        If True the conversion is from MDMC units to LAMMPS units. Default is
+        True.
 
-    Returns:
-    a float or array with the value in LAMMPS units if to_lammps is True,
-    otherwise a float or array with the value in MDMC units
+    Returns
+    -------
+    float or array
+        Value in LAMMPS units if to_lammps is True, otherwise value in MDMC
+        units. Return type is same as `value` type.
     """
 
     def expand_components(unit):
@@ -1858,9 +1865,12 @@ def convert_unit(value, unit=None, to_lammps=True):
         Expands out the components of a unit, so that the unit is expressed
         purely in terms of base units
 
-        Returns:
-        A tuple of (num, denom), where num is a list of all base units in the
-        numerator, and denom is a list of all base units in the denominator
+        Returns
+        -------
+        tuple
+            A tuple of (num, denom), where num is a list of all base units in
+            the numerator, and denom is a list of all base units in the
+            denominator
         """
 
         num, denom = [], []
