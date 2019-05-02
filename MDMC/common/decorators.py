@@ -1,6 +1,4 @@
-"""Module which defines decorators
-
-AUTHOR :    Thomas Farmer        START DATE :    12/12/2018, 10:46:48"""
+"""Module which defines decorators"""
 
 from MDMC.common.units import UnitFloat, unit_array
 

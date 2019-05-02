@@ -1,6 +1,4 @@
-"""Factory class for generating MD engine facades
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-23 13:22:22"""
+"""Factory class for generating MD engine facades"""
 
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers

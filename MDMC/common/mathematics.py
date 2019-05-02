@@ -1,6 +1,4 @@
-"""A module containing mathematical functions
-
-AUTHOR :    Thomas Farmer        START DATE :    18/07/2018, 16:42:10"""
+"""A module containing mathematical functions"""
 
 import numpy as np
 from numpy.fft import fft, ifft

@@ -16,7 +16,6 @@ when they are read from PyLammps e.g. int(lmp.variables['steps'].value).
 Note: A minor bug in LAMMPS (Dec 2018 version) means that nangletypes returned
 by PyLammps is incorrectly set to ndihedraltypes
 
-AUTHOR :    Thomas Farmer        START DATE :    11/01/2019, 13:45:29"""
 
 from copy import copy
 from itertools import chain, count, product, tee

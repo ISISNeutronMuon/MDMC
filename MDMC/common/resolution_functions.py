@@ -1,6 +1,4 @@
-"""A module for containing all resolution functions
-
-AUTHOR :    Thomas Farmer        START DATE :    27/07/2018, 13:40:34"""
+"""A module for containing all resolution functions"""
 
 import numpy as np
 

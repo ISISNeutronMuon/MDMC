@@ -1,6 +1,4 @@
-"""A module for performing the refinement
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-18 15:47:47"""
+"""A module for performing the refinement"""
 
 from copy import deepcopy
 

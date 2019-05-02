@@ -1,6 +1,4 @@
-"""Abstract base class for MD engine facades
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 14:48:12"""
+"""Module containing an abstract base class for MD engine facades"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
