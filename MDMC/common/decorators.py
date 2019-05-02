@@ -29,16 +29,18 @@ def unit_decorator(unit):
 
     Example
     -------
-    Class Atom(StructuralUnit):
+    Add a unit_decorator to the position property::
 
-        @property
-        def position(self):
-            return self._position
+        Class Atom(StructuralUnit):
 
-        @position.setter
-        @unit_decorator(unit=Unit('Ang'))
-        def position(self, value):
-            self._position = value
+            @property
+            def position(self):
+                return self._position
+
+            @position.setter
+            @unit_decorator(unit=Unit('Ang'))
+            def position(self, value):
+                self._position = value
     """
 
     def decorator(func):
@@ -83,12 +85,14 @@ def unit_decorator_getter(unit):
 
     Example
     -------
-    Class Universe(object):
+    Add a unit_decorator_getter to the volume property::
 
-        @property
-        @unit_decorator_getter(unit=Unit('Ang') ^ 3)
-        def volume(self):
-            return self.dims ** 3
+        Class Universe(object):
+
+            @property
+            @unit_decorator_getter(unit=Unit('Ang') ^ 3)
+            def volume(self):
+                return self.dims ** 3
     """
 
     def decorator(func):

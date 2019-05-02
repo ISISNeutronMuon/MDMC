@@ -51,50 +51,45 @@ class Unit(str):
     components : defaultdict(list), optional
         Sets the components attribute (see Attributes).  Default is None.
 
+    Examples
+    --------
+    Base units can be set::
+
+        time_unit = Unit('s')
+
+    Compound units can be set with spaces separating base units which are
+    multiplied::
+
+        charge_unit = Unit('A s')
+
+    Compound units can be set with / separating base units which are divided::
+
+        velocity_unit = Unit('m / s')
+
+    Units raised to a positive power can be set with ^::
+
+        volume_unit = Unit('Ang ^ 3')
+
+    Compound units can be set with a combination of these operands::
+
+        force_unit = Unit('kg m / s ^ 2')
+
+    To set an inverse unit, the power operation must be applied to a Unit::
+
+        frequency = Unit('s') ** -1
+
     Attributes
     ----------
-    base
-    components - defaultdict(list)
+    components : defaultdict(list)
         Contains the components of the unit, separated into two lists (numerator
         and denominator) depending on which side of the fraction each component
         is on.  If the Unit is a base unit i.e. initialized using Unit(), then
         the components only has a numerator and this is the Unit's string.
         If it a combined unit (created by either __mul__, __div__ or __pow__)
         then the units which combined to form it make up the components.
-
-    Examples
-    --------
-    Base units can be set:
-
-        time_unit = Unit('s')
-
-    Compound units can be set with spaces separating base units which are
-    multiplied:
-
-        charge_unit = Unit('A s')
-
-    Compound units can be set with / separating base units which are divided:
-
-        velocity_unit = Unit('m / s')
-
-    Units raised to a positive power can be set with ^:
-
-        volume_unit = Unit('Ang ^ 3')
-
-    Compound units can be set with a combination of these operands:
-
-        force_unit = Unit('kg m / s ^ 2')
-
-    To set an inverse unit, the power operation must be applied to a Unit:
-
-        frequency = Unit('s') ** -1
     """
 
     def __new__(cls, string, components=None):
-
-        """
-
-        """
 
         if string is None:
             return None
@@ -187,7 +182,7 @@ class Unit(str):
     def base(self):
 
         """
-        Whether the unit is a base or compound unit
+        Get whether the unit is a base or compound unit
 
         Returns
         -------
@@ -318,9 +313,10 @@ class Unit(str):
 
         Example
         -------
-        parse_unit_string('e mol / K ^ 2')
+        Parse 'e mol / K ^ 2'::
 
-        >>> ([Unit('e'), Unit('e'), Unit('mol')], [Unit('K'), Unit('K')])
+            >>> parse_unit_string('e mol / K ^ 2')
+            ([Unit('e'), Unit('e'), Unit('mol')], [Unit('K'), Unit('K')])
         """
 
         def parse_powers(string):
@@ -340,9 +336,9 @@ class Unit(str):
 
             Example
             -------
-            parse_powers('Ang ^ 2 mol kJ^2')
-
-            >>> [Unit('Ang'), Unit('Ang'), Unit('mol)', Unit('kJ'), Unit('kJ')]
+            Parse 'Ang ^ 2 mol kJ^2'::
+                >>> parse_powers('Ang ^ 2 mol kJ^2')
+                [Unit('Ang'), Unit('Ang'), Unit('mol)', Unit('kJ'), Unit('kJ')]
             """
 
             if '^' in string:
@@ -460,12 +456,8 @@ class UnitFloat(float):
     unit : unit, str
         a unit or a string representing the unit.
 
-    Attributes
-    ----------
-    unit
-
-    Notes
-    -----
+    Note
+    ----
     As both __repr__ and __deepcopy__ rely on the float being real, this class
     is not compatible with complex numbers.  This should be immaterial as no
     quantity which possesses units is complex.
@@ -553,15 +545,11 @@ class UnitNDArray(np.ndarray):
     buffer : object exposing NumPy buffer interface, optional
         Used to fill the array with data.
     offset : int, optional
-        Offset of array data in buffe.r
+        Offset of array data in buffer.
     strides : tuple of ints, optional
         Strides of data in memory.
     order : str, optional
-        Either 'C' for row-major or 'F' for column-major
-
-    Attributes
-    ----------
-    unit
+        Either 'C' for row-major or 'F' for column-major. Default is 'C'.
     """
 
     def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0,
