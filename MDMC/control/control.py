@@ -14,19 +14,58 @@ class MDMCControl(object):
     """
     Controls the MDMC refinement
 
-    Attributes:
-    MD_engine - the MD engine which runs the simulation.  This contains the
-    universe and the simulation parameters.
-    exp_datasets - a list of dictionaries defining each experimental dataset
-    fit_params - a set of the parameters which will be fit during the refinement
-    minimizer - the Minimizer object which drives the refinement
-    settings - a dictionary of the settings for the MD and minimization
-    observable_pairs - a list of ObservablePair objects, each of which contains
-    one experimental observable and one observable calculated from MD
-    FoM_calculator - the object which calculates the FoM float for all
-    observable pairs
-    MD_steps - the number of steps the MD performs for each step of the
-    refinement
+    Parameters
+    ----------
+    MD_engine : MDEngine
+        Performs a simulation for a given set of potential parameters.
+    exp_datasets : list of dicts
+        Each dictionary is an experimental dataset, containing the file name
+        ('file_name'), the type of observable ('type'), the reader required for
+        the file ('reader'), and the weighting of the dataset in the Figure of
+        Merit calculation('weighting').
+    fit_params : list
+        All parameters which will be refined.
+    MC_norm : float, optional
+        Determines the accept/reject ratio of the MC. Default is 1.
+    minimizier_type : str, optional
+        The minimizer type. Default is 'MMC'.
+    FoM_type : str, optional
+        The type of Figure of Merit calculation. Default is standard.
+    reset_config : bool, optional
+        Determines if the configuration is reset to the end of the last accepted
+        state. Default is true.
+    **settings
+        Keyword arguments.
+
+    Example
+    -------
+    An example of an exp_dataset list is::
+
+        [{'file_name':data.LAMP_SQW_FILE,
+          'type':'SQw',
+          'reader':'LAMPSQw',
+          'weight':1.},
+         {'file_name:data.ANOTHER_FILE',
+          'type':'FQt',
+          'reader':'GENERIC_READER',
+          'weight':0.5}]
+
+    Attributes
+    ----------
+    MD_engine : MDEngine
+    exp_datasets : list of dicts
+    fit_params : list of Parameters
+    minimizer : Minimizer
+        Refines the potential parameters.
+    settings - dict
+        settings for the MD and minimization.
+    observable_pairs : list of ObservablePairs
+        Experimental observable/MD observable pairs which are used to calculate
+        the Figure of Merit
+    FoM_calculator : FoMCalculator
+        Calculates the FoM float from the observable_pairs.
+    MD_steps : int
+        number of molecular dynamics steps for each step of the refinement
     """
 
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
@@ -36,46 +75,18 @@ class MDMCControl(object):
                  minimizer_type='MMC', FoM_type='standard',
                  reset_config = True, **settings):
 
-        """
-        Creates experimental observables from datasets and placeholders for
-        experimental observables calculated from MD
-
-        Minimizer FoM_old is initialized to infinity so that the first MC step (i.e. the
-        setup) is always accepted. Settings for calculating observables can be
-        specified.
-
-        Arguments:
-        MD_engine - MDEngine
-        exp_datasets - a list of dictionaries with one dictionary fof each
-        dataset. Each dictionary contains the file name, the type of observable,
-        the reader required for the file, and the weighting of the dataset in
-        the Figure of Merit calculation. For example:
-
-        exp_datasets = [{'file_name':data.LAMP_SQW_FILE,
-                         'type':'SQw',
-                         'reader':'LAMPSQw',
-                         'weight':1.},
-                        {'file_name:data.ANOTHER_FILE',
-                         'type':'FQt',
-                         'reader':'GENERIC_READER',
-                         'weight':0.5}]
-
-        MC_norm - a float which determines the accept/reject ratio of the MC
-        fit_params - a list of all parameters which will be refined
-        minimizier_type - a string with the minimizer type. 'MMC' is the default
-        FoM_type - a string with the type of Figure of Merit calculation
-        reset_config - a boolean which determines if the configuration is reset
-        to the end of the last accepted state
-        """
-
         self.MD_engine = MD_engine
         self.exp_datasets = exp_datasets
         self.fit_params = fit_params
+        # Minimizer FoM_old is always initialised to infinity, so that first MC
+        # step (i.e. the setup) is always accepted.
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
                                                              self.fit_params)
         self.reset_config = reset_config
         self.settings = settings
 
+        # Create experimental observables from datasets and placeholders for
+        # experimental observables calculated from MD
         self.observable_pairs = []
         for dset in exp_datasets:
             exp_observable = self._read_observable_from_file(dset['type'],
@@ -97,8 +108,10 @@ class MDMCControl(object):
         """
         Refines the specified potential parameters
 
-        Arguments:
-        n_steps - integer maximum number of steps for the refinement
+        Parameters
+        ----------
+        n_steps : int
+            maximum number of steps for the refinement
         """
 
         count = -1
@@ -134,8 +147,10 @@ class MDMCControl(object):
         """
         The methods required to generate a FoM
 
-        Returns:
-        Non-negative float FoM
+        Returns
+        -------
+        float
+            Non-negative float FoM
         """
 
         self.run_MD()
@@ -154,20 +169,30 @@ class MDMCControl(object):
 
     def run_MD(self):
 
+        """
+        Run a molecular dynamics simulation
+        """
+
         self.MD_engine.run(self.MD_steps)
 
     def _read_observable_from_file(self, type, reader, file_name):
 
         """
-        Creates an observable of the specified type and reads in data from file
+        Creates an Observable of the specified type and reads in data from file
 
-        Arguments:
-        type - string specifying the type of the observable
-        reader - string specifying the type of the reader
-        file_name - string with the absolute or relative path and the file name
+        Parameters
+        ----------
+        type : str
+            the type of the Observable.
+        reader : str
+            the type of the reader.
+        file_name : str
+            the absolute or relative path and the file name.
 
-        Returns:
-        Observable of type 'type'
+        Returns
+        -------
+        Observable
+            An observable of specified type
         """
 
         observable = ObservableFactory.create_observable(type)
@@ -177,15 +202,19 @@ class MDMCControl(object):
     def _create_empty_observable(self, exp_observable):
 
         """
-        Creates a observable without data but with independent variables
-        specified from another observable.  This is a placeholder in which
+        Creates a Observable without data but with independent variables
+        specified from another Observable.  This is a placeholder in which
         the observable can be calculated from an MD trajectory.
 
-        Arguments:
-        exp_observable - an observable with defined independent variables
+        Parameters
+        ----------
+        exp_observable : Observable
+            An Observable with defined independent variables.
 
-        Returns:
-        An observable with only independent variables and origin = 'MD'
+        Returns
+        -------
+        Observable
+            An observable with only independent variables and origin = 'MD'
         """
 
         observable = ObservableFactory.create_observable(exp_observable.name)
@@ -197,11 +226,14 @@ class MDMCControl(object):
     def _calculate_observables(self, MD_engine, observable_pairs):
 
         """
-        Calculates all of the observables from the MD trajectory/configurations
+        Calculates all of the Observables from the MD trajectory/configurations
 
-        Arguments:
-        MD_engine - an MDEngine object
-        observable_pairs - a list of observable pairs
+        Parameters
+        ----------
+        MD_engine : MDEngine
+            MDEngine with defined trajectory attribute
+        observable_pairs - list of ObservablePairs
+            ObservablesPairs for which the MD observable will be calculated
         """
 
         # slc = self._calculate_trajectory_slice(self.observable_pairs[0].exp_obs,
@@ -215,8 +247,10 @@ class MDMCControl(object):
         """
         Calculates the total FoM for all observable pairs
 
-        Returns:
-        Non-negative float FoM
+        Returns
+        -------
+        float
+            Non-negative float FoM
         """
 
         return self.FoM_calculator.calculate()
@@ -228,8 +262,17 @@ class MDMCControl(object):
         order to calculate MD observables with the same independent variables as
         the experimental observables.
 
-        Returns:
-        integer number of steps
+        THIS METHOD IS NOT IMPLEMENTED
+
+        Returns
+        -------
+        int
+            number of molecular dynamics steps
+
+        Raises
+        ------
+        NotImplementedError
+            THIS METHOD IS NOT IMPLEMENTED
         """
 
         raise NotImplementedError

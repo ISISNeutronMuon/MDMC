@@ -4,13 +4,22 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 class MDEngine:
 
+    """
+    Abstract base class for MD engine facades
+    """
+
     __metaclass__ = ABCMeta
 
     @abstractproperty
     def saved_config(self):
 
         """
-        A saved configuration of the atomic positions
+        Get the saved configuration of the atomic positions
+
+        Returns
+        -------
+        Configuration
+            the atomic positions
         """
 
         pass
@@ -21,10 +30,13 @@ class MDEngine:
         """
         Creates a universe configuration and populates with structural units
 
-        Arguments:
-        universe - a Universe object
-        settings - The majority of these are generic but some are specific to
-        the MDEngine that is being used
+        Parameters
+        ----------
+        universe : Universe
+            a molecular dynamics Universe which will be setup in the engine.
+        **settings
+            The majority of these are generic but some are specific to the
+            MDEngine that is being used.
         """
 
         pass
@@ -36,10 +48,13 @@ class MDEngine:
         Sets the options required to perform a simulation on a setup universe.
         Must follow a call to setup_universe().
 
-        Arguments:
-        universe - a Universe object
-        settings - The majority of these are generic but some are specific to
-        the MDEngine that is being used
+        Parameters
+        ----------
+        universe : Universe
+            a molecular dynamics Universe which will be simulated in the engine.
+        settings**
+            The majority of these are generic but some are specific to the
+            MDEngine that is being used.
         """
 
         pass
@@ -50,8 +65,10 @@ class MDEngine:
         """
         Minimizes the simulation energy
 
-        Arguments:
-        n_steps - integer maximum number of steps for minimizer
+        Parameters
+        ----------
+        n_steps : int
+            maximum number of steps for the energy minimization.
         """
 
         pass
@@ -63,10 +80,13 @@ class MDEngine:
         Runs a simulation.  Must follow a call to setup_universe() and
         setup_simulation().
 
-        Arguments:
-        n_steps - integer number of steps for integrator
-        equilibration - Boolean which defines if run is equilibration or
-        production
+        Parameters
+        ----------
+        n_steps : int
+            number of steps for the time integrator.
+        equilibration : bool
+            If True, run is equilibration which does not store the trajectory.
+            Otherwise run is prodution.
         """
 
         pass
@@ -76,6 +96,11 @@ class MDEngine:
 
         """
         Parses the trajectory from the MDEngine format into MDMC format
+
+        Returns
+        -------
+        Trajectory
+            the trajectory from the most recent production simulation
         """
 
         # convert_trajectory has no range function as it is assumed that the
