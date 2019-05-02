@@ -424,25 +424,49 @@ class LAMMPSUniverse(PyLammpsAttribute):
     A class with what would be the equivalent in LAMMPS to the universe (i.e.
     the configuration and topology)
 
-    Attributes:
-    universe - an MDMC Universe object
-    atom_dict - a dictionary with {MDMC_atom: LAMMPS_atom}, where MDMC_atom is
-    an MDMC Atom object and LAMMPS_atom is the corresponding LAMMPS Atom object
-    atom_types - a dictionary with {type_ID: MDMC_atom_group}, where the type_ID
-    is a unique integer and MDMC_atom_group is a list of atoms which are
-    identical in terms of element and interactions
-    atom_type_properties -
-    bonds - a list of bonds interactions in the MDMC universe
-    angles - a list of bond angle interactions in the MDMC universe
-    couls - a list of coulombic interactions in the MDMC universe
-    disps - a list of the dispersion interactions in the MDMC universe
-    bond_ID - a dictionary of
-    angle_ID -
+    Parameters
+    ----------
+    universe : Universe
+        The MDMC Universe used to create the LAMMPSUniverse
+    lmp : PyLammps, optional
+        Set the lmp attribute to a PyLammps object. Default is None, which
+        results in a new PyLammps object being initialised.
+    **settings
+        atom_style : str
+            A LAMMPS atom_style string. The default setting of 'real' will
+            generally be appropriate.
+        nonbonded_mix : str
+            The name of the formula which determines non-bonded mixing
 
-    nonbonded_mix - a string speciying which formula is used to determine the
-    i!=j mixing for nonbonded interactions, where i and j are atom types.
-    Options are geometric, arithmetic, sixthpower, where the formula for each
-    mixing style can be found in the LAMMPS documentation.
+    Attributes
+    ----------
+    universe : Universe
+        The MDMC Universe which has been converted to this LAMMPSUniverse.
+    atom_dict : dict
+        A dictionary with {MDMC_atom: LAMMPS_atom}, where MDMC_atom is an MDMC
+        Atom object and LAMMPS_atom is the corresponding LAMMPS Atom object.
+    atom_types : dict
+        A dictionary with {type_ID: MDMC_atom_group}, where the type_ID is a
+        unique integer and MDMC_atom_group is a list of atoms which are
+        identical in terms of element and interactions.
+    atom_type_properties : list of tuples
+        Each tuple is (symbol, mass) for all atom_types (ordered) by atom_type,
+        where symbol is a string specifying the element of the atom_type and
+        mass is a float specifying the mass of the atom_type.
+    bonds : list of Bonds
+        All Bond interactions in the MDMC universe.
+    angles : list of BondAngles
+        All BondAngle interactions in the MDMC universe.
+    couls : list of Coulombics
+        All Coulomobc interactions in the MDMC universe.
+    disps : list of Dispersions
+        All Dispersion interactions in the MDMC universe.
+    bond_ID : dict
+        A dictionary of {bond: ID pairs} relating each Bond object to a LAMMPS
+        ID.
+    angle_ID : dict
+        A dictionary of {angle: ID pairs} relating each BondAngle object to
+        a LAMMPS ID.
     """
 
     def __init__(self, universe, lmp=None, **settings):
@@ -474,7 +498,20 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         """
         Get or set the formula used to calculate nonbonded interactions between
-        different atom types. Options are geometric, arithmetic and sixthpower.
+        different atom types
+
+        Options are geometric, arithmetic and sixthpower, which are defined in
+        the LAMMPS documentation.
+
+        Returns
+        -------
+        str
+            the name of the formula which determines non-bonded mixing
+
+        Raises
+        ------
+        ValueError
+            `str` specifies an unsupported mix name
         """
 
         return self._nonbonded_mix
@@ -507,8 +544,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
         Defines a region and creates a simulation box that fills this region
 
-        Arguments:
-        universe - a Universe object
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC Universe used to create the region and simulation box.
         """
 
         # ID is an acronym
@@ -550,9 +589,12 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
         Create a geometry of the simulation box in LAMMPS
 
-        Arguments:
-        universe - an MDMC universe object
-        region_ID - a string with the region ID
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC Universe used to create the region.
+        region_ID : str
+            The LAMMPS region ID
         """
 
         xlo = ylo = zlo = 0.
@@ -567,8 +609,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
         Adds atoms to LAMMPS
 
-        Arguments:
-        universe - a Universe object
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC Universe used to fill the LAMMPS box with atoms.
         """
 
         self.atom_types = universe.atom_types
@@ -593,11 +637,20 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
         Changes the positions of all of the atoms in the LAMMPS wrapper
 
-        Arguments:
-        config - a NumPy array with the configuration from the start of the run.
-        Each row of the array corresponds to the LAMMPS atom ID - 1 (offset is
-        due to array zero indexing) and the columns of the array are the x, y, z
-        components of the position, the mass and the charge of each atom.
+        Parameters
+        ----------
+        config : array
+            The positions, mass and charge of the atoms, used to set the LAMMPS
+            configuration. Each row of the array must correspond to the LAMMPS
+            atom ID - 1 (offset is due to array zero indexing) and the columns
+            of the array must be the x, y, z components of the position, the
+            mass and the charge of each atom.
+
+        Raises
+        ------
+        IndexError
+            If `config` does not contain the same number of atoms as LAMMPS
+            possesses.
         """
 
         # Raise an IndexError if the config is not the correct size
@@ -619,19 +672,41 @@ class LAMMPSUniverse(PyLammpsAttribute):
     def _max_n_interaction(self, atoms, name):
 
         """
-        Arguments:
-        atoms - a list of Atom objects
-        name - a string specifying an Interaction type, for example 'Bond'
+        Parameters
+        ----------
+        atoms : list of Atoms
+        name : str
+            An Interaction type, for example 'Bond'.
 
-        Returns:
-        int specifying the maximum number of interactions with a given name that
-        any atom possesses
+        Returns
+        -------
+        int
+            The maximum number of interactions with a given name that any atom
+            in `atoms` possesses
         """
 
         return max([len(filter(lambda i: i.name == name, atom.interactions))
                     for atom in atoms])
 
     def _add_topology(self, universe, **settings):
+
+        """
+        Add the bonded and nonbonded interactions to LAMMPS
+
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC Universe used to define the topology.
+        **settings
+            nonbonded_mix : str
+                The name of the formula which determines non-bonded mixing
+
+        Raises
+        ------
+        NotImplementedError
+            If `universe` contains an interaction type that has not been
+            implemented in the LAMMPS facade
+        """
 
         bonds, angles, disps, couls, others = partition_interactions(
             set(universe.interactions),
@@ -695,8 +770,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         PASSED EXPLICITLY - THIS CAN LEAD TO UNPREDICTABLE BEHAVIOUR IF MORE
         THAN ONE STYLE OF COULOMBIC INTERACTION IS USED.
 
-        Arguments:
-        couls - a list of coulombic interactions
+        Parameters
+        ----------
+        couls : list of Coulombics
+            Coulombic interactions to be created in LAMMPS.
         """
 
         # Coulombic interaction doesn't require parameter setting, as this is
@@ -744,8 +821,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
         Updates dispersion interactions in LAMMPS
 
-        Arguments:
-        disps - a list of dispersion interactions
+        Parameters
+        ----------
+        disps : list of Dispersions
+            Dispersion interactions to be updated in LAMMPS.
         """
 
         # Determine all pair_styles by parsing all nonbonded styles and removing
@@ -800,9 +879,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
         correction or setting a mixing style for interactions acting on unlike
         atom type pairs
 
-        Arguments:
-        nonbonded_interactions - a list of nonbonded interactions which will
-        have modifications applied to the corresponding pair styles
+        Parameters
+        ----------
+        nonbonded_interactions : list of NonbondedInteractions
+            NonBondedInteractions which will have modifications applied to the
+            corresponding pair styles.
         """
 
         # LAMMPS pair_modify is of the following form:
@@ -874,8 +955,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         Creates coefficients and bonds in LAMMPS, and fills the bond_ID
         dictionary with bond: ID pairs
 
-        Arguments:
-        bonds - a list of bond interactions
+        Parameters
+        ----------
+        bonds : list of Bonds
+            Bond interactions which will be created in LAMMPS.
         """
 
         special = 'no'
@@ -913,8 +996,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         Updates the bond coefficients, which are then applied to any bonds which
         have previously been set
 
-        Arguments:
-        bonds - a list of bond interactions
+        Parameters
+        ----------
+        bonds : list of Bonds
+            Bond interactions which will be updated in LAMMPS.
         """
 
         for bond in bonds:
@@ -927,8 +1012,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         Creates coefficients and angles in LAMMPS, and fills the angle_ID
         dictionary with angle: ID pairs
 
-        Arguments:
-        angles - a list of bond angle interactions
+        Parameters
+        ----------
+        angles : list of BondAngles
+            BondAngle interactions which will be created in LAMMPS
         """
 
         special = 'no'
@@ -970,8 +1057,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         Updates the angle coefficients, which are then applied to any angles
         which have been previously set
 
-        Arguments:
-        angles - a list of bond angle interactions
+        Parameters
+        ----------
+        angles : list of BondAngles
+         BondAngle interactions which will be updated in LAMMPS
         """
 
         for angle in angles:
