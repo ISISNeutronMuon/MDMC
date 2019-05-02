@@ -1930,11 +1930,21 @@ def parse_bonded_styles(interaction):
     Converts MDMC InteractionFunction names for BondedInteractions to LAMMPS
     bond styles
 
-    Arguments:
-    interaction - an MDMC interaction
+    Parameters
+    ----------
+    interaction : BondedInteraction
+        BondedInteraction to be parsed into LAMMPS bond style.
 
-    Returns:
-    a string with the corresponding LAMMPS bond style
+    Returns
+    -------
+    str
+        LAMMPS bond style corresponding to `interaction`
+
+    Raises
+    ------
+    NotImplementedError
+        If `interaction` has a function that has not been implemented in the
+        LAMMPS facade.
     """
 
     if interaction.function_name == 'HarmonicPotential':
@@ -1950,11 +1960,21 @@ def parse_nonbonded_styles(interaction):
     Converts MDMC InteractionFunction names for NonBondedInteractions to LAMMPS
     pair styles
 
-    Arguments:
-    interaction - an MDMC interaction
+    Parameters
+    ----------
+    interaction : NonBondedInteraction
+        NonBondedInteraction to be parsed into LAMMPS pair style.
 
-    Returns:
-    a list with the correspoding LAMMPS pair style
+    Returns
+    -------
+    list of str
+        LAMMPS pair style corresponding to `interaction`
+
+    Raises
+    ------
+    NotImplementedError
+        If `interaction` has a function that has not been implemented in the
+        LAMMPS facade.
     """
 
     lmp_str = []
@@ -1998,11 +2018,21 @@ def parse_all_nonbonded_styles(interactions):
     IF A NONBONDED STYLE COULD FORM PART OF TWO PAIRS THEN THE FIRST PAIR THAT
     OCCURS WILL BE USED (ALTHOUGH THIS SCENARIO SHOULD NOT OCCUR)
 
-    Arguments:
-    interactions - A list of MDMC NonBondedInteractions
+    Parameters
+    ----------
+    interactions : list of NonBondedInteractions
+        NonBondedInteractions to be parsed into LAMMPS pair styles.
 
-    Returns:
-    a list with all of the LAMMPS pair styles
+    Returns
+    -------
+    list of str
+        All of the LAMMPS pair styles corresponding to `interactions`
+
+    Raises
+    ------
+    ValueError
+        If Dispersion and Coulombic interactions have different long range
+        cutoffs, which is not implemented in LAMMPS.
     """
 
     # Set to remove duplicates
@@ -2057,12 +2087,22 @@ def parse_bonded_coefficients(interaction):
     """
     Orders MDMC Parameters for input to LAMMPS bond_coeff and angle_coeff
 
-    Arguments:
-    interaction - an MDMC interaction
+    Parameters
+    ----------
+    interaction : BondedInteraction
+        BondedInteraction where its style and parameters will be parsed.
 
-    Returns:
-    A list of style and parameters converted to the input format for LAMMPS
-    bond_coeff and angle_coeff
+    Returns
+    -------
+    list of str
+        Style and parameters converted to the input format for LAMMPS bond_coeff
+        and angle_coeff
+
+    Raises
+    ------
+    NotImplementedError
+        If `interaction` has a function that has not been implemented in the
+        LAMMPS facade.
     """
 
     parameters = {p.name:convert_unit(p.value)
@@ -2084,12 +2124,23 @@ def parse_dispersion_coefficients(interaction, style):
     """
     Orders MDMC Parameters for input to LAMMPS pair_coeff
 
-    Arguments:
-    interaction - an MDMC interaction object
-    style - a LAMMPS pair_style
+    Parameters
+    ----------
+    interaction : NonBondedInteraction
+        NonBondedInteraction where its style and parameters will be parsed.
+    style : list of str
+        A LAMMPS pair style
 
-    Returns:
-    A list of parameters converted to the input format for LAMMPS pair_coeff
+    Returns
+    -------
+    list
+        Parameters converted to the input format for LAMMPS pair_coeff
+
+    Raises
+    ------
+    NotImplementedError
+        If `interaction` has a function that has not been implemented in the
+        LAMMPS facade.
     """
 
     parameters = {p.name:convert_unit(p.value)
@@ -2109,11 +2160,20 @@ def parse_kspace_solver(solver):
     """
     Converts an MDMC kspace solver for input to LAMMPS kspace_style
 
-    Arguments:
-    solver - an MDMC kspace solver
+    Parameters
+    ----------
+    solver : KSpaceSolver
+        A KSpaceSolver to be parsed.
 
-    Returns:
-    A list of style and parameters for input to LAMMPS kspace_style
+    Returns
+    -------
+    list
+        Style and parameters for input to LAMMPS kspace_style
+
+    Raises
+    ------
+    NotImplementedError
+        If `solver` type has has not been implemented in the LAMMPS facade.
     """
 
     lmp_str = []
@@ -2138,28 +2198,41 @@ def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
     #pylint: disable=invalid-name
 
     """
-    Converts an MDMC constraint algorithm for input to LAMMPS fix, or raises a
-    NotImplementedError if the algorithm does not exist within LAMMPS
+    Converts an MDMC constraint algorithm for input to LAMMPS fix
 
-    At least one of bonds and angles must be passed
+    At least one of bonds and angles must be passed.
 
-    Arguments:
-    constraint_algorithm - an object which derives from ConstraintAlgorithm
-    bonds - a list of constrained Bonds
-    bond_ID_dict - a dictionary with bond: ID pairs where bond is a Bond object
-    and ID is the integer in LAMMPS which refers to the bond
-    angles - a list of constrained BondAngles
-    angle_ID_dict - a dictionary with angle: ID pairs where angle is a BondAngle
-    object and ID is the integer in LAMMPS which refers to the angle
+    Parameters
+    ----------
+    constraint_algorithm : ConstraintAlgorithm
+        An object that derives from ConstraintAlgorithm to be parsed.
+    bonds : list of Bonds, optional
+        Constrained Bond interactions.
+    bond_ID_dict : dict, optional
+        Dictionary with {bond: ID pairs} relating each Bond object to a LAMMPS
+        ID.
+    angles : list of BondAngles, optional
+        Constrained BondAngle interactions.
+    angle_ID_dict : dict, optional
+        Dictionary with {angle: ID pairs} relating each BondAngle object to a
+        LAMMPS ID.
 
-    Returns:
-    A list of input parameters for LAMMPS fix, not including the first two
-    terms (fix ID, group-ID).  The output list is:
+    Returns
+    -------
+    list
+        Input parameters for LAMMPS fix, not including the first two terms
+        (fix ID, group-ID).  The output list has a maximum length of 7, where
+        the last four entries are optional but a minimum of two is required::
 
-    [algorithm name, accuracy, max iterations, 'b', bond IDs, 'a', angle IDs]
+            [algorithm name, accuracy, max iterations, 'b', bond IDs,
+             'a', angle IDs]
 
-    where the last four entries are optional, although a minimum of two is
-    required.
+    Raises
+    ------
+    TypeError
+        If there is not at least one constrained interaction passed.
+    NotImplementedError
+        If `constraint_algorithm` not been implemented in the LAMMPS facade.
     """
 
     # Raise error if there is not at least one constrained interaction passed
