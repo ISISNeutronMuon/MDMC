@@ -148,28 +148,22 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     can be taken care of when pair_coeff is called from the correspoding
     dispersion interaction, as this possesses the dispersion coefficients that
     also need to be passed when the coefficients of this pair style are set.
-
-    Attributes:
-    universe - an MDMC Universe object
-    lmp_universe - a LAMMPSUniverse object
-    lmp_simulation - a LAMMPSSimulation object
-    saved_config - a NumPy array with the configuration from the start of the
-    run. Each row of the array corresponds to the LAMMPS atom ID - 1 (offset is
-    due to array zero indexing) and the columns of the array are the x, y, z
-    components of the position, the mass and the charge of each atom.
-    time_step - a float specifying the simulation time step in fs
-    traj_step - an integer specifying how many simulation steps elapse between
-    the trajectory being saved
-    temperature - a float specifying the simulation temperature in K
-    pressure - a float specifying the simulation pressure in atm
-    ensemble - an Ensemble object, which applies a thermostat and barostat to
-    the simulation
-    thermostat - a string specifying the thermostat
-    barostat - a string specifying the barostat
     """
 
     @property
     def saved_config(self):
+
+        """
+        Get the saved configuration of the atomic positions
+
+        Returns
+        -------
+        array
+            The configuration from the start of the run. Each row of the array
+            corresponds to the LAMMPS atom ID - 1 (offset is due to array zero
+            indexing) and the columns of the array are the x, y, z components of
+            the position, the mass and the charge of each atom.
+        """
 
         return self._saved_config
 
@@ -178,6 +172,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         """
         Get or set the simulation time step in fs
+
+        Returns
+        -------
+        float
+            Simulation time step in fs
         """
 
         return self.lmp_simulation.time_step
@@ -193,6 +192,12 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         """
         Get or set the number of simulation steps between saving the trajectory
+
+        Returns
+        -------
+        int
+            Number of simulation steps that elapse between the trajectory being
+            stored
         """
 
         return self.lmp_simulation.traj_step
@@ -207,6 +212,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         """
         Get or set the temperature of the simulation in K
+
+        Returns
+        -------
+        float
+            Temperature in K
         """
 
         return self.lmp_simulation.temperature
@@ -222,6 +232,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         """
         Get or set the pressure of the simulation in atm
+
+        Returns
+        -------
+        float
+            Pressure in atm
         """
 
         return self.lmp_simulation.pressure
@@ -238,6 +253,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         """
         Get or set the ensemble object which applies a thermostat or barostat to
         LAMMPS
+
+        Returns
+        -------
+        Ensemble
+            The simulation ensemble
         """
 
         return self.lmp_simulation.ensemble
@@ -252,6 +272,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         """
         Get or set the string which specifies the thermostat
+
+        Returns
+        -------
+        str
+            The thermostat name
         """
 
         return self.ensemble.thermostat
@@ -266,6 +291,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         """
         Get or set the string which specifies the barostat
+
+        Returns
+        -------
+        str
+            The barostat name
         """
 
         return self.ensemble.barostat
@@ -281,12 +311,14 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         Creates the simulation box, the atomic configuration, and the topology
         in LAMMPS
 
-        Arguments:
-        universe - an MDMC Universe object
-
-        Settings:
-        atom_style - a LAMMPS atom_style string. The default setting of 'real'
-        will generally be appropriate.
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC Universe which will be setup in LAMMPS.
+        **settings
+            atom_style : str
+                A LAMMPS atom_style string. The default setting of 'real'
+                will generally be appropriate.
         """
 
         super(LAMMPSEngine, self).__init__(atom_style=settings.get('atom_style',
@@ -300,6 +332,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         """
         Sets simulation parameters in LAMMPS, such as the thermodynamic
         variables, thermostat/barostat parameters and trajectory settings
+
+        Parameters
+        ----------
+        **settings
+            Passed to LAMMPSSimulation
         """
 
         self.lmp_simulation = LAMMPSSimulation(self.universe, self.lmp,
