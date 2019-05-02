@@ -2279,15 +2279,19 @@ def partition(items, predicate):
     """
     Partitions an iterable using a predicate
 
-    Arguments:
-    items - an iterable
-    predicate - a predicate that can be applied to items to returned True or
-    False
+    Parameters
+    ----------
+    items : iterable
+        An interable to be partitioned.
+    predicate : function
+        A predicate that can be applied to items to returned True or False.
 
-    Returns:
-    A tuple of (gen_true, gen_false), where gen_true is a generator of all items
-    for which the predicate returned True, and gen_false is a generator of all
-    items for which the predicate returned False
+    Returns
+    -------
+    tuple
+        A tuple of (gen_true, gen_false), where gen_true is a generator of all
+        items for which the predicate returned True, and gen_false is a
+        generator of all items for which the predicate returned False
     """
 
     iter_a, iter_b = tee((predicate(item), item) for item in items)
@@ -2304,23 +2308,34 @@ def partition_interactions(interactions, names, unpartitioned=False, lst=False):
     This occurs by using partition to filter out one Interaction type for each
     loop, so previously identified Interactions are no longer considered.
 
-    Arguments:
-    interactions - an iterable of Interaction objects
-    names - a list of names of Interaction classes
-    unpartitioned - a boolean
-    lst - a boolean
+    Parameters
+    ----------
+    interactions : iterable of Interactions
+        An interable of Interaction objects to be partitioned.
+    names : list of str
+        Names of Interaction classes.
+    unpartitioned : bool, optional
+        If True, then a generator containing any Interaction objects that did
+        not have a name in names is returned as an additional item in the tuple.
+        Default is False.
+    lst : bool, optional
+        If True, then the returned tuple contains lists rather than generators.
+        Interaction objects which have the name specified by names[n]. Default
+        is False.
 
-    Returns:
-    A tuple of length len(names) where index n is a generator of all of the
-    Interaction objects which have the name specified by names[n]. For example:
+    Returns
+    -------
+    tuple
+        A tuple of length len(names) where index n is a generator of all of the
+        Interaction objects which have the name specified by `names[n]`. If
+        `unpartitioned` is True, tuple is length n+1. If `lst` is True, the
+        generators are replaced by lists.
 
-    bonds, angles = partition_interactions(interactions, ['Bond, BondAngle'])
-
-    If unpartitioned=True then a generator containing any Interaction objects
-    that did not have a name in names is returned as an additional item in the
-    tuple.
-    If lst=True then the returned n-length tuple contains lists of all of
-    the Interaction objects which have the name specified by names[n].
+    Example
+    -------
+    Partion interactions into Bonds and BondAngles::
+        bonds, angles = partition_interactions(interactions,
+                                               ['Bond, BondAngle'])
     """
 
     interaction_lst = [None] * len(names)
