@@ -1,6 +1,4 @@
-"""Facade for MMTK MD engine
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 11:07:19"""
+"""Facade for MMTK MD engine"""
 
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
