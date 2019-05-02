@@ -1449,26 +1449,33 @@ class Ensemble(PyLammpsAttribute):
     """
     A thermodynamic ensemble determined by applying a thermostat and/or barostat
 
+    Parameters
+    ----------
+    lmp : PyLammps
+        Set the lmp attribute to a PyLammps object.
+    temperature : float, optional
+        Thermostat temperature. Default is None, which is only valid if a
+        thermostat is also None.
+    pressure : float, optional
+        Barostat pressure. Default is None, which is only valid if a barostat is
+        also None.
+    thermostat : str
+        Name of a thermostat to be applied.
+    barostat : str
+        Name of a barostat to be applied.
+    **settings
+        time_step : float
+        t_damp : int
+        p_damp : int
+        t_window : float
+        t_fraction : float
+        rescale_step : int
 
-    Attributes:
-    temperature - a float specifying the simulation temperature in K
-    pressure - a float specifying the simulation pressure in atm
-    thermostat - a string specifying the thermostat
-    barostat - a string specifying the barostat
-    time_step - a float specifying the simulation time step in fs
-    t_damp - an int specifying over how many steps the temperature is relaxed by
-    the thermostat. This only applies to Nose-Hoover, Berendsen, Langevin
-    thermostats.
-    p_damp - an int specifying over how many steps the pressure is relaxed by
-    the barostat. This applies to all barostats.
-    t_fraction - a float between 0.0 and 1.0 specifying the magnitude rescale to
-    the target temperature, where 1.0 is rescale exactly to the target. This
-    only applies to rescale thermostat.
-    t_window - a float specifying the temperature window in K. If the
-    temperature varies from the target by greater than this value, the
-    temperature is rescaled. This only applies to rescale thermostats.
-    rescale_step - number of steps between applying temperature rescaling. This
-    only applies to rescale thermostats.
+    Attributes
+    ----------
+    rescale_step : int
+        Number of steps between applying temperature rescaling. This only
+        applies to rescale thermostats.
     """
 
     def __init__(self, lmp, temperature=None, pressure=None, thermostat=None,
@@ -1548,8 +1555,19 @@ class Ensemble(PyLammpsAttribute):
 
         """
         Get or set the number of time steps over which the temperature is
-        relaxed for Nose-Hoover, Berendsen and Langevin thermostats. This
-        requires the time step to have been set.
+        relaxed
+
+        Required for Nose-Hoover, Berendsen and Langevin thermostats.
+
+        Returns
+        -------
+        int
+            Number of time steps
+
+        Raises
+        ------
+        AttributeError
+            If `self.time_step` has not been set.
         """
 
         # t_damp is stored in units of time - convert back to number of steps
@@ -1581,8 +1599,20 @@ class Ensemble(PyLammpsAttribute):
 
         """
         Get or set the number of time steps over which the pressure is
-        relaxed for Nose-Hoover or Berendsen barostats. This requires the time
-        step to have been set.
+        relaxed
+
+        Required for Nose-Hoover or Berendsen barostats. The `time_step` must
+        have been set before `p_damp`.
+
+        Returns
+        -------
+        int
+            Number of time steps
+
+        Raises
+        ------
+        AttributeError
+            If `self.time_step` has not been set.
         """
 
         # p_damp is stored in units of time - convert back to number of steps
@@ -1611,9 +1641,21 @@ class Ensemble(PyLammpsAttribute):
     def t_fraction(self):
 
         """
-        Get or set the fraction (i.e. float between 0.0 and 1.0 inclusive) by
-        which the temperature is rescaled to the target temperature for the
-        rescale thermostat.
+        Get or set the fraction by which the temperature is rescaled to the
+        target temperature
+
+        This is required for the rescale thermostat.
+
+        Returns
+        -------
+        float
+            Fraction (i.e. between 0.0 and 1.0 inclusive) by which the
+            temperature is rescaled
+
+        Raises
+        ------
+        ValueError
+            If set to a value outside of 0.0 and 1.0 inclusive.
         """
 
         return self._t_fraction
@@ -1632,7 +1674,14 @@ class Ensemble(PyLammpsAttribute):
 
         """
         Get or set the temperature range in K in which the temperature is not
-        rescaled by the rescale thermostat.
+        rescaled
+
+        This only applies to rescale thermostats.
+
+        Returns
+        -------
+        float
+            temperature range in K
         """
 
         return self._t_window
@@ -1647,8 +1696,12 @@ class Ensemble(PyLammpsAttribute):
     def thermostat(self):
 
         """
-        Get or set the string which specifies the thermostat. This requires a
-        temperature to have been set.
+        Get or set the string which specifies the thermostat
+
+        Raises
+        ------
+        AttributeError
+            If `self.temperature` has not been set.
         """
 
         return self._thermostat
@@ -1667,8 +1720,12 @@ class Ensemble(PyLammpsAttribute):
     def barostat(self):
 
         """
-        Get or set the string which specifies the barostat. This requires a
-        pressure to have been set.
+        Get or set the string which specifies the barostat
+
+        Raises
+        ------
+        AttributeError
+            If `self.pressure` has not been set.
         """
 
         return self._barostat
