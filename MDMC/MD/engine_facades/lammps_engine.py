@@ -42,25 +42,22 @@ class PyLammpsAttribute(object):
 
     It possesses attributes and methods relating to the PyLammps object
 
-    Attributes:
-    system_state - a System object from the LAMMPS Python interface which
-    contains properties of the simulation box
-    fixes - a list of dictionaries specifying which LAMMPS fixes which are
-    applied
-    fix_styles - a list of strings specifying the styles of the LAMMPS fixes
-    which are applied
-    fix_names - a list of string specifying the names of the LAMMPS fixes which
-    are applied
+    Parameters
+    ----------
+    lmp : PyLammps, optional
+        Set the lmp attribute to a PyLammps object. Default is None, which
+        results in a new PyLammps object being initialised.
+    atom_style : str, optional
+        The LAMMPS atom_style, which determines the properties that can be
+        associated which the atoms (e.g. charge, bonds). Default is 'full'.
+
+    Attributes
+    -----------
+    lmp : PyLammps
+        The PyLammps object owned by this class
     """
 
     def __init__(self, lmp=None, atom_style='full'):
-
-        """
-        lmp - a PyLammps object
-        atom_style - a string specifying the LAMMPS atom_style, which determines
-        the properties that can be associated which the atoms (e.g. charge,
-        bonds)
-        """
 
         if lmp:
             self.lmp = lmp
@@ -74,6 +71,11 @@ class PyLammpsAttribute(object):
 
         """
         Get the PyLammps wrapper system state dictionary
+
+        Returns
+        -------
+        System
+                Contains the properties of the simulation box.
         """
 
         return self.lmp.system
@@ -83,6 +85,12 @@ class PyLammpsAttribute(object):
 
         """
         Get the PyLammps wrapper list of fixes
+
+        Returns
+        -------
+        list of dict
+            Each dict states the group, name and style of a LAMMPS fix which is
+            applied
         """
 
         return self.lmp.fixes
@@ -91,7 +99,12 @@ class PyLammpsAttribute(object):
     def fix_styles(self):
 
         """
-        Get a list of the styles of the fixes applied in LAMMPS
+        Get the styles of the fixes applied in LAMMPS
+
+        Returns
+        -------
+        list of str
+            The styles of the fixes
         """
 
         return [fix['style'] for fix in self.fixes]
@@ -100,7 +113,12 @@ class PyLammpsAttribute(object):
     def fix_names(self):
 
         """
-        Get a list of the names of the fixes applied in LAMMPS
+        Get the names of the fixes applied in LAMMPS
+
+        Returns
+        -------
+        list of str
+            The names of the fixes
         """
 
         return [fix['name'] for fix in self.fixes]
