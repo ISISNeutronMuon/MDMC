@@ -34,23 +34,25 @@ class Parameter(object):
     As __repr__ returns a string of a dictionary of the public attributes (so
     that these are easy to view), for consistency this class implements some
     dictionary methods.
+
+    Parameters
+    ----------
+    value : float
+        The value of the parameter.
+    name :  str
+        The name of the parameter.
+    fixed : bool
+        Whether or not the value can be changed.
+    constraints : tuple
+        The closed range of the Parameter value, (lower, upper). Constraints
+        must have the same units as value.
+    **settings
+        unit : str
+            The unit. If this is not provided then the unit will be taken from
+            the object passed as value.
     """
 
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
-
-        """
-        Arguments:
-        value - float specifying the value of the parameter
-        name - a string specifying the name
-        fixed - boolean specifying whether or not the value can be changed
-        constraints - 2 element tuple (lower, upper) specifying the closed range
-        in which value can be set. Constraints must have the same units as
-        value.
-
-        Settings:
-        unit - a string specifying the unit. If this is not provided then the
-        unit will be taken from the object passed as value.
-        """
 
         self.name = name
         self.unit = settings['unit'] if 'unit' in settings else value.unit
@@ -65,6 +67,25 @@ class Parameter(object):
     @property
     def value(self):
 
+        """
+        Get or set the value of the Parameter
+
+        The value will not be changed if it is fixed or tied, or if it is set
+        outside the bounds of a constraint
+
+        Returns
+        -------
+        float
+            The value of the Parameter, including if the parameter is tied
+
+        Warns
+        --------
+        warnings.warn
+            If the Parameter is fixed.
+        warnings.warn
+            If the Parameter is tied.
+        """
+
         if self.tied:
             return self.tie
         return self._value
@@ -72,10 +93,6 @@ class Parameter(object):
     @value.setter
     @unit_decorator(unit=None)
     def value(self, value):
-
-        """
-        Checks if Parameter is fixed or constrained
-        """
 
         if hasattr(self, 'fixed') and self.fixed:
             warnings.warn("Unable to change fixed parameter")
@@ -90,17 +107,28 @@ class Parameter(object):
     @unit_decorator_getter(unit=None)
     def constraints(self):
 
+        """
+        Get or set the constraint of the Parameter
+
+        Returns
+        -------
+        tuple
+            The closed range of the Parameter value
+
+        Raises
+        ------
+        ValueError
+            If the constraint tuple is not (lower, upper).
+        """
+
         return self._constraints
 
     @constraints.setter
     def constraints(self, constraints):
 
-        """
-        Checks if constraints are a 2 element tuple of floats, that the zeroeth
-        element is less than or equal to the first, and that self.value is
-        within them, if it exists
-        """
-
+        ### Checks if constraints are a 2 element tuple of floats, that the
+        ### zeroeth element is less than or equal to the first, and that
+        ### self.value is within them, if it exists
         if constraints is not None:
             if constraints[0] > constraints[1]:
                 raise ValueError("Constaints must be (lower, upper)")
@@ -112,19 +140,27 @@ class Parameter(object):
     def interactions(self):
 
         """
-        Returns:
-        A list of all parent Interaction objects for this Parameter object
+        Get or append to the parent Interaction objects for this Parameter
+
+        Returns
+        -------
+        list
+            All parent Interaction objects
+
+        Raises
+        ------
+        ValueError
+            If an added interaction name is not consistent with existing
+            interaction names
+        ValueError
+            If an added interaction has a function name not consistent with
+            the function names of existing interactions
         """
 
         return [interaction() for interaction in self._interactions]
 
     @interactions.setter
     def interactions(self, interaction):
-
-        """
-        Appends to a list of parent Interaction objects for this Parameter
-        object
-        """
 
         # Test if interaction is of the same type as any interactions already
         # stored
@@ -145,9 +181,12 @@ class Parameter(object):
     def tie(self):
 
         """
-        Returns:
-        The value of the Parameter object that this Parameter is tied to, or
-        None
+        Get the value of a the Parameter object that this Parameter is tied to
+
+        Returns
+        -------
+        float
+            The value of the tied Parameter
         """
 
         if self._tie is None:
@@ -159,8 +198,12 @@ class Parameter(object):
     def tied(self):
 
         """
-        Returns:
-        True if this Parameter is tied to another Parameter, else False
+        Get whether this Parameter is tied
+
+        Returns
+        -------
+        bool
+            True if this Parameter is tied to another Parameter, else False
         """
 
         if hasattr(self, 'tie') and self.tie is not None:
@@ -173,12 +216,18 @@ class Parameter(object):
         """
         This ties the parameter's value to the value of another parameter
 
-        Arguments:
-        parameter - a Parameter object
-        expr - a mathematical expression
+        Parameters
+        ---------
+        parameter : Parameter
+            The Parameter to tie to
+        expr : str
+            A mathematical expression
 
-        Example:
-        set_tie(p1, "* 2") means this parameter's value will return p1.value * 2
+        Examples
+        --------
+        To set the Parameters return value to p1.value * 2:
+
+        >>> Parameter.set_tie(p1, "* 2")
         """
 
         self._tie_param = weakref.ref(parameter)
