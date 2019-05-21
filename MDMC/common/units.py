@@ -55,28 +55,28 @@ class Unit(str):
     --------
     Base units can be set::
 
-        time_unit = Unit('s')
+    >>> time_unit = Unit('s')
 
     Compound units can be set with spaces separating base units which are
     multiplied::
 
-        charge_unit = Unit('A s')
+    >>> charge_unit = Unit('A s')
 
     Compound units can be set with / separating base units which are divided::
 
-        velocity_unit = Unit('m / s')
+    >>> velocity_unit = Unit('m / s')
 
     Units raised to a positive power can be set with ^::
 
-        volume_unit = Unit('Ang ^ 3')
+    >>> volume_unit = Unit('Ang ^ 3')
 
     Compound units can be set with a combination of these operands::
 
-        force_unit = Unit('kg m / s ^ 2')
+    >>> force_unit = Unit('kg m / s ^ 2')
 
     To set an inverse unit, the power operation must be applied to a Unit::
 
-        frequency = Unit('s') ** -1
+    >>> frequency = Unit('s') ** -1
 
     Attributes
     ----------
