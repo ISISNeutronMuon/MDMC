@@ -2410,15 +2410,6 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
         If no `time_step` is passed, it is set to 1.0 fs.
     """
 
-    # Settings:
-    # time_step - the amount of time that elapses in a single simulation step in
-    # fs (defaults to 1.0 fs)
-    # universe - an MDMC universe
-    # scaled_positions - a boolean specifying if the LAMMPS trajectory file
-    # provides the positions in scaled coordinates (i.e. xs, ys, yz)
-    # atom_IDs - a list specifying the LAMMPS IDs of the atoms which should be
-    # converted. If None then all atoms are converted.
-
     def create_atom(line):
 
         """
