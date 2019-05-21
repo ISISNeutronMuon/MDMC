@@ -884,6 +884,12 @@ class LAMMPSUniverse(PyLammpsAttribute):
         nonbonded_interactions : list of NonbondedInteractions
             NonBondedInteractions which will have modifications applied to the
             corresponding pair styles.
+
+        Warns
+        -----
+        warnings.warn
+            If a pair style is specified which cannot have a vdw tail correction
+            applied
         """
 
         # LAMMPS pair_modify is of the following form:
@@ -2404,9 +2410,9 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     TypeError
         If `trajectory_file` describes a triclinic universe.
 
-    Warnings
-    --------
-    warning.warn
+    Warns
+    -----
+    warnings.warn
         If no `time_step` is passed, it is set to 1.0 fs.
     """
 
