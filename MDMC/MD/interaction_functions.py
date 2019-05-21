@@ -9,9 +9,7 @@ Contains class Parameter, which defines the name and value of each
 parameter which belongs to an InteractionFunction, and whether the parameter is
 fixed, has constraints or is tied.
 
-Contains filters for filtering list of parameters based on a predicate.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
+Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
 from inspect import getargspec, getmembers
