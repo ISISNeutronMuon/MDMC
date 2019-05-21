@@ -40,8 +40,10 @@ class ForceField:
         Parameterizes the interactions with the parameters speicifed in the
         interaction dictionary
 
-        Arguments:
-        interactions - a list of interactions
+        Parameters
+        ----------
+        interactions : list
+            A list of Interaction objects to be parameterized
         """
 
         for interaction in interactions:
@@ -54,7 +56,8 @@ class ForceField:
         interaction dictionary
 
         Arguments:
-        interaction - a subclass of MDMC.MD.structural_units.Interaction
+        interaction : Interaction
+            An Interaction object to be parameterized
         """
 
         elements = interaction.element_tuple()
