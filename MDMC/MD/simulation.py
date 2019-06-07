@@ -1,8 +1,6 @@
 """Module for setting up and running the simulation
 
- Classes for the simulation box, minimizer and integrator.
-
- AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:01:04"""
+ Classes for the simulation box, minimizer and integrator."""
 
 from abc import ABCMeta, abstractproperty
 from collections import defaultdict
@@ -27,56 +25,49 @@ class Universe(object):
     """
     Class where configuration and topology are defined
 
-    Attributes:
-    shape - member of the Shape enum
-    dims - array of dimensions
-    interactions - a list of interactions which exist in the universe
-    bonded_interaction_pairs - a list of (interaction, atoms) tuples where atoms
-    is a list of atoms to which the bonded interaction applies
-    parameters - a list of interaction potential parameters
-    volume - The volume of the universe
-    element_list - A list of the elements in the universe
-    element_dict - A dictionary of element:atom, where atom is a single atom of
-    the specified element
-    atom_list - a list of the atoms in the universe
-    molecule_list - a list of the molecules in the universe
-    structure_list - a list of the structural units in the universe
-    force_fields - a list of the force fields that apply to the universe
-    kspace_solver - a KSpaceSolver object specifying the k-space solver to
-    be used for both electrostatic and dispersive interactions
-    electrostatic_solver - a KSpaceSolver object specifying the k-space
-    solver to be used for electrostatic interactions
-    dispersive_solver - a KSpaceSolver object specifying the k-space solver
-    to be used for dispersive interactions
-    constraint_algorithm - an object which has a  ConstraintAlgorithm base
-    class which specifies the constraint algorithm which will be applied to
-    constrained BondedInteractions.
+    Parameters
+    ----------
+    dims : np.array, list, float
+        Dimensions of the Universe, in units of Ang. A float can be used for a
+        cubic universe.
+    shape : enum
+        Member of the Shape enum.
+    force_field : ForceField
+        A force field to apply to the Universe.
+    structures : list
+        Structures contained in the Universe.
+
+    **settings
+        kspace_solver : KSpaceSolver
+            The k-space solver to be used for both electrostatic and dispersive
+            interactions. If this is passed then no electrostatic_solver or
+            dispersive_solver may be passed.
+        electrostatic_solver : KSpaceSolver
+            The k-space solver to be used for electrostatic interactions.
+        dispersive_solver : KSpaceSolver
+            The k-space solver to be used for dispersive interactions.
+        constraint_algorithm : ConstraintAlgorithm
+            The constraint algorithm which will be applied to constrained
+            BondedInteractions.
+
+    Attributes
+    ----------
+    shape : enum
+        Member of the Shape enum.
+    kspace_solver : KSpaceSolver
+        The k-space solver to be used for both electrostatic and dispersive
+        interactions.
+    electrostatic_solver : KSpaceSolver
+        The k-space solver to be used for electrostatic interactions.
+    dispersive_solver : KSpaceSolver
+        The k-space solver to be used for dispersive interactions.
+    constraint_algorithm : ConstraintAlgorithm
+        The constraint algorithm which will be applied to constrained
+        BondedInteractions.
     """
 
     def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
                  structures=None, **settings):
-
-        """
-        Arguments:
-        dimensions - single float for cubic universe or 3 element list of
-        floats, with units of Ang.
-        shape - member of shape enum
-        force_field - a subclass of MDMC.MD.force_fields.ff.ForceField
-        structures - a list of structures
-
-        Settings:
-        kspace_solver - a KSpaceSolver object specifying the k-space solver to
-        be used for both electrostatic and dispersive interactions. If this is
-        passed then no electrostatic_solver or dispersive_solver may be
-        provided.
-        electrostatic_solver - a KSpaceSolver object specifying the k-space
-        solver to be used for electrostatic interactions
-        dispersive_solver - a KSpaceSolver object specifying the k-space solver
-        to be used for dispersive interactions
-        constraint_algorithm - an object which has a  ConstraintAlgorithm base
-        class which specifies the constraint algorithm which will be applied to
-        constrained BondedInteractions.
-        """
 
         self.shape = shape
         self.dims = dimensions
@@ -107,6 +98,23 @@ class Universe(object):
     @unit_decorator_getter(unit=units.LENGTH)
     def dims(self):
 
+        """
+        Get or set the dimensions of the Universe
+
+        Raises
+        ------
+        TypeError
+            If the dimensions of a non-cubic Universe are specified with a float
+        TypeError
+            If a float, list, or np.array are not passed
+        ValueError
+            If a list or array is not 1d with 3 elements
+        Returns
+        -------
+        np.array
+            The dimensions of the Universe
+        """
+
         return self._dims
 
     @dims.setter
@@ -130,7 +138,12 @@ class Universe(object):
     def interactions(self):
 
         """
-        A list of interactions in the universe
+        Get the interactions in the Universe
+
+        Returns
+        -------
+        list
+            The interactions in the Universe
         """
 
         return self.bonded_interactions + self.nonbonded_interactions
@@ -139,7 +152,12 @@ class Universe(object):
     def bonded_interactions(self):
 
         """
-        A list of the bonded interactions in the universe
+        Get the bonded interactions in the Universe
+
+        Returns
+        -------
+        list
+            The bonded interactions in the Universe
         """
 
         return [pair[0] for pair in self.bonded_interaction_pairs]
@@ -148,7 +166,12 @@ class Universe(object):
     def nonbonded_interactions(self):
 
         """
-        A list of the nonbonded interactions in the universe
+        Get the nonbonded interactions in the Universe
+
+        Returns
+        -------
+        list
+            The nonbonded interactions in the Universe
         """
 
         return list(self._nonbonded_interactions)
@@ -157,15 +180,20 @@ class Universe(object):
     def bonded_interaction_pairs(self):
 
         """
-        A list of (interaction, atoms) pairs in the universe, where atoms is a
-        tuple of all atoms for that specific interaction
+        Get the bonded interactions and the atoms they apply to
 
-        Example:
-        For an O Atom with two bonds, one to H1 and one to H2:
+        Returns
+        -------
+        list
+            The (interaction, atoms) pairs in the Universe, where atoms is a
+            tuple of all atoms for that specific interaction
 
-        print(O.bonded_interaction_pairs)
-        [(Bond, (H1, O)),
-         (Bond, (H2, O))]
+        Example
+        -------
+        For an O Atom with two bonds, one to H1 and one to H2::
+
+        >>> print(O.bonded_interaction_pairs)
+        [(Bond, (H1, O)), (Bond, (H2, O))]
         """
 
         # bonded_interaction_pairs is a set to avoid double counting of
@@ -175,6 +203,15 @@ class Universe(object):
     @property
     def parameters(self):
 
+        """
+        Get the parameters of the interactions that exist within the Universe
+
+        Returns
+        -------
+        set
+            The parameters in the Universe
+        """
+
         return set([param for interaction in self.interactions
                     for param in interaction.params])
 
@@ -182,10 +219,28 @@ class Universe(object):
     @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
 
+        """
+        Get the volume of the Universe
+
+        Returns
+        -------
+        float
+            Volume in Ang^3
+        """
+
         return np.prod(self.dims)
 
     @property
     def element_list(self):
+
+        """
+        The elements of the atoms in the Universe.
+
+        Returns
+        -------
+        list
+            The elements in the Universe.
+        """
 
         return [atom.element for atom in self.atom_list]
 
@@ -193,9 +248,17 @@ class Universe(object):
     def element_dict(self):
 
         """
-        Returns a dictionary of all elements and a single atom of that
-        element type. This is required for MD engines which assign the same
-        potential parameters for all identical element types.
+        Get the elements in the Universe and examples atoms for each element
+
+        This is required for MD engines which assign the same potential
+        parameters for all identical element types.
+
+        Returns
+        -------
+        dict
+            element:atom pairs, where atom is a single atom of the specified
+            element.
+
         """
 
         return {atom.element:atom for atom in self.atom_list}
@@ -203,10 +266,28 @@ class Universe(object):
     @property
     def atom_list(self):
 
+        """
+        Get a list of the atoms in the Universe
+
+        Returns
+        -------
+        list
+            The atoms in the Universe
+        """
+
         return self.configuration.atom_list
 
     @property
     def molecule_list(self):
+
+        """
+        Get a list of the molecules in the Universe
+
+        Returns
+        -------
+        list
+            The molecules in the Universe
+        """
 
         return self.configuration.molecule_list
 
@@ -214,9 +295,15 @@ class Universe(object):
     def structure_list(self):
 
         """
-        Returns all structural units that exist in the Universe.  This includes
-        all structural units that are a subunit of another structure belonging
-        to the universe.
+        Get a list of all structural units that exist in the Universe.  This
+        includes all structural units that are a subunit of another structure
+        belonging to the universe.
+
+
+        Returns
+        -------
+        list
+            The structural units in the Universe
         """
 
         def add_all_parents(unit):
@@ -237,6 +324,15 @@ class Universe(object):
     @property
     def force_fields(self):
 
+        """
+        Get or set the force fields acting on the Universe
+
+        Returns
+        -------
+        list
+            Force fields that apply to the Universe
+        """
+
         return self._force_fields
 
     @force_fields.setter
@@ -251,10 +347,30 @@ class Universe(object):
     @property
     def atom_types(self):
 
+        """
+        Get the atom types of atoms in the Universe
+
+        Returns
+        -------
+        list
+            The atom types in the Universe
+        """
+
         return self._atom_types
 
     @property
     def atom_type_interactions(self):
+
+        """
+        Get the atom types and the interactions for each atom type
+
+        Returns
+        -------
+        dict
+            atom_type:interactions pairs where atom_type is a int specifying the
+            atom type and interactions is a list of interactions acting on that
+            atom_type
+        """
 
         return self._atom_type_interactions
 
@@ -263,8 +379,10 @@ class Universe(object):
         """
         Adds the atom to atom_types dictionary
 
-        Arguments:
-        atom - an Atom object to add to the atom_types dictionary
+        Parameters
+        ----------
+        atom : Atom
+            An Atom object to add to the atom_types dictionary
         """
 
         inter_key = (atom.element, ) + tuple(sorted(atom.interactions))
@@ -291,11 +409,19 @@ class Universe(object):
         Adds a new key:atom_type to atom_type_interactions, if the key does not
         already exist
 
-        Arguments:
-        key - a tuple of (element, *interactions), where element is a string
-        specifying the atomic element, and *interactions is one or more
-        Interaction objects
-        atom_type - an integer specifying the atom type
+        Parameters
+        ----------
+        key : tuple
+            (element, *interactions), where element is a string specifying the
+            atomic element, and *interactions is one or more Interaction objects
+        atom_type : int
+            The atom type
+
+        Raises
+        ------
+        TypeError
+            If an assignment is made to an atom_type which already has
+            associated interactions
         """
 
         if key not in self.atom_type_interactions:
@@ -310,6 +436,13 @@ class Universe(object):
         """
         Adds a single structural unit to the universe, with optional force field
         applying only to that structural unit
+
+        Parameters
+        ----------
+        structural_unit : StructuralUnit
+            The structural unit to be added to the Universe
+        force_field : str, optional
+            The force field to be applied to the structural unit
         """
 
         structural_unit.universe = self
@@ -325,9 +458,9 @@ class Universe(object):
     def fill(self, structural_unit, force_field=None, **settings):
 
         """
-        A liquid-like filling of the universe independent of existing atoms
+        A liquid-like filling of the Universe independent of existing atoms
 
-        Adds copies of structural_unit to existing configuration until universe
+        Adds copies of structural_unit to existing configuration until Universe
         is full.  As exclusion region is defined by the size of a bounding
         sphere, this method is most suitable for atoms or molecules with
         approximately equal dimensions.
@@ -335,12 +468,16 @@ class Universe(object):
         CURRENT APPROACH RESULTS IN NUMBER DENSITY DIFFERENT TO WHAT IS
         SPECIFIED DEPENDING ON HOW CLOSE CUBE ROOT OF N_MOLECULES IS TO AN INT.
 
-        Arguments:
-        structural_unit - any object with base class StructuralUnit
-        force_field - Simultaneously applies a forcefield (base class
-        ForceField)
-        Settings:
-        num_density - non-negative float specifying number density
+        Parameters
+        ----------
+        structural_unit : StructuralUnit
+            The structural unit with which to fill the Universe
+        force_field : str
+            Applies a force field to the Universe
+        **settings
+            num_density : float
+                Non-negative float specifying the number density of the
+                structural unit
         """
 
         n_units_xyz = self.dims / (1. / settings.get('num_density')) ** (1 / 3.)
@@ -372,12 +509,15 @@ class Universe(object):
 
         """
         Adds a force field to *interactions.  If no interactions are
-        passed, the force field is applied to all interactions in the universe.
+        passed, the force field is applied to all interactions in the Universe.
 
-        Arguments:
-        force_field - the ForceField to be the interactions, or to all the
-        interactions in the universe
-        interactions - any objects with base class Interaction
+        Parameters
+        ----------
+        force_field : str
+            The ForceField to parameterize *interactions (if provided), or all
+            the interactions in the universe
+        *interactions
+            Interactions to parameterize with the force field
         """
 
         self.force_fields = force_field
@@ -390,11 +530,13 @@ class Universe(object):
     def add_bonded_interaction_pairs(self, *bonded_interaction_pairs):
 
         """
-        Adds one or more interaction pairs to the universe
+        Adds one or more interaction pairs to the Universe
 
-        Arguments:
-        bonded_interaction_pairs - A list of (interaction, atoms) pairs, where
-        atoms is a tuple of all atoms for that specific bonded interaction
+        Parameters
+        ----------
+        *bonded_interaction_pairs
+            one or more (interaction, atoms) pairs, where atoms is a tuple of
+            all atoms for that specific bonded interaction
         """
 
         self._bonded_interaction_pairs.update(bonded_interaction_pairs)
@@ -402,10 +544,12 @@ class Universe(object):
     def add_nonbonded_interaction(self, *nonbonded_interactions):
 
         """
-        Adds one or more nonbonded interactions to the universe
+        Adds one or more nonbonded interactions to the Universe
 
-        Arguments:
-        nonbonded_interactions - a list of nonbonded interactions
+        Parameters
+        ----------
+        *nonbonded_interactions
+            Nonbonded interactions to be added to the Universe
         """
 
         self._nonbonded_interactions.update(nonbonded_interactions)
@@ -415,6 +559,11 @@ def _primitive_cubic(dimensions, number):
 
     """
     Generates a primitive cubic structure
+
+    Raises
+    ------
+    NotImplementedError
+        HAS NOT BEEN IMPLEMENTED
     """
 
     raise NotImplementedError
@@ -424,6 +573,11 @@ def _liquid_structure():
 
     """
     Generates a random arrangement of structural units
+
+    Raises
+    ------
+    NotImplementedError
+        HAS NOT BEEN IMPLEMENTED
     """
 
     raise NotImplementedError
@@ -435,29 +589,38 @@ class KSpaceSolver(object):
     Class describing the k-space solver that is applied to electrostatic and/or
     dispersion interactions
 
-    Attributes:
-    accuracy - a float specifying the relative RMS error in per-atom forces
-    """
 
     SOLVERS = ['ewald', 'pppm']
+    Different MD engines require different parameters to be specified for a
+    k-space solver to be used. These parameters are specified in settings.
+
+    Parameters
+    ----------
+    **settings
+        accuracy : float
+            The relative RMS error in per-atom forces
+
+    Attributes
+    ----------
+    accuracy : float
+        The relative RMS error in per-atom forces
+    """
 
     def __init__(self, **settings):
-
-        """
-        Different MD engines require different parameters to be specified for a
-        k-space solver to be used. These parameters are specified in settings.
-
-        Arguments:
-        solver - a string specifying the name of the solver
-
-        Settings:
-        accuracy - a float specifying the relative RMS error in per-atom forces
-        """
 
         self.accuracy = settings.get('accuracy')
 
     @property
     def name(self):
+
+        """
+        Get the name of the class
+
+        Returns
+        -------
+        str
+            The name of the class
+        """
 
         return self.__class__.__name__
 
@@ -467,14 +630,15 @@ class Ewald(KSpaceSolver):
     """
     Holds the parameters that are required for the Ewald solver to be applied to
     both/either the electrostatic and/or dispersion interactions
+
+    Parameters
+    ----------
+    **settings
+        accuracy : float
+            The relative RMS error in per-atom forces
     """
 
     def __init__(self, **settings):
-
-        """
-        Settings:
-        accuracy - a float specifying the relative RMS error in per-atom forces
-        """
 
         super(Ewald, self).__init__(**settings)
 
@@ -484,14 +648,15 @@ class PPPM(KSpaceSolver):
     """
     Holds the parameters that are required for the PPPM solver to be applied to
     both/either the electrostatic and/or dispersion interactions
+
+    Parameters
+    ----------
+    **settings
+        accuracy : float
+            The relative RMS error in per-atom forces
     """
 
     def __init__(self, **settings):
-
-        """
-        Settings:
-        accuracy - a float specifying the relative RMS error in per-atom forces
-        """
 
         super(PPPM, self).__init__(**settings)
 
@@ -519,13 +684,19 @@ class ConstraintAlgorithm(object):
     Class describing the algorithm and parameters which are applied to constrain
     bonded interactions
 
-    Attributes:
-    name - a string specifying the name of the constraint algorithm
-    accuracy - a float specifying the accuracy (tolerance) of the applied
-    constraints
-    max_iterations - an integer specifying the maximum number of iterations that
-    can be used when calculating the additional force that is required to
-    constrain the atoms to satisfy the constraints on the bonded interactions
+    Parameters
+    ----------
+    accuracy : float
+        The accuracy (tolerance) of the applied constraints
+    max_iterations : int
+        The maximum number of iterations that can be used when calculating the
+        additional force that is required to constrain the atoms to satisfy the
+        constraints on the bonded interactions
+
+    Attributes
+    ----------
+    accuracy : float
+        The accuracy (tolerance) of the applied constraints
     """
 
     def __init__(self, accuracy, max_iterations):
@@ -536,10 +707,30 @@ class ConstraintAlgorithm(object):
     @property
     def name(self):
 
+        """
+        Get the name of the class
+
+        Returns
+        -------
+        str
+            The name of the class
+        """
+
         return self.__class__.__name__
 
     @property
     def max_iterations(self):
+
+        """
+        Get or set the maximum number of iterations that can be used when
+        calculating the additional force that is required to constrain the atoms
+        to satisfy the constraints on the bonded interactions
+
+        Returns
+        -------
+        int
+            The maximum number of iterations
+        """
 
         return self._max_iterations
 
@@ -554,6 +745,15 @@ class Shake(ConstraintAlgorithm):
     """
     Holds the parameters which are required for the SHAKE algorithm to be
     applied to the constrained interactions
+
+    Parameters
+    ----------
+    accuracy : float
+        The accuracy (tolerance) of the applied constraints
+    max_iterations : int
+        The maximum number of iterations that can be used when calculating the
+        additional force that is required to constrain the atoms to satisfy the
+        constraints on the bonded interactions
     """
 
     def __init__(self, accuracy, max_iterations):
@@ -566,6 +766,15 @@ class Rattle(ConstraintAlgorithm):
     """
     Holds the parameters which are required for the RATTLE algorithm to be
     applied to the constrained interactions
+
+    Parameters
+    ----------
+    accuracy : float
+        The accuracy (tolerance) of the applied constraints
+    max_iterations : int
+        The maximum number of iterations that can be used when calculating the
+        additional force that is required to constrain the atoms to satisfy the
+        constraints on the bonded interactions
     """
 
     def __init__(self, accuracy, max_iterations):
@@ -576,14 +785,23 @@ class Rattle(ConstraintAlgorithm):
 class EnergyMinimizer(object):
 
     """
-    Define the MD energy minimizer
+    The MD energy minimizer
 
-    Attributes:
-    n_steps - number of steps
-    sz_steps - size of steps
-    algorithm - minimization algorithm
-    stop - condition for minimization to stop
-    minimize() - uses MD engine API to minimize energy
+    Attributes
+    ----------
+    n_steps : int
+        number of steps
+    sz_steps : float
+        size of steps
+    algorithm : str
+        minimization algorithm
+    stop : float
+        condition for minimization to stop
+
+    Raises
+    ------
+    NotImplementedError
+        THIS IS NOT IMPLEMENTED
     """
 
     def __init__(self):
