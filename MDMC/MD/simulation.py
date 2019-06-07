@@ -66,11 +66,11 @@ class Universe(object):
         BondedInteractions.
     """
 
-    def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
+    def __init__(self, dims, shape=Shape.cubic, force_field=None,
                  structures=None, **settings):
 
         self.shape = shape
-        self.dims = dimensions
+        self.dims = dims
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:
