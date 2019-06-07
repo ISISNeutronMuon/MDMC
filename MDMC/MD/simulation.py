@@ -589,8 +589,6 @@ class KSpaceSolver(object):
     Class describing the k-space solver that is applied to electrostatic and/or
     dispersion interactions
 
-
-    SOLVERS = ['ewald', 'pppm']
     Different MD engines require different parameters to be specified for a
     k-space solver to be used. These parameters are specified in settings.
 
