@@ -514,31 +514,28 @@ class Atom(StructuralUnit):
     """
     A single atom
 
-    Attributes:
-    element - string specifying the atomic element label
-    mass - float specifying the atomic mass (amu)
-    charge - float specifying the charge (e) if one has been applied to the Atom
+    Parameters
+    ----------
+    element : str
+        The atomic element label.
+    position : list, tuple, NumPy array, optional
+        A 3 element list, tuple or array with the position in units of Ang. The
+        default is (0., 0., 0.).
+    velocity : list, tuple, NumPy array, optional
+        A 3 element list, tuple or array with the velocity in units of Ang. The
+        default is (0., 0., 0.).
+    **settings
+        mass : float
+            The atomic mass in amu. If not provided a lookup table will be used.
+
+    Attributes
+    ----------
+    element : str
+        The atomic element label
     """
 
     def __init__(self, element, position=(0., 0., 0.), velocity=(0., 0., 0.),
                  **settings):
-
-        """
-        init with position, velocity, element, mass and a non-bonded interaction
-
-        The Coulombic interaction value (i.e. charge) is set when a force field
-        is applied to the universe, in units of e.
-
-        Arguments:
-        element - string specifying the atomic element label
-        position - a tuple or NumPy array specifying the position in units of
-        Ang
-        velocity - a tuple of NumPy array specifying the velocity in units of
-        Ang fs^-1
-        Settings:
-        mass - float specifying the atomic mass in amu. If not provided a lookup
-        table will be used.
-        """
 
         self.universe = None
         super(Atom, self).__init__(position, velocity, name=element)
@@ -649,10 +646,18 @@ class Atom(StructuralUnit):
     def charge(self):
 
         """
-        Returns:
-        If a force field has been defined then the charge parameter will have
-        been set, and is returned in units of e. If no charge parameter exists
-        then None is returned.
+        Get or set the charge in e if one has been applied to the Atom
+
+        Returns
+        -------
+        float
+            The charge in units of e, or None if no charge has been set
+
+        Raises
+        ------
+        AttributeError
+            If a charge is set when the Atom has no Coulombic interaction, or if
+            the Coulombic interaction has no InteractionFunction
         """
 
         try:
@@ -683,16 +688,19 @@ class Atom(StructuralUnit):
     @property
     def mass(self):
 
+        """
+        Get or set the atomic mass in amu
+
+        Returns
+        -------
+        float
+            the atomic mass in amu
+        """
         return self._mass
 
     @mass.setter
     @unit_decorator(unit=units.MASS)
     def mass(self, mass):
-
-        """
-        Either assigns mass to self._mass or uses lookup table to determine
-        mass if it is unspecified
-        """
 
         self._mass = mass
 
