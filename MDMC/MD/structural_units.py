@@ -1,9 +1,8 @@
 """Module in which all structural units are defined.
 
 Atoms are the fundamental structural unit in terms of which all others must be
-defined.  All shared behaviour is included within the StructuralUnit base class.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 12:11:03"""
+defined.  All shared behaviour is included within the StructuralUnit base
+class."""
 
 from abc import ABCMeta, abstractproperty
 from copy import deepcopy
@@ -23,20 +22,18 @@ class StructuralUnit:
 
     """Abstract base class for all structural units
 
- 	Attributes:
- 	ID - a unique identifier for each StructuralUnit
-    universe - the universe to which the StructuralUnit belongs
-    structure_type - type of StructuralUnit
-    name - a string specifying the name of the structure
-    position - position of center of mass in units of Ang
-    velocity - average velocity in units of Ang fs^-1
-    bonds - list of all bonds
-    parent - the StructuralUnit to which this unit belongs
-    atom_list - a list of atoms belonging to the StructuralUnit
-    interactions - a list of interactions acting on the StructuralUnit
-    bonded_interaction_pairs - a list of (interaction, atoms) tuples where atoms
-    is a list of atoms to which the bonded interaction applies. At least one of
-    these atoms belongs to the StructuralUnit
+ 	Attributes
+    ----------
+ 	ID : int
+        A unique identifier for each StructuralUnit.
+    universe : Universe
+        The universe to which the StructuralUnit belongs.
+    structure_type : str
+
+    name : str
+        The name of the structure.
+    parent : StructuralUnit
+        StructuralUnit to which this unit belongs, or self
     """
 
     __metaclass__ = ABCMeta
@@ -65,6 +62,15 @@ class StructuralUnit:
     @property
     def position(self):
 
+        """
+        Get or set the position of the center of mass of the StructuralUnit in
+        Ang
+
+        Returns
+        -------
+        NumPy array
+        """
+
         return self._position
 
     @position.setter
@@ -84,6 +90,14 @@ class StructuralUnit:
     @property
     def velocity(self):
 
+        """
+        Get or set the velocity of the StructuralUnit in Ang/fs
+
+        Returns
+        -------
+        NumPy array
+        """
+
         return self._velocity
 
     @velocity.setter
@@ -96,9 +110,13 @@ class StructuralUnit:
     def atom_list(self):
 
         """
-        Returns:
-        A list of all of the atoms in the structure by recursively calling
-        atom_list for all substructures.
+        Get a list of all of the atoms in the structure by recursively calling
+        atom_list for all substructures
+
+        Returns
+        -------
+        list
+            All atoms in the structure
         """
 
         atom_list = []
@@ -110,8 +128,12 @@ class StructuralUnit:
     def universe(self):
 
         """
-        Returns:
-        The universe to which the atom belongs or None
+        Get the Universe to which the StructuralUnit belongs
+
+        Returns
+        -------
+        Universe
+            The Universe to which the StructuralUnit belongs or None
         """
 
         raise NotImplementedError
@@ -121,8 +143,10 @@ class StructuralUnit:
         """
         Translate the structural unit by the specified displacement
 
-        Arguments:
-        Displacement - three element tuple or NumPy array
+        Parameters
+        ----------
+        Displacement : tuple, NumPy array
+            A three element tuple or array of floats
         """
 
         self.position = self.position + np.array(displacement)
@@ -131,7 +155,12 @@ class StructuralUnit:
     def interactions(self):
 
         """
-        A list of the interactions acting on the StructuralUnit
+        Get a list of the interactions acting on the StructuralUnit
+
+        Returns
+        -------
+        list
+            Interactions acting on the StructuralUnit
         """
 
         return self.bonded_interactions + self.nonbonded_interactions
@@ -140,7 +169,12 @@ class StructuralUnit:
     def bonded_interactions(self):
 
         """
-        A list of the bonded interactions acting on the StructuralUnit
+        Get a list of the bonded interactions acting on the StructuralUnit
+
+        Returns
+        -------
+        list
+            BondedInteractions acting on the StructuralUnit
         """
 
         return [pair[0] for pair in self.bonded_interaction_pairs]
@@ -149,7 +183,12 @@ class StructuralUnit:
     def nonbonded_interactions(self):
 
         """
-        A list of the nonbonded interactions acting on the StructuralUnit
+        Get a list of the nonbonded interactions acting on the StructuralUnit
+
+        Returns
+        -------
+        list
+            NonBondedInteractions acting on the StructuralUnit
         """
 
         raise NotImplementedError
@@ -158,15 +197,23 @@ class StructuralUnit:
     def bonded_interaction_pairs(self):
 
         """
-        A list of (interaction, atoms) pairs acting on the StructuralUnit,
-        where atoms is a tuple of all atoms for that specific bonded interaction
+        Get bonded interactions acting on the StructuralUnit and the other atoms
+        to which the atom is bonded
 
-        Example:
-        For an O Atom with two bonds, one to H1 and one to H2:
 
-        print(O.bonded_interaction_pairs)
-        [(Bond, (H1, O)),
-         (Bond, (H2, O))]
+        Returns
+        -------
+        list
+            (interaction, atoms) pairs acting on the StructuralUnit, where atoms
+            is a tuple of all atoms for that specific bonded interaction. At
+            least one of these atoms belongs to the StructuralUnit
+
+        Example
+        -------
+        For an O Atom with two bonds, one to H1 and one to H2::
+
+            >>> print(O.bonded_interaction_pairs)
+            [(Bond, (H1, O)), (Bond, (H2, O))]
         """
 
         raise NotImplementedError
@@ -175,8 +222,12 @@ class StructuralUnit:
     def structure_type(self):
 
         """
-        Returns:
-        string specifying the name of the class
+        Get the class of the StructuralUnit.
+
+        Returns
+        -------
+        str
+            The name of the class
         """
 
         return self.__class__.__name__
@@ -186,13 +237,17 @@ class StructuralUnit:
         """
         Copies the structural unit and sets the position
 
-        Arguments:
-        position - a list of floats specifying the position of the new
-        structural unit
+        Parameters
+        ----------
+        position : list, tuple, NumPy array
+            3 element list, tuple or array of floats specifying the position of
+            the new StructuralUnit
 
-        Returns:
-        A structural unit with all non-unique attributes copied and a new
-        position
+        Returns
+        -------
+        StructuralUnit
+            A StructuralUnit of the same type with all non-unique attributes
+            copied and a new position
         """
 
         structural_unit = deepcopy(self)
@@ -204,8 +259,10 @@ class StructuralUnit:
         """
         Uses class attribute to generate a unique ID for each StructuralUnit
 
-        Returns:
-        unique integer
+        Returns
+        -------
+        int
+            Unique integer
         """
 
         return next(self._ID_generator)
@@ -213,8 +270,13 @@ class StructuralUnit:
     def top_level_structure(self):
 
         """
-        Returns:
-        Highest level StructuralUnit of which it is a member
+        Get the top level structure (i.e. StructuralUnit which has no parent) of
+        the StructuralUnut
+
+        Returns
+        -------
+        StructuralUnit
+            Highest level StructuralUnit of which it is a member
         """
 
         if issubclass(type(self.parent), StructuralUnit) \
@@ -226,9 +288,17 @@ class StructuralUnit:
     def _position_in_parent_CoM_frame(self):
 
         """
-        Returns:
-        Position in parent CoM frame with units of Ang, or None if it has no
-        parent structure
+        Get the position in the parent center of mass frame
+
+        Returns
+        -------
+        NumPy array
+            Position in parent CoM frame with units of Ang
+
+        Raises
+        ------
+        AttributeError
+            If StructuralUnit has no parent
         """
 
         if self.top_level_structure() is self:
@@ -250,14 +320,23 @@ class StructuralUnit:
         Checks if the specified position is within the bounds of the
         StructuralUnit's universe, if it is associated with one
 
-        Arguments:
-        position - 3 element tuple or NumPy array with units of Ang or None.  If
-        None then Atom's position is used.
+        Parameters
+        ----------
+        position : list, tuple, NumPy array
+            3 element list, tuple or NumPy array with units of Ang or None. If
+            None then the position of the StructuralUnit is used.
 
-        Returns:
-        True if position is within universe or there is no associated universe.
-        False if StructuralUnit has an associated universe but the position is
-        not within its bounds.
+        Returns
+        -------
+        bool
+            True if position is within universe or there is no associated
+            universe. False if StructuralUnit has an associated universe but the
+            position is not within its bounds.
+
+        Raises
+        ------
+        ValueError
+            If the position if undefined
         """
 
         if position is None:
@@ -268,7 +347,7 @@ class StructuralUnit:
                     np.any(position > self.universe.dims)):
                 return False
             elif np.any(position == np.float('nan')):
-                raise ValueError('position of {0} is underdefined'.format(self))
+                raise ValueError('position of {0} is undefined'.format(self))
             else:
                 return True
         except AttributeError:
@@ -280,10 +359,6 @@ class CompositeStructuralUnit(StructuralUnit):
 
     """
     Base class for structural units comprised of more than one atom
-
-    Attributes:
-    structure_list - a list of all of the StructuralUnits belonging to the
-    CompositeStructuralUnit
     """
 
     __metaclass__ = ABCMeta
@@ -305,8 +380,10 @@ class CompositeStructuralUnit(StructuralUnit):
 
         Interactions for Atoms may be reordered with respect to initial atoms
 
-        Arguments:
-        memo - the memo dict
+        Arguments
+        ---------
+        memo : dict
+            The memo dict
         """
 
         cls = self.__class__
@@ -376,8 +453,12 @@ class CompositeStructuralUnit(StructuralUnit):
     def universe(self, value):
 
         """
-        Sets self.universe to a weakref to universe or None, and sets the
-        universe for all subunits
+        Get or set the Universe to which the CompositeStructuralUnit belongs
+
+        Returns
+        -------
+        Universe
+            The Universe to which the CompositeStructuralUnit belongs or None
         """
 
         try:
@@ -394,8 +475,13 @@ class CompositeStructuralUnit(StructuralUnit):
     def structure_list(self):
 
         """
-        A list of all StructuralUnits that are subunits of this
+        Get or set the StructuralUnits that are subunits of this
         CompositeStructuralUnit
+
+        Returns
+        -------
+        list
+            StructuralUnits that are subunits of this CompositeStructuralUnit
         """
 
         return self._structure_list
