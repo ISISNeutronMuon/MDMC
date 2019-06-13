@@ -1,6 +1,4 @@
-"""A module for containing all resolution functions
-
-AUTHOR :    Thomas Farmer        START DATE :    27/07/2018, 13:40:34"""
+"""A module for containing all resolution functions"""
 
 import numpy as np
 
@@ -8,15 +6,23 @@ import numpy as np
 def gaussian(x, sigma, mu=0.0, norm=True):
 
     """
-    Arguments:
-    x - an an array of floats
-    sigma - a float specifying the standard deviation of the Gaussian
-    mu - a float specifying the offset
-    norm - a boolean specifying if the resulting distribution is normalized
-    to unity
+    Calculates the Gaussian distribution
 
-    Returns:
-    Aan array of floats with the Gaussian distribution
+    Parameters
+    ---------
+    x : array
+        The x values at which the Gaussian distribution is calculated.
+    sigma : float
+        The standard deviation of the Gaussian.
+    mu : float, optional
+        The offset of the Gaussian. Default is 0.0
+    norm : bool
+        If True, resulting distribution is normalized to unity. Default is True.
+
+    Returns
+    -------
+    array
+        An array with the same length as x, with the Gaussian distribution
     """
 
     y = np.exp(-0.5 * ((x - mu) / sigma)**2)
@@ -31,12 +37,26 @@ def gaussian(x, sigma, mu=0.0, norm=True):
 def lorentzian(N, gamma):
 
     """
-    Returns:
-    A Lorentzian (Cauchy) distribution
+    Calculates the Lorentzian (Cauchy) distribution
 
-    Arguments:
-    N: Length of the distribution
-    gamma: half-width at half-maximum
+    THIS FUNCTION HAS NOT BEEN IMPLEMENTED
+
+    Parameters
+    ---------
+    x : array
+        The x values at which the Gaussian distribution is calculated.
+    gamma : float
+        The half-width at half-maximum
+
+    Returns
+    -------
+    array
+        An array with the same length as x, with the Lorentzian distribution
+
+    Raises
+    ------
+    NotImplementedError
+        THIS FUNCTION HAS NOT BEEN IMPLEMENTED
     """
 
     raise NotImplementedError

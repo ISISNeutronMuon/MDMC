@@ -1,6 +1,4 @@
-"""Factory class for generating MD engine facades
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-23 13:22:22"""
+"""Factory class for generating MD engine facades"""
 
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
@@ -19,12 +17,16 @@ class MDEngineFacadeFactory(object):
     def create_facade(module_name):
 
         """
-        Arguments:
-        module_name - a string specifying a module name in engine_facades.
-        Aliases to these module names are also valid.
+        Parameters
+        ----------
+        module_name : str
+            a module name in engine_facades. Aliases to these module names are
+            also valid.
 
-        Returns:
-        an object of a MD engine
+        Returns
+        -------
+        MDEngine
+            The specified MDEngine, as determined by the module_name
         """
 
         try:

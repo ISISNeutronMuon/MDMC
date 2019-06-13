@@ -1,6 +1,4 @@
-"""A module for Figure of Merits
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-15 14:15:58"""
+"""A module for Figure of Merits"""
 
 from abc import ABCMeta, abstractmethod
 
@@ -11,16 +9,23 @@ class FigureOfMeritCalculator:
     """
     Abstract class that defines methods common to all figure of merit
     calculators
+
+    Parameters
+    ----------
+    obs_pairs : list
+        A list of ObservablePairs
+
+    Attributes
+    ----------
+    obs_pairs : list
+        A list of ObservablePairs
+    value : float
+        The Figure of Merit for all obs_pairs
     """
 
     __metaclass__ = ABCMeta
 
     def __init__(self, obs_pairs):
-
-        """
-        Arguments:
-        obs_pairs - One or more ObservablePairs
-        """
 
         self.obs_pairs = list(obs_pairs)
         self.value = None
@@ -31,8 +36,15 @@ class FigureOfMeritCalculator:
         Calculates the FoM value by calculating the FoM for every observable
         pair
 
-        Returns:
-        Non-negative float
+        Returns
+        -------
+        float
+            A non-negative float Figure of Merit
+
+        Raises
+        ------
+        AssertionError
+            If calculated value of Figure of Merit is negative
         """
 
         self.value = np.sum([self.calculate_single_FoM(obs_pair)
@@ -45,6 +57,16 @@ class FigureOfMeritCalculator:
 
         """
         Performs the FoM calculation specific to each FoM
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ObservablePair for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the obs_pair
         """
 
         raise NotImplementedError
@@ -59,6 +81,20 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     def calculate_single_FoM(self, obs_pair):
 
+        """
+        Performs the error normalised square difference for an ObservablePair
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ObservablePair for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the obs_pair
+        """
+
         return obs_pair.weight * (np.sum(obs_pair.calculate_difference()
                                          / obs_pair.calculate_errors()) ** 2)
 
@@ -69,16 +105,18 @@ class ObservablePair(object):
     Contains a pair of observables for calculating the FoM
 
     Checks the validity of observables
+
+    Parameters
+    ----------
+    exp_obs : Observable
+        An Observable with the origin 'experiment'
+    MD_obs : Observable
+        An Observable with the origin 'MD'
+    weight : float
+        The relative weight of this pair on a total FoM
     """
 
     def __init__(self, exp_obs, MD_obs, weight):
-
-        """
-        Arguments:
-        exp_obs - an Observable with an origin 'experiment'
-        MD_obs - an Observable with an origin 'MD'
-        weight - a float with the relative weight of this pair on the total FoM
-        """
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
@@ -86,6 +124,17 @@ class ObservablePair(object):
 
     @property
     def exp_obs(self):
+
+        """
+        Get or set the experimental Observable
+
+        Setting the Observable checks its validity
+
+        Returns
+        -------
+        Observable
+            The experimental observable
+        """
 
         return self._exp_obs
 
@@ -98,6 +147,17 @@ class ObservablePair(object):
     @property
     def MD_obs(self):
 
+        """
+        Get or set the MD Observable
+
+        Setting the Observable checks its validity
+
+        Returns
+        -------
+        Observable
+            The MD observable
+        """
+
         return self._MD_obs
 
     @MD_obs.setter
@@ -108,6 +168,20 @@ class ObservablePair(object):
 
     @property
     def weight(self):
+
+        """
+        Get or set the relative weight of this pair on a total FoM
+
+        Returns
+        -------
+        float
+            The relative weight
+
+        Raises
+        ------
+        TypeError
+            If weight is set with a non-numeric
+        """
 
         return self._weight
 
@@ -126,10 +200,38 @@ class ObservablePair(object):
         """
         Performs checks to test the validity of an observable
 
-        Arguments:
-        obs - an osbervable
-        origin - a string specifying the origin of the observable ('experiment'
-        or 'MD')
+        Tests that the origin is as expected. If the ObservablePair has another
+        Observable (i.e. the other origin), then this tests that the independent
+        variables are identical, the dependent variables have the same shape,
+        the errors have the same shape, and that the Observables are of the same
+        type.
+
+        Parameters
+        ----------
+        obs : Observable
+            The Observable to validate
+        origin : str
+            The origin of the observable ('experiment' or 'MD')
+
+        Raises
+        ------
+        AssertionError
+            If the origin of the Observable is not the same as the origin
+            Parameter
+        AssertionError
+            If Observable does not have identical independent variables to any
+            Observable of the other origin that already exists in the
+            ObservablePair
+        AssertionError
+            If Observable does not have identical dependent variables to any
+            Observable of the other origin that already exists in the
+            ObservablePair
+        AssertionError
+            If Observable does not have identical errors to any Observable of
+            the other origin that already exists in the ObservablePair
+        AssertionError
+            If Observable does not have identical type to any Observable of the
+            other origin that already exists in the ObservablePair
         """
 
         # Check origin is correct
@@ -181,12 +283,19 @@ class ObservablePair(object):
         """
         Performs checks to test the validity of the weight
 
-        Arguments:
-        weight - the weight attribute
+        Parameters
+        ----------
+        weight : float
+            The weight to be validated
+
+        Raises
+        ------
+        AssertionError
+            If the weight is not positive or is infinite
         """
 
-        assert weight > 0. and weight != np.float('inf'), ('Weight must be a '
-                                                           'finite non-negative'
+        assert weight > 0. and weight != np.float('inf'), ('Weight must be a'
+                                                           ' finite positive'
                                                            ' float')
 
     def check_types(self):
@@ -236,8 +345,12 @@ class ObservablePair(object):
         """
         Assumes a single dependent variable for each observable
 
-        Returns:
-        The absolute difference between the dependent variables
+        Returns
+        -------
+        array
+            An array with the same dimensions as the dependent variables of the
+            Observables. The array contains the absolute difference between the
+            dependent variables.
         """
 
         diff = (np.array(self.exp_obs.dependent_variables.values())
@@ -250,8 +363,12 @@ class ObservablePair(object):
         """
         Assumes a single dependent variable error for each observable
 
-        Returns:
-        The combination of the errors in quadrature
+        Returns
+        -------
+        array
+            An array with the same dimensions as the errors variables of the
+            Observables. The array contains the combination of the errors in
+            quadrature.
         """
 
         errors = (np.array(self.exp_obs.errors.values()) ** 2

@@ -1,9 +1,4 @@
-"""Generic xml reader
-
-As this reader is generic, it is incapable of determining the type of dependent
-and independent variables it is returning.
-
-AUTHOR :    Thomas Farmer        START DATE :    26/07/2018, 13:42:40"""
+"""XML reader for SQw data"""
 
 import numpy as np
 import xml.etree.ElementTree as ET
@@ -15,6 +10,10 @@ from MDMC.readers.readers import Reader
 
 
 class XML_SQw(Reader):
+
+    """
+    An XML reader for SQw data
+    """
 
     def parse(self):
 
@@ -68,7 +67,12 @@ class XML_SQw(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q (in Ang^-1) and E (meV)
+        Get the independent variables, Q (in Ang^-1) and E (meV)
+
+        Returns
+        -------
+        dict
+            The independent variables Q and E
         """
 
         return {"Q":self.Q, "E":self.E}
@@ -77,7 +81,12 @@ class XML_SQw(Reader):
     def dependent_variables(self):
 
         """
-        A dictionary containing SQw (in arb)
+        Get the dependent variables, SQw (in arb)
+
+        Returns
+        -------
+        dict
+            The dependent variables, SQw (in arb)
         """
 
         return {"SQw":self.SQw}
@@ -86,7 +95,12 @@ class XML_SQw(Reader):
     def errors(self):
 
         """
-        A dictionary containing the error associated with SQw (in arb)
+        Get the errors on the dependent variables
+
+        Returns
+        -------
+        dict
+            The error on SQw (in arb)
         """
 
         return {"SQw":self.SQw_err}
@@ -95,7 +109,12 @@ class XML_SQw(Reader):
     def E(self):
 
         """
-        Energy transfer, E, in meV
+        Get or set the energy transfer, E, in meV
+
+        Returns
+        -------
+        array
+            Energy transfer, E, in meV
         """
 
         return self._E
@@ -110,7 +129,12 @@ class XML_SQw(Reader):
     def Q(self):
 
         """
-        Momentum transfer, Q, in Ang^-1
+        Get or set the momentum transfer, Q, in Ang^-1
+
+        Returns
+        -------
+        array
+            Momentum transfer, Q, in Ang^-1
         """
 
         return self._Q
@@ -122,5 +146,21 @@ class XML_SQw(Reader):
         self._Q = value
 
     def dict_from_element(self, element):
+
+        """
+        Creates a dictionary from an XML element
+
+        Parameters
+        ----------
+        element : Element
+            An XML element. Must have items method, which must return a list of
+            2 element tuples.
+
+        Returns
+        -------
+        dict
+            For each tuple from the xml Element, The first index is the key and
+            the second element is the value.
+        """
 
         return {item[0]:item[1] for item in element.items()}

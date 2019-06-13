@@ -1,6 +1,4 @@
-"""Factory class for generating force fields
-
-AUTHOR :    Thomas Farmer        START DATE :    02/11/2018, 13:17:31"""
+"""Factory class for generating force fields"""
 
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers

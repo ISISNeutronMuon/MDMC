@@ -1,6 +1,4 @@
-"""Module which defines physical constants
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-7 10:22:47"""
+"""Module which defines physical constants"""
 
 from numpy import pi
 

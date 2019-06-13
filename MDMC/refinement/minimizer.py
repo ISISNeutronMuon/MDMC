@@ -1,7 +1,5 @@
 """A module for all minimizers which can be iterated to refine the potential
-parameters
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:51:42"""
+parameters"""
 
 
 from abc import ABCMeta, abstractmethod
@@ -14,6 +12,35 @@ class Minimizer:
 
     """
     An abstract class with methods common to all minimizers
+
+    Parameters
+    ----------
+    MC_norm : float
+        Normalization parameter for MC which determines the accept/reject ratio
+    params : list
+        A list of Parameter objects which will be fit
+    distribution : str, optional
+        The distribution from which Parameter changes are selected
+
+    Attributes
+    ----------
+    comm : Intracomm
+        MPI Intracomm which has all of the specified processors
+    history : list
+        A list of minimization history, where each element contains the FoM, a
+        list of the Parameters and a str with whether the step was Accepted or
+        Rejected.
+    FoM : float
+        The FoM from the current Minimizer step
+    FoM_old : float
+        The FoM from the previous Minimizer step
+    params : list
+        A list of Parameter objects being fitted
+    params : list
+        A list of the values of the Parameter objects from the previous
+        minimizer step
+    state_changed : bool
+        If the MMC algorithm resulted in the step being Accepted or Rejected
     """
 
     __metaclass__ = ABCMeta
@@ -22,18 +49,7 @@ class Minimizer:
 
     def __init__(self, MC_norm, params, distribution='uniform'):
 
-        """
-        Arguments:
-        MC_norm - Normalization parameter for MC which determines the
-        accept/reject ratio
-        params - a list of MD parameters which will be fit
-        config_reset - Boolean which determines whether or not the MD
-        configuration is stored.  If True, the MD configuration will always be
-        reset to the configuration for the last accepted parameter set.
-        distribution - the distribution from which parameter changes are
-        selected
-        """
-
+        # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
 
         # Parameters are only changed by rank 0 process, and so only rank 0
@@ -72,7 +88,12 @@ class Minimizer:
     def max_param_change(self):
 
         """
-        Maximum factor by which a parameter can change
+        Maximum factor by which a Parameter can change
+
+        Returns
+        -------
+        float
+            Maximum Parameter value change
         """
 
         return 0.01
@@ -83,6 +104,11 @@ class Minimizer:
         """
         Stochastic determination of whether the state should change based on the
         FOM
+
+        Returns
+        -------
+        bool
+            True if the state should be change
         """
 
         raise NotImplementedError
@@ -94,8 +120,10 @@ class Minimizer:
         Selects a new value for each parameter from a distribution centered
         around the current value
 
-        Arguments:
-        params - References to all potential parameters that will be refined
+        Parameters
+        ----------
+        params : list
+            All Parameters that are being refined
         """
 
         raise NotImplementedError
@@ -113,8 +141,15 @@ class Minimizer:
         """
         Checks the validity of the parameters on input
 
-        Raises:
-        ValueError when any parameter has fixed = True
+        Parameters
+        ----------
+        params : list
+            All parameters to validate
+
+        Raises
+        ------
+        ValueError
+            If any parameter has is fixed
         """
 
         for param in params:
@@ -129,6 +164,10 @@ class MMC(Minimizer):
     """
 
     def step(self, FoM):
+
+        """
+        Increments the minimization by a step
+        """
 
         self.FoM = FoM
         values = np.array([p.value for p in self.params])
@@ -159,6 +198,16 @@ class MMC(Minimizer):
 
     def change_state(self):
 
+        """
+        Stochastic determination of whether the state should change based on the
+        FOM
+
+        Returns
+        -------
+        bool
+            True if the state should be change
+        """
+
         # Only determine if state will be changed on rank 0 process
         if self.comm.rank == 0:
             prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
@@ -171,6 +220,16 @@ class MMC(Minimizer):
         return change_state
 
     def change_parameters(self, params):
+
+        """
+        Selects a new value for each parameter from a distribution centered
+        around the current value
+
+        Parameters
+        ----------
+        params : list
+            All Parameters that are being refined
+        """
 
         # Only calculate magnitude of parameter changes on rank 0 process, so
         # that each process ends up with same parameters
@@ -188,6 +247,10 @@ class MMC(Minimizer):
             param.value += param.value * changes[i]
 
     def reset_params(self):
+
+        """
+        Resets the Parameter values to the values from the previous MMC step
+        """
 
         for i, param in enumerate(self.params):
             param.value = self.params_old_values[i]

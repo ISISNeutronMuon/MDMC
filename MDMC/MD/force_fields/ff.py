@@ -6,9 +6,7 @@ models (such as SPCE and TIP3P) are also defined as force fields, even though
 the parameter sets are restricted to describing water.  Each force field module
 is self contained, although adding a new force field may require changes to the
 MD engine facades, so that a correspondence is established between the MDMC
-force field and the MD engine equivalent.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-4 17:38:48"""
+force field and the MD engine equivalent."""
 
 from abc import ABCMeta, abstractproperty
 
@@ -42,8 +40,10 @@ class ForceField:
         Parameterizes the interactions with the parameters speicifed in the
         interaction dictionary
 
-        Arguments:
-        interactions - a list of interactions
+        Parameters
+        ----------
+        interactions : list
+            A list of Interaction objects to be parameterized
         """
 
         for interaction in interactions:
@@ -56,7 +56,8 @@ class ForceField:
         interaction dictionary
 
         Arguments:
-        interaction - a subclass of MDMC.MD.structural_units.Interaction
+        interaction : Interaction
+            An Interaction object to be parameterized
         """
 
         elements = interaction.element_tuple()

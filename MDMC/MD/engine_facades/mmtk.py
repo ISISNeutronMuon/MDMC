@@ -1,6 +1,4 @@
-"""Facade for MMTK MD engine
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-16 11:07:19"""
+"""Facade for MMTK MD engine"""
 
 from copy import deepcopy
 from tempfile import NamedTemporaryFile
@@ -111,17 +109,21 @@ class MMTKEngine(MDEngine):
 
         MMTK.Trajectory.Trajectory() is called with a temporary file.
 
-        Arguments:
-        Settings:
-        temperature - float temperature in units of K (default 300 K)
-        temperature_variation - float maximum temperature before scaling in K
-        (default 10 K)
-        traj_step - the number of simulation steps between each trajectory
-        output
-        time_step - float time step in units of fs (default 1 fs)
-        minimizer_step_size - float minimizer distance step in units of Ang
-        (default 0.05 Ang)
-        pressure - float pressure in units of Pa
+        Parameters
+        ----------
+        **settings
+            temperature : float
+                Temperature in units of K (default 300 K)
+            temperature_variation : float
+                Maximum temperature before scaling in K (default 10 K)
+            traj_step : int
+                The number of simulation steps between each trajectory output.
+            time_step : float
+                Time step in units of fs (default 1 fs)
+            minimizer_step_size : float
+                Minimizer distance step in units of Ang (default 0.05 Ang)
+            pressure : float
+                Pressure in units of Pa.
         """
 
         self._saved_config = None
@@ -223,7 +225,6 @@ class MMTKEngine(MDEngine):
             m = MMTKMolecule(molecule)
             self.universe.addObject(m)
 
-    # TODO: Unite convert trajectory methods once testing is complete
     def convert_trajectory(self):
 
         return convert_trajectory(self.trajectory,
@@ -250,13 +251,15 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         consequence of this is that self.MDMC_universe cannot be set after
         initialization.
 
-        Arguments:
-        universe - an MDMC universe
-        Settings:
-        lj_options - Either a float specifying the cutoff in Ang or a string
-        specifying the cutoff type
-        es_options - Either a float specifying the cutoff in Ang or a string
-        specifying the cutoff type
+        Parameters
+        ----------
+        universe : Universe
+            MDMC Universe used to create MMTK universe
+        **settings
+            lj_options : float or str
+                the cutoff in Ang or a string specifying the cutoff type
+            es_options : float or str
+                the cutoff in Ang or a string specifying the cutoff type
         """
 
         self._MDMC_universe = weakref.ref(universe)
@@ -290,11 +293,20 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
 
         """
         Updates the positions and velocities of atoms in the MDMC universe
+
+        Raises
+        ------
+        NotImplementedError
+            update_MDMC_universe has not been implemented
         """
 
         raise NotImplementedError
 
     def assign_charges(self):
+
+        """
+        Assigns charges to MMTK objects
+        """
 
         for mol in self.objectList():
             mol.assign_charge()
@@ -312,13 +324,21 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def lj_parameters_closure(self, element_dict):
 
         """
-        Arguments:
-        element_dict - a dictionary with (element string):(atom of element)
-        pairs
+        Parameters
+        ----------
+        element_dict : dict
+            A dictionary with {element string: atom of element} pairs
 
-        Returns:
-        Function equivalent to MMTK SPCEParameters.ljParameters method, which is
-        where LJ parameters are hard coded in MMTK.
+        Returns
+        -------
+        function
+            Equivalent to MMTK SPCEParameters.ljParameters method, which is
+            where LJ parameters are hard coded in MMTK.
+
+        Raises
+        ------
+        ValueError
+            Unknown atom type
         """
 
         parameters = {element:self.get_interaction_parameters(MDMCs.Dispersion,
@@ -346,13 +366,21 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def bond_parameters_closure(self, element_dict):
 
         """
-        Arguments:
-        element_dict - a dictionary with (element string):(atom of element)
-        pairs
+        Parameters
+        ----------
+        element_dict : dict
+            A dictionary with {element string: atom of element} pairs
 
-        Returns:
-        Function equivalent to MMTK SPCEParameters.bondParameters method, which
-        is where bond parameters are hard coded in MMTK.
+        Returns
+        -------
+        function
+            Equivalent to MMTK SPCEParameters.BondParameters method, which is
+            where bond parameters are hard coded in MMTK.
+
+        Raises
+        ------
+        ValueError
+            Unknown atom combination
         """
 
         parameters = {}
@@ -384,13 +412,21 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
     def bond_angle_parameters_closure(self, element_dict):
 
         """
-        Arguments:
-        element_dict - a dictionary with (element string):(atom of element)
-        pairs
+        Parameters
+        ----------
+        element_dict : dict
+            A dictionary with {element string: atom of element} pairs
 
-        Returns:
-        Function equivalent to MMTK SPCEParameters.bondAngleParameters method,
-        which is where bond parameters are hard coded in MMTK.
+        Returns
+        -------
+        function
+            Equivalent to MMTK SPCEParameters.bondAngleParameters method, which
+            is where bond angle parameters are hard coded in MMTK.
+
+        Raises
+        ------
+        ValueError
+            Unknown atom combination
         """
 
         parameters = {}
@@ -423,12 +459,18 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         the LJ force field normally only takes two parameters, this third
         parameter will always be hard coded to 0.
 
-        Arguments:
-        interaction_type - a class which is a subclass of MDMCs.Interaction
-        elements - one or more strings specifying an element
+        Parameters
+        ----------
+        interaction_type : Interaction
+            A class which is a subclass of MDMCs.Interaction
+        *elements : str
+            one or more strings specifying an element
 
-        Returns:
-        A tuple from first Dispersion interaction of MDMC atom of same element.
+        Returns
+        -------
+        tuple
+            Parameters from first Dispersion interaction of MDMC atom of same
+            element.
         """
 
         elements = list(elements)
@@ -467,8 +509,16 @@ class MMTKCubicUniverse(MMTK.Universe.CubicPeriodicUniverse):
         """
         Parses forcefield option, either electrostatic or LJ
 
-        option - a float specifying the cutoff, a string specifying the
-        method for calculating the cutoff or None
+        Parameters
+        ----------
+        option :float or str
+            The cutoff or a string specifying the method for calculating the
+            cutoff
+
+        Raises
+        ------
+        TypeError
+            If invalid es or lj option is specified
         """
         try:
             option = float(option)
@@ -562,10 +612,18 @@ def convert_trajectory(MMTK_trajectory, **settings):
 
     Assumes that there is no change in the number/types of atom in the universe.
 
-    Arguments:
-    MMTK_trajectory: An MMTK trajectory
-    Settings:
-    slice - a slice to be applied to the MMTK trajectory before conversion
+    Parameters
+    ----------
+    MMTK_trajectory : MMTKTrajectory
+        An MMTK Trajectory object
+    **settings
+        slice : slice
+            a slice to be applied to the MMTK trajectory before conversion
+
+    Returns
+    -------
+    Trajectory
+        An MDMC Trajectory converted from the `MMTK_trajectory`
     """
 
     # This currently exists as a separate function so that saved MMTK trajectories can be tested
@@ -601,11 +659,21 @@ def convert_configuration(MMTK_frame, uni_dims, MDMC_universe, atom_list=None):
     """
     Builds an MDMC configuration from an MMTK configuration.
 
-    Arguments:
-    MMTK_frame - A frame of an MMTK trajectory ir a configuration
-    uni_dims - a vector of the MMTK universe dimensions
-    MDMC_universe - an MDMC universe
-    atom_list - a list of the atoms in the configuration
+    Parameters
+    ----------
+    MMTK_frame : MMTKTrajectory or MMTKConfiguration
+        A frame of an MMTK trajectory or an MMTK configuration
+    uni_dims : array
+        a vector of the MMTK universe dimensions
+    MDMC_universe - Universe
+        An MDMC Universe
+    atom_list : list of Atoms
+        The atoms in the configuration
+
+    Returns
+    -------
+    TemporalConfiguration
+        A TemporalConfiguration converted from the `MMTK_frame`
     """
 
     if atom_list is None:
@@ -634,15 +702,21 @@ def coordinate_transform(coordinates, uni_dims, from_MDMC=True):
     MDMC coordinates are only in a positive quadrant and are in Angstroms,
     whereas MMTK coordinates are in all four quadrants are in nm.
 
-    Arguments:
-    coordinates - the coordinate vector
-    uni_dims - a vector of the MMTK universe dimensions, equivalent to
-    MMTK universe.cellParameters()
-    from_MDMC - If True convert from MDMC coordinates to MMTK, if False
-    convert from MMTK coordinates to MDMC.
+    Parameters
+    ----------
+    coordinates : array_like
+        The coordinate vector
+    uni_dims : array_like
+        A vector of the MMTK universe dimensions, equivalent to
+        MMTK universe.cellParameters()
+    from_MDMC : bool
+        If True, convert from MDMC coordinates to MMTK, if False convert from
+        MMTK coordinates to MDMC.
 
-    Returns:
-    Vector of transformed coordinates
+    Returns
+    -------
+    array
+        Vector of transformed coordinates
     """
 
     if from_MDMC:

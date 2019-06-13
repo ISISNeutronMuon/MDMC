@@ -9,9 +9,7 @@ Contains class Parameter, which defines the name and value of each
 parameter which belongs to an InteractionFunction, and whether the parameter is
 fixed, has constraints or is tied.
 
-Contains filters for filtering list of parameters based on a predicate.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-1 10:15:10"""
+Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
 from inspect import getargspec, getmembers
@@ -36,23 +34,25 @@ class Parameter(object):
     As __repr__ returns a string of a dictionary of the public attributes (so
     that these are easy to view), for consistency this class implements some
     dictionary methods.
+
+    Parameters
+    ----------
+    value : float
+        The value of the parameter.
+    name :  str
+        The name of the parameter.
+    fixed : bool
+        Whether or not the value can be changed.
+    constraints : tuple
+        The closed range of the Parameter value, (lower, upper). Constraints
+        must have the same units as value.
+    **settings
+        unit : str
+            The unit. If this is not provided then the unit will be taken from
+            the object passed as value.
     """
 
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
-
-        """
-        Arguments:
-        value - float specifying the value of the parameter
-        name - a string specifying the name
-        fixed - boolean specifying whether or not the value can be changed
-        constraints - 2 element tuple (lower, upper) specifying the closed range
-        in which value can be set. Constraints must have the same units as
-        value.
-
-        Settings:
-        unit - a string specifying the unit. If this is not provided then the
-        unit will be taken from the object passed as value.
-        """
 
         self.name = name
         self.unit = settings['unit'] if 'unit' in settings else value.unit
@@ -67,6 +67,25 @@ class Parameter(object):
     @property
     def value(self):
 
+        """
+        Get or set the value of the Parameter
+
+        The value will not be changed if it is fixed or tied, or if it is set
+        outside the bounds of a constraint
+
+        Returns
+        -------
+        float
+            The value of the Parameter, including if the parameter is tied
+
+        Warns
+        --------
+        warnings.warn
+            If the Parameter is fixed.
+        warnings.warn
+            If the Parameter is tied.
+        """
+
         if self.tied:
             return self.tie
         return self._value
@@ -74,10 +93,6 @@ class Parameter(object):
     @value.setter
     @unit_decorator(unit=None)
     def value(self, value):
-
-        """
-        Checks if Parameter is fixed or constrained
-        """
 
         if hasattr(self, 'fixed') and self.fixed:
             warnings.warn("Unable to change fixed parameter")
@@ -92,17 +107,28 @@ class Parameter(object):
     @unit_decorator_getter(unit=None)
     def constraints(self):
 
+        """
+        Get or set the constraint of the Parameter
+
+        Returns
+        -------
+        tuple
+            The closed range of the Parameter value
+
+        Raises
+        ------
+        ValueError
+            If the constraint tuple is not (lower, upper).
+        """
+
         return self._constraints
 
     @constraints.setter
     def constraints(self, constraints):
 
-        """
-        Checks if constraints are a 2 element tuple of floats, that the zeroeth
-        element is less than or equal to the first, and that self.value is
-        within them, if it exists
-        """
-
+        ### Checks if constraints are a 2 element tuple of floats, that the
+        ### zeroeth element is less than or equal to the first, and that
+        ### self.value is within them, if it exists
         if constraints is not None:
             if constraints[0] > constraints[1]:
                 raise ValueError("Constaints must be (lower, upper)")
@@ -114,19 +140,27 @@ class Parameter(object):
     def interactions(self):
 
         """
-        Returns:
-        A list of all parent Interaction objects for this Parameter object
+        Get or append to the parent Interaction objects for this Parameter
+
+        Returns
+        -------
+        list
+            All parent Interaction objects
+
+        Raises
+        ------
+        ValueError
+            If an added interaction name is not consistent with existing
+            interaction names
+        ValueError
+            If an added interaction has a function name not consistent with
+            the function names of existing interactions
         """
 
         return [interaction() for interaction in self._interactions]
 
     @interactions.setter
     def interactions(self, interaction):
-
-        """
-        Appends to a list of parent Interaction objects for this Parameter
-        object
-        """
 
         # Test if interaction is of the same type as any interactions already
         # stored
@@ -147,9 +181,12 @@ class Parameter(object):
     def tie(self):
 
         """
-        Returns:
-        The value of the Parameter object that this Parameter is tied to, or
-        None
+        Get the value of a the Parameter object that this Parameter is tied to
+
+        Returns
+        -------
+        float
+            The value of the tied Parameter
         """
 
         if self._tie is None:
@@ -161,8 +198,12 @@ class Parameter(object):
     def tied(self):
 
         """
-        Returns:
-        True if this Parameter is tied to another Parameter, else False
+        Get whether this Parameter is tied
+
+        Returns
+        -------
+        bool
+            True if this Parameter is tied to another Parameter, else False
         """
 
         if hasattr(self, 'tie') and self.tie is not None:
@@ -175,12 +216,18 @@ class Parameter(object):
         """
         This ties the parameter's value to the value of another parameter
 
-        Arguments:
-        parameter - a Parameter object
-        expr - a mathematical expression
+        Parameters
+        ---------
+        parameter : Parameter
+            The Parameter to tie to
+        expr : str
+            A mathematical expression
 
-        Example:
-        set_tie(p1, "* 2") means this parameter's value will return p1.value * 2
+        Examples
+        --------
+        To set the Parameters return value to p1.value * 2::
+
+        >>> Parameter.set_tie(p1, "* 2")
         """
 
         self._tie_param = weakref.ref(parameter)
@@ -189,9 +236,11 @@ class Parameter(object):
     def __repr__(self):
 
         """
-        Returns:
-        The Parameter name and a dictionary containing properties and their
-        values, except self.tie and self.interactions
+        Returns
+        -------
+        str
+            The Parameter name and a dictionary containing properties and their
+            values, except self.tie and self.interactions
         """
 
         return self._get_attr_strings(['tie', 'interactions'])
@@ -207,13 +256,26 @@ class Parameter(object):
     def validate_value(self, value, constraints):
 
         """
-        Validates the parameter value by testing if it is within
+        Validates the parameter value by testing if it is within the constraints
+
+        Raises
+        ------
+        ValueError
+            If the value is not within the constraints
         """
 
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
     def _get_attr_strings(self, excluded=[]):
+
+        """
+        Returns
+        -------
+        str
+            The Parameter name and a dictionary containing properties and their
+            values
+        """
 
         # Determine which attributes are in the form of properties
         properties = getmembers(self.__class__,
@@ -229,22 +291,17 @@ class InteractionFunction(object):
 
     """
     Base class for interaction functions, which can be user supplied
+
+    Parameters
+    ---------
+    val_dict : dict
+        name:value pairs. Currently this must be ordered alphabetically. Value
+        must either be a object with a value and a unit (e.g. a UnitFloat
+        object), or a (float, str) tuple, where float is the value and str is
+        the unit.
     """
 
     def __init__(self, val_dict):
-
-        """
-        Arguments:
-        names - a list of names of the parameters of the interaction function
-        val_dict - a dictionary of name:value pairs. Currently this must be
-        ordered alphabetically. value must either be a object with a value and a
-        unit (e.g. a UnitFloat object), or a (float, str) tuple, where float is
-        the value and str is the unit.  For example, the following are
-        equivalent:
-
-        HarmonicPotential(UnitFloat(1.0, 'Ang'), UnitFloat(2.0, 'kJ'))
-        HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
-        """
 
         try:
             self.params = [Parameter(value, name) for name, value
@@ -263,8 +320,15 @@ class InteractionFunction(object):
     def params(self):
 
         """
-        Returns:
-        Array of parameters
+        Get or set the array of Parameters
+
+        On setting the Parameters, they are ordered alphabetically by
+        Parameter.name
+
+        Returns
+        -------
+        np.ndarray
+            A NumPy array of Parameters
         """
 
         return self._params
@@ -278,8 +342,12 @@ class InteractionFunction(object):
     def params_values(self):
 
         """
-        Returns:
-        Array of values for all parameters
+        Get the values for all Parameters
+
+        Returns
+        -------
+        np.ndarray
+            A NumPy array of values for all Parameters
         """
 
         return np.array([p.value for p in self.params])
@@ -287,15 +355,26 @@ class InteractionFunction(object):
     @property
     def name(self):
 
+        """
+        Get the name of the class of the InteractionFunction
+
+        Returns
+        -------
+        str
+            The class name
+        """
+
         return self.__class__.__name__
 
     def set_params_interactions(self, interaction):
 
         """
-        Sets the parent interaction for all parameters
+        Sets the parent interaction for all Parameters
 
-        Arguments:
-        interaction - an interaction
+        Parameters
+        ----------
+        interaction : Interaction
+            An interaction to set as the parent of all the Parameters
         """
 
         for param in self.params:
@@ -306,17 +385,33 @@ class InteractionFunction(object):
 class HarmonicPotential(InteractionFunction):
 
     """
-    Harmonic potential for bond stretching and angular vibration
+    Harmonic potential for bond stretching and angular vibration, with the form:
+
+    math::
+
+        E = K(r-r_0)^2
+
+    Parameters
+    ----------
+    equilibrium_state : UnitFloat, tuple
+        The equilibrium state of the object in either Ang or degrees. Can either
+        be a UnitFloat, or a (float, str) tuple, where float is the value and
+        str is the unit.
+    potential_strength : UnitFloat, tuple
+        The potential strength in units of kJ mol^-1 Ang^-2 (linear) or
+        kJ mol^-1 rad^-2 (angular). Can either be a UnitFloat, or a (float, str)
+        tuple, where float is the value and str is the unit.
+
+    Examples
+    --------
+    The following result in equivalent InteractionFunctions::
+
+    >>> HarmonicPotential(UnitFloat(1.0, 'Ang'), UnitFloat(2.0, 'kJ'))
+
+    >>> HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
     """
 
     def __init__(self, equilibrium_state, potential_strength):
-
-        """
-        Arguments:
-        equilibrium_state - in units of Ang (linear) or deg (angular)
-        potential_strength - in units of kJ mol^-1 Ang^-2 (linear) or
-        kJ mol^-1 rad^-2 (angular)
-        """
 
         super(self.__class__, self).__init__(locals())
 
@@ -324,23 +419,31 @@ class HarmonicPotential(InteractionFunction):
 class LennardJones(InteractionFunction):
 
     """
-    Dispersive Lennard-Jones interaction
+    Dispersive Lennard-Jones interaction with the form:
+
+    ..math::
+
+        E = 4{\epsilon}[(\frac{\sigma}{r})^{12} - (\frac{\sigma}{r})^6)]
+        \qquad r < r_c
+
+    Parameters
+    ----------
+    epsilon : UnitFloat, tuple
+        The LJ epsilon value in units of kJ mol^-1. Can either be a UnitFloat,
+        or a (float, str) tuple, where float is the value and str is the unit.
+    sigma : UnitFloat, tuple
+        The LJ sigma value in units of Ang. Can either be a UnitFloat, or a
+        (float, str) tuple, where float is the value and str is the unit.
+    **settings
+        cutoff : float
+            The distance in Ang at which the potential is cutoff
+        long_range_solver : str
+            The long range solver, either 'PPPM', 'PME', or 'E' for
+            Particle-Particle Particle-Mesh, Particle Mesh Ewald, or Ewald
+            solvers
     """
 
     def __init__(self, epsilon, sigma, **settings):
-
-        """
-        Arguments:
-        epsilon - in units of kJ mol^-1
-        sigma - in units of Ang
-
-        Settings:
-        cutoff - a float specifying the distance in Ang at which the potential
-        is cutoff
-        long_range_solver - a string specifying a long range solver, either
-        'PPPM', 'PME', or 'E', for Particle-Particle Particle-Mesh, Particle
-        Mesh Ewald, or Ewald solvers
-        """
 
         super(self.__class__, self).__init__(locals())
         self.cutoff = settings.get('cutoff', None)
@@ -350,15 +453,19 @@ class LennardJones(InteractionFunction):
 class Coulomb(InteractionFunction):
 
     """
-    Coulomb interaction for charged particles
+    Coulomb interaction for charged particles:
+
+    ..math::
+
+        E = \frac{Cq_{i}q_{j}}{r}
+
+    Parameters
+    ----------
+    charge : float
+        The charge in units of e
     """
 
     def __init__(self, charge):
-
-        """
-        Arguments:
-        charge - in units of e
-        """
 
         super(self.__class__, self).__init__(locals())
 
@@ -366,12 +473,20 @@ class Coulomb(InteractionFunction):
 def filter_parameters(parameters, predicate):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    predicate - a function that returns a boolean
+    Filters a list of Parameter objects using a predicate
 
-    Returns:
-    a list of parameters which meet the condition of predicate
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    predicate : function
+        A function that returns a boolean which takes a Parameter as an
+        argument.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects which meet the condition of the predicate
     """
 
     return filter(predicate, parameters)
@@ -380,13 +495,19 @@ def filter_parameters(parameters, predicate):
 def filter_parameters_name(parameters, name):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    name - a string specifying the parameter name, for example 'charge' for a
-    Coulomb interaction or 'sigma' for an LJ interaction
+    Filters a list of Parameters objects by name
 
-    Returns:
-    a list of parameters which meet the condition of parameter.name == name
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    name : str
+        The name of the Parameter objects to return.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects with name
     """
 
     return filter(lambda p: p.name == name, parameters)
@@ -395,14 +516,24 @@ def filter_parameters_name(parameters, name):
 def filter_parameters_value(parameters, comparison, value):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    comparison - a string representing a comparison operator: '>', '<', '>=',
-    '<=', '==', '!='
+    Filters a list of Parameters objects by value
 
-    Returns:
-    a list of parameters which meet the condition of
-    parameter.value comparison value e.g. parameter.value > value
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    comparison : str
+        A string representing a comparison operator, '>', '<', '>=', '<=', '==',
+        '!='.
+    value : float
+        A float with which Parameter values are compared, using the comparison
+        operator.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects which return a True when their values are
+        compared with value using the comparison operator
     """
 
     ops = {'>':operator.gt,
@@ -418,14 +549,21 @@ def filter_parameters_value(parameters, comparison, value):
 def filter_parameters_interaction(parameters, interaction_name):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    interaction_name - a string specifying the interaction name, for example
-    'Bond' for a bonded interaction
+    Filters a list of Parameters objects by Interaction.name
 
-    Returns:
-    a list of parameters where the interaction meets the condition of
-    interaction.name == interaction_name
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    interaction_name : str
+        The name of the Interaction of Parameter objects to return, for example
+        'Bond'.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects which have an interaction with the specified
+        name
     """
 
     return filter(lambda p: p.interactions_name == interaction_name, parameters)
@@ -434,14 +572,21 @@ def filter_parameters_interaction(parameters, interaction_name):
 def filter_parameters_function(parameters, function_name):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    function_name - a string specifying the interaction function name, for
-    example 'LennardJones' or 'HarmonicPotential'
+    Filters a list of Parameters objects by InteractionFunction.name
 
-    Returns:
-    a list of parameters where the interaction function meets the condition of
-    function.name == function_name
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    function_name : str
+        The name of the InteractionFunction of Parameter objects to return, for
+        example 'LennardJones' or 'HarmonicPotential'.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects which have a function with the specified
+        name
     """
 
     return filter(lambda p: p.functions_name == function_name, parameters)
@@ -450,14 +595,25 @@ def filter_parameters_function(parameters, function_name):
 def filter_parameters_atom_attribute(parameters, attribute, value):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    attribute - a string specifying an attribute of an Atom.  Attributes are
-    restricted to float or strings.
-    value - the desired value of the attribute
+    Filters a list of Parameters objects by attribute of Atoms which have the
+    Parameter applied to them
 
-    Returns:
-    a list of parameters which relate to any atom where atom.attribute == value
+
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    attribute : str
+        An attribute of an Atom. Attributes to match to must be either float or
+        str.
+    value : str, float
+        The value of the Atom attribute.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects which are applied to an Atom object which
+        has the specified value of the specified attribute
     """
 
     return filter(lambda p: value in [getattr(atom, attribute)
@@ -468,17 +624,33 @@ def filter_parameters_atom_attribute(parameters, attribute, value):
 def filter_parameters_structure(parameters, structure_name):
 
     """
-    Arguments:
-    parameters - a list of parameters
-    structure_name - a string specifying the name of a structure e.g. 'water'
-    for a water molecule
+    Filters a list of Parameters objects by the name of the structural units to
+    which they apply
 
-    Returns:
-    a list of parameters which relate to any structure where
-    structure.name == structure_name
+    Parameters
+    ----------
+    parameters : list
+        A list of Parameter objects.
+    structure_name : str
+        The name of a structural_unit.
+
+    Returns
+    -------
+    list
+        A list of Parameter objects which are applied to a structural_unit which
+        has the specified name
     """
 
     def check_structure_name(parameter):
+
+        """
+        Checks the name of all structures
+
+        Returns
+        -------
+        list
+            A list of str with the of names of structural_units
+        """
 
         # Recursively add structure.name to structure_names set until the
         # structure is the top level structure

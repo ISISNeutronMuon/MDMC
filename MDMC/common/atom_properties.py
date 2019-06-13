@@ -1,6 +1,4 @@
-"""Module for storing properties related to atoms
-
-AUTHOR :    Thomas Farmer        START DATE :    04/07/2018, 11:04:45"""
+"""Module for storing properties related to atoms"""
 
 """
 Atomic masses are taken from IUPAC 2013.  In instances where IUPAC specifies a
