@@ -1,6 +1,4 @@
-"""Module for reader abstract class
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-5 17:23:06"""
+"""Module for reader abstract class"""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -8,6 +6,8 @@ class Reader:
 
     """
     Abstract class that defines methods common to all readers
+
+    Readers are created using ReaderFactory
     """
 
     __metaclass__ = ABCMeta
@@ -20,6 +20,11 @@ class Reader:
         open
 
         Should be overriden if necessary for specific file types.
+
+        Parameters
+        ----------
+        file_name : str
+            The name of the input file
         """
 
         self.file = open(file_name, 'r')
@@ -34,7 +39,6 @@ class Reader:
         For readers which are not specific to one data type, the calling class
         must be determined so that the file data can be parsed into
         the appropriate data type.
-
         """
 
         pass
@@ -45,6 +49,12 @@ class Reader:
         """
         A dictionary of dictionaries containing the independent variables,
         dependent variables and the associated errors.
+
+        Returns
+        -------
+        dict
+            The independent variables, dependent variables and the errors on
+            the dependent variables
         """
 
         return {"independent":self.independent_variables,
@@ -54,14 +64,41 @@ class Reader:
     @abstractproperty
     def independent_variables(self):
 
+        """
+        The independent variables
+
+        Returns
+        -------
+        dict
+            A dictionary of the independent variables
+        """
+
         pass
 
     @abstractproperty
     def dependent_variables(self):
 
+        """
+        The dependent variables
+
+        Returns
+        -------
+        dict
+            A dictionary of the dependent variables
+        """
+
         pass
 
     @abstractproperty
     def errors(self):
+
+        """
+        The errors on the dependent variables
+
+        Returns
+        -------
+        dict
+            A dictionary of the errors on the dependent variables
+        """
 
         pass

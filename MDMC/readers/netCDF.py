@@ -1,6 +1,4 @@
-"""A reader for netcdf SQw data
-
- AUTHOR :    Thomas Farmer        START DATE :    18/09/2018, 14:40:50"""
+"""A reader for netcdf SQw data"""
 
 import numpy as np
 from netCDF4 import Dataset
@@ -15,12 +13,22 @@ class netCDF(Reader):
 
     """
     Currently only setup for parsing MMTK/nMOLDYN SQw netcdf files
+
+    Attributes
+    ----------
+    file : file
+        The netCDF input file
     """
 
     def open(self, file_name):
 
         """
         Opens the file for parsing
+
+        Parameters
+        ----------
+        file_name : str
+            The name of the netCDF file
         """
 
         self.file = Dataset(file_name, 'r')
@@ -47,7 +55,12 @@ class netCDF(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q (in Ang^-1) and E (meV)
+        Get the independent variables, Q (in Ang^-1) and E (meV)
+
+        Returns
+        -------
+        dict
+            The independent variables Q and E
         """
 
         return {"Q":self.Q, "E":self.E}
@@ -56,7 +69,12 @@ class netCDF(Reader):
     def dependent_variables(self):
 
         """
-        A dictionary containing SQw (in arb)
+        Get the dependent variables, SQw (in arb)
+
+        Returns
+        -------
+        dict
+            The dependent variables, SQw (in arb)
         """
 
         return {"SQw":self.SQw}
@@ -65,7 +83,12 @@ class netCDF(Reader):
     def errors(self):
 
         """
-        A dictionary containing the error associated with SQw (in arb)
+        Get the errors on the dependent variables
+
+        Returns
+        -------
+        dict
+            The error on SQw (in arb)
         """
 
         return {"SQw":self.SQw_err}
@@ -74,7 +97,12 @@ class netCDF(Reader):
     def E(self):
 
         """
-        Energy transfer, E, in meV
+        Get or set the energy transfer, E, in meV
+
+        Returns
+        -------
+        array
+            Energy transfer, E, in meV
         """
 
         return self._E
@@ -89,7 +117,12 @@ class netCDF(Reader):
     def Q(self):
 
         """
-        Momentum transfer, Q, in Ang^-1
+        Get or set the momentum transfer, Q, in Ang^-1
+
+        Returns
+        -------
+        array
+            Momentum transfer, Q, in Ang^-1
         """
 
         return self._Q
