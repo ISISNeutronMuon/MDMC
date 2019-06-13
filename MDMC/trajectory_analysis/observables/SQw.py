@@ -1,6 +1,4 @@
-"""Module for total SQw class
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 13:24:27"""
+"""Module for AbstractSQw and total SQw class"""
 
 from abc import ABCMeta, abstractmethod
 
@@ -29,6 +27,15 @@ class AbstractSQw(Observable):
     @property
     def data(self):
 
+        """
+        Get the independent, dependent and error data
+
+        Returns
+        -------
+        dict
+            The independent, dependent and error data
+        """
+
         return {'independent':self.independent_variables,
                 'dependent':self.dependent_variables,
                 'errors':self.errors}
@@ -37,8 +44,12 @@ class AbstractSQw(Observable):
     def independent_variables(self):
 
         """
-        Return:
-        Dictionary of independent variables Q (in Ang^-1) and E (in meV)
+        Get or set the independent variables, Q (in Ang^-1) and E (in meV)
+
+        Returns
+        -------
+        dict
+            The independent variables
         """
 
         return self._independent_variables
@@ -51,10 +62,28 @@ class AbstractSQw(Observable):
     @property
     def dependent_variables(self):
 
+        """
+        Get or set the dependent variables, SQw (in arb)
+
+        Returns
+        -------
+        dict
+            The dependent variables
+        """
+
         return self._dependent_variables
 
     @property
     def errors(self):
+
+        """
+        Get or set the errors on the dependent variables
+
+        Returns
+        -------
+        dict
+            The errors on the dependent variables
+        """
 
         return self._errors
 
@@ -63,8 +92,12 @@ class AbstractSQw(Observable):
     def Q(self):
 
         """
-        Returns:
-        1D array of Q floats (in Ang^-1)
+        Get the momentum transfers
+
+        Returns
+        -------
+        array
+            1D array of Q floats (in Ang^-1)
         """
         try:
             return self.independent_variables['Q']
@@ -76,8 +109,12 @@ class AbstractSQw(Observable):
     def E(self):
 
         """
-        Returns:
-        1D array of energy floats (in meV)
+        Get the energies
+
+        Returns
+        -------
+        array
+            1D array of energy floats (in meV)
         """
 
         try:
@@ -90,9 +127,12 @@ class AbstractSQw(Observable):
     def w(self):
 
         """
-        Returns:
-        1D array of angular frequency floats in units of rad ps^-1, calculated
-        from E
+        Get the angular frequencies
+
+        Returns
+        -------
+        array
+            1D array of angular frequency floats in units of rad ps^-1
         """
 
         return self.E / (h_bar * 1e15)
@@ -102,8 +142,12 @@ class AbstractSQw(Observable):
     def SQw(self):
 
         """
-        Returns:
-        2D array of S(Q,w) floats with arbitrary units
+        Get the dynamic structure factor, S(Q, w), in arb
+
+        Returns
+        -------
+        array
+            2D array of S(Q, w) floats with arbitrary units
         """
 
         try:
@@ -116,8 +160,11 @@ class AbstractSQw(Observable):
     def SQw_err(self):
 
         """
-        Returns:
-        2D array of S(Q,w) errors with arbitrary units
+        Get the errors on the dynamic structure factor in arb
+
+        Returns
+        -------
+            2D array of S(Q, w) error floats with arbitrary units
         """
 
         try:
@@ -127,6 +174,16 @@ class AbstractSQw(Observable):
 
     @property
     def t(self):
+
+        """
+        Get or set the times of the intermediate scattering function in units of
+        fs
+
+        Returns
+        -------
+        array
+            1D array of times in fs
+        """
 
         return self._t
 
@@ -139,6 +196,16 @@ class AbstractSQw(Observable):
     @property
     def t_res(self):
 
+        """
+        Get or set the time resolution used to calculate the dynamic structure
+        factor, S(Q, w), from the intermediate scattering function, F(Q, t)
+
+        Returns
+        -------
+        float
+            The time resolution
+        """
+
         return self._t_res
 
     @t_res.setter
@@ -149,6 +216,17 @@ class AbstractSQw(Observable):
 
     def read_from_file(self, reader, file_name):
 
+        """
+        Reads in experimental data from a file using a specified reader
+
+        Parameters
+        ----------
+        reader : str
+            The name of the required file reader
+        file_name : str
+            The name of the file
+        """
+
         super(AbstractSQw, self).read_from_file(reader, file_name)
         self._independent_variables = self.reader.independent_variables
         self._dependent_variables = self.reader.dependent_variables
@@ -157,18 +235,25 @@ class AbstractSQw(Observable):
     def calculate_from_MD(self, MD_input, **settings):
 
         """
+        Calculate the dynamic structure factor, S(Q, w) from a MD Trajectory
+
         Currently sets all errors to 0 when S(Q,w) is calculated from MD
 
         Independent variables can either be set previously or defined within
         settings.
 
-        Arguments:
-        MD_input - an MD trajectory
-        Settings:
-        n_Q_vectors - an integer specifying maximum number of Q vectors for any
-        Q value
-        dims - a 3 element tuple or NumPy array of floats specifying the
-        dimenions of the universe in units of Ang
+        Parameters
+        ----------
+        MD_input : Trajectory
+            An MD Trajectory
+        **settings
+            n_Q_vectors : int
+                The maximum number of Q vectors for any Q value. The greater the
+                number of Q vectors, the more accurate the calculation, but the
+                longer it will take.
+            dims : list, tuple, array
+                A 3 element tuple or NumPy array of floats specifying the
+                dimenions of the universe in units of Ang
         """
 
         self._origin = 'MD'
@@ -241,12 +326,17 @@ class AbstractSQw(Observable):
         """
         Calculates E from trajectory times
 
-        Arguments:
-        nE - the number of E values to be calculated
-        dt - the step size of the time in fs
+        Parameters
+        ----------
+        nE : int
+            The number of E values to be calculated
+        dt : float
+            The step size of the time in fs
 
-        Returns:
-        An array of floats specifying the energy in units of meV
+        Returns
+        -------
+        array
+            An array of floats specifying the energy in units of meV
         """
 
         return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt / 1000)
@@ -256,6 +346,12 @@ class AbstractSQw(Observable):
         """
         Calculates the intermediate scattering function for all Q vectors for
         all time intervals
+
+        Returns
+        -------
+        array
+            An array of dimensions determined by the number of times and Q
+            values
         """
 
         comm = MPI.COMM_WORLD
@@ -308,8 +404,10 @@ class AbstractSQw(Observable):
         Calculates intermediate scattering function for a single Q value for all
         time intervals (t)
 
-        Arguments:
-        Q_vector: Either a single Q vector or three orthogonal Q vectors
+        Parameters
+        ----------
+        Q_vector : array
+            An array of one or more Q vectors with the same Q value
         """
 
         pass
@@ -324,8 +422,10 @@ class AbstractSQw(Observable):
         vectors, these Q vectors should have the same Q value. Includes
         contributions from all atoms in the trajectory.
 
-        Arguments:
-        Q_vector: Either a single Q vector or three orthogonal Q vectors
+        Parameters
+        ----------
+        Q_vector : array
+            An array of one or more Q vectors with the same Q value
         """
 
         rho_all_atoms = [np.apply_along_axis(self._rho,
@@ -338,6 +438,23 @@ class AbstractSQw(Observable):
 
     def _calculate_Q_vectors(self, Q_values):
 
+        """
+        Calculates a number of Q vectors for each Q value
+
+        The upper limit of the number of Q vectors for a specific Q value is
+        determined by self.n_Q_vectors
+
+        Parameters
+        ----------
+        Q_value : list
+            A list of floats for the Q values
+
+        Returns
+        -------
+        array
+            an array of arrays of Q vectors, one array for each Q value
+        """
+
         # Only valid for uniform Q_values
         Q_step = (Q_values[1] - Q_values[0]) / 2.
 
@@ -348,7 +465,7 @@ class AbstractSQw(Observable):
             Q_min = Q - Q_step
             Q_max = Q + Q_step
 
-            vectors = self._calculate_vectors_single_Q(Q_min, Q, Q_max)
+            vectors = self._calculate_vectors_single_Q(Q_min, Q_max)
 
             if len(vectors) > 0:
                 Q_vectors.append(np.array(vectors))
@@ -358,7 +475,27 @@ class AbstractSQw(Observable):
 
         return np.array(Q_vectors)
 
-    def _calculate_vectors_single_Q(self, Q_min, Q, Q_max):
+    def _calculate_vectors_single_Q(self, Q_min, Q_max):
+
+        """
+        Calculates a number of Q vectors for Q values within a range
+
+        The upper limit of the number of Q vectors is determined by
+        self.n_Q_vectors
+
+        Parameters
+        ----------
+        Q_min : float
+            The minimum Q value for which a Q vector can be calculated
+        Q_max : float
+            The maximum Q value for which a Q vector can be calculated
+
+        Returns
+        -------
+        array
+            an array of Q vectors which lie within the range defined by Q_min
+            and Q_max
+        """
 
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
                                in self.reciprocal_basis)
@@ -386,12 +523,19 @@ class AbstractSQw(Observable):
     def _rho(self, r, Q_vector):
 
         """
-        Returns:
-        The reciprocal space density for a position and Q vectors
+        Calculates the reciprocal space density
 
-        Arguments:
-        r: A position vector
-        Q_vector: One or more orthogonal Q vectors
+        Parameters
+        ----------
+        r : array
+            A 3 element array specifying the position vector
+        Q_vector : array
+            An array of one or more orthogonal Q vectors (arrays)
+
+        Returns
+        -------
+        array
+            The reciprocal space density for a position and Q vectors
         """
 
         return np.exp(-1j * np.dot(Q_vector, r))
@@ -399,7 +543,12 @@ class AbstractSQw(Observable):
     def _calculate_SQw(self):
 
         """
-        Calculates SQw from FQt
+        Calculates S(Q, w) from F(Q, t)
+
+        Returns
+        -------
+        array
+            The S(Q, w) calculated from F(Q, t)
         """
 
         FQt_res = self._apply_instrument_resolution(self.FQt,
@@ -431,6 +580,21 @@ class AbstractSQw(Observable):
         dependence.
 
         CURRENTLY SQw is hard coded to only apply Gaussian resolution functions
+
+        Parameters
+        ----------
+        FQt : array
+            The F(Q, t) to which the resolution function is applied
+        function : function, optional
+            The resolution function to apply. The default is gaussian.
+        **params
+            sigma : float
+                The sigma of the gaussian distribution.
+
+        Returns
+        -------
+        array
+            An array of the same dimensions as FQt
         """
 
         # Functions other than Gaussians must be FFT before multiplication
@@ -451,6 +615,10 @@ class SQw(AbstractSQw):
 
     def _set_weights(self):
 
+        """
+        Calculate the neutron weighting for coherent and incoherent scattering
+        """
+
         self.weights = {element:{'coh':B_COH[element],
                                     'incoh':B_INCOH[element]}
                            for element in self.trajectory.element_set}
@@ -458,10 +626,22 @@ class SQw(AbstractSQw):
     def _calculate_FQt_single_Q(self, Q_vector):
 
         """
+        Calculates the F(Q, t) for a single Q value
+
         The length of the correlations is bounded by the length of the energies
         rather the times, as this allows energies to be calculated from
         trajectories with longer timescales than is required by the energy
         resolution.
+
+        Parameters
+        ----------
+        Q_vector : array
+            an array of one or more Q vectors with the same Q value
+
+        Returns
+        -------
+        array
+            An array with dimensions of self.t
         """
 
         rho = self._calculate_rho(Q_vector)

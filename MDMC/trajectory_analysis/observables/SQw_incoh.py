@@ -1,6 +1,4 @@
-"""Module for incoherent SQw class
-
-AUTHOR :    Thomas Farmer        START DATE :    20/07/2018, 16:28:02"""
+"""Module for incoherent SQw class"""
 
 import numpy as np
 
@@ -18,6 +16,10 @@ class SQwIncoherent(AbstractSQw):
 
     def _set_weights(self):
 
+        """
+        Calculate the neutron weighting for incoherent scattering
+        """
+
         element_weights = {element:B_INCOH[element]**2 for element
                            in self.trajectory.element_set}
         self.weights = [element_weights[atom.element] for atom
@@ -26,10 +28,22 @@ class SQwIncoherent(AbstractSQw):
     def _calculate_FQt_single_Q(self, Q_vector):
 
         """
+        Calculates the F(Q, t) for a single Q value
+
         The length of the correlations is bounded by the length of the energies
         rather the times, as this allows energies to be calculated from
         trajectories with longer timescales than is required by the energy
         resolution.
+
+        Parameters
+        ----------
+        Q_vector : array
+            An array of one or more Q vectors with the same Q value
+
+        Returns
+        -------
+        array
+            An array with dimensions of self.t
         """
 
         n_atoms = len(self.trajectory.atoms)

@@ -1,7 +1,5 @@
 """Module defining a class for storing, calculating and reading in observables
-from molecular dynamics trajectories.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-4-26 10:14:51"""
+from molecular dynamics trajectories."""
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -16,6 +14,11 @@ class Observable:
     Observable data can either be from a file or calculated from
     MD and stored in the data property, along with the associated uncertainty.
     The boolean property from_MD states the source of the information.
+
+    Attributes
+    ----------
+    reader : Reader
+        The file reader for reading experimental data
     """
 
     __metaclass__ = ABCMeta
@@ -24,7 +27,12 @@ class Observable:
     def name(self):
 
         """
-        The module name that was used for factory instantiation
+        Get or set the module name that was used for factory instantiation
+
+        Returns
+        -------
+        str
+            The name of the module in which the Observable is located
         """
 
         return self._name
@@ -38,7 +46,12 @@ class Observable:
     def origin(self):
 
         """
-        The origin of the observable: experiment, MD, difference
+        Get or set the origin of the observable
+
+        Returns
+        -------
+        str
+            The origin of the Observable, either experiment or MD
         """
 
         return self._origin
@@ -51,14 +64,27 @@ class Observable:
     @abstractproperty
     def data(self):
 
+        """
+        The independent, dependent and error data in the Observable
+
+        Returns
+        -------
+        dict
+            The independent, dependent and error data
+        """
+
         pass
 
     @abstractproperty
     def independent_variables(self):
 
         """
-        Return:
-        Dictionary of independent variables
+        The independent variables
+
+        Return
+        ------
+        dict
+            The independent variables
         """
 
         pass
@@ -67,8 +93,12 @@ class Observable:
     def dependent_variables(self):
 
         """
-        Return:
-        Dictionary of dependent variables
+        The dependent variables
+
+        Return
+        ------
+        dict
+            The dependent variables
         """
 
         pass
@@ -77,17 +107,27 @@ class Observable:
     def errors(self):
 
         """
-        Return:
-        Dictionary of errors on the dependent variables
+        The errors on the dependent variables
+
+        Return
+        ------
+        dict
+            The errors
         """
 
         pass
 
-    # TODO: Potentially the reader can be selected based upon file name and experimental observable class type
     def read_from_file(self, reader, file_name):
 
         """
         Reads in experimental data from a file using a specified reader
+
+        Parameters
+        ----------
+        reader : str
+            The name of the required file reader
+        file_name : str
+            The name of the file
         """
 
         self._origin = 'experiment'
@@ -95,18 +135,18 @@ class Observable:
         self.reader.open(file_name)
         self.reader.parse()
 
-    # TODO: Currently uses the generic parameter MD_input - if this is only histograms then change this
     @abstractmethod
     def calculate_from_MD(self, MD_input, **params):
 
         """
         Calculates the obseravable using input from an MD simulation
 
-        Arguments:
-        MD_input - some input from an MD simulation, commonly a trajectory
-        Params:
-        additional parameters required for calculation to be passed e.g.
-        variables for RDF prefactor calculation, independent variable axis
+        Parameters
+        ----------
+        MD_input : Object
+            Some input from an MD simulation, commonly a trajectory
+        **params
+            additional parameters required for calculation specific Observables
         """
 
         pass
