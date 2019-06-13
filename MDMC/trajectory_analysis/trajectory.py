@@ -1,6 +1,4 @@
-"""Module for configuration, trajectory and histogram containers
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 23:44:11"""
+"""Module for configuration, trajectory and histogram containers"""
 
 import weakref
 
@@ -14,8 +12,20 @@ class AtomCollection(object):
     Base class for shared attributes for Configurations and Trajectories
     """
 
+    __slots__ = ('_universe', )
+
     @property
     def universe(self):
+
+        """
+        Get or set the Universe in which the AtomCollection exists
+
+        Returns
+        -------
+        Universe
+            The Universe in which the AtomCollection exists, or None if it has
+            not been set
+        """
 
         try:
             return self._universe()
@@ -33,6 +43,15 @@ class AtomCollection(object):
     @property
     def dims(self):
 
+        """
+        Get the dimensions of the Universe in which the AtomCollection exists
+
+        Returns
+        -------
+        array
+            The dimensions of the Universe
+        """
+
         return self.universe.dims
 
 
@@ -40,19 +59,27 @@ class Configuration(AtomCollection):
 
     """
     A Configuration stores atoms and their positions and velocities
+
+    Parameters
+    ----------
+    *structural_units
+        Zero or more StructuralUnits to be added to the configuration
+    **settings
+        universe : Universe
+            The Universe of the configuration
+
+    Attributes
+    ----------
+    element_set : set
+        Set of the elements in the Configuration
     """
 
-    # TODO: Consider how wraparound for periodic objects will work
+    __slots__ = ('_data', 'element_set', 'structure_list')
 
-    def __init__(self, *structural_units, **kwargs):
-
-        """
-        Arugments:
-        structural_units - any object with base class StructuralUnit
-        """
+    def __init__(self, *structural_units, **settings):
 
         try:
-            self.universe = kwargs['universe']
+            self.universe = settings['universe']
         except KeyError:
             try:
                 self.universe = structural_units[0].universe
@@ -64,30 +91,85 @@ class Configuration(AtomCollection):
     @property
     def atom_list(self):
 
+        """
+        Get the list of Atoms which belong to the Configuration
+
+        Returns
+        -------
+        list
+            A list of Atoms
+        """
+
         return self.data['atom']
 
     @property
     def atom_positions(self):
 
+        """
+        Get the list of Atom positions which belong to the Configuration
+
+        Returns
+        -------
+        list
+            A list of Atom positions
+        """
         return self.data['position']
 
     @property
     def atom_velocities(self):
+
+        """
+        Get the list of Atom velocities which belong to the Configuration
+
+        Returns
+        -------
+        list
+            A list of Atom velocities
+        """
 
         return self.data['velocity']
 
     @property
     def element_list(self):
 
+        """
+        Get the list of Atom elements which belong to the Configuration
+
+        Returns
+        -------
+        list
+            A list of str for the elements
+        """
+
         return [atom.element for atom in self.atom_list]
 
     @property
     def molecule_list(self):
 
+        """
+        Get the list of Molecules which belong to the Configuration
+
+        Returns
+        -------
+        list
+            A list of Molecules
+        """
+
         return self.filter_structures(lambda x: x.structure_type == 'Molecule')
 
     @property
     def data(self):
+
+        """
+        Get or set the Atoms, Atom positions, and Atom velocities which belong
+        to the Configuration
+
+        Returns
+        -------
+        array
+            A structured NumPy array with 'atom', 'position', and 'velocity'
+            fields
+        """
 
         return np.array([(atom, atom.position, atom.velocity)
                          for atom in self._data],
@@ -105,11 +187,36 @@ class Configuration(AtomCollection):
 
     def add_structural_unit(self, structural_unit):
 
+        """
+        Adds the Atoms from a StructuralUnit to the data
+
+        Parameters
+        ----------
+        structure_unit : StructuralUnit
+            The StructuralUnit to add
+        """
+
         self.validate_structure(structural_unit)
         self.structure_list.append(structural_unit)
         self._data.extend([atom for atom in structural_unit.atom_list])
 
     def validate_structure(self, structure):
+
+        """
+        Validates the structure by testing that it belongs to the same Universe
+        as the Configuration
+
+        Parameters
+        ----------
+        structure : StructuralUnit
+            The StructuralUnit to validate
+
+        Raises
+        ------
+        AssertionError
+            If the StructuralUnit does not belong to the same Universe as the
+            Configuration
+        """
 
         # Test that all structural units are from the same universe
         try:
@@ -120,7 +227,10 @@ class Configuration(AtomCollection):
     def __add__(self, configuration):
 
         """
-        Returns a new configuration from the sum of configurations
+        Returns
+        -------
+        Configuration
+            New Configuration from the sum of Configurations
         """
 
         structure_list = self.structure_list + configuration.structure_list
@@ -130,21 +240,38 @@ class Configuration(AtomCollection):
     def __sub__(self, configuration):
 
         """
-        Returns a new configuration from the difference of configurations
+        Returns
+        -------
+        Configuration
+            New configuration from the difference of configurations
+
+        Raises
+        ------
+        NotImplementedError
+            THIS HAS NOT BEEN IMPLEMENTED
         """
 
         raise NotImplementedError
 
     def __len__(self):
 
+        """
+        Returns
+        -------
+        int
+            The number of atoms in the Configuration
+        """
+
         return len(self.atom_list)
 
     def __getitem__(self, item):
 
         """
-        Returns:
-        A numpy void containing a slice from the data. The same fields can be
-        accessed with 'atom', 'position', and 'velocity'.
+        Returns
+        -------
+        array
+            A NumPy array containing a slice from the data. The same fields can
+            be accessed with 'atom', 'position', and 'velocity'.
         """
 
         return self.data[item]
@@ -152,11 +279,17 @@ class Configuration(AtomCollection):
     def filter_structures(self, predicate):
 
         """
-        Filters the list of structural units using the predicate
+        Filters the list of StructuralUnits using the predicate
 
-        Arguments:
-        predicate: a boolean valued function which can be applied to structural
-        units
+        Parameters
+        ----------
+        predicate : function
+            A function which returns a boolean when passed a StructuralUnit
+
+        Returns
+        -------
+        list
+            A list of StructuralUnits which are True for the given predicate
         """
 
         return filter(predicate, self.structure_list)
@@ -164,11 +297,17 @@ class Configuration(AtomCollection):
     def filter_atoms(self, predicate):
 
         """
-        Filters the list of atoms using the predicate
+        Filters the list of Atoms using the predicate
 
-        Arguments:
-        predicate: a boolean valued function which can be applied to structural
-        units
+        Parameters
+        ----------
+        predicate : function
+            A function which returns a boolean when passed an Atom
+
+        Returns
+        -------
+        list
+            A list of Atoms which are True for the given predicate
         """
 
         return filter(predicate, self.atom_list)
@@ -178,9 +317,15 @@ class Configuration(AtomCollection):
         """
         Filter the configuration using an element
 
-        Arguments:
-        element: elemental symbol of the same format as is used for creating
-                 atoms
+        Parameters
+        ----------
+        element: str
+            An elemental symbol of the same format as is used for creating atoms
+
+        Returns
+        -------
+        list
+            A list of Atoms of the specified element
         """
 
         return self.filter_atoms(lambda x: x.element == element)
@@ -188,11 +333,19 @@ class Configuration(AtomCollection):
     def scale(self, factor, vectors='positions'):
 
         """
-        Scales either atom positions (default) or velocities by a factor
+        Scales either atom positions or velocities by a factor
 
-        Arguments:
-        factor: float by which the vector is scaled
-        vectors: 'positions' (default) or 'velocities' of the atoms
+        Parameters
+        ----------
+        factor : float
+            Factor by which the vector is scaled
+        vectors : str, optional
+            'positions' (default) or 'velocities' of the atoms
+
+        Raises
+        ------
+        NotImplementedError
+            THIS IS NOT IMPEMENTED
         """
 
         raise NotImplementedError
@@ -202,34 +355,32 @@ class TemporalConfiguration(Configuration):
 
     """
     A configuration which has a time associated with it
+
+    Parameters
+    ----------
+    time : float
+        The time of the TemporalConfiguration in fs
+    *structure_units
+        Zero or more StructuralUnits
     """
 
-    def __init__(self, time, *structural_units, **kwargs):
+    __slots__ = ('time', )
 
-        """
-        Arguments:
-        time - a float specifying a time in units of fs
-        structural_units - one or more objects with a base class of
-        StructuralUnit
-        """
+    def __init__(self, time, *structural_units, **settings):
 
-        super(TemporalConfiguration, self).__init__(*structural_units, **kwargs)
+        super(TemporalConfiguration, self).__init__(*structural_units,
+                                                    **settings)
         self.time = time
 
     def __add__(self, configuration):
 
         """
-        Sums the structure list of two configurations
-
-        Arguments:
-        configuration - a TemporalConfiguration object
-
-        Returns:
-        A TemporalConfiguration object with the sum of the structures from the
-        configuration and self
+        Returns
+        -------
+        TemporalConfiguration
+            New TemporalConfiguration from the sum of the TemporalConfigurations
         """
 
-        # TODO: Add warning if configurations don't all have the same time
         time = np.mean([self.time, configuration.time])
 
         structure_list = self.structure_list + configuration.structure_list
@@ -242,9 +393,15 @@ class Trajectory(AtomCollection):
     """
     A Trajectory is a collection of TimedConfigurations
 
-    Attributes:
-    data: an ordered array of frames, times (in fs) and TimedConfigurations
-    configurations: TimedConfigurations
+    Parameters
+    ----------
+    *configurations
+        Zero or more TimedConfigurations
+
+    Attributes
+    ----------
+    configurations : list
+        A list of TimedConfigurations
     """
 
     def __init__(self, *configurations):
@@ -254,6 +411,15 @@ class Trajectory(AtomCollection):
 
     @property
     def data(self):
+
+        """
+        Get or set the data of the Trajectory
+
+        Returns
+        -------
+        array
+            An ordered array of frames, times (in fs) and TimedConfigurations
+        """
 
         return self._data
 
@@ -275,6 +441,23 @@ class Trajectory(AtomCollection):
 
     def validate_config(self, config, validator):
 
+        """
+        Validates that a Configuration has the same number of Atoms as
+        the validator
+
+        Parameters
+        ----------
+        config : Configuration
+            The Configuration to test
+        validator : Configuration
+            The Configuration against which to compare config
+
+        Raises
+        ------
+        AssertionError
+            If the number of atoms in the Configurations do not match
+        """
+
         try:
             assert len(config.atom_list) == len(validator.atom_list)
         except AssertionError:
@@ -286,6 +469,7 @@ class Trajectory(AtomCollection):
         """
         Indexing and slicing is relative to frames
         """
+
         if type(item) == int:
             return self.__class__(self.configurations[item])
         else:
@@ -294,14 +478,27 @@ class Trajectory(AtomCollection):
     @property
     def frames(self):
 
+        """
+        Get frames of the Trajectory
+
+        Returns
+        -------
+        array
+            An array of ints specifying the frames of the Trajectory
+        """
+
         return self.data['frame']
 
     @property
     def times(self):
 
         """
-        Returns:
-        a float specifying the time in fs
+        Get the times of the Trajectory
+
+        Returns
+        -------
+        array
+            An array of floats specifying the times of the Trajectory
         """
 
         return self.data['time']
@@ -310,8 +507,12 @@ class Trajectory(AtomCollection):
     def atoms(self):
 
         """
-        Returns:
-        Atoms from the frame 0 configuration
+        Get the atoms from the start of the Trajectory
+
+        Returns
+        -------
+        array
+            Atoms from the frame 0 configuration
         """
 
         return self.data['configuration'][0].atom_list
@@ -320,8 +521,12 @@ class Trajectory(AtomCollection):
     def element_set(self):
 
         """
-        Returns:
-        Set of elements from the frame 0 configuration
+        Get the unique elements from the start of the Trajectory
+
+        Returns
+        -------
+        set
+            Elements from the frame 0 configuration
         """
 
         return self.data['configuration'][0].element_set
@@ -330,8 +535,12 @@ class Trajectory(AtomCollection):
     def element_list(self):
 
         """
-        Returns:
-        List of elements from the frame 0 configuration
+        Get the elements from the start of the Trajectory
+
+        Returns
+        -------
+        list
+            Elements from the frame 0 configuration
         """
 
         return self.data['configuration'][0].element_list
@@ -339,10 +548,28 @@ class Trajectory(AtomCollection):
     @property
     def configurations(self):
 
+        """
+        Get the Configurations of the Trajectory
+
+        Returns
+        -------
+        list
+            A list of the Configurations
+        """
+
         return self.data['configuration']
 
     @property
     def positions(self):
+
+        """
+        Get the positions of the Atoms in the Trajectory
+
+        Returns
+        -------
+        array
+            The position of every atom at every time in the Trajectory
+        """
 
         return np.array([position for config in self.configurations
             for position in config.atom_positions])
@@ -350,14 +577,28 @@ class Trajectory(AtomCollection):
     @property
     def velocities(self):
 
+        """
+        Get the velocities of the Atoms in the Trajectory
+
+        Returns
+        -------
+        array
+            The velocity of every atom at every time in the Trajectory
+        """
+
         return np.array([velocity for config in self.configurations
             for velocity in config.atom_velocities])
 
     def filter_by_time(self, start, end=None):
 
         """
-        Returns:
-        Trajectory with times in half open interval defined by start and end
+        Filter the Trajectory by time
+
+        Returns
+        -------
+        Trajectory
+            A Trajectory with times in half open interval defined by start and
+            end
         """
 
         if end is None:
@@ -370,6 +611,13 @@ class Trajectory(AtomCollection):
             (self.times >= start) & (self.times < end)])
 
     def __len__(self):
+
+        """
+        Returns
+        -------
+        int
+            The number of times in the Trajectory
+        """
 
         return len(self.times)
 
@@ -522,7 +770,7 @@ class Histogram(object):
         return histogram_sum
 
     def _calc_n_bins(self, axis_bins):
-        
+
         return int((axis_bins[1] - axis_bins[0]) / axis_bins[2])
 
     def filter_histogram_by_time(self, start, end):
