@@ -8,17 +8,37 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator
 from MDMC.readers.readers import Reader
 
-# TODO: Determine if base class for dynamic data is required
-
 class LAMPSQw(Reader):
+
+    """
+    A class for reading SQw files from LAMP
+
+    LAMP's ascii output uses three files: 1 for independent variables and
+    parameters (..._LAMP), another for dependent variables
+    (..._LAMPascii), and a third for the errors in the dependent variables
+    (...LAMPascii_e)
+
+    Attributes
+    ----------
+    file_indep : file
+        File containing the independent variables
+    file_dep : file
+        File containing the dependent variables
+    file_dep_err
+        File containing the errors on the dependent variables
+    """
 
     def open(self, file_name):
 
         """
-        LAMP's ascii output uses three files: 1 for independent variables and
-        parameters (..._LAMP), another for dependent variables
-        (..._LAMPascii), and a third for the errors in the dependent variables
-        (...LAMPascii_e)
+        Open the files for independent variables, dependent variables and errors
+        on the dependent variables
+
+        Parameters
+        ----------
+        file_name : str
+            The independent file name, which is the base file name for the three
+            files.
         """
 
         self.file_indep = open(file_name)
@@ -47,7 +67,12 @@ class LAMPSQw(Reader):
     def independent_variables(self):
 
         """
-        A dictionary containing Q (in Ang^-1) and E (meV)
+        Get the independent variables, Q (in Ang^-1) and E (meV)
+
+        Returns
+        -------
+        dict
+            The independent variables Q and E
         """
 
         return {"Q":self.Q, "E":self.E}
@@ -56,7 +81,12 @@ class LAMPSQw(Reader):
     def dependent_variables(self):
 
         """
-        A dictionary containing SQw (in arb)
+        Get the dependent variables, SQw (in arb)
+
+        Returns
+        -------
+        dict
+            The dependent variables, SQw (in arb)
         """
 
         return {"SQw":self.SQw}
@@ -65,7 +95,12 @@ class LAMPSQw(Reader):
     def errors(self):
 
         """
-        A dictionary containing the error associated with SQw (in arb)
+        Get the errors on the dependent variables
+
+        Returns
+        -------
+        dict
+            The error on SQw (in arb)
         """
 
         return {"SQw":self.SQw_err}
@@ -74,7 +109,12 @@ class LAMPSQw(Reader):
     def E(self):
 
         """
-        Energy transfer, E, in meV
+        Get or set the energy transfer, E, in meV
+
+        Returns
+        -------
+        array
+            Energy transfer, E, in meV
         """
 
         return self._E
@@ -89,7 +129,12 @@ class LAMPSQw(Reader):
     def Q(self):
 
         """
-        Momentum transfer, Q, in Ang^-1
+        Get or set the momentum transfer, Q, in Ang^-1
+
+        Returns
+        -------
+        array
+            Momentum transfer, Q, in Ang^-1
         """
 
         return self._Q
@@ -108,8 +153,15 @@ class LAMPSQw(Reader):
         Splits the file so that the data can be extracted into a numpy array by
         self._get_data
 
-        Parameters:
-        file - open file containing independent data
+        Parameters
+        ----------
+        file : file
+            Open file containing independent data
+
+        Returns
+        -------
+        tuple
+            (X, Y) where X and Y are arrays of the two independent variables
         """
 
         def get_n_elements(line):
@@ -144,8 +196,15 @@ class LAMPSQw(Reader):
         """
         Parses the dependent variables or their errors.
 
-        Parameters:
-        file - open file containing independent data
+        Parameters
+        ----------
+        file : file
+            Open file containing independent data
+
+        Returns
+        -------
+        array
+            A 2d array with dimensions of the two independent variables
         """
 
         file_split = iter([str for line in file for str in line.split(" ")])
@@ -155,8 +214,17 @@ class LAMPSQw(Reader):
     def _make_float(self, i):
 
         """
-        Returns:
-        A non-negative float, if the input can be converted to a float.
+        Casts the input to a float, or passes if the input cannot be cast
+
+        Parameters
+        ----------
+        i : numeric
+            Input to be cast to float
+
+        Returns
+        -------
+        float
+            A non-negative float, if the input can be converted to a float.
         """
 
         try:
@@ -169,6 +237,18 @@ class LAMPSQw(Reader):
         """
         Iterates over an iterator from a file and extracts the numerical values
         as data.
+
+        Parameters
+        ----------
+        str_iter : iterator
+            An iterator of str
+        *dims
+            A float specifying the size for every dimension of the data
+
+        Returns
+        -------
+        array
+            An array of floats with dimensions specified by *dims
         """
 
         def get_row_data(dim):
