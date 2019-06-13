@@ -12,8 +12,8 @@ notifications:
   email: false
 
 before_install:
-  - docker pull tfarmer/mmtk_dependencies
-  - docker run tfarmer/mmtk_dependencies
+  - docker pull tfarmer/mdmc_dependencies
+  - docker run tfarmer/mdmc_dependencies
 
 install:
   - pip install enum34
