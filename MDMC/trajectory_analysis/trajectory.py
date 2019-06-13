@@ -12,8 +12,6 @@ class AtomCollection(object):
     Base class for shared attributes for Configurations and Trajectories
     """
 
-    __slots__ = ('_universe', )
-
     @property
     def universe(self):
 
@@ -73,8 +71,6 @@ class Configuration(AtomCollection):
     element_set : set
         Set of the elements in the Configuration
     """
-
-    __slots__ = ('_data', 'element_set', 'structure_list')
 
     def __init__(self, *structural_units, **settings):
 
@@ -363,8 +359,6 @@ class TemporalConfiguration(Configuration):
     *structure_units
         Zero or more StructuralUnits
     """
-
-    __slots__ = ('time', )
 
     def __init__(self, time, *structural_units, **settings):
 
