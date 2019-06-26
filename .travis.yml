@@ -12,14 +12,10 @@ notifications:
   email: false
 
 before_install:
-  - docker pull tfarmer/mdmc_dependencies
-  - docker run tfarmer/mdmc_dependencies
-
-install:
-  - pip install enum34
+  - docker pull tfarmer/mdmc_dependencies:latest
 
 script:
-  - pytest -vv
+    - docker run --mount type=bind,source="$(pwd)",target="$(pwd)" tfarmer/mdmc_dependencies:latest python -m pytest -v "$(pwd)"/tests/
 
 branches:
   only:
