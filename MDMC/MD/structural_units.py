@@ -9,6 +9,7 @@ from copy import deepcopy
 from itertools import count
 from types import MethodType
 import weakref
+import warnings
 
 import numpy as np
 
@@ -526,11 +527,14 @@ class Atom(StructuralUnit):
     element : str
         The atomic element label.
     position : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the position in units of Ang. The
-        default is (0., 0., 0.).
+        A 3 element list, tuple or array with the position in units of Ang.
+        The default is (0., 0., 0.).
     velocity : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the velocity in units of Ang. The
-        default is (0., 0., 0.).
+        A 3 element list, tuple or array with the velocity in units of Ang.
+        The default is (0., 0., 0.).
+    charge : float
+        The charge of the atom in units of elementary charge. The default
+        is None
     **settings
         mass : float
             The atomic mass in amu. If not provided a lookup table will be used.
@@ -542,7 +546,7 @@ class Atom(StructuralUnit):
     """
 
     def __init__(self, element, position=(0., 0., 0.), velocity=(0., 0., 0.),
-                 **settings):
+                 charge=None, **settings):
 
         self.universe = None
         super(Atom, self).__init__(position, velocity, name=element)
@@ -554,6 +558,8 @@ class Atom(StructuralUnit):
         except KeyError:
             self.mass = atom_properties.MASS[self.element]
         self._atom_type = settings.get('atom_type', None)
+        if charge:
+            self.charge = charge
 
     def __deepcopy__(self, memo):
 
@@ -681,8 +687,8 @@ class Atom(StructuralUnit):
         Raises
         ------
         AttributeError
-            If a charge is set when the Atom has no Coulombic interaction, or if
-            the Coulombic interaction has no InteractionFunction
+            If a charge is set when the Atom has no Coulombic interaction, or
+            if the Coulombic interaction has no InteractionFunction
         """
 
         try:
@@ -699,16 +705,15 @@ class Atom(StructuralUnit):
     @unit_decorator(unit=units.CHARGE)
     def charge(self, value):
 
-        charge_set = False
-        for interaction in self.interactions:
-            if isinstance(interaction, Coulombic):
-                # Coulombic interactions only have a single parameter
-                interaction.params[0].value = value
-                charge_set = True
-        if not charge_set:
-            raise AttributeError('the atom must have a Coulombic interaction'
-                                 ' with an InteractionFunction before the'
-                                 ' charge can be set')
+        try:
+            self.interactions[0].params[0].value = value
+        except IndexError:
+            # initialise a Coulombic interaction (with Coulomb interaction
+            # function) with the set value
+            Coulombic(atoms=self.atom_list[0],
+                      function=Coulomb((value, 'e')))
+            warnings.warn('WARNING: Coulombic interaction for the Atom '
+                          'object initialized with the set charge value.')
 
     @property
     def mass(self):
