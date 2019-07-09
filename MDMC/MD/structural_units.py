@@ -710,7 +710,7 @@ class Atom(StructuralUnit):
         except IndexError:
             # initialise a Coulombic interaction (with Coulomb interaction
             # function) with the set value
-            Coulombic(atoms=self.atom_list[0],
+            Coulombic(atoms=self,
                       charge=value)
             warnings.warn(UserWarning('Coulombic interaction for the Atom '
                                       'object initialized with the Coulomb '
