@@ -558,8 +558,8 @@ class Atom(StructuralUnit):
         except KeyError:
             self.mass = atom_properties.MASS[self.element]
         self._atom_type = settings.get('atom_type', None)
-        # if charge:
-        self.charge = charge
+        if charge:
+            self.charge = charge
 
     def __deepcopy__(self, memo):
 
@@ -706,16 +706,15 @@ class Atom(StructuralUnit):
     @unit_decorator(unit=units.CHARGE)
     def charge(self, value):
 
-        try:
-            self.interactions[0].params[0].value = value
-        except IndexError:
-            # initialise a Coulombic interaction (with Coulomb interaction
-            # function) with the set value
-            Coulombic(atoms=self,
-                      charge=value)
-            warnings.warn(UserWarning('Coulombic interaction for the Atom '
-                                      'object initialized with the Coulomb '
-                                      'interaction function.'))
+        for interaction in self.interactions:
+            if isinstance(interaction, Coulombic):
+                self.interactions[0].params[0].value = value
+                return
+        # If Coulombic interaction doesn't exist, initialise one
+        Coulombic(atoms=self, charge=value)
+        warnings.warn(UserWarning('Coulombic interaction for the Atom '
+                                  'object initialized with the Coulomb '
+                                  'interaction function.'))
 
     @property
     def mass(self):
