@@ -684,11 +684,12 @@ class Atom(StructuralUnit):
         float
             The charge in units of e, or None if no charge has been set
 
-        Raises
-        ------
-        AttributeError
-            If a charge is set when the Atom has no Coulombic interaction, or
-            if the Coulombic interaction has no InteractionFunction
+        Warns
+        -----
+        UserWarning
+            If a charge is set when the Atom has no Coulombic
+            interaction, resulting in the initialization of a Coulomb
+            interaction function.
         """
 
         try:
