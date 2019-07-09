@@ -8,8 +8,8 @@ from abc import ABCMeta, abstractproperty
 from copy import deepcopy
 from itertools import count
 from types import MethodType
-import weakref
 import warnings
+import weakref
 
 import numpy as np
 
@@ -558,8 +558,8 @@ class Atom(StructuralUnit):
         except KeyError:
             self.mass = atom_properties.MASS[self.element]
         self._atom_type = settings.get('atom_type', None)
-        if charge:
-            self.charge = charge
+        # if charge:
+        self.charge = charge
 
     def __deepcopy__(self, memo):
 
@@ -711,9 +711,10 @@ class Atom(StructuralUnit):
             # initialise a Coulombic interaction (with Coulomb interaction
             # function) with the set value
             Coulombic(atoms=self.atom_list[0],
-                      function=Coulomb((value, 'e')))
-            warnings.warn('WARNING: Coulombic interaction for the Atom '
-                          'object initialized with the set charge value.')
+                      charge=value)
+            warnings.warn(UserWarning('Coulombic interaction for the Atom '
+                                      'object initialized with the Coulomb '
+                                      'interaction function.'))
 
     @property
     def mass(self):
