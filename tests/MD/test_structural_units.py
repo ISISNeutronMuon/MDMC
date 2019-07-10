@@ -147,6 +147,7 @@ def test_charge_set_warning(atom):
             pytest.fail('Expected a warning!')
 
 
+@pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_when_None(atom_Coulombic):
     """
     Tests that setting the charge of an Atom of charge None that
