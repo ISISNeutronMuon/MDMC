@@ -1592,8 +1592,6 @@ class Coulombic(NonBondedInteraction):
     ----------
     universe : Universe, optional
         The Universe in which the NonBondedInteraction exists. Default is None.
-    *atom_types
-        int for each atom_type for which the NonBondedInteraction applies
     **settings
         charge : float
             The charge parameter of the Coulombic interaction, in units of e. If
@@ -1610,37 +1608,53 @@ class Coulombic(NonBondedInteraction):
             are set, i.e. it makes the function keyword redundant
         atoms : list
             Atoms to which the Coulombic interaction applies
+        atom_types : list
+            int for each atom_type for which the NonBondedInteraction applies
 
     Raises
     ------
     TypeError
-        If one or more atom_types are passed by no universe is passed
+        If one or more atom_types are passed but no universe is passed
     TypeError
         If neither atom_types or atoms have been passed
     """
 
-    def __init__(self, universe=None, *atom_types, **settings):
+    def __init__(self, universe=None, **settings):
 
-        if atom_types:
-            if not universe:
-                raise TypeError('Coulombic requires a universe when atom_types'
-                                ' are passed')
-            super(Coulombic, self).__init__(universe, **settings)
-            self.add_atom_types = MethodType(_add_atom_types, self)
+        try:
+            atom_types = settings['atom_types']
+            try:
+                settings['atoms']
+            except KeyError:  # should raise error with proper User input
+                if isinstance(atom_types, int):
+                    # Account for arg atom_types=atom_type
+                    # rather than atom_types=[atom_type]
+                    atom_types = [atom_types]
+            # atom_types:
+                if not universe:
+                    raise TypeError('Coulombic requires a universe when '
+                                    'atom_types are passed')
+                super(Coulombic, self).__init__(universe, **settings)
+                self.add_atom_types = MethodType(_add_atom_types, self)
 
-            self._atom_types = atom_types
-            self._atoms = [atom for atom_type in self.atom_types
-                           for atom in self.universe.atom_types[atom_type]]
-            # Add interaction to atoms
-            for atom in self.atoms:
-                atom.add_interaction(self)
-        else:
+                self._atom_types = atom_types
+                self._atoms = [atom for atom_type in self.atom_types
+                               for atom in self.universe.atom_types[atom_type]]
+                # Add interaction to atoms
+                for atom in self.atoms:
+                    atom.add_interaction(self)
+            else:
+                # Executes if no errors are raised;
+                raise ValueError('Cannot pass both atoms and atom_types '
+                                 'as arguments')
+        except KeyError:
             self.add_atoms = MethodType(_add_atoms, self)
             try:
                 atoms = settings['atoms']
+                # atom_types = settings['atom_types']
             except KeyError:
-                raise TypeError('Coulombic takes either atom_types or atoms as'
-                                ' parameters')
+                raise TypeError('Coulombic takes either atom_types or atoms '
+                                'as parameters')
             # Account for init argument atoms=atom rather than atoms=[atom]
             if isinstance(atoms, Atom):
                 atoms = [atoms]
