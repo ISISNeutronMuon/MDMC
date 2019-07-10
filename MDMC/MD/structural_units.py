@@ -714,12 +714,13 @@ class Atom(StructuralUnit):
                     raise ValueError("Can't set charge to None when a "
                                      "Coulombic interaction exists.")
 
-        # If Coulombic interaction doesn't exist, initialise one
+        # If Coulombic interaction doesn't exist, initialise one unless
+        # charge passed is None
         if value:
             Coulombic(atoms=self, charge=value)
-            warnings.warn(UserWarning('Coulombic interaction for the Atom '
-                                      'object initialized with the Coulomb '
-                                      'interaction function.'))
+            # warnings.warn(UserWarning('Coulombic interaction for the Atom '
+            #                           'object initialized with the Coulomb '
+            #                           'interaction function.'))
 
     @property
     def mass(self):
@@ -1648,6 +1649,9 @@ class Coulombic(NonBondedInteraction):
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(units.UnitFloat(charge, units.CHARGE))
+            warnings.warn(UserWarning('Coulombic interaction for the Atom '
+                                      'object initialized with the Coulomb '
+                                      'interaction function.'))
 
     def __len__(self):
 
