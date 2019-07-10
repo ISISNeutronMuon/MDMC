@@ -147,20 +147,13 @@ def test_charge_set_warning(atom):
             pytest.fail('Expected a warning!')
 
 
-def test_charge_None_when_None(atom_Coulombic):
+def test_charge_when_None(atom_Coulombic):
     """
     Tests that setting the charge of an Atom of charge None that
-    has a Coulomb interaction keeps the charge at None.
+    has a Coulomb interaction creates an interaction function.
 
     """
 
-    # Not yet implemented.
-
-
-def test_charge_int_func_not_created(atom_Coulombic):
-    """
-    Tests that setting the charge of an Atom of charge None with
-    a Coulombic interaction doesn't create an interaction function.
-    """
-
-    # Not yet implemented.
+    H1 = atom_Coulombic
+    H1.charge = TEST_CHARGE
+    assert H1.interactions[0].function.name == 'Coulomb'
