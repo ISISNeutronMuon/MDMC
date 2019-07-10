@@ -1617,6 +1617,8 @@ class Coulombic(NonBondedInteraction):
         If one or more atom_types are passed but no universe is passed
     TypeError
         If neither atom_types or atoms have been passed
+    TypeError
+        If both atom_types and atoms have been passed
     """
 
     def __init__(self, universe=None, **settings):
@@ -1645,8 +1647,8 @@ class Coulombic(NonBondedInteraction):
                     atom.add_interaction(self)
             else:
                 # Executes if no errors are raised;
-                raise ValueError('Cannot pass both atoms and atom_types '
-                                 'as arguments')
+                raise TypeError('Cannot pass both atoms and atom_types '
+                                'as parameters.')
         except KeyError:
             self.add_atoms = MethodType(_add_atoms, self)
             try:
