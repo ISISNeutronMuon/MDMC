@@ -683,6 +683,12 @@ class Atom(StructuralUnit):
         float
             The charge in units of e, or None if no charge has been set
 
+        Raises
+        ------
+        ValueError
+            When setting charge to None when a Coulombic interaction
+            already exists.
+
         Warns
         -----
         UserWarning
@@ -705,14 +711,20 @@ class Atom(StructuralUnit):
     @unit_decorator(unit=units.CHARGE)
     def charge(self, value):
 
-        for interaction in self.interactions:
-            if isinstance(interaction, Coulombic):
+        for inter in self.interactions:
+            if isinstance(inter, Coulombic):
                 if value:
-                    self.interactions[0].params[0].value = value
+                    try:
+                        inter.params[0].value = value
+                    except AttributeError:
+                        # creates an interaction function if the Atom's
+                        # Coulomb interaction doesn't have one
+                        inter.function = Coulomb(units.UnitFloat(value,
+                                                                 units.CHARGE))
                     return
-                else:  # if the charge is being set to None
-                    raise ValueError("Can't set charge to None when a "
-                                     "Coulombic interaction exists.")
+                # else if the charge has value None
+                raise ValueError("Can't set charge to None when a "
+                                 "Coulombic interaction exists.")
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
         if value:
