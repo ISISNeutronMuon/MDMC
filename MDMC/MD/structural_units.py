@@ -1619,15 +1619,13 @@ class Coulombic(NonBondedInteraction):
             Atoms, a universe doesn't need to be passed as a parameter nor do
             the atoms have to be added to it::
 
-                O_coulombic = Coulombic(atoms=[O], function=Coulomb((-0.84, 'e')))
+                O_coulombic = Coulombic(atoms=[O], charge=-0.84)
 
         atom_types : list
             int for each atom_type for which the NonBondedInteraction applies.
             If specifying the atom_types, the universe must be passed as a
             parameter and the atoms for which the atom_types are specified must
             be added to it. See the example above in the 'charge' section.
-            It should also be noted that both atoms and atom_types shouldn't be
-            passed together as arguments.
 
     Raises
     ------
