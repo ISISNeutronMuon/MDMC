@@ -1602,7 +1602,7 @@ class Coulombic(NonBondedInteraction):
 
                 O = Atom('O', atom_type=1)
                 O_coulombic = Coulombic(O.atom_type, charge=-0.84)
-                O_coulombic = Coulombic(O.atom_type, function=Coulomb(-0.84))
+                O_coulombic = Coulombic(O.atom_type, function=Coulomb((-0.84, 'e')))
 
             Passing a charge will overwrite any other interaction functions that
             are set, i.e. it makes the function keyword redundant
@@ -1627,12 +1627,11 @@ class Coulombic(NonBondedInteraction):
             atom_types = settings['atom_types']
             try:
                 settings['atoms']
-            except KeyError:  # should raise error with proper User input
+            except KeyError:  # should raise error with expected User input
                 if isinstance(atom_types, int):
-                    # Account for arg atom_types=atom_type
+                    # Account for init argument atom_types=atom_type
                     # rather than atom_types=[atom_type]
                     atom_types = [atom_types]
-            # atom_types:
                 if not universe:
                     raise TypeError('Coulombic requires a universe when '
                                     'atom_types are passed')
@@ -1646,14 +1645,12 @@ class Coulombic(NonBondedInteraction):
                 for atom in self.atoms:
                     atom.add_interaction(self)
             else:
-                # Executes if no errors are raised;
                 raise TypeError('Cannot pass both atoms and atom_types '
                                 'as parameters.')
         except KeyError:
             self.add_atoms = MethodType(_add_atoms, self)
             try:
                 atoms = settings['atoms']
-                # atom_types = settings['atom_types']
             except KeyError:
                 raise TypeError('Coulombic takes either atom_types or atoms '
                                 'as parameters')
