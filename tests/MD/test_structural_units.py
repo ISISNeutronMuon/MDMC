@@ -134,8 +134,6 @@ def test_charge_set_warning(atom):
 
     with pytest.warns(UserWarning) as record:
         atom.charge = TEST_CHARGE
-        if not record:
-            pytest.fail('Expected a warning!')
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
