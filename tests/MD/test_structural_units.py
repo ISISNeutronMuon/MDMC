@@ -7,12 +7,12 @@ AUTHOR :    Joe Abbott        START DATE :    09/07/2019, 10:30:25
 
 import pytest
 
-import MDMC.MD.simulation as sim
-import MDMC.MD.structural_units as su
+from MDMC.MD.simulation import Shape, Universe
+from MDMC.MD.structural_units import Atom, Coulombic
 
 
 UNIVERSE_DIMS = (10., 10., 10.)
-UNIVERSE_SHAPE = sim.Shape.cubic
+UNIVERSE_SHAPE = Shape.cubic
 
 TEST_CHARGE_1 = 3.14
 TEST_CHARGE_2 = -2.71
@@ -25,7 +25,7 @@ def atom():
     Creates an Atom object.
     """
 
-    return su.Atom('H')
+    return Atom('H')
 
 
 @pytest.fixture
@@ -39,23 +39,24 @@ def atoms(atom):
 
 @pytest.fixture
 def universe():
+
     """
-    Initializes a universe object.
+    Initializes an empty universe object.
     """
 
-    return sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
+    return Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
 
 
 @pytest.fixture
 def atom_types_universe(atom, universe):
+
     """
     Generates a list of atom_types for atoms added to a universe.
     Returns the atom_types and the universe.
     """
-    univ = universe
-    H1 = atom
-    univ.add_structural_unit(H1)
-    return [H1.atom_type], univ
+
+    universe.add_structural_unit(atom)
+    return ([atom.atom_type], universe)
 
 
 @pytest.fixture
@@ -64,7 +65,7 @@ def atom_charge():
     Creates an Atom object initialised with a charge.
     """
 
-    return su.Atom('H', charge=TEST_CHARGE_1)
+    return Atom('H', charge=TEST_CHARGE_1)
 
 
 @pytest.fixture
@@ -73,7 +74,7 @@ def atom_Coulombic(atom):
     Creates an Atom object with an Coulombic interaction.
     """
     atom_Coul = atom
-    su.Coulombic(atoms=atom_Coul)
+    Coulombic(atoms=atom_Coul)
     return atom_Coul
 
 
@@ -85,7 +86,7 @@ def atom_Coulombic_charge(atom):
     """
 
     atom_Coul_charge = atom
-    su.Coulombic(atoms=atom_Coul_charge, charge=TEST_CHARGE_1)
+    Coulombic(atoms=atom_Coul_charge, charge=TEST_CHARGE_1)
     return atom_Coul_charge
 
 
@@ -98,7 +99,7 @@ def test_charge(atom):
     Ignores any warnings thrown.
     """
 
-    assert su.Atom('O', charge=TEST_CHARGE_1).charge == TEST_CHARGE_1
+    assert Atom('O', charge=TEST_CHARGE_1).charge == TEST_CHARGE_1
 
 
 def test_charge_creates_Coulombic(atom_charge):
@@ -194,33 +195,33 @@ def test_charge_when_None(atom_Coulombic):
     assert H1.interactions[0].function.name == 'Coulomb'
 
 
-def test_init_Coulombic_atoms_no_universe(atoms):
+def test_init_coulombic_atoms_no_universe(atoms):
+
     """
     Tests that a Coulombic interaction can be initialised by passing
     atoms as a parameter.
     """
 
-    H1_atoms = atoms
-    coul = su.Coulombic(atoms=H1_atoms, charge=TEST_CHARGE_1)
-    assert coul.atoms[0] == H1_atoms[0]
+    coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1)
+    assert coul.atoms[0] == atoms[0]
     assert coul.params[0].value == TEST_CHARGE_1
 
 
-def test_init_Coulombic_atoms_added_to_universe(atoms, universe):
+def test_init_coulombic_atoms_added_to_universe(atoms, universe):
+
     """
     Tests that a Coulombic interaction can be initialised by passing
     atoms and universe as parameters, where the Atoms have been
     added to the universe.
     """
 
-    H1_atoms = atoms
-    univ = universe
-    univ.add_structural_unit(H1_atoms[0])
-    coul = su.Coulombic(universe, atoms=H1_atoms, charge=TEST_CHARGE_1)
-    assert isinstance(coul.universe, sim.Universe)
+    universe.add_structural_unit(atoms[0])
+    coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
+    assert isinstance(coul.universe, Universe)
 
 
-def test_init_Coulombic_atoms_not_added_to_universe(atoms, universe):
+def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
+
     """
     Tests that a Coulombic interacion can be initialised by passing
     atoms and universe as parameters, where the Atoms have not been
@@ -229,27 +230,27 @@ def test_init_Coulombic_atoms_not_added_to_universe(atoms, universe):
     Tests that the universe property of the Coulombic object is None.
     """
 
-    H1_atoms = atoms
-    univ = universe
-    coul = su.Coulombic(universe, atoms=H1_atoms, charge=TEST_CHARGE_1)
-    assert coul.universe == None
+    assert (Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1).universe
+            is None)
 
 
-def test_init_Coulombic_atom_types_universe(atom_types_universe):
+def test_init_coulombic_atom_types_universe(atom_types_universe):
+
     """
     Tests that a Coulombic interaction can be initialized by passing
     atom_types and universe as parameters, where the Atoms for which
     the atom_types are specified have been added to the universe.
     """
 
-    H1_types, univ = atom_types_universe
-    coul = su.Coulombic(univ, atom_types=H1_types, charge=TEST_CHARGE_1)
-    assert isinstance(coul.universe, sim.Universe)
-    assert coul.atom_types[0] == H1_types[0]
+    coul = Coulombic(atom_types_universe[1], atom_types=atom_types_universe[0],
+                     charge=TEST_CHARGE_1)
+    assert isinstance(coul.universe, Universe)
+    assert coul.atom_types[0] == atom_types_universe[0][0]
     assert coul.params[0].value == TEST_CHARGE_1
 
 
-def test_init_Coulombic_error_atom_types_no_universe(atom_types_universe):
+def test_init_coulombic_error_atom_types_no_universe(atom_types_universe):
+
     """
     Tests that an error is thrown when atom_types is passed as a
     parameter without passing a universe object.
@@ -259,27 +260,18 @@ def test_init_Coulombic_error_atom_types_no_universe(atom_types_universe):
     are specified have not been added to the universe.
     """
 
-    H1_types, _ = atom_types_universe
-    try:
-        coul = su.Coulombic(atom_types=H1_types, charge=TEST_CHARGE_1)
-    except TypeError:
-        pass
-    else:
-        pytest.fail('Expected a TypeError')
+    with pytest.raises(TypeError):
+        Coulombic(atom_types=atom_types_universe[0],
+                  charge=TEST_CHARGE_1)
 
 
-def test_init_Coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
+def test_init_coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
+
     """
     Tests that an error is thrown when both atoms and atom_types are
     passed as parameters when initialising a Coulombic interaction.
     """
 
-    H1_atoms = atoms
-    H1_types, _ = atom_types_universe
-    try:
-        coul = su.Coulombic(atoms=H1_atoms, atom_types=H1_types,
-                            charge=TEST_CHARGE_1)
-    except TypeError:
-        pass
-    else:
-        pytest.fail('Expected a TypeError')
+    with pytest.raises(TypeError):
+        Coulombic(atoms=atoms, atom_types=atom_types_universe[0],
+                  charge=TEST_CHARGE_1)
