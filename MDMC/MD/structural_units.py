@@ -1592,24 +1592,42 @@ class Coulombic(NonBondedInteraction):
     ----------
     universe : Universe, optional
         The Universe in which the NonBondedInteraction exists. Default is None.
+        Must be passed as a parameter if atom_types if passed.
     **settings
         charge : float
             The charge parameter of the Coulombic interaction, in units of e. If
             this argument is passed, the interaction function of this Coulombic
             object is set to a Coulomb InteractionFunction with this float as
-            its parameter. For example, the following initialization are
-            equivalent::
+            its parameter. For example, upon initializing an Atom object and
+            adding it to a universe::
 
                 O = Atom('O', atom_type=1)
-                O_coulombic = Coulombic(O.atom_type, charge=-0.84)
-                O_coulombic = Coulombic(O.atom_type, function=Coulomb((-0.84, 'e')))
+                universe = Universe(10.0)
+                universe.add_structural_unit('O')
+
+            The following initializations of Coulombic are equivalent::
+
+                O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
+                                        charge=-0.84)
+                O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
+                                        function=Coulomb((-0.84, 'e')))
 
             Passing a charge will overwrite any other interaction functions that
             are set, i.e. it makes the function keyword redundant
         atoms : list
-            Atoms to which the Coulombic interaction applies
+            Atoms to which the Coulombic interaction applies. If specifying the
+            Atoms, a universe doesn't need to be passed as a parameter nor do
+            the atoms have to be added to it::
+
+                O_coulombic = Coulombic(atoms=[O], function=Coulomb((-0.84, 'e')))
+
         atom_types : list
-            int for each atom_type for which the NonBondedInteraction applies
+            int for each atom_type for which the NonBondedInteraction applies.
+            If specifying the atom_types, the universe must be passed as a
+            parameter and the atoms for which the atom_types are specified must
+            be added to it. See the example above in the 'charge' section.
+            It should also be noted that both atoms and atom_types shouldn't be
+            passed together as arguments.
 
     Raises
     ------
