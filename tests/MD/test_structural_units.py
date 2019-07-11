@@ -132,7 +132,7 @@ def test_charge_set_warning(atom):
     set without there being a pre-existing a Coulombic interaction.
     """
 
-    with pytest.warns(UserWarning) as record:
+    with pytest.warns(UserWarning):
         atom.charge = TEST_CHARGE
 
 
