@@ -713,7 +713,7 @@ class Atom(StructuralUnit):
 
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
-                if value:
+                if value is not None:
                     try:
                         inter.params[0].value = value
                     except AttributeError:
