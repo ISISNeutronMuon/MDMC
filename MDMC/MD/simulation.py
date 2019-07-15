@@ -554,6 +554,28 @@ class Universe(object):
 
         self._nonbonded_interactions.update(nonbonded_interactions)
 
+    def solvate(self, density, solvent=None):
+
+        """
+        Fills the universe with randomly distributed solvent molecules.
+
+        Parameters
+        ----------
+        density : float
+            The total density of the solvent and solute molecules,
+            IN UNITS OF: ##############
+        solvent : ###########
+            A configuration with the position of 1 or more solvent
+            StructuralUnits. If None then use SPCE water configuration.
+
+        Raises
+        ------
+        NotImplementedError
+            HAS NOT BEEN IMPLEMENTED
+        """
+
+        raise NotImplementedError
+
 
 def _primitive_cubic(dimensions, number):
 
