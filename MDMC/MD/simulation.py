@@ -455,6 +455,24 @@ class Universe(object):
         if force_field:
             self.add_force_field(force_field, structural_unit.interactions)
 
+
+    def delete_structural_unit(self, structural_unit):
+
+        """
+        Deletes a single structural unit from the universe.
+
+        Parameters
+        ----------
+        structural_unit : StructuralUnit
+            The structural unit to be deleted from the Universe.
+
+        Raises
+        ------
+        NotImplementedError
+            HAS NOT BEEN IMPLEMENTED
+        """
+
+
     def fill(self, structural_unit, force_field=None, **settings):
 
         """
@@ -573,6 +591,16 @@ class Universe(object):
         NotImplementedError
             HAS NOT BEEN IMPLEMENTED
         """
+
+        # if solvent is None:
+        #     solvent = method_to_get_configs_of_SPCE_water()
+        #
+        # # work out number of solvent molecules needed to be added
+        # num_solute = len(self.atom_list)
+        #
+        # # iterate over solvent list
+        # for solv_mol in solvent:
+        #     self.add_structural_unit(solv_mol)
 
         raise NotImplementedError
 
