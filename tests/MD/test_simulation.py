@@ -671,3 +671,9 @@ def test_universe_multiple_solvers_error(kspace_solver):
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
+
+
+def test_solvate():
+    """
+    Stub unit test function for Universe.solvate method
+    """
