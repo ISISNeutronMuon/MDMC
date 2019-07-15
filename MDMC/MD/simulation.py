@@ -572,7 +572,7 @@ class Universe(object):
 
         self._nonbonded_interactions.update(nonbonded_interactions)
 
-    def solvate(self, density, solvent=None, model='SPCE'):
+    def solvate(self, density, solvent=None, model='SPCE', **settings):
 
         """
         Fills the universe with randomly distributed solvent molecules.
@@ -584,9 +584,12 @@ class Universe(object):
             in units of amu Ang ^ -3
         solvent : StructuralUnit
             A StructuralUnit for the solvent Molecule/Atom to fill the
-            Universe with.
+            Universe with. If None fills with SPCE
             A configuration with the position of 1 or more solvent
             StructuralUnits. If None then use SPCE water configuration.
+        **settings
+            tolerance : float
+                The ± percentage tolerance of the density
 
         Raises
         ------
@@ -594,7 +597,7 @@ class Universe(object):
             HAS NOT BEEN IMPLEMENTED
         """
 
-        if solvent is None:
+        if model is 'SPCE':
             # Call method that retrieves the configs of SPCE water
             # from the spc16.gro file
             solvent = get_SPCE_water_configs()
