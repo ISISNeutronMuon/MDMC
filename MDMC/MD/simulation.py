@@ -659,7 +659,7 @@ class Universe:
 
         return pairs_interactions
 
-    def solvate(self, density, solvent=None):
+    def solvate(self, density, solvent=None, model='SPCE', **settings):
 
         """
         Fills the universe with randomly distributed solvent molecules.
@@ -668,10 +668,15 @@ class Universe:
         ----------
         density : float
             The total density of the solvent and solute molecules,
-            IN UNITS OF: ##############
-        solvent : ###########
+            in units of amu Ang ^ -3
+        solvent : StructuralUnit
+            A StructuralUnit for the solvent Molecule/Atom to fill the
+            Universe with. If None fills with SPCE
             A configuration with the position of 1 or more solvent
             StructuralUnits. If None then use SPCE water configuration.
+        **settings
+            tolerance : float
+                The ± percentage tolerance of the density
 
         Raises
         ------
@@ -679,15 +684,65 @@ class Universe:
             HAS NOT BEEN IMPLEMENTED
         """
 
-        # if solvent is None:
-        #     solvent = method_to_get_configs_of_SPCE_water()
-        #
-        # # work out number of solvent molecules needed to be added
-        # num_solute = len(self.atom_list)
-        #
-        # # iterate over solvent list
-        # for solv_mol in solvent:
-        #     self.add_structural_unit(solv_mol)
+        if model is 'SPCE':
+            # Call method that retrieves the configs of SPCE water
+            # from the spc16.gro file
+            solvent = get_SPCE_water_configs()
+
+        # iterate over solvent list and add each structural unit in turn
+        # to universe
+        for solv_mol in solvent:
+            self.add_structural_unit(solv_mol)
+
+        # define a tolerance for the density
+        tol = value
+
+        # Define an initial exclusion distance
+        exclusion = 0.01  # angstroms
+
+        # A kind of 'do while' loop to get actual density to match passed
+        # density, within a tolerance range
+        num_iterations = -1
+        while True:
+
+            num_iterations += 1
+            # work out number density of solute and solvent
+            # how to do so? If you have a mix of molecules and atoms, neither
+            # len(self.atom_list), len(self.molecule_list),
+            # nor len(self.structure_list) return the correct number of structures
+            # in the universe.
+            num_structures = method_to_get_number_of_structures_in_universe()
+            curr_density = num_structures / self.volume  # in structs angstrom ^ -3
+
+            # check whether actual universe density within tolerance range
+            if curr_density > density - tol and curr_desity < density + tol:
+                # if actual_density if within passed density tolerance range,
+                # break out of the while loop
+                break
+
+            # If not broken out of while loop the density isn't correct, so
+            # add/ delete StructuralUnits accordingly until it is.
+            if curr_density > density:
+                # need to delete some StructuralUnits
+                # define the exclusion distance
+                if num_iterations != 0:
+                    # increases the exclusion distance by increasingly
+                    # smaller amounts upon each iteration
+                    exclusion_dist = exclusion * (1 + 0.01 / num_iterations)
+
+                # identify solvent molecules that are within the exclusion
+                # distance from the solute molecules and delete them
+                for each solute molecule:
+                    for each solvent molecule:
+                        norm = np.linalg.norm(solute.position - solvent.position)
+
+                        if norm >= exclusion_dist:
+                            continue
+                        else:
+                            self.delete_structural_unit(solvent)
+            else:
+                # need to add_structural_unit ???
+
 
         raise NotImplementedError
 
