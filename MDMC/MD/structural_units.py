@@ -1673,7 +1673,7 @@ class Coulombic(NonBondedInteraction):
             super(Coulombic, self).__init__(universe, **settings)
 
         charge = settings.get('charge')
-        if charge:
+        if charge is not None:
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(units.UnitFloat(charge, units.CHARGE))
