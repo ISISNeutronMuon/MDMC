@@ -727,7 +727,7 @@ class Atom(StructuralUnit):
                                  "Coulombic interaction exists.")
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
-        if value:
+        if value is not None:
             Coulombic(atoms=self, charge=value)
 
     @property
