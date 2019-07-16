@@ -8,6 +8,7 @@ from abc import ABCMeta, abstractproperty
 from copy import deepcopy
 from itertools import count
 from types import MethodType
+import warnings
 import weakref
 
 import numpy as np
@@ -526,11 +527,14 @@ class Atom(StructuralUnit):
     element : str
         The atomic element label.
     position : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the position in units of Ang. The
-        default is (0., 0., 0.).
+        A 3 element list, tuple or array with the position in units of Ang.
+        The default is (0., 0., 0.).
     velocity : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the velocity in units of Ang. The
-        default is (0., 0., 0.).
+        A 3 element list, tuple or array with the velocity in units of Ang.
+        The default is (0., 0., 0.).
+    charge : float
+        The charge of the atom in units of elementary charge. The default
+        is None
     **settings
         mass : float
             The atomic mass in amu. If not provided a lookup table will be used.
@@ -542,7 +546,7 @@ class Atom(StructuralUnit):
     """
 
     def __init__(self, element, position=(0., 0., 0.), velocity=(0., 0., 0.),
-                 **settings):
+                 charge=None, **settings):
 
         self.universe = None
         super(Atom, self).__init__(position, velocity, name=element)
@@ -554,6 +558,7 @@ class Atom(StructuralUnit):
         except KeyError:
             self.mass = atom_properties.MASS[self.element]
         self._atom_type = settings.get('atom_type', None)
+        self.charge = charge
 
     def __deepcopy__(self, memo):
 
@@ -680,18 +685,35 @@ class Atom(StructuralUnit):
 
         Raises
         ------
-        AttributeError
-            If a charge is set when the Atom has no Coulombic interaction, or if
-            the Coulombic interaction has no InteractionFunction
+        ValueError
+            When the Atom has more than one Coulombic interaction
+        ValueError
+            When the Atom has more than one parameter; i.e. should only
+            have charge as a parameter
+        ValueError
+            When setting charge to None when a Coulombic interaction
+            already exists.
         """
 
         try:
+            num_coul = 0
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
-                    # Zero index parameter can be used as there should only be
-                    # one parameter as each atom only has a single charge
-                    return interaction.params[0].value
-            return None
+                    # Check that only one Coulombic interaction exists.
+                    num_coul += 1
+                    if num_coul > 1:
+                        raise ValueError('Atom should not have more than one '
+                                         'Coulombic interaction')
+                    # Check that a charge parameter exists.
+                    charge_params = 0
+                    for param in interaction.params:
+                        if param.name == 'charge':
+                            charge_params += 1
+                            value = param.value
+                    if charge_params == 0:
+                        raise ValueError('Coulombic interaction does not have a '
+                                         'parameter "charge".')
+            return value
         except AttributeError:
             return None
 
@@ -699,16 +721,29 @@ class Atom(StructuralUnit):
     @unit_decorator(unit=units.CHARGE)
     def charge(self, value):
 
-        charge_set = False
-        for interaction in self.interactions:
-            if isinstance(interaction, Coulombic):
-                # Coulombic interactions only have a single parameter
-                interaction.params[0].value = value
-                charge_set = True
-        if not charge_set:
-            raise AttributeError('the atom must have a Coulombic interaction'
-                                 ' with an InteractionFunction before the'
-                                 ' charge can be set')
+        for inter in self.interactions:
+            if isinstance(inter, Coulombic):
+                if value is not None:
+                    try:
+                        for param in inter.params:
+                            if param.name == 'charge':
+                                param.value = value
+                                return
+                        raise ValueError('Coulombic interaction does not have '
+                                         'a parameter "charge".')
+                    except AttributeError:
+                        # creates an interaction function if the Atom's
+                        # Coulomb interaction doesn't have one
+                        inter.function = Coulomb(units.UnitFloat(value,
+                                                                 units.CHARGE))
+                    return
+                # else if the charge has value None
+                raise ValueError("Can't set charge to None when a "
+                                 "Coulombic interaction exists.")
+        # Executes if Coulombic interaction doesn't currently exist.
+        # Initialises an interaction unless the charge passed is None.
+        if value is not None:
+            Coulombic(atoms=self, charge=value)
 
     @property
     def mass(self):
@@ -1597,6 +1632,13 @@ class Coulombic(NonBondedInteraction):
         If one or more atom_types are passed by no universe is passed
     TypeError
         If neither atom_types or atoms have been passed
+
+    Warns
+    -----
+    UserWarning
+        If a charge is set when the Atom has no Coulombic
+        interaction, resulting in the initialization of a Coulomb
+        interaction function.
     """
 
     def __init__(self, universe=None, *atom_types, **settings):
@@ -1633,10 +1675,13 @@ class Coulombic(NonBondedInteraction):
             super(Coulombic, self).__init__(universe, **settings)
 
         charge = settings.get('charge')
-        if charge:
+        if charge is not None:
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(units.UnitFloat(charge, units.CHARGE))
+            warnings.warn(UserWarning('Coulombic interaction for the Atom '
+                                      'object initialized with the Coulomb '
+                                      'interaction function.'))
 
     def __len__(self):
 
