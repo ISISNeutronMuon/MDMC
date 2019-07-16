@@ -148,3 +148,16 @@ def test_charge_when_none(atom):
     atom.charge = TEST_CHARGE
     assert atom.interactions[0].function.name == 'Coulomb'
     assert isinstance(atom.interactions[0].function, Coulomb)
+
+@pytest.mark.filterwarnings("ignore:Coulombic interaction")
+def test_charge_set_zero(atom):
+
+    """
+    Tests that when the charge of an initialised atom is set to zero
+    that the charge returns zero and that a Coulombic interaction has
+    been created.
+    """
+
+    atom.charge = 0
+    assert atom.interactions[0].params[0].value == 0.0
+    assert atom.interactions[0].name == 'Coulombic'
