@@ -693,13 +693,6 @@ class Atom(StructuralUnit):
         ValueError
             When setting charge to None when a Coulombic interaction
             already exists.
-
-        Warns
-        -----
-        UserWarning
-            If a charge is set when the Atom has no Coulombic
-            interaction, resulting in the initialization of a Coulomb
-            interaction function.
         """
 
         try:
@@ -1637,6 +1630,13 @@ class Coulombic(NonBondedInteraction):
         If one or more atom_types are passed by no universe is passed
     TypeError
         If neither atom_types or atoms have been passed
+
+    Warns
+    -----
+    UserWarning
+        If a charge is set when the Atom has no Coulombic
+        interaction, resulting in the initialization of a Coulomb
+        interaction function.
     """
 
     def __init__(self, universe=None, *atom_types, **settings):
