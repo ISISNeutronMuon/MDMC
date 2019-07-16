@@ -161,3 +161,15 @@ def test_charge_set_zero(atom):
     atom.charge = 0
     assert atom.interactions[0].params[0].value == 0.0
     assert atom.interactions[0].name == 'Coulombic'
+
+
+def test_charge_getter_checks(atom_charge):
+
+    """
+    Tests that an error is raised when trying to retrieve the charge of an
+    atom that has 2 Coulombic interactions.
+    """
+
+    Coulombic(atoms=atom_charge)
+    with pytest.raises(ValueError):
+        atom_charge.charge
