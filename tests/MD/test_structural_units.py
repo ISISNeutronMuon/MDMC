@@ -32,17 +32,6 @@ def atom_charge():
     return Atom('H', charge=TEST_CHARGE)
 
 
-@pytest.fixture
-def atom_coulombic(atom):
-
-    """
-    Creates an Atom object with an Coulombic interaction.
-    """
-
-    Coulombic(atoms=atom)
-    return atom
-
-
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge():
 
