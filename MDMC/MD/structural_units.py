@@ -696,7 +696,6 @@ class Atom(StructuralUnit):
         """
 
         try:
-            value = None
             num_coul = 0
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
@@ -705,17 +704,15 @@ class Atom(StructuralUnit):
                     if num_coul > 1:
                         raise ValueError('Atom should not have more than one '
                                          'Coulombic interaction')
-                    # Check that only one parameter exists.
-                    try:
-                        interaction.params[1]
-                    except IndexError:
-                        # Check that the only parameter is indeed charge.
-                        assert interaction.params[0].name == 'charge'
-                        value = interaction.params[0].value
-                    else:
-                        # Raise error is Atom has more than one parameter.
-                        raise ValueError('Atom should not have more than one '
-                                         'parameter (charge)')
+                    # Check that a charge parameter exists.
+                    charge_params = 0
+                    for param in interaction.params:
+                        if param.name == 'charge':
+                            charge_params += 1
+                            value = param.value
+                    if charge_params == 0:
+                        raise ValueError('Coulombic interaction does not have a '
+                                         'parameter "charge".')
             return value
         except AttributeError:
             return None
@@ -728,7 +725,12 @@ class Atom(StructuralUnit):
             if isinstance(inter, Coulombic):
                 if value is not None:
                     try:
-                        inter.params[0].value = value
+                        for param in inter.params:
+                            if param.name == 'charge':
+                                param.value = value
+                                return
+                        raise ValueError('Coulombic interaction does not have '
+                                         'a parameter "charge".')
                     except AttributeError:
                         # creates an interaction function if the Atom's
                         # Coulomb interaction doesn't have one
