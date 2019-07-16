@@ -686,6 +686,11 @@ class Atom(StructuralUnit):
         Raises
         ------
         ValueError
+            When the Atom has more than one Coulombic interaction
+        ValueError
+            When the Atom has more than one parameter; i.e. should only
+            have charge as a parameter
+        ValueError
             When setting charge to None when a Coulombic interaction
             already exists.
 
@@ -698,12 +703,27 @@ class Atom(StructuralUnit):
         """
 
         try:
+            value = None
+            num_coul = 0
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
-                    # Zero index parameter can be used as there should only be
-                    # one parameter as each atom only has a single charge
-                    return interaction.params[0].value
-            return None
+                    # Check that only one Coulombic interaction exists.
+                    num_coul += 1
+                    if num_coul > 1:
+                        raise ValueError('Atom should not have more than one '
+                                         'Coulombic interaction')
+                    # Check that only one parameter exists.
+                    try:
+                        interaction.params[1]
+                    except IndexError:
+                        # Check that the only parameter is indeed charge.
+                        assert interaction.params[0].name == 'charge'
+                        value = interaction.params[0].value
+                    else:
+                        # Raise error is Atom has more than one parameter.
+                        raise ValueError('Atom should not have more than one '
+                                         'parameter (charge)')
+            return value
         except AttributeError:
             return None
 
