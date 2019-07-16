@@ -602,6 +602,7 @@ class Universe(object):
         # Generate a standard configuration dict no matter what
         # inputs are passed
         if solvent is not None:
+            raise NotImplementedError
             if isinstance(solvent, StructuralUnit):
                 # Deal with the case where a StructuralUnit is passed
                 # i.e. if user specifies the solvent molecule
