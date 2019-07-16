@@ -10,6 +10,7 @@ import numpy as np
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
+from MDMC.common.configurations import molecule_list_from_config, SPCE
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.structural_units import Coulombic, Dispersion
@@ -669,14 +670,15 @@ class Universe:
         density : float
             The total density of the solvent and solute molecules,
             in units of amu Ang ^ -3
-        solvent : StructuralUnit
+        solvent : StructuralUnit or dict
             A StructuralUnit for the solvent Molecule/Atom to fill the
-            Universe with. If None fills with SPCE
-            A configuration with the position of 1 or more solvent
-            StructuralUnits. If None then use SPCE water configuration.
+            Universe with.
+            A configuration dict with the position of 1 or more solvent
+            StructuralUnits.
+            If None then use SPCE water configuration.
         **settings
             tolerance : float
-                The ± percentage tolerance of the density
+                The +/- percentage tolerance of the density to be achieved
 
         Raises
         ------
@@ -684,64 +686,55 @@ class Universe:
             HAS NOT BEEN IMPLEMENTED
         """
 
-        if model is 'SPCE':
-            # Call method that retrieves the configs of SPCE water
-            # from the spc16.gro file
-            solvent = get_SPCE_water_configs()
-
-        # iterate over solvent list and add each structural unit in turn
-        # to universe
-        for solv_mol in solvent:
-            self.add_structural_unit(solv_mol)
-
-        # define a tolerance for the density
-        tol = value
-
-        # Define an initial exclusion distance
-        exclusion = 0.01  # angstroms
-
-        # A kind of 'do while' loop to get actual density to match passed
-        # density, within a tolerance range
-        num_iterations = -1
-        while True:
-
-            num_iterations += 1
-            # work out number density of solute and solvent
-            # how to do so? If you have a mix of molecules and atoms, neither
-            # len(self.atom_list), len(self.molecule_list),
-            # nor len(self.structure_list) return the correct number of structures
-            # in the universe.
-            num_structures = method_to_get_number_of_structures_in_universe()
-            curr_density = num_structures / self.volume  # in structs angstrom ^ -3
-
-            # check whether actual universe density within tolerance range
-            if curr_density > density - tol and curr_desity < density + tol:
-                # if actual_density if within passed density tolerance range,
-                # break out of the while loop
-                break
-
-            # If not broken out of while loop the density isn't correct, so
-            # add/ delete StructuralUnits accordingly until it is.
-            if curr_density > density:
-                # need to delete some StructuralUnits
-                # define the exclusion distance
-                if num_iterations != 0:
-                    # increases the exclusion distance by increasingly
-                    # smaller amounts upon each iteration
-                    exclusion_dist = exclusion * (1 + 0.01 / num_iterations)
-
-                # identify solvent molecules that are within the exclusion
-                # distance from the solute molecules and delete them
-                for each solute molecule:
-                    for each solvent molecule:
-                        norm = np.linalg.norm(solute.position - solvent.position)
-
-                        if norm >= exclusion_dist:
-                            continue
-                        else:
-                            self.delete_structural_unit(solvent)
+        # Generate a standard configuration dict no matter what
+        # inputs are passed
+        if solvent is not None:
+            if isinstance(solvent, StructuralUnit):
+                # Deal with the case where a StructuralUnit is passed
+                # i.e. if user specifies the solvent molecule
+                # Fill universe with StructuralUnit
+                pass
+            elif isinstance(solvent, dict):
+                # If configuration is passed
+                config = solvent
+        else:
+            # if solvent is passed as None
+            if model == 'SPCE':
+                config = SPCE
             else:
-                # need to add_structural_unit ???
+                # if the user pass None for solvent but specifies another
+                # model configuration for a different solvent.
+                # config = other_solvent
+                pass
+            # Manipulate positions and density of tiling solvent configuration
+            # to control density.
+            # Retrieve total volume and mass of each StructuralUnit in the universe
+            solute_mass, solute_vol = 0, 0
+            for structure in self.structure_list:
+                tot_solute_mass += structure.mass
+                tot_solute_vol += abs(np.prod(structure.bounding_box.max
+                                              - structure.bounding_box.min))
+            # Calculate remaining volume of empty space
+            empty_space = self.volume - tot_solute_vol
+            # Then retrieve mass and bounding box of single solvent molecule.
+            # Assumes all solvent molecules passed in config are the same.
+            molecules = molecule_list_from_config(config)
+            solvent_mass = molecules[0].mass
+            solvent_vol = abs(np.prod(molecules[0].bounding_box.max
+                                      - molecules[0].bounding_box.min))
+            # Calculate the total required mass needed in form of solvent molecules
+            tot_req_mass = (density * self.volume) - tot_solute_mass
+            # Calculate the number of solvent molecules required
+            num_solvent = tot_req_mass / solvent_mass
+            # Calculate the whole number of 'tiles' of solvent configs needed
+            num_tiles = np.ceil(num_solvent // len(molecules))
+            # Tile together the configs num_tiles number of times
+            for i in range(0, num_tiles):
+                # assign the direction in which to tile
+                vector = np.zeros(3)
+                vector[i % 3] = 1
+
+
 
 
         raise NotImplementedError
