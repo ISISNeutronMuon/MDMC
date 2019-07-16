@@ -1,5 +1,5 @@
 """
-A script containing raw configuration data for solvent molecules.
+Contains raw configuration data for solvent molecules.
 """
 
 # SPCE water
