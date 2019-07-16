@@ -362,6 +362,18 @@ class StructuralUnit:
             # Not a member of a universe
             return True
 
+    @property
+    def bounding_box(self):
+
+        """
+        Returns
+        -------
+        BoundingBox
+            Contains the lower and upper extents of the Molecule
+        """
+
+        return BoundingBox(self.atom_list)
+
 
 class CompositeStructuralUnit(StructuralUnit):
 
@@ -1074,18 +1086,6 @@ class Molecule(CompositeStructuralUnit):
         CoM = self._calc_CoM()
         for atom in self.atom_list:
             self._CoM_frame_positions[atom] = atom.position - CoM
-
-    @property
-    def bounding_box(self):
-
-        """
-        Returns
-        -------
-        BoundingBox
-            Contains the lower and upper extents of the Molecule
-        """
-
-        return BoundingBox(self.atom_list)
 
 
 class BoundingBox(object):
