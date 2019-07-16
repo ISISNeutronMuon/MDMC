@@ -148,7 +148,7 @@ def test_charge_set_zero(atom):
     """
 
     atom.charge = 0
-    assert atom.interactions[0].params[0].value == 0.0
+    assert atom.charge == 0.0
     assert atom.interactions[0].name == 'Coulombic'
 
 
