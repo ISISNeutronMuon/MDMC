@@ -1114,6 +1114,7 @@ class BoundingBox(object):
         for atom in atom_list:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
+        self.volume = abs(np.prod(self.max - self.min))
 
     @property
     def min(self):
@@ -1173,8 +1174,7 @@ class BoundingBox(object):
     @unit_decorator(unit=units.LENGTH ** 3)
     def volume(self, value):
 
-        return abs(np.prod(self.max - self.min))
-
+        self._volume = value
 
 
 def filter_atoms(atoms, predicate):
