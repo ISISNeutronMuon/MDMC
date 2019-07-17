@@ -1155,11 +1155,26 @@ class BoundingBox(object):
 
         self._max = value
 
+    @property
+    def volume(self):
+
+        """
+        Get or set the volume of the bounding box, in units of Ang ^ 3
+
+        Returns
+        -------
+        float
+            The volume of the bounding box
+        """
+
+        return self._volume
+
     @volume.setter
     @unit_decorator(unit=units.LENGTH ** 3)
     def volume(self, value):
 
-        raise NotImplementedError
+        return abs(np.prod(self.max - self.min))
+
 
 
 def filter_atoms(atoms, predicate):
