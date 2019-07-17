@@ -4,7 +4,6 @@
 
 from collections import Counter
 from itertools import permutations
-import math
 
 import numpy as np
 import numpy.testing as npt
