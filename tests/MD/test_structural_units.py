@@ -3,10 +3,11 @@ Tests for creating structural unit objects and setting
 their attributes.
 """
 
+import numpy as np
 import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
-from MDMC.MD.structural_units import Atom, Coulombic
+from MDMC.MD.structural_units import Atom, Coulombic, Molecule
 
 TEST_CHARGE = 3.14
 TEST_CHARGE_2 = -2.71
@@ -30,6 +31,18 @@ def atom_charge():
     """
 
     return Atom('H', charge=TEST_CHARGE)
+
+@pytest.fixture
+def diatomic():
+
+    """
+    Initialises a diatomic Molecule object with 2 atoms with an
+    internuclear separation of 1 Ang.
+    """
+
+    xy_coor = np.sqrt(1. / 3)
+    return Molecule(atoms=[Atom('H', position=(0, 0, 0)),
+                           Atom('H', position=(xy_coor, xy_coor, xy_coor))])
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
@@ -162,3 +175,31 @@ def test_charge_getter_checks(atom_charge):
     Coulombic(atoms=atom_charge)
     with pytest.raises(ValueError):
         atom_charge.charge
+
+
+def test_bounding_box_volume(diatomic):
+
+    """
+    Tests that the correct volume is returned for the bounding box of a
+    diatomic molecule.
+    """
+
+    exp_vol = abs(np.prod(diatomic.atom_list[1].position -
+                          diatomic.atom_list[0].position))
+    assert diatomic.bounding_box.volume == exp_vol
+
+
+def test_bounding_box_set_volume(diatomic):
+
+    """
+    Tests that attempting to set the volume of the bounding box of a
+    Molecule whose atoms are in fixed positions doesn't result in a
+    change of this volume.
+    """
+
+    curr_vol = diatomic.bounding_box.volume
+    new_vol = 10.0
+    assert new_vol != curr_vol
+    diatomic.bounding_box.volume = new_vol
+    assert diatomic.bounding_box.volume == curr_vol
+    
