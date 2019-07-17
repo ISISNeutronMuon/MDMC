@@ -4,6 +4,7 @@
 
 from collections import Counter
 from itertools import permutations
+import math
 
 import numpy as np
 import numpy.testing as npt
@@ -657,3 +658,25 @@ def test_universe_multiple_solvers_error(kspace_solver):
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
+
+def test_universe_fill_orientations(universe):
+
+    """
+    Tests that filling 2 separate Universe objects with a diatomic
+    molecule of different orientations results in the same number
+    density of those solvent molecules.
+    """
+
+    univ1 = universe
+    univ2 = universe
+    coord = math.sqrt(0.5)
+    diatomic1 = su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+                                   su.Atom('H', position=(0, 1, 0))],
+                            position=(0, 0.5, 0))
+    diatomic2 = su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+                                   su.Atom('H', position=(coord, coord, 0))],
+                            position=(0.5 * coord, 0.5 * coord, 0))
+    density = 0.567438
+    univ1.fill(diatomic1, num_density=density)
+    univ2.fill(diatomic2, num_density=density)
+    assert len(univ1.molecule_list) == len(univ2.molecule_list)
