@@ -663,20 +663,27 @@ def test_universe_fill_orientations(universe):
 
     """
     Tests that filling 2 separate Universe objects with a diatomic
-    molecule of different orientations results in the same number
-    density of those solvent molecules.
+    molecule of different orientations but the same internuclear
+    separation results in the same number density of the Universe.
     """
 
     univ1 = universe
     univ2 = universe
-    coord = math.sqrt(0.5)
-    diatomic1 = su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
-                                   su.Atom('H', position=(0, 1, 0))],
-                            position=(0, 0.5, 0))
-    diatomic2 = su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
-                                   su.Atom('H', position=(coord, coord, 0))],
-                            position=(0.5 * coord, 0.5 * coord, 0))
+    origin = (0, 0, 0)
+    pos1 = (0, 1, 0)
+    pos2 = (math.sqrt(0.5), math.sqrt(0.5), 0)
+    # Check that the internuclear separation is the same.
+    assert np.linalg.norm(pos1) == np.linalg.norm(pos2)
+    # Build the 2 diatomics with different orientations.
+    diatomic1 = su.Molecule(atoms=[su.Atom('H', position=origin),
+                                   su.Atom('H', position=pos1)])  #,
+                            # position=(0, 0.5, 0))
+    diatomic2 = su.Molecule(atoms=[su.Atom('H', position=origin),
+                                   su.Atom('H', position=pos2)])  #,
+                            # position=(0.5 * coord, 0.5 * coord, 0))
+    # Fill each respective universe.
     density = 0.567438
     univ1.fill(diatomic1, num_density=density)
     univ2.fill(diatomic2, num_density=density)
+    # Test number densities.
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
