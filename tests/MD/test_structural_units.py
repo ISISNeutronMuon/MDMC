@@ -1,12 +1,11 @@
 """
 Tests for creating structural unit objects and setting
 their attributes.
-
-AUTHOR :    Joe Abbott        START DATE :    09/07/2019, 10:30:25
 """
 
 import pytest
 
+from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Shape, Universe
 from MDMC.MD.structural_units import Atom, Coulombic
 
@@ -21,21 +20,21 @@ ATOM_TYPES = [1, 2, 3]
 
 @pytest.fixture
 def atom():
+
     """
     Creates an Atom object.
     """
 
     return Atom('H')
 
-
 @pytest.fixture
 def atoms(atom):
+
     """
     Generates a list containing an Atom object.
     """
 
     return [atom]
-
 
 @pytest.fixture
 def universe():
@@ -45,7 +44,6 @@ def universe():
     """
 
     return Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
-
 
 @pytest.fixture
 def atom_types_universe(atom, universe):
@@ -58,40 +56,18 @@ def atom_types_universe(atom, universe):
     universe.add_structural_unit(atom)
     return ([atom.atom_type], universe)
 
-
 @pytest.fixture
 def atom_charge():
+
     """
     Creates an Atom object initialised with a charge.
     """
 
     return Atom('H', charge=TEST_CHARGE_1)
 
-
-@pytest.fixture
-def atom_Coulombic(atom):
-    """
-    Creates an Atom object with an Coulombic interaction.
-    """
-    atom_Coul = atom
-    Coulombic(atoms=atom_Coul)
-    return atom_Coul
-
-
-@pytest.fixture
-def atom_Coulombic_charge(atom):
-    """
-    Creates an Atom object, with a Coulombic interaction
-    initialised with a chIs a test charge value.
-    """
-
-    atom_Coul_charge = atom
-    Coulombic(atoms=atom_Coul_charge, charge=TEST_CHARGE_1)
-    return atom_Coul_charge
-
-
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
-def test_charge(atom):
+def test_charge():
+
     """
     Tests that the charge attribute of the Atom object can
     be set during Atom initialisation.
@@ -101,33 +77,32 @@ def test_charge(atom):
 
     assert Atom('O', charge=TEST_CHARGE_1).charge == TEST_CHARGE_1
 
+def test_charge_creates_coulombic(atom_charge):
 
-def test_charge_creates_Coulombic(atom_charge):
     """
     Tests that setting the charge during Atom initialisation
     creates a Coulombic interaction and only a Coulombic
     interaction.
     """
 
-    H1 = atom_charge
-    assert H1.interactions[0].name == 'Coulombic'
-    assert len(H1.interactions) == 1
+    assert atom_charge.interactions[0].name == 'Coulombic'
+    assert len(atom_charge.interactions) == 1
 
+def test_charge_after_init_creates_coulombic(atom):
 
-def test_charge_after_init_creates_Coulombic(atom_charge):
     """
     Tests that setting the charge after Atom initialisation
     creates a Coulombic interaction and only a Coulombic
     interaction.
     """
 
-    H1 = atom_charge
-    assert H1.interactions[0].name == 'Coulombic'
-    assert len(H1.interactions) == 1
-
+    atom.charge = TEST_CHARGE_1
+    assert atom.interactions[0].name == 'Coulombic'
+    assert len(atom.interactions) == 1
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_after_init(atom):
+
     """
     Tests that the charge of an atom can be set after
     initialisation, without there existing a Coulombic
@@ -136,13 +111,12 @@ def test_charge_after_init(atom):
     Ignores any warnings thrown.
     """
 
-    H1 = atom
-    H1.charge = TEST_CHARGE_1
-    assert H1.charge == TEST_CHARGE_1
-
+    atom.charge = TEST_CHARGE_1
+    assert atom.charge == TEST_CHARGE_1
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
-def test_charge_change_no_Coulomb(atom_charge):
+def test_charge_change_no_coulomb(atom_charge):
+
     """
     Tests that a charge can be changed after is has already been
     set during Atom initialisation.
@@ -150,13 +124,12 @@ def test_charge_change_no_Coulomb(atom_charge):
     Ignores any warnings thrown.
     """
 
-    H1 = atom_charge
-    H1.charge = TEST_CHARGE_2
-    assert H1.charge == TEST_CHARGE_2
-
+    atom_charge.charge = TEST_CHARGE_2
+    assert atom_charge.charge == TEST_CHARGE_2
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
-def test_charge_change_Coulomb(atom_Coulombic_charge):
+def test_charge_change_coulomb(atom):
+
     """
     Tests that a charge can be changed after it has already
     been set during initialisation of a Coulombic interaction.
@@ -164,36 +137,56 @@ def test_charge_change_Coulomb(atom_Coulombic_charge):
     Ignores any warnings thrown.
     """
 
-    H1 = atom_Coulombic_charge
-    H1.charge = TEST_CHARGE_2
-    assert H1.charge == TEST_CHARGE_2
-
+    Coulombic(atoms=atom, charge=TEST_CHARGE_1)
+    atom.charge = TEST_CHARGE_2
+    assert atom.charge == TEST_CHARGE_2
 
 def test_charge_set_warning(atom):
+
     """
     Tests that a warning is raised when the charge of an atom is
     set without there being a pre-existing a Coulombic interaction.
     """
 
-    H1 = atom
-    value = -0.6
-    with pytest.warns(Warning) as record:
-        H1.charge = value
-        if not record:
-            pytest.fail('Expected a warning!')
-
+    with pytest.warns(UserWarning):
+        atom.charge = TEST_CHARGE_1
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
-def test_charge_when_None(atom_Coulombic):
+def test_charge_when_none(atom):
+
     """
     Tests that setting the charge of an Atom of charge None that
-    has a Coulomb interaction creates an interaction function.
+    has a Coulombic interaction creates an interaction function.
     """
 
-    H1 = atom_Coulombic
-    H1.charge = TEST_CHARGE_1
-    assert H1.interactions[0].function.name == 'Coulomb'
+    Coulombic(atoms=atom)
+    atom.charge = TEST_CHARGE_1
+    assert atom.interactions[0].function.name == 'Coulomb'
+    assert isinstance(atom.interactions[0].function, Coulomb)
 
+@pytest.mark.filterwarnings("ignore:Coulombic interaction")
+def test_charge_set_zero(atom):
+
+    """
+    Tests that when the charge of an initialised atom is set to zero
+    that the charge returns zero and that a Coulombic interaction has
+    been created.
+    """
+
+    atom.charge = 0
+    assert atom.charge == 0.0
+    assert atom.interactions[0].name == 'Coulombic'
+
+def test_charge_getter_checks(atom_charge):
+
+    """
+    Tests that an error is raised when trying to retrieve the charge of
+    an atom that has 2 Coulombic interactions.
+    """
+
+    Coulombic(atoms=atom_charge)
+    with pytest.raises(ValueError):
+        atom_charge.charge
 
 def test_init_coulombic_atoms_no_universe(atoms):
 
@@ -205,7 +198,6 @@ def test_init_coulombic_atoms_no_universe(atoms):
     coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1)
     assert coul.atoms[0] == atoms[0]
     assert coul.params[0].value == TEST_CHARGE_1
-
 
 def test_init_coulombic_atoms_added_to_universe(atoms, universe):
 
@@ -219,7 +211,6 @@ def test_init_coulombic_atoms_added_to_universe(atoms, universe):
     coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
 
-
 def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
 
     """
@@ -232,7 +223,6 @@ def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
 
     assert (Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1).universe
             is None)
-
 
 def test_init_coulombic_atom_types_universe(atom_types_universe):
 
@@ -248,7 +238,6 @@ def test_init_coulombic_atom_types_universe(atom_types_universe):
     assert coul.atom_types[0] == atom_types_universe[0][0]
     assert coul.params[0].value == TEST_CHARGE_1
 
-
 def test_init_coulombic_error_atom_types_no_universe(atom_types_universe):
 
     """
@@ -263,7 +252,6 @@ def test_init_coulombic_error_atom_types_no_universe(atom_types_universe):
     with pytest.raises(TypeError):
         Coulombic(atom_types=atom_types_universe[0],
                   charge=TEST_CHARGE_1)
-
 
 def test_init_coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
 

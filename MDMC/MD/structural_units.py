@@ -362,6 +362,18 @@ class StructuralUnit:
             # Not a member of a universe
             return True
 
+    @property
+    def bounding_box(self):
+
+        """
+        Returns
+        -------
+        BoundingBox
+            Contains the lower and upper extents of the Molecule
+        """
+
+        return BoundingBox(self.atom_list)
+
 
 class CompositeStructuralUnit(StructuralUnit):
 
@@ -686,17 +698,34 @@ class Atom(StructuralUnit):
         Raises
         ------
         ValueError
+            When the Atom has more than one Coulombic interaction
+        ValueError
+            When the Atom has more than one parameter; i.e. should only
+            have charge as a parameter
+        ValueError
             When setting charge to None when a Coulombic interaction
             already exists.
         """
 
         try:
+            num_coul = 0
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
-                    # Zero index parameter can be used as there should only be
-                    # one parameter as each atom only has a single charge
-                    return interaction.params[0].value
-            return None
+                    # Check that only one Coulombic interaction exists.
+                    num_coul += 1
+                    if num_coul > 1:
+                        raise ValueError('Atom should not have more than one '
+                                         'Coulombic interaction')
+                    # Check that a charge parameter exists.
+                    charge_params = 0
+                    for param in interaction.params:
+                        if param.name == 'charge':
+                            charge_params += 1
+                            value = param.value
+                    if charge_params == 0:
+                        raise ValueError('Coulombic interaction does not have a '
+                                         'parameter "charge".')
+            return value
         except AttributeError:
             return None
 
@@ -706,9 +735,14 @@ class Atom(StructuralUnit):
 
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
-                if value:
+                if value is not None:
                     try:
-                        inter.params[0].value = value
+                        for param in inter.params:
+                            if param.name == 'charge':
+                                param.value = value
+                                return
+                        raise ValueError('Coulombic interaction does not have '
+                                         'a parameter "charge".')
                     except AttributeError:
                         # creates an interaction function if the Atom's
                         # Coulomb interaction doesn't have one
@@ -720,7 +754,7 @@ class Atom(StructuralUnit):
                                  "Coulombic interaction exists.")
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
-        if value:
+        if value is not None:
             Coulombic(atoms=self, charge=value)
 
     @property
@@ -1052,18 +1086,6 @@ class Molecule(CompositeStructuralUnit):
         CoM = self._calc_CoM()
         for atom in self.atom_list:
             self._CoM_frame_positions[atom] = atom.position - CoM
-
-    @property
-    def bounding_box(self):
-
-        """
-        Returns
-        -------
-        BoundingBox
-            Contains the lower and upper extents of the Molecule
-        """
-
-        return BoundingBox(self.atom_list)
 
 
 class BoundingBox(object):
@@ -1682,7 +1704,7 @@ class Coulombic(NonBondedInteraction):
             super(Coulombic, self).__init__(universe, **settings)
 
         charge = settings.get('charge')
-        if charge:
+        if charge is not None:
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(units.UnitFloat(charge, units.CHARGE))
