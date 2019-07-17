@@ -671,7 +671,7 @@ def test_universe_fill_orientations(universe):
     univ2 = universe
     origin = (0, 0, 0)
     pos1 = (0, 1, 0)
-    pos2 = (math.sqrt(0.5), math.sqrt(0.5), 0)
+    pos2 = (np.sqrt(0.5), np.sqrt(0.5), 0)
     # Check that the internuclear separation is the same.
     assert np.linalg.norm(pos1) == np.linalg.norm(pos2)
     # Build the 2 diatomics with different orientations.
