@@ -419,6 +419,7 @@ def test_molecule_position(position, expected):
                                                 in element_properties.items()])
     assert np.all(mol.position == expected)
 
+
 def test_molecule_subunit_positions(water_molecule):
 
     """
