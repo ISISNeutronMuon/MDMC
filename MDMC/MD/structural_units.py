@@ -1052,6 +1052,45 @@ class Molecule(CompositeStructuralUnit):
 
         return BoundingBox(self.atom_list)
 
+    @property
+    def mass(self):
+
+        """
+        Get or set the atomic mass in amu
+
+        Returns
+        -------
+        float
+            the atomic mass in amu
+        """
+
+        return self._mass
+
+    @mass.setter
+    @unit_decorator(unit=units.MASS)
+    def mass(self, mass):
+
+        mass = 0
+        for atom in self.atom_list:
+            mass += atom.mass
+
+        self._mass = mass
+
+    # @property
+    # def mass(self):
+    #
+    #     """
+    #     Returns
+    #     -------
+    #     mass : float
+    #         The mass of the Molecule in amu
+    #     """
+    #
+    #     mass = 0
+    #     for atom in self.atom_list:
+    #         mass += atom.mass
+    #     return mass
+
 
 class BoundingBox(object):
 
