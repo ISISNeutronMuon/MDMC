@@ -1092,6 +1092,7 @@ class Molecule(CompositeStructuralUnit):
             self._CoM_frame_positions[atom] = atom.position - CoM
 
     @property
+    @unit_decorator_getter(unit=units.MASS)
     def mass(self):
 
         """
@@ -1103,17 +1104,11 @@ class Molecule(CompositeStructuralUnit):
             the atomic mass in amu
         """
 
-        return self._mass
-
-    @mass.setter
-    @unit_decorator(unit=units.MASS)
-    def mass(self, mass):
-
         mass = 0
         for atom in self.atom_list:
             mass += atom.mass
 
-        self._mass = mass
+        return mass
 
 
 class BoundingBox:
