@@ -13,7 +13,7 @@ import weakref
 import numpy as np
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.common.decorators import unit_decorator
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
 from MDMC.MD.interaction_functions import Coulomb
 
@@ -1053,6 +1053,7 @@ class Molecule(CompositeStructuralUnit):
         return BoundingBox(self.atom_list)
 
     @property
+    @unit_decorator_getter(unit=units.MASS)
     def mass(self):
 
         """
@@ -1064,32 +1065,11 @@ class Molecule(CompositeStructuralUnit):
             the atomic mass in amu
         """
 
-        return self._mass
-
-    @mass.setter
-    @unit_decorator(unit=units.MASS)
-    def mass(self, mass):
-
         mass = 0
         for atom in self.atom_list:
             mass += atom.mass
 
-        self._mass = mass
-
-    # @property
-    # def mass(self):
-    #
-    #     """
-    #     Returns
-    #     -------
-    #     mass : float
-    #         The mass of the Molecule in amu
-    #     """
-    #
-    #     mass = 0
-    #     for atom in self.atom_list:
-    #         mass += atom.mass
-    #     return mass
+        return mass
 
 
 class BoundingBox(object):
