@@ -396,6 +396,29 @@ def test_valid_position(atom):
         assert atom.valid_position() is False
 
 
+@pytest.mark.parametrize("position, expected", [(None, [2., 9., 7.5]),
+                                                ([5., 4., 3.], [5., 4., 3.])])
+def test_molecule_position(position, expected):
+
+    """
+    Tests that a molecules position is set correctly on initialization, both
+    when the position argument is passed and when it is left as default
+
+    In the default case the position should be set to the CoM of the molecule,
+    as determined by the atoms which are being added to the molecule
+    """
+
+    element_properties = {'H':{'pos':(2., 0., 0.), 'mass':1.0},
+                          'Be':{'pos':(2., 10., 5.), 'mass':9.0},
+                          'C':{'pos':(2., 9., 10.), 'mass':12.0}}
+
+    mol = su.Molecule(position=position, atoms=[su.Atom(element,
+                                                        position=prop['pos'],
+                                                        mass=prop['mass'])
+                                                for element, prop
+                                                in element_properties.items()])
+    assert np.all(mol.position == expected)
+
 def test_molecule_subunit_positions(water_molecule):
 
     """
