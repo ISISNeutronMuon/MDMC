@@ -1155,6 +1155,12 @@ class BoundingBox(object):
 
         self._max = value
 
+    @volume.setter
+    @unit_decorator(unit=units.LENGTH ** 3)
+    def volume(self, value):
+
+        raise NotImplementedError
+
 
 def filter_atoms(atoms, predicate):
 
