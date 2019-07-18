@@ -709,6 +709,7 @@ class Atom(StructuralUnit):
 
         try:
             num_coul = 0
+            value = None
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
                     # Check that only one Coulombic interaction exists.
