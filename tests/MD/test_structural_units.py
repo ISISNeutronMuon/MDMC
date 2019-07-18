@@ -65,6 +65,7 @@ def atom_charge():
 
     return Atom('H', charge=TEST_CHARGE_1)
 
+
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge():
 
