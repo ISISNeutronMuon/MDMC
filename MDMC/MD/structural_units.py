@@ -1096,12 +1096,12 @@ class Molecule(CompositeStructuralUnit):
     def mass(self):
 
         """
-        Get or set the atomic mass in amu
+        Get the molecular mass of the Molecule in amu
 
         Returns
         -------
         float
-            the atomic mass in amu
+            the molecular mass in amu
         """
 
         mass = 0
