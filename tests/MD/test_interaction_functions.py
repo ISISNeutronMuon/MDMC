@@ -87,3 +87,16 @@ def test_parameter_tied(parameter, scaled_parameter):
     assert not scaled_parameter.tied
     scaled_parameter.set_tie(parameter, "* 1")
     assert scaled_parameter.tied
+
+
+def test_fixed_parameter_change_warning(parameter):
+
+    """
+    Tests that parameters that are fixed issue a warning when the value is set,
+    and that the value does not change
+    """
+
+    parameter.fixed = True
+    with pytest.warns(UserWarning):
+        parameter.value *= 5.
+    assert parameter.value == VALUE
