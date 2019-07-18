@@ -14,7 +14,7 @@ import weakref
 import numpy as np
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.common.decorators import unit_decorator
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
 from MDMC.MD.interaction_functions import Coulomb
 
@@ -1157,6 +1157,7 @@ class BoundingBox(object):
         self._max = value
 
     @property
+    @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
 
         """
