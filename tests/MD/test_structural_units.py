@@ -11,6 +11,7 @@ from MDMC.MD.structural_units import Atom, Coulombic, Molecule
 
 TEST_CHARGE = 3.14
 TEST_CHARGE_2 = -2.71
+POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
 
 
 @pytest.fixture
@@ -33,16 +34,14 @@ def atom_charge():
     return Atom('H', charge=TEST_CHARGE)
 
 @pytest.fixture
-def diatomic():
+def atom_list():
 
     """
-    Initialises a diatomic Molecule object with 2 atoms with an
-    internuclear separation of 1 Ang.
+    Generates a 3-body atom list with positions and masses defined by a
+    global variable.
     """
 
-    xy_coor = np.sqrt(1. / 3)
-    return Molecule(atoms=[Atom('H', position=(0, 0, 0)),
-                           Atom('H', position=(xy_coor, xy_coor, xy_coor))])
+    return [Atom('H', position=pos, mass=mass) for (pos, mass) in POS_MASS]
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
@@ -177,13 +176,14 @@ def test_charge_getter_checks(atom_charge):
         atom_charge.charge
 
 
-def test_bounding_box_volume(diatomic):
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_bounding_box_volume(atom_list):
 
     """
     Tests that the correct volume is returned for the bounding box of a
-    diatomic molecule.
+    1, 2, and 3-bodied molecule.
     """
 
-    exp_vol = abs(np.prod(diatomic.atom_list[1].position -
-                          diatomic.atom_list[0].position))
-    assert diatomic.bounding_box.volume == exp_vol
+    mol = Molecule(atoms=atom_list)
+    bb = mol.bounding_box
+    assert bb.volume == abs(np.prod(bb.max - bb.min))
