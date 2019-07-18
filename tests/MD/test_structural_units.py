@@ -46,15 +46,16 @@ def universe():
     return Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
 
 @pytest.fixture
-def atom_types_universe(atom, universe):
+def atom_types_universe(atoms, universe):
 
     """
     Generates a list of atom_types for atoms added to a universe.
     Returns the atom_types and the universe.
     """
 
-    universe.add_structural_unit(atom)
-    return ([atom.atom_type], universe)
+    for atom in atoms:
+        universe.add_structural_unit(atom)
+    return ([atom.atom_type for atom in atoms], universe)
 
 @pytest.fixture
 def atom_charge():
@@ -78,6 +79,7 @@ def test_charge():
 
     assert Atom('O', charge=TEST_CHARGE_1).charge == TEST_CHARGE_1
 
+
 def test_charge_creates_coulombic(atom_charge):
 
     """
@@ -88,6 +90,7 @@ def test_charge_creates_coulombic(atom_charge):
 
     assert atom_charge.interactions[0].name == 'Coulombic'
     assert len(atom_charge.interactions) == 1
+
 
 def test_charge_after_init_creates_coulombic(atom):
 
@@ -100,6 +103,7 @@ def test_charge_after_init_creates_coulombic(atom):
     atom.charge = TEST_CHARGE_1
     assert atom.interactions[0].name == 'Coulombic'
     assert len(atom.interactions) == 1
+
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_after_init(atom):
@@ -115,6 +119,7 @@ def test_charge_after_init(atom):
     atom.charge = TEST_CHARGE_1
     assert atom.charge == TEST_CHARGE_1
 
+
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_change_no_coulomb(atom_charge):
 
@@ -127,6 +132,7 @@ def test_charge_change_no_coulomb(atom_charge):
 
     atom_charge.charge = TEST_CHARGE_2
     assert atom_charge.charge == TEST_CHARGE_2
+
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_change_coulomb(atom):
@@ -142,6 +148,7 @@ def test_charge_change_coulomb(atom):
     atom.charge = TEST_CHARGE_2
     assert atom.charge == TEST_CHARGE_2
 
+
 def test_charge_set_warning(atom):
 
     """
@@ -151,6 +158,7 @@ def test_charge_set_warning(atom):
 
     with pytest.warns(UserWarning):
         atom.charge = TEST_CHARGE_1
+
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_when_none(atom):
@@ -165,6 +173,7 @@ def test_charge_when_none(atom):
     assert atom.interactions[0].function.name == 'Coulomb'
     assert isinstance(atom.interactions[0].function, Coulomb)
 
+
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_set_zero(atom):
 
@@ -178,6 +187,7 @@ def test_charge_set_zero(atom):
     assert atom.charge == 0.0
     assert atom.interactions[0].name == 'Coulombic'
 
+
 def test_charge_getter_checks(atom_charge):
 
     """
@@ -189,6 +199,7 @@ def test_charge_getter_checks(atom_charge):
     with pytest.raises(ValueError):
         atom_charge.charge
 
+
 def test_init_coulombic_atoms_no_universe(atoms):
 
     """
@@ -197,8 +208,9 @@ def test_init_coulombic_atoms_no_universe(atoms):
     """
 
     coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1)
-    assert coul.atoms[0] == atoms[0]
+    assert all(coul.atoms) == all(atoms)
     assert coul.params[0].value == TEST_CHARGE_1
+
 
 def test_init_coulombic_atoms_added_to_universe(atoms, universe):
 
@@ -208,9 +220,11 @@ def test_init_coulombic_atoms_added_to_universe(atoms, universe):
     added to the universe.
     """
 
-    universe.add_structural_unit(atoms[0])
+    for atom in atoms:
+        universe.add_structural_unit(atom)
     coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
+
 
 def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
 
@@ -225,6 +239,7 @@ def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
     assert (Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1).universe
             is None)
 
+
 def test_init_coulombic_atom_types_universe(atom_types_universe):
 
     """
@@ -236,23 +251,20 @@ def test_init_coulombic_atom_types_universe(atom_types_universe):
     coul = Coulombic(atom_types_universe[1], atom_types=atom_types_universe[0],
                      charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
-    assert coul.atom_types[0] == atom_types_universe[0][0]
+    assert all(coul.atom_types) == all(atom_types_universe[0])
     assert coul.params[0].value == TEST_CHARGE_1
 
-def test_init_coulombic_error_atom_types_no_universe(atom_types_universe):
+
+def test_init_coulombic_error_atom_types_no_universe():
 
     """
     Tests that an error is thrown when atom_types is passed as a
     parameter without passing a universe object.
-
-    Tests that an error is thrown when atom_types and universe are
-    passed as parameters, but the the Atoms for which the atom_types
-    are specified have not been added to the universe.
     """
 
     with pytest.raises(TypeError):
-        Coulombic(atom_types=atom_types_universe[0],
-                  charge=TEST_CHARGE_1)
+        Coulombic(atom_types=[1, 2, 3], charge=TEST_CHARGE_1)
+
 
 def test_init_coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
 
@@ -262,5 +274,5 @@ def test_init_coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
     """
 
     with pytest.raises(TypeError):
-        Coulombic(atoms=atoms, atom_types=atom_types_universe[0],
-                  charge=TEST_CHARGE_1)
+        Coulombic(atom_types_universe[1], atoms=atoms,
+                  atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
