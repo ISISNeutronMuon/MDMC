@@ -8,7 +8,7 @@ import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Shape, Universe
-from MDMC.MD.structural_units import Atom, BoundingBox, Coulombic
+from MDMC.MD.structural_units import Atom, BoundingBox, Coulombic, Molecule
 
 
 ATOM_TYPES = [1, 2, 3]
@@ -331,3 +331,18 @@ def test_init_coulombic_error_atoms_and_atom_types(atom_list,
     with pytest.raises(TypeError):
         Coulombic(atom_types_universe[1], atoms=atom_list,
                   atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
+
+
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_molecule_mass(atom_list):
+
+    """
+    Tests that the mass property returns the expected result for 1, 2,
+    and 3-bodied Molecule objects.
+    """
+
+    mol = Molecule(atoms=atom_list)
+    exp_mass = 0.
+    for atom in atom_list:
+        exp_mass += atom.mass
+    assert mol.mass == exp_mass
