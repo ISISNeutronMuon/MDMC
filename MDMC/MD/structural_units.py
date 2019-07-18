@@ -1161,7 +1161,7 @@ class BoundingBox(object):
     def volume(self):
 
         """
-        Get or set the volume of the bounding box, in units of Ang ^ 3
+        Get the volume of the bounding box, in units of Ang ^ 3
 
         Returns
         -------
