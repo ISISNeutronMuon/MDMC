@@ -396,6 +396,30 @@ def test_valid_position(atom):
         assert atom.valid_position() is False
 
 
+@pytest.mark.parametrize("position, expected", [(None, [2., 9., 7.5]),
+                                                ([5., 4., 3.], [5., 4., 3.])])
+def test_molecule_position(position, expected):
+
+    """
+    Tests that a molecules position is set correctly on initialization, both
+    when the position argument is passed and when it is left as default
+
+    In the default case the position should be set to the CoM of the molecule,
+    as determined by the atoms which are being added to the molecule
+    """
+
+    element_properties = {'H':{'pos':(2., 0., 0.), 'mass':1.0},
+                          'Be':{'pos':(2., 10., 5.), 'mass':9.0},
+                          'C':{'pos':(2., 9., 10.), 'mass':12.0}}
+
+    mol = su.Molecule(position=position, atoms=[su.Atom(element,
+                                                        position=prop['pos'],
+                                                        mass=prop['mass'])
+                                                for element, prop
+                                                in element_properties.items()])
+    assert np.all(mol.position == expected)
+
+
 def test_molecule_subunit_positions(water_molecule):
 
     """
@@ -534,20 +558,6 @@ def test_charge_setting(water_SPCE_universe):
     assert atom.charge == 5.0
 
 
-def test_charge_setting_no_coulombic(atom):
-
-    """
-    Tests that setting the charge of an atom without a Coulombic interaction
-    raises an AttributeError
-    """
-
-    # Check that the charge is None, as it should be if it does not possess a
-    # Coulombic interaction
-    assert atom.charge is None
-    with pytest.raises(AttributeError):
-        atom.charge = 5.0
-
-
 def test_init_coulombic_atom_types():
 
     """
@@ -671,6 +681,36 @@ def test_universe_multiple_solvers_error(kspace_solver):
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
+
+
+def test_universe_fill_orientations(universe):
+
+    """
+    Tests that filling 2 separate Universe objects with a diatomic
+    molecule of different orientations but the same internuclear
+    separation results in the same number density of the Universe.
+    """
+
+    univ1 = universe
+    univ2 = universe
+    origin = (0, 0, 0)
+    pos1 = (0, 1, 0)
+    pos2 = (np.sqrt(0.5), np.sqrt(0.5), 0)
+    # Check that the internuclear separation is the same.
+    assert np.linalg.norm(pos1) == np.linalg.norm(pos2)
+    # Build the 2 diatomics with different orientations.
+    diatomic1 = su.Molecule(atoms=[su.Atom('H', position=origin),
+                                   su.Atom('H', position=pos1)])  #,
+                            # position=(0, 0.5, 0))
+    diatomic2 = su.Molecule(atoms=[su.Atom('H', position=origin),
+                                   su.Atom('H', position=pos2)])  #,
+                            # position=(0.5 * coord, 0.5 * coord, 0))
+    # Fill each respective universe.
+    density = 0.567438
+    univ1.fill(diatomic1, num_density=density)
+    univ2.fill(diatomic2, num_density=density)
+    # Test number densities.
+    assert len(univ1.molecule_list) == len(univ2.molecule_list)
 
 
 def test_solvate():
