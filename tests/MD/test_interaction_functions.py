@@ -184,3 +184,16 @@ def test_interaction_setting_function_name(param_inter):
         param_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
                                              function=LennardJones((1., 'arb'),
                                                                    (1., 'arb')))
+
+@pytest.mark.parametrize('expression, expected', [('*2.', VALUE * 2.),
+                                                  ('/2.', VALUE / 2.),
+                                                  ('+2.', VALUE + 2.),
+                                                  ('-2.', VALUE - 2.)])
+def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
+
+    """
+    Tests setting Parameter tie with basic arithmetic operations
+    """
+
+    scaled_parameter.set_tie(parameter, expression)
+    assert scaled_parameter.value == expected
