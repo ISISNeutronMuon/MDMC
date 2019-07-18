@@ -173,6 +173,7 @@ def test_charge_when_none(atom):
     assert atom.interactions[0].function.name == 'Coulomb'
     assert isinstance(atom.interactions[0].function, Coulomb)
 
+
 def test_charge_get_when_none(atom):
 
     """
