@@ -1623,46 +1623,71 @@ class Coulombic(NonBondedInteraction):
     ----------
     universe : Universe, optional
         The Universe in which the NonBondedInteraction exists. Default is None.
-    *atom_types
-        int for each atom_type for which the NonBondedInteraction applies
+        Must be passed as a parameter if atom_types if passed.
     **settings
         charge : float
             The charge parameter of the Coulombic interaction, in units of e. If
             this argument is passed, the interaction function of this Coulombic
             object is set to a Coulomb InteractionFunction with this float as
-            its parameter. For example, the following initialization are
-            equivalent::
+            its parameter. For example, upon initializing an Atom object and
+            adding it to a universe::
 
                 O = Atom('O', atom_type=1)
-                O_coulombic = Coulombic(O.atom_type, charge=-0.84)
-                O_coulombic = Coulombic(O.atom_type, function=Coulomb(-0.84))
+                universe = Universe(10.0)
+                universe.add_structural_unit('O')
+
+            The following initializations of Coulombic are equivalent::
+
+                O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
+                                        charge=-0.84)
+                O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
+                                        function=Coulomb((-0.84, 'e')))
 
             Passing a charge will overwrite any other interaction functions that
             are set, i.e. it makes the function keyword redundant
         atoms : list
-            Atoms to which the Coulombic interaction applies
+            Atoms to which the Coulombic interaction applies. If specifying the
+            Atoms, a universe doesn't need to be passed as a parameter::
+
+                O_coulombic = Coulombic(atoms=[O], charge=-0.84)
+
+        atom_types : list of int
+            int for each atom_type for which the NonBondedInteraction applies.
+            If specifying the atom_types, the universe must be passed as a
+            parameter and the atoms for which the atom_types are specified must
+            exist in Universe. See the example above in the 'charge' section.
 
     Raises
     ------
     TypeError
-        If one or more atom_types are passed by no universe is passed
+        If one or more atom_types are passed but no universe is passed
     TypeError
         If neither atom_types or atoms have been passed
+    TypeError
+        If both atom_types and atoms have been passed
 
     Warns
     -----
     UserWarning
-        If a charge is set when the Atom has no Coulombic
-        interaction, resulting in the initialization of a Coulomb
-        interaction function.
+        If a charge is set when the Atom has no Coulombic interaction,
+        resulting in the initialization of a Coulomb interaction function.
+        Warning only raised in the first instance of triggering behaviour.
     """
 
-    def __init__(self, universe=None, *atom_types, **settings):
+    def __init__(self, universe=None, **settings):
 
-        if atom_types:
+        try:
+            atom_types = settings['atom_types']
+            if settings.get('atoms'):
+                raise TypeError('Cannot pass both atoms and atom_types '
+                                'as parameters.')
+            if isinstance(atom_types, int):
+                # Account for init argument atom_types=atom_type
+                # rather than atom_types=[atom_type]
+                atom_types = [atom_types]
             if not universe:
-                raise TypeError('Coulombic requires a universe when atom_types'
-                                ' are passed')
+                raise TypeError('Coulombic requires a universe when '
+                                'atom_types are passed')
             super(Coulombic, self).__init__(universe, **settings)
             self.add_atom_types = MethodType(_add_atom_types, self)
 
@@ -1672,13 +1697,13 @@ class Coulombic(NonBondedInteraction):
             # Add interaction to atoms
             for atom in self.atoms:
                 atom.add_interaction(self)
-        else:
+        except KeyError:
             self.add_atoms = MethodType(_add_atoms, self)
             try:
                 atoms = settings['atoms']
             except KeyError:
-                raise TypeError('Coulombic takes either atom_types or atoms as'
-                                ' parameters')
+                raise TypeError('Coulombic takes either atom_types or atoms '
+                                'as parameters')
             # Account for init argument atoms=atom rather than atoms=[atom]
             if isinstance(atoms, Atom):
                 atoms = [atoms]
