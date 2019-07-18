@@ -1120,7 +1120,7 @@ class BoundingBox(object):
 
     Parameters
     ----------
-    atom_ist : list
+    atom_list : list
         Atoms for which the minimum and maximum extents are determined
     """
 
@@ -1178,6 +1178,21 @@ class BoundingBox(object):
     def max(self, value):
 
         self._max = value
+
+    @property
+    @unit_decorator_getter(unit=units.LENGTH ** 3)
+    def volume(self):
+
+        """
+        Get the volume of the bounding box, in units of Ang ^ 3
+
+        Returns
+        -------
+        float
+            The volume of the bounding box
+        """
+
+        return abs(np.prod(self.max - self.min))
 
 
 def filter_atoms(atoms, predicate):
