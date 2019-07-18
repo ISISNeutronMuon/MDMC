@@ -1,21 +1,22 @@
 """
-Tests for creating structural unit objects and setting
-their attributes.
+Tests for creating StructuralUnit, BoundingBox, and Coulombic objects
+and setting their attributes.
 """
 
+import numpy as np
 import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Shape, Universe
-from MDMC.MD.structural_units import Atom, Coulombic
+from MDMC.MD.structural_units import Atom, BoundingBox, Coulombic
 
 
-UNIVERSE_DIMS = (10., 10., 10.)
-UNIVERSE_SHAPE = Shape.cubic
-
+ATOM_TYPES = [1, 2, 3]
+POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
 TEST_CHARGE_1 = 3.14
 TEST_CHARGE_2 = -2.71
-ATOM_TYPES = [1, 2, 3]
+UNIVERSE_DIMS = (10., 10., 10.)
+UNIVERSE_SHAPE = Shape.cubic
 
 
 @pytest.fixture
@@ -28,15 +29,6 @@ def atom():
     return Atom('H')
 
 @pytest.fixture
-def atoms(atom):
-
-    """
-    Generates a list containing an Atom object.
-    """
-
-    return [atom]
-
-@pytest.fixture
 def universe():
 
     """
@@ -46,16 +38,26 @@ def universe():
     return Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
 
 @pytest.fixture
-def atom_types_universe(atoms, universe):
+def atom_list():
+
+    """
+    Generates a 3-body atom list with positions and masses defined by a
+    global variable.
+    """
+
+    return [Atom('H', position=pos, mass=mass) for (pos, mass) in POS_MASS]
+
+@pytest.fixture
+def atom_types_universe(atom_list, universe):
 
     """
     Generates a list of atom_types for atoms added to a universe.
     Returns the atom_types and the universe.
     """
 
-    for atom in atoms:
+    for atom in atom_list:
         universe.add_structural_unit(atom)
-    return ([atom.atom_type for atom in atoms], universe)
+    return ([atom.atom_type for atom in atom_list], universe)
 
 @pytest.fixture
 def atom_charge():
@@ -210,19 +212,61 @@ def test_charge_getter_checks(atom_charge):
         atom_charge.charge
 
 
-def test_init_coulombic_atoms_no_universe(atoms):
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_bounding_box_min(atom_list):
+
+    """
+    Tests that the min property of the BoundingBox class returns the correct
+    value for a 1, 2, and 3-bodied atom list.
+    """
+
+    mn = atom_list[0].position
+    for atom in atom_list:
+        mn = np.minimum(mn, atom.position)
+    bb_mn = BoundingBox(atom_list).min
+    np.testing.assert_array_equal(bb_mn, mn)
+
+
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_bounding_box_max(atom_list):
+
+    """
+    Tests that the max property of the BoundingBox class returns the correct
+    value for a 1, 2, and 3-bodied atom list.
+    """
+
+    mx = atom_list[0].position
+    for atom in atom_list:
+        mx = np.maximum(mx, atom.position)
+    bb_mx = BoundingBox(atom_list).max
+    np.testing.assert_array_equal(bb_mx, mx)
+
+
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_bounding_box_volume(atom_list):
+
+    """
+    Tests that the correct volume is returned for the bounding box of a
+    1, 2, and 3-bodied atom list.
+    """
+
+    bb = BoundingBox(atom_list)
+    assert bb.volume == abs(np.prod(bb.max - bb.min))
+
+
+def test_init_coulombic_atoms_no_universe(atom_list):
 
     """
     Tests that a Coulombic interaction can be initialised by passing
     atoms as a parameter.
     """
 
-    coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1)
-    assert all(coul.atoms) == all(atoms)
+    coul = Coulombic(atoms=atom_list, charge=TEST_CHARGE_1)
+    assert all(coul.atoms) == all(atom_list)
     assert coul.params[0].value == TEST_CHARGE_1
 
 
-def test_init_coulombic_atoms_added_to_universe(atoms, universe):
+def test_init_coulombic_atoms_added_to_universe(atom_list, universe):
 
     """
     Tests that a Coulombic interaction can be initialised by passing
@@ -230,13 +274,13 @@ def test_init_coulombic_atoms_added_to_universe(atoms, universe):
     added to the universe.
     """
 
-    for atom in atoms:
+    for atom in atom_list:
         universe.add_structural_unit(atom)
-    coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
+    coul = Coulombic(universe, atoms=atom_list, charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
 
 
-def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
+def test_init_coulombic_atoms_not_added_to_universe(atom_list, universe):
 
     """
     Tests that a Coulombic interacion can be initialised by passing
@@ -246,7 +290,7 @@ def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
     Tests that the universe property of the Coulombic object is None.
     """
 
-    assert (Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1).universe
+    assert (Coulombic(universe, atoms=atom_list, charge=TEST_CHARGE_1).universe
             is None)
 
 
@@ -276,7 +320,8 @@ def test_init_coulombic_error_atom_types_no_universe():
         Coulombic(atom_types=[1, 2, 3], charge=TEST_CHARGE_1)
 
 
-def test_init_coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
+def test_init_coulombic_error_atoms_and_atom_types(atom_list,
+                                                   atom_types_universe):
 
     """
     Tests that an error is thrown when both atoms and atom_types are
@@ -284,5 +329,5 @@ def test_init_coulombic_error_atoms_and_atom_types(atoms, atom_types_universe):
     """
 
     with pytest.raises(TypeError):
-        Coulombic(atom_types_universe[1], atoms=atoms,
+        Coulombic(atom_types_universe[1], atoms=atom_list,
                   atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
