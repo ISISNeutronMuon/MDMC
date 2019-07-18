@@ -4,9 +4,17 @@ import pytest
 
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import Parameter, Coulomb, LennardJones
+from MDMC.MD.simulation import Universe
+from MDMC.MD.structural_units import Atom, Coulombic, Dispersion
+
+
 VALUE = 1.0
 NAME = 'length'
 UNIT = Unit('Ang')
+COULOMB = Coulomb((5.0, 'e'))
+COULOMBIC = Coulombic(atom_types=[1],
+                      universe=Universe(1.0),
+                      function=COULOMB)
 
 @pytest.fixture
 def parameter():
@@ -32,6 +40,20 @@ def scaled_parameter():
     """
 
     return Parameter(UnitFloat(5 * VALUE, UNIT), NAME)
+
+
+@pytest.fixture
+def param_inter(parameter):
+
+    """
+    Returns
+    -------
+    Parameter
+        A Parameter with a value, a name, and an interaction
+    """
+
+    parameter.interactions = COULOMBIC
+    return parameter
 
 
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
@@ -136,3 +158,29 @@ def test_value_setting_outside_constraints(constraints, value, parameter):
     with pytest.raises(ValueError):
         parameter.value = value
     assert parameter.value == VALUE
+
+
+def test_interaction_setting_name(param_inter):
+
+    """
+    Tests that an error is raised when setting an interaction with a different
+    name to interactions already in Parameter.interaction
+    """
+
+    with pytest.raises(ValueError):
+        param_inter.interactions = Dispersion(Universe(1.0), [1],
+                                              function=COULOMB)
+
+
+def test_interaction_setting_function_name(param_inter):
+
+    """
+    Tests that an error is raised when setting an interaction with an
+    interaction function with a different name to the interaction functions of
+    interactions already in Parameter.interaction
+    """
+
+    with pytest.raises(ValueError):
+        param_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
+                                             function=LennardJones((1., 'arb'),
+                                                                   (1., 'arb')))
