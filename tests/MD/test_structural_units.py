@@ -214,6 +214,5 @@ def test_bounding_box_volume(atom_list):
     1, 2, and 3-bodied molecule.
     """
 
-    mol = Molecule(atoms=atom_list)
-    bb = mol.bounding_box
+    bb = BoundingBox(atom_list)
     assert bb.volume == abs(np.prod(bb.max - bb.min))
