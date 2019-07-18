@@ -1663,28 +1663,25 @@ class Coulombic(NonBondedInteraction):
 
         try:
             atom_types = settings['atom_types']
-            try:
-                settings['atoms']
-            except KeyError:  # should raise error with expected User input
-                if isinstance(atom_types, int):
-                    # Account for init argument atom_types=atom_type
-                    # rather than atom_types=[atom_type]
-                    atom_types = [atom_types]
-                if not universe:
-                    raise TypeError('Coulombic requires a universe when '
-                                    'atom_types are passed')
-                super(Coulombic, self).__init__(universe, **settings)
-                self.add_atom_types = MethodType(_add_atom_types, self)
-
-                self._atom_types = atom_types
-                self._atoms = [atom for atom_type in self.atom_types
-                               for atom in self.universe.atom_types[atom_type]]
-                # Add interaction to atoms
-                for atom in self.atoms:
-                    atom.add_interaction(self)
-            else:
+            if settings.get('atoms'):
                 raise TypeError('Cannot pass both atoms and atom_types '
                                 'as parameters.')
+            if isinstance(atom_types, int):
+                # Account for init argument atom_types=atom_type
+                # rather than atom_types=[atom_type]
+                atom_types = [atom_types]
+            if not universe:
+                raise TypeError('Coulombic requires a universe when '
+                                'atom_types are passed')
+            super(Coulombic, self).__init__(universe, **settings)
+            self.add_atom_types = MethodType(_add_atom_types, self)
+
+            self._atom_types = atom_types
+            self._atoms = [atom for atom_type in self.atom_types
+                           for atom in self.universe.atom_types[atom_type]]
+            # Add interaction to atoms
+            for atom in self.atoms:
+                atom.add_interaction(self)
         except KeyError:
             self.add_atoms = MethodType(_add_atoms, self)
             try:
