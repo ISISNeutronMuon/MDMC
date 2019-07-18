@@ -12,32 +12,32 @@ from MDMC.MD.structural_units import Atom, Molecule
 def molecule_list_from_config(config):
 
     """
-    Generates a list of Molecule objects with CoM positions from a
-    formatted dictionary of solvent molecules and their constituent
-    atomic positions of the form:
-        {molecule key : {atom 1 : atom 1 coordinates,
-                         ... ,
-                         atom N : atom N coordinates}}
-    where molecule key is an int
+    Generates a list of Molecule objects from a formatted dictionary
+    of solvent molecules and their constituent atomic positions of the form:
+        {int: dict}
+        where the int is the index of the molecule
+        and the dict is of the form:
+            {str: np.array}
+            where the str represents the atom (i.e. 'H1', 'H2', or 'O')
+            and the np.array is the atomic position.
+        {molecule: {atom 1 : atom 1 coordinates,
+                    ... ,
+                    atom N : atom N coordinates}}
 
     Returns
     -------
-    molecules : list
-        element:Molecule, for solvent molecules in the passed
-        config dictionary.
+    molecules : list of Molecule
+        Molecule objects generated from the atoms passed in config, where
+        each molecule position is its centre-of-mass.
     """
 
     molecules = []
     for mol_key in config:
-        atoms, mass, weighted_positions = [], 0, np.zeros(3)
+        atoms = []
         for atom_key in config[mol_key].keys():
-            atom = Atom(atom_key.replace('1', '').replace('2', ''),
-                        position=config[mol_key][atom_key])
-            atoms.append(atom)
-            mass += atom.mass
-            weighted_positions += (atom.position * atom.mass)
-        molecule = Molecule(atoms=atoms, position=(weighted_positions / mass))
-        molecules.append(molecule)
+            atoms.append(Atom(atom_key.replace('1', '').replace('2', ''),
+                              position=config[mol_key][atom_key]))
+        molecules.append(Molecule(atoms=atoms))
     return molecules
 
 # SPCE water
