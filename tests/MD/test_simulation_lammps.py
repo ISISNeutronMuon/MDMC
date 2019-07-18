@@ -97,7 +97,7 @@ def universe_interactions(empty_universe, atoms):
                         function=angle_harmonic)]
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
-        coulombics.append(Coulombic(empty_universe, type,
+        coulombics.append(Coulombic(empty_universe, atom_types=type,
                                     function=Coulomb((-1.0+type*0.5, 'e')),
                                     cutoff=COULOMBIC_CUTOFF))
         dispersions.append(Dispersion(empty_universe, type,
