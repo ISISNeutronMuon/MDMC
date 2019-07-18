@@ -709,6 +709,7 @@ class Atom(StructuralUnit):
 
         try:
             num_coul = 0
+            value = None
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
                     # Check that only one Coulombic interaction exists.
@@ -1096,7 +1097,7 @@ class BoundingBox(object):
 
     Parameters
     ----------
-    atom_ist : list
+    atom_list : list
         Atoms for which the minimum and maximum extents are determined
     """
 
@@ -1114,7 +1115,6 @@ class BoundingBox(object):
         for atom in atom_list:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
-        self.volume = abs(np.prod(self.max - self.min))
 
     @property
     def min(self):
@@ -1169,7 +1169,7 @@ class BoundingBox(object):
             The volume of the bounding box
         """
 
-        return self._volume
+        return abs(np.prod(self.max - self.min))
 
 
 def filter_atoms(atoms, predicate):
