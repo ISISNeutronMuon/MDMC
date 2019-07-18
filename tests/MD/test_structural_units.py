@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
-from MDMC.MD.structural_units import Atom, Coulombic, Molecule
+from MDMC.MD.structural_units import Atom, BoundingBox, Coulombic, Molecule
 
 TEST_CHARGE = 3.14
 TEST_CHARGE_2 = -2.71
@@ -174,6 +174,36 @@ def test_charge_getter_checks(atom_charge):
     Coulombic(atoms=atom_charge)
     with pytest.raises(ValueError):
         atom_charge.charge
+
+
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_bounding_box_min(atom_list):
+
+    """
+    Tests that the min property of the BoundingBox class returns the correct
+    value for a 1, 2, and 3-bodied Molecule.
+    """
+
+    mn = atom_list[0].position
+    for atom in atom_list:
+        mn = np.minimum(mn, atom.position)
+    bb_mn = BoundingBox(atom_list).min
+    np.testing.assert_array_equal(bb_mn, mn)
+
+
+@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+def test_bounding_box_min(atom_list):
+
+    """
+    Tests that the min property of the BoundingBox class returns the correct
+    value for a 1, 2, and 3-bodied Molecule.
+    """
+
+    mx = atom_list[0].position
+    for atom in atom_list:
+        mx = np.maximum(mx, atom.position)
+    bb_mx = BoundingBox(atom_list).max
+    np.testing.assert_array_equal(bb_mx, mx)
 
 
 @pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
