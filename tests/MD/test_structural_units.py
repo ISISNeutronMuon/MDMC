@@ -38,6 +38,16 @@ def universe():
     return Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
 
 @pytest.fixture
+def atom_list():
+
+    """
+    Generates a 3-body atom list with positions and masses defined by a
+    global variable.
+    """
+
+    return [Atom('H', position=pos, mass=mass) for (pos, mass) in POS_MASS]
+
+@pytest.fixture
 def atom_types_universe(atom_list, universe):
 
     """
@@ -57,16 +67,6 @@ def atom_charge():
     """
 
     return Atom('H', charge=TEST_CHARGE_1)
-
-@pytest.fixture
-def atom_list():
-
-    """
-    Generates a 3-body atom list with positions and masses defined by a
-    global variable.
-    """
-
-    return [Atom('H', position=pos, mass=mass) for (pos, mass) in POS_MASS]
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
@@ -228,10 +228,10 @@ def test_bounding_box_min(atom_list):
 
 
 @pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_min(atom_list):
+def test_bounding_box_max(atom_list):
 
     """
-    Tests that the min property of the BoundingBox class returns the correct
+    Tests that the max property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
 
