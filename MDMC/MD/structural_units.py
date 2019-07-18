@@ -1170,12 +1170,6 @@ class BoundingBox(object):
 
         return self._volume
 
-    @volume.setter
-    @unit_decorator(unit=units.LENGTH ** 3)
-    def volume(self, value):
-
-        self._volume = value
-
 
 def filter_atoms(atoms, predicate):
 
