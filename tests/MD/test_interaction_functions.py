@@ -100,3 +100,39 @@ def test_fixed_parameter_change_warning(parameter):
     with pytest.warns(UserWarning):
         parameter.value *= 5.
     assert parameter.value == VALUE
+
+
+@pytest.mark.parametrize('constraints, value', [((0., 2.), 2.),
+                                                ((0., 2.), 0.),
+                                                ((1., 5.), 2.),
+                                                ((-1., 2.), -0.5)])
+def test_value_setting_within_constraints(constraints, value, parameter):
+
+    """
+    Tests setting the value of a Parameter within the constraints
+
+    Includes tests of values at edges of constraints, as constraints are a
+    closed interval
+    """
+
+    parameter.constraints = constraints
+    parameter.value = value
+    assert parameter.value == value
+
+
+@pytest.mark.parametrize('constraints, value', [((1., 2.), 0.),
+                                                ((1., 5.), 6.),
+                                                ((-1., 2.), -1.5)])
+def test_value_setting_outside_constraints(constraints, value, parameter):
+
+    """
+    Tests that setting the value of a Parameter outside of the constraints
+    raises an error, and that the Parameter value does not change
+
+    Includes setting the value both above and below the constraints
+    """
+
+    parameter.constraints = constraints
+    with pytest.raises(ValueError):
+        parameter.value = value
+    assert parameter.value == VALUE
