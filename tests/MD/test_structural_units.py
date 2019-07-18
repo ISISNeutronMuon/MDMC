@@ -187,19 +187,3 @@ def test_bounding_box_volume(diatomic):
     exp_vol = abs(np.prod(diatomic.atom_list[1].position -
                           diatomic.atom_list[0].position))
     assert diatomic.bounding_box.volume == exp_vol
-
-
-def test_bounding_box_set_volume(diatomic):
-
-    """
-    Tests that attempting to set the volume of the bounding box of a
-    Molecule whose atoms are in fixed positions doesn't result in a
-    change of this volume.
-    """
-
-    curr_vol = diatomic.bounding_box.volume
-    new_vol = 10.0
-    assert new_vol != curr_vol
-    diatomic.bounding_box.volume = new_vol
-    assert diatomic.bounding_box.volume == curr_vol
-    
