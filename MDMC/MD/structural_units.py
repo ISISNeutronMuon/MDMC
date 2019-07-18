@@ -1631,8 +1631,7 @@ class Coulombic(NonBondedInteraction):
             are set, i.e. it makes the function keyword redundant
         atoms : list
             Atoms to which the Coulombic interaction applies. If specifying the
-            Atoms, a universe doesn't need to be passed as a parameter nor do
-            the atoms have to be added to it::
+            Atoms, a universe doesn't need to be passed as a parameter::
 
                 O_coulombic = Coulombic(atoms=[O], charge=-0.84)
 
@@ -1640,7 +1639,7 @@ class Coulombic(NonBondedInteraction):
             int for each atom_type for which the NonBondedInteraction applies.
             If specifying the atom_types, the universe must be passed as a
             parameter and the atoms for which the atom_types are specified must
-            be added to it. See the example above in the 'charge' section.
+            exist in Universe. See the example above in the 'charge' section.
 
     Raises
     ------
