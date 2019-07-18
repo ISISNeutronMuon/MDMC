@@ -964,7 +964,8 @@ class Molecule(CompositeStructuralUnit):
     ----------
     position : list, tuple, NumPy array, optional
         A 3 element list, tuple or array with the position in units of Ang. The
-        default is (0., 0., 0.).
+        default is None, which sets the position of the Molecule to be equal to
+        the center of mass of the atoms in the Molecule.
     velocity : list, tuple, NumPy array, optional
         A 3 element list, tuple or array with the velocity in units of Ang. The
         default is (0., 0., 0.).
@@ -979,13 +980,15 @@ class Molecule(CompositeStructuralUnit):
             prior to the Molecule.
     """
 
-    def __init__(self, position=(0, 0, 0), velocity=(0, 0, 0), name=None,
+    def __init__(self, position=None, velocity=(0, 0, 0), name=None,
                  **settings):
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
+        if position is None:
+            position = self._calc_CoM()
         super(Molecule, self).__init__(position, velocity, name)
 
     @property
