@@ -1636,7 +1636,7 @@ class Coulombic(NonBondedInteraction):
 
                 O_coulombic = Coulombic(atoms=[O], charge=-0.84)
 
-        atom_types : list
+        atom_types : list of int
             int for each atom_type for which the NonBondedInteraction applies.
             If specifying the atom_types, the universe must be passed as a
             parameter and the atoms for which the atom_types are specified must
