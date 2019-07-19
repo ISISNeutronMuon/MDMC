@@ -3,9 +3,12 @@
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
-from MDMC.MD.interaction_functions import Parameter, Coulomb, LennardJones
+from MDMC.MD.interaction_functions import (Parameter, Coulomb, LennardJones,
+    filter_parameters, filter_parameters_name, filter_parameters_value,
+    filter_parameters_interaction, filter_parameters_function,
+    filter_parameters_atom_attribute, filter_parameters_structure)
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import Atom, Coulombic, Dispersion
+from MDMC.MD.structural_units import Atom, Bond, Coulombic, Dispersion, Molecule
 
 
 VALUE = 1.0
@@ -211,3 +214,28 @@ def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
     scaled_parameter.set_tie(parameter, expression)
     assert scaled_parameter.value == expected
 
+
+@pytest.mark.parametrize('pred, attr, val', [(lambda p: p.fixed is True,
+                                              'fixed',
+                                              True),
+                                             (lambda p: p.constraints != None,
+                                              'constraints',
+                                              (0., 10.)),
+                                             (lambda p: p.unit is 'e',
+                                              'unit',
+                                              'e')])
+def test_filter_parameters(pred, attr, val):
+
+    """
+    Tests parameter filtering for predicates not used by other Parameter filter
+    functions
+    """
+
+    params = []
+    for index in range(10):
+        param = Parameter(VALUE * index, NAME, unit=UNIT)
+        if index % 2:
+            setattr(param, attr, val)
+        params.append(param)
+
+    assert filter_parameters(params, pred) == params[1::2]
