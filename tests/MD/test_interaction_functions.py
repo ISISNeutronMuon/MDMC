@@ -280,3 +280,53 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
 
     assert (filter_parameters_value(parameters, comp, value)
             == parameters[slice(*expected_slice)])
+
+
+@pytest.mark.parametrize('int_name, expected_slice', [('Dispersion',
+                                                       [0, None, 2]),
+                                                      ('Coulombic',
+                                                       [1, None, 2]),
+                                                      ('Bond',
+                                                       [-1, -2])])
+def test_filter_parameters_interaction(int_name, expected_slice, parameters):
+
+    """
+    Tests that filtering parameters by interaction results in the correct
+    parameters being returned
+    """
+
+    for index, param in enumerate(parameters):
+        if index % 2:
+            param.interactions = COULOMBIC
+        else:
+            param.interactions = Dispersion(Universe(1.0), [1],
+                                            function=LennardJones((1., 'arb'),
+                                                                  (1., 'arb')))
+
+    assert (filter_parameters_interaction(parameters, int_name)
+            == parameters[slice(*expected_slice)])
+
+
+@pytest.mark.parametrize('function_name, expected_slice', [('Coulomb',
+                                                            [0, None, 2]),
+                                                           ('LennardJones',
+                                                            [1, None, 2]),
+                                                           ('HarmonicPotential',
+                                                            [-1, -2])])
+def test_filter_parameters_function(function_name, expected_slice, parameters):
+
+    """
+    Tests that filtering parameters by interaction function results in the
+    correct number of parameters which have the correct interaction function
+    """
+
+    for index, param in enumerate(parameters):
+        if index % 2:
+            function = LennardJones((1., 'arb'), (1., 'arb'))
+        else:
+            function = COULOMB
+        param.interactions = Dispersion(Universe(1.0), [1], function=function)
+
+    assert (filter_parameters_function(parameters, function_name)
+            == parameters[slice(*expected_slice)])
+
