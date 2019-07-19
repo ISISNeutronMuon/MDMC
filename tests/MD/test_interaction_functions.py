@@ -55,6 +55,19 @@ def param_inter(parameter):
     parameter.interactions = COULOMBIC
     return parameter
 
+@pytest.fixture
+def parameters():
+
+    """
+    Returns
+    -------
+    list
+        A list of parameters with a value and a name. In each case the value is
+        equal to the index of the parameter
+    """
+
+    return [Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i in range(10)]
+
 
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
                                          (UnitFloat(VALUE, UNIT), None)])
@@ -197,3 +210,4 @@ def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
 
     scaled_parameter.set_tie(parameter, expression)
     assert scaled_parameter.value == expected
+
