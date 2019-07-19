@@ -239,3 +239,44 @@ def test_filter_parameters(pred, attr, val):
         params.append(param)
 
     assert filter_parameters(params, pred) == params[1::2]
+
+
+@pytest.mark.parametrize('name, number', [('charge', 3),
+                                          ('epsilon', 2),
+                                          ('sigma', 0)])
+def test_filter_parameters_name(name, number):
+
+    """
+    Tests that filtering parameters by name results in the correct number of
+    parameters which have the correct name
+    """
+
+    params = [Parameter(VALUE * index, 'charge', unit=UNIT) if index < 3
+              else Parameter(VALUE * index, 'epsilon', unit=UNIT)
+              for index in range(5)]
+
+    filtered = filter_parameters_name(params, name)
+    assert [param.name for param in filtered] == [name] * number
+
+
+@pytest.mark.parametrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
+                                                         ('>=', 0., [0, None]),
+                                                         ('>', 5., [6, None]),
+                                                         ('<', 2., [0, 2]),
+                                                         ('>=', 5., [5, None]),
+                                                         ('<=', 2., [0, 3]),
+                                                         ('==', 1., [1, 2]),
+                                                         ('!=', 9., [0, -1])])
+def test_filter_parameter_value(comp, value, expected_slice, parameters):
+
+    """
+    Tests that the filtering parameters by value results in the correct
+    parameters being returned
+
+    Tests all supported comparison operators. First parametrization tests case
+    where no parameters are returned, second parameterization tests case where
+    all parameters are returned.
+    """
+
+    assert (filter_parameters_value(parameters, comp, value)
+            == parameters[slice(*expected_slice)])
