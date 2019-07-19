@@ -330,3 +330,75 @@ def test_filter_parameters_function(function_name, expected_slice, parameters):
     assert (filter_parameters_function(parameters, function_name)
             == parameters[slice(*expected_slice)])
 
+
+@pytest.mark.filterwarnings("ignore: Coulombic")
+@pytest.mark.parametrize('attr, val, expected_slice', [('mass', 1.,
+                                                        [0, None]),
+                                                       ('mass', 4.,
+                                                        [0, None, 2]),
+                                                       ('charge', .5,
+                                                        [0, None]),
+                                                       ('charge', -1.,
+                                                        [0, None, 2])])
+def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
+
+    """
+    Tests that filtering parameters by the values of an attribute of the atoms
+    which have the parameter applied to them results in the correct parameters
+    being returned
+
+    Tests for different charges and masses, and tests that all atoms that have
+    the parameter applied to them are considered when filtering
+    """
+
+    # Make two bonds with atoms with different masses and charges
+    # The second atom in each Bond has double the mass and charge of the first
+    # atom
+    inters = [Bond(Atom('H', mass=props[0], charge=props[1]),
+                   Atom('H', mass=(2 * props[0]), charge=(props[1] * 2)))
+              for props in [(1., 0.5),
+                            (4., -1.0)]]
+
+    for index, param in enumerate(parameters):
+        # Set parameters with different interactions
+        # So all parameters will have a Bond with Atoms with masses of 1. and 2.
+        # and charges of 0.5 and 1.0, while only parameters with even indexes
+        # will have a Bond with Atoms with masses of 4. and 8. and charges of
+        # -1.0 and -2.0
+        for inter_index, inter in enumerate(inters):
+            if not index % (inter_index + 1):
+                param.interactions = inter
+
+    # Test that filter returns expected atoms for both val and val * 2, as any
+    # parameter of an atom with val must also be a parameter of an atom with
+    # val * 2
+    assert (filter_parameters_atom_attribute(parameters, attr, val)
+            == parameters[slice(*expected_slice)]
+            == filter_parameters_atom_attribute(parameters, attr, val * 2))
+
+
+@pytest.mark.parametrize('struct_name, expected_slice', [('H', [0, None, 3]),
+                                                         ('C', [0, None, 2]),
+                                                         ('H2', [0, None, 3])])
+def test_filter_parameters_structure(struct_name, expected_slice, parameters):
+
+    """
+    Tests that filtering parameters by the structures which have the parameter
+    applied to them results in the correct parameters being returned
+
+    Tests for both atoms and molecules as athe structural unit
+    """
+
+    # Create bonds that can be set as the a parameter's interactions
+    H2 = Molecule(atoms=[Atom('H'), Atom('H')], name='H2')
+    H2_bond = Bond(H2.atom_list[0], H2.atom_list[1])
+    C_bond = Bond(Atom('C'), Atom('C'))
+
+    for index, param in enumerate(parameters):
+        if not index % 3:
+            param.interactions = H2_bond
+        if not index % 2:
+            param.interactions = C_bond
+
+    assert (filter_parameters_structure(parameters, struct_name)
+            == parameters[slice(*expected_slice)])
