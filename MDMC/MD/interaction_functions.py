@@ -13,6 +13,7 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
 from inspect import getargspec, getmembers
+from itertools import chain
 import operator
 import warnings
 import weakref
@@ -618,7 +619,8 @@ def filter_parameters_atom_attribute(parameters, attribute, value):
 
     return filter(lambda p: value in [getattr(atom, attribute)
                                       for int in p.interactions
-                                      for atom in int.atom_list], parameters)
+                                      for atom in chain.from_iterable(int.atoms)
+                                     ], parameters)
 
 
 def filter_parameters_structure(parameters, structure_name):
@@ -662,7 +664,7 @@ def filter_parameters_structure(parameters, structure_name):
             add_name(structure.parent)
 
         for int in parameter.interactions:
-            for atom in int.atom_list:
+            for atom in chain.from_iterable(int.atoms):
                 add_name(atom)
         return structure_name in structure_names
 
