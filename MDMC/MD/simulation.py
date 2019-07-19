@@ -11,7 +11,8 @@ import numpy as np
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
-from MDMC.common.configurations import molecule_list_from_config, SPCE
+from MDMC.common.configurations import (molecule_from_dict,
+                                        molecule_list_from_config, SPCE)
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
@@ -622,36 +623,68 @@ class Universe(object):
                 pass
             # Manipulate positions and density of tiling solvent configuration
             # to control density.
-            # Retrieve total volume and mass of each StructuralUnit in the universe
-            solute_mass, solute_vol = 0, 0
-            for structure in self.structure_list:
-                tot_solute_mass += structure.mass
-                tot_solute_vol += abs(np.prod(structure.bounding_box.max
-                                              - structure.bounding_box.min))
+            # Retrieve total volume and mass of solutes in the universe.
+            # solute_mass, solute_vol = 0, 0
+            # for structure in self.structure_list:
+            #     tot_solute_mass += structure.mass
+            #     tot_solute_vol += structure.bounding_box.volume
             # Calculate remaining volume of empty space
-            empty_space = self.volume - tot_solute_vol
+            # empty_space = self.volume - tot_solute_vol
             # Then retrieve mass and bounding box of single solvent molecule.
             # Assumes all solvent molecules passed in config are the same.
-            molecules = molecule_list_from_config(config)
-            solvent_mass = molecules[0].mass
-            solvent_vol = abs(np.prod(molecules[0].bounding_box.max
-                                      - molecules[0].bounding_box.min))
-            # Calculate the total required mass needed in form of solvent molecules
-            tot_req_mass = (density * self.volume) - tot_solute_mass
-            # Calculate the number of solvent molecules required
-            num_solvent = tot_req_mass / solvent_mass
-            # Calculate the whole number of 'tiles' of solvent configs needed
-            num_tiles = np.ceil(num_solvent // len(molecules))
-            # Tile together the configs num_tiles number of times
-            for i in range(0, num_tiles):
-                # assign the direction in which to tile
-                vector = np.zeros(3)
-                vector[i % 3] = 1
+            solv_mass = molecule_list_from_config(config['molecules'])[0].mass
+            req_vol = solv_mass * len(config['molecules']) / density
+            # Get the box dimensions required to achieve correct density
+            # AT THE MOMENT ASSUMES BOX OF SOLVENT CONFIG PASSED IS CUBIC
+            # box_dims = np.array([req_vol ** (1. / 3)] * 3)
+            # box_dims = np.array([1.001] * 3)
+            box_dims = SPCE['box']
+            # Calculate the number of tiles required in each direction
+            num_tiles = np.ceil(self.dims // box_dims).astype(int)
+            # Initialize a list that will be a list of lists; where each list
+            # contains translated Molecule objects
+            molecules = []
+            for x in range(0, num_tiles[0]):
+                for y in range(0, num_tiles[1]):
+                    for z in range(0, num_tiles[2]):
+                        trans_config = config['molecules']
+                        for mol_key in trans_config.keys():
+                            mol = trans_config[mol_key]
+                            remove = False
+                            for position in mol.values():
+                                # Translate positions so there's no -ve coords.
+                                # Translate with the translation vector.
+                                # Scale the coordinates by the scaling factor
+                                # to give the correct density.
+                                position += (np.array([1, 1, 1])
+                                            + box_dims * np.array([x, y, z]))
+                                if (any(position > self.dims)
+                                    or any(position < [0, 0, 0])):
+                                    # Remove position if outside universe
+                                    remove = True
+                                # Need to check for overlap with solute molecules
+                            if remove:
+                                # del trans_config[mol_key]
+                                pass
+                            else:
+                                self.add_structural_unit(molecule_from_dict(mol))
 
+                        # molecules.append(molecule_list_from_config(trans_config))
+                        # trans_configs.append(trans_config)
+            # return molecules
+            # for molecule_list in molecules:
+            #     for molecule in molecule_list:
+            #         self.add_structural_unit(molecule)
 
+            # # solvent_vol = molecules[0].bounding_box.volume
+            # # Calculate the total required mass needed in form of solvent molecules
+            # tot_req_mass = (density * self.volume) - tot_solute_mass
+            # # Calculate the number of solvent molecules required
+            # num_solvent = tot_req_mass / solvent_mass
+            # # Calculate the whole number of 'tiles' of solvent configs needed
+            # num_tiles = np.ceil(num_solvent // len(molecules))
 
-
-        raise NotImplementedError
+        # raise NotImplementedError
 
 
 def _primitive_cubic(dimensions, number):
