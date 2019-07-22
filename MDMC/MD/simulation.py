@@ -699,33 +699,63 @@ class Universe:
             if model == 'SPCE':
                 config = copy.deepcopy(SPCE)
             else:
-                # user specifies model for a different solvent.
+                # User specifies model for a different solvent.
                 pass
+            # Calculate useful properties from the original box
+            solv_mass = molec_from_dict(config['molecules'].values()[0]).mass
+            num_solv = len(config['molecules'])
+            orig_box_dims = copy.deepcopy(config['box'])
+            orig_box_vol = np.prod(orig_box_dims)
+            orig_box_dens = solv_mass * num_solv / orig_box_vol
             # Find the minimum position to set as the origin when translating
             origin = np.zeros(3)
+            max_coord = np.zeros(3)
             for mol in config['molecules'].values():
                 for pos in mol.values():
                     origin = np.minimum(origin, pos)
-            # Retrieve total mass of solutes in the universe.
-            tot_solute_mass = 0
-            for structure in self.structure_list:
-                tot_solute_mass += structure.mass
-            # Retrieve mass of single solvent molecule.
-            solv_mass = molec_from_dict(config['molecules'].values()[0]).mass
-            req_vol = solv_mass * len(config['molecules']) / density
-            # Get the box dimensions required to achieve correct density
-            # AT THE MOMENT ASSUMES BOX OF SOLVENT CONFIG PASSED IS CUBIC
-            box_dims = np.array([req_vol ** (1. / 3)] * 3)
+                    max_coord = np.maximum(max_coord, pos)
+            min_dims = max_coord - origin
+            return min_dims
+            min_vol = np.prod(min_dims)
+            max_dens = num_solv * solv_mass / min_vol
 
-            difference = 0.0
+            print 'Origin = ', origin
+            print 'Max coord = ', max_coord
+            print 'Min dims = ', min_dims
+            print 'Min vol = ', min_vol
+            print 'Max dens = ', max_dens
+            return
+            # Get the prelim scaling of the orig box required to achieve density
+            # AT THE MOMENT ASSUMES BOX OF SOLVENT CONFIG PASSED IS CUBIC
+            tot_solute_mass = 0
+            for atom in self.atom_list:
+                tot_solute_mass += atom.mass
+            assert tot_solute_mass == 0 ######
+            req_mass = self.volume * density - tot_solute_mass
+
+            vol_scaling = num_solv * solv_mass / req_mass
+            dim_scaling = np.array([vol_scaling ** (1. / 3)] * 3)
+
+            # Scale the original box, create bool to deal with low density case
+            box_dims = orig_box * dim_scaling
+            low_density = True if all(self.dims / box_dims
+                                      < np.array([1] * 3)) else False
+
+            # Calculate the number of tiles required in each direction
+            num_tiles = np.ceil(self.dims / box_dims).astype(int)
+            print 'num tiles = ', num_tiles
+
+            scale_factor = 0.
             count = 0
             while True:
                 count += 1
-                box_dims *=  1 + difference
+                remove_count = 0
+
+                dim_scaling *= 1 + scale_factor
+                print 'dim scaling = ', dim_scaling
+
+                box_dims = orig_box * dim_scaling
                 print 'box dims = ', box_dims
-                # Calculate the number of tiles required in each direction
-                num_tiles = np.ceil(self.dims / box_dims).astype(int)
-                print 'num of tiles = ', num_tiles
 
                 mols = np.array([])
                 for trans_vect in product(range(0, num_tiles[0]),
@@ -734,35 +764,46 @@ class Universe:
 
                     trans_tile = copy.deepcopy(config['molecules'])
                     for mol_key in trans_tile.keys():
+
                         mol = trans_tile[mol_key]
+                        atom_positions = mol.values()
+
+                        if low_density:
+                            CoM = molec_from_dict(mol).position
+
                         remove = False
-                        for pos in mol.values():
-                            if (np.linalg.norm(num_tiles) == 1
-                                and difference >= 0):
-                                pos = (pos - origin) * box_dims * trans_vect
+                        for pos in atom_positions:
+                            if low_density:
+                                pos += CoM * (dim_scaling - 1) - origin
                             else:
                                 pos += box_dims * trans_vect - origin
-                            # Check for atoms that fall outside the universe
-                            if (any(pos > self.dims) or any(pos < [0, 0, 0])):
-                                remove = True
-                            # Check for overlap with solute molecules
-                            for solute in self.molecule_list:
-                                cond1 = any(pos > solute.bounding_box.min)
-                                cond2 = any(pos < solute.bounding_box.max)
-                                if cond1 and cond2:
+                            # Check for atoms that fall outside the universe.
+                            if not remove:
+                                # No point in checking if remove==True already
+                                cond1 = any(pos > self.dims)
+                                cond2 = any(pos < [0, 0, 0])
+                                if cond1 or cond2:
                                     remove = True
+                            # Check for overlap with solute molecules.
+                            if not remove:
+                                for solute in self.molecule_list:
+                                    cond1 = any(pos > solute.bounding_box.min)
+                                    cond2 = any(pos < solute.bounding_box.max)
+                                    if cond1 and cond2:
+                                        remove = True
                         if remove:
                             del trans_tile[mol_key]
+                            remove_count += 1
                     mols = np.append(mols, molec_list_from_config(trans_tile))
+                print 'Remove count: ', remove_count
                 # Check the density
                 print 'num of mols = ', len(mols)
-                # print 'num of mols = ', len(trans_configs)
                 actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
                 print 'actual = ', actual
                 difference = (actual - density) / density
                 print 'diff = ', difference
                 if abs(difference * 100) > abs(tolerance):
-                    difference /= count
+                    scale_factor = difference / count
                 else:
                     break
             # Once the correct density is achieved, add molecules to universe
