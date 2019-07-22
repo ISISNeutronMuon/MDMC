@@ -9,7 +9,7 @@ import numpy as np
 from MDMC.MD.structural_units import Atom, Molecule
 
 
-def molecule_from_dict(mol_dict):
+def molec_from_dict(mol_dict):
 
     """
     Creates a Molecule object from a dictionary containing atom and
@@ -25,7 +25,7 @@ def molecule_from_dict(mol_dict):
                           position=mol_dict[atom_key]))
     return Molecule(atoms=atoms)
 
-def molecule_list_from_config(config):
+def molec_list_from_config(config):
 
     """
     Generates a list of Molecule objects from a formatted dictionary
@@ -46,11 +46,7 @@ def molecule_list_from_config(config):
 
     molecules = []
     for mol_dict in config.values():
-        # atoms = []
-        # for atom_key in mol.keys():
-        #     atoms.append(Atom(atom_key.replace('1', '').replace('2', ''),
-        #                       position=mol[atom_key]))
-        mol = molecule_from_dict(mol_dict)
+        mol = molec_from_dict(mol_dict)
         molecules.append(mol)
     return molecules
 
