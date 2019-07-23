@@ -2159,7 +2159,7 @@ class BondAngle(Constrainable, BondedInteraction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        settings['n_atoms'] = (3, 4)
+        settings['n_atoms'] = (3, )
         super(BondAngle, self).__init__(*atom_tuples, **settings)
 
 
