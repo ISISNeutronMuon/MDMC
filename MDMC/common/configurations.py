@@ -54,7 +54,8 @@ def molec_list_from_config(config):
 # 216H2O,WATJP01,SPC216,SPC-MODEL,300K,BOX(M)=1.86206NM,WFVG,MAR. 1984
 # Raw data from: https://raw.githubusercontent.com/gromacs/gromacs/
 #                4fa824292a67e2adeba57d528a6f5f19c1f1bd22/share/top/spc216.gro
-# Distances in Ang
+# Coordinates modified so that distances in Ang, scaled to the size of the
+# box, and translated so that all coordinates are positive.
 SPCE = {'box': np.array([18.6206, 18.6206, 18.6206]),
         'molecules': {1: {'H1': np.array([10.4089154, 15.1478581, 10.5578802]),
                           'H2': np.array([11.2840836, 14.803377, 9.3568515]),
