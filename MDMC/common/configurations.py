@@ -56,7 +56,7 @@ def molec_list_from_config(config):
 #                4fa824292a67e2adeba57d528a6f5f19c1f1bd22/share/top/spc216.gro
 # Coordinates modified so that distances in Ang, scaled to the size of the
 # box, and translated so that all coordinates are positive.
-SPCE = {'box': np.array([18.6206, 18.6206, 18.6206]),
+SPCE = {'box dims': np.array([18.6206, 18.6206, 18.6206]),
         'molecules': {1: {'H1': np.array([10.4089154, 15.1478581, 10.5578802]),
                           'H2': np.array([11.2840836, 14.803377, 9.3568515]),
                           'O': np.array([11.2747733, 15.1664787, 10.2133991])},
