@@ -618,46 +618,18 @@ class Universe(object):
             # Calculate useful properties from the original box
             solv_mass = molec_from_dict(config['molecules'].values()[0]).mass
             num_solv = len(config['molecules'])
-            orig_box_dims = copy.deepcopy(config['box'])
+            orig_box_dims = config['box dims']
             orig_box_vol = np.prod(orig_box_dims)
             orig_box_dens = solv_mass * num_solv / orig_box_vol
-            low_density = True if density <= orig_box_dens else False
-            # Find the minimum position to set as the origin when translating
-            origin = np.zeros(3)
-            max_coord = np.zeros(3)
-            for mol in config['molecules'].values():
-                for pos in mol.values():
-                    origin = np.minimum(origin, pos)
-                    max_coord = np.maximum(max_coord, pos)
-            min_dims = max_coord - origin
-            min_vol = np.prod(min_dims)
-            max_dens = num_solv * solv_mass / min_vol
-            print 'Origin = ', origin
-            print 'Max coord = ', max_coord
-            print 'Min dims = ', min_dims
-            print 'Min vol = ', min_vol
-            print 'Max dens = ', max_dens
-            # return
-
             # Get the prelim scaling of the orig box required to achieve density
-            # AT THE MOMENT ASSUMES BOX OF SOLVENT CONFIG PASSED IS CUBIC
             tot_solute_mass = 0
             for atom in self.atom_list:
                 tot_solute_mass += atom.mass
             req_dens = density - (tot_solute_mass / self.volume)
             vol_scaling = orig_box_dens / req_dens
-            print 'vol scaling = ', vol_scaling
+            # print 'vol scaling = ', vol_scaling
             dim_scaling = np.array([vol_scaling ** (1. / 3)] * 3)
-            print 'dim scaling = ', dim_scaling
-            # Scale the original box, create bool to deal with low density case
-            box_dims = orig_box_dims * dim_scaling
-            print 'box dims = ', box_dims
-            # low_density = True if all(self.dims / box_dims
-            #                           < np.array([1] * 3)) else False
-
-            # Calculate the number of tiles required in each direction
-            num_tiles = np.ceil(self.dims / box_dims).astype(int)
-            print 'num tiles = ', num_tiles
+            # print 'dim scaling = ', dim_scaling
 
             scale_factor = 0.
             count = 0
@@ -666,10 +638,14 @@ class Universe(object):
                 remove_count = 0
 
                 dim_scaling *= 1 + scale_factor
-                print 'dim scaling = ', dim_scaling
+                # print 'dim scaling = ', dim_scaling
 
+                # Scale the original box
                 box_dims = orig_box_dims * dim_scaling
-                print 'box dims = ', box_dims
+                # print 'box dims = ', box_dims
+                # Calculate the number of tiles required in each direction
+                num_tiles = np.ceil(self.dims / box_dims).astype(int)
+                # print 'num tiles = ', num_tiles
 
                 mols = np.array([])
                 for trans_vect in product(range(0, num_tiles[0]),
@@ -681,16 +657,12 @@ class Universe(object):
 
                         mol = trans_tile[mol_key]
                         atom_positions = mol.values()
-
-                        if low_density:
-                            CoM = molec_from_dict(mol).position
-
+                        # Calc the CoM
+                        CoM = molec_from_dict(mol).position
                         remove = False
                         for pos in atom_positions:
-                            if low_density:
-                                pos += box_dims * trans_vect - origin
-                            else:
-                                pos += CoM * (dim_scaling - 1) - origin
+                            pos += (dim_scaling
+                                    * (CoM + trans_vect * orig_box_dims) - CoM)
                             # Check for atoms that fall outside the universe.
                             if not remove:
                                 cond1 = any(pos > self.dims)
@@ -708,13 +680,13 @@ class Universe(object):
                             del trans_tile[mol_key]
                             remove_count += 1
                     mols = np.append(mols, molec_list_from_config(trans_tile))
-                print 'Remove count: ', remove_count
+                # print 'Remove count: ', remove_count
                 # Check the density
-                print 'num of mols = ', len(mols)
+                # print 'num of mols = ', len(mols)
                 actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
-                print 'actual = ', actual
+                # print 'actual = ', actual
                 difference = (actual - density) / density
-                print 'diff = ', difference
+                # print 'diff = ', difference
                 if abs(difference * 100) > abs(tolerance):
                     scale_factor = difference / (count + 2)
                 else:
