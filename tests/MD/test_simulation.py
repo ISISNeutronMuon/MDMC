@@ -9,6 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
+from MDMC.common.configurations import molec_from_dict, SPCE
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 
@@ -23,6 +24,10 @@ H_MASS = 1.008
 O_MASS = 16.000
 WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
+
+TOLERANCE = 1
+SPCE_MASS = molec_from_dict(SPCE['molecules'].values()[0]).mass
+SPCE_DENSITY = SPCE_MASS * len(SPCE['molecules']) / np.prod(SPCE['box dims']))
 
 
 @pytest.fixture
@@ -64,6 +69,28 @@ def water_SPCE_universe(water_molecule):
 def kspace_solver():
 
     return sim.Ewald(accuracy=0.0001)
+
+@pytest.fixture
+def create_small_molecule():
+
+    """
+    Creates a benzene molecule.
+    """
+
+    return su.Molecule(atoms=[Atom('C', position=(0.00000, 1.40272, 0.00000)),
+                              Atom('H', position=(0.00000, 2.49029, 0.00000)),
+                              Atom('C', position=(-1.21479, 0.70136, 0.00000)),
+                              Atom('H', position=(-2.15666, 1.24515, 0.00000)),
+                              Atom('C', position=(-1.21479, -0.70136, 0.00000)),
+                              Atom('H', position=(-2.15666, -1.24515, 0.00000)),
+                              Atom('C', position=(0.00000, -1.40272, 0.00000)),
+                              Atom('H', position=(0.00000, -2.49029, 0.00000)),
+                              Atom('C', position=(1.21479, -0.70136, 0.00000)),
+                              Atom('H', position=(2.15666, -1.24515, 0.00000)),
+                              Atom('C', position=(1.21479, 0.70136, 0.00000)),
+                              Atom('H', position=(2.15666, 1.24515, 0.00000))])
+@pytest.fixture
+def create_large_molecule():
 
 
 def test_create_universe(universe):
@@ -713,7 +740,16 @@ def test_universe_fill_orientations(universe):
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
 
 
-def test_solvate():
+def test_solvate_spce_no_solute(universe):
     """
-    Stub unit test function for Universe.solvate method
+    Tests that the achieved density is within the tolerance for solvating an
+    empty universe with SPCE water.
     """
+
+    universe.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    actual_dens = len(universe.molecule_list) * SPCE_MASS / universe.volume
+    cond1 = SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
+    cond2 = actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+    assert cond1 and cond2
+
+def test_solvate_SPCE_with_solute(universe):
