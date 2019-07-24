@@ -707,6 +707,7 @@ class Universe:
             orig_box_dims = copy.deepcopy(config['box'])
             orig_box_vol = np.prod(orig_box_dims)
             orig_box_dens = solv_mass * num_solv / orig_box_vol
+            low_density = True if density <= orig_box_dens else False
             # Find the minimum position to set as the origin when translating
             origin = np.zeros(3)
             max_coord = np.zeros(3)
@@ -715,31 +716,30 @@ class Universe:
                     origin = np.minimum(origin, pos)
                     max_coord = np.maximum(max_coord, pos)
             min_dims = max_coord - origin
-            return min_dims
             min_vol = np.prod(min_dims)
             max_dens = num_solv * solv_mass / min_vol
-
             print 'Origin = ', origin
             print 'Max coord = ', max_coord
             print 'Min dims = ', min_dims
             print 'Min vol = ', min_vol
             print 'Max dens = ', max_dens
-            return
+            # return
+
             # Get the prelim scaling of the orig box required to achieve density
             # AT THE MOMENT ASSUMES BOX OF SOLVENT CONFIG PASSED IS CUBIC
             tot_solute_mass = 0
             for atom in self.atom_list:
                 tot_solute_mass += atom.mass
-            assert tot_solute_mass == 0 ######
-            req_mass = self.volume * density - tot_solute_mass
-
-            vol_scaling = num_solv * solv_mass / req_mass
+            req_dens = density - (tot_solute_mass / self.volume)
+            vol_scaling = orig_box_dens / req_dens
+            print 'vol scaling = ', vol_scaling
             dim_scaling = np.array([vol_scaling ** (1. / 3)] * 3)
-
+            print 'dim scaling = ', dim_scaling
             # Scale the original box, create bool to deal with low density case
-            box_dims = orig_box * dim_scaling
-            low_density = True if all(self.dims / box_dims
-                                      < np.array([1] * 3)) else False
+            box_dims = orig_box_dims * dim_scaling
+            print 'box dims = ', box_dims
+            # low_density = True if all(self.dims / box_dims
+            #                           < np.array([1] * 3)) else False
 
             # Calculate the number of tiles required in each direction
             num_tiles = np.ceil(self.dims / box_dims).astype(int)
@@ -754,7 +754,7 @@ class Universe:
                 dim_scaling *= 1 + scale_factor
                 print 'dim scaling = ', dim_scaling
 
-                box_dims = orig_box * dim_scaling
+                box_dims = orig_box_dims * dim_scaling
                 print 'box dims = ', box_dims
 
                 mols = np.array([])
@@ -774,12 +774,11 @@ class Universe:
                         remove = False
                         for pos in atom_positions:
                             if low_density:
-                                pos += CoM * (dim_scaling - 1) - origin
-                            else:
                                 pos += box_dims * trans_vect - origin
+                            else:
+                                pos += CoM * (dim_scaling - 1) - origin
                             # Check for atoms that fall outside the universe.
                             if not remove:
-                                # No point in checking if remove==True already
                                 cond1 = any(pos > self.dims)
                                 cond2 = any(pos < [0, 0, 0])
                                 if cond1 or cond2:
@@ -803,7 +802,7 @@ class Universe:
                 difference = (actual - density) / density
                 print 'diff = ', difference
                 if abs(difference * 100) > abs(tolerance):
-                    scale_factor = difference / count
+                    scale_factor = difference / (count + 2)
                 else:
                     break
             # Once the correct density is achieved, add molecules to universe
