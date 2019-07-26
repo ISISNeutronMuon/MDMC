@@ -661,6 +661,22 @@ class Universe:
 
         return pairs_interactions
 
+    def _check_out_of_bounds(self, position):
+
+        """
+        Checks whether or not the position of a StructuralUnit lies
+        outside the bounds of the universe.
+
+        Returns
+        -------
+        bool
+            True if the position passed falls outside the universe,
+            False otherwise.
+        """
+
+        return any(position > self.dims) or any(position < [0, 0, 0])
+
+
     def solvate(self, density, solvent=None, model='SPCE', **settings):
 
         """
@@ -713,25 +729,16 @@ class Universe:
                 tot_solute_mass += atom.mass
             req_dens = density - (tot_solute_mass / self.volume)
             vol_scaling = orig_box_dens / req_dens
-            # print 'vol scaling = ', vol_scaling
             dim_scaling = np.array([vol_scaling ** (1. / 3)] * 3)
-            # print 'dim scaling = ', dim_scaling
 
             scale_factor = 0.
             count = 0
             while True:
+
                 count += 1
-                remove_count = 0
-
                 dim_scaling *= 1 + scale_factor
-                # print 'dim scaling = ', dim_scaling
-
-                # Scale the original box
                 box_dims = orig_box_dims * dim_scaling
-                # print 'box dims = ', box_dims
-                # Calculate the number of tiles required in each direction
                 num_tiles = np.ceil(self.dims / box_dims).astype(int)
-                # print 'num tiles = ', num_tiles
 
                 mols = np.array([])
                 for trans_vect in product(range(0, num_tiles[0]),
@@ -743,43 +750,34 @@ class Universe:
 
                         mol = trans_tile[mol_key]
                         atom_positions = mol.values()
-                        # Calc the CoM
                         CoM = molec_from_dict(mol).position
+
                         remove = False
                         for pos in atom_positions:
+
                             pos += (dim_scaling
                                     * (CoM + trans_vect * orig_box_dims) - CoM)
-                            # Check for atoms that fall outside the universe.
-                            if not remove:
-                                cond1 = any(pos > self.dims)
-                                cond2 = any(pos < [0, 0, 0])
-                                if cond1 or cond2:
-                                    remove = True
+                            remove = self._check_out_of_bounds(pos)
                             # Check for overlap with solute molecules.
                             if not remove:
                                 for solute in self.molecule_list:
-                                    cond1 = any(pos > solute.bounding_box.min)
-                                    cond2 = any(pos < solute.bounding_box.max)
+                                    cond1 = all(pos > solute.bounding_box.min)
+                                    cond2 = all(pos < solute.bounding_box.max)
                                     if cond1 and cond2:
                                         remove = True
                         if remove:
                             del trans_tile[mol_key]
-                            remove_count += 1
                     mols = np.append(mols, molec_list_from_config(trans_tile))
-                # print 'Remove count: ', remove_count
+
                 # Check the density
-                # print 'num of mols = ', len(mols)
                 actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
-                # print 'actual = ', actual
                 difference = (actual - density) / density
-                # print 'diff = ', difference
-                if abs(difference * 100) > abs(tolerance):
+                if abs(difference * 100) >= abs(tolerance):
                     scale_factor = difference / (count + 2)
                 else:
                     break
             # Once the correct density is achieved, add molecules to universe
             [self.add_structural_unit(molecule) for molecule in mols]
-            print '\nIterations required: ', count
 
 
 def _primitive_cubic(dimensions, number):
