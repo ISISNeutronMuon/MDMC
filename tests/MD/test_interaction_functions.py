@@ -31,7 +31,6 @@ def parameter():
 
     return Parameter(UnitFloat(VALUE, UNIT), NAME)
 
-
 @pytest.fixture
 def scaled_parameter():
 
