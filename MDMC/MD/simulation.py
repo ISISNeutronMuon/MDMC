@@ -633,17 +633,15 @@ class Universe(object):
                 pass
             # Calculate useful properties from the original box
             solv_mass = molec_from_dict(config['molecules'].values()[0]).mass
-            num_solv = len(config['molecules'])
             orig_box_dims = config['box dims']
-            orig_box_vol = np.prod(orig_box_dims)
-            orig_box_dens = solv_mass * num_solv / orig_box_vol
+            orig_box_dens = (solv_mass * len(config['molecules'])
+                             / np.prod(orig_box_dims))
             # Get the prelim scaling of the orig box required to achieve density
             tot_solute_mass = 0
             for atom in self.atom_list:
                 tot_solute_mass += atom.mass
             req_dens = density - (tot_solute_mass / self.volume)
-            vol_scaling = orig_box_dens / req_dens
-            dim_scaling = np.array([vol_scaling ** (1. / 3)] * 3)
+            dim_scaling = np.array([(orig_box_dens / req_dens) ** (1. / 3)] * 3)
 
             scale_factor = 0.
             count = 0
