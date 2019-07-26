@@ -145,7 +145,7 @@ def test_fixed_parameter_change_warning(parameter):
 def test_value_setting_within_constraints(constraints, value, parameter):
 
     """
-    Tests setting the value of a Parameter within the constraints
+    Tests that the value of a Parameter can be set within the constraints
 
     Includes tests of values at edges of constraints, as constraints are a
     closed interval
