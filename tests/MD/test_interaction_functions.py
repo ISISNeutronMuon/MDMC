@@ -43,7 +43,6 @@ def scaled_parameter():
 
     return Parameter(UnitFloat(5 * VALUE, UNIT), NAME)
 
-
 @pytest.fixture
 def param_inter(parameter):
 
