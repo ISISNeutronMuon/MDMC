@@ -886,3 +886,22 @@ def test_solvate_spce_bond_lengths(dim_scalings):
         dist1 = distances[label + str(1)]
         dist2 = distances[label + str(2)]
         np.testing.assert_array_almost_equal(dist1, dist2)
+
+
+@pytest.mark.parametrize('univ_dims', [[1, 1, 1], [1, 2, 3], [2, 3, 1]])
+def test_solvate_spce_density_perfect_dims(univ_dims):
+
+    """
+    Tests that a perfect density (i.e. the density of SPCE water box as
+    provided in GROMACS' spc216.gro at 300K) is achieved when solvating an
+    empty universe with dimensions that are integer multiples of the SPCE
+    water box.
+    """
+
+    univ = sim.Universe(SPCE_DIMS * np.array(univ_dims))
+    univ.solvate(SPCE_DENSITY)
+    total_mass = 0
+    for atom in univ.atom_list:
+        total_mass += atom.mass
+    assert (abs(((total_mass / univ.volume) - SPCE_DENSITY) / SPCE_DENSITY)
+            < 1e-10)
