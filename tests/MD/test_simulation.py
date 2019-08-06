@@ -761,7 +761,7 @@ def test_universe_fill_orientations(universe):
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
 
 
-@pytest.mark.parametrize('uni', [sim.Universe(SPCE_DIMS * scalar)
+@pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMS * scalar)
                                  for scalar in [0.9, 1.0, 1.1]])
 def test_solvate_spce_no_solute(uni):
 
@@ -778,7 +778,7 @@ def test_solvate_spce_no_solute(uni):
     assert cond1 and cond2
 
 
-@pytest.mark.parametrize('molecule', [small_diatomic(), large_diatomic()])
+@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
 def test_solvate_spce_with_solute(molecule):
 
     """
@@ -816,7 +816,7 @@ def test_solvate_spce_no_out_of_bounds():
         assert cond1 and cond2
 
 
-@pytest.mark.parametrize('molecule', [small_diatomic(), large_diatomic()])
+@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
 def test_solvate_spce_no_overlap_with_solute(molecule):
 
     """
@@ -840,7 +840,7 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
                 assert not (cond1 and cond2)
 
 
-@pytest.mark.parametrize('dim_scalings', [(0.9, 1.1), (0.5, 0.7)])
+@pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
 def test_solvate_spce_bond_lengths(dim_scalings):
 
     """
@@ -888,8 +888,8 @@ def test_solvate_spce_bond_lengths(dim_scalings):
         np.testing.assert_array_almost_equal(dist1, dist2)
 
 
-@pytest.mark.parametrize('univ_dims', [[1, 1, 1], [1, 2, 3], [2, 3, 1]])
-def test_solvate_spce_density_perfect_dims(univ_dims):
+@pytest.mark.parametrize("dim_scaling", [[1, 1, 1], [1, 2, 3], [2, 3, 1]])
+def test_solvate_spce_density_perfect_dims(dim_scaling):
 
     """
     Tests that a perfect density (i.e. the density of SPCE water box as
@@ -898,10 +898,24 @@ def test_solvate_spce_density_perfect_dims(univ_dims):
     water box.
     """
 
-    univ = sim.Universe(SPCE_DIMS * np.array(univ_dims))
+    univ = sim.Universe(SPCE_DIMS * np.array(dim_scaling))
     univ.solvate(SPCE_DENSITY)
     total_mass = 0
     for atom in univ.atom_list:
         total_mass += atom.mass
     assert (abs(((total_mass / univ.volume) - SPCE_DENSITY) / SPCE_DENSITY)
             < 1e-10)
+
+
+@pytest.mark.parametrize("univ_dims", [SPCE_DIMS * np.array([1, 1, 0.5]),
+                                       SPCE_DIMS * np.array([1, 1, 1.5])])
+def test_solvate_no_spce_wrapping_for_non_int_univ_dims(univ_dims):
+
+    """
+    Creates a universe with dimensions that are non-integer multiples of the
+    dimensions of the SPCE water box, and tests that atoms that fall outside
+    the bounds of the universe aren't wrapped around back into the universe.
+    """
+
+    univ = sim.Universe(univ_dims)
+    univ.solvate(SPCE_DENSITY)
