@@ -649,8 +649,15 @@ class Universe(object):
 
                 count += 1
                 dim_scaling *= 1 + scale_factor
+                print 'Dim Scaling = ', dim_scaling
+
                 box_dims = orig_box_dims * dim_scaling
-                num_tiles = np.ceil(self.dims / box_dims).astype(int)
+                num_tiles = np.array(self.dims / box_dims)
+                # Binary list for axes that contain a whole num of tiles.
+                wrap = np.array([1 if dir.is_integer() else 0
+                                 for dir in num_tiles])
+                num_tiles = np.ceil(num_tiles).astype(int)
+                print 'Num tiles = ', num_tiles
 
                 mols = np.array([])
                 for trans_vect in product(range(0, num_tiles[0]),
@@ -669,6 +676,16 @@ class Universe(object):
 
                             pos += (dim_scaling
                                     * (CoM + trans_vect * orig_box_dims) - CoM)
+
+                            # Create binary list indicating the axes along
+                            # which the atom is out of bounds.
+                            axes = np.array([1 if i > j else 0
+                                             for i, j in zip(pos, self.dims)])
+                            # Translates position if wrapping required.
+                            wrap_vect = wrap * axes * num_tiles * box_dims
+                            if any(wrap_vect) != 0:
+                                print 'Wrapping vector = ', wrap_vect
+                            pos -= wrap_vect
                             remove = self._check_out_of_bounds(pos)
                             # Check for overlap with solute molecules.
                             if not remove:
@@ -684,12 +701,14 @@ class Universe(object):
                 # Check the density
                 actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
                 difference = (actual - density) / density
+                print 'Difference = ', difference * 100, ' %'
                 if abs(difference * 100) >= abs(tolerance):
-                    scale_factor = difference / (count + 2)
+                    scale_factor = difference / count
                 else:
                     break
             # Once the correct density is achieved, add molecules to universe
             [self.add_structural_unit(molecule) for molecule in mols]
+            print 'Iterations Required = ', count
 
 
 def _primitive_cubic(dimensions, number):
