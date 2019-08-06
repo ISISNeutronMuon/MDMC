@@ -677,25 +677,31 @@ class Universe:
         return any(position > self.dims) or any(position < [0, 0, 0])
 
 
-    def solvate(self, density, solvent=None, model='SPCE', **settings):
+    def solvate(self, density, tolerance=1, solvent=None, model='SPCE'):
 
         """
-        Fills the universe with randomly distributed solvent molecules.
+        Fills the universe with solvent molecules, distributed randomly
+        or according to a pre-defined configuration.
 
         Parameters
         ----------
         density : float
             The desired total density of the solvent and solute molecules,
             in units of amu Ang ^ -3
+        tolerance : float
+            The +/- percentage tolerance of the density to be achieved.
+            The default is 1 %. Tolerances of less than 1 % are at risk
+            of not converging.
         solvent : StructuralUnit or dict
             A StructuralUnit for the solvent Molecule/Atom to fill the
             Universe with.
             A configuration dict with the position of 1 or more solvent
             StructuralUnits.
             If None then use SPCE water configuration.
-        **settings
-            tolerance : float
-                The +/- percentage tolerance of the density to be achieved
+        model : str
+            The name of the solvent model to use. Must specify a name that
+            corresponds to one of the data structures found in
+            configurations.py. The default is 'SPCE'.
 
         Raises
         ------
@@ -704,8 +710,6 @@ class Universe:
             is passed as an argument.
         """
 
-        if settings.get('tolerance'):
-            tolerance = settings['tolerance']
         if solvent is not None:
             raise NotImplementedError
             if isinstance(solvent, StructuralUnit):
@@ -736,10 +740,9 @@ class Universe:
                 count += 1
                 dim_scaling *= 1 + scale_factor
                 print 'Dim Scaling = ', dim_scaling
-
                 box_dims = orig_box_dims * dim_scaling
                 num_tiles = np.array(self.dims / box_dims)
-                # Binary list for axes that contain a whole num of tiles.
+                # Binary list for axes along which whole num of tiles are used.
                 wrap = np.array([1 if dir.is_integer() else 0
                                  for dir in num_tiles])
                 num_tiles = np.ceil(num_tiles).astype(int)
@@ -762,7 +765,6 @@ class Universe:
 
                             pos += (dim_scaling
                                     * (CoM + trans_vect * orig_box_dims) - CoM)
-
                             # Create binary list indicating the axes along
                             # which the atom is out of bounds.
                             axes = np.array([1 if i > j else 0
