@@ -907,15 +907,31 @@ def test_solvate_spce_density_perfect_dims(dim_scaling):
             < 1e-10)
 
 
-@pytest.mark.parametrize("univ_dims", [SPCE_DIMS * np.array([1, 1, 0.5]),
-                                       SPCE_DIMS * np.array([1, 1, 1.5])])
-def test_solvate_no_spce_wrapping_for_non_int_univ_dims(univ_dims):
+def test_solvate_no_spce_wrapping_for_non_int_univ_dims():
 
     """
-    Creates a universe with dimensions that are non-integer multiples of the
-    dimensions of the SPCE water box, and tests that atoms that fall outside
-    the bounds of the universe aren't wrapped around back into the universe.
+    Creates a universe with a dimension that is a non-integer multiple of the
+    dimensions of the SPCE water box, and tests that a known SPCE molecule with
+    an out-of-bounds atom isn't added to the universe, nor that this atom is
+    wrapped around back into the universe.
     """
 
+    # Build a universe of dimensions of the SPCE box, but cut in half
+    # along the z-axis, and solvate it.
+    univ_dims = SPCE_DIMS * np.array([1, 1, 0.5])
     univ = sim.Universe(univ_dims)
     univ.solvate(SPCE_DENSITY)
+    # Molecule 12 from the GROMACS spc216 configuration is known to have one
+    # atom that sits out of bounds of these universe dims, along the z-axis
+    # only. The molecule should therefore not be added to the universe, nor
+    # should the atom out-of-bounds be wrapped around.
+    pos1 = np.array([17.27, 3.79, 9.39])
+    pos2 = np.array([15.81, 3.31, 8.84])
+    pos3 = np.array([16.67, 3., 9.25])
+    # If wrapped, the wrapped position is the position of the out-of-bounds
+    # atom minus the universe dimension length in the z-direction.
+    wrapped_pos = pos1 - univ_dims * np.array([0, 0, 1])
+    # Check that no atoms in the universe have these positions.
+    for atom in univ.atom_list:
+        for pos in [pos1, pos2, pos3, wrapped_pos]:
+            assert all(atom.position != pos)
