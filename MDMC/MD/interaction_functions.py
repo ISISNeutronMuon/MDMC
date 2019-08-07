@@ -495,14 +495,11 @@ class Buckingham(InteractionFunction):
         The Buckingham parameter C in units of Ang^6 kJ mol^-1. Can either
         be a UnitFloat, or a (float, str) tuple, where float is the value
         and str is the unit.
-
-    Raises
-    ------
-    NotImplementedError
-        HAS NOT YET BEEN IMPLEMENTED
     """
 
-    raise NotImplementedError
+    def __init__(self, A, B, C):
+
+        super(self.__class__, self).__init__(locals())
 
 
 def filter_parameters(parameters, predicate):
