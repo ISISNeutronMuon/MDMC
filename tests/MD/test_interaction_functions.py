@@ -3,10 +3,11 @@
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
-from MDMC.MD.interaction_functions import (Parameter, Coulomb, LennardJones,
-    filter_parameters, filter_parameters_name, filter_parameters_value,
-    filter_parameters_interaction, filter_parameters_function,
-    filter_parameters_atom_attribute, filter_parameters_structure)
+from MDMC.MD.interaction_functions import (Parameter, Buckingham, Coulomb,
+    LennardJones, filter_parameters, filter_parameters_name,
+    filter_parameters_value, filter_parameters_interaction,
+    filter_parameters_function, filter_parameters_atom_attribute,
+    filter_parameters_structure)
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import Atom, Bond, Coulombic, Dispersion, Molecule
 
