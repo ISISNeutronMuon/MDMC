@@ -401,3 +401,31 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
 
     assert (filter_parameters_structure(parameters, struct_name)
             == parameters[slice(*expected_slice)])
+
+
+def test_harmonicpotential():
+
+    """
+    Tests for the HarmonicPotential InteractionFunction.
+    """
+
+
+def test_lennardjones():
+
+    """
+    Tests for the LennardJones InteractionFunction.
+    """
+
+
+def test_coulomb():
+
+    """
+    Tests for the Coulomb InteractionFunction.
+    """
+
+
+def test_buckingham():
+
+    """
+    Tests for the Buckingham InteractionFunction.
+    """
