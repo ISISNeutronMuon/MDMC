@@ -20,7 +20,8 @@ COULOMBIC = Coulombic(atom_types=[1],
                       universe=Universe(1.0),
                       function=COULOMB)
 HARMPOT_EQUIL_STATE = 1
-HARMPOT_POT_STRENGTH = 1
+HARMPOT_POT_STRENGTH_LINEAR = 1
+HARMPOT_POT_STRENGTH_ANGULAR = 1
 LJ_EPSILON = (10, 'kJ mol ^ -1')
 LJ_SIGMA = (5, 'Ang')
 COULOMB_CHARGE = UnitFloat(7.0, 'e')
@@ -77,6 +78,18 @@ def parameters():
     """
 
     return [Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i in range(10)]
+
+@pytest.fixture
+def buckingham_potential():
+
+    """
+    Returns
+    -------
+    Buckingham
+        An initialized Buckingham InteractionFunction.
+    """
+
+    return Buckingham(BUCK_A, BUCK_B, BUCK_C)
 
 
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
@@ -432,8 +445,23 @@ def test_coulomb():
     """
 
 
-def test_buckingham():
+def test_buckingham_initialization(buckingham):
 
     """
-    Tests for the Buckingham InteractionFunction.
+    Tests that initialization of a Buckingham InteractionFunction creates
+    a Buckingham object.
     """
+
+    assert isinstance(buckingham, Buckingham)
+
+
+def test_buckingham_params(buckingham):
+
+    """
+    Tests that initializing a Buckingham InteractionFunction assigns the
+    correct values and names to the parameters values.
+    """
+
+    for idx, param in enumerate(buckingham.params):
+        assert param.value == [BUCK_A, BUCK_B, BUCK_C][idx]
+        assert param.name == ['A', 'B', 'C'][idx]
