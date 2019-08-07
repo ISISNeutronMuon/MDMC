@@ -19,6 +19,14 @@ COULOMB = Coulomb((5.0, 'e'))
 COULOMBIC = Coulombic(atom_types=[1],
                       universe=Universe(1.0),
                       function=COULOMB)
+HARMPOT_EQUIL_STATE = 1
+HARMPOT_POT_STRENGTH = 1
+LJ_EPSILON = (10, 'kJ mol ^ -1')
+LJ_SIGMA = (5, 'Ang')
+COULOMB_CHARGE = UnitFloat(7.0, 'e')
+BUCK_A = UnitFloat(1, 'kJ mol ^ -1')
+BUCK_B = UnitFloat(2, 'Ang ^ -1')
+BUCK_C = UnitFloat(3, 'Ang ^ 6 kJ mol ^ -1')
 
 @pytest.fixture
 def parameter():
