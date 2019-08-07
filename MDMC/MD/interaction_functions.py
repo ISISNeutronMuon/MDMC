@@ -383,6 +383,57 @@ class InteractionFunction(object):
             param.interactions = interaction
 
 
+class Buckingham(InteractionFunction):
+
+    """
+    The Buckingham potential (in units of kJ mol-1) for the interaction of
+    2 atoms at distance r (in Ang) has the form:
+
+    ..math::
+
+        {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
+
+    Parameters
+    ----------
+    A : UnitFloat, tuple
+        The Buckingham parameter A in units of kJ mol^-1. Can either be a
+        UnitFloat, or a (float, str) tuple, where float is the value and
+        str is the unit.
+    B : UnitFloat, tuple
+        The Buckingham parameter B in units of Ang^-1. Can either be a
+        UnitFloat, or a (float, str) tuple, where float is the value and
+        str is the unit.
+    C : float
+        The Buckingham parameter C in units of Ang^6 kJ mol^-1. Can either
+        be a UnitFloat, or a (float, str) tuple, where float is the value
+        and str is the unit.
+    """
+
+    def __init__(self, A, B, C):
+
+        super(self.__class__, self).__init__(locals())
+
+
+class Coulomb(InteractionFunction):
+
+    """
+    Coulomb interaction for charged particles:
+
+    ..math::
+
+        E = \frac{Cq_{i}q_{j}}{r}
+
+    Parameters
+    ----------
+    charge : float
+        The charge in units of e
+    """
+
+    def __init__(self, charge):
+
+        super(self.__class__, self).__init__(locals())
+
+
 class HarmonicPotential(InteractionFunction):
 
     """
@@ -449,57 +500,6 @@ class LennardJones(InteractionFunction):
         super(self.__class__, self).__init__(locals())
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)
-
-
-class Coulomb(InteractionFunction):
-
-    """
-    Coulomb interaction for charged particles:
-
-    ..math::
-
-        E = \frac{Cq_{i}q_{j}}{r}
-
-    Parameters
-    ----------
-    charge : float
-        The charge in units of e
-    """
-
-    def __init__(self, charge):
-
-        super(self.__class__, self).__init__(locals())
-
-
-class Buckingham(InteractionFunction):
-
-    """
-    The Buckingham potential (in units of kJ mol-1) for the interaction of
-    2 atoms at distance r (in Ang) has the form:
-
-    ..math::
-
-        {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
-
-    Parameters
-    ----------
-    A : UnitFloat, tuple
-        The Buckingham parameter A in units of kJ mol^-1. Can either be a
-        UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
-    B : UnitFloat, tuple
-        The Buckingham parameter B in units of Ang^-1. Can either be a
-        UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
-    C : float
-        The Buckingham parameter C in units of Ang^6 kJ mol^-1. Can either
-        be a UnitFloat, or a (float, str) tuple, where float is the value
-        and str is the unit.
-    """
-
-    def __init__(self, A, B, C):
-
-        super(self.__class__, self).__init__(locals())
 
 
 def filter_parameters(parameters, predicate):
