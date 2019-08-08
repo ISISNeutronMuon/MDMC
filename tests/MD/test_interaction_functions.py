@@ -3,21 +3,34 @@
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
-from MDMC.MD.interaction_functions import (Parameter, Coulomb, LennardJones,
-    filter_parameters, filter_parameters_name, filter_parameters_value,
-    filter_parameters_interaction, filter_parameters_function,
-    filter_parameters_atom_attribute, filter_parameters_structure)
+from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
+                                           HarmonicPotential,
+                                           InteractionFunction, LennardJones,
+                                           Parameter, filter_parameters,
+                                           filter_parameters_atom_attribute,
+                                           filter_parameters_function,
+                                           filter_parameters_interaction,
+                                           filter_parameters_name,
+                                           filter_parameters_structure,
+                                           filter_parameters_value)
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import Atom, Bond, Coulombic, Dispersion, Molecule
 
 
-VALUE = 1.0
+BUCK_A = UnitFloat(1, 'kJ mol ^ -1')
+BUCK_B = UnitFloat(2, 'Ang ^ -1')
+BUCK_C = UnitFloat(3, 'Ang ^ 6 kJ mol ^ -1')
+COULOMB_CHARGE = UnitFloat(5.0, 'e')
+HARMPOT_EQUIL_STATE = UnitFloat(10, 'Ang')
+HARMPOT_POT_STREN = UnitFloat(100, 'kJ mol ^ -1')
+LJ_EPSILON = UnitFloat(15, 'kJ mol ^ -1')
+LJ_SIGMA = UnitFloat(5, 'Ang')
 NAME = 'length'
 UNIT = Unit('Ang')
-COULOMB = Coulomb((5.0, 'e'))
-COULOMBIC = Coulombic(atom_types=[1],
-                      universe=Universe(1.0),
-                      function=COULOMB)
+VALUE = 1.0
+VAL_DICT = {'aa': UnitFloat(5, 'arb'),
+            'bb': UnitFloat(7, 'arb'),
+            'cc': UnitFloat(9, 'arb')}
 
 @pytest.fixture
 def parameter():
@@ -44,7 +57,7 @@ def scaled_parameter():
     return Parameter(UnitFloat(5 * VALUE, UNIT), NAME)
 
 @pytest.fixture
-def param_inter(parameter):
+def param_inter(parameter, coulombic):
 
     """
     Returns
@@ -53,7 +66,7 @@ def param_inter(parameter):
         A Parameter with a value, a name, and an interaction
     """
 
-    parameter.interactions = COULOMBIC
+    parameter.interactions = coulombic
     return parameter
 
 @pytest.fixture
@@ -68,6 +81,83 @@ def parameters():
     """
 
     return [Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i in range(10)]
+
+@pytest.fixture
+def interaction_func():
+
+    """
+    Returns
+    -------
+    InteractionFunction
+        An InteractionFunction object initialized with a dictionary containing
+        name:value pairs that correspond to the parameters.
+    """
+
+    return InteractionFunction(VAL_DICT)
+
+@pytest.fixture
+def buckingham():
+
+    """
+    Returns
+    -------
+    Buckingham
+        An Buckingham InteractionFunction initialized with the Buckingham
+        A, B, and C parameters.
+    """
+
+    return Buckingham(BUCK_A, BUCK_B, BUCK_C)
+
+@pytest.fixture
+def coulomb():
+
+    """
+    Returns
+    -------
+    Coulomb
+        A Coulomb InteractionFunction initialized with a charge parameter.
+    """
+
+    return Coulomb(COULOMB_CHARGE)
+
+@pytest.fixture
+def coulombic(coulomb):
+
+    """
+    Returns
+    -------
+    Coulombic
+        A Coulombic Interaction object, initialized with a Coulomb
+        InteractionFunction object, an empty universe, and one atom.
+    """
+
+    return Coulombic(atom_types=[1], universe=Universe(1.0), function=coulomb)
+
+@pytest.fixture
+def harmonic():
+
+    """
+    Returns
+    -------
+    HarmonicPotential
+        A HarmonicPotential InteractionFunction initialized with an equilibrium
+        state and a linear potential strength.
+    """
+
+    return HarmonicPotential(HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN)
+
+@pytest.fixture
+def lennardjones():
+
+    """
+    Returns
+    -------
+    LennardJones
+        A LennardJones InteractionFunction initialized with an LJ epsilon and
+        LJ sigma values.
+    """
+
+    return LennardJones(LJ_EPSILON, LJ_SIGMA)
 
 
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
@@ -183,7 +273,7 @@ def test_interaction_setting_name(param_inter):
 
     with pytest.raises(ValueError):
         param_inter.interactions = Dispersion(Universe(1.0), [1],
-                                              function=COULOMB)
+                                              function=coulomb)
 
 
 def test_interaction_setting_function_name(param_inter):
@@ -216,7 +306,8 @@ def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
 @pytest.mark.parametrize('pred, attr, val', [(lambda p: p.fixed is True,
                                               'fixed',
                                               True),
-                                             (lambda p: p.constraints != None,
+                                             ((lambda p: p.constraints
+                                               is not None),
                                               'constraints',
                                               (0., 10.)),
                                              (lambda p: p.unit is 'e',
@@ -286,7 +377,8 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
                                                        [1, None, 2]),
                                                       ('Bond',
                                                        [-1, -2])])
-def test_filter_parameters_interaction(int_name, expected_slice, parameters):
+def test_filter_parameters_interaction(int_name, expected_slice, parameters,
+                                       coulombic):
 
     """
     Tests that filtering parameters by interaction results in the correct
@@ -295,7 +387,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters):
 
     for index, param in enumerate(parameters):
         if index % 2:
-            param.interactions = COULOMBIC
+            param.interactions = coulombic
         else:
             param.interactions = Dispersion(Universe(1.0), [1],
                                             function=LennardJones((1., 'arb'),
@@ -311,7 +403,8 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters):
                                                             [1, None, 2]),
                                                            ('HarmonicPotential',
                                                             [-1, -2])])
-def test_filter_parameters_function(function_name, expected_slice, parameters):
+def test_filter_parameters_function(function_name, expected_slice, parameters,
+                                    coulomb):
 
     """
     Tests that filtering parameters by interaction function results in the
@@ -322,7 +415,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters):
         if index % 2:
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
-            function = COULOMB
+            function = coulomb
         param.interactions = Dispersion(Universe(1.0), [1], function=function)
 
     assert (filter_parameters_function(parameters, function_name)
@@ -400,3 +493,80 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
 
     assert (filter_parameters_structure(parameters, struct_name)
             == parameters[slice(*expected_slice)])
+
+
+def test_interaction_function_get_params(interaction_func):
+
+    """
+    Tests that the correct parameters are returned when retrieving them from
+    an already-initialized InteractionFunction object.
+    """
+
+    for param in interaction_func.params:
+        assert param.value == VAL_DICT[param.name]
+
+
+def test_interaction_function_set_params(interaction_func, parameters):
+
+    """
+    Tests that the parameters of an InteractionFunction can be set.
+    """
+
+    interaction_func.params = parameters
+    for intfunc_param, param in zip(interaction_func.params, parameters):
+        assert intfunc_param.value == param.value
+
+
+def test_interaction_function_params_values(interaction_func):
+
+    """
+    Tests that retrieval of the values of the parameters set during
+    initialization of an InteractionFunction object returns the correct values.
+    """
+
+    assert all(interaction_func.params_values
+               == [param.value for param in interaction_func.params])
+
+
+def test_interaction_function_name(interaction_func):
+
+    """
+    Tests that the initialization of an InteractionFunction object has the
+    correct name.
+    """
+
+    assert interaction_func.name == 'InteractionFunction'
+
+
+@pytest.mark.filterwarnings("ignore: Coulombic")
+def test_interaction_function_set_params_inters(interaction_func, coulombic):
+
+    """
+    Tests that the parent interaction for all Parameters of the
+    InteractionFunction object can be set to a Coulombic Interaction object.
+    """
+
+    interaction_func.set_params_interactions(coulombic)
+    for param in interaction_func.params:
+        for inter in param.interactions:
+            assert isinstance(inter, Coulombic)
+
+
+@pytest.mark.parametrize("object, values, names",
+                         [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
+                           ['A', 'B', 'C']),
+                          (coulomb(), [COULOMB_CHARGE], ['charge']),
+                          (harmonic(), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
+                           ['equilibrium_state', 'potential_strength']),
+                          (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
+                           ['epsilon', 'sigma'])])
+def test_interaction_function_subclass_params(object, values, names):
+
+    """
+    Tests that initializing a subclass of InteractionFunction assigns the
+    correct values and names to the parameters.
+    """
+
+    for idx, param in enumerate(object.params):
+        assert param.value == values[idx]
+        assert param.name == names[idx]
