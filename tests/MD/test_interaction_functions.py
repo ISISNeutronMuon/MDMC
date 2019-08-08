@@ -516,7 +516,7 @@ def test_interactionfunction_set_params(interactionfunc, parameters):
         assert intfunc_param.value == param.value
 
 
-def test_interactionfunction_params_values(interactionfunc):
+def test_interaction_function_params_values(interaction_func):
 
     """
     Tests that retrieval of the values of the parameters set during
