@@ -386,7 +386,7 @@ class InteractionFunction(object):
 class Buckingham(InteractionFunction):
 
     """
-    The Buckingham potential (in units of kJ mol-1) for the interaction of
+    The Buckingham potential (in units of kJ mol^-1) for the interaction of
     2 atoms at distance r (in Ang) has the form:
 
     ..math::
