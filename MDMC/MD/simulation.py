@@ -705,86 +705,81 @@ class Universe:
             is passed as an argument.
         """
 
-        if solvent is not None:
-            raise NotImplementedError
-            if isinstance(solvent, StructuralUnit):
-                # Deal with the case where user specifies the solvent molecule
-                pass
-        else:
-            if model == 'SPCE':
-                config = copy.deepcopy(SPCE)
-            else:
-                # User specifies model for a different solvent.
-                pass
-            # Calculate useful properties from the original box
-            solv_mass = molec_from_dict(config['molecules'].values()[0]).mass
-            orig_box_dims = config['box dims']
-            orig_box_dens = (solv_mass * len(config['molecules'])
-                             / np.prod(orig_box_dims))
-            # Get the prelim scaling of the orig box required to achieve density
-            tot_solute_mass = 0
-            for atom in self.atom_list:
-                tot_solute_mass += atom.mass
-            req_dens = density - (tot_solute_mass / self.volume)
-            dim_scaling = np.array([(orig_box_dens / req_dens) ** (1. / 3)] * 3)
+        try:
+            config = copy.deepcopy(getattr(coordinates, solvent))
+        except AttributeError:
+            raise NotImplementedError('The solvate method currently only'
+                                      ' supports using inbuilt solvents')
 
-            scale_factor = 0.
-            count = 0
-            while True:
+        # Calculate useful properties from the original box
+        solv_mass = coordinates.molec_from_dict(config['molecules'].values()[0]).mass
+        orig_box_dims = config['box dims']
+        orig_box_dens = (solv_mass * len(config['molecules'])
+                         / np.prod(orig_box_dims))
+        # Get the prelim scaling of the orig box required to achieve density
+        tot_solute_mass = 0
+        for atom in self.atom_list:
+            tot_solute_mass += atom.mass
+        req_dens = density - (tot_solute_mass / self.volume)
+        dim_scaling = np.array([(orig_box_dens / req_dens) ** (1. / 3)] * 3)
 
-                count += 1
-                dim_scaling *= 1 + scale_factor
-                box_dims = orig_box_dims * dim_scaling
-                num_tiles = np.array(self.dims / box_dims)
-                # Binary list for axes along which whole num of tiles are used.
-                wrap = np.array([1 if dir.is_integer() else 0
-                                 for dir in num_tiles])
-                num_tiles = np.ceil(num_tiles).astype(int)
+        scale_factor = 0.
+        count = 0
+        difference = np.float('inf')
+        while abs(difference * 100) >= abs(tolerance):
 
-                mols = np.array([])
-                for trans_vect in product(range(0, num_tiles[0]),
-                                          range(0, num_tiles[1]),
-                                          range(0, num_tiles[2])):
 
-                    trans_tile = copy.deepcopy(config['molecules'])
-                    for mol_key in trans_tile.keys():
+            count += 1
+            dim_scaling *= 1 + scale_factor
+            box_dims = orig_box_dims * dim_scaling
+            num_tiles = np.array(self.dims / box_dims)
+            # Binary list for axes along which whole num of tiles are used.
+            wrap = np.array([1 if dir.is_integer() else 0
+                             for dir in num_tiles])
+            num_tiles = np.ceil(num_tiles).astype(int)
 
-                        mol = trans_tile[mol_key]
-                        atom_positions = mol.values()
-                        CoM = molec_from_dict(mol).position
+            mols = []
+            for trans_vect in product(range(0, num_tiles[0]),
+                                      range(0, num_tiles[1]),
+                                      range(0, num_tiles[2])):
 
-                        remove = False
-                        for pos in atom_positions:
+                trans_tile = copy.deepcopy(config['molecules'])
+                for mol_key, mol in trans_tile.items():
 
-                            pos += (dim_scaling
-                                    * (CoM + trans_vect * orig_box_dims) - CoM)
-                            # Create binary list indicating the axes along
-                            # which the atom is out of bounds.
-                            axes = np.array([1 if i > j else 0
-                                             for i, j in zip(pos, self.dims)])
-                            # Translates position if wrapping required.
-                            pos -= wrap * axes * num_tiles * box_dims
-                            remove = self._check_out_of_bounds(pos)
-                            # Check for overlap with solute molecules.
-                            if not remove:
-                                for solute in self.molecule_list:
-                                    cond1 = all(pos > solute.bounding_box.min)
-                                    cond2 = all(pos < solute.bounding_box.max)
-                                    if cond1 and cond2:
-                                        remove = True
-                        if remove:
-                            del trans_tile[mol_key]
-                    mols = np.append(mols, molec_list_from_config(trans_tile))
+                    atom_positions = mol.values()
+                    CoM = coordinates.molec_from_dict(mol).position
 
-                # Check the density
-                actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
-                difference = (actual - density) / density
-                if abs(difference * 100) >= abs(tolerance):
-                    scale_factor = difference / count
-                else:
-                    break
-            # Once the correct density is achieved, add molecules to universe
-            [self.add_structural_unit(molecule) for molecule in mols]
+                    remove = False
+                    for pos in atom_positions:
+
+                        pos += (dim_scaling
+                                * (CoM + trans_vect * orig_box_dims) - CoM)
+                        # Create binary list indicating the axes along
+                        # which the atom is out of bounds.
+                        axes = np.array([1 if i > j else 0
+                                         for i, j in zip(pos, self.dims)])
+                        # Translates position if wrapping required.
+                        pos -= wrap * axes * num_tiles * box_dims
+                        remove = self._check_out_of_bounds(pos)
+                        # Check for overlap with solute molecules.
+                        if not remove:
+                            for solute in self.molecule_list:
+                                cond1 = all(pos > solute.bounding_box.min)
+                                cond2 = all(pos < solute.bounding_box.max)
+                                if cond1 and cond2:
+                                    remove = True
+                    if remove:
+                        del trans_tile[mol_key]
+                mols += coordinates.molec_list_from_config(trans_tile)
+
+            # Check the density
+            actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
+            difference = (actual - density) / density
+            scale_factor = difference / count
+
+        # Once the correct density is achieved, add molecules to universe
+        for molecule in mols:
+            self.add_structural_unit(molecule)
 
 
 def _primitive_cubic(dimensions, number):
