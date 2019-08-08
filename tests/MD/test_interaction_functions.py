@@ -83,7 +83,7 @@ def parameters():
     return [Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i in range(10)]
 
 @pytest.fixture
-def interactionfunc():
+def interaction_func():
 
     """
     Returns
