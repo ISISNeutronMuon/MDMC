@@ -558,7 +558,7 @@ def test_interactionfunction_subclass_initialization(object, subclass):
 
     """
     Tests that initialization of an InteractionFunction subclass creates
-    a isnstance of that object.
+    an instance of that object.
     """
 
     assert isinstance(object, subclass)
