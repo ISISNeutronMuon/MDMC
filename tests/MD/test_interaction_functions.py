@@ -83,7 +83,7 @@ def parameters():
     return [Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i in range(10)]
 
 @pytest.fixture
-def interaction_func():
+def interactionfunc():
 
     """
     Returns
@@ -494,7 +494,7 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
             == parameters[slice(*expected_slice)])
 
 
-def test_interaction_function_get_params(interaction_func):
+def test_interactionfunction_get_params(interactionfunc):
 
     """
     Tests that the correct parameters are returned when retrieving them from
@@ -505,18 +505,18 @@ def test_interaction_function_get_params(interaction_func):
         assert param.value == VAL_DICT[param.name]
 
 
-def test_interaction_function_set_params(interaction_func, parameters):
+def test_interactionfunction_set_params(interactionfunc, parameters):
 
     """
     Tests that the parameters of an InteractionFunction can be set.
     """
 
     interactionfunc.params = parameters
-    for intfunc_param, param in zip(interaction_func.params, parameters):
+    for intfunc_param, param in zip(interactionfunc.params, parameters):
         assert intfunc_param.value == param.value
 
 
-def test_interaction_function_params_values(interaction_func):
+def test_interactionfunction_params_values(interactionfunc):
 
     """
     Tests that retrieval of the values of the parameters set during
@@ -548,20 +548,6 @@ def test_interactionfunction_set_params_inters(interactionfunc, coulombic):
     for param in interactionfunc.params:
         for inter in param.interactions:
             assert isinstance(inter, Coulombic)
-
-
-@pytest.mark.parametrize("object, subclass", [(buckingham(), Buckingham),
-                                              (coulomb(), Coulomb),
-                                              (harmonic(), HarmonicPotential),
-                                              (lennardjones(), LennardJones)])
-def test_interactionfunction_subclass_initialization(object, subclass):
-
-    """
-    Tests that initialization of an InteractionFunction subclass creates
-    an instance of that object.
-    """
-
-    assert isinstance(object, subclass)
 
 
 @pytest.mark.parametrize("object, values, names",
