@@ -12,8 +12,7 @@ import numpy as np
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
-from MDMC.common.configurations import (molec_from_dict, molec_list_from_config,
-                                        SPCE)
+from MDMC.common import coordinates
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
