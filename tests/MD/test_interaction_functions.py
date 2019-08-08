@@ -512,7 +512,7 @@ def test_interactionfunction_set_params(interactionfunc, parameters):
     """
 
     interactionfunc.params = parameters
-    for intfunc_param, param in zip(interactionfunc.params, parameters):
+    for intfunc_param, param in zip(interaction_func.params, parameters):
         assert intfunc_param.value == param.value
 
 
