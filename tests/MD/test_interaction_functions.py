@@ -403,7 +403,8 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
                                                             [1, None, 2]),
                                                            ('HarmonicPotential',
                                                             [-1, -2])])
-def test_filter_parameters_function(function_name, expected_slice, parameters):
+def test_filter_parameters_function(function_name, expected_slice, parameters,
+                                    coulomb):
 
     """
     Tests that filtering parameters by interaction function results in the
@@ -414,7 +415,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters):
         if index % 2:
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
-            function = coulomb()
+            function = coulomb
         param.interactions = Dispersion(Universe(1.0), [1], function=function)
 
     assert (filter_parameters_function(parameters, function_name)
