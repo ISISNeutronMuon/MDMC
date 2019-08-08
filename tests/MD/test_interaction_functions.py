@@ -505,7 +505,7 @@ def test_interaction_function_get_params(interaction_func):
         assert param.value == VAL_DICT[param.name]
 
 
-def test_interactionfunction_set_params(interactionfunc, parameters):
+def test_interaction_function_set_params(interaction_func, parameters):
 
     """
     Tests that the parameters of an InteractionFunction can be set.
