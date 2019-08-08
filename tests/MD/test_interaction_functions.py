@@ -524,7 +524,8 @@ def test_interaction_function_params_values(interaction_func):
     initialization of an InteractionFunction object returns the correct values.
     """
 
-    assert all(interaction_func.params_values) == all(VAL_DICT.values())
+    assert all(interaction_func.params_values
+               == [param.value for param in interaction_func.params])
 
 
 def test_interaction_function_name(interaction_func):
