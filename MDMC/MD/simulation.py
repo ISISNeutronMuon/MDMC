@@ -676,7 +676,7 @@ class Universe:
         return any(position > self.dims) or any(position < [0, 0, 0])
 
 
-    def solvate(self, density, tolerance=1, solvent=None, model='SPCE'):
+    def solvate(self, density, tolerance=1, solvent='SPCE'):
 
         """
         Fills the universe with solvent molecules, distributed randomly
@@ -691,16 +691,12 @@ class Universe:
             The +/- percentage tolerance of the density to be achieved.
             The default is 1 %. Tolerances of less than 1 % are at risk
             of not converging.
-        solvent : StructuralUnit or dict
+        solvent : str, StructuralUnit, Configuration, optional
+            A str specifying an inbuilt solvent from the following: 'SPCE'.
+            The default is 'SPCE'.
             A StructuralUnit for the solvent Molecule/Atom to fill the
-            Universe with.
-            A configuration dict with the position of 1 or more solvent
-            StructuralUnits.
-            If None then use SPCE water configuration.
-        model : str
-            The name of the solvent model to use. Must specify a name that
-            corresponds to one of the data structures found in
-            configurations.py. The default is 'SPCE'.
+            Universe with randomly.
+            A Configuration with 1 or more solvent which will tile the Universe.
 
         Raises
         ------
