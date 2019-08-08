@@ -83,7 +83,7 @@ def parameters():
     return [Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i in range(10)]
 
 @pytest.fixture
-def interactionfunc():
+def interaction_func():
 
     """
     Returns
@@ -494,58 +494,58 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
             == parameters[slice(*expected_slice)])
 
 
-def test_interactionfunction_get_params(interactionfunc):
+def test_interaction_function_get_params(interaction_func):
 
     """
     Tests that the correct parameters are returned when retrieving them from
     an already-initialized InteractionFunction object.
     """
 
-    for param in interactionfunc.params:
+    for param in interaction_func.params:
         assert param.value == VAL_DICT[param.name]
 
 
-def test_interactionfunction_set_params(interactionfunc, parameters):
+def test_interaction_function_set_params(interaction_func, parameters):
 
     """
     Tests that the parameters of an InteractionFunction can be set.
     """
 
-    interactionfunc.params = parameters
-    for intfunc_param, param in zip(interactionfunc.params, parameters):
+    interaction_func.params = parameters
+    for intfunc_param, param in zip(interaction_func.params, parameters):
         assert intfunc_param.value == param.value
 
 
-def test_interactionfunction_params_values(interactionfunc):
+def test_interaction_function_params_values(interaction_func):
 
     """
     Tests that retrieval of the values of the parameters set during
     initialization of an InteractionFunction object returns the correct values.
     """
 
-    assert all(interactionfunc.params_values) == all(VAL_DICT.values())
+    assert all(interaction_func.params_values) == all(VAL_DICT.values())
 
 
-def test_interactionfunction_name(interactionfunc):
+def test_interaction_function_name(interaction_func):
 
     """
     Tests that the initialization of an InteractionFunction object has the
     correct name.
     """
 
-    assert interactionfunc.name == 'InteractionFunction'
+    assert interaction_func.name == 'InteractionFunction'
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")
-def test_interactionfunction_set_params_inters(interactionfunc, coulombic):
+def test_interaction_function_set_params_inters(interaction_func, coulombic):
 
     """
     Tests that the parent interaction for all Parameters of the
     InteractionFunction object can be set to a Coulombic Interaction object.
     """
 
-    interactionfunc.set_params_interactions(coulombic)
-    for param in interactionfunc.params:
+    interaction_func.set_params_interactions(coulombic)
+    for param in interaction_func.params:
         for inter in param.interactions:
             assert isinstance(inter, Coulombic)
 
@@ -558,7 +558,7 @@ def test_interactionfunction_set_params_inters(interactionfunc, coulombic):
                            ['equilibrium_state', 'potential_strength']),
                           (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
                            ['epsilon', 'sigma'])])
-def test_interactionfunction_subclass_params(object, values, names):
+def test_interaction_function_subclass_params(object, values, names):
 
     """
     Tests that initializing a subclass of InteractionFunction assigns the
