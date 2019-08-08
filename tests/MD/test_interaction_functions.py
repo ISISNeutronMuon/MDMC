@@ -494,7 +494,7 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
             == parameters[slice(*expected_slice)])
 
 
-def test_interactionfunction_get_params(interactionfunc):
+def test_interaction_function_get_params(interaction_func):
 
     """
     Tests that the correct parameters are returned when retrieving them from
