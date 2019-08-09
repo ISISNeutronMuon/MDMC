@@ -665,8 +665,12 @@ class Universe:
     def _check_out_of_bounds(self, position):
 
         """
-        Checks whether a position lies outside the bounds of the Universe
-        outside the bounds of the universe.
+        Checks whether a position lies outside the bounds of the universe.
+
+        Parameters
+        ----------
+        position : list, array
+            The position to be checked against bounds of the universe.
 
         Returns
         -------
