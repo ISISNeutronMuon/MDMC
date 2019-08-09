@@ -2021,8 +2021,9 @@ def parse_all_nonbonded_styles(interactions):
     This is required because LAMMPS frequently treats Coulombic and Disperion
     interactions together; these cases need to be dealt with to generate the
     correct input to LAMMPS pair styles.  For example, while the pair_styles
-    'lj/cut', 'coul/cut' and 'coul/long' can all be passed separately, 'lj/long'
-    only exists as part of other pair styles, such as 'lj/long/coul/long'.
+    'buck', 'lj/cut', 'coul/cut' and 'coul/long' can all be passed separately,
+    'buck/long' and 'lj/long' only exist as part of other pair styles, such
+    as 'buck/long/coul/long' and 'lj/long/coul/long'.
 
     IF A NONBONDED STYLE COULD FORM PART OF TWO PAIRS THEN THE FIRST PAIR THAT
     OCCURS WILL BE USED (ALTHOUGH THIS SCENARIO SHOULD NOT OCCUR)
@@ -2054,7 +2055,7 @@ def parse_all_nonbonded_styles(interactions):
 
     # Check for coulombic and dispersion pairs that need to be combined
     # Dispersion styles always precede coulombic styles in LAMMPS pair styles
-    disp_styles = ['lj/long']
+    disp_styles = ['buck/long', 'lj/long']
     coul_styles = ['coul/long']
 
     lmp_str = []
