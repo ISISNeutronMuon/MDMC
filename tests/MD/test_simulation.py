@@ -825,8 +825,8 @@ def test_solvate_spce_no_out_of_bounds():
     univ = sim.Universe(SPCE_DIMS)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     for atom in univ.atom_list:
-        assert any(atom.position <= univ.dims)
-        assert any(atom.position >= [0, 0, 0])
+        assert all(atom.position <= univ.dims)
+        assert all(atom.position >= [0, 0, 0])
 
 
 @pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
@@ -847,8 +847,8 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
         if not np.array_equal(np.sort(names), np.sort(['H', 'O', 'H'])):
             for atom in mol.atom_list:
                 pos = atom.position
-                assert not all(pos > solute_bounds.min)
-                assert not all(pos < solute_bounds.max)
+                assert not (all(pos > solute_bounds.min)
+                            and all(pos < solute_bounds.max))
 
 
 @pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
@@ -865,38 +865,56 @@ def test_solvate_spce_bond_lengths(dim_scalings):
     univ2 = sim.Universe(SPCE_DIMS * dim_scalings[1])
     univ1.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     univ2.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
-    # Retrieve 2 test molecules from each universe.
-    test_molecules = {}
-    univ_number = 0
-    for univ in (univ1, univ2):
-        univ_number += 1
-        min_pos = max_pos = SPCE_DIMS * min(dim_scalings) * 0.5
-        for mol in univ.molecule_list:
-            min_length = np.linalg.norm(min_pos)
-            max_length = np.linalg.norm(max_pos)
 
-            pos = mol.position
-            length = np.linalg.norm(pos)
-            if length < min_length:
-                min_pos = pos
-                min_mol = mol
-            elif length > max_length:
-                max_pos = pos
-                max_mol = mol
-        test_molecules['min ' + str(univ_number)] = min_mol
-        test_molecules['max ' + str(univ_number)] = max_mol
-    # Generate the distances between pairs of atoms in the test molecules.
-    distances = {}
-    for mol_key in test_molecules:
-        mol = test_molecules[mol_key]
-        pos = [atom.position for atom in mol.atom_list]
-        dists = np.sort([np.linalg.norm(i - j) for i, j in combinations(pos, 2)])
-        distances[mol_key] = dists
-    # Compare distances between molecules in each universe.
-    for label in ('min ', 'max '):
-        dist1 = distances[label + str(1)]
-        dist2 = distances[label + str(2)]
-        np.testing.assert_array_almost_equal(dist1, dist2)
+    mol1 = univ1.molecule_list[0]
+    mol2 = univ2.molecule_list[0]
+
+    positions1 = [atom.position for atom in mol1.atom_list]
+    lengths1 = []
+    for pair in combinations(positions1, 2):
+        lengths1.append(abs(np.linalg.norm(pair[1] - pair[0])))
+    lengths1.sort()
+
+    positions2 = [atom.position for atom in mol2.atom_list]
+    lengths2 = []
+    for pair in combinations(positions2, 2):
+        lengths2.append(abs(np.linalg.norm(pair[1] - pair[0])))
+    lengths2.sort()
+
+    assert lengths1 == lengths2
+
+    # # Retrieve 2 test molecules from each universe.
+    # test_molecules = {}
+    # univ_number = 0
+    # for univ in (univ1, univ2):
+    #     univ_number += 1
+    #     min_pos = max_pos = SPCE_DIMS * min(dim_scalings) * 0.5
+    #     for mol in univ.molecule_list:
+    #         min_length = np.linalg.norm(min_pos)
+    #         max_length = np.linalg.norm(max_pos)
+    #
+    #         pos = mol.position
+    #         length = np.linalg.norm(pos)
+    #         if length < min_length:
+    #             min_pos = pos
+    #             min_mol = mol
+    #         elif length > max_length:
+    #             max_pos = pos
+    #             max_mol = mol
+    #     test_molecules['min ' + str(univ_number)] = min_mol
+    #     test_molecules['max ' + str(univ_number)] = max_mol
+    # # Generate the distances between pairs of atoms in the test molecules.
+    # distances = {}
+    # for mol_key in test_molecules:
+    #     mol = test_molecules[mol_key]
+    #     pos = [atom.position for atom in mol.atom_list]
+    #     dists = np.sort([np.linalg.norm(i - j) for i, j in combinations(pos, 2)])
+    #     distances[mol_key] = dists
+    # # Compare distances between molecules in each universe.
+    # for label in ('min ', 'max '):
+    #     dist1 = distances[label + str(1)]
+    #     dist2 = distances[label + str(2)]
+    #     np.testing.assert_array_almost_equal(dist1, dist2)
 
 
 def test_solvate_SPCE_with_solute(universe):
