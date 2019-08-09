@@ -593,7 +593,7 @@ class Universe(object):
             False otherwise.
         """
 
-        return any(position > self.dims) and any(position < [0, 0, 0])
+        return (any(position > self.dims) or any(position < [0, 0, 0]))
 
 
     def solvate(self, density, tolerance=1, solvent='SPCE'):
@@ -649,13 +649,9 @@ class Universe(object):
 
 
             count += 1
-            print count
             dim_scaling *= 1 + scale_factor
-            print 'Dim Scaling', dim_scaling
             box_dims = orig_box_dims * dim_scaling
-            print 'Box dims', box_dims
             num_tiles = np.array(self.dims / box_dims)
-            print 'Num tiles', num_tiles
             # Binary list for axes along which whole num of tiles are used.
             wrap = np.array([1 if dir.is_integer() else 0
                              for dir in num_tiles])
@@ -675,6 +671,7 @@ class Universe(object):
                     remove = False
                     for pos in atom_positions:
 
+                        # pdb.set_trace()
                         pos += (dim_scaling
                                 * (CoM + trans_vect * orig_box_dims) - CoM)
                         # Create binary list indicating the axes along
