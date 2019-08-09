@@ -9,7 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from MDMC.common.configurations import molec_from_dict, SPCE
+from MDMC.common.coordinates import molec_from_dict, SPCE
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 
