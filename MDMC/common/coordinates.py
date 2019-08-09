@@ -40,7 +40,7 @@ def molec_from_dict(mol_dict):
                                        (atoms['H2'], atoms['O']),
                                        constrained=True),
                                   BondAngle(atoms['H1'], atoms['O'],
-                                            atoms['H2'],constrained=True)],
+                                            atoms['H2'], constrained=True)],
                     name='water')
 
 
