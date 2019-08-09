@@ -593,14 +593,14 @@ class Universe(object):
             False otherwise.
         """
 
-        return any(position > self.dims) or any(position < [0, 0, 0])
+        return any(position > self.dims) and any(position < [0, 0, 0])
 
 
     def solvate(self, density, tolerance=1, solvent='SPCE'):
 
         """
         Fills the universe with solvent molecules, distributed randomly
-        or according to a pre-defined configuration.
+        or according to pre-defined coordinates.
 
         Parameters
         ----------
@@ -625,15 +625,15 @@ class Universe(object):
         """
 
         try:
-            config = copy.deepcopy(getattr(coordinates, solvent))
+            coords = copy.deepcopy(getattr(coordinates, solvent))
         except AttributeError:
             raise NotImplementedError('The solvate method currently only'
                                       ' supports using inbuilt solvents')
 
         # Calculate useful properties from the original box
-        solv_mass = coordinates.molec_from_dict(config['molecules'].values()[0]).mass
-        orig_box_dims = config['box dims']
-        orig_box_dens = (solv_mass * len(config['molecules'])
+        solv_mass = coordinates.molec_from_dict(coords['molecules'].values()[0]).mass
+        orig_box_dims = coords['box dims']
+        orig_box_dens = (solv_mass * len(coords['molecules'])
                          / np.prod(orig_box_dims))
         # Get the prelim scaling of the orig box required to achieve density
         tot_solute_mass = 0
@@ -649,9 +649,13 @@ class Universe(object):
 
 
             count += 1
+            print count
             dim_scaling *= 1 + scale_factor
+            print 'Dim Scaling', dim_scaling
             box_dims = orig_box_dims * dim_scaling
+            print 'Box dims', box_dims
             num_tiles = np.array(self.dims / box_dims)
+            print 'Num tiles', num_tiles
             # Binary list for axes along which whole num of tiles are used.
             wrap = np.array([1 if dir.is_integer() else 0
                              for dir in num_tiles])
@@ -662,7 +666,7 @@ class Universe(object):
                                       range(0, num_tiles[1]),
                                       range(0, num_tiles[2])):
 
-                trans_tile = copy.deepcopy(config['molecules'])
+                trans_tile = copy.deepcopy(coords['molecules'])
                 for mol_key, mol in trans_tile.items():
 
                     atom_positions = mol.values()
@@ -694,6 +698,7 @@ class Universe(object):
             # Check the density
             actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
             difference = (actual - density) / density
+            print difference
             scale_factor = difference / count
 
         # Once the correct density is achieved, add molecules to universe
