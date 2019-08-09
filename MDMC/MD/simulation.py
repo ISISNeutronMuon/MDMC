@@ -671,7 +671,6 @@ class Universe(object):
                     remove = False
                     for pos in atom_positions:
 
-                        # pdb.set_trace()
                         pos += (dim_scaling
                                 * (CoM + trans_vect * orig_box_dims) - CoM)
                         # Create binary list indicating the axes along
