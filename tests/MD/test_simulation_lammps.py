@@ -9,8 +9,8 @@ import pytest
 
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp_eng
-from MDMC.MD.interaction_functions import HarmonicPotential, LennardJones, \
-    Coulomb
+from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
+                                           HarmonicPotential, LennardJones)
 from MDMC.MD.simulation import ConstraintAlgorithm, Rattle, Shake, Universe, \
     Ewald, PPPM, KSpaceSolver
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
@@ -105,6 +105,14 @@ def universe_interactions(empty_universe, atoms):
                                                              'kJ / mol'),
                                                             (type*1.0,
                                                              'Ang')),
+                                      cutoff=10.0,
+                                      vdw_tail_correction=True))
+        dispersions.append(Dispersion(empty_universe, type,
+                                      function=Buckingham((type * 0.1,
+                                                           'kJ mol^-1'),
+                                                          (type * 1.0, 'Ang'),
+                                                          (type * 2.0,
+                                                           'Ang^6 kJ mol^-1')),
                                       cutoff=10.0,
                                       vdw_tail_correction=True))
     return (empty_universe, bonds, angles, coulombics, dispersions)
@@ -466,20 +474,29 @@ def test_parse_bonded_styles(interactions, expected, request):
     assert lmp_eng.parse_bonded_styles(interactions[0]) == expected
 
 
-@pytest.mark.parametrize('interactions, expected, solver_attr',
-                         [('dispersions', ['lj/cut', 10.], None),
-                          ('coulombics', ['coul/cut', 8.], None),
-                          ('dispersions', ['lj/long', 10.], 'kspace_solver'),
-                          ('coulombics', ['coul/long', 8.], 'kspace_solver'),
-                          ('dispersions', ['lj/long', 10.], 'dispersive_solver'),
-                          ('coulombics', ['coul/cut', 8.], 'dispersive_solver'),
-                          ('dispersions', ['lj/cut', 10.],
+@pytest.mark.parametrize('interactions, index, expected, solver_attr',
+                         [('dispersions', 0, ['lj/cut', 10.], None),
+                          ('dispersions', 1, ['buck', 10.], None),
+                          ('coulombics', 0, ['coul/cut', 8.], None),
+                          ('dispersions', 0, ['lj/long', 10.], 'kspace_solver'),
+                          ('dispersions', 1, ['buck/long', 10.],
+                           'kspace_solver'),
+                          ('coulombics', 0, ['coul/long', 8.], 'kspace_solver'),
+                          ('dispersions', 0, ['lj/long', 10.],
+                           'dispersive_solver'),
+                          ('dispersions', 1, ['buck/long', 10.],
+                           'dispersive_solver'),
+                          ('coulombics', 0, ['coul/cut', 8.],
+                           'dispersive_solver'),
+                          ('dispersions', 0, ['lj/cut', 10.],
                            'electrostatic_solver'),
-                          ('coulombics', ['coul/long', 8.],
+                          ('dispersions', 1, ['buck', 10.],
+                           'electrostatic_solver'),
+                          ('coulombics', 0, ['coul/long', 8.],
                            'electrostatic_solver')
                          ])
-def test_parse_nonbonded_styles(interactions, expected, solver_attr, universe,
-                                request):
+def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
+                                universe, request):
 
     """
     Tests that the return from parse_nonbonded_styles is the correct input for
@@ -497,12 +514,12 @@ def test_parse_nonbonded_styles(interactions, expected, solver_attr, universe,
     # As fixtures cannot be included in parameterization, the names of the
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
-    interactions = request.getfixturevalue(interactions)
+    interactions = request.getfixturevalue(interactions)[index]
     # If a solver_attr is specified, add a PPPM solver to this attribute
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
     # Test the first interaction in each list of interactions
-    assert lmp_eng.parse_nonbonded_styles(interactions[0]) == expected
+    assert lmp_eng.parse_nonbonded_styles(interactions) == expected
 
 
 @pytest.mark.parametrize('interaction, arguments, parser',
