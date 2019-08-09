@@ -775,7 +775,7 @@ class Universe:
                                     remove = True
                     if remove:
                         del trans_tile[mol_key]
-                mols += coordinates.molec_list_from_config(trans_tile)
+                mols += coordinates.molec_list_from_coords(trans_tile)
 
             # Check the density
             actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
