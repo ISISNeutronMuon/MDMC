@@ -665,7 +665,7 @@ class Universe:
     def _check_out_of_bounds(self, position):
 
         """
-        Checks whether or not the position of a StructuralUnit lies
+        Checks whether a position lies outside the bounds of the Universe
         outside the bounds of the universe.
 
         Returns
