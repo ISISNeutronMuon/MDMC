@@ -474,6 +474,8 @@ class Universe(object):
             HAS NOT BEEN IMPLEMENTED
         """
 
+        raise NotImplementedError
+
 
     def fill(self, structural_unit, force_field=None, **settings):
 
