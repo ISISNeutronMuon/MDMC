@@ -14,9 +14,9 @@ def molec_from_dict(mol_dict):
     """
     Creates a Molecule object from a dictionary containing atom and
     position pairs of the form:
-        {str: np.ndnp.array}
+        {str: np.ndarray}
         where the str represents the atom (i.e. 'H1', 'H2', or 'O')
-        and the np.ndnp.array is the atomic position.
+        and the np.ndarray is the atomic position.
     """
 
     atoms = []
@@ -33,9 +33,9 @@ def molec_list_from_coords(coords):
         {int: dict}
         where the int is the index of the molecule
         and the dict is of the form:
-            {str: np.ndnp.array}
+            {str: np.ndarray}
             where the str represents the atom (i.e. 'H1', 'H2', or 'O')
-            and the np.ndnp.array is the atomic position.
+            and the np.ndarray is the atomic position.
 
     Returns
     -------
