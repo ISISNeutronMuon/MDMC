@@ -95,26 +95,6 @@ def large_diatomic():
     return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
                               su.Atom('H', position=(np.array(UNIVERSE_DIMS) / 2))])
 
-# @pytest.fixture
-# def benzene_molecule():
-#
-#     """
-#     Creates a benzene molecule.
-#     """
-#
-#     return su.Molecule(atoms=[su.Atom('C', position=(0., 1.40272, 0.)),
-#                               su.Atom('H', position=(0., 2.49029, 0.)),
-#                               su.Atom('C', position=(-1.21479, 0.70136, 0.)),
-#                               su.Atom('H', position=(-2.15666, 1.24515, 0.)),
-#                               su.Atom('C', position=(-1.21479, -0.70136, 0.)),
-#                               su.Atom('H', position=(-2.15666, -1.24515, 0.)),
-#                               su.Atom('C', position=(0., -1.40272, 0.)),
-#                               su.Atom('H', position=(0., -2.49029, 0.)),
-#                               su.Atom('C', position=(1.21479, -0.70136, 0.)),
-#                               su.Atom('H', position=(2.15666, -1.24515, 0.)),
-#                               su.Atom('C', position=(1.21479, 0.70136, 0.)),
-#                               su.Atom('H', position=(2.15666, 1.24515, 0.))])
-
 
 def test_create_universe(universe):
 
@@ -773,9 +753,8 @@ def test_solvate_spce_no_solute(uni):
 
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     actual_dens = len(uni.molecule_list) * SPCE_MOLECULE.mass / uni.volume
-    cond1 = SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
-    cond2 = actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
-    assert cond1 and cond2
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
+    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
 @pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
@@ -796,9 +775,8 @@ def test_solvate_spce_with_solute(molecule):
     for mol in univ.molecule_list:
         tot_mass += mol.mass
     actual_dens = tot_mass / univ.volume
-    cond1 = SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
-    cond2 = actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
-    assert cond1 and cond2
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
+    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
 def test_solvate_spce_no_out_of_bounds():
@@ -811,9 +789,8 @@ def test_solvate_spce_no_out_of_bounds():
     univ = sim.Universe(SPCE_DIMS)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     for atom in univ.atom_list:
-        cond1 = any(atom.position <= univ.dims)
-        cond2 = any(atom.position >= [0, 0, 0])
-        assert cond1 and cond2
+        assert any(atom.position <= univ.dims)
+        assert any(atom.position >= [0, 0, 0])
 
 
 @pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
@@ -834,10 +811,8 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
         if not np.array_equal(np.sort(names), np.sort(['H', 'O', 'H'])):
             for atom in mol.atom_list:
                 pos = atom.position
-                cond1 = all(pos > solute_bounds.min)
-                cond2 = all(pos < solute_bounds.max)
-                # Overlapping if both conditions are true
-                assert not (cond1 and cond2)
+                assert not all(pos > solute_bounds.min)
+                assert not all(pos < solute_bounds.max)
 
 
 @pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
