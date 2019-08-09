@@ -607,7 +607,7 @@ class Universe(object):
         density : float
             The desired total density of the solvent and solute molecules,
             in units of amu Ang ^ -3
-        tolerance : float
+        tolerance : float, optional
             The +/- percentage tolerance of the density to be achieved.
             The default is 1 %. Tolerances of less than 1 % are at risk
             of not converging.
