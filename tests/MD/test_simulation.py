@@ -811,8 +811,8 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
         if not np.array_equal(np.sort(names), np.sort(['H', 'O', 'H'])):
             for atom in mol.atom_list:
                 pos = atom.position
-                assert not all(pos > solute_bounds.min)
-                assert not all(pos < solute_bounds.max)
+                assert not (all(pos > solute_bounds.min)
+                            and all(pos < solute_bounds.max))
 
 
 @pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
