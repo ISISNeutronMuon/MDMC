@@ -581,6 +581,11 @@ class Universe(object):
         """
         Checks whether a position lies outside the bounds of the universe.
 
+        Parameters
+        ----------
+        position : list, array
+            The position to be checked against bounds of the universe.
+
         Returns
         -------
         bool
