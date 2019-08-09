@@ -1057,3 +1057,22 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dims():
     for atom in univ.atom_list:
         for pos in [pos1, pos2, pos3, wrapped_pos]:
             assert all(atom.position != pos)
+
+
+@pytest.mark.parametrize("univ_dims, pos, expected", [(10., [10., 10., 10.],
+                                                       False),
+                                                       (0.1, [-7., 0, 0], True),
+                                                       ([20., 15., 1.],
+                                                        [21., 15., 1.], True),
+                                                       (10., [0., 0., -0.0001],
+                                                        True),
+                                                       (10., [5, 5, 5], False)])
+def test_check_out_of_bounds(univ_dims, pos, expected):
+
+    """
+    Tests whether the correct bool is returned by the function that checks
+    whether a position is outside the bounds of a universe.
+    """
+
+    univ = sim.Universe(univ_dims)
+    assert univ._check_out_of_bounds(np.array(pos)) == expected
