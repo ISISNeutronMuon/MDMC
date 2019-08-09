@@ -503,12 +503,12 @@ def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
     creating a LAMMPS pair style
 
     The pair style is modified if a solver is provided:
-    - kspace_solver modifies both lj and coul
-    - dispersive_solver modifies lj
+    - kspace_solver modifies lj, buck, and coul
+    - dispersive_solver modifies both lj and buck
     - coulombic_solver modifies coul
 
     The parameters should be modified whenever a new nonbonded style is
-    implemented
+    implemented.
     """
 
     # As fixtures cannot be included in parameterization, the names of the
