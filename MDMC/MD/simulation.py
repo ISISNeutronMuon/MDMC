@@ -694,7 +694,6 @@ class Universe(object):
             # Check the density
             actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
             difference = (actual - density) / density
-            print difference
             scale_factor = difference / count
 
         # Once the correct density is achieved, add molecules to universe
