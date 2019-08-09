@@ -6,7 +6,7 @@ objects/ a list of Molecule objects.
 
 import numpy as np
 
-from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.structural_units import Atom, Bond, BondAngle, Molecule
 
 
 def molec_from_dict(mol_dict):
