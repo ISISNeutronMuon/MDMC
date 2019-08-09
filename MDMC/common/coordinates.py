@@ -1,7 +1,7 @@
 """
-Contains formatted configuration data for solvent molecules, as well as a
-helper function to convert the formatted configurations into a list of
-Molecule objects.
+Contains formatted coordinate data for solvent molecules, as well as
+helper functions to convert the formatted coordinates into Molecule
+objects/ a list of Molecule objects.
 """
 
 import numpy as np
@@ -25,7 +25,7 @@ def molec_from_dict(mol_dict):
                           position=mol_dict[atom_key]))
     return Molecule(atoms=atoms)
 
-def molec_list_from_config(config):
+def molec_list_from_coords(coords):
 
     """
     Generates a list of Molecule objects from a formatted dictionary
@@ -40,12 +40,12 @@ def molec_list_from_config(config):
     Returns
     -------
     molecules : list of Molecule
-        Molecule objects generated from the atoms passed in config, where
+        Molecule objects generated from the atoms passed in coords, where
         each molecule position is its centre-of-mass.
     """
 
     molecules = []
-    for mol_dict in config.values():
+    for mol_dict in coords.values():
         mol = molec_from_dict(mol_dict)
         molecules.append(mol)
     return molecules
