@@ -12,11 +12,23 @@ from MDMC.MD.structural_units import Atom, Molecule
 def molec_from_dict(mol_dict):
 
     """
-    Creates a Molecule object from a dictionary containing atom and
-    position pairs of the form:
-        {str: np.ndarray}
-        where the str represents the atom (i.e. 'H1', 'H2', or 'O')
-        and the np.ndarray is the atomic position.
+    Creates a Molecule object from a dictionary containing atomic label
+    and position pairs.
+
+    Parameters
+    ----------
+    mol_dict : dict
+        The formatted dictionary representation from which the Molecule
+        object will be created. Atomic label and position pairs are of
+        the form:
+            {str: np.ndarray}
+            where the str represents the atom (i.e. 'H1', 'H2', or 'O')
+            and the np.ndarray is the atomic position.
+
+    Returns
+    -------
+    Molecule
+        A Molecule object with Bond and BondAngle parameters.
     """
 
     atoms = []
@@ -24,6 +36,7 @@ def molec_from_dict(mol_dict):
         atoms.append(Atom(atom_key.replace('1', '').replace('2', ''),
                           position=mol_dict[atom_key]))
     return Molecule(atoms=atoms)
+
 
 def molec_list_from_coords(coords):
 
@@ -36,6 +49,19 @@ def molec_list_from_coords(coords):
             {str: np.ndarray}
             where the str represents the atom (i.e. 'H1', 'H2', or 'O')
             and the np.ndarray is the atomic position.
+
+    Parameters
+    ----------
+    coords : dict
+        A formatted dictionary of solvent molecule index and dictionary pairs
+        of the form:
+            {int: dict}
+            where the int is the index of the molecule
+            and the dict contains the solvent molecule's constituent
+            atomic label and position pairs of the form:
+                {str: np.ndarray}
+                where the str represents the atom (i.e. 'H1', 'H2', or 'O')
+                and the np.ndarray is the atomic position.
 
     Returns
     -------
