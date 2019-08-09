@@ -2077,9 +2077,11 @@ def parse_nonbonded_styles(interaction):
 
     lmp_str = []
     if interaction.function_name == 'LennardJones':
-        lmp_str.append('lj/')
+        lmp_str.append('lj')
     elif interaction.function_name == 'Coulomb':
-        lmp_str.append('coul/')
+        lmp_str.append('coul')
+    elif interaction.function_name == 'Buckingham':
+        lmp_str.append('buck')
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
@@ -2091,9 +2093,10 @@ def parse_nonbonded_styles(interaction):
         dispersive = interaction.universe.dispersive_solver
         if kspace or (electrostatic and interaction.name == 'Coulombic') \
             or (dispersive and interaction.name == 'Dispersion'):
-            lmp_str[-1] += 'long'
+            lmp_str[-1] += '/long'
         else:
-            lmp_str[-1] += 'cut'
+            if interaction.function_name != 'Buckingham':
+                lmp_str[-1] += '/cut'
         lmp_str.append(cutoff)
     else:
         raise NotImplementedError('This InteractionFunction has not been'
