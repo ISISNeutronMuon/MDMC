@@ -552,7 +552,15 @@ class Universe(object):
             Nonbonded interactions to be added to the Universe
         """
 
-        self._nonbonded_interactions.update(nonbonded_interactions)
+        # Check if interactions already exists in Universe
+        new_nonbonded_interactions = []
+        for nbi in nonbonded_interactions:
+            # As in uses == (as well as is) to test for membership, this
+            # excludes all nonbonded interactions that are equal to any already
+            # in the Universe
+            if nbi not in self.nonbonded_interactions:
+                new_nonbonded_interactions.append(nbi)
+        self._nonbonded_interactions.update(new_nonbonded_interactions)
 
 
 def _primitive_cubic(dimensions, number):
