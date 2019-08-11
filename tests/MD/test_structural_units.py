@@ -3,6 +3,8 @@ Tests for creating StructuralUnit, BoundingBox, and Coulombic objects
 and setting their attributes.
 """
 
+from copy import deepcopy
+
 import numpy as np
 import pytest
 
@@ -207,7 +209,9 @@ def test_charge_getter_checks(atom_charge):
     an atom that has 2 Coulombic interactions.
     """
 
-    Coulombic(atoms=atom_charge)
+    # A second atom has to be added as otherwise the Coulombic interaction is
+    # not unique, and is therefore not added to atom_charge
+    Coulombic(atoms=[atom_charge, deepcopy(atom_charge)])
     with pytest.raises(ValueError):
         atom_charge.charge
 
