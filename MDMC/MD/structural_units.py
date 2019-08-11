@@ -1813,7 +1813,9 @@ class Coulombic(NonBondedInteraction):
             The elements for which the Coulombic interaction applies
         """
 
-        return list(set(atom.element for atom in self._atoms))
+        return list(set([atom.element for atom in self._atoms]
+                        + [self.universe.atom_types[atom_type][0].element for
+                           atom_type in self.atom_types]))
 
 
 def _add_atom_types(self, *atom_types):
