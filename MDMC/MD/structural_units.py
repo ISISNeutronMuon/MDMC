@@ -4,7 +4,7 @@ Atoms are the fundamental structural unit in terms of which all others must be
 defined.  All shared behaviour is included within the StructuralUnit base
 class."""
 
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod, abstractproperty
 from copy import deepcopy
 from itertools import count
 from types import MethodType
@@ -1477,6 +1477,15 @@ class NonBondedInteraction(Interaction):
         self.cutoff = settings.get('cutoff')
         super(NonBondedInteraction, self).__init__(**settings)
 
+    @abstractmethod
+    def __eq__(self, other):
+
+        raise NotImplementedError
+
+    def __ne__(self, other):
+
+        return not self == other
+
     @abstractproperty
     def atom_types(self):
 
@@ -1574,6 +1583,11 @@ class Dispersion(NonBondedInteraction):
                 atom.add_interaction(self)
 
         self.vdw_tail_correction = settings.get('vdw_tail_correction', False)
+
+    def __eq__(self, other):
+
+        return other.atom_types == self.atom_types and isinstance(other,
+                                                                  type(self))
 
     @property
     def atom_types(self):
@@ -1748,6 +1762,12 @@ class Coulombic(NonBondedInteraction):
         """
 
         return self.atoms[key]
+
+    def __eq__(self, other):
+
+        return (sorted(self.atoms) == sorted(other.atoms)
+                and sorted(self.atom_types) == sorted(other.atom_types)
+                and isinstance(other, type(self)))
 
     @property
     def atoms(self):
