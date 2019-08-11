@@ -1593,7 +1593,7 @@ class Dispersion(NonBondedInteraction):
     @property
     def atom_types(self):
 
-        return self._atom_types
+        return tuple(sorted(self._atom_types))
 
     @property
     def atoms(self):
