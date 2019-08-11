@@ -677,8 +677,9 @@ class Atom(StructuralUnit):
         try:
             self._universe = weakref.ref(value)
 
-            # Update universe for all interactions if not previously set
-            for inter in self.interactions:
+            # Update universe for all nonbonded interactions if not previously
+            # set
+            for inter in self.nonbonded_interactions:
                 if not inter.universe:
                     inter.universe = value
         except TypeError:
