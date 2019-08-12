@@ -604,7 +604,7 @@ class Universe(object):
         return any(position > self.dims) or any(position < [0, 0, 0])
 
 
-    def solvate(self, density, tolerance=1, solvent='SPCE'):
+    def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
 
         """
         Fills the universe with solvent molecules, distributed randomly
@@ -624,7 +624,14 @@ class Universe(object):
             The default is 'SPCE'.
             A StructuralUnit for the solvent Molecule/Atom to fill the
             Universe with randomly.
-            A Configuration with 1 or more solvent which will tile the Universe.
+            A Configuration with 1 or more solvent which will tile the Universe
+            with a cubic tiling.
+        **settings
+            constraint_algorithm : ConstraintAlgorithm
+                A ConstraintAlgorithm which is applied to the Universe.  If an
+                inbuilt solvent is select (e.g. 'SPCE') and constraint_algorithm
+                is not passed, the ConstraintAlgorithm will default to
+                Shake(1e-4, 100).
 
         Raises
         ------
@@ -740,6 +747,10 @@ class Universe(object):
         try:
             self.add_force_field(solvent, *set(bonded_interactions
                                                + nonbonded_interactions))
+            # If BondedInteractions are constrained, apply a constrain algorithm
+            if coords['constrained']:
+                self.constraint_algorithm = settings.get('constraint_algorithm',
+                                                         Shake(1e-4, 100))
         except ImportError:
             pass
 
