@@ -88,7 +88,16 @@ def molec_list_from_coords(coords):
 #                4fa824292a67e2adeba57d528a6f5f19c1f1bd22/share/top/spc216.gro
 # Coordinates translated to an origin of [0, 0, 0] so all coordinates are
 # positive, and scaled by a factor of 10 to convert to Ang.
-SPCE = {'box dims' : np.array([18.6206, 18.6206, 18.6206]),
+SPCE = {'box_dims': np.array([18.6206, 18.6206, 18.6206]),
+        'atom_types': {'H': 1,
+                       'O': 2},
+        'bonded_interactions': [['Bond', ('H1', 'O'), ('H2', 'O')],
+                                ['BondAngle', ('H1', 'O', 'H2')]],
+        'nonbonded_interactions': [['Coulombic', 1],
+                                   ['Coulombic', 2],
+                                   ['Dispersion', (2, 2)]],
+        'constrained': True,
+        'molecule_name': 'water',
         'molecules': {1:  {'H1': np.array([11.18, 16.27, 11.34]),
                            'H2': np.array([12.12, 15.9, 10.05]),
                            'O' : np.array([12.11, 16.29, 10.97])},
