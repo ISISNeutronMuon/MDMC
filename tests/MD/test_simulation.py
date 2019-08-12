@@ -95,6 +95,14 @@ def large_diatomic():
     return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
                               su.Atom('H', position=(np.array(UNIVERSE_DIMS) / 2))])
 
+@pytest.fixture
+def solvated_universe():
+
+    uni = sim.Universe(SPCE_DIMS)
+    uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+
+    return uni
+
 
 def test_create_universe(universe):
 
@@ -779,17 +787,15 @@ def test_solvate_spce_with_solute(molecule):
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
-def test_solvate_spce_no_out_of_bounds():
+def test_solvate_spce_no_out_of_bounds(solvated_universe):
 
     """
     Tests that solvating an empty universe with SPCE water results in no
     atoms of those solvent moleules being outside the universe bounds.
     """
 
-    univ = sim.Universe(SPCE_DIMS)
-    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
-    for atom in univ.atom_list:
-        assert all(atom.position <= univ.dims)
+    for atom in solvated_universe.atom_list:
+        assert all(atom.position <= solvated_universe.dims)
         assert all(atom.position >= [0, 0, 0])
 
 
