@@ -34,7 +34,7 @@ def molec_from_dict(mol_dict):
     atoms = {}
     for atom_key in mol_dict.keys():
         atoms[atom_key] = Atom(atom_key.replace('1', '').replace('2', ''),
-                      position=mol_dict[atom_key])
+                               position=mol_dict[atom_key])
     return Molecule(atoms=atoms.values())
                     # interactions=[Bond((atoms['H1'], atoms['O']),
                     #                    (atoms['H2'], atoms['O']),
