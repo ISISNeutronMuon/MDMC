@@ -798,9 +798,21 @@ class Universe:
             scale_factor = difference / counter
 
         # Once the correct density is achieved, add molecules to universe
+        # and get all bonded interactions
+        bonded_interactions = []
         for molecule in mols:
             self.add_structural_unit(molecule)
+            bonded_interactions += molecule.interactions
 
+        # Get nonbonded interactions from atom types
+        atom_types = np.array(coords['atom_types'].values()) + max_atom_type
+        # Add interaction if any of its atom types are in atom_types
+
+        nonbonded_interactions = []
+        for interaction in self.nonbonded_interactions:
+            interaction_atom_types = np.array(interaction.atom_types).flatten()
+            if len(set(interaction_atom_types).intersection(atom_types)) >= 1:
+                nonbonded_interactions.append(interaction)
 
 def _primitive_cubic(dimensions, number):
 
