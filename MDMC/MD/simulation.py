@@ -783,7 +783,14 @@ class Universe:
                                     remove = True
                     if remove:
                         del trans_tile[mol_key]
-                mols += coordinates.molec_list_from_coords(trans_tile)
+                mols += coordinates.molecules_from_coords(
+                    trans_tile,
+                    atom_type_dict=coords['atom_types'],
+                    atom_type_offset=max_atom_type,
+                    bonded_interactions=coords['bonded_interactions'],
+                    nonbonded_interactions=coords['nonbonded_interactions'],
+                    constrained=coords['constrained'],
+                    universe=self)
 
             # Check the density
             actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
