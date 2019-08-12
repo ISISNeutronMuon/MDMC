@@ -736,6 +736,14 @@ class Universe(object):
             if len(set(interaction_atom_types).intersection(atom_types)) >= 1:
                 nonbonded_interactions.append(interaction)
 
+        # Apply the force field of the solvent to the Universe
+        try:
+            self.add_force_field(solvent, *set(bonded_interactions
+                                               + nonbonded_interactions))
+        except ImportError:
+            pass
+
+
 def _primitive_cubic(dimensions, number):
 
     """
