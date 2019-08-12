@@ -2071,15 +2071,19 @@ def parse_all_nonbonded_styles(interactions):
                     for int2 in parsed_interactions:
                         if d_style == int1[0] and c_style == int2[0]:
                             lmp_str.append('/'.join([d_style, c_style]))
-                            if lmp_str[-1] == 'lj/long/coul/long':
+                            if lmp_str[-1] in ['buck/long/coul/long',
+                                               'lj/long/coul/long']:
                                 lmp_str.append('long long')
                             lmp_str.append(int1[1])
                             if int1[1] != int2[1]:
-                                if lmp_str[-3] == 'lj/long/coul/long':
+                                if lmp_str[-3] in ['buck/long/coul/long',
+                                                   'lj/long/coul/long']:
                                     raise ValueError('LAMMPS requires both'
                                                      ' cutoffs to be the same'
-                                                     ' for long range LJ and'
-                                                     ' coulombic pair styles')
+                                                     ' for long range buck and'
+                                                     ' coulombic, or long range'
+                                                     ' LJ and coulombic pair'
+                                                     ' styles')
                                 lmp_str.append(int2[1])
                             parsed_interactions.remove(int1)
                             parsed_interactions.remove(int2)
