@@ -26,8 +26,8 @@ WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
 TOLERANCE = 1
-SPCE_MOLECULE = molec_from_dict(SPCE['molecules'].values()[0])
-SPCE_DIMS = SPCE['box dims']
+SPCE_MOLECULE = molec_from_dict(SPCE['molecules'].values()[0], {'H':1, 'O':2})
+SPCE_DIMS = SPCE['box_dims']
 SPCE_NUM_MOL = len(SPCE['molecules'])
 SPCE_DENSITY = SPCE_MOLECULE.mass * SPCE_NUM_MOL / np.prod(SPCE_DIMS)
 
