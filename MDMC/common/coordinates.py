@@ -54,42 +54,76 @@ def molec_from_dict(mol_dict, atom_type_dict, bonded_interactions=None,
 
     return structural_units.Molecule(atoms=atoms.values())
 
-def molec_list_from_coords(coords):
+def molecules_from_coords(coords, atom_type_dict, atom_type_offset=0,
+                          **settings):
 
     """
-    Generates a list of Molecule objects from a formatted dictionary
-    of solvent molecules and their constituent atomic positions of the form:
-        {int: dict}
-        where the int is the index of the molecule
-        and the dict is of the form:
-            {str: np.ndarray}
-            where the str represents the atom (i.e. 'H1', 'H2', or 'O')
-            and the np.ndarray is the atomic position.
+    Creates Molecules from atomic coordinates and atom_types
 
     Parameters
     ----------
     coords : dict
-        A formatted dictionary of solvent molecule index and dictionary pairs
-        of the form:
-            {int: dict}
-            where the int is the index of the molecule
-            and the dict contains the solvent molecule's constituent
-            atomic label and position pairs of the form:
-                {str: np.ndarray}
-                where the str represents the atom (i.e. 'H1', 'H2', or 'O')
-                and the np.ndarray is the atomic position.
+        A dict of {ID : atom_coordinates} where ID is an int specifying the ID
+        of the Molecule (unrelated to StructuralUnit.ID, purely for this dict)
+        and atom_coordinates is a dict of {atom_name : position} pairs, where
+        atom_name is a str and position is a 3 element array
+    atom_type_dict : dict
+        A dict of {element : atom_name} pairs, where both are str
+    atom_type_offset : int
+        An offset which is added to all atom types in atom_type_dict and all
+        NonBondedInteractions
+    **settings
+        universe : Universe
+            The Universe to which the Molecules are added
+        constrained : bool
+            Whether or not BondedInteractions are constrained
+        bonded_interactions : dict
+            A dict of {interaction_name : atom_name} pairs, where both are str
+        nonbonded_interactions : dict
+            A dict of {interaction_name : atom_type} pairs, where
+            interaction_name is a str and atom_type is an int
 
     Returns
     -------
-    molecules : list of Molecule
+    molecules : list of Molecules
         Molecule objects generated from the atoms passed in coords, where
         each molecule position is its centre-of-mass.
     """
 
+    universe = settings.get('universe', None)
+    if atom_type_offset:
+        atom_type_dict = {name: (value + atom_type_offset) for name, value
+                          in atom_type_dict.items()}
+
+    if settings.get('bonded_interactions'):
+        cstrain = settings.get('constrained', False)
+        # Initialises an object from the str specifying a BondedInteraction
+        # at the start of each list in bonded_interactions. The rest of each
+        # list (i.e. the atom names) are left unchanged.
+        bonded_interactions = map(lambda b_i: [getattr(structural_units,
+                                                       el)(constrained=cstrain)
+                                               if not n else el for n, el
+                                               in enumerate(b_i)],
+                                  settings.get('bonded_interactions'))
+
     molecules = []
     for mol_dict in coords.values():
-        mol = molec_from_dict(mol_dict)
+        mol = molec_from_dict(mol_dict,
+                              atom_type_dict,
+                              bonded_interactions=bonded_interactions,
+                              universe=universe)
         molecules.append(mol)
+
+    for nb_i in settings.get('nonbonded_interactions', []):
+        # Different __init__ for Coulombic than other NonBondedInteractions
+        if nb_i[0] == 'Coulombic':
+            atom_types = nb_i[1] + atom_type_offset
+            dummy = structural_units.Coulombic(universe=universe,
+                                               atom_types=atom_types)
+        else:
+            atom_types = [atom_type + atom_type_offset for atom_type
+                          in nb_i[1]]
+            dummy = getattr(structural_units, nb_i[0])(universe, *atom_types)
     return molecules
 
 # SPCE water
