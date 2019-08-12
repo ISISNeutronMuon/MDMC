@@ -1,48 +1,58 @@
 """
-Contains formatted coordinate data for solvent molecules, as well as
-helper functions to convert the formatted coordinates into Molecule
-objects/ a list of Molecule objects.
+Contains formatted configuration data for solvent molecules, as well as a
+helper function to convert the formatted configurations into a list of
+Molecule objects.
 """
 
 import numpy as np
 
-from MDMC.MD.structural_units import Atom, Bond, BondAngle, Molecule
+from MDMC.MD import structural_units
 
 
-def molec_from_dict(mol_dict):
+def molec_from_dict(mol_dict, atom_type_dict, bonded_interactions=None,
+                    universe=None):
 
     """
-    Creates a water Molecule object from a dictionary containing atomic
-    label and position pairs.
+    Creates a Molecule object from a dictionaries containing atoms and
+    atom_types
 
     Parameters
     ----------
     mol_dict : dict
-        The formatted dictionary representation from which the Molecule
-        object will be created. Atomic label and position pairs are of
-        the form:
-            {str: np.ndarray}
-            where the str represents the atom (i.e. 'H1', 'H2', or 'O')
-            and the np.ndarray is the atomic position.
+        A dict of {atom_name : position} pairs, where atom_name is a str and
+        position is a 3 element array
+    atom_type_dict : dict
+        A dict of {element : atom_name} pairs, where both are str
+    bonded_interactions : dict, optional
+        A dict of {interaction_name : atom_name} pairs, where both are str
+    universe : Universe, optional
+        The Universe to which the Molecule will be added, with the default being
+        None
 
     Returns
     -------
     Molecule
-        A Molecule object with Bond and BondAngle parameters.
+        A Molecule object comprised of the atoms specified in mol_dict with the
+        BondedInteractions in bonded_interactions applied
     """
 
     atoms = {}
-    for atom_key in mol_dict.keys():
-        atoms[atom_key] = Atom(atom_key.replace('1', '').replace('2', ''),
-                               position=mol_dict[atom_key])
-    return Molecule(atoms=atoms.values())
-                    # interactions=[Bond((atoms['H1'], atoms['O']),
-                    #                    (atoms['H2'], atoms['O']),
-                    #                    constrained=True),
-                    #               BondAngle(atoms['H1'], atoms['O'],
-                    #                         atoms['H2'], constrained=True)],
-                    # name='water')
+    for atom_name, position in mol_dict.items():
+        elem = atom_name.replace('1', '').replace('2', '')
+        atoms[atom_name] = structural_units.Atom(elem,
+                                                 position=position,
+                                                 atom_type=atom_type_dict[elem],
+                                                 universe=universe)
+    for b_i in bonded_interactions or []:
+        # Get the required atom objects based on the atom names specified for
+        # each bonded interaction in bonded_interactions
+        atom_name_tuples = b_i[1:]
+        atom_tuples = map(lambda atom_name_tuple: tuple(atoms[name] for name
+                                                        in atom_name_tuple),
+                          atom_name_tuples)
+        b_i[0].atoms += atom_tuples
 
+    return structural_units.Molecule(atoms=atoms.values())
 
 def molec_list_from_coords(coords):
 
