@@ -601,7 +601,7 @@ class Universe(object):
             False otherwise.
         """
 
-        return (any(position > self.dims) or any(position < [0, 0, 0]))
+        return any(position > self.dims) or any(position < [0, 0, 0])
 
 
     def solvate(self, density, tolerance=1, solvent='SPCE'):
@@ -651,12 +651,12 @@ class Universe(object):
         dim_scaling = np.array([(orig_box_dens / req_dens) ** (1. / 3)] * 3)
 
         scale_factor = 0.
-        count = 0
+        counter = 0
         difference = np.float('inf')
         while abs(difference * 100) >= abs(tolerance):
 
 
-            count += 1
+            counter += 1
             dim_scaling *= 1 + scale_factor
             box_dims = orig_box_dims * dim_scaling
             num_tiles = np.array(self.dims / box_dims)
@@ -702,7 +702,7 @@ class Universe(object):
             # Check the density
             actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
             difference = (actual - density) / density
-            scale_factor = difference / count
+            scale_factor = difference / counter
 
         # Once the correct density is achieved, add molecules to universe
         for molecule in mols:
