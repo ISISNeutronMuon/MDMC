@@ -4,7 +4,7 @@ Atoms are the fundamental structural unit in terms of which all others must be
 defined.  All shared behaviour is included within the StructuralUnit base
 class."""
 
-from abc import ABCMeta, abstractproperty
+from abc import ABCMeta, abstractmethod, abstractproperty
 from copy import deepcopy
 from itertools import count
 from types import MethodType
@@ -677,8 +677,9 @@ class Atom(StructuralUnit):
         try:
             self._universe = weakref.ref(value)
 
-            # Update universe for all interactions if not previously set
-            for inter in self.interactions:
+            # Update universe for all nonbonded interactions if not previously
+            # set
+            for inter in self.nonbonded_interactions:
                 if not inter.universe:
                     inter.universe = value
         except TypeError:
@@ -1497,6 +1498,15 @@ class NonBondedInteraction(Interaction):
         self.cutoff = settings.get('cutoff')
         super(NonBondedInteraction, self).__init__(**settings)
 
+    @abstractmethod
+    def __eq__(self, other):
+
+        raise NotImplementedError
+
+    def __ne__(self, other):
+
+        return not self == other
+
     @abstractproperty
     def atom_types(self):
 
@@ -1578,7 +1588,6 @@ class Dispersion(NonBondedInteraction):
 
     def __init__(self, universe, *atom_types, **settings):
 
-        super(Dispersion, self).__init__(universe, **settings)
         # Add tuples to short format of atom_types
         if isinstance(atom_types[0], int):
             if len(atom_types) == 1:
@@ -1586,6 +1595,7 @@ class Dispersion(NonBondedInteraction):
             elif len(atom_types) == 2:
                 atom_types = ((atom_types[0], ), (atom_types[1], ))
         self._atom_types = atom_types
+        super(Dispersion, self).__init__(universe, **settings)
         self._atoms = [tuple([atom for atom_type in tpl
                               for atom in self.universe.atom_types[atom_type]])
                        for tpl in self.atom_types]
@@ -1595,10 +1605,15 @@ class Dispersion(NonBondedInteraction):
 
         self.vdw_tail_correction = settings.get('vdw_tail_correction', False)
 
+    def __eq__(self, other):
+
+        return other.atom_types == self.atom_types and isinstance(other,
+                                                                  type(self))
+
     @property
     def atom_types(self):
 
-        return self._atom_types
+        return tuple(sorted(self._atom_types))
 
     @property
     def atoms(self):
@@ -1711,12 +1726,12 @@ class Coulombic(NonBondedInteraction):
             if not universe:
                 raise TypeError('Coulombic requires a universe when '
                                 'atom_types are passed')
-            super(Coulombic, self).__init__(universe, **settings)
-            self.add_atom_types = MethodType(_add_atom_types, self)
 
+            self.add_atom_types = MethodType(_add_atom_types, self)
             self._atom_types = atom_types
             self._atoms = [atom for atom_type in self.atom_types
-                           for atom in self.universe.atom_types[atom_type]]
+                           for atom in universe.atom_types[atom_type]]
+            super(Coulombic, self).__init__(universe, **settings)
             # Add interaction to atoms
             for atom in self.atoms:
                 atom.add_interaction(self)
@@ -1769,6 +1784,12 @@ class Coulombic(NonBondedInteraction):
 
         return self.atoms[key]
 
+    def __eq__(self, other):
+
+        return (sorted(self.atoms) == sorted(other.atoms)
+                and sorted(self.atom_types) == sorted(other.atom_types)
+                and isinstance(other, type(self)))
+
     @property
     def atoms(self):
 
@@ -1812,7 +1833,9 @@ class Coulombic(NonBondedInteraction):
             The elements for which the Coulombic interaction applies
         """
 
-        return list(set(atom.element for atom in self._atoms))
+        return list(set([atom.element for atom in self._atoms]
+                        + [self.universe.atom_types[atom_type][0].element for
+                           atom_type in self.atom_types]))
 
 
 def _add_atom_types(self, *atom_types):
