@@ -10,6 +10,7 @@ import numpy.testing as npt
 import pytest
 
 from MDMC.common.coordinates import molec_from_dict, SPCE
+from MDMC.MD.interaction_functions import Parameter
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 
@@ -910,14 +911,50 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dims():
             assert all(atom.position != pos)
 
 
+@pytest.mark.parametrize("solvent, params", [('SPCE',
+                                              (('equilibrium_state', 1.),
+                                               ('potential_strength', 383.),
+                                               ('equilibrium_state', 109.47),
+                                               ('potential_strength', 4637.),
+                                               ('charge', 0.4238),
+                                               ('charge', -0.8476),
+                                               ('epsilon', 0.6502),
+                                               ('sigma', 3.166))
+                                             )])
+def test_solvate_parameter_setting(solvated_universe, solvent, params):
+
+    """
+    Tests that the parameters of the solvent molcules are set correctly when
+    the solvent has been selected from inbuilt solvents
+    """
+
+    test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
+                       for parameter in params]
+    uni_parameters = list(solvated_universe.parameters)
+
+    # Check lists are same length, then remove all Parameters that have a
+    # matching name and value, finally check list of Parameters is empty (i.e.
+    # all Parameters have matched)
+    assert len(test_parameters) == len(uni_parameters)
+    from copy import copy
+    for test_p in test_parameters:
+        print('test = {0}'.format(test_p))
+        for uni_p in copy(uni_parameters):
+            print('uni = {0}'.format(uni_p))
+            if (test_p.value == uni_p.value and test_p.name == uni_p.name):
+                uni_parameters.remove(uni_p)
+                break
+    assert uni_parameters == []
+
+
 @pytest.mark.parametrize("univ_dims, pos, expected", [(10., [10., 10., 10.],
                                                        False),
-                                                       (0.1, [-7., 0, 0], True),
-                                                       ([20., 15., 1.],
+                                                      (0.1, [-7., 0, 0], True),
+                                                      ([20., 15., 1.],
                                                         [21., 15., 1.], True),
-                                                       (10., [0., 0., -0.0001],
+                                                      (10., [0., 0., -0.0001],
                                                         True),
-                                                       (10., [5, 5, 5], False)])
+                                                      (10., [5, 5, 5], False)])
 def test_check_out_of_bounds(univ_dims, pos, expected):
 
     """
