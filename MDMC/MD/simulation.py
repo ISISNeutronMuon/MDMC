@@ -717,8 +717,9 @@ class Universe:
                                       ' supports using inbuilt solvents')
 
         # Calculate useful properties from the original box
-        solv_mass = coordinates.molec_from_dict(coords['molecules'].values()[0]).mass
-        orig_box_dims = coords['box dims']
+        solv_mass = coordinates.molec_from_dict(coords['molecules'].values()[0],
+                                                coords['atom_types']).mass
+        orig_box_dims = coords['box_dims']
         orig_box_dens = (solv_mass * len(coords['molecules'])
                          / np.prod(orig_box_dims))
         # Get the prelim scaling of the orig box required to achieve density
@@ -752,7 +753,9 @@ class Universe:
                 for mol_key, mol in trans_tile.items():
 
                     atom_positions = mol.values()
-                    CoM = coordinates.molec_from_dict(mol).position
+                    CoM = coordinates.molec_from_dict(mol,
+                                                      coords['atom_types']
+                                                     ).position
 
                     remove = False
                     for pos in atom_positions:
