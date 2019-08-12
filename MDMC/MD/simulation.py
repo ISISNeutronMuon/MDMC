@@ -731,6 +731,11 @@ class Universe:
 
         scale_factor = 0.
         counter = 0
+        # Try/except accounts for empty universe (so no atom_types)
+        try:
+            max_atom_type = np.max(self.atom_types.keys())
+        except ValueError:
+            max_atom_type = 0
         difference = np.float('inf')
         while abs(difference * 100) >= abs(tolerance):
 
