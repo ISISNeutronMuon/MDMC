@@ -522,22 +522,20 @@ def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
     assert lmp_eng.parse_nonbonded_styles(interactions) == expected
 
 
-@pytest.mark.parametrize('interactions, error, indices, solver_attr, expected',
-                         [(('coulombics', 'dispersions', 'dispersions'), False,
+@pytest.mark.parametrize('interactions, indices, solver_attr, expected',
+                         [(('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1), None, ['buck', DISP_CUTOFF,
                                              'lj/cut', DISP_CUTOFF,
                                              'coul/cut', COUL_CUTOFF]),
-                          (('coulombics', 'dispersions', 'dispersions'), True,
-                           (0, 0, 1), 'kspace_solver', None),
-                          (('coulombics', 'dispersions', 'dispersions'), False,
+                          (('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1), 'dispersive_solver',
                            ['buck/long/coul/cut', DISP_CUTOFF, COUL_CUTOFF,
-                            'lj/long/coul/cut', DISP_CUTOFF, COUL_CUTOFF])])#,
-                          # (('coulombics', 'dispersions', 'dispersions'), False,
-                          #  (0, 0, 1), 'electrostatic_solver',
-                          #  ['buck', DISP_CUTOFF, 'lj/long', DISP_CUTOFF,
-                          #   'coul/long', COUL_CUTOFF])])
-def test_parse_all_nonbonded_styles_diff_cutoffs(interactions, error, indices,
+                            'lj/long/coul/cut', DISP_CUTOFF, COUL_CUTOFF]),
+                          (('coulombics', 'dispersions', 'dispersions'),
+                           (0, 0, 1), 'electrostatic_solver',
+                           ['buck', DISP_CUTOFF, 'lj/cut', DISP_CUTOFF,
+                            'coul/long', COUL_CUTOFF])])
+def test_parse_all_nonbonded_styles_diff_cutoffs(interactions, indices,
                                                  solver_attr, expected,
                                                  universe, request):
 
@@ -554,39 +552,36 @@ def test_parse_all_nonbonded_styles_diff_cutoffs(interactions, error, indices,
         - long range LennardJones and Coulombic (lj/long/coul/long)
     """
 
+    assert COUL_CUTOFF != DISP_CUTOFF
     interactions = [request.getfixturevalue(interaction)[idx]
                     for interaction, idx in zip(interactions, indices)]
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
-    if error:
-        with pytest.raises(ValueError):
-            lmp_eng.parse_all_nonbonded_styles(interactions)
-    else:
-        assert lmp_eng.parse_all_nonbonded_styles(interactions) == expected
+    assert lmp_eng.parse_all_nonbonded_styles(interactions) == expected
 
 
-# @pytest.mark.parametrize('index', [0, 1])
-# def test_parse_all_nonbonded_styles_unequal_cutoff_error(dispersions, index,
-#                                                          coulombics, universe,
-#                                                          request):
-#
-#     """
-#     Tests that a ValueError is raised when trying to create the following
-#     pair styles when the Dispersive and Coulombic interactions are created
-#     with different cut offs:
-#
-#     - long range Buckingham and Coulombic (buck/long/coul/long)
-#     - long range LennardJones and Coulombic (lj/long/coul/long)
-#     """
-#
-#     assert COUL_CUTOFF != DISP_CUTOFF
-#
-#     interactions = [request.getfixturevalue('dispersions')[index],
-#                     request.getfixturevalue('coulombics')[0]]
-#     # Use kspace solver for long range Dispersive and Coulombic interactions
-#     setattr(universe, 'kspace_solver', PPPM(accuracy=1e-4))
-#     with pytest.raises(ValueError):
-#         lmp_eng.parse_all_nonbonded_styles(interactions)
+@pytest.mark.parametrize('index', [0, 1])
+def test_parse_all_nonbonded_styles_unequal_cutoff_error(dispersions, index,
+                                                         coulombics, universe,
+                                                         request):
+
+    """
+    Tests that a ValueError is raised when trying to create the following
+    pair styles when the Dispersive and Coulombic interactions are created
+    with different cut offs:
+
+    - long range Buckingham and Coulombic (buck/long/coul/long)
+    - long range LennardJones and Coulombic (lj/long/coul/long)
+    """
+
+    assert COUL_CUTOFF != DISP_CUTOFF
+
+    interactions = [request.getfixturevalue('dispersions')[index],
+                    request.getfixturevalue('coulombics')[0]]
+    # Use kspace solver for long range Dispersive and Coulombic interactions
+    setattr(universe, 'kspace_solver', PPPM(accuracy=1e-4))
+    with pytest.raises(ValueError):
+        lmp_eng.parse_all_nonbonded_styles(interactions)
 
 
 @pytest.mark.parametrize('interaction, arguments, parser',
