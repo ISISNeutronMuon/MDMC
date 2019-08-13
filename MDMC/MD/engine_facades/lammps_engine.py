@@ -2076,12 +2076,12 @@ def parse_nonbonded_styles(interaction):
     """
 
     lmp_str = []
-    if interaction.function_name == 'LennardJones':
+    if interaction.function_name == 'Buckingham':
+        lmp_str.append('buck')
+    elif interaction.function_name == 'LennardJones':
         lmp_str.append('lj')
     elif interaction.function_name == 'Coulomb':
         lmp_str.append('coul')
-    elif interaction.function_name == 'Buckingham':
-        lmp_str.append('buck')
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
@@ -2178,7 +2178,6 @@ def parse_all_nonbonded_styles(interactions):
                                              ' and coulombic, or long range LJ'
                                              ' and coulombic pair styles')
                         lmp_str.append('long long')
-                    elif lmp_str[-1] in ['buck/long/coul/cut']
                     lmp_str.append(int1[1])
                     if int2[1] != int1[1]:
                         lmp_str.append(int2[1])
