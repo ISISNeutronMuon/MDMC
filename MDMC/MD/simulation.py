@@ -28,7 +28,7 @@ class Universe:
 
     Parameters
     ----------
-    dims : np.array, list, float
+    dimensions : np.array, list, float
         Dimensions of the Universe, in units of Ang. A float can be used for a
         cubic universe.
     shape : enum
