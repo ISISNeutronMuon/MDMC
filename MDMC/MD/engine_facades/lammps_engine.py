@@ -2168,6 +2168,10 @@ def parse_dispersion_coefficients(interaction, style):
     if 'lj' in style:
         ordered_parameters = [parameters['epsilon'],
                               parameters['sigma']]
+    elif 'buck' in style:
+        ordered_parameters = [parameters['A'],
+                              parameters['B'],
+                              parameters['C']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
