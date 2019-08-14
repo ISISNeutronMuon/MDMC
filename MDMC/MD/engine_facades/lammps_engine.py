@@ -2148,7 +2148,7 @@ def parse_all_nonbonded_styles(interactions):
     # Check for coulombic and dispersion pairs that need to be combined
     # Dispersion styles always precede coulombic styles in LAMMPS pair styles
     disp_styles = ['buck/long', 'lj/long']
-    coul_styles = ['coul/long']
+    coul_styles = ['coul/long', 'coul/cut']
 
     lmp_str = []
     combined = []
