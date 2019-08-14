@@ -18,6 +18,7 @@ from MDMC.MD.structural_units import (Atom, Bond, BondAngle, Coulombic,
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
+CUTOFF = 3.14
 COUL_CUTOFF = 8.0
 DISP_CUTOFF = 10.0
 N_ATOMS = 10
@@ -531,34 +532,29 @@ def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
     assert lmp_eng.parse_nonbonded_styles(interactions) == expected
 
 
-@pytest.mark.parametrize('interactions, indices, solver_attr, expected',
+@pytest.mark.parametrize("interactions, indices, solver_attr, expected",
                          [(('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1), None, ['buck', DISP_CUTOFF,
                                              'lj/cut', DISP_CUTOFF,
                                              'coul/cut', COUL_CUTOFF]),
                           (('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), 'dispersive_solver',
-                           ['buck/long/coul/cut', DISP_CUTOFF, COUL_CUTOFF,
-                            'lj/long/coul/cut', DISP_CUTOFF, COUL_CUTOFF]),
-                          (('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1), 'electrostatic_solver',
                            ['buck', DISP_CUTOFF, 'lj/cut', DISP_CUTOFF,
                             'coul/long', COUL_CUTOFF])])
-def test_parse_all_nonbonded_styles_diff_cutoffs(interactions, indices,
-                                                 solver_attr, expected,
-                                                 universe, request):
+def test_parse_all_nonbonded_styles_valid_diff_cutoffs(interactions, indices,
+                                                       solver_attr, expected,
+                                                       universe, request):
 
     """
-    Tests the generation of LAMMPS pair_styles of Dispersive and Coulombic
-    interactions for various solver attributes, where the Dispersive and
-    Coulombic cutoff distances are different.
+    Tests the generation of valid LAMMPS pair_styles of Dispersive and
+    Coulombic interactions for various solver attributes, where the
+    Dispersive and Coulombic cutoff distances are different.
 
-    Tests that a ValueError is raised when trying to create the following
-    pair styles when the Dispersive and Coulombic interactions are created
-    with different cut offs:
+    Doesn't test for interactions created in a universe with a
+    kspace_solver attribute as this creates an invalid command.
 
-        - long range Buckingham and Coulombic (buck/long/coul/long)
-        - long range LennardJones and Coulombic (lj/long/coul/long)
+    Doesn't test for interactions created in a universe with a
+    dispersive_solver attribute as this creates an invalid pair style.
     """
 
     assert COUL_CUTOFF != DISP_CUTOFF
@@ -569,20 +565,58 @@ def test_parse_all_nonbonded_styles_diff_cutoffs(interactions, indices,
     assert lmp_eng.parse_all_nonbonded_styles(interactions) == expected
 
 
+@pytest.mark.parametrize("interactions, indices, solver_attr, cutoff, expected",
+                         [(('coulombics', 'dispersions', 'dispersions'),
+                           (0, 0, 1), None, CUTOFF,
+                           ['coul/cut', CUTOFF, 'buck', CUTOFF,
+                            'lj/cut', CUTOFF]),
+                          (('coulombics', 'dispersions', 'dispersions'),
+                           (0, 0, 1), 'kspace_solver', CUTOFF,
+                           ['buck/long/coul/long', 'long long', CUTOFF,
+                            'lj/long/coul/long', 'long long', CUTOFF]),
+                          (('coulombics', 'dispersions', 'dispersions'),
+                           (0, 0, 1), 'electrostatic_solver', CUTOFF,
+                           ['coul/long', CUTOFF, 'buck', CUTOFF,
+                            'lj/cut', CUTOFF])])
+def test_parse_all_nonbonded_styles_valid_same_cutoff(interactions, indices,
+                                                      solver_attr, cutoff,
+                                                      expected, universe,
+                                                      request):
+
+    """
+    Tests the generation of valid LAMMPS pair_styles of Dispersive and
+    Coulombic interactions for various solvent attributes, where the
+    Dispersive and Coulombic cutoff distances are the same.
+
+    Doesn't test for interactions created in a universe with a
+    dispersive_solver attribute as this creates an invalid pair style.
+    """
+
+    interactions = [request.getfixturevalue(interaction)[idx]
+                    for interaction, idx in zip(interactions, indices)]
+    # Set the cutoff to the same value for all interactions
+    for interaction in interactions:
+        interaction.cutoff = cutoff
+    if solver_attr:
+        setattr(universe, solver_attr, PPPM(accuracy=1e-4))
+    assert lmp_eng.parse_all_nonbonded_styles(interactions) == expected
+
+
 @pytest.mark.parametrize('index', [0, 1])
-def test_parse_all_nonbonded_styles_diff_cutoffs(index):
+def test_parse_all_nonbonded_styles_diff_cutoffs_error(dispersions, index,
+                                                       coulombics, universe,
+                                                       request):
 
     """
     Tests that a ValueError is raised when trying to create the following
     pair styles when the Dispersive and Coulombic interactions are created
     with different cut offs:
 
-    - buck/long/coul/long with different cutoffs
-    - lj/long/coul/long with different cutoffs
+        - buck/long/coul/long
+        - lj/long/coul/long
     """
 
     assert COUL_CUTOFF != DISP_CUTOFF
-
     interactions = [request.getfixturevalue('dispersions')[index],
                     request.getfixturevalue('coulombics')[0]]
     # Use kspace solver for long range Dispersive and Coulombic interactions
@@ -592,8 +626,10 @@ def test_parse_all_nonbonded_styles_diff_cutoffs(index):
 
 
 @pytest.mark.parametrize("interactions, indices, solver_attr",
-                         [(('coulombics', 'dispersions', 'dispersions'),
-                          (0, 0, 1), 'dispersive_solver')])
+                         [(('coulombics', 'dispersions'),
+                           (0, 0), 'dispersive_solver'),
+                          (('coulombics', 'dispersions'),
+                           (0, 1), 'dispersive_solver')])
 def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
                                                    solver_attr, universe,
                                                    request):
@@ -602,12 +638,12 @@ def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
     Tests that a ValueError is raised when trying to create the following
     invalid LAMMPS pair_styles:
 
-    - buck/long/coul/cut
-    - lj/long/coul/cut
+        - buck/long/coul/cut
+        - lj/long/coul/cut
     """
 
-    interactions = [request.getfixturevalue('dispersions')[index],
-                    request.getfixturevalue('coulombics')[0]]
+    interactions = [request.getfixturevalue(interaction)[idx]
+                    for interaction, idx in zip(interactions, indices)]
     setattr(universe, solver_attr, PPPM(accuracy=1e-4))
     with pytest.raises(ValueError):
         lmp_eng.parse_all_nonbonded_styles(interactions)
