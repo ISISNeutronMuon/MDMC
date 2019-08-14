@@ -2068,14 +2068,15 @@ def parse_all_nonbonded_styles(interactions):
         if d_style in flat_interactions and c_style in flat_interactions:
             for int1, int2 in combinations(parsed_interactions, 2):
                 if (int1[0] == d_style and int2[0] == c_style
-                    or int1[0] == c_style and int2[0] == d_style):
+                        or int1[0] == c_style and int2[0] == d_style):
                     combined.append(int1)
                     combined.append(int2)
                     if (d_style in ['buck/long', 'lj/long']
-                        and c_style == 'coul/cut'):
-                        raise ValueError('LAMMPS requires long range coulombics'
-                                         ' to be defined in conjunction with'
-                                         ' long range buck or LJ interactions')
+                            and c_style == 'coul/cut'):
+                        raise ValueError('Invalid pair_style; LAMMPS requires'
+                                         ' long range coulombics to be defined'
+                                         ' in conjunction with long range buck'
+                                         ' or LJ interactions')
 
                     lmp_str.append('/'.join([d_style, c_style]))
                     if (lmp_str[-1] in ['buck/long/coul/long',
@@ -2091,6 +2092,7 @@ def parse_all_nonbonded_styles(interactions):
                         lmp_str.append(int2[1])
 
     parsed_interactions = list(set(parsed_interactions) - set(combined))
+    # return parsed_interactions, lmp_str
     # Include all pair styles that were not part of a merged pair i.e.
     # everything left over in parsed_interactions
     # Chain used to flatten list of tuples
