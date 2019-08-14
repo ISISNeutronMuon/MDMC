@@ -561,17 +561,15 @@ def test_parse_all_nonbonded_styles_diff_cutoffs(interactions, indices,
 
 
 @pytest.mark.parametrize('index', [0, 1])
-def test_parse_all_nonbonded_styles_unequal_cutoff_error(dispersions, index,
-                                                         coulombics, universe,
-                                                         request):
+def test_parse_all_nonbonded_styles_diff_cutoffs(index):
 
     """
     Tests that a ValueError is raised when trying to create the following
     pair styles when the Dispersive and Coulombic interactions are created
     with different cut offs:
 
-    - long range Buckingham and Coulombic (buck/long/coul/long)
-    - long range LennardJones and Coulombic (lj/long/coul/long)
+    - buck/long/coul/long with different cutoffs
+    - lj/long/coul/long with different cutoffs
     """
 
     assert COUL_CUTOFF != DISP_CUTOFF
@@ -580,6 +578,28 @@ def test_parse_all_nonbonded_styles_unequal_cutoff_error(dispersions, index,
                     request.getfixturevalue('coulombics')[0]]
     # Use kspace solver for long range Dispersive and Coulombic interactions
     setattr(universe, 'kspace_solver', PPPM(accuracy=1e-4))
+    with pytest.raises(ValueError):
+        lmp_eng.parse_all_nonbonded_styles(interactions)
+
+
+@pytest.mark.parametrize("interactions, indices, solver_attr",
+                         [(('coulombics', 'dispersions', 'dispersions'),
+                          (0, 0, 1), 'dispersive_solver')])
+def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
+                                                   solver_attr, universe,
+                                                   request):
+
+    """
+    Tests that a ValueError is raised when trying to create the following
+    invalid LAMMPS pair_styles:
+
+    - buck/long/coul/cut
+    - lj/long/coul/cut
+    """
+
+    interactions = [request.getfixturevalue('dispersions')[index],
+                    request.getfixturevalue('coulombics')[0]]
+    setattr(universe, solver_attr, PPPM(accuracy=1e-4))
     with pytest.raises(ValueError):
         lmp_eng.parse_all_nonbonded_styles(interactions)
 
