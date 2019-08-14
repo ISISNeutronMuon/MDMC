@@ -2171,8 +2171,6 @@ class DihedralAngle(BondedInteraction):
     Dihedral angles can be both proper and improper, where the angle between the
     two planes of ijk and jkl is fixed for improper dihedrals.
 
-
-
     Parameters
     ----------
     atom_tuples : list
@@ -2187,11 +2185,11 @@ class DihedralAngle(BondedInteraction):
     improper : bool
         Whether the DihedralAngle is improper or not, which affects the
         InteractionFunctions which can be set for this DihedralAngle. By default
-        this is set to False.
+        this is set to False i.e. the interaction is a proper dihedral.
     """
 
     def __init__(self, *atom_tuples, **settings):
 
         settings['n_atoms'] = (4, )
-        self.improper = settings['improper', False]
+        self.improper = settings.get('improper', False)
         super(DihedralAngle, self).__init__(*atom_tuples, **settings)
