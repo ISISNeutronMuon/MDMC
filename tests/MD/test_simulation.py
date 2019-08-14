@@ -437,7 +437,8 @@ def test_molecule_subunit_positions(water_molecule):
 
 
 @pytest.mark.parametrize("Int, n_atoms", [(su.Bond, [2]),
-                                          (su.BondAngle, [3, 4])])
+                                          (su.BondAngle, [3]),
+                                          (su.DihedralAngle, [4])])
 def test_bonded_interactions(Int, n_atoms, atom):
 
     """
