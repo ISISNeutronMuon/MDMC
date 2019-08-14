@@ -691,7 +691,7 @@ class Universe:
         Parameters
         ----------
         density : float
-            The desired total density of the solvent and solute molecules,
+            The desired density of the solvent that solvates the universe,
             in units of amu Ang ^ -3
         tolerance : float, optional
             The +/- percentage tolerance of the density to be achieved.
@@ -730,11 +730,7 @@ class Universe:
         orig_box_dens = (solv_mass * len(coords['molecules'])
                          / np.prod(orig_box_dims))
         # Get the prelim scaling of the orig box required to achieve density
-        tot_solute_mass = 0
-        for atom in self.atom_list:
-            tot_solute_mass += atom.mass
-        req_dens = density - (tot_solute_mass / self.volume)
-        dim_scaling = np.array([(orig_box_dens / req_dens) ** (1. / 3)] * 3)
+        dim_scaling = np.array([(orig_box_dens / density) ** (1. / 3)] * 3)
 
         scale_factor = 0.
         counter = 0
@@ -800,7 +796,7 @@ class Universe:
                     universe=self)
 
             # Check the density
-            actual = (len(mols) * solv_mass + tot_solute_mass) / self.volume
+            actual = (len(mols) * solv_mass) / self.volume
             difference = (actual - density) / density
             scale_factor = difference / counter
 
