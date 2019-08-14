@@ -2092,7 +2092,6 @@ def parse_all_nonbonded_styles(interactions):
                         lmp_str.append(int2[1])
 
     parsed_interactions = list(set(parsed_interactions) - set(combined))
-    # return parsed_interactions, lmp_str
     # Include all pair styles that were not part of a merged pair i.e.
     # everything left over in parsed_interactions
     # Chain used to flatten list of tuples
