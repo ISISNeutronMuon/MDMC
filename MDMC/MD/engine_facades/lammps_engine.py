@@ -2047,8 +2047,15 @@ def parse_all_nonbonded_styles(interactions):
     """
 
     # Set to remove duplicates
-    parsed_interactions = list(set([tuple(parse_nonbonded_styles(nb))
-                                    for nb in interactions]))
+    # parsed_interactions = list(set([tuple(parse_nonbonded_styles(nb))
+    #                                 for nb in interactions]))
+    # Function to remove duplicates but maintain order of interactions as passed
+    def remove_duplicates(interactions):
+        seen = set()
+        seen_add = seen.add
+        return [x for x in interactions if not (x in seen or seen_add(x))]
+    parsed_interactions = remove_duplicates([tuple(parse_nonbonded_styles(nb))
+                                             for nb in interactions])
     # Parsed interactions will be a list of tuple(style, parameters) e.g.
     # ('lj/cut', cutoff). Chain from iterable to flatten this for ease of
     # searching for pair styles
@@ -2091,7 +2098,10 @@ def parse_all_nonbonded_styles(interactions):
                     if int2[1] != int1[1]:
                         lmp_str.append(int2[1])
 
-    parsed_interactions = list(set(parsed_interactions) - set(combined))
+    # Remove interactions from parsed interactions if already combined
+    for parsed, used in product(parsed_interactions, combined):
+        if parsed == used and parsed in parsed_interactions:
+            parsed_interactions.remove(parsed)
     # Include all pair styles that were not part of a merged pair i.e.
     # everything left over in parsed_interactions
     # Chain used to flatten list of tuples
@@ -2165,13 +2175,13 @@ def parse_dispersion_coefficients(interaction, style):
     parameters = {p.name:convert_unit(p.value)
                   for p in interaction.params}
 
-    if 'lj' in style:
+    if 'buck' in style:
+        ordered_parameters = [parameters['A'],
+                              1. / parameters['B'],
+                              parameters['C']]
+    elif 'lj' in style:
         ordered_parameters = [parameters['epsilon'],
                               parameters['sigma']]
-    elif 'buck' in style:
-        ordered_parameters = [parameters['A'],
-                              parameters['B'],
-                              parameters['C']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
