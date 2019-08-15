@@ -534,13 +534,13 @@ def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
 
 @pytest.mark.parametrize("interactions, indices, solver_attr, expected",
                          [(('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), None, ['buck', DISP_CUTOFF,
-                                             'lj/cut', DISP_CUTOFF,
-                                             'coul/cut', COUL_CUTOFF]),
+                           (0, 0, 1), None, ['coul/cut', COUL_CUTOFF,
+                                             'buck', DISP_CUTOFF,
+                                             'lj/cut', DISP_CUTOFF]),
                           (('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1), 'electrostatic_solver',
-                           ['buck', DISP_CUTOFF, 'lj/cut', DISP_CUTOFF,
-                            'coul/long', COUL_CUTOFF])])
+                           ['coul/long', COUL_CUTOFF, 'buck', DISP_CUTOFF,
+                            'lj/cut', DISP_CUTOFF,])])
 def test_parse_all_nonbonded_styles_valid_diff_cutoffs(interactions, indices,
                                                        solver_attr, expected,
                                                        universe, request):
