@@ -811,10 +811,14 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         for atom, lmp_atom in self.atom_dict.items():
-            self.lmp.set('atom',
-                         lmp_atom.id,
-                         'charge',
-                         convert_unit(atom.charge))
+            try:
+                self.lmp.set('atom',
+                             lmp_atom.id,
+                             'charge',
+                             convert_unit(atom.charge))
+            except AttributeError:
+                raise AttributeError('LAMMPS requires all atoms in the universe'
+                                     ' to have a charge.')
 
     def _update_dispersions(self, disps):
 
