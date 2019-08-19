@@ -840,7 +840,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
                       if isinstance(style, str)]
 
         for disp in disps:
-            atom_type_pairs = product(disp.atom_types[0], disp.atom_types[1])
+            atom_type_pairs = product(disp.atom_types[0], disp.atom_types[0])
+            # atom_type_pairs = [i for i in product(disp.atom_types[0], repeat=2)
+            #                    if i[0] <= i[1]]
             disp_style = parse_nonbonded_styles(disp)[0]
             for style in all_styles:
                 if disp_style in style:
