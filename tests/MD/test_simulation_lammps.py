@@ -113,10 +113,10 @@ def universe_interactions(empty_universe, atoms):
                                       vdw_tail_correction=True))
         dispersions.append(Dispersion(empty_universe, type,
                                       function=Buckingham((type * 0.1,
-                                                           'kJ mol^-1'),
+                                                           'kJ / mol'),
                                                           (type * 1.0, 'Ang'),
                                                           (type * 2.0,
-                                                           'Ang^6 kJ mol^-1')),
+                                                           'Ang^6 kJ / mol')),
                                       cutoff=DISP_CUTOFF,
                                       vdw_tail_correction=True))
         dispersions.append(Dispersion(empty_universe, type,
