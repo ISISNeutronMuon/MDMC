@@ -74,11 +74,11 @@ For the above example, passing a density of ``0.6`` and setting ``tolerance=1`` 
 
 ### 3. ``solvent``
 
-In all cases, the following parameters must the desired density of the solvent you would like solvate with must be passed as a parameter in addition to a tolerance level within which you 
 
 #### a) Using a solvent with pre-defined coordinates
 
-MDMC has a few in-built solvents that can be used to solvate your Universe. These have pre-defined atomic coordinates, Bonds, BondAngles, NonBondedInteractions, and that have been generated in simulation.
+MDMC has a few in-built solvents that can be used to solvate your Universe. These have pre-defined atomic coordinates, Bonds, BondAngles, NonBondedInteractions. 
+
 
 Currently, the in-built solvents you can choose from are:  
 
@@ -86,14 +86,48 @@ Currently, the in-built solvents you can choose from are:
 
 ##### Example: solvating with SPCE water
 
-An example of solvating with in-built SPCE water:
-
 ```
 universe.solvate(0.6, tolerance=1, solvent='SPCE')
 ```
 
 #### b) Specifying a StructuralUnit.
-You can also create an Atom or Molecule StructuralUnit which with to solvate the universe. Ensure that the StructuralUnit you are specifying has the correct bonded and nonbonded interactions
+You can also create a StructuralUnit (such as an Atom or Molecule) with which you can solvate the universe.
+
+##### Example: solvating with a methanol molecule
+
+Methanol coordinates taken from [Biological Magnetic Resonance Data Bank](http://www.bmrb.wisc.edu/ftp/pub/bmrb/metabolomics/entry_directories/bmse000294/bmse000294.mol)
+
+```
+from MDMC.MD.simulation import Universe
+from MDMC.MD.structural_units import Atom, Bond, BondAngle, Molecule
+from MDMC.MD.interaction_functions import HarmonicPotential
+
+# Create the atoms
+H1 = Atom('H', position=[-0.7006,  0.3636,  0.8900])
+H2 = Atom('H', position=[-0.7006,  0.3636, -0.8900])
+H3 = Atom('H', position=[-0.7076, -1.1754,  0.0000])
+C  = Atom('C', position=[-0.3366, -0.1504,  0.0000])
+O  = Atom('O', position=[ 1.0849, -0.1713, -0.0000])
+H4 = Atom('H', position=[ 1.3606,  0.7699,  0.0000])
+
+# Define a HarmonicPotential and create the Bonds
+harmonic = HarmonicPotential((1., 'Ang'), (100., 'kJ / mol Ang^2')
+CH_bond_1 = Bond(C, H1, function=harmonic)
+CH_bond_2 = Bond(C, H2, function=harmonic)
+CH_bond_3 = Bond(C, H3, function=harmonic)
+CO_bond = Bond(C, O, function=harmonic)
+OH_bond = Bond(O, H4, function=harmonic)
+
+# Generate the triplets of atoms joined by bonds
+HCH_triplets = [(i[0], C, i[1]) for i in combinations([H1, H2, H3], 2)]
+HCO_triplets = [(i, C, O) for i H_atoms)]
+HOC_triplet = (H4, O, C)
+HCH_angles = BondAngle(*HCH_triplets, *HCO_triplets, HOC_triplet,
+					   function=HarmonicPotential((109.5, 'deg'), (10., 'kJ / mol deg^2')))
+
+
+methanol = Molecule(atoms=[H1, H2, H3, C, O, H4])
+```
 
 
 ### 4. ``**settings``
