@@ -477,7 +477,7 @@ class Universe(object):
         **settings
             num_density : float
                 Non-negative float specifying the number density of the
-                structural unit
+                structural unit, in units of structural units Ang ^ -3
             num_struc_units : int
                 Non-negative int specifying the number of passed structural
                 units that the universe should be filled with, regardless of
