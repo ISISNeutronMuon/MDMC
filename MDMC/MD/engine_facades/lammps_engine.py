@@ -1904,6 +1904,7 @@ def convert_unit(value, unit=None, to_lammps=True):
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
         l_sys = copy(SYSTEM)
+        l_sys.update({'DIMENSIONLESS': '1'})
         # For angular potential strength LAMMPS requires the units in rad,
         # rather than degrees (which is uses otherwise). Therefore if the unit
         # is in MDMC angular potential strength units (energy / angle^2), the
@@ -1913,25 +1914,28 @@ def convert_unit(value, unit=None, to_lammps=True):
 
         expanded_unit = expand_components(unit)
         system_inv = {unit:property for property, unit in units.SYSTEM.items()}
+        system_inv.update({'1': 'DIMENSIONLESS'})
         # Apply inversion to all components
-        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
+        unit_denoms, unit_nums = map(lambda comp_list: [l_sys[system_inv[comp]]
                                                         for comp in comp_list],
                                      expanded_unit)
     else:
-        unit_denoms, unit_nums = expand_components(unit)
+        unit_nums, unit_denoms = expand_components(unit)
 
     conv_nums, conv_denoms = [], []
     for component in unit_nums:
         conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
-            expand_components(component)
+            expand_components(units.Unit(component))
     for component in unit_denoms:
         conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
-            expand_components(component)
+            expand_components(units.Unit(component))
 
     for component in conv_nums:
-        value *= getattr(units, component)
+        if component != '1':
+            value *= getattr(units, component)
     for component in conv_denoms:
-        value /= getattr(units, component)
+        if component != '1':
+            value /= getattr(units, component)
 
     return value
 

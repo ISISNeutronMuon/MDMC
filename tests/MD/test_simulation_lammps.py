@@ -1568,8 +1568,8 @@ def test_convert_mdmc_compound_equivalence():
     P = units.SYSTEM['PRESSURE']
     E = units.SYSTEM['ENERGY']
 
-    assert lmp_eng.convert_unit(1., P / E) == (lmp_eng.convert_unit(1., P)
-                                               / lmp_eng.convert_unit(1., E))
+    assert np.isclose(lmp_eng.convert_unit(1., P / E),
+                      lmp_eng.convert_unit(1., P) / lmp_eng.convert_unit(1., E))
 
 
 def test_partition_single_interaction(interactions, bonds):

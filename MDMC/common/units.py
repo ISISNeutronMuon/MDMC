@@ -414,30 +414,34 @@ def create_units(codata_version):
     codata = CODATA[codata_version]
 
     # Length
-    units['m'] = 1e10
-    units['nm'] = 10.
+    units['m'] = units['Ang'] * 1e10
+    units['nm'] = units['Ang'] * 1e1
 
     # Time
-    units['ns'] = 1e6
-    units['ps'] = 1e3
+    units['ns'] = units['fs'] * 1e6
+    units['ps'] = units['fs'] * 1e3
 
     # Mass
     units['kg'] = 1. / codata['_amu']
-    units['g'] = units['kg'] * 1000.
+    units['g'] = units['kg'] / 1000.
 
     # Energy
-    units['J'] = units['kJ'] * 1000.
-    units['kcal'] = units['kJ'] / 4.184
+    units['J'] = units['kJ'] / 1000.
+    units['kcal'] = units['kJ'] * 4.184
 
     # Force
-    units['kcal / Ang mol'] = units['kJ / Ang mol'] / 4.184
+    units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
 
     # Pressure
-    units['atm'] = units['Pa'] / 101325.
-    units['bar'] = units['Pa'] / 1e5
+    units['atm'] = units['Pa'] * 101325.
+    units['bar'] = units['Pa'] * 1e5
 
     # Angle
-    units['rad'] = units['deg'] * np.pi / 180.
+    units['rad'] = units['deg'] * 180. / np.pi
+
+    # Amount
+    # units['molecules'] = units['mol'] / codata['_Nav']
+    units['mol'] = codata['_Nav']
 
     return units
 
