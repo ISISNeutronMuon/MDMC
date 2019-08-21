@@ -1890,19 +1890,20 @@ def convert_unit(value, unit=None, to_lammps=True):
         system_inv = {unit:property for property, unit in units.SYSTEM.items()}
         system_inv.update({'1': 'DIMENSIONLESS'})
         # Apply inversion to all components
-        unit_dens, unit_nums = map(lambda comp_list: [l_sys[system_inv[comp]]
-                                                      for comp in comp_list],
-                                   expanded_unit)
-        # # Deal with special case of g / mol <---> amu (or inverse)
-        # unit_nums, mul_num = parse_lammps_compound_mass(unit_nums)
-        # unit_dens, mul_den = parse_lammps_compound_mass(unit_dens)
-        # value *= mul_num / mul_den
+        try:
+            unit_dens, unit_nums = map(lambda comp_list:
+                                       [l_sys[system_inv[comp]]
+                                        for comp in comp_list],
+                                       expanded_unit)
+        except KeyError:
+            raise ValueError('Must be in MDMC base units if converting to'
+                             ' LAMMPS units.')
     else:
         unit_nums, unit_dens = expand_components(unit)
-        # # Deal with special case of amu <---> g / mol (or inverse)
-        # unit_nums, unit_dens, mul_num = parse_lammps_mass(unit_nums, unit_dens)
-        # unit_nums, unit_dens, mul_den = parse_lammps_mass(unit_dens, unit_nums)
-        # value *= mul_num / mul_den
+    # Deal with special case of amu <---> g / mol (or inverse)
+    unit_nums, unit_dens, mul_num = parse_lammps_mass(unit_nums, unit_dens)
+    unit_nums, unit_dens, mul_den = parse_lammps_mass(unit_dens, unit_nums)
+    value *= mul_num / mul_den
 
     conv_nums, conv_dens = [], []
     for component in unit_nums:
@@ -1949,41 +1950,6 @@ def expand_components(unit):
     return num, denom
 
 
-def parse_lammps_compound_mass(unit_list):
-
-    """
-    Parses a list of unit components and replaces any instance of 'g / mol'
-    or 'kg / mol' with 'amu', returning the edited list as well as a
-    multiplier that accounts for any orders of magnitude lost when converting
-    LAMMPS mass units to MDMC mass units.
-
-    Parameters
-    ----------
-    unit_list : list of str
-        Contains str representations of LAMMPS units.
-
-    Returns
-    -------
-    unit_list : list of str
-        The input unit_list, where all instances of 'g / mol' or 'kg / mol'
-        have been replaced with 'amu'.
-    multiplier : float
-        The factor containing the orders of magnitude lost when converting
-        LAMMPS mass units to MDMC mass units. For example, if unit_nums
-        contained 2 'kg' elements the multiplier would be 1e6 (= 1e3 ** 2
-        for each 'kg').
-    """
-
-    multiplier = 1.
-    for idx, unit in enumerate(unit_list):
-        if 'g / mol' in unit:
-            mass, _ = expand_components(unit)
-            multiplier *= getattr(units, *mass) / CONST['_Nav']
-            unit_list[idx] = 'amu'
-
-    return unit_list, multiplier
-
-
 def parse_lammps_mass(unit_nums, unit_dens):
 
     """
@@ -2017,15 +1983,19 @@ def parse_lammps_mass(unit_nums, unit_dens):
     masses = []
     multiplier = 1.
     for idx, unit in enumerate(unit_nums):
+        if unit == 'g / mol':
+            unit_nums[idx] = 'g'
+            unit_dens.append('mol')
+    for idx, unit in enumerate(unit_nums):
         if unit in ['g', 'kg']:
             masses.append(unit)
             unit_nums[idx] = 'amu'
     for mass in masses:
-        # Scale the multiplier based on the mass (i.e. * 1000 for kg)
-        multiplier *= (getattr(units, mass)
-                       / CONST['_Nav'])
+        # Scale the multiplier based on the mass' order of mag
+        multiplier /= getattr(units, mass)
         try:
             unit_dens.remove('mol')
+            multiplier /= CONST['_Nav']
         except ValueError:
             pass
 
