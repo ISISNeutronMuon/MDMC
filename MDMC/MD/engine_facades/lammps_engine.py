@@ -1900,9 +1900,11 @@ def convert_unit(value, unit=None, to_lammps=True):
                              ' LAMMPS units.')
     else:
         unit_nums, unit_dens = expand_components(unit)
-    # Deal with special case of amu <---> g / mol (or inverse)
-    unit_nums, unit_dens, mul_num = parse_lammps_mass(unit_nums, unit_dens)
-    unit_nums, unit_dens, mul_den = parse_lammps_mass(unit_dens, unit_nums)
+    # Deal with special cases: amu <---> g / mol ...and... kJ  <---> kcal / mol
+    unit_nums, unit_dens, mul_num = convert_units_special_cases(unit_nums,
+                                                                unit_dens)
+    unit_nums, unit_dens, mul_den = convert_units_special_cases(unit_dens,
+                                                                unit_nums)
     value *= mul_num / mul_den
 
     conv_nums, conv_dens = [], []
@@ -1950,13 +1952,18 @@ def expand_components(unit):
     return num, denom
 
 
-def parse_lammps_mass(unit_nums, unit_dens):
+def convert_units_special_cases(unit_nums, unit_dens):
 
     """
-    Takes the expanded component numerator and denominator lists
-    and replaces LAMMPS mass unit pairs between the lists (i.e. 'g' or 'kg'
-    in unit_nums and 'mol' in unit_dens) with MDMC mass units of 'amu' in
-    unit_nums.
+    Deals with the conversion of special cases:
+
+        Dimension       MDMC unit           LAMMPS unit
+        mass            amu         <--->   g / mol
+        energy          kJ          <--->   kcal / mol
+
+    by converting all instances of the LAMMPS unit in the expanded component
+    numerator and denominator lists and replaces them with the MDMC unit,
+    returning a multiplier that accounts for the conversion factors.
 
     Parameters
     ----------
@@ -1968,36 +1975,51 @@ def parse_lammps_mass(unit_nums, unit_dens):
     Returns
     -------
     unit_nums : list of str
-        Input list unit_nums, with all mass units ('g' or 'kg') replaced
-        with 'amu'.
+        Input list unit_nums, with all LAMMPS mass numerator components
+        ('g' or 'kg') replaced with 'amu', and all LAMMPS energy numerator
+        components ('kcal') replaced with 'kJ'.
     unit_dens : list of str
-        Input list unit_dens where every 'mol' element that has a
-        corresponding mass unit of 'g' or 'kg' in unit_nums has been removed.
+        Input list unit_dens where every 'mol' element has been removed, if
+        and only if it pairs with a LAMMPS mass numerator component of 'g' or
+        'kg', or a LAMMPS energy numerator component of 'kcal', in unit_nums.
     multiplier : float
-        The factor containing the orders of magnitude lost when converting
-        LAMMPS mass units to MDMC mass units. For example, if unit_nums
-        contained 2 'kg' elements the multiplier would be 1e6 (= 1e3 ** 2
-        for each 'kg').
+        The factor that is a product of all conversion factors needed when
+        performing the special conversions.
     """
 
-    masses = []
+    properties = {'mass'   : ['kg', 'g'],
+                  'energy' : ['kcal']
+                 }
+
     multiplier = 1.
-    for idx, unit in enumerate(unit_nums):
-        if unit == 'g / mol':
-            unit_nums[idx] = 'g'
-            unit_dens.append('mol')
-    for idx, unit in enumerate(unit_nums):
-        if unit in ['g', 'kg']:
-            masses.append(unit)
-            unit_nums[idx] = 'amu'
-    for mass in masses:
-        # Scale the multiplier based on the mass' order of mag
-        multiplier /= getattr(units, mass)
-        try:
-            unit_dens.remove('mol')
-            multiplier /= CONST['_Nav']
-        except ValueError:
-            pass
+    for property in ('mass', 'energy'):
+
+        prop_units = properties[property]
+        for idx, unit in enumerate(unit_nums):
+            if unit == 'g / mol':
+                unit_nums[idx] = 'g'
+                unit_dens.append('mol')
+            elif unit == 'kcal / mol':
+                unit_nums[idx] = 'kcal'
+                unit_dens.append('mol')
+
+        converted = []
+        for idx, unit in enumerate(unit_nums):
+            if unit in prop_units:
+                converted.append(unit)
+                if property == 'mass':
+                    unit_nums[idx] = 'amu'
+                elif property == 'energy':
+                    unit_nums[idx] = 'kJ'
+
+        for conv_unit in converted:
+            # Scale the multiplier based on the mass' order of magnitude
+            multiplier /= getattr(units, conv_unit)
+            try:
+                unit_dens.remove('mol')
+                multiplier /= CONST['_Nav']
+            except ValueError:
+                pass
 
     return unit_nums, unit_dens, multiplier
 
