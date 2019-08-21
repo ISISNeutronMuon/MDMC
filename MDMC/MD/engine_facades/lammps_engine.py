@@ -1917,8 +1917,22 @@ def convert_unit(value, unit=None, to_lammps=True):
         unit_denoms, unit_nums = map(lambda comp_list: [l_sys[system_inv[comp]]
                                                         for comp in comp_list],
                                      expanded_unit)
+        # Deal with special case of amu <---> g / mol (or inverse)
+        for comp_list in (unit_denoms, unit_nums):
+            for idx, unit in enumerate(comp_list):
+                if unit == 'g / mol':
+                    comp_list[idx] = 'amu'
     else:
         unit_nums, unit_denoms = expand_components(unit)
+        # Deal with special case of amu <---> g / mol (or inverse)
+        while 'g' in unit_nums and 'mol' in unit_denoms:
+            unit_nums.remove('g')
+            unit_denoms.remove('mol')
+            unit_nums.append('amu')
+        while 'mol' in unit_nums and 'g' in unit_denoms:
+            unit_nums.remove('mol')
+            unit_denoms.remove('g')
+            unit_denoms.append('amu')
 
     conv_nums, conv_denoms = [], []
     for component in unit_nums:
