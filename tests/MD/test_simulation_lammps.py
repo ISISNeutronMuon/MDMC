@@ -1328,7 +1328,8 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
                           ('amu', 1.), ('g / mol', 1.),
                           ('mol', 1.),
                           ('J', 0.001), ('kJ', 1.), ('kcal', 4.184),
-                          ('kcal / Ang mol', 4.184), ('kJ / Ang mol', 1.),
+                          ('kcal / Ang mol', 4.184 / CONST['_Nav']),
+                          ('kJ / Ang mol', 1.),
                           ('atm', 101325), ('bar', 1e5),
                           ('rad', 180 / np.pi), ('deg', 1.)])
 def test_convert_unit_conversion_factors(unit_str, expected):
