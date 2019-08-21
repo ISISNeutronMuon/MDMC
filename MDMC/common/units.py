@@ -424,6 +424,7 @@ def create_units(codata_version):
     # Mass
     units['kg'] = 1. / codata['_amu']
     units['g'] = units['kg'] / 1000.
+    units['gmol'] = units['amu']
 
     # Energy
     units['J'] = units['kJ'] / 1000.
@@ -438,10 +439,6 @@ def create_units(codata_version):
 
     # Angle
     units['rad'] = units['deg'] * 180. / np.pi
-
-    # Amount
-    # units['molecules'] = units['mol'] / codata['_Nav']
-    units['mol'] = codata['_Nav']
 
     return units
 
