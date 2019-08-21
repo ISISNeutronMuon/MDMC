@@ -431,13 +431,15 @@ def create_units(codata_version):
     # 1 g = N_av amu = (1/1000u) amu =
     units['g'] = units['kg'] * 1000.
     # 1 g mol^-1 = 1 amu by definition
-    units['gmol'] = units['amu']
+    units['g / mol'] = units['amu']
 
     # Energy
     # 1 J = (1/1000) kJ
     units['J'] = units['kJ'] * 1000.
     # 1 kcal = 4.184 kJ
     units['kcal'] = units['kJ'] / 4.184
+    # 1 kcal mol^-1 = (4.184 / N_av) kJ
+    units['kcal / mol'] = units['kJ'] / (4.184 / codata['_Nav'])
 
     # Force
     # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
@@ -450,7 +452,7 @@ def create_units(codata_version):
     units['bar'] = units['Pa'] / 1e5
 
     # Angle
-    # 1 rad = (180 / pi) deg 
+    # 1 rad = (180 / pi) deg
     units['rad'] = units['deg'] / (180. / np.pi)
 
     return units
