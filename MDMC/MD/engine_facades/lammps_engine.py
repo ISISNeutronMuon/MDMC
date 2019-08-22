@@ -35,6 +35,9 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 
 
+CONST = units.CODATA[units.CODATA_VERSION]
+
+
 class PyLammpsAttribute(object):
 
     """
@@ -1871,73 +1874,156 @@ def convert_unit(value, unit=None, to_lammps=True):
         units. Return type is same as `value` type.
     """
 
-    def expand_components(unit):
-
-        """
-        Expands out the components of a unit, so that the unit is expressed
-        purely in terms of base units
-
-        Returns
-        -------
-        tuple
-            A tuple of (num, denom), where num is a list of all base units in
-            the numerator, and denom is a list of all base units in the
-            denominator
-        """
-
-        num, denom = [], []
-        if unit.base:
-            num.append(unit)
-        else:
-            # tuple unpacking style below appends to num and denom lists
-            for comp in unit.components['numerator']:
-                num[len(num):], denom[len(denom):] = expand_components(comp)
-            for comp in unit.components['denominator']:
-                denom[len(denom):], num[len(num):] = expand_components(comp)
-
-        return num, denom
-
     # If no unit argument is passed, the value must possess a unit
     if not unit:
         unit = value.unit
-
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
         l_sys = copy(SYSTEM)
+        # Update dict to be able to handle units containing '1'
         l_sys.update({'DIMENSIONLESS': '1'})
         # For angular potential strength LAMMPS requires the units in rad,
-        # rather than degrees (which is uses otherwise). Therefore if the unit
+        # rather than degrees (which is used otherwise). Therefore if the unit
         # is in MDMC angular potential strength units (energy / angle^2), the
         # ANGLE entry in SYSTEM is replaced by radians.
         if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
             l_sys['ANGLE'] = units.Unit('rad')
-
         expanded_unit = expand_components(unit)
         system_inv = {unit:property for property, unit in units.SYSTEM.items()}
         system_inv.update({'1': 'DIMENSIONLESS'})
         # Apply inversion to all components
-        unit_denoms, unit_nums = map(lambda comp_list: [l_sys[system_inv[comp]]
-                                                        for comp in comp_list],
-                                     expanded_unit)
+        try:
+            unit_dens, unit_nums = map(lambda comp_list:
+                                       [l_sys[system_inv[comp]]
+                                        for comp in comp_list],
+                                       expanded_unit)
+        except KeyError:
+            raise ValueError('Must be in MDMC base units if converting to'
+                             ' LAMMPS units.')
     else:
-        unit_nums, unit_denoms = expand_components(unit)
+        unit_nums, unit_dens = expand_components(unit)
+    # Deal with special cases: amu <---> g / mol ...and... kJ  <---> kcal / mol
+    unit_nums, unit_dens, mul_num = convert_units_special_cases(unit_nums,
+                                                                unit_dens)
+    unit_nums, unit_dens, mul_den = convert_units_special_cases(unit_dens,
+                                                                unit_nums)
+    value *= mul_num / mul_den
 
-    conv_nums, conv_denoms = [], []
+    conv_nums, conv_dens = [], []
     for component in unit_nums:
-        conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
-            expand_components(units.Unit(component))
-    for component in unit_denoms:
-        conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
-            expand_components(units.Unit(component))
+        (conv_nums[len(conv_nums):],
+         conv_dens[len(conv_dens):]) = expand_components(units.Unit(component))
+    for component in unit_dens:
+        (conv_dens[len(conv_dens):],
+         conv_nums[len(conv_nums):]) = expand_components(units.Unit(component))
 
     for component in conv_nums:
         if component != '1':
             value *= getattr(units, component)
-    for component in conv_denoms:
+    for component in conv_dens:
         if component != '1':
             value /= getattr(units, component)
 
     return value
+
+
+def expand_components(unit):
+
+    """
+    Expands out the components of a unit, so that the unit is expressed
+    purely in terms of base units
+
+    Returns
+    -------
+    tuple
+        A tuple of (num, denom), where num is a list of all base units in
+        the numerator, and denom is a list of all base units in the
+        denominator
+    """
+
+    num, denom = [], []
+    if unit.base:
+        num.append(unit)
+    else:
+        # tuple unpacking style below appends to num and denom lists
+        for comp in unit.components['numerator']:
+            num[len(num):], denom[len(denom):] = expand_components(comp)
+        for comp in unit.components['denominator']:
+            denom[len(denom):], num[len(num):] = expand_components(comp)
+
+    return num, denom
+
+
+def convert_units_special_cases(unit_nums, unit_dens):
+
+    """
+    Deals with the conversion of special cases:
+
+        Dimension       MDMC unit           LAMMPS unit
+        mass            amu         <--->   g / mol
+        energy          kJ          <--->   kcal / mol
+
+    by converting all instances of the LAMMPS unit in the expanded component
+    numerator and denominator lists and replaces them with the MDMC unit,
+    returning a multiplier that accounts for the conversion factors.
+
+    Parameters
+    ----------
+    unit_nums : list of str
+        A list of expanded unit components.
+    unit_dens : list of str
+        A list of expanded unit components.
+
+    Returns
+    -------
+    unit_nums : list of str
+        Input list unit_nums, with all LAMMPS mass numerator components
+        ('g' or 'kg') replaced with 'amu', and all LAMMPS energy numerator
+        components ('kcal') replaced with 'kJ'.
+    unit_dens : list of str
+        Input list unit_dens where every 'mol' element has been removed, if
+        and only if it pairs with a LAMMPS mass numerator component of 'g' or
+        'kg', or a LAMMPS energy numerator component of 'kcal', in unit_nums.
+    multiplier : float
+        The factor that is a product of all conversion factors needed when
+        performing the special conversions.
+    """
+
+    properties = {'mass'   : ['kg', 'g'],
+                  'energy' : ['kcal']
+                 }
+
+    multiplier = 1.
+    for property in ('mass', 'energy'):
+
+        prop_units = properties[property]
+        for idx, unit in enumerate(unit_nums):
+            if unit == 'g / mol':
+                unit_nums[idx] = 'g'
+                unit_dens.append('mol')
+            elif unit == 'kcal / mol':
+                unit_nums[idx] = 'kcal'
+                unit_dens.append('mol')
+
+        converted = []
+        for idx, unit in enumerate(unit_nums):
+            if unit in prop_units:
+                converted.append(unit)
+                if property == 'mass':
+                    unit_nums[idx] = 'amu'
+                elif property == 'energy':
+                    unit_nums[idx] = 'kJ'
+
+        for conv_unit in converted:
+            # Scale the multiplier based on the mass' order of magnitude
+            multiplier /= getattr(units, conv_unit)
+            try:
+                unit_dens.remove('mol')
+                multiplier /= CONST['_Nav']
+            except ValueError:
+                pass
+
+    return unit_nums, unit_dens, multiplier
 
 
 def parse_bonded_styles(interaction):
