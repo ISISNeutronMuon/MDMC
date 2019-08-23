@@ -2264,6 +2264,8 @@ def parse_dispersion_coefficients(interaction, style):
     NotImplementedError
         If `interaction` has a function that has not been implemented in the
         LAMMPS facade.
+    ValueError
+        If the LAMMPS Buckingham parameter rho is less than or equal to zero.
     """
 
     parameters = {p.name:convert_unit(p.value)
@@ -2273,6 +2275,11 @@ def parse_dispersion_coefficients(interaction, style):
         ordered_parameters = [parameters['A'] / CONST['_Nav'],
                               parameters['B'] ** -1,
                               parameters['C'] / CONST['_Nav']]
+        try:
+            assert ordered_parameters[1] > 0
+        except AssertionError:
+            raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B) must be'
+                             ' greater than 0.')
     elif 'lj' in style:
         ordered_parameters = [parameters['epsilon'] / CONST['_Nav'],
                               parameters['sigma']]
