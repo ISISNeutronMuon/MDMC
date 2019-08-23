@@ -2142,6 +2142,27 @@ def parse_all_nonbonded_styles(interactions):
         cutoffs, which is not implemented in LAMMPS.
     """
 
+    def remove_duplicates(interactions):
+
+        """
+        Removes duplicates from list of tuples whilst maintaining order passed.
+
+        Parameters
+        ----------
+        interactions : list of tuple
+            List of parsed nonbonded interactions, where each element is a
+            tuple of the form (style, parameters), i.e. ('lj/cut', cutoff).
+
+        Returns
+        -------
+        list of tuple
+            List of tuples of the above form, with duplicates removed but
+            order as passed in interactions maintained.
+        """
+
+        return [x for x in interactions if not (x in set() or set().add(x))]
+        
+
     def check_validity(pair_style, cutoffs=None):
 
         """
@@ -2167,34 +2188,22 @@ def parse_all_nonbonded_styles(interactions):
             If the pair_style passed is not valid.
         """
 
-        modification = ''
-        if pair_style == 'buck/long/coul/cut':
+        if pair_style in ['buck/long/coul/cut', 'lj/long/coul/cut']:
             raise ValueError('Invalid pair_style: ' + pair_style
                              + '. LAMMPS requires long range Coulombics to be'
                              ' defined in conjunction with long range Dispersion'
                              ' interactions.')
-        elif pair_style in ['buck/long/coul/long', 'lj/long/coul/long']:
+        if pair_style in ['buck/long/coul/long', 'lj/long/coul/long']:
             if cutoffs[0] != cutoffs[1]:
                 raise ValueError('LAMMPS requires both cutoffs to be the same'
                                  ' for long range Dispersion and Coulombic pair'
                                  ' styles.')
-            else:
-                return [pair_style, 'long long']
+            return [pair_style, 'long long']
 
         return [pair_style]
 
-    # Set to remove duplicates
     # parsed_interactions = list(set([tuple(parse_nonbonded_styles(nb))
     #                                 for nb in interactions]))
-    def remove_duplicates(interactions):
-
-        """
-        Remove duplicates from list of (style, parameters) tuples, whilst
-        maintaining order passed.
-        """
-
-        return [x for x in interactions if not (x in set() or set().add(x))]
-
     parsed_interactions = remove_duplicates([tuple(parse_nonbonded_styles(nb))
                                              for nb in interactions])
     # Flatten tuples of form (style, parameters), i.e. ('lj/cut', cutoff).
