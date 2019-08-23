@@ -2235,7 +2235,7 @@ def parse_bonded_coefficients(interaction):
     style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
-        ordered_parameters = [parameters['potential_strength'],
+        ordered_parameters = [parameters['potential_strength'] / CONST['_Nav'],
                               parameters['equilibrium_state']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
@@ -2272,11 +2272,11 @@ def parse_dispersion_coefficients(interaction, style):
                   for p in interaction.params}
 
     if 'buck' in style:
-        ordered_parameters = [parameters['A'],
-                              1. / parameters['B'],
-                              parameters['C']]
+        ordered_parameters = [parameters['A'] / CONST['_Nav'],
+                              parameters['B'] ** -1,
+                              parameters['C'] / CONST['_Nav']]
     elif 'lj' in style:
-        ordered_parameters = [parameters['epsilon'],
+        ordered_parameters = [parameters['epsilon'] / CONST['_Nav'],
                               parameters['sigma']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
