@@ -416,6 +416,8 @@ def create_units(codata_version):
     # Length
     # 1 m = 1e10 Ang
     units['m'] = units['Ang'] / 1e10
+    # 1 cm = 1e8 Ang
+    units['cm'] = units['Ang'] / 1e8
     # 1 nm = 1e1 Ang
     units['nm'] = units['Ang'] / 1e1
 
