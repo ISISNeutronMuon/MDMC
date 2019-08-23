@@ -2140,29 +2140,69 @@ def parse_all_nonbonded_styles(interactions):
         cutoffs, which is not implemented in LAMMPS.
     """
 
+    def check_validity(pair_style, cutoffs=None):
+
+        """
+        Tests the validity of a LAMMPS pair_style.
+
+        Parameters
+        ----------
+        pair_style : str
+            The LAMMPS pair_style to be checked.
+        cutoffs : list of float
+            The cutoff distances for each style in the pair_style.
+
+        Returns
+        -------
+        list of str
+            Contains the inputted pair_style (if valid) as well as any extra
+            terms required in specific cases (i.e. 'long long' if the pair
+            style buck/long/coul/long is passed).
+
+        Raises
+        ------
+        ValueError
+            If the pair_style passed is not valid.
+        """
+
+        modification = ''
+        if pair_style == 'buck/long/coul/cut':
+            raise ValueError('Invalid pair_style: ' + pair_style
+                             + '. LAMMPS requires long range Coulombics to be'
+                             ' defined in conjunction with long range Dispersion'
+                             ' interactions.')
+        elif pair_style in ['buck/long/coul/long', 'lj/long/coul/long']:
+            if cutoffs[0] != cutoffs[1]:
+                raise ValueError('LAMMPS requires both cutoffs to be the same'
+                                 ' for long range Dispersion and Coulombic pair'
+                                 ' styles.')
+            else:
+                return [pair_style, 'long long']
+
+        return [pair_style]
+
     # Set to remove duplicates
     # parsed_interactions = list(set([tuple(parse_nonbonded_styles(nb))
     #                                 for nb in interactions]))
-    # Function to remove duplicates but maintain order of interactions as passed
     def remove_duplicates(interactions):
-        seen = set()
-        seen_add = seen.add
-        return [x for x in interactions if not (x in seen or seen_add(x))]
+
+        """
+        Remove duplicates from list of (style, parameters) tuples, whilst
+        maintaining order passed.
+        """
+
+        return [x for x in interactions if not (x in set() or set().add(x))]
+
     parsed_interactions = remove_duplicates([tuple(parse_nonbonded_styles(nb))
                                              for nb in interactions])
-    # Parsed interactions will be a list of tuple(style, parameters) e.g.
-    # ('lj/cut', cutoff). Chain from iterable to flatten this for ease of
-    # searching for pair styles
+    # Flatten tuples of form (style, parameters), i.e. ('lj/cut', cutoff).
     flat_interactions = list(chain.from_iterable(parsed_interactions))
     # Check for coulombic and dispersion pairs that need to be combined
     # Dispersion styles always precede coulombic styles in LAMMPS pair styles
     disp_styles = ['buck/long', 'lj/long']
     coul_styles = ['coul/long', 'coul/cut']
 
-    lmp_str = []
-    combined = []
-    # Iterate over all pairs - this will need refactoring if all disp styles
-    # cannot be combined with all coul styles
+    lmp_str = combined = []
     # While this is a very inefficient solution, there will be so few nonbonded
     # styles it is irrelevant
     for d_style, c_style in product(disp_styles, coul_styles):
@@ -2172,22 +2212,9 @@ def parse_all_nonbonded_styles(interactions):
                         or int1[0] == c_style and int2[0] == d_style):
                     combined.append(int1)
                     combined.append(int2)
-                    if (d_style in ['buck/long', 'lj/long']
-                            and c_style == 'coul/cut'):
-                        raise ValueError('Invalid pair_style; LAMMPS requires'
-                                         ' long range coulombics to be defined'
-                                         ' in conjunction with long range buck'
-                                         ' or LJ interactions')
-
-                    lmp_str.append('/'.join([d_style, c_style]))
-                    if (lmp_str[-1] in ['buck/long/coul/long',
-                                        'lj/long/coul/long']):
-                        if int2[1] != int1[1]:
-                            raise ValueError('LAMMPS requires both cutoffs to'
-                                             ' be the same for long range buck'
-                                             ' and coulombic, or long range LJ'
-                                             ' and coulombic pair styles')
-                        lmp_str.append('long long')
+                    for element in check_validity('/'.join([d_style, c_style]),
+                                                  cutoffs=[int1[1], int2[1]]):
+                        lmp_str.append(element)
                     lmp_str.append(int1[1])
                     if int2[1] != int1[1]:
                         lmp_str.append(int2[1])
@@ -2196,9 +2223,8 @@ def parse_all_nonbonded_styles(interactions):
     for parsed, used in product(parsed_interactions, combined):
         if parsed == used and parsed in parsed_interactions:
             parsed_interactions.remove(parsed)
-    # Include all pair styles that were not part of a merged pair i.e.
-    # everything left over in parsed_interactions
-    # Chain used to flatten list of tuples
+    # Include all pair styles that were not part of a merged pair, and flatten
+    # list of tuples.
     try:
         return list(chain.from_iterable(lmp_str + parsed_interactions))
     except TypeError:
