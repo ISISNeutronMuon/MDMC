@@ -1905,7 +1905,7 @@ def convert_unit(value, unit=None, to_lammps=True):
                                                                 unit_dens)
     unit_nums, unit_dens, mul_den = convert_units_special_cases(unit_dens,
                                                                 unit_nums)
-    value *= mul_num / mul_den
+    value *= (mul_num / mul_den)
 
     conv_nums, conv_dens = [], []
     for component in unit_nums:
@@ -1917,10 +1917,10 @@ def convert_unit(value, unit=None, to_lammps=True):
 
     for component in conv_nums:
         if component != '1':
-            value *= getattr(units, component)
+            value /= getattr(units, component)
     for component in conv_dens:
         if component != '1':
-            value /= getattr(units, component)
+            value *= getattr(units, component)
 
     return value
 
@@ -2014,7 +2014,7 @@ def convert_units_special_cases(unit_nums, unit_dens):
 
         for conv_unit in converted:
             # Scale the multiplier based on the mass' order of magnitude
-            multiplier /= getattr(units, conv_unit)
+            multiplier *= getattr(units, conv_unit)
             try:
                 unit_dens.remove('mol')
                 multiplier /= CONST['_Nav']
