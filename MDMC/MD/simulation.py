@@ -562,6 +562,41 @@ class Universe(object):
                 new_nonbonded_interactions.append(nbi)
         self._nonbonded_interactions.update(new_nonbonded_interactions)
 
+    def nbis_by_atom_type_pairs(self):
+
+        """
+        Generates a dictionary of all nonbonded interactions possessed by all
+        combinations of atom_type pairs in the universe.
+
+        Returns
+        -------
+        pairs_interactions : dict of {tuple: list} pairs
+            A dictionary of {pair: interactions} pairs, where:
+                - pair is a tuple for a pair of atom types in the universe,
+                - interactions is a list of nonbonded interactions
+                that exist for this pair of atom types.
+            Any Dispersions in interactions are ones that exist explicity
+            for this pair, whereas any Coulombics in interactions are ones
+            that exist for either of the atom types in pair.
+        """
+
+        pairs_interactions = {}
+
+        # Find pairwise combinations of N atom_types in the universe
+        # Where each pair (i, j) has 0 < i, j <= N   and    i <= j
+        for pair in atom_type_pairs:
+            # Empty lists???
+            pairs_interactions[pair] = []
+            for inter in universe.interactions:
+                cond1 = (isinstance(inter, Dispersion)
+                         and pair in inter.atom_types)
+                cond2 = (isinstance(inter, Coulombic)
+                         and any(pair) in inter.atom_types)
+                if cond1 or cond2:
+                    pairs_interactions[pair].append(inter)
+
+        return pairs_interactions
+
 
 def _primitive_cubic(dimensions, number):
 
