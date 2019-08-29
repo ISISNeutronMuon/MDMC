@@ -537,7 +537,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self._update_charges()
         self._update_bonds(self.bonds)
         self._update_angles(self.angles)
-        self._update_dispersions(self.disps)
+        self._update_dispersions(self.universe)
 
     def _define_simulation_box(self, universe):
 
@@ -721,47 +721,36 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = bonds
         self.angles = angles
-        # self.disps = disps
-        # self.couls = couls
+        self.disps = disps
+        self.couls = couls
 
-        nonbonded_styles = []
-        pair_coeffs = []
-        for pair, inters in universe.nbis_by_atom_type_pairs().items():
-            # Generates list of tuples containing styles and cutoffs.
-            nonbonded_styles += parse_all_nonbonded_styles(inters)
-            # Generates list of tuples that contain each pair_coeff command.
-            pair_coeffs += parse_dispersion_coefficients(inters)
-        if nonbonded_styles:
-            # Remove duplicates in nonbonded_styles, create flattened list.
-            nonbonded_styles = list(
-                chain.from_iterable(list(set(nonbonded_styles))))
-            self.lmp.pair_style('hybrid/overlay', *nonbonded_styles)
+        pair_styles, pair_coeff_cmds = self._pair_style_coeff_commands(universe)
+        if pair_styles:
+            # hybrid/overlay allows multiple pair_styles for same atom_type pair
+            self.lmp.pair_style('hybrid/overlay', *pair_styles)
             self._update_charges()
             self.nonbonded_mix = settings.get('nonbonded_mix')
-
-
-
-        for pair_coeff in pair_coeffs:
-            command(pair_coeff)
-
-
-        # LAMMPS uses pair_style for all nonbonded interactions, so dispersive
-        # and coulombic interactions are treated together. While multiple
-        # identical pair_styles can be used with the hybrid command, it is
-        # inefficient, so duplicates are removed with set.
-        nonbonded_styles = parse_all_nonbonded_styles(disps+couls)
-        if nonbonded_styles:
-            # Using hybrid/overlay allows multiple pair styles to be used for
-            # the same pair of atom types
-            self.lmp.pair_style('hybrid/overlay', *nonbonded_styles)
-            self._create_coulombic(couls)
-            self._update_charges()
-            self.nonbonded_mix = settings.get('nonbonded_mix')
-            # Dispersion creation and updating are the same, so only an update
-            # method exists
-            self._update_dispersions(disps)
+            self._update_dispersions(universe, pair_coeff_cmds)
             # Apply LAMMPS modifications to nonbonded interactions
-            self._modify_nonbonded_styles(couls+disps)
+            self._modify_nonbonded_styles(disps+couls)
+
+        # # LAMMPS uses pair_style for all nonbonded interactions, so dispersive
+        # # and coulombic interactions are treated together. While multiple
+        # # identical pair_styles can be used with the hybrid command, it is
+        # # inefficient, so duplicates are removed with set.
+        # nonbonded_styles = parse_all_nonbonded_styles(disps+couls)
+        # if nonbonded_styles:
+        #     # Using hybrid/overlay allows multiple pair styles to be used for
+        #     # the same pair of atom types
+        #     self.lmp.pair_style('hybrid/overlay', *nonbonded_styles)
+        #     self._create_coulombic(couls)
+        #     self._update_charges()
+        #     self.nonbonded_mix = settings.get('nonbonded_mix')
+        #     # Dispersion creation and updating are the same, so only an update
+        #     # method exists
+        #     self._update_dispersions(disps)
+        #     # Apply LAMMPS modifications to nonbonded interactions
+        #     self._modify_nonbonded_styles(couls+disps)
 
         if bonds:
             # Set used to remove duplicate bond styles, which are not required
@@ -782,49 +771,90 @@ class LAMMPSUniverse(PyLammpsAttribute):
         if self.universe.constraint_algorithm:
             self.apply_constraints()
 
-    def _create_coulombic(self, couls):
+    def _pair_style_coeff_commands(self, universe):
 
         """
-        Creates the coulombic interactions in LAMMPS
-
-        AS MDMC CURRENTLY ONLY CONSIDERS COULOMBIC INTERACTIONS BETWEEN
-        LIKE-LIKE ATOMS, THE CROSS TERM IS INFERRED FROM THESE RATHER THAN
-        PASSED EXPLICITLY - THIS CAN LEAD TO UNPREDICTABLE BEHAVIOUR IF MORE
-        THAN ONE STYLE OF COULOMBIC INTERACTION IS USED.
+        Parses a list of NonBondedInteractions, returning the correctly
+        formatted input for pair_style and pair_coeff LAMMPS commands
+        for all atom_type pairs in the universe.
 
         Parameters
         ----------
-        couls : list of Coulombics
-            Coulombic interactions to be created in LAMMPS.
+        universe : Universe
+            The MDMC Universe containing the NonBondedInteractions to
+            be parsed.
+
+        Returns
+        -------
+        pair_styles : list of str
+            A flattened list of pair_style commands to be set in the
+            LAMMPS interface.
+        pair_coeff_cmds : list of str
+            A list of pair_coeff commands for each atom_type pair to be
+            set individually in the LAMMPS interface.
         """
 
-        # Coulombic interaction doesn't require parameter setting, as this is
-        # handled by the atom property charge
-        # As Coulombic interactions in MDMC only have one type, that interaction
-        # style (e.g. Coulomb) is applied to the interactions between that type
-        # and all other types (achieved in LAMMPS with '*' notation). As
-        # interactions are overwritten, it is the style of last atom_type
-        # that determines its unlike interactions.
+        pair_styles = []
+        pair_coeff_cmds = []
+        for pair, inters in universe.nbis_by_atom_type_pairs().items():
+            # Generates list of tuples containing styles and cutoffs.
+            nb_styles = parse_all_nonbonded_styles(inters)
+            # Generates list of tuples that contain each pair_coeff command.
+            coeff_cmds = parse_dispersion_coefficients(inters, nb_styles)
+            for idx, cmd in enumerate(coeff_cmds):
+                coeff_cmds[idx] = (' '.join(str(type) for type in pair)
+                                   + ' ' + cmd)
+            pair_styles += nb_styles
+            pair_coeff_cmds += coeff_cmds
 
-        all_styles = [style for style in
-                      parse_all_nonbonded_styles(couls+self.disps)
-                      if isinstance(style, str)]
-        for coul in couls:
-            coul_style = parse_nonbonded_styles(coul)[0]
-            for style in all_styles:
+        # Remove duplicates in pair_styles, create flattened list.
+        pair_styles = list(chain.from_iterable(list(set(pair_styles))))
 
-                # As is explained in the LAMMPSEngine docstring, pair_coeffs for
-                # coulombic interactions can only be set if the pair_style is
-                # not part of a combined pair_style (e.g. lj/long/coul/long).
-                # Therefore the style of each coulombic interaction must exactly
-                # match one of all of the nonbonded styles in the simulation,
-                # otherwise the pair coeff is not set here; it is instead set by
-                # the corresponding dispersion interaction, which possesses the
-                # coefficients (parameters) which also need to be passed to
-                # pair_coeff.
-                if coul_style == style:
-                    for atom_type in coul.atom_types:
-                        self.lmp.pair_coeff(atom_type, '*', style)
+        return pair_styles, pair_coeff_cmds
+
+    # def _create_coulombic(self, couls):
+    #
+    #     """
+    #     Creates the coulombic interactions in LAMMPS
+    #
+    #     AS MDMC CURRENTLY ONLY CONSIDERS COULOMBIC INTERACTIONS BETWEEN
+    #     LIKE-LIKE ATOMS, THE CROSS TERM IS INFERRED FROM THESE RATHER THAN
+    #     PASSED EXPLICITLY - THIS CAN LEAD TO UNPREDICTABLE BEHAVIOUR IF MORE
+    #     THAN ONE STYLE OF COULOMBIC INTERACTION IS USED.
+    #
+    #     Parameters
+    #     ----------
+    #     couls : list of Coulombics
+    #         Coulombic interactions to be created in LAMMPS.
+    #     """
+    #
+    #     # Coulombic interaction doesn't require parameter setting, as this is
+    #     # handled by the atom property charge
+    #     # As Coulombic interactions in MDMC only have one type, that interaction
+    #     # style (e.g. Coulomb) is applied to the interactions between that type
+    #     # and all other types (achieved in LAMMPS with '*' notation). As
+    #     # interactions are overwritten, it is the style of last atom_type
+    #     # that determines its unlike interactions.
+    #
+    #     all_styles = [style for style in
+    #                   parse_all_nonbonded_styles(couls+self.disps)
+    #                   if isinstance(style, str)]
+    #     for coul in couls:
+    #         coul_style = parse_nonbonded_styles(coul)[0]
+    #         for style in all_styles:
+    #
+    #             # As is explained in the LAMMPSEngine docstring, pair_coeffs for
+    #             # coulombic interactions can only be set if the pair_style is
+    #             # not part of a combined pair_style (e.g. lj/long/coul/long).
+    #             # Therefore the style of each coulombic interaction must exactly
+    #             # match one of all of the nonbonded styles in the simulation,
+    #             # otherwise the pair coeff is not set here; it is instead set by
+    #             # the corresponding dispersion interaction, which possesses the
+    #             # coefficients (parameters) which also need to be passed to
+    #             # pair_coeff.
+    #             if coul_style == style:
+    #                 for atom_type in coul.atom_types:
+    #                     self.lmp.pair_coeff(atom_type, '*', style)
 
     def _update_charges(self):
 
@@ -842,63 +872,78 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.')
 
-    def _update_dispersions(self, disps):
+    # def _update_dispersions(self, disps):
+    def _update_dispersions(self, universe, pair_coeff_cmds=None):
 
         """
         Updates dispersion interactions in LAMMPS
 
         Parameters
         ----------
-        disps : list of Dispersions
-            Dispersion interactions to be updated in LAMMPS.
+        universe : Universe
+            The MDMC Universe containing NonBondedInteractions used to generate
+            the pair_coeff commands if pair_coeff_cmds is not passed.
+        pair_coeff_cmds : list of str
+            A list of pair_coeff commands for each atom_type pair to be
+            set individually in the LAMMPS interface.
+            NOTE: the Coulombics for the appropriate atom_type pairs are also
+            set in this method.
+        # disps : list of Dispersions
+        #     Dispersion interactions to be updated in LAMMPS.
         """
 
-        # Determine all pair_styles by parsing all nonbonded styles and removing
-        # the numerical values (e.g. if a cutoff is defined). Parsing all
-        # nonbonded styles has the effect of combining some pair styles that
-        # cannot be passed to lammps individually (e.g. lj/long/coul/long)
-        all_styles = [style for style in
-                      parse_all_nonbonded_styles(disps+self.couls)
-                      if isinstance(style, str)]
+        if not pair_coeff_cmds:
+            _, pair_coeff_cmds = self._generate_pair_styles_coeffs(universe)
 
-        for disp in disps:
-            atom_type_pairs = product(disp.atom_types[0], disp.atom_types[0])
-            # atom_type_pairs = [i for i in product(disp.atom_types[0], repeat=2)
-            #                    if i[0] <= i[1]]
-            disp_style = parse_nonbonded_styles(disp)[0]
-            for style in all_styles:
-                if disp_style in style:
-                    coeffs = parse_dispersion_coefficients(disp, disp_style)
+        for cmd in pair_coeff_cmds:
+            self.lmp.pair_coeff(cmd)
 
-                    # LAMMPS uses mixing rules to set coefficients for undefined
-                    # unlike atom_type pairs (e.g. if LJ interactions exist for
-                    # 1 1 and 2 2 atom types, but not for 1 2). For this to
-                    # occur, all i=j (i.e. like) interactions must be defined -
-                    # below these are all set to zero. These zero coeffs will
-                    # then be overwritten with the correct values (in the
-                    # atom_type_pair for loop) if they are defined in MDMC.
-                    zero_coeffs = [0. for _ in coeffs]
-                    if self.nonbonded_mix:
-                        for atom_type in self.atom_types.keys():
-                            self.lmp.pair_coeff(atom_type,
-                                                atom_type,
-                                                style,
-                                                *zero_coeffs)
-                    # If not mixing is to occur, all permutations of atom types
-                    # have coefficients set to zero. Again, the zero coeffs will
-                    # be overwritten with the correct values (in the
-                    # atom_type_pair for loop) if they are defined in MDMC.
-                    else:
-                        self.lmp.pair_coeff('*',
-                                            '*',
-                                            style,
-                                            *zero_coeffs)
-
-                    for atom_type_pair in atom_type_pairs:
-                        self.lmp.pair_coeff(atom_type_pair[0],
-                                            atom_type_pair[1],
-                                            style,
-                                            *coeffs)
+        # # Determine all pair_styles by parsing all nonbonded styles and removing
+        # # the numerical values (e.g. if a cutoff is defined). Parsing all
+        # # nonbonded styles has the effect of combining some pair styles that
+        # # cannot be passed to lammps individually (e.g. lj/long/coul/long)
+        # all_styles = [style for style in
+        #               parse_all_nonbonded_styles(disps+self.couls)
+        #               if isinstance(style, str)]
+        #
+        # for disp in disps:
+        #     atom_type_pairs = product(disp.atom_types[0], disp.atom_types[0])
+        #     # atom_type_pairs = [i for i in product(disp.atom_types[0], repeat=2)
+        #     #                    if i[0] <= i[1]]
+        #     disp_style = parse_nonbonded_styles(disp)[0]
+        #     for style in all_styles:
+        #         if disp_style in style:
+        #             coeffs = parse_dispersion_coefficients(disp, disp_style)
+        #
+        #             # LAMMPS uses mixing rules to set coefficients for undefined
+        #             # unlike atom_type pairs (e.g. if LJ interactions exist for
+        #             # 1 1 and 2 2 atom types, but not for 1 2). For this to
+        #             # occur, all i=j (i.e. like) interactions must be defined -
+        #             # below these are all set to zero. These zero coeffs will
+        #             # then be overwritten with the correct values (in the
+        #             # atom_type_pair for loop) if they are defined in MDMC.
+        #             zero_coeffs = [0. for _ in coeffs]
+        #             if self.nonbonded_mix:
+        #                 for atom_type in self.atom_types.keys():
+        #                     self.lmp.pair_coeff(atom_type,
+        #                                         atom_type,
+        #                                         style,
+        #                                         *zero_coeffs)
+        #             # If not mixing is to occur, all permutations of atom types
+        #             # have coefficients set to zero. Again, the zero coeffs will
+        #             # be overwritten with the correct values (in the
+        #             # atom_type_pair for loop) if they are defined in MDMC.
+        #             else:
+        #                 self.lmp.pair_coeff('*',
+        #                                     '*',
+        #                                     style,
+        #                                     *zero_coeffs)
+        #
+        #             for atom_type_pair in atom_type_pairs:
+        #                 self.lmp.pair_coeff(atom_type_pair[0],
+        #                                     atom_type_pair[1],
+        #                                     style,
+        #                                     *coeffs)
 
     def _modify_nonbonded_styles(self, nonbonded_interactions):
 
@@ -2309,22 +2354,31 @@ def parse_bonded_coefficients(interaction):
     return [style] + ordered_parameters
 
 
-def parse_dispersion_coefficients(interaction, style):
+def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
 
     """
     Orders MDMC Parameters for input to LAMMPS pair_coeff
 
     Parameters
     ----------
-    interaction : NonBondedInteraction
-        NonBondedInteraction where its style and parameters will be parsed.
-    style : list of str
-        A LAMMPS pair style
+    interactions : list of NonBondedInteraction
+        NonBondedInteractions where their style and parameters will be parsed.
+    nonbonded_styles : list of tuple
+        The parsed NonBondedInteractions, where the combined pair styles have
+        been created by the parse_all_nonbonded_styles function.
+        If None (default), the interactions are parsed manually.
 
     Returns
     -------
-    list
-        Parameters converted to the input format for LAMMPS pair_coeff
+    coeff_cmds : list of str
+        Each element is a partial pair_coeff command, containing a pair_style,
+        the ordered Dispersion parameters converted to the correct input format
+        for LAMMPS pair_coeff, and the cutoffs.
+        For example, if interactions contains a Buckingham with parameters
+        A, B, C = 4.184, 1.0, 4.184, and a cutoff of 20.0, and a Coulombic with
+        a cutoff of 10.0, the str element of the list will be:
+
+            'buck/coul/cut 1.0 1.0 1.0 20.0 10.0'
 
     Raises
     ------
@@ -2335,25 +2389,68 @@ def parse_dispersion_coefficients(interaction, style):
         If the LAMMPS Buckingham parameter rho is less than or equal to zero.
     """
 
-    parameters = {p.name:convert_unit(p.value)
-                  for p in interaction.params}
+    if not nonbonded_styles:
+        nonbonded_styles = parse_all_nonbonded_styles(interactions)
 
-    if 'buck' in style:
-        ordered_parameters = [parameters['A'] / CONST['_Nav'],
-                              parameters['B'] ** -1,
-                              parameters['C'] / CONST['_Nav']]
-        try:
-            assert ordered_parameters[1] > 0
-        except AssertionError:
-            raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B) must be'
-                             ' greater than 0.')
-    elif 'lj' in style:
-        ordered_parameters = [parameters['epsilon'] / CONST['_Nav'],
-                              parameters['sigma']]
-    else:
-        raise NotImplementedError('This InteractionFunction has not been'
-                                  ' implemented in the LAMMPS facade')
-    return ordered_parameters
+    coul_styles = ['coul/cut', 'coul/long']
+    coeff_cmds = []
+    for style in nonbonded_styles:
+        pair_style = style[0]
+        cutoffs = style[-1]
+        if 'buck' in pair_style:
+            for inter in interactions:
+                if inter.function.name == 'Buckingham':
+                    params = {p.name:convert_unit(p.value)
+                              for p in inter.params}
+            ordered_params = [params['A'] / CONST['_Nav'],
+                              params['B'] ** -1,
+                              params['C'] / CONST['_Nav']]
+            try:
+                assert ordered_params[1] > 0
+            except AssertionError:
+                raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B)'
+                                 ' must be greater than 0')
+            coeff_cmd = (pair_style + ' '
+                         + ' '.join(str(p) for p in ordered_params) + ' '
+                         + cutoffs)
+        elif 'lj' in pair_style:
+            for inter in interactions:
+                if inter.function.name == 'LennardJones':
+                    params = {p.name:convert_unit(p.value)
+                              for p in inter.params}
+            ordered_params = [params['epsilon'] / CONST['_Nav'],
+                              params['sigma']]
+            coeff_cmd = (pair_style + ' '
+                         + ' '.join(str(p) for p in ordered_params) + ' '
+                         + cutoffs)
+        elif pair_style in coul_styles:
+            coeff_cmd = pair_style
+        else:
+            raise NotImplementedError('This InteractionFunction has not been'
+                                      ' implemented in the LAMMPS facade')
+        coeff_cmds.append(coeff_cmd)
+
+    return coeff_cmds
+
+    # parameters = {p.name:convert_unit(p.value)
+    #               for p in interaction.params}
+    #
+    # if 'buck' in style:
+    #     ordered_parameters = [parameters['A'] / CONST['_Nav'],
+    #                           parameters['B'] ** -1,
+    #                           parameters['C'] / CONST['_Nav']]
+    #     try:
+    #         assert ordered_parameters[1] > 0
+    #     except AssertionError:
+    #         raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B) must be'
+    #                          ' greater than 0.')
+    # elif 'lj' in style:
+    #     ordered_parameters = [parameters['epsilon'] / CONST['_Nav'],
+    #                           parameters['sigma']]
+    # else:
+    #     raise NotImplementedError('This InteractionFunction has not been'
+    #                               ' implemented in the LAMMPS facade')
+    # return ordered_parameters
 
 
 def parse_kspace_solver(solver):
