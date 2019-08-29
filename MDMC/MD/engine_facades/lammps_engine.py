@@ -798,7 +798,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         pair_styles = []
         pair_coeff_cmds = []
-        for pair, inters in universe.nbis_by_atom_type_pairs().items():
+        for pair, inters in universe.nbis_by_atom_type_pairs.items():
             # Generates list of tuples containing styles and cutoffs.
             nb_styles = parse_all_nonbonded_styles(inters)
             # Generates list of tuples that contain each pair_coeff command.
@@ -895,7 +895,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         if not pair_coeff_cmds:
-            _, pair_coeff_cmds = self._generate_pair_styles_coeffs(universe)
+            _, pair_coeff_cmds = self._pair_style_coeff_commands(universe)
 
         for cmd in pair_coeff_cmds:
             self.lmp.pair_coeff(cmd)
