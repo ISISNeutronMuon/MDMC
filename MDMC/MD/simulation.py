@@ -13,6 +13,7 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
+from MDMC.MD.structural_units import Coulombic, Dispersion
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -562,6 +563,7 @@ class Universe(object):
                 new_nonbonded_interactions.append(nbi)
         self._nonbonded_interactions.update(new_nonbonded_interactions)
 
+    @property
     def nbis_by_atom_type_pairs(self):
 
         """
@@ -581,13 +583,15 @@ class Universe(object):
         """
 
         pairs_interactions = {}
-
         # Find pairwise combinations of N atom_types in the universe
         # Where each pair (i, j) has 0 < i, j <= N   and    i <= j
+        atom_type_pairs = [(i, j) for i, j in product(self.atom_types,
+                                                      repeat=2)
+                           if i <= j]
+        # Create dict of interactions for each atom type pair
         for pair in atom_type_pairs:
-            # Empty lists???
             pairs_interactions[pair] = []
-            for inter in universe.interactions:
+            for inter in self.interactions:
                 cond1 = (isinstance(inter, Dispersion)
                          and pair in inter.atom_types)
                 cond2 = (isinstance(inter, Coulombic)
