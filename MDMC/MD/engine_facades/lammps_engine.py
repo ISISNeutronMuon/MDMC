@@ -2235,7 +2235,7 @@ def parse_bonded_coefficients(interaction):
     style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
-        ordered_parameters = [parameters['potential_strength'] / CONST['_Nav'],
+        ordered_parameters = [parameters['potential_strength'],
                               parameters['equilibrium_state']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
@@ -2292,9 +2292,9 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
                 if inter.function.name == 'Buckingham':
                     params = {p.name:convert_unit(p.value)
                               for p in inter.params}
-            ordered_params = [params['A'] / CONST['_Nav'],
+            ordered_params = [params['A'],
                               params['B'] ** -1,
-                              params['C'] / CONST['_Nav']]
+                              params['C']]
             try:
                 assert ordered_params[1] > 0
             except AssertionError:
@@ -2308,7 +2308,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
                 if inter.function.name == 'LennardJones':
                     params = {p.name:convert_unit(p.value)
                               for p in inter.params}
-            ordered_params = [params['epsilon'] / CONST['_Nav'],
+            ordered_params = [params['epsilon'],
                               params['sigma']]
             coeff_cmd = (pair_style + ' '
                          + ' '.join(str(p) for p in ordered_params) + ' '
