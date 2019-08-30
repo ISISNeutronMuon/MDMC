@@ -84,9 +84,9 @@ def universe_interactions(empty_universe, atoms):
         empty_universe.add_structural_unit(atom)
 
     # Create InteractionFunctions for bonds, angles and dispersive interactions
-    bond1_harmonic = HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
-    bond2_harmonic = HarmonicPotential((2.0, 'Ang'), (4.0, 'kJ'))
-    angle_harmonic = HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
+    bond1_harmonic = HarmonicPotential((1.0, units.LENGTH), (2.0, units.ENERGY))
+    bond2_harmonic = HarmonicPotential((2.0, units.LENGTH), (4.0, units.ENERGY))
+    angle_harmonic = HarmonicPotential((1.0, units.LENGTH), (2.0, units.ENERGY))
 
     # Create 2 bonds for some atoms, and one angle, coulombic and dispersive
     # interaction
@@ -104,9 +104,9 @@ def universe_interactions(empty_universe, atoms):
                                     cutoff=COULOMBIC_CUTOFF))
         dispersions.append(Dispersion(empty_universe, type,
                                       function=LennardJones((type*0.1,
-                                                             'kJ / mol'),
+                                                             units.ENERGY),
                                                             (type*1.0,
-                                                             'Ang')),
+                                                             units.LENGTH)),
                                       cutoff=10.0,
                                       vdw_tail_correction=True))
     return (empty_universe, bonds, angles, coulombics, dispersions)
