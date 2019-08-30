@@ -483,8 +483,6 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = []
         self.angles = []
-        self.couls = []
-        self.disps = []
         # ID is an acronym
         #pylint: disable=invalid-name
         self.bond_ID = {}
@@ -723,8 +721,6 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = bonds
         self.angles = angles
-        self.disps = disps
-        self.couls = couls
 
         pair_styles, pair_coeff_cmds = self._pair_style_coeff_commands(universe)
         if pair_styles:
@@ -2167,8 +2163,6 @@ def parse_all_nonbonded_styles(interactions):
 
         return [pair_style]
 
-    # parsed_interactions = list(set([tuple(parse_nonbonded_styles(nb))
-    #                                 for nb in interactions]))
     parsed_interactions = remove_duplicates([tuple(parse_nonbonded_styles(nb))
                                              for nb in interactions])
     # Flatten tuples of form (style, parameters), i.e. ('lj/cut', cutoff).
