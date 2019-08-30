@@ -1569,12 +1569,35 @@ class Dispersion(NonBondedInteraction):
     def __init__(self, universe, *atom_types, **settings):
 
         # Add tuples to short format of atom_types
-        if isinstance(atom_types[0], int):
+        tmp = []
+        if not isinstance(atom_types, tuple):
+            raise ValueError('Atom types must be passed as a tuple')
+        if all([isinstance(type, int) for type in atom_types]):
             if len(atom_types) == 1:
-                # atom_types = ((atom_types[0], ), (atom_types[0], ))
-                atom_types = ((atom_types[0], atom_types[0]),)
+                tmp = ((atom_types[0], atom_types[0]), )
             elif len(atom_types) == 2:
-                atom_types = ((atom_types[0], ), (atom_types[1], ))
+                tmp = ((atom_types[0], atom_types[1]), )
+            else:
+                raise ValueError('Dispersion interactions should only be'
+                                 ' specified as existing between pairs of'
+                                 ' atom_types')
+        elif all([isinstance(e, tuple) for e in atom_types]):
+            for type in atom_types:
+                if isinstance(type, int):
+                    tmp.append((type, type))
+                elif isinstance(type, tuple):
+                    if len(type) == 1:
+                        tmp.append((type[0], type[0]))
+                    elif len(e) == 2:
+                        tmp.append(type)
+                    else:
+                        raise ValueError('Dispersion interactions should only'
+                                         ' be specified as existing between'
+                                         ' pairs of atom_types')
+        else:
+            raise ValueError("Can't pass atom types as a mix"
+                             " of tuples and ints")
+        atom_types = tuple(tmp)
         self._atom_types = atom_types
         super(Dispersion, self).__init__(universe, **settings)
         self._atoms = [tuple([atom for atom_type in tpl
