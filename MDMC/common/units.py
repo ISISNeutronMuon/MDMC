@@ -382,9 +382,8 @@ SYSTEM = {
     'CHARGE':Unit('e'),
     'ANGLE':Unit('deg'),
     'TEMPERATURE':Unit('K'),
-    'AMOUNT':Unit('mol'),
-    'ENERGY':Unit('kJ'),
-    'FORCE':Unit('kJ') / (Unit('mol') * Unit('Ang')),
+    'ENERGY':Unit('kJ') / Unit('mol'),
+    'FORCE':Unit('kJ') / (Unit('Ang') * Unit('mol')),
     'PRESSURE':Unit('Pa'),
     'ENERGY_TRANSFER':Unit('meV'),
     'ARBITRARY':Unit('arb')
@@ -436,12 +435,15 @@ def create_units(codata_version):
     units['g / mol'] = units['amu']
 
     # Energy
+    # 1 kcal mol^-1 = 4.184 kJ mol^-1
+    units['kcal / mol'] = units['kJ / mol'] * 4.184
+    # 1 kJ = 1 kJ mol^-1 * Nav
+    units['kJ'] = units['kJ / mol'] * codata['_Nav']
     # 1 J = (1/1000) kJ
     units['J'] = units['kJ'] / 1000.
     # 1 kcal = 4.184 kJ
     units['kcal'] = units['kJ'] * 4.184
-    # 1 kcal mol^-1 = (4.184 / N_av) kJ
-    units['kcal / mol'] = units['kJ'] * (4.184 / codata['_Nav'])
+
 
     # Force
     # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
