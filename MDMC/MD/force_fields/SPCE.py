@@ -30,17 +30,17 @@ class SPCE(ForceField):
 
         # LJ Params
         sigma = UnitFloat(3.166, units.LENGTH)       # Ang
-        epsilon = UnitFloat(0.6502, units.ENERGY / units.AMOUNT)    # kJ mol^-1
+        epsilon = UnitFloat(0.6502, units.ENERGY)    # kJ mol^-1
 
         # Bond Params
         r_OH = UnitFloat(1.000, units.LENGTH)        # Ang
         f_OH = UnitFloat(4637.,                      # kJ mol^-1 Ang^-2
-                         units.ENERGY / units.AMOUNT * units.LENGTH**2)
+                         units.ENERGY / units.LENGTH**2)
 
         # Bond Angle Params
         a_HOH = UnitFloat(109.47, units.ANGLE)      # deg
         f_HOH = UnitFloat(383.,                     # kJ mol^-1 rad^-2
-                          units.ENERGY / units.AMOUNT * units.ANGLE**2)
+                          units.ENERGY / units.ANGLE**2)
 
         return {
             (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
