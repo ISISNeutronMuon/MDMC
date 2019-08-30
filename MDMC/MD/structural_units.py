@@ -1580,7 +1580,8 @@ class Dispersion(NonBondedInteraction):
         # Add tuples to short format of atom_types
         if isinstance(atom_types[0], int):
             if len(atom_types) == 1:
-                atom_types = ((atom_types[0], ), (atom_types[0], ))
+                # atom_types = ((atom_types[0], ), (atom_types[0], ))
+                atom_types = ((atom_types[0], atom_types[0]),)
             elif len(atom_types) == 2:
                 atom_types = ((atom_types[0], ), (atom_types[1], ))
         self._atom_types = atom_types
