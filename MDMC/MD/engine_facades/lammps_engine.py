@@ -2320,26 +2320,6 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
 
     return coeff_cmds
 
-    # parameters = {p.name:convert_unit(p.value)
-    #               for p in interaction.params}
-    #
-    # if 'buck' in style:
-    #     ordered_parameters = [parameters['A'] / CONST['_Nav'],
-    #                           parameters['B'] ** -1,
-    #                           parameters['C'] / CONST['_Nav']]
-    #     try:
-    #         assert ordered_parameters[1] > 0
-    #     except AssertionError:
-    #         raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B) must be'
-    #                          ' greater than 0.')
-    # elif 'lj' in style:
-    #     ordered_parameters = [parameters['epsilon'] / CONST['_Nav'],
-    #                           parameters['sigma']]
-    # else:
-    #     raise NotImplementedError('This InteractionFunction has not been'
-    #                               ' implemented in the LAMMPS facade')
-    # return ordered_parameters
-
 
 def parse_kspace_solver(solver):
 
