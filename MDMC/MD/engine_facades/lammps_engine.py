@@ -1866,6 +1866,123 @@ def convert_unit(value, unit=None, to_lammps=True):
         units. Return type is same as `value` type.
     """
 
+    def expand_components(unit, system):
+
+        """
+        Expands out the components of a unit, so that the unit is expressed
+        purely in terms of base units. The only exception to this is units
+        which occur in system: these are kept in the list of components.
+
+        Parameters
+        ----------
+        unit : Unit
+            The unit to be expanded out
+        system : dict
+            A dict of {Property: Unit} pairs, which is used to substitute system
+            units into the expanded components.
+
+        Returns
+        -------
+        tuple
+            A tuple of (num, denom), where num is a list of all base units in
+            the numerator, and denom is a list of all base units in the
+            denominator
+        """
+
+        def is_sublist_of_list(sub, lst):
+
+            """
+            Determines if all of the elements in a sublist are in a list,
+            including ensuring that any duplicates in the sublist have at least
+            the same number of duplicates in the list
+
+            Parameters
+            ----------
+            sub : list
+                The sublist to be tested
+            lst : list
+                The list the sub is tested against
+
+            Returns
+            -------
+            bool
+                True if all of the elements of sub are in ls, and False if not
+            """
+
+            return all(sub.count(x) <= lst.count(x) for x in set(sub))
+
+        def remove_components(remove_comps, comps):
+
+            """
+            Removes all elements of a list of components from another list of
+            components
+
+            Parameters
+            ----------
+            remove_comps : list
+                The components to be removed
+            comps : list
+                The components from which remove_comps is removed
+
+            Returns
+            -------
+            list
+                A list of components from which remove_comps have been removed
+            """
+
+            for remove_comp in remove_comps:
+                comps.remove(remove_comp)
+
+            return comps
+
+        num, denom = [], []
+        # If unit is in system of units, don't break down to components, as
+        # a unit in the system of units always has a conversion, even if it is
+        # a compound unit.
+        if unit.base or unit in system.values():
+            num.append(unit)
+        else:
+            # tuple unpacking style below appends to num and denom lists
+            for comp in unit.components['numerator']:
+                num[len(num):], denom[len(denom):] = expand_components(comp,
+                                                                       system)
+            for comp in unit.components['denominator']:
+                denom[len(denom):], num[len(num):] = expand_components(comp,
+                                                                       system)
+
+            # Substitute in units rather than separated out components if a unit
+            # exists in the system of units.  This is because the conversion can
+            # always be determined for units in the system of units. Base units
+            # are filtered as they can only replace themselves (as they are
+            # their only component).
+            for sys_unit in (unit for unit in system.values() if not unit.base):
+                # while is required for powers of sys_unit, as otherwise only
+                # a single power will be removed
+                while True:
+                    sys_unit_num = sys_unit.components['numerator']
+                    sys_unit_denom = sys_unit.components['denominator']
+                    # Determine if all of the components of unit are in the
+                    # numerator and denominator lists. If so, remove them and
+                    # replace with the unit in the numerator.
+                    if (is_sublist_of_list(sys_unit_num, num) and
+                            is_sublist_of_list(sys_unit_denom, denom)):
+                        num = remove_components(sys_unit_num, num)
+                        denom = remove_components(sys_unit_denom, denom)
+                        num.append(sys_unit)
+                    # Do the same for the inverse (i.e. unit's numberator
+                    # components in the denominator list and vice versa). If so,
+                    # remove them and replace with the unit in the denominator.
+                    elif (is_sublist_of_list(sys_unit_num, denom) and
+                          is_sublist_of_list(sys_unit_denom, num)):
+                        denom = remove_components(sys_unit_num, denom)
+                        num = remove_components(sys_unit_denom, num)
+                        denom.append(sys_unit)
+                    # Breaks if the components of sys_unit are not found in num
+                    # and denom
+                    else:
+                        break
+        return num, denom
+
     # If no unit argument is passed, the value must possess a unit
     if not unit:
         unit = value.unit
@@ -1917,33 +2034,6 @@ def convert_unit(value, unit=None, to_lammps=True):
             value *= getattr(units, component)
 
     return value
-
-
-def expand_components(unit):
-
-    """
-    Expands out the components of a unit, so that the unit is expressed
-    purely in terms of base units
-
-    Returns
-    -------
-    tuple
-        A tuple of (num, denom), where num is a list of all base units in
-        the numerator, and denom is a list of all base units in the
-        denominator
-    """
-
-    num, denom = [], []
-    if unit.base:
-        num.append(unit)
-    else:
-        # tuple unpacking style below appends to num and denom lists
-        for comp in unit.components['numerator']:
-            num[len(num):], denom[len(denom):] = expand_components(comp)
-        for comp in unit.components['denominator']:
-            denom[len(denom):], num[len(num):] = expand_components(comp)
-
-    return num, denom
 
 
 def convert_units_special_cases(unit_nums, unit_dens):
