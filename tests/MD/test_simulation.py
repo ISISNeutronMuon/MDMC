@@ -501,10 +501,12 @@ def test_universe_atom_types(water_molecule, universe):
 
 
 @pytest.mark.parametrize("atom_types_init, atom_types_expected",
-                         [((1, ), ((1, ), (1, ))),
-                          (((1, ), (2, )), ((1, ), (2, ))),
-                          ((1, 2), ((1, ), (2, ))),
-                          (((1, 2), (3, )), ((1, 2), (3, ))),
+                         [(((1, ), ), ((1, 1), )),
+                          ((1, ), ((1, 1), )),
+                          (((1, 1), (2, 2), ), ((1, 1), (2, 2))),
+                          (((1, ), (2, )), ((1, 1), (2, 2))),
+                          ((1, 2), ((1, 2), )),
+                          (((1, 2), (3, )), ((1, 2), (3, 3))),
                           (((1, 2), (3, 4)), ((1, 2), (3, 4)))])
 def test_init_dispersion(atom_types_init, atom_types_expected,
                          water_SPCE_universe):
@@ -532,6 +534,31 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
 
     disp = su.Dispersion(water_SPCE_universe, *atom_types_init)
     assert disp.atom_types == atom_types_expected
+
+
+@pytest.mark.parametrize("atom_types_init, error_msg",
+                         [((1), 'Atom types must be passed as a tuple'),
+                          ((1, 2, 3), 'Dispersion interactions should only'
+                                      ' be specified as existing between'
+                                      ' pairs'),
+                          (((1, 2), (1, 2, 3)), 'Dispersion interactions should'
+                                                ' only be specified as existing'
+                                                ' between pairs'),
+                          ((1, 2, (3, 4)), "Can't pass atom types as a mix")])
+def test_dipersion_init_atom_type_error(atom_types_init, error_msg,
+                                        water_SPCE_universe):
+
+    """
+    Tests that the appropriate errors are raised when trying to initialize
+    a Dispersion interaction by passing invalid atom_types.
+    """
+
+    with pytest.raises(ValueError) as excinfo:
+        # try:
+        su.Dispersion(water_SPCE_universe, atom_types_init)
+        # except TypeError:
+            # su.Dispersion(water_SPCE_universe, atom_types_init)
+    assert error_msg in excinfo.value.message
 
 
 def test_dispersion_cutoff(water_SPCE_universe):
