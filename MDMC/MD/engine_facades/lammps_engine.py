@@ -758,9 +758,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
     def _pair_style_coeff_commands(self, universe):
 
         """
-        Parses a list of NonBondedInteractions, returning the correctly
-        formatted input for pair_style and pair_coeff LAMMPS commands for
-        all appropriate combinations of atom_type pairs in the universe.
+        Parses all the NonBondedInteractions for every appropriate combination
+        of atom_type pairs in an MDMC Universe, returning the correctly
+        formatted input for pair_style and pair_coeff LAMMPS commands.
 
         Parameters
         ----------
