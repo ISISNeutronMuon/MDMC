@@ -1989,17 +1989,14 @@ def convert_unit(value, unit=None, to_lammps=True):
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
         l_sys = copy(SYSTEM)
-        # Update dict to be able to handle units containing '1'
-        l_sys.update({'DIMENSIONLESS': '1'})
         # For angular potential strength LAMMPS requires the units in rad,
-        # rather than degrees (which is used otherwise). Therefore if the unit
+        # rather than degrees (which is uses otherwise). Therefore if the unit
         # is in MDMC angular potential strength units (energy / angle^2), the
         # ANGLE entry in SYSTEM is replaced by radians.
         if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
             l_sys['ANGLE'] = units.Unit('rad')
         expanded_unit = expand_components(unit)
         system_inv = {unit:property for property, unit in units.SYSTEM.items()}
-        system_inv.update({'1': 'DIMENSIONLESS'})
         # Apply inversion to all components
         try:
             unit_dens, unit_nums = map(lambda comp_list:
