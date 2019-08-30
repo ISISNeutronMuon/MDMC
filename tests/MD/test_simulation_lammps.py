@@ -1465,13 +1465,7 @@ def test_convert_mdmc_compound_equivalence():
 
 @pytest.mark.parametrize("unit, mag, power, to_lammps",
                          [('g / mol', 0, 1, False), ('mol / g', 0, 1, False),
-                          ('g / mol', 0, 3, False), ('mol / g', 0, 5, False),
-                          ('kg / mol', 3, 1, False), ('mol / kg', -3, 1, False),
-                          ('kg / mol', 3, 2, False), ('mol / kg', -3, 5, False),
-                          ('amu', 0, 1, False), ('1 / amu', 0, 1, False),
-                          ('amu', 0, 4, False), ('1 / amu', 0, 8, False),
-                          ('amu', 0, 1, True), ('1 / amu', 0, 1, True),
-                          ('amu', 0, 2, True), ('1 / amu', 0, 4, True)])
+                          ('g / mol', 0, 3, False), ('mol / g', 0, 5, False)])
 def test_convert_mass_units_special_case(unit, mag, power, to_lammps):
 
     """
