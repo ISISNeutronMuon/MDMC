@@ -35,9 +35,6 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 
 
-CONST = units.CODATA[units.CODATA_VERSION]
-
-
 class PyLammpsAttribute(object):
 
     """
@@ -1839,9 +1836,6 @@ SYSTEM = {
     'CHARGE':units.Unit('e'),
     'ANGLE':units.Unit('deg'),
     'TEMPERATURE':units.Unit('K'),
-    # AMOUNT is required for unit conversion of energies to work, even though
-    # it is not defined in LAMMPS
-    'AMOUNT':units.Unit('mol'),
     'ENERGY':units.Unit('kcal') / units.Unit('mol'),
     'FORCE':units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
     'PRESSURE':units.Unit('atm')
