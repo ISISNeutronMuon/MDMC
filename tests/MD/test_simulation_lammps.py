@@ -459,6 +459,13 @@ def test_unimplemented_interactions(lammps_universe, universe):
     with pytest.raises(NotImplementedError):
         lammps_universe._add_topology(universe)
 
+
+def test_pair_style_coeff_commands(universe):
+
+    """
+    
+    """
+
 @pytest.mark.parametrize('interactions, expected',
                          [('bonds', 'harmonic'),
                           ('angles', 'harmonic')])
