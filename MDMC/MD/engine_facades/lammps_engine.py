@@ -2011,12 +2011,6 @@ def convert_unit(value, unit=None, to_lammps=True):
                              ' LAMMPS units.')
     else:
         unit_nums, unit_dens = expand_components(unit)
-    # Deal with special cases: amu <---> g / mol ...and... kJ  <---> kcal / mol
-    unit_nums, unit_dens, mul_num = convert_units_special_cases(unit_nums,
-                                                                unit_dens)
-    unit_nums, unit_dens, mul_den = convert_units_special_cases(unit_dens,
-                                                                unit_nums)
-    value *= (mul_num / mul_den)
 
     conv_nums, conv_dens = [], []
     for component in unit_nums:
@@ -2034,78 +2028,6 @@ def convert_unit(value, unit=None, to_lammps=True):
             value *= getattr(units, component)
 
     return value
-
-
-def convert_units_special_cases(unit_nums, unit_dens):
-
-    """
-    Deals with the conversion of special cases:
-
-        Dimension       MDMC unit           LAMMPS unit
-        mass            amu         <--->   g / mol
-        energy          kJ          <--->   kcal / mol
-
-    by converting all instances of the LAMMPS unit in the expanded component
-    numerator and denominator lists and replaces them with the MDMC unit,
-    returning a multiplier that accounts for the conversion factors.
-
-    Parameters
-    ----------
-    unit_nums : list of str
-        A list of expanded unit components.
-    unit_dens : list of str
-        A list of expanded unit components.
-
-    Returns
-    -------
-    unit_nums : list of str
-        Input list unit_nums, with all LAMMPS mass numerator components
-        ('g' or 'kg') replaced with 'amu', and all LAMMPS energy numerator
-        components ('kcal') replaced with 'kJ'.
-    unit_dens : list of str
-        Input list unit_dens where every 'mol' element has been removed, if
-        and only if it pairs with a LAMMPS mass numerator component of 'g' or
-        'kg', or a LAMMPS energy numerator component of 'kcal', in unit_nums.
-    multiplier : float
-        The factor that is a product of all conversion factors needed when
-        performing the special conversions.
-    """
-
-    properties = {'mass'   : ['kg', 'g'],
-                  'energy' : ['kcal']
-                 }
-
-    multiplier = 1.
-    for property in ('mass', 'energy'):
-
-        prop_units = properties[property]
-        for idx, unit in enumerate(unit_nums):
-            if unit == 'g / mol':
-                unit_nums[idx] = 'g'
-                unit_dens.append('mol')
-            elif unit == 'kcal / mol':
-                unit_nums[idx] = 'kcal'
-                unit_dens.append('mol')
-
-        converted = []
-        for idx, unit in enumerate(unit_nums):
-            if unit in prop_units:
-                converted.append(unit)
-                if property == 'mass':
-                    unit_nums[idx] = 'amu'
-                elif property == 'energy':
-                    unit_nums[idx] = 'kJ'
-
-        for conv_unit in converted:
-            # Scale the multiplier based on the mass' order of magnitude
-            multiplier *= getattr(units, conv_unit)
-            try:
-                unit_dens.remove('mol')
-                multiplier /= CONST['_Nav']
-            except ValueError:
-                pass
-
-    return unit_nums, unit_dens, multiplier
 
 
 def parse_bonded_styles(interaction):
