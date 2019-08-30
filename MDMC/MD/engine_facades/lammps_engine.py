@@ -1995,34 +1995,28 @@ def convert_unit(value, unit=None, to_lammps=True):
         # ANGLE entry in SYSTEM is replaced by radians.
         if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
             l_sys['ANGLE'] = units.Unit('rad')
-        expanded_unit = expand_components(unit)
+
+        expanded_unit = expand_components(unit, units.SYSTEM)
         system_inv = {unit:property for property, unit in units.SYSTEM.items()}
         # Apply inversion to all components
-        try:
-            unit_dens, unit_nums = map(lambda comp_list:
-                                       [l_sys[system_inv[comp]]
-                                        for comp in comp_list],
-                                       expanded_unit)
-        except KeyError:
-            raise ValueError('Must be in MDMC base units if converting to'
-                             ' LAMMPS units.')
-    else:
-        unit_nums, unit_dens = expand_components(unit)
+        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
+                                                        for comp in comp_list],
+                                     expanded_unit)
 
-    conv_nums, conv_dens = [], []
-    for component in unit_nums:
-        (conv_nums[len(conv_nums):],
-         conv_dens[len(conv_dens):]) = expand_components(units.Unit(component))
-    for component in unit_dens:
-        (conv_dens[len(conv_dens):],
-         conv_nums[len(conv_nums):]) = expand_components(units.Unit(component))
+        conv_nums, conv_denoms = [], []
+        for component in unit_nums:
+            conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
+                expand_components(component, l_sys)
+        for component in unit_denoms:
+            conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
+                expand_components(component, l_sys)
+    else:
+        conv_denoms, conv_nums = expand_components(unit, SYSTEM)
 
     for component in conv_nums:
-        if component != '1':
-            value /= getattr(units, component)
-    for component in conv_dens:
-        if component != '1':
-            value *= getattr(units, component)
+        value /= getattr(units, component)
+    for component in conv_denoms:
+        value *= getattr(units, component)
 
     return value
 
