@@ -21,7 +21,6 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 UNIVERSE_DIM = 50.0
 N_ATOMS = 10
 COULOMBIC_CUTOFF = 8.0
-CONVS = units.create_units(units.CODATA_VERSION)
 CONST = units.CODATA[units.CODATA_VERSION]
 
 @pytest.fixture
