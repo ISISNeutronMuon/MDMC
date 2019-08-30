@@ -1325,10 +1325,9 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
                           ('kg', 1 / CONST['_amu']), ('g', 1 / (CONST['_amu']
                                                                 * 1000)),
                           ('amu', 1.), ('g / mol', 1.),
-                          ('mol', 1.),
-                          ('J', 0.001), ('kJ', 1.), ('kcal', 4.184),
-                          ('kcal / Ang mol', 4.184 / CONST['_Nav']),
-                          ('kJ / Ang mol', 1.),
+                          ('J', CONST['_Nav'] / 1000.), ('kJ', CONST['_Nav']),
+                          ('kcal', CONST['_Nav'] * 4.184),
+                          ('kcal / Ang mol', 4.184),
                           ('atm', 101325), ('bar', 1e5),
                           ('rad', 180 / np.pi), ('deg', 1.)])
 def test_convert_unit_conversion_factors(unit_str, expected):
@@ -1374,7 +1373,8 @@ def test_convert_lammps_base_units_identity(value):
 
 @pytest.mark.parametrize('mdmc_unit, lmp_value',
                          [(units.Unit('Pa'), 1 / 101325.),
-                          (units.Unit('kJ'), CONST['_Nav'] / 4.184),
+                          (units.Unit('kJ / mol'), 1 / 4.184),
+                          (units.Unit('kJ / Ang mol'), 1 / 4.184),
                           (units.Unit('amu'), 1.)])
 def test_convert_mdmc_base_units(mdmc_unit, lmp_value):
 
@@ -1388,7 +1388,7 @@ def test_convert_mdmc_base_units(mdmc_unit, lmp_value):
 
 @pytest.mark.parametrize('lmp_unit, mdmc_value',
                          [(units.Unit('atm'), 101325.),
-                          (units.Unit('kcal / mol'), 4.184 / CONST['_Nav'])])
+                          (units.Unit('kcal / mol'), 4.184)])
 def test_convert_lammps_base_units(lmp_unit, mdmc_value):
 
     """
@@ -1402,14 +1402,12 @@ def test_convert_lammps_base_units(lmp_unit, mdmc_value):
 
 @pytest.mark.parametrize('mdmc_unit, lmp_value',
                          [(units.Unit('kJ') / units.Unit('mol'),
-                           (4.184 / CONST['_Nav']) ** -1),
+                           4.184 ** -1),
                           (units.Unit('Pa') * units.Unit('fs'), 101325. ** -1),
                           (units.Unit('amu') ** 2, 1.), # mass units equiv
-                          (units.Unit('amu') ** -1, 1.), # mass units equiv
-                          (units.SYSTEM['ENERGY'],
-                           (4.184 / CONST['_Nav']) ** -1),
+                          (units.Unit('amu') ** -1, 1.), # mass units equiv,
                           (units.SYSTEM['FORCE'],
-                           (4.184 / CONST['_Nav']) ** -1)])
+                           4.184 ** -1)])
 def test_convert_mdmc_compound_units(mdmc_unit, lmp_value):
 
     """
@@ -1428,18 +1426,18 @@ def test_convert_mdmc_angular_potential_strength():
     """
 
     mdmc_unit = units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2
-    lmp_value = (180. / np.pi) ** 2 * (CONST['_Nav'] / 4.184)
+    lmp_value = (180. / np.pi) ** 2 / 4.184
     assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 @pytest.mark.parametrize('lmp_unit, mdmc_value',
                          [(units.Unit('kcal') / units.Unit('mol'),
-                           4.184 / CONST['_Nav']),
+                           4.184),
                           (units.Unit('atm') * units.Unit('fs'), 101325.),
                           (units.Unit('bar') * units.Unit('fs'), 1e5),
                           (lmp_eng.SYSTEM['MASS'] ** 2, 1.), # mass units equiv
                           (lmp_eng.SYSTEM['MASS'] ** -1, 1.), # mass units equiv
-                          (lmp_eng.SYSTEM['ENERGY'], 4.184 / CONST['_Nav']),
-                          (lmp_eng.SYSTEM['FORCE'], 4.184 / CONST['_Nav'])])
+                          (lmp_eng.SYSTEM['ENERGY'], 4.184),
+                          (lmp_eng.SYSTEM['FORCE'], 4.184)])
 def test_convert_lammps_compound_units(lmp_unit, mdmc_value):
 
     """
