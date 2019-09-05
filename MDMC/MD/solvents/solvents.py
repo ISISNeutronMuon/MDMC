@@ -13,6 +13,7 @@ from os.path import dirname, basename, isfile, join
 
 from MDMC.MD import force_fields
 from MDMC.MD.force_fields.ff import WaterModel
+from MDMC.MD.solvents._solvent_config import SolventConfig
 from MDMC.MD.solvents.SPC_config import SPCConfig
 
 
@@ -75,4 +76,87 @@ def _get_water_model_configs():
             w_model_configs[w_model.__name__] = SPCConfig
 
     return w_model_configs
+
+
+def _get_solvent_configs():
+
+    """
+    Gets a dict of the names of solvent configs and their classes
+
+    Returns
+    -------
+    dict
+        {name: solvent_config} pairs, where each name is a str specifying
+        an available SolventConfig subclass, and solvent_config is the
+        corresponding class.
+    """
+
+    # Import all modules in same directory, except this one
+    modules = [import_module('.' + basename(f)[:-3], __package__) for f
+               in glob(join(dirname(__file__), "*.py"))
+               if isfile(f) and not f.startswith('_') and f != __file__]
+    # Get members of all modules if they are solvent_configs (i.e. they are
+    # subclasses of SolventConfig)
+    s_configs = []
+    for module in modules:
+        # try/except for modules which have no subclasses of SolventConfig and
+        # so return an empty list
+        try:
+            s_configs.append(getmembers(module,
+                                        lambda m: (isclass(m)
+                                                   and not isabstract(m)
+                                                   and issubclass(m,
+                                                                  SolventConfig)
+                                                  ))[0][1])
+        except IndexError:
+            pass
+    return {s_config.__name__:s_config for s_config in s_configs}
+
+
+def get_solvent_config(name):
+
+    """
+    Gets the solvent_config for a solvent
+
+    Parameters
+    ----------
+    name : str
+        The name of the solvent
+
+    Returns
+    -------
+    SolventConfig
+        An object from a subclass of SolventConfig for the specified solvent
+        name
+    """
+
+    s_config = SOLVENT_CONFIGS.get(name+'Config', None)
+    if s_config is None:
+        try:
+            s_config = WATER_MODELS[name]
+        except KeyError:
+            raise ValueError("{0} is not an inbuilt solvent. The inbuilt"
+                             " solvents are: {1}".format(name,
+                                                         get_solvent_names()))
+
+    return s_config()
+
+
+def get_solvent_names():
+
+    """
+    Get the names of the inbuilt solvents which can be passed as parameters to
+    get_solvent_config
+
+    Returns
+    -------
+    list
+        A list of str with the names of the inbuilt solvents
+    """
+
+    return list(set(WATER_MODELS.keys()
+                    + [name.replace('Config', '') for name
+                       in _get_solvent_configs().keys()]))
+
+SOLVENT_CONFIGS = _get_solvent_configs()
 WATER_MODELS = _get_water_model_configs()
