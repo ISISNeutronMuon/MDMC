@@ -68,3 +68,26 @@ class ForceField:
         except KeyError:
             raise KeyError("This force field does not have defined interactions"
                            " for these element types")
+
+
+class WaterModel(ForceField):
+
+    """
+    Abstract class for force fields that describe a water model
+    """
+
+    @abstractproperty
+    def n_body(self):
+
+        """
+        This is the number of bodies in the water model.
+
+        THIS MUST BE IMPLEMENTED USING A STATIC VARIABLE, INSTEAD OF A PROPERTY.
+
+        Returns
+        -------
+        int
+            The number of bodies (atoms) in the water model.
+        """
+
+        raise NotImplementedError
