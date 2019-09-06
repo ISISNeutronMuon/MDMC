@@ -46,6 +46,8 @@ def unit_decorator(unit):
         ...         self._position = value
     """
 
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
     def decorator(func):
         def unit_creator(self, value, unit):
             try:
@@ -98,6 +100,8 @@ def unit_decorator_getter(unit):
         ...         return self.dims ** 3
     """
 
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
     def decorator(func):
         def unit_creator(self, unit):
             try:
@@ -131,6 +135,8 @@ def set_func_docstring(docstring):
     A decorator which sets the docstring of a function or method
     """
 
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
     def decorator(func):
         # docstring must be set outside of wrapper. This means that
         # functools.wraps can be used to preserve the docstring after the
@@ -163,6 +169,8 @@ def mod_func_docstring(replacements):
     A decorator which modifies the docstring of a function or method
     """
 
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
     def decorator(func):
         # docstring must be modified outside of wrapper. This means that
         # functools.wraps can be used to preserve the docstring after the
