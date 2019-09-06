@@ -13,46 +13,55 @@ def docstring():
     """
 
     doc = (r"""
-           This is a docstring with several sections
+            This is a docstring with several sections
 
-           Here is the extended description. It wraps over two lines due to its
-           extended length.
+            Here is the extended description. It wraps over two lines due to its
+            extended length.
 
-           Parameters
-           ----------
-           a : type
-               This is parameter 'a'.
-           b : type
-               This is parameter 'b'. It has a longer description to test for
-               line wrapping and indenting of Parameters.
-           *args
+            Parameters
+            ----------
+            a : type
+                This is parameter 'a'.
+            b : type
+                This is parameter 'b'. It has a longer description to test for
+                line wrapping and indenting of Parameters.
+            *args
                 These are the *args.
-           **kwargs
+            **kwargs
                 c : type
                     **kwargs are indented further
 
-           Returns
-           -------
-           type
-               This is the return type
+            Returns
+            -------
+            type
+                This is the return type
 
-           Examples
-           --------
-           Here is an example::
+            Examples
+            --------
+            Here is an example::
 
-               >>> print('Example')
-               Example
+                >>> print('Example')
+                Example
 
-           Notes
-           -----
-           Here is an equation:
+            Notes
+            -----
+            Here is an equation:
 
-           ..math::
+            ..math::
 
-               {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
-           """)
+                {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
+            """)
 
     return doc
+
+@pytest.fixture
+def wrap(docstring):
+
+    """
+    docstring wrapped with a line length of 40
+    """
+
+    return decorators._wrap_docstring(docstring, 40)
 
 
 @pytest.mark.parametrize('length', [100, 80, 60, 40])
