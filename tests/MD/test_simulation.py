@@ -731,3 +731,9 @@ def test_water_model_inheritance():
 
     with pytest.raises(TypeError):
         invalid = InvalidWaterModel()
+
+    class ValidWaterModel(InvalidWaterModel):
+
+        n_body = 3
+
+    assert ValidWaterModel().n_body == 3
