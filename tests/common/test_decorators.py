@@ -68,3 +68,12 @@ def test_wrap_docstring_wrapping(docstring, length):
     for line in wrap.split('\n'):
         assert len(line) <= length
 
+
+def test_wrap_docstring_blank_lines():
+
+    pass
+
+
+def test_wrap_docstring_indentation():
+
+    pass
