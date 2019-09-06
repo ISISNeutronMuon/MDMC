@@ -1,5 +1,7 @@
 """Module which defines decorators"""
 
+import textwrap
+
 from MDMC.common.units import UnitFloat, unit_array
 
 
@@ -108,3 +110,33 @@ def unit_decorator_getter(unit):
             return unit_creator(self, unit)
         return wrapper
     return decorator
+def _wrap_docstring(docstring, line_length):
+
+    """
+    Wraps a docstring to a specific line length.
+
+    This maintains any indentation which exists at the start of a line
+
+    Parameters
+    ----------
+    docstring : str
+        The docstring to be wrapped
+    line_length : int
+        The maximum line length of the docstring before it is wrapped
+
+    Returns
+    -------
+    str
+        The wrapped docstring
+    """
+
+    wrapped = []
+    for line in docstring.split('\n'):
+        if len(line) > line_length:
+            indent = (len(line) - len(line.strip())) * ' '
+            wrap = textwrap.wrap(line, line_length, subsequent_indent=indent)
+            wrap = ['\n' + element for element in wrap]
+            wrapped += wrap
+        else:
+            wrapped.append('\n' + line)
+    return ''.join(wrapped)
