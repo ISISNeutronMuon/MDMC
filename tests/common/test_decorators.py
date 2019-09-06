@@ -96,12 +96,30 @@ def test_wrap_docstring_invalid_length(docstring, length):
         decorators._wrap_docstring(docstring, length)
 
 
+def test_wrap_docstring_blank_lines(docstring, wrap):
+    """
+    Tests that wrapping preserves blank lines (with different indentation)
+    """
 
-def test_wrap_docstring_blank_lines():
-
-    pass
+    assert wrap.split('\n').count('') == docstring.split('\n').count('')
 
 
-def test_wrap_docstring_indentation():
+def test_wrap_docstring_indentation(wrap):
 
-    pass
+    """
+    Tests that indentation is maintained
+    """
+
+    # The expected indent sizes when wrapping the docstring fixture with a line
+    # length of 40
+    EXPECTED_INDENTS = [0, 12, 12, 0, 12, 12, 12, 12, 0, 12, 12, 12, 16, 12, 16,
+                        16, 16, 16, 16, 12, 16, 12, 16, 20, 20, 0, 12, 12, 12,
+                        16, 0, 12, 12, 12, 0, 16, 16, 0, 12, 12, 12, 0, 12, 0,
+                        16, 16, 16]
+
+    for index, indent in enumerate(EXPECTED_INDENTS):
+        line = wrap.split('\n')[index]
+        assert indent == len(line) - len(line.strip())
+
+
+
