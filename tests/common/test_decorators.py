@@ -1,5 +1,7 @@
 """Tests for decorators and associated functions"""
 
+from textwrap import dedent
+
 import pytest
 
 from MDMC.common import decorators
@@ -122,4 +124,18 @@ def test_wrap_docstring_indentation(wrap):
         assert indent == len(line) - len(line.strip())
 
 
+def test_wrap_docstring_math():
 
+    """
+    Tests that text wrapping doesn't prepend text in front of a math command,
+    which would stop the command functioning
+    """
+
+    math_doc = (r"""
+                 Docstring with inline math
+                 .. math:: x^2
+                 """)
+
+    math_wrap = decorators._wrap_docstring(math_doc, 40).split('\n')
+    assert len(math_wrap) == 5
+    assert dedent(math_wrap[-2]) == r'.. math:: x^2'
