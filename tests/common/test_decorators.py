@@ -54,3 +54,17 @@ def docstring():
 
     return doc
 
+
+@pytest.mark.parametrize('length', [100, 80, 60, 40])
+def test_wrap_docstring_wrapping(docstring, length):
+
+    """
+    This tests wrapping a docstring to a specific line length
+    """
+
+    # Determine expected line lengths
+
+    wrap = decorators._wrap_docstring(docstring, length)
+    for line in wrap.split('\n'):
+        assert len(line) <= length
+
