@@ -1,5 +1,6 @@
 """Module which defines decorators"""
 
+from functools import wraps
 import textwrap
 
 from MDMC.common.units import UnitFloat, unit_array
@@ -110,6 +111,72 @@ def unit_decorator_getter(unit):
             return unit_creator(self, unit)
         return wrapper
     return decorator
+
+
+def set_func_docstring(docstring):
+
+    """
+    Decorator for setting the docstring of a function or method.
+
+    The new docstring is text wrapped to ensure that the line length is valid.
+    It is assumed that the specified docstring has the correct indentations.
+
+    Parameters
+    ----------
+    docstring : str
+        The new docstring for the function or method
+
+    Returns
+    -------
+    A decorator which sets the docstring of a function or method
+    """
+
+    def decorator(func):
+        # docstring must be set outside of wrapper. This means that
+        # functools.wraps can be used to preserve the docstring after the
+        # function has been wrapped.
+        func.__doc__ = _wrap_docstring(docstring, 80)
+        @wraps(func)
+        def wrapper(*args, **settings):
+            func(*args, **settings)
+        return wrapper
+    return decorator
+
+
+def mod_func_docstring(replacements):
+
+    """
+    Decorator for modifying the docstring of a function or method.
+
+    This is done by replacing specified substrings. After replacement the
+    docstring is text wrapped to ensure that line length and indentations are
+    preserved.
+
+    Parameters
+    ----------
+    replacements : dict
+        {old:new} pairs where old is a str in the docstring which will be
+        replaced, and new is the str it should be replaced with.
+
+    Returns
+    -------
+    A decorator which modifies the docstring of a function or method
+    """
+
+    def decorator(func):
+        # docstring must be modified outside of wrapper. This means that
+        # functools.wraps can be used to preserve the docstring after the
+        # function has been wrapped.
+        for old, new in replacements.items():
+            func.__doc__ = func.__doc__.replace(old, new)
+        func.__doc__ = _wrap_docstring(func.__doc__, 80)
+        @wraps(func)
+        def wrapper(*args, **settings):
+            func(*args, **settings)
+        return wrapper
+    return decorator
+
+
 def _wrap_docstring(docstring, line_length):
 
     """
