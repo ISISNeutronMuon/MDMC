@@ -206,12 +206,37 @@ def _wrap_docstring(docstring, line_length):
     """
 
     wrapped = []
+    prev_line = None
+    prev_indent = None
+
     for line in docstring.split('\n'):
+        # Get indent of right length for line
+        indent = (len(line) - len(line.strip())) * ' '
+        if len(indent) >= line_length:
+            raise ValueError('The line length is shorter than one or more'
+                             ' indents')
+        # If previous line was wrapped and has same length of indent, then
+        # prepend it to this line
+        if prev_line is not None:
+            if prev_indent == indent and not 'math::' in line:
+                line = prev_line + ' ' + textwrap.dedent(line)
+            else:
+                wrapped.append('\n' + prev_line)
+        # Wrap line if the length is greater than the line length
         if len(line) > line_length:
-            indent = (len(line) - len(line.strip())) * ' '
             wrap = textwrap.wrap(line, line_length, subsequent_indent=indent)
-            wrap = ['\n' + element for element in wrap]
+            prev_line = wrap[-1]
+            wrap = ['\n' + element for element in wrap[:-1]]
             wrapped += wrap
+            prev_indent = indent
         else:
+            prev_line = None
             wrapped.append('\n' + line)
+    # If last line in docstring was wrapped, append this to the array
+    if prev_line is not None:
+        wrapped.append('\n' + prev_line)
+    # Accounting for typical case of docstring starting on line after """
+    if wrapped[0] == '\n':
+        del wrapped[0]
+
     return ''.join(wrapped)
