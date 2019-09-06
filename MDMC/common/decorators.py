@@ -158,6 +158,10 @@ def mod_func_docstring(replacements):
     docstring is text wrapped to ensure that line length and indentations are
     preserved.
 
+    While this can be used for replacements in equations, care must be taken
+    to ensure that wrapping does not cause line breaks in invalid places in the
+    Latex.
+
     Parameters
     ----------
     replacements : dict
@@ -190,7 +194,9 @@ def _wrap_docstring(docstring, line_length):
     """
     Wraps a docstring to a specific line length.
 
-    This maintains any indentation which exists at the start of a line
+    This maintains any indentation which exists at the start of a line. While
+    equations should not be affected by this wrapping, it is recommended that
+    docstrings with math:: are visually checked after wrapping.
 
     Parameters
     ----------
@@ -203,6 +209,12 @@ def _wrap_docstring(docstring, line_length):
     -------
     str
         The wrapped docstring
+
+    Raises
+    ------
+    ValueError
+        If any indent has more characters than the line_length, as the wrapping
+        cannot then preserve the correct indent
     """
 
     wrapped = []
