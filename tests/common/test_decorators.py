@@ -64,18 +64,37 @@ def wrap(docstring):
     return decorators._wrap_docstring(docstring, 40)
 
 
-@pytest.mark.parametrize('length', [100, 80, 60, 40])
-def test_wrap_docstring_wrapping(docstring, length):
+@pytest.mark.parametrize('length, n_expected_lines', [(100, 39),
+                                                      (80, 39),
+                                                      (60, 41),
+                                                      (40, 48)])
+def test_wrap_docstring_wrapping(docstring, length, n_expected_lines):
 
     """
     This tests wrapping a docstring to a specific line length
-    """
 
-    # Determine expected line lengths
+    Tests that the the wrapping results in the expected number of lines, and
+    that none of the wrapped lines have a length greater than the wrapping line
+    length.
+    """
 
     wrap = decorators._wrap_docstring(docstring, length)
     for line in wrap.split('\n'):
         assert len(line) <= length
+    assert len(wrap.split('\n')) == n_expected_lines
+
+
+@pytest.mark.parametrize('length', [16, 10])
+def test_wrap_docstring_invalid_length(docstring, length):
+
+    """
+    Tests that a wrapping length greater than the number of characters in one or
+    more indents raises a ValueError
+    """
+
+    with pytest.raises(ValueError):
+        decorators._wrap_docstring(docstring, length)
+
 
 
 def test_wrap_docstring_blank_lines():
