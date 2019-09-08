@@ -181,3 +181,37 @@ def test_wrap_docstring_math():
     assert len(math_wrap) == 5
     assert dedent(math_wrap[-2]) == r'.. math:: x^2'
 
+
+def test_set_func_docstring_function(docstring):
+
+    """
+    Tests setting a docstring to a function
+    """
+
+    @decorators.set_func_docstring(docstring)
+    def test_func():
+
+        """
+        This docstring should be overwritten
+        """
+
+        pass
+
+    assert test_func.__doc__ == docstring
+
+
+def test_set_func_docstring_method(docstring):
+
+    """
+    Tests setting a docstring to a method
+    """
+
+    class TestClass(object):
+
+        @decorators.set_func_docstring(docstring)
+        def test_method(self):
+
+            pass
+
+    assert TestClass.test_method.__doc__ == docstring
+
