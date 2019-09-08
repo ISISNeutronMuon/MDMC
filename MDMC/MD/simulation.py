@@ -13,7 +13,7 @@ import numpy as np
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     mod_func_docstring
 from MDMC.common import units
-from MDMC.common import coordinates
+from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.trajectory_analysis.trajectory import Configuration
@@ -630,18 +630,9 @@ class Universe(object):
                 inbuilt solvent is selected (e.g. 'SPCE') and
                 constraint_algorithm is not passed, the ConstraintAlgorithm will
                 default to Shake(1e-4, 100).
-
-        Raises
-        ------
-        NotImplementedError
-            The solvate method currently only supports using inbuilt solvents.
         """
 
-        try:
-            coords = copy.deepcopy(getattr(coordinates, solvent))
-        except AttributeError:
-            raise NotImplementedError('The solvate method currently only'
-                                      ' supports using inbuilt solvents')
+        solvent_config = get_solvent_config(solvent)
 
         # Calculate useful properties from the original box
         solv_mass = coordinates.molec_from_dict(coords['molecules'].values()[0],
