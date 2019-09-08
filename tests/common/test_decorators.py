@@ -60,6 +60,44 @@ def docstring():
     return doc
 
 @pytest.fixture
+def modified_docstring():
+
+    """
+    Returns
+    -------
+    dict
+        A dict with 'after' (str with the docstring after it has been modified),
+        and 'replacements' (dict containing keys with str to be replaced, and
+        values with the replacement str).
+    """
+
+    mod = {}
+    mod['replacements'] = {'int':'float',
+                           'An ':'A ',
+                           'Arguments':'Parameters',
+                           'longer':'much much much much much longer'}
+    mod['after'] = (
+        """
+        This is a docstring with parts to be replaced
+
+        Parameters
+        ----------
+        a : float
+            A float
+        b : float
+            Another float
+
+        Returns
+        -------
+        str
+            Replace this description with a much much much much much longer
+            description
+        """)
+
+    return mod
+
+
+@pytest.fixture
 def wrap(docstring):
 
     """
@@ -142,3 +180,4 @@ def test_wrap_docstring_math():
     math_wrap = decorators._wrap_docstring(math_doc, 40).split('\n')
     assert len(math_wrap) == 5
     assert dedent(math_wrap[-2]) == r'.. math:: x^2'
+
