@@ -638,6 +638,19 @@ def test_update_all_interactions(lammps_universe, interactions):
     lammps_universe.update_parameters()
 
 
+def test_update_charges_error():
+
+    """
+    Tests that an error is raised when trying to create a LAMMPS universe
+    from a universe that contains atoms with a charge of None.
+    """
+
+    universe = Universe(10.)
+    universe.add_structural_unit(Atom('H'))
+    with pytest.raises(AttributeError):
+        lmp_eng.LAMMPSUniverse(universe)
+
+
 @pytest.mark.parametrize('mix', ['GEOMETRIC',
                                  'geometric',
                                  'arithmetic',

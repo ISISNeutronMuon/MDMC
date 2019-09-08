@@ -9,8 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from MDMC.common.coordinates import molec_from_dict, SPCE
-from MDMC.MD.interaction_functions import Parameter
+from MDMC.MD.force_fields.ff import WaterModel
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 
@@ -476,7 +475,8 @@ def test_molecule_subunit_positions(water_molecule):
 
 
 @pytest.mark.parametrize("Int, n_atoms", [(su.Bond, [2]),
-                                          (su.BondAngle, [3, 4])])
+                                          (su.BondAngle, [3]),
+                                          (su.DihedralAngle, [4])])
 def test_bonded_interactions(Int, n_atoms, atom):
 
     """
@@ -951,9 +951,9 @@ def test_solvate_parameter_setting(solvated_universe, solvent, params):
                                                        False),
                                                       (0.1, [-7., 0, 0], True),
                                                       ([20., 15., 1.],
-                                                        [21., 15., 1.], True),
+                                                       [21., 15., 1.], True),
                                                       (10., [0., 0., -0.0001],
-                                                        True),
+                                                       True),
                                                       (10., [5, 5, 5], False)])
 def test_check_out_of_bounds(univ_dims, pos, expected):
 
@@ -964,3 +964,28 @@ def test_check_out_of_bounds(univ_dims, pos, expected):
 
     univ = sim.Universe(univ_dims)
     assert univ._check_out_of_bounds(np.array(pos)) == expected
+
+
+def test_water_model_inheritance():
+
+    """
+    Tests that a class which inherits from WaterModel requires n_body to be
+    defined. This test is required because although WaterModel specifies n_body
+    as an abstractproperty, it can be made concrete as a static variable
+    """
+
+    class InvalidWaterModel(WaterModel):
+
+        @property
+        def interaction_dictionary(self):
+
+            return 0
+
+    with pytest.raises(TypeError):
+        invalid = InvalidWaterModel()
+
+    class ValidWaterModel(InvalidWaterModel):
+
+        n_body = 3
+
+    assert ValidWaterModel().n_body == 3

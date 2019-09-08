@@ -2202,5 +2202,37 @@ class BondAngle(Constrainable, BondedInteraction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        settings['n_atoms'] = (3, 4)
+        settings['n_atoms'] = (3, )
         super(BondAngle, self).__init__(*atom_tuples, **settings)
+
+
+class DihedralAngle(BondedInteraction):
+
+    """
+    A dihedral angle between any two sets of three atoms, ijk and jkl.
+
+    Dihedral angles can be both proper and improper, where the angle between the
+    two planes of ijk and jkl is fixed for improper dihedrals.
+
+    Parameters
+    ----------
+    atom_tuples : list
+        A list of tuples. Each tuples contains four Atoms which are bonded
+        together by the DihedralAngle, in the order specified.
+    **settings
+        improper : bool
+            Whether the DihedralAngle is improper or not.
+
+    Attributes
+    ----------
+    improper : bool
+        Whether the DihedralAngle is improper or not, which affects the
+        InteractionFunctions which can be set for this DihedralAngle. By default
+        this is set to False i.e. the interaction is a proper dihedral.
+    """
+
+    def __init__(self, *atom_tuples, **settings):
+
+        settings['n_atoms'] = (4, )
+        self.improper = settings.get('improper', False)
+        super(DihedralAngle, self).__init__(*atom_tuples, **settings)
