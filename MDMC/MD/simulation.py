@@ -3,7 +3,6 @@
  Classes for the simulation box, minimizer and integrator."""
 
 from abc import ABCMeta, abstractproperty
-import copy
 from collections import defaultdict
 from itertools import count, ifilterfalse, product
 
@@ -635,22 +634,24 @@ class Universe(object):
         solvent_config = get_solvent_config(solvent)
 
         # Calculate useful properties from the original box
-        solv_mass = coordinates.molec_from_dict(coords['molecules'].values()[0],
-                                                coords['atom_types']).mass
-        orig_box_dims = coords['box_dims']
-        orig_box_dens = (solv_mass * len(coords['molecules'])
-                         / np.prod(orig_box_dims))
+        solvent_mass = solvent_config.mass
+        orig_box_dims = solvent_config.box_dims
         # Get the prelim scaling of the orig box required to achieve density
-        dim_scaling = np.array([(orig_box_dens / density) ** (1. / 3)] * 3)
+        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
+                               * 3)
 
         scale_factor = 0.
         counter = 0
-        # Try/except accounts for empty universe (so no atom_types)
+        # Offset the atom_types of the solvent_config by the maximum atom_type
+        # in the Universe.
+        # Try/except accounts for empty universe (i.e. no atom_types)
         try:
             max_atom_type = np.max(self.atom_types.keys())
         except ValueError:
             max_atom_type = 0
+        solvent_config.offset_atom_types(max_atom_type)
         difference = np.float('inf')
+
         while abs(difference * 100) >= abs(tolerance):
 
 
@@ -668,13 +669,11 @@ class Universe(object):
                                       range(0, num_tiles[1]),
                                       range(0, num_tiles[2])):
 
-                trans_tile = copy.deepcopy(coords['molecules'])
-                for mol_key, mol in trans_tile.items():
+                solvent_config.reset_molecules()
+                for mol_key, mol in solvent_config.molecules.items():
 
                     atom_positions = mol.values()
-                    CoM = coordinates.molec_from_dict(mol,
-                                                      coords['atom_types']
-                                                     ).position
+                    CoM = solvent_config.molec_from_dict(mol).position
 
                     remove = False
                     for pos in atom_positions:
@@ -696,18 +695,13 @@ class Universe(object):
                                 if cond1 and cond2:
                                     remove = True
                     if remove:
-                        del trans_tile[mol_key]
-                mols += coordinates.molecules_from_coords(
-                    trans_tile,
-                    atom_type_dict=coords['atom_types'],
-                    atom_type_offset=max_atom_type,
-                    bonded_interactions=coords['bonded_interactions'],
-                    nonbonded_interactions=coords['nonbonded_interactions'],
-                    constrained=coords['constrained'],
+                        del solvent_config.molecules[mol_key]
+                mols += solvent_config.molecules_from_coords(
+                    solvent_config.molecules,
                     universe=self)
 
             # Check the density
-            actual = (len(mols) * solv_mass) / self.volume
+            actual = (len(mols) * solvent_mass) / self.volume
             difference = (actual - density) / density
             scale_factor = difference / counter
 
@@ -719,13 +713,11 @@ class Universe(object):
             bonded_interactions += molecule.interactions
 
         # Get nonbonded interactions from atom types
-        atom_types = np.array(coords['atom_types'].values()) + max_atom_type
         # Add interaction if any of its atom types are in atom_types
-
         nonbonded_interactions = []
         for interaction in self.nonbonded_interactions:
-            interaction_atom_types = np.array(interaction.atom_types).flatten()
-            if len(set(interaction_atom_types).intersection(atom_types)) >= 1:
+            inter_atom_types = np.array(interaction.atom_types).flatten()
+            if len(set(inter_atom_types).intersection(solvent_config.atom_types.values())) >= 1:
                 nonbonded_interactions.append(interaction)
 
         # Apply the force field of the solvent to the Universe
@@ -733,7 +725,7 @@ class Universe(object):
             self.add_force_field(solvent, *set(bonded_interactions
                                                + nonbonded_interactions))
             # If BondedInteractions are constrained, apply a constrain algorithm
-            if coords['constrained']:
+            if solvent_config.constrained:
                 self.constraint_algorithm = settings.get('constraint_algorithm',
                                                          Shake(1e-4, 100))
         except ImportError:
