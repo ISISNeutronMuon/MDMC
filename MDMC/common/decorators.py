@@ -132,7 +132,21 @@ def set_func_docstring(docstring):
 
     Returns
     -------
-    A decorator which sets the docstring of a function or method
+    function
+        A decorator which sets the docstring of a function or method
+
+    Example
+    -------
+    To dynamically set the docstring of a function:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @set_func_docstring("This is the new docstring")
+            def function():
+                \"\"\"
+                This docstring will be replaced
+                \"\"\"
     """
 
     # Ignore pylint warning for decorator inner function docstrings
@@ -170,7 +184,22 @@ def mod_func_docstring(replacements):
 
     Returns
     -------
-    A decorator which modifies the docstring of a function or method
+    function
+        A decorator which modifies the docstring of a function or method
+
+    Example
+    -------
+    To dynamically modify the docstring of a function so 'this' is replaced
+    with 'that':
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @set_func_docstring({'this':'that'})
+            def function():
+                \"\"\"
+                The word this will be replaced
+                \"\"\"
     """
 
     # Ignore pylint warning for decorator inner function docstrings
