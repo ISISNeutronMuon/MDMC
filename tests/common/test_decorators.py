@@ -215,3 +215,68 @@ def test_set_func_docstring_method(docstring):
 
     assert TestClass.test_method.__doc__ == docstring
 
+
+def test_mod_func_docstring_function(modified_docstring):
+
+    """
+    Tests modifying the docstring of a function
+    """
+
+    @decorators.mod_func_docstring(modified_docstring['replacements'])
+    def test_func():
+
+        """
+        This is a docstring with parts to be replaced
+
+        Arguments
+        ----------
+        a : int
+            An int
+        b : int
+            Another int
+
+        Returns
+        -------
+        str
+            Replace this description with a longer description
+        """
+
+        pass
+
+    # dedent removes common leading whitespace - accounts for docstring fixture
+    # and function docstring starting with different indents
+    assert dedent(test_func.__doc__) == dedent(modified_docstring['after'])
+
+
+def test_mod_func_docstring_method(modified_docstring):
+
+    """
+    Tests modifying the docstring of a method
+    """
+
+    class TestClass(object):
+
+        @decorators.mod_func_docstring(modified_docstring['replacements'])
+        def test_method(self):
+
+            """
+            This is a docstring with parts to be replaced
+
+            Arguments
+            ----------
+            a : int
+                An int
+            b : int
+                Another int
+
+            Returns
+            -------
+            str
+                Replace this description with a longer description
+            """
+
+            pass
+
+    # dedent removes common leading whitespace - accounts for docstring fixture
+    # and method docstring starting with different indents 
+    assert dedent(TestClass.test_method.__doc__) == dedent(modified_docstring['after'])
