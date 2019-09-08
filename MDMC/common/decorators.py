@@ -247,8 +247,11 @@ def _wrap_docstring(docstring, line_length):
     # If last line in docstring was wrapped, append this to the array
     if prev_line is not None:
         wrapped.append('\n' + prev_line)
-    # Accounting for typical case of docstring starting on line after """
+    # Accounting for case of docstring starting on line after """
     if wrapped[0] == '\n':
         del wrapped[0]
+    # Accounting for case of docstring starting on same line as """
+    elif wrapped[0][0] == '\n':
+        wrapped[0] = wrapped[0][1:]
 
     return ''.join(wrapped)
