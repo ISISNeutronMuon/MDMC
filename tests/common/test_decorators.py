@@ -11,7 +11,10 @@ from MDMC.common import decorators
 def docstring():
 
     """
-    Returns an example docstring
+    Returns
+    -------
+    str
+        An example docstring
     """
 
     doc = (r"""
