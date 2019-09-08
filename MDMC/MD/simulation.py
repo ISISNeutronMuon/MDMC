@@ -10,7 +10,8 @@ from itertools import count, ifilterfalse, product
 from enum import Enum
 import numpy as np
 
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
+    mod_func_docstring
 from MDMC.common import units
 from MDMC.common import coordinates
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
@@ -603,12 +604,12 @@ class Universe(object):
 
         return any(position > self.dims) or any(position < [0, 0, 0])
 
-
+    @mod_func_docstring({'DYNAMIC_SOLVENT_LIST':', '.join(get_solvent_names())})
     def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
 
         """
-        Fills the universe with solvent molecules, distributed randomly
-        or according to pre-defined coordinates.
+        Fills the universe with solvent molecules according to pre-defined
+        coordinates.
 
         Parameters
         ----------
@@ -619,19 +620,16 @@ class Universe(object):
             The +/- percentage tolerance of the density to be achieved.
             The default is 1 %. Tolerances of less than 1 % are at risk
             of not converging.
-        solvent : str, StructuralUnit, Configuration, optional
-            A str specifying an inbuilt solvent from the following: 'SPCE'.
+        solvent : str, optional
+            A str specifying an inbuilt solvent from the following:
+            DYNAMIC_SOLVENT_LIST.
             The default is 'SPCE'.
-            A StructuralUnit for the solvent Molecule/Atom to fill the
-            Universe with randomly.
-            A Configuration with 1 or more solvent which will tile the Universe
-            with a cubic tiling.
         **settings
             constraint_algorithm : ConstraintAlgorithm
                 A ConstraintAlgorithm which is applied to the Universe.  If an
-                inbuilt solvent is select (e.g. 'SPCE') and constraint_algorithm
-                is not passed, the ConstraintAlgorithm will default to
-                Shake(1e-4, 100).
+                inbuilt solvent is selected (e.g. 'SPCE') and
+                constraint_algorithm is not passed, the ConstraintAlgorithm will
+                default to Shake(1e-4, 100).
 
         Raises
         ------
