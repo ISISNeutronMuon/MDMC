@@ -374,6 +374,21 @@ class Universe(object):
 
         return self._atom_type_interactions
 
+    @property
+    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
+    def density(self):
+
+        """
+        Get the mass density of the Universe
+
+        Returns
+        -------
+        float
+            The mass density of all of the atoms of the Universe
+        """
+
+        return np.sum([atom.mass for atom in self.atom_list]) / self.volume
+
     def _update_atom_types(self, atom):
 
         """
