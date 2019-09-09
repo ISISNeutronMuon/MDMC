@@ -652,6 +652,18 @@ class Universe(object):
         # Calculate useful properties from the original box
         solvent_mass = solvent_config.mass
         orig_box_dims = solvent_config.box_dims
+        # density is adjusted to account for density of solvent already in box
+        density = (density - self.solvent_density)
+        # If this is already within the specified tolerance then return, as
+        # calling solvate is redundant. Otherwise, raise an error, as solvate is
+        # not designed to be applied multiple times to change the
+        # solvent_density of a Universe.
+        if density * 100 <= abs(tolerance):
+            return
+        elif self.solvent_density != 0.:
+            raise ValueError('The universe has already been solvated. The'
+                             ' density of a previously added solvent cannot be'
+                             ' changed.')
         # Get the prelim scaling of the orig box required to achieve density
         dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
                                * 3)
@@ -723,10 +735,12 @@ class Universe(object):
 
         # Once the correct density is achieved, add molecules to universe
         # and get all bonded interactions
+        # Also determine the total density of the solvent
         bonded_interactions = []
         for molecule in mols:
             self.add_structural_unit(molecule)
             bonded_interactions += molecule.interactions
+
 
         # Get nonbonded interactions from atom types
         # Add interaction if any of its atom types are in atom_types
@@ -746,6 +760,8 @@ class Universe(object):
                                                          Shake(1e-4, 100))
         except ImportError:
             pass
+
+        self._solvent_density += len(mols) * solvent_mass / self.volume
 
 
 def _primitive_cubic(dimensions, number):
