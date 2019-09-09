@@ -673,7 +673,7 @@ class Universe(object):
         # calling solvate is redundant. Otherwise, raise an error, as solvate is
         # not designed to be applied multiple times to change the
         # solvent_density of a Universe.
-        if density * 100 <= abs(tolerance):
+        if abs(density * 100) <= abs(tolerance):
             return
         elif self.solvent_density != 0.:
             raise ValueError('The universe has already been solvated. The'
