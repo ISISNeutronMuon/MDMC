@@ -722,6 +722,11 @@ class Universe:
                 inbuilt solvent is selected (e.g. 'SPCE') and
                 constraint_algorithm is not passed, the ConstraintAlgorithm will
                 default to Shake(1e-4, 100).
+
+        Raises
+        ------
+        ValueError
+            If the universe has already been solvated with a different density.
         """
 
         solvent_config = get_solvent_config(solvent)
