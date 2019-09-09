@@ -948,6 +948,43 @@ def test_solvate_parameter_setting(solvated_universe, solvent, params):
                 break
     assert uni_parameters == []
 
+@pytest.mark.parametrize("density, tolerance", [(0.7, 20.),
+                                                (0.59, 5.),
+                                                (0.602707, 1.)])
+def test_solvate_solvated_universe_same_density(density, tolerance,
+                                                solvated_universe):
+
+    """
+    Tests that if a previously solvated universe is solvated with the same
+    density, there is no change in the solvent_density or the number or atoms
+
+    Parametrizations test densities where the solvent_density is within the
+    solvate tolerance
+    """
+
+    solvent_density = solvated_universe.solvent_density
+    solvated_universe.solvate(density=density, tolerance=tolerance)
+    assert solvent_density == solvated_universe.solvent_density
+
+
+@pytest.mark.parametrize("density, tolerance", [(0.7, 1.),
+                                                (0.5, 5.),
+                                                (6.02, 0.01),
+                                                (6.03, 0.0001)])
+def test_solvate_solvated_universe_different_density(density, tolerance,
+                                                     solvated_universe):
+
+    """
+    Tests that if a previously solvated universe is solvated with a different
+    density, a ValueError is raised
+
+    Tested for densities that are both to high and too low (outside of the
+    solvate tolerance)
+    """
+
+    with pytest.raises(ValueError):
+        solvated_universe.solvate(density=density, tolerance=tolerance)
+
 
 @pytest.mark.parametrize("univ_dims, pos, expected", [(10., [10., 10., 10.],
                                                        False),
