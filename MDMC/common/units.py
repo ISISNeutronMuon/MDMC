@@ -382,9 +382,8 @@ SYSTEM = {
     'CHARGE':Unit('e'),
     'ANGLE':Unit('deg'),
     'TEMPERATURE':Unit('K'),
-    'AMOUNT':Unit('mol'),
-    'ENERGY':Unit('kJ'),
-    'FORCE':Unit('kJ') / (Unit('mol') * Unit('Ang')),
+    'ENERGY':Unit('kJ') / Unit('mol'),
+    'FORCE':Unit('kJ') / (Unit('Ang') * Unit('mol')),
     'PRESSURE':Unit('Pa'),
     'ENERGY_TRANSFER':Unit('meV'),
     'ARBITRARY':Unit('arb')
@@ -414,30 +413,51 @@ def create_units(codata_version):
     codata = CODATA[codata_version]
 
     # Length
-    units['m'] = 1e10
-    units['nm'] = 10.
+    # 1 m = 1e10 Ang
+    units['m'] = units['Ang'] * 1e10
+    # 1 cm = 1e8 Ang
+    units['cm'] = units['Ang'] * 1e8
+    # 1 nm = 1e1 Ang
+    units['nm'] = units['Ang'] * 1e1
 
     # Time
-    units['ns'] = 1e6
-    units['ps'] = 1e3
+    # 1 ns = 1e6 fs
+    units['ns'] = units['fs'] * 1e6
+    # 1 ns = 1e3 fs
+    units['ps'] = units['fs'] * 1e3
 
     # Mass
-    units['kg'] = 1. / codata['_amu']
-    units['g'] = units['kg'] * 1000.
+    # 1 kg = (1000 * N_av) amu = (1/u) amu
+    units['kg'] = units['amu'] / codata['_amu']
+    # 1 g = N_av amu = (1/1000u) amu = (1/1000) kg
+    units['g'] = units['kg'] / 1000.
+    # 1 g mol^-1 = 1 amu by definition
+    units['g / mol'] = units['amu']
 
     # Energy
-    units['J'] = units['kJ'] * 1000.
-    units['kcal'] = units['kJ'] / 4.184
+    # 1 kcal mol^-1 = 4.184 kJ mol^-1
+    units['kcal / mol'] = units['kJ / mol'] * 4.184
+    # 1 kJ = 1 kJ mol^-1 * Nav
+    units['kJ'] = units['kJ / mol'] * codata['_Nav']
+    # 1 J = (1/1000) kJ
+    units['J'] = units['kJ'] / 1000.
+    # 1 kcal = 4.184 kJ
+    units['kcal'] = units['kJ'] * 4.184
+
 
     # Force
-    units['kcal / Ang mol'] = units['kJ / Ang mol'] / 4.184
+    # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
+    units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
 
     # Pressure
-    units['atm'] = units['Pa'] / 101325.
-    units['bar'] = units['Pa'] / 1e5
+    # 1 atm = 101325 Pa
+    units['atm'] = units['Pa'] * 101325.
+    # 1 bar = 1e5 Pa
+    units['bar'] = units['Pa'] * 1e5
 
     # Angle
-    units['rad'] = units['deg'] * np.pi / 180.
+    # 1 rad = (180 / pi) deg
+    units['rad'] = units['deg'] * (180. / np.pi)
 
     return units
 

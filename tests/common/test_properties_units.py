@@ -147,7 +147,7 @@ def test_Parameter_units():
     """
 
     # Values passed to Parameter must have units
-    UNIT = units.ENERGY / units.AMOUNT * units.ANGLE**2
+    UNIT = units.ENERGY / units.ANGLE**2
     CONSTRAINTS = [FLOAT-1, FLOAT+1]
     param1 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test')
     param2 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test',
