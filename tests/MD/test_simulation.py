@@ -737,3 +737,34 @@ def test_water_model_inheritance():
         n_body = 3
 
     assert ValidWaterModel().n_body == 3
+
+
+def test_empty_universe_density(universe):
+
+    """
+    Tests that the density of an empty Universe is 0.
+    """
+
+    assert universe.density == 0.
+
+
+@pytest.mark.parametrize("structural_units, expected",
+                         [([su.Atom('AA', mass=1.0)],
+                           0.001),
+                          ([su.Atom('BB', mass=15.0)],
+                           0.015),
+                          ([su.Molecule(atoms=[su.Atom('CC', mass=2.0),
+                                               su.Atom('DD', mass=21.0)])],
+                           0.023),
+                          ([su.Atom('AA', mass=1.0), su.Atom('DD', mass=21.0)],
+                           0.022)])
+def test_universe_density(structural_units, expected, universe):
+
+    """
+    Tests that the density property of Universe is correct
+    """
+
+    assert universe.density == 0.
+    for structural_unit in structural_units:
+        universe.add_structural_unit(structural_unit)
+    assert universe.density == expected
