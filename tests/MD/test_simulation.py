@@ -13,6 +13,7 @@ import pytest
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Parameter
 import MDMC.MD.simulation as sim
+from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structural_units as su
 
 
