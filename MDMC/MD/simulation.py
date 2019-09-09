@@ -79,6 +79,7 @@ class Universe(object):
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
+        self._solvent_density = 0.
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         self.force_fields = force_field
@@ -375,6 +376,21 @@ class Universe(object):
         """
 
         return self._atom_type_interactions
+
+    @property
+    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
+    def solvent_density(self):
+
+        """
+        Get the mass density of a solvent added using the solvate method
+
+        Returns
+        -------
+        float
+            The mass density of a solvent added using sovlate
+        """
+
+        return self._solvent_density
 
     def _update_atom_types(self, atom):
 
