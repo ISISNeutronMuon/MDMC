@@ -7,15 +7,17 @@ AUTHOR :    Thomas Farmer        START DATE :    02/11/2018, 13:24:21"""
 
 from MDMC.common import units
 from MDMC.common.units import UnitFloat
-from MDMC.MD.force_fields.ff import ForceField
+from MDMC.MD.force_fields.ff import WaterModel
 import MDMC.MD.structural_units as su
 import MDMC.MD.interaction_functions as ifu
 
-class SPCE(ForceField):
+class SPCE(WaterModel):
 
     """
     SPCE force field - LJ, Coulombic, fixed bond lengths and angles
     """
+
+    n_body = 3
 
     @property
     def interaction_dictionary(self):

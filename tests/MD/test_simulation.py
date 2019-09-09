@@ -9,6 +9,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
+from MDMC.MD.force_fields.ff import WaterModel
 import MDMC.MD.simulation as sim
 import MDMC.MD.structural_units as su
 
@@ -711,3 +712,59 @@ def test_universe_fill_orientations(universe):
     univ2.fill(diatomic2, num_density=density)
     # Test number densities.
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
+
+
+def test_water_model_inheritance():
+
+    """
+    Tests that a class which inherits from WaterModel requires n_body to be
+    defined. This test is required because although WaterModel specifies n_body
+    as an abstractproperty, it can be made concrete as a static variable
+    """
+
+    class InvalidWaterModel(WaterModel):
+
+        @property
+        def interaction_dictionary(self):
+
+            return 0
+
+    with pytest.raises(TypeError):
+        invalid = InvalidWaterModel()
+
+    class ValidWaterModel(InvalidWaterModel):
+
+        n_body = 3
+
+    assert ValidWaterModel().n_body == 3
+
+
+def test_empty_universe_density(universe):
+
+    """
+    Tests that the density of an empty Universe is 0.
+    """
+
+    assert universe.density == 0.
+
+
+@pytest.mark.parametrize("structural_units, expected",
+                         [([su.Atom('AA', mass=1.0)],
+                           0.001),
+                          ([su.Atom('BB', mass=15.0)],
+                           0.015),
+                          ([su.Molecule(atoms=[su.Atom('CC', mass=2.0),
+                                               su.Atom('DD', mass=21.0)])],
+                           0.023),
+                          ([su.Atom('AA', mass=1.0), su.Atom('DD', mass=21.0)],
+                           0.022)])
+def test_universe_density(structural_units, expected, universe):
+
+    """
+    Tests that the density property of Universe is correct
+    """
+
+    assert universe.density == 0.
+    for structural_unit in structural_units:
+        universe.add_structural_unit(structural_unit)
+    assert universe.density == expected
