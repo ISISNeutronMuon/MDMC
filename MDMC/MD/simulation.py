@@ -379,6 +379,21 @@ class Universe(object):
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
+    def density(self):
+
+        """
+        Get the mass density of the Universe
+
+        Returns
+        -------
+        float
+            The mass density of all of the atoms of the Universe
+        """
+
+        return np.sum([atom.mass for atom in self.atom_list]) / self.volume
+
+    @property
+    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
     def solvent_density(self):
 
         """
