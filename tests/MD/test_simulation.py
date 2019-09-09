@@ -29,10 +29,10 @@ WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
 TOLERANCE = 1
-SPCE_MOLECULE = molec_from_dict(SPCE['molecules'].values()[0], {'H':1, 'O':2})
-SPCE_DIMS = SPCE['box_dims']
-SPCE_NUM_MOL = len(SPCE['molecules'])
-SPCE_DENSITY = SPCE_MOLECULE.mass * SPCE_NUM_MOL / np.prod(SPCE_DIMS)
+SPCE_MASS = 18.01499
+SPCE_DIMS = SPC216['box_dims']
+SPCE_NUM_MOL = len(SPC216['molecules'])
+SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMS)
 
 
 @pytest.fixture
@@ -798,7 +798,7 @@ def test_solvate_spce_no_solute(uni):
     """
 
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
-    actual_dens = len(uni.molecule_list) * SPCE_MOLECULE.mass / uni.volume
+    actual_dens = len(uni.molecule_list) * SPCE_MASS / uni.volume
     assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
