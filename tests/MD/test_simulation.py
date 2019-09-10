@@ -3,6 +3,7 @@
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:05:13"""
 
 from collections import Counter
+from copy import deepcopy
 from itertools import permutations
 
 import numpy as np
@@ -744,16 +745,15 @@ def test_universe_fill_num_density_num_struc_same_result(universe, num_density,
     """
     Tests that specifying either num_density or the equivalent absolute
     number of StructuralUnits to fill the universe with results in no
-    difference in the actual number density achieved.
+    difference in the actual number densityx achieved.
     """
 
     num_strucs = num_density * np.prod(universe.dims)
-    univ1 = universe
-    univ2 = universe
-    univ1.fill(water_molecule, num_density=num_density)
-    univ2.fill(water_molecule, num_struc_units=num_strucs)
+    universe2 = sim.Universe(universe.dims)
+    universe.fill(water_molecule, num_density=num_density)
+    universe2.fill(water_molecule, num_struc_units=num_strucs)
 
-    assert len(univ1.atom_list) == len(univ2.atom_list)
+    assert len(universe.atom_list) == len(universe2.atom_list)
 
 
 def test_universe_fill_num_density_num_struc_error(universe, water_molecule):
