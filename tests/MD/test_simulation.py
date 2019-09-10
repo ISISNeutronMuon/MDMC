@@ -755,13 +755,19 @@ def test_universe_fill_num_density_num_struc_same_result(universe, num_density,
     assert len(universe.atom_list) == len(universe2.atom_list)
 
 
-def test_universe_fill_num_density_num_struc_error(universe, water_molecule):
+@pytest.mark.parametrize("num_density, num_struc_units", ([None, None],
+                                                          [3.14, 100]))
+def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
+                                                   universe, water_molecule):
 
     """
-    Tests that the appropriate error is raised when passing both num_density
-    and num_struc_units as parameters.
+    Tests that the appropriate error is raised when passing both or neither
+    num_density and num_struc_units as parameters.
     """
 
-    with pytest.raises(ValueError) as exc:
-        universe.fill(water_molecule, num_density=3.14, num_struc_units=100)
-        assert exc.value.message == 'Cannot pass both'
+    with pytest.raises(ValueError):
+        if num_density and num_struc_units:
+            universe.fill(water_molecule, num_density=num_density,
+                          num_struc_units=num_struc_units)
+        else:
+            universe.fill(water_molecule)
