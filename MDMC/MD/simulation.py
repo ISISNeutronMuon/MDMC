@@ -4,7 +4,7 @@
 
 from abc import ABCMeta, abstractproperty
 from collections import defaultdict
-from itertools import product, ifilterfalse, count
+from itertools import product, filterfalse, count
 
 from enum import Enum
 import numpy as np
@@ -410,9 +410,9 @@ class Universe(object):
                 atom_type = self.atom_type_interactions[inter_key]
             except KeyError:
                 # Get lowest missing interger in self.atom_type_interactions
-                atom_type = next(ifilterfalse(set(
+                atom_type = next(filterfalse(set(
                     self.atom_type_interactions.values()).__contains__,
-                                              count(1)))
+                                             count(1)))
                 self._update_atom_type_interactions(inter_key, atom_type)
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
