@@ -3,6 +3,7 @@
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:05:13"""
 
 from collections import Counter
+from copy import deepcopy
 from itertools import permutations
 
 import numpy as np
@@ -684,6 +685,7 @@ def test_universe_multiple_solvers_error(kspace_solver):
                            electrostatic_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
 
+
 def test_universe_fill_orientations(universe):
 
     """
@@ -712,6 +714,68 @@ def test_universe_fill_orientations(universe):
     univ2.fill(diatomic2, num_density=density)
     # Test number densities.
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
+
+
+@pytest.mark.parametrize('param', ['num_density', 'num_struc_units'])
+def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
+
+    """
+    Tests that filling the universe with a StructuralUnit results in
+    no molecules being added outside the bounds of the universe.
+
+    Parametrized to test for both cases where either num_density or
+    num_struc_units is passed as the parameter.
+    """
+
+    if param == 'num_density':
+        universe.fill(water_molecule, num_density=3.14)
+    else:
+        universe.fill(water_molecule, num_struc_units=567)
+
+    # Define a tolerance to allow for rounding errors
+    tolerance = 1e-16
+    for atom in universe.atom_list:
+        assert all(atom.position > [0, 0, 0] - np.array([tolerance] * 3))
+        assert all(atom.position < universe.dims)
+
+
+@pytest.mark.parametrize('num_density', [3.14, 0.6, 1.0])
+def test_universe_fill_num_density_num_struc_same_result(universe, num_density,
+                                                         water_molecule):
+
+    """
+    Tests that specifying either num_density or the equivalent absolute
+    number of StructuralUnits to fill the universe with results in no
+    difference in the actual number densityx achieved.
+    """
+
+    num_strucs = num_density * np.prod(universe.dims)
+    universe2 = sim.Universe(universe.dims)
+    universe.fill(water_molecule, num_density=num_density)
+    universe2.fill(water_molecule, num_struc_units=num_strucs)
+
+    assert len(universe.atom_list) == len(universe2.atom_list)
+
+
+@pytest.mark.parametrize("num_density, num_struc_units", ([None, None],
+                                                          [3.14, 100]))
+def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
+                                                   universe, water_molecule):
+
+    """
+    Tests that the appropriate error is raised when passing both or neither
+    num_density and num_struc_units as parameters.
+    """
+
+    with pytest.raises(ValueError):
+        if num_density and num_struc_units:
+            universe.fill(water_molecule, num_density=num_density,
+                          num_struc_units=num_struc_units)
+        else:
+            universe.fill(water_molecule)
+    with pytest.raises(ValueError) as exc:
+        universe.fill(water_molecule, num_density=3.14, num_struc_units=100)
+        assert exc.value.message == 'Cannot pass both'
 
 
 def test_water_model_inheritance():

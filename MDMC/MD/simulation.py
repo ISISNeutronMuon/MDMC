@@ -492,10 +492,34 @@ class Universe(object):
         **settings
             num_density : float
                 Non-negative float specifying the number density of the
-                structural unit
+                structural unit, in units of structural units Ang ^ -3
+            num_struc_units : int
+                Non-negative int specifying the number of passed structural
+                units that the universe should be filled with, regardless of
+                universe dimensions.
+
+        Raises
+        ------
+        ValueError
+            If both num_density and num_struc_units are passed
+        ValueError
+            If neither num_density or num_struc_units are passed
         """
 
-        n_units_xyz = self.dims / (1. / settings.get('num_density')) ** (1 / 3.)
+        try:
+            num_density = settings['num_density']
+            if settings.get('num_struc_units'):
+                raise ValueError('Cannot pass both num_density and'
+                                 ' num_struc_units to fill the universe with.')
+        except KeyError:
+            try:
+                num_struc_units = settings['num_struc_units']
+            except KeyError:
+                raise ValueError('The fill method takes either num_density or'
+                                 ' num_struc_units as a parameter.')
+            num_density = num_struc_units / np.prod(self.dims)
+
+        n_units_xyz = self.dims * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
         positions = []
