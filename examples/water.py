@@ -46,9 +46,9 @@ md_engine = Simulation(universe,
 
 # Energy Minimization and equilibration
 md_engine.minimize(n_steps=5000)
-print "Minimization Complete"
+print("Minimization Complete")
 md_engine.run(n_steps=25000, equilibration=True)
-print "Equilibration Complete"
+print("Equilibration Complete")
 
 # Setup refinement
 
