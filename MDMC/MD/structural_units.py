@@ -1485,6 +1485,12 @@ class NonBondedInteraction(Interaction):
 
         return not self == other
 
+    def __hash__(self):
+
+        # Simplified version of immutable hash which Python3 produces
+        # (marginally less efficient but shouldn't matter) 
+        return id(self) // 8
+
     @property
     @abstractmethod
     def atom_types(self):
@@ -1564,6 +1570,10 @@ class Dispersion(NonBondedInteraction):
             be applied. This only affects the simulation dynamics if the
             simulation is being performed with constant pressure.
     """
+
+    # Python3 requires subclasses thay overwrite __eq__ to explicity inherit
+    # __hash__
+    __hash__ = NonBondedInteraction.__hash__
 
     def __init__(self, universe, *atom_types, **settings):
 
@@ -1690,6 +1700,10 @@ class Coulombic(NonBondedInteraction):
         resulting in the initialization of a Coulomb interaction function.
         Warning only raised in the first instance of triggering behaviour.
     """
+
+    # Python3 requires subclasses thay overwrite __eq__ to explicity inherit
+    # __hash__
+    __hash__ = NonBondedInteraction.__hash__
 
     def __init__(self, universe=None, **settings):
 
