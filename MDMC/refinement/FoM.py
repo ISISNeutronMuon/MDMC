@@ -265,7 +265,8 @@ class ObservablePair:
                         other_obs.dependent_variables.keys()), dep_e_mess
                 for k in obs.dependent_variables:
                     assert (np.shape(obs.dependent_variables[k]) ==
-                            np.shape(other_obs.dependent_variables[k])), dep_e_mess
+                            np.shape(other_obs.dependent_variables[k])), \
+                            dep_e_mess
 
                 err_e_mess = 'Errors must have the same shape'
                 assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess

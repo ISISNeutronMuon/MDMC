@@ -40,11 +40,11 @@ N_Q_VALUES = 13
 
 @pytest.fixture(scope="module")
 def incoh_file():
-    return Dataset(data.OBS_DATA['SQw_incoh'],'r')
+    return Dataset(data.OBS_DATA['SQw_incoh'], 'r')
 
 @pytest.fixture(scope="module")
 def coh_file():
-    return Dataset(data.OBS_DATA['SQw_coh'],'r')
+    return Dataset(data.OBS_DATA['SQw_coh'], 'r')
 
 @pytest.fixture(scope="module")
 def Q_ref(incoh_file):

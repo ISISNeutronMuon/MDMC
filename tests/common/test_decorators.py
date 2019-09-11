@@ -278,5 +278,5 @@ def test_mod_func_docstring_method(modified_docstring):
             pass
 
     # dedent removes common leading whitespace - accounts for docstring fixture
-    # and method docstring starting with different indents 
+    # and method docstring starting with different indents
     assert dedent(TestClass.test_method.__doc__) == dedent(modified_docstring['after'])
