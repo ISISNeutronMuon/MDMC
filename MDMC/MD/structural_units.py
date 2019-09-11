@@ -1765,8 +1765,9 @@ class Coulombic(NonBondedInteraction):
 
     def __eq__(self, other):
 
-        return (sorted(self.atoms) == sorted(other.atoms)
-                and sorted(self.atom_types) == sorted(other.atom_types)
+        return ((sorted(self.atom_types, key=id)
+                 == sorted(other.atom_types, key=id))
+                and sorted(self.atoms, key=id) == sorted(other.atoms, key=id)
                 and isinstance(other, type(self)))
 
     @property

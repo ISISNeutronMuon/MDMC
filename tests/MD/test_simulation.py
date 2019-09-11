@@ -219,7 +219,8 @@ def test_add_molecule(universe, water_molecule):
 
     universe.add_structural_unit(water_molecule)
     assert water_molecule.position.all() == np.array(WATER_POSITION).all()
-    assert sorted(water_molecule.atom_list) == sorted(universe.atom_list)
+    assert (sorted(water_molecule.atom_list, key=id)
+            == sorted(universe.atom_list, key=id))
 
     water_CoM = ((np.array(H1_POSITION) * H_MASS)
                  + (np.array(H2_POSITION) * H_MASS)

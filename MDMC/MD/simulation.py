@@ -399,7 +399,9 @@ class Universe:
             An Atom object to add to the atom_types dictionary
         """
 
-        inter_key = (atom.element, ) + tuple(sorted(atom.interactions))
+        # Sorting is just to ensure consistent order. As interactions will have
+        # different types, sort by id
+        inter_key = (atom.element, ) + tuple(sorted(atom.interactions, key=id))
         if atom.atom_type:
             atom_type = atom.atom_type
             if atom_type not in self.atom_types:
