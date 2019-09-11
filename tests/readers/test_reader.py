@@ -80,10 +80,10 @@ def test_parse(reader_info):
         assert len(indep_var) in np.shape(
             reader.dependent_variables[dep_datatype])
 
-    assert np.all(reader.errors >= 0)
+    assert np.all(list(reader.errors.values())[0] >= 0)
 
-    all_vars = reader.independent_variables.values() + \
-               reader.dependent_variables.values() + \
-               reader.errors.values()
+    all_vars = (list(reader.independent_variables.values())
+                + list(reader.dependent_variables.values())
+                + list(reader.errors.values()))
     for var in all_vars:
         assert float in inspect.getmro(var.dtype.type)
