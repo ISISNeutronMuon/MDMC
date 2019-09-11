@@ -4,7 +4,7 @@ Atoms are the fundamental structural unit in terms of which all others must be
 defined.  All shared behaviour is included within the StructuralUnit base
 class."""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from itertools import count
 from types import MethodType
@@ -19,7 +19,7 @@ from MDMC.common import units
 from MDMC.MD.interaction_functions import Coulomb
 
 
-class StructuralUnit:
+class StructuralUnit(ABC):
 
     """Abstract base class for all structural units
 
@@ -43,8 +43,6 @@ class StructuralUnit:
     parent : StructuralUnit
         StructuralUnit to which this unit belongs, or self
     """
-
-    __metaclass__ = ABCMeta
 
     # ID exists to facilitate a 1 to 1 association with structural units within
     # MD engines.  It may not be required or may only be required for atoms.
@@ -132,7 +130,8 @@ class StructuralUnit:
             atom_list.extend(structure.atom_list)
         return atom_list
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def universe(self):
 
         """
@@ -187,7 +186,8 @@ class StructuralUnit:
 
         return [pair[0] for pair in self.bonded_interaction_pairs]
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def nonbonded_interactions(self):
 
         """
@@ -201,7 +201,8 @@ class StructuralUnit:
 
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def bonded_interaction_pairs(self):
 
         """
@@ -380,8 +381,6 @@ class CompositeStructuralUnit(StructuralUnit):
     """
     Base class for structural units comprised of more than one atom
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, position, velocity, name):
 
@@ -1218,7 +1217,7 @@ def filter_atoms_element(atoms, element):
     return filter(lambda a: a.element == element, atoms)
 
 
-class Interaction:
+class Interaction(ABC):
 
     """
     Base class for interactions, both bonded, non-bonded and constraints
@@ -1241,8 +1240,6 @@ class Interaction:
         function : InteractionFunction
             A class of interaction function (e.g. HarmonicPotential)
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, **settings):
 
@@ -1322,7 +1319,8 @@ class Interaction:
 
         return self.__repr__
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def atoms(self):
 
         """
@@ -1382,7 +1380,8 @@ class Interaction:
         except AttributeError:
             return None
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def universe(self):
 
         """
@@ -1396,7 +1395,8 @@ class Interaction:
 
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def element_list(self):
 
         """
@@ -1468,8 +1468,6 @@ class NonBondedInteraction(Interaction):
             The distance in Ang at which the interaction potential is truncated
     """
 
-    __metaclass__ = ABCMeta
-
     def __init__(self, universe, *atom_types, **settings):
 
         self.universe = universe
@@ -1487,7 +1485,8 @@ class NonBondedInteraction(Interaction):
 
         return not self == other
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def atom_types(self):
 
         """
@@ -1889,8 +1888,6 @@ class BondedInteraction(Interaction):
 
         BondAngle(H1, H2, O)
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, *atom_tuples, **settings):
 

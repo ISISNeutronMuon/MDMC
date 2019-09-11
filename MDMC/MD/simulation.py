@@ -2,7 +2,6 @@
 
  Classes for the simulation box, minimizer and integrator."""
 
-from abc import ABCMeta, abstractproperty
 from collections import defaultdict
 from itertools import product, filterfalse, count
 

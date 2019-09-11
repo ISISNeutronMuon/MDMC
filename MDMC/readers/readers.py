@@ -1,16 +1,14 @@
 """Module for reader abstract class"""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
-class Reader:
+class Reader(ABC):
 
     """
     Abstract class that defines methods common to all readers
 
     Readers are created using ReaderFactory
     """
-
-    __metaclass__ = ABCMeta
 
     # TODO: Consider if splitting these methods may cause issue - should I be using a with ... as statement?
     def open(self, file_name):
@@ -61,7 +59,8 @@ class Reader:
                 "dependent":self.dependent_variables,
                 "errors":self.errors}
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def independent_variables(self):
 
         """
@@ -75,7 +74,8 @@ class Reader:
 
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def dependent_variables(self):
 
         """
@@ -89,7 +89,8 @@ class Reader:
 
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def errors(self):
 
         """

@@ -8,10 +8,10 @@ is self contained, although adding a new force field may require changes to the
 MD engine facades, so that a correspondence is established between the MDMC
 force field and the MD engine equivalent."""
 
-from abc import ABCMeta, abstractproperty
+from abc import ABC, abstractmethod
 
 
-class ForceField:
+class ForceField(ABC):
 
     """
     Abstract class defining a force field
@@ -21,9 +21,8 @@ class ForceField:
     must also define the parameters for each of these functions.
     """
 
-    __metaclass__ = ABCMeta
-
-    @abstractproperty
+    @property
+    @abstractmethod
     def interaction_dictionary(self):
 
         """
@@ -76,7 +75,8 @@ class WaterModel(ForceField):
     Abstract class for force fields that describe a water model
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def n_body(self):
 
         """

@@ -2,13 +2,13 @@
 parameters"""
 
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 from mpi4py import MPI
 import numpy as np
 
 
-class Minimizer:
+class Minimizer(ABC):
 
     """
     An abstract class with methods common to all minimizers
@@ -42,8 +42,6 @@ class Minimizer:
     state_changed : bool
         If the MMC algorithm resulted in the step being Accepted or Rejected
     """
-
-    __metaclass__ = ABCMeta
 
     DISTRIBUTION = {'uniform':np.random.uniform}
 
