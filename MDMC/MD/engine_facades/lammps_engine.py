@@ -685,7 +685,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             in `atoms` possesses
         """
 
-        return max([len(filter(lambda i: i.name == name, atom.interactions))
+        return max([len(list(filter(lambda i: i.name == name,
+                                    atom.interactions)))
                     for atom in atoms])
 
     def _add_topology(self, universe, **settings):

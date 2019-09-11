@@ -1193,7 +1193,7 @@ def filter_atoms(atoms, predicate):
         Atoms which meet the condition of the predicate
     """
 
-    return filter(predicate, atoms)
+    return list(filter(predicate, atoms))
 
 
 def filter_atoms_element(atoms, element):
@@ -1214,7 +1214,7 @@ def filter_atoms_element(atoms, element):
         Atoms of a specific element
     """
 
-    return filter(lambda a: a.element == element, atoms)
+    return list(filter(lambda a: a.element == element, atoms))
 
 
 class Interaction(ABC):

@@ -288,7 +288,7 @@ class Configuration(AtomCollection):
             A list of StructuralUnits which are True for the given predicate
         """
 
-        return filter(predicate, self.structure_list)
+        return list(filter(predicate, self.structure_list))
 
     def filter_atoms(self, predicate):
 
@@ -306,7 +306,7 @@ class Configuration(AtomCollection):
             A list of Atoms which are True for the given predicate
         """
 
-        return filter(predicate, self.atom_list)
+        return list(filter(predicate, self.atom_list))
 
     def filter_by_element(self, element):
 
