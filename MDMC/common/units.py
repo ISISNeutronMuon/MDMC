@@ -130,7 +130,7 @@ class Unit(str):
             raise TypeError('A Unit can only be multipled by another Unit')
         return self.__class__(self._calculate_string(components), components)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
 
         """
         Divides the unit by another unit
