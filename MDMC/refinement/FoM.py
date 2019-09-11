@@ -353,8 +353,8 @@ class ObservablePair:
             dependent variables.
         """
 
-        diff = (np.array(self.exp_obs.dependent_variables.values())
-                - np.array(self.MD_obs.dependent_variables.values()))
+        diff = (np.array(*self.exp_obs.dependent_variables.values())
+                - np.array(*self.MD_obs.dependent_variables.values()))
 
         return diff
 
@@ -371,7 +371,7 @@ class ObservablePair:
             quadrature.
         """
 
-        errors = (np.array(self.exp_obs.errors.values()) ** 2
-                  + np.array(self.MD_obs.errors.values()) ** 2) ** 0.5
+        errors = (np.array(*self.exp_obs.errors.values()) ** 2
+                  + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
 
         return errors
