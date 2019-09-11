@@ -1092,7 +1092,7 @@ class Molecule(CompositeStructuralUnit):
             self._CoM_frame_positions[atom] = atom.position - CoM
 
 
-class BoundingBox(object):
+class BoundingBox:
 
     """
     A box with the minimum and maximum extents of the positions of a collection
@@ -2110,7 +2110,7 @@ class BondedInteraction(Interaction):
         universe.add_bonded_interaction_pairs((self, tpl))
 
 
-class Constrainable(object):
+class Constrainable:
 
     """
     A mixin class enabling classes inheriting from BondedInteraction to be

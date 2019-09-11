@@ -99,7 +99,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                                          / obs_pair.calculate_errors()) ** 2)
 
 
-class ObservablePair(object):
+class ObservablePair:
 
     """
     Contains a pair of observables for calculating the FoM

@@ -92,7 +92,7 @@ def unit_decorator_getter(unit):
     -------
     Add a unit_decorator_getter to the volume property::
 
-        >>> Class Universe(object):
+        >>> Class Universe:
         ...
         ...     @property
         ...     @unit_decorator_getter(unit=Unit('Ang') ^ 3)

@@ -19,7 +19,7 @@ Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
                        'rhombic_dodecahedron', 'truncated_octahedron'])
 
 
-class Universe(object):
+class Universe:
 
     """
     Class where configuration and topology are defined
@@ -629,7 +629,7 @@ def _liquid_structure():
     raise NotImplementedError
 
 
-class KSpaceSolver(object):
+class KSpaceSolver:
 
     """
     Class describing the k-space solver that is applied to electrostatic and/or
@@ -722,7 +722,7 @@ class PPPM(KSpaceSolver):
         return not self.__eq__(other)
 
 
-class ConstraintAlgorithm(object):
+class ConstraintAlgorithm:
 
     """
     Class describing the algorithm and parameters which are applied to constrain
@@ -826,7 +826,7 @@ class Rattle(ConstraintAlgorithm):
         super(Rattle, self).__init__(accuracy, max_iterations)
 
 
-class EnergyMinimizer(object):
+class EnergyMinimizer:
 
     """
     The MD energy minimizer
@@ -852,7 +852,7 @@ class EnergyMinimizer(object):
 
         raise NotImplementedError
 
-class Simulation(object):
+class Simulation:
 
     """
     Molecular dynamics engine for any ensemble

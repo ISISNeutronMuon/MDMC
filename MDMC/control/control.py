@@ -9,7 +9,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 
 
-class MDMCControl(object):
+class MDMCControl:
 
     """
     Controls the MDMC refinement

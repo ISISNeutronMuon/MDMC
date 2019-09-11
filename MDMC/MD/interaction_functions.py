@@ -24,7 +24,7 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
 
 
-class Parameter(object):
+class Parameter:
 
     """
     A force field parameter which can be fixed or constrained within limits
@@ -288,7 +288,7 @@ class Parameter(object):
                                        rpr=rpr)
 
 
-class InteractionFunction(object):
+class InteractionFunction:
 
     """
     Base class for interaction functions, which can be user supplied

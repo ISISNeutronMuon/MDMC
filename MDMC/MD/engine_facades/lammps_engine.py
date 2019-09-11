@@ -35,7 +35,7 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 
 
-class PyLammpsAttribute(object):
+class PyLammpsAttribute:
 
     """
     A class which has a PyLammps object as an attribute
