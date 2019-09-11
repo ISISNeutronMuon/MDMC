@@ -304,10 +304,12 @@ class InteractionFunction:
 
     def __init__(self, val_dict):
 
+        # locals which are excluded from Parameter creation
+        excluded = ['self', 'settings', '__class__']
         try:
             self.params = [Parameter(value, name) for name, value
                            in val_dict.items()
-                           if name not in ['self', 'settings']]
+                           if name not in excluded]
         except AttributeError:
             # If value is a (float, str) tuple, create a UnitFloat object from
             # this. Parameters should not be arrays, so UnitFloat can be used.
@@ -315,7 +317,7 @@ class InteractionFunction:
                                                      units.Unit(value[1])),
                                      name)
                            for name, value in val_dict.items()
-                           if name not in ['self', 'settings']]
+                           if name not in excluded]
 
     @property
     def params(self):
@@ -696,8 +698,8 @@ def filter_parameters_structure(parameters, structure_name):
                 return
             add_name(structure.parent)
 
-        for int in parameter.interactions:
-            for atom in chain.from_iterable(int.atoms):
+        for inter in parameter.interactions:
+            for atom in chain.from_iterable(inter.atoms):
                 add_name(atom)
         return structure_name in structure_names
 
