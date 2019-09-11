@@ -600,8 +600,8 @@ class AbstractSQw(Observable):
         window = function(self.t[:len(self.E)] / 1000., params['sigma'],
                           norm=False)
 
-        # Tile the window so that it is applied for all Q values
-        return np.tile(window, [N_Q, 1]) * FQt
+        # Broadcast the window so that it is applied for all Q values
+        return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt
 
 
 class SQw(AbstractSQw):
