@@ -95,7 +95,7 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     for SQw in [SQw_full, SQw_1, SQw_2]:
         SQw.independent_variables = independent_variables
 
-    n = len(trajectory.times) / 2
+    n = len(trajectory.times) // 2
     SQw_full.calculate_from_MD(trajectory, t_resolution=T_RES, dims=DIMS)
     SQw_1.calculate_from_MD(trajectory[:n], t_resolution=T_RES, dims=DIMS)
     SQw_2.calculate_from_MD(trajectory[n:], t_resolution=T_RES, dims=DIMS)
