@@ -29,8 +29,8 @@ class XML_SQw(Reader):
         self._tree = ET.parse(self.file)
         self._root = self._tree.getroot()
         self._root_dict = self.dict_from_element(self._root)
-        n_Q = float(self._root_dict['n-q-points'])
-        n_w = float(self._root_dict['n-omega-points'])
+        n_Q = int(self._root_dict['n-q-points'])
+        n_w = int(self._root_dict['n-omega-points'])
 
         # Local variable Q is used for setting self.Q after all children of
         # self._root have been parsed. This is required because a set cannot be
