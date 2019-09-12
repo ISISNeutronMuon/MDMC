@@ -44,6 +44,14 @@ def SQw_from_exp():
     return SQw
 
 @pytest.fixture
+def SQw_from_exp_diff():
+
+    # SQw objects from files cannot be deepcopied so add a new fixture
+    SQw = of.ObservableFactory.create_observable('SQw')
+    SQw.read_from_file(reader='LAMPSQw', file_name=data.READER_DATA['LAMPSQw'])
+    return SQw
+
+@pytest.fixture
 def SQw_from_MD(SQw_from_exp):
 
     SQw = of.ObservableFactory.create_observable('SQw')
@@ -112,8 +120,8 @@ def pairs():
     return obs_pairs
 
 
-def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_MD,
-                                            observable_pair):
+def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_exp_diff,
+                                            SQw_from_MD, observable_pair):
 
     """
     Tests that ObservablePair observables have the same independent variables
@@ -127,10 +135,9 @@ def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_MD,
     pair.exp_obs = SQw_from_exp
 
     # Test for exceptions with different independent variables
-    SQw_from_exp_diff = copy.deepcopy(SQw_from_exp)
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.independent_variables:
-        SQw_from_exp_diff.independent_variables[k] *= 2.
+        SQw_from_exp_diff._independent_variables[k] *= 2.
         SQw_from_MD_diff.independent_variables[k] *= 3.
 
     init_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff)
@@ -138,8 +145,8 @@ def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_MD,
                         observable_pair)
 
 
-def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_MD,
-                                      observable_pair):
+def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_exp_diff,
+                                      SQw_from_MD, observable_pair):
 
     """
     Tests that ObservablePair observables have dependent variables with the same
@@ -154,7 +161,6 @@ def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_MD,
     pair.exp_obs = SQw_from_exp
 
     # Tests foir exception with different shape dependent variables
-    SQw_from_exp_diff = copy.deepcopy(SQw_from_exp)
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.dependent_variables:
         SQw_from_exp_diff._dependent_variables[k] = np.transpose(
@@ -167,7 +173,8 @@ def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_MD,
                         observable_pair)
 
 
-def test_OP_shape_errors(SQw_from_exp, SQw_from_MD, observable_pair):
+def test_OP_shape_errors(SQw_from_exp, SQw_from_exp_diff, SQw_from_MD,
+                         observable_pair):
 
     """
     Tests that ObservablePair observables have errors with the same shape
@@ -180,7 +187,6 @@ def test_OP_shape_errors(SQw_from_exp, SQw_from_MD, observable_pair):
     pair.exp_obs = SQw_from_exp
 
     # Tests foir exception with different shape dependent variables
-    SQw_from_exp_diff = copy.deepcopy(SQw_from_exp)
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.errors:
         SQw_from_exp_diff._errors[k] = np.transpose(SQw_from_exp_diff.errors[k])

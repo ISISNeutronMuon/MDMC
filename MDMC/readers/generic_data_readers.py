@@ -13,7 +13,7 @@ from MDMC.readers.readers import Reader
 from MDMC.utilities.introspection import get_calling_class
 from MDMC.trajectory_analysis.observables import RDF, SQW
 
-class GenericReader(object):
+class GenericReader:
 
     def __new__(cls, *args, **kwargs):
         if cls is GenericReader:

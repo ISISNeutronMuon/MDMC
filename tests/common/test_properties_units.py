@@ -1,17 +1,15 @@
 """Tests units assigned to properties
 
 Tests properties belonging to the following classes: StructuralUnit, Atom,
-Molecule, BoundingBox, MMTKEngine, Parameter, LAMPSQW, netCDF, xml_SQw, SQw
+Molecule, BoundingBox, Parameter, LAMPSQW, netCDF, xml_SQw, SQw
 
 AUTHOR :    Thomas Farmer        START DATE :    17/12/2018, 13:12:24"""
 
 import numpy as np
 import pytest
 
-from tests.MD.test_simulation_mmtk import water_MMTK_NVE
 
 from MDMC.common import units
-from MDMC.MD.engine_facades.mmtk import MMTKEngine
 from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond, \
                                      Coulombic
@@ -105,36 +103,6 @@ def test_BoundingBox_units(molecule):
         check_property(box.max, LIST, units.LENGTH, units.unit_array)
     except AssertionError:
         raise AssertionError(ERROR_MESSAGE.format('BoundingBox'))
-
-
-def test_MMTKEngine_units():
-
-    """
-    Test the units of:
-
-    temperature
-    temperature_variation
-    time_step
-    pressure
-    """
-
-    mmtk_engine = MMTKEngine()
-    mmtk_engine.temperature = FLOAT
-    mmtk_engine.temperature_variation = FLOAT / 5.
-    mmtk_engine.time_step = FLOAT
-    mmtk_engine.pressure = FLOAT
-
-    try:
-        check_property(mmtk_engine.temperature, FLOAT, units.TEMPERATURE,
-                       units.UnitFloat)
-        check_property(mmtk_engine.temperature_variation, FLOAT  /5.,
-                       units.TEMPERATURE, units.UnitFloat)
-        check_property(mmtk_engine.time_step, FLOAT, units.TIME,
-                       units.UnitFloat)
-        check_property(mmtk_engine.pressure, FLOAT, units.PRESSURE,
-                       units.UnitFloat)
-    except AssertionError:
-        raise AssertionError(ERROR_MESSAGE.format('MMTKEngine'))
 
 
 def test_Parameter_units():

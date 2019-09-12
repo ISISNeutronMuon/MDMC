@@ -2,13 +2,13 @@
 parameters"""
 
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 from mpi4py import MPI
 import numpy as np
 
 
-class Minimizer:
+class Minimizer(ABC):
 
     """
     An abstract class with methods common to all minimizers
@@ -42,8 +42,6 @@ class Minimizer:
     state_changed : bool
         If the MMC algorithm resulted in the step being Accepted or Rejected
     """
-
-    __metaclass__ = ABCMeta
 
     DISTRIBUTION = {'uniform':np.random.uniform}
 
@@ -171,15 +169,15 @@ class MMC(Minimizer):
 
         self.FoM = FoM
         values = np.array([p.value for p in self.params])
-        print '\n' + 'New FoM'
-        print self.FoM
-        print 'Old FoM'
-        print self.FoM_old
-        print values
+        print('\n' + 'New FoM')
+        print(self.FoM)
+        print('Old FoM')
+        print(self.FoM_old)
+        print(values)
         history = [self.FoM, values]
 
         if self.change_state():
-            print 'Accepted'
+            print('Accepted')
             history.append('Accepted')
             self.FoM_old = self.FoM
             self.params_old_values = np.array([param.value
@@ -187,7 +185,7 @@ class MMC(Minimizer):
             self.state_changed = True
 
         else:
-            print 'Rejected'
+            print('Rejected')
             history.append('Rejected')
             self.FoM = self.FoM_old
             self.reset_params()

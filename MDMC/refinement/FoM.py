@@ -99,7 +99,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                                          / obs_pair.calculate_errors()) ** 2)
 
 
-class ObservablePair(object):
+class ObservablePair:
 
     """
     Contains a pair of observables for calculating the FoM
@@ -265,7 +265,8 @@ class ObservablePair(object):
                         other_obs.dependent_variables.keys()), dep_e_mess
                 for k in obs.dependent_variables:
                     assert (np.shape(obs.dependent_variables[k]) ==
-                            np.shape(other_obs.dependent_variables[k])), dep_e_mess
+                            np.shape(other_obs.dependent_variables[k])), \
+                            dep_e_mess
 
                 err_e_mess = 'Errors must have the same shape'
                 assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess
@@ -353,8 +354,8 @@ class ObservablePair(object):
             dependent variables.
         """
 
-        diff = (np.array(self.exp_obs.dependent_variables.values())
-                - np.array(self.MD_obs.dependent_variables.values()))
+        diff = (np.array(*self.exp_obs.dependent_variables.values())
+                - np.array(*self.MD_obs.dependent_variables.values()))
 
         return diff
 
@@ -371,7 +372,7 @@ class ObservablePair(object):
             quadrature.
         """
 
-        errors = (np.array(self.exp_obs.errors.values()) ** 2
-                  + np.array(self.MD_obs.errors.values()) ** 2) ** 0.5
+        errors = (np.array(*self.exp_obs.errors.values()) ** 2
+                  + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
 
         return errors

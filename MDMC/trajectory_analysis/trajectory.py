@@ -6,7 +6,7 @@ import numpy as np
 
 # TODO: SORT OUT EFFECTS OF PBC
 
-class AtomCollection(object):
+class AtomCollection:
 
     """
     Base class for shared attributes for Configurations and Trajectories
@@ -288,7 +288,7 @@ class Configuration(AtomCollection):
             A list of StructuralUnits which are True for the given predicate
         """
 
-        return filter(predicate, self.structure_list)
+        return list(filter(predicate, self.structure_list))
 
     def filter_atoms(self, predicate):
 
@@ -306,7 +306,7 @@ class Configuration(AtomCollection):
             A list of Atoms which are True for the given predicate
         """
 
-        return filter(predicate, self.atom_list)
+        return list(filter(predicate, self.atom_list))
 
     def filter_by_element(self, element):
 
@@ -616,7 +616,7 @@ class Trajectory(AtomCollection):
         return len(self.times)
 
 
-class DistanceData(object):
+class DistanceData:
 
     """
     A container for calculating and storing separation distances determined from
@@ -657,7 +657,7 @@ class DistanceData(object):
         return np.linalg.norm(vec1-vec2)
 
 
-class Histogram(object):
+class Histogram:
 
     """
     A Histogram is a rebinned Trajectory

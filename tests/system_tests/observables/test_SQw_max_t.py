@@ -35,9 +35,9 @@ def trajectory():
     Trajectory
     """
 
-    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'r').read()
+    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'rb').read()
     pickled_trajectory = zlib.decompress(compressed_trajectory)
-    trajectory = pickle.loads(pickled_trajectory)
+    trajectory = pickle.loads(pickled_trajectory, encoding='latin-1')
     return trajectory
 
 
@@ -95,7 +95,7 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     for SQw in [SQw_full, SQw_1, SQw_2]:
         SQw.independent_variables = independent_variables
 
-    n = len(trajectory.times) / 2
+    n = len(trajectory.times) // 2
     SQw_full.calculate_from_MD(trajectory, t_resolution=T_RES, dims=DIMS)
     SQw_1.calculate_from_MD(trajectory[:n], t_resolution=T_RES, dims=DIMS)
     SQw_2.calculate_from_MD(trajectory[n:], t_resolution=T_RES, dims=DIMS)

@@ -1,16 +1,15 @@
 """Module containing an abstract base class for MD engine facades"""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
-class MDEngine:
+class MDEngine(ABC):
 
     """
     Abstract base class for MD engine facades
     """
 
-    __metaclass__ = ABCMeta
-
-    @abstractproperty
+    @property
+    @abstractmethod
     def saved_config(self):
 
         """

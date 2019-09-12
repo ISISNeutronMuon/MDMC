@@ -24,7 +24,7 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
 
 
-class Parameter(object):
+class Parameter:
 
     """
     A force field parameter which can be fixed or constrained within limits
@@ -288,7 +288,7 @@ class Parameter(object):
                                        rpr=rpr)
 
 
-class InteractionFunction(object):
+class InteractionFunction:
 
     """
     Base class for interaction functions, which can be user supplied
@@ -304,10 +304,12 @@ class InteractionFunction(object):
 
     def __init__(self, val_dict):
 
+        # locals which are excluded from Parameter creation
+        excluded = ['self', 'settings', '__class__']
         try:
             self.params = [Parameter(value, name) for name, value
                            in val_dict.items()
-                           if name not in ['self', 'settings']]
+                           if name not in excluded]
         except AttributeError:
             # If value is a (float, str) tuple, create a UnitFloat object from
             # this. Parameters should not be arrays, so UnitFloat can be used.
@@ -315,7 +317,7 @@ class InteractionFunction(object):
                                                      units.Unit(value[1])),
                                      name)
                            for name, value in val_dict.items()
-                           if name not in ['self', 'settings']]
+                           if name not in excluded]
 
     @property
     def params(self):
@@ -521,7 +523,7 @@ def filter_parameters(parameters, predicate):
         A list of Parameter objects which meet the condition of the predicate
     """
 
-    return filter(predicate, parameters)
+    return list(filter(predicate, parameters))
 
 
 def filter_parameters_name(parameters, name):
@@ -542,7 +544,7 @@ def filter_parameters_name(parameters, name):
         A list of Parameter objects with name
     """
 
-    return filter(lambda p: p.name == name, parameters)
+    return list(filter(lambda p: p.name == name, parameters))
 
 
 def filter_parameters_value(parameters, comparison, value):
@@ -575,7 +577,7 @@ def filter_parameters_value(parameters, comparison, value):
            '==':operator.eq,
            '!=':operator.ne}
 
-    return filter(lambda p: ops[comparison](p.value, value), parameters)
+    return list(filter(lambda p: ops[comparison](p.value, value), parameters))
 
 
 def filter_parameters_interaction(parameters, interaction_name):
@@ -598,7 +600,8 @@ def filter_parameters_interaction(parameters, interaction_name):
         name
     """
 
-    return filter(lambda p: p.interactions_name == interaction_name, parameters)
+    return list(filter(lambda p: p.interactions_name == interaction_name,
+                       parameters))
 
 
 def filter_parameters_function(parameters, function_name):
@@ -621,7 +624,7 @@ def filter_parameters_function(parameters, function_name):
         name
     """
 
-    return filter(lambda p: p.functions_name == function_name, parameters)
+    return list(filter(lambda p: p.functions_name == function_name, parameters))
 
 
 def filter_parameters_atom_attribute(parameters, attribute, value):
@@ -648,10 +651,11 @@ def filter_parameters_atom_attribute(parameters, attribute, value):
         has the specified value of the specified attribute
     """
 
-    return filter(lambda p: value in [getattr(atom, attribute)
-                                      for int in p.interactions
-                                      for atom in chain.from_iterable(int.atoms)
-                                     ], parameters)
+    return list(filter(lambda p: value in [getattr(atom, attribute)
+                                           for int in p.interactions
+                                           for atom
+                                           in chain.from_iterable(int.atoms)
+                                          ], parameters))
 
 
 def filter_parameters_structure(parameters, structure_name):
@@ -694,9 +698,9 @@ def filter_parameters_structure(parameters, structure_name):
                 return
             add_name(structure.parent)
 
-        for int in parameter.interactions:
-            for atom in chain.from_iterable(int.atoms):
+        for inter in parameter.interactions:
+            for atom in chain.from_iterable(inter.atoms):
                 add_name(atom)
         return structure_name in structure_names
 
-    return filter(check_structure_name, parameters)
+    return list(filter(check_structure_name, parameters))

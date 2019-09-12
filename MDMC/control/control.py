@@ -9,7 +9,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 
 
-class MDMCControl(object):
+class MDMCControl:
 
     """
     Controls the MDMC refinement
@@ -119,7 +119,7 @@ class MDMCControl(object):
         while count < n_steps and not self.minimizer.has_converged():
 
             FoM = self.generate_FoM()
-            print self.MD_engine.engine.universe.energy()
+            print(self.MD_engine.engine.universe.energy())
             self.minimizer.step(FoM)
             self.MD_engine.engine.update_parameters()
             count += 1
@@ -140,7 +140,7 @@ class MDMCControl(object):
         except TypeError:
             pass
 
-        print np.array([p.value for p in self.fit_params])
+        print(np.array([p.value for p in self.fit_params]))
 
     def generate_FoM(self):
 

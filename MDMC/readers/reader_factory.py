@@ -5,7 +5,7 @@ from inspect import isclass, isabstract, getmembers
 
 from MDMC.readers.readers import Reader
 
-class ReaderFactory(object):
+class ReaderFactory:
 
     """
     Provides a factory for creating readers.  Any module within the readers

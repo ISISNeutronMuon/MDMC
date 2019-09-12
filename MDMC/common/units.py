@@ -130,7 +130,7 @@ class Unit(str):
             raise TypeError('A Unit can only be multipled by another Unit')
         return self.__class__(self._calculate_string(components), components)
 
-    def __div__(self, other):
+    def __truediv__(self, other):
 
         """
         Divides the unit by another unit
@@ -347,7 +347,7 @@ class Unit(str):
                 string = ' '.join(string.split('^'))
             splt_space = string.split(' ')
             # Strip out spaces
-            strip = filter(lambda x: x != '', splt_space)
+            strip = list(filter(lambda x: x != '', splt_space))
             parsed = [Unit(strip[0])]
             # For all elements apart from the first, determine it element is a
             # digit. If so, append n-1 copies of the previous unit, where n is

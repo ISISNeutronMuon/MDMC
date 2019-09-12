@@ -6,7 +6,7 @@ from inspect import isclass, isabstract, getmembers
 from MDMC.trajectory_analysis.observables.obs import \
     Observable
 
-class ObservableFactory(object):
+class ObservableFactory:
 
     """
     Provides a factory for creating Observables.  Any module within the

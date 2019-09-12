@@ -35,7 +35,7 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 
 
-class PyLammpsAttribute(object):
+class PyLammpsAttribute:
 
     """
     A class which has a PyLammps object as an attribute
@@ -685,7 +685,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             in `atoms` possesses
         """
 
-        return max([len(filter(lambda i: i.name == name, atom.interactions))
+        return max([len(list(filter(lambda i: i.name == name,
+                                    atom.interactions)))
                     for atom in atoms])
 
     def _add_topology(self, universe, **settings):
@@ -2569,7 +2570,7 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
     # Use count to create range so that stop can be undefined
     frame_indexes = count(start, step)
     # next_frame_n next attribute is assigned dynamically
-    next_frame_n = frame_indexes.next() #pylint: disable=no-member
+    next_frame_n = next(frame_indexes) #pylint: disable=no-member
     with open(trajectory_file.name, 'r') as file_handler:
         line = file_handler.readline()
         while line:
@@ -2655,7 +2656,7 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
 
                     # next_frame_n next attribute is assigned dynamically
                     #pylint: disable=no-member
-                    next_frame_n = frame_indexes.next()
+                    next_frame_n = next(frame_indexes)
                 frame_n += 1
                 if stop is not None and frame_n >= stop:
                     break

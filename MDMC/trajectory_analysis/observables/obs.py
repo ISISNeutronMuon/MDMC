@@ -1,11 +1,11 @@
 """Module defining a class for storing, calculating and reading in observables
 from molecular dynamics trajectories."""
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 from MDMC.readers.reader_factory import ReaderFactory
 
-class Observable:
+class Observable(ABC):
 
     """
     Abstract class that defines methods common to all observable
@@ -20,8 +20,6 @@ class Observable:
     reader : Reader
         The file reader for reading experimental data
     """
-
-    __metaclass__ = ABCMeta
 
     @property
     def name(self):
@@ -61,7 +59,8 @@ class Observable:
 
         self._origin = origin
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def data(self):
 
         """
@@ -75,7 +74,8 @@ class Observable:
 
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def independent_variables(self):
 
         """
@@ -89,7 +89,8 @@ class Observable:
 
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def dependent_variables(self):
 
         """
@@ -103,7 +104,8 @@ class Observable:
 
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def errors(self):
 
         """

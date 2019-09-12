@@ -2,9 +2,8 @@
 
  Classes for the simulation box, minimizer and integrator."""
 
-from abc import ABCMeta, abstractproperty
 from collections import defaultdict
-from itertools import product, ifilterfalse, count
+from itertools import product, filterfalse, count
 
 from enum import Enum
 import numpy as np
@@ -20,7 +19,7 @@ Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
                        'rhombic_dodecahedron', 'truncated_octahedron'])
 
 
-class Universe(object):
+class Universe:
 
     """
     Class where configuration and topology are defined
@@ -400,7 +399,9 @@ class Universe(object):
             An Atom object to add to the atom_types dictionary
         """
 
-        inter_key = (atom.element, ) + tuple(sorted(atom.interactions))
+        # Sorting is just to ensure consistent order. As interactions will have
+        # different types, sort by id
+        inter_key = (atom.element, ) + tuple(sorted(atom.interactions, key=id))
         if atom.atom_type:
             atom_type = atom.atom_type
             if atom_type not in self.atom_types:
@@ -410,9 +411,9 @@ class Universe(object):
                 atom_type = self.atom_type_interactions[inter_key]
             except KeyError:
                 # Get lowest missing interger in self.atom_type_interactions
-                atom_type = next(ifilterfalse(set(
+                atom_type = next(filterfalse(set(
                     self.atom_type_interactions.values()).__contains__,
-                                              count(1)))
+                                             count(1)))
                 self._update_atom_type_interactions(inter_key, atom_type)
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
@@ -630,7 +631,7 @@ def _liquid_structure():
     raise NotImplementedError
 
 
-class KSpaceSolver(object):
+class KSpaceSolver:
 
     """
     Class describing the k-space solver that is applied to electrostatic and/or
@@ -723,7 +724,7 @@ class PPPM(KSpaceSolver):
         return not self.__eq__(other)
 
 
-class ConstraintAlgorithm(object):
+class ConstraintAlgorithm:
 
     """
     Class describing the algorithm and parameters which are applied to constrain
@@ -827,7 +828,7 @@ class Rattle(ConstraintAlgorithm):
         super(Rattle, self).__init__(accuracy, max_iterations)
 
 
-class EnergyMinimizer(object):
+class EnergyMinimizer:
 
     """
     The MD energy minimizer
@@ -853,7 +854,7 @@ class EnergyMinimizer(object):
 
         raise NotImplementedError
 
-class Simulation(object):
+class Simulation:
 
     """
     Molecular dynamics engine for any ensemble

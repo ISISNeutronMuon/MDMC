@@ -47,7 +47,7 @@ def atoms():
 
     symbols = ['C', 'H', 'N', 'O']
     masses = [12.011, 1.008, 14.007, 16.000]
-    elements = symbols * (N_ATOMS / 4)
+    elements = symbols * (N_ATOMS // 4)
     elements[len(elements):N_ATOMS] = symbols[:N_ATOMS-len(elements)]
     # Sorted so that atoms of same type are grouped
     elements = sorted(elements)

@@ -5,7 +5,7 @@ from inspect import isclass, isabstract, getmembers
 
 from MDMC.MD.engine_facades.facade import MDEngine
 
-class MDEngineFacadeFactory(object):
+class MDEngineFacadeFactory:
 
     """
     Provides a factory for creating facades to MD engines.  Any facade within

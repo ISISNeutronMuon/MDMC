@@ -5,7 +5,7 @@ from inspect import isclass, isabstract, getmembers
 
 from MDMC.MD.force_fields.ff import ForceField
 
-class ForceFieldFactory(object):
+class ForceFieldFactory:
 
     """
     Provides a factory for creating force fields.  Any facade within

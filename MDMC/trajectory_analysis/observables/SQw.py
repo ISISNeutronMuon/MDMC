@@ -1,6 +1,6 @@
 """Module for AbstractSQw and total SQw class"""
 
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 from mpi4py import MPI
 import numpy as np
@@ -21,8 +21,6 @@ class AbstractSQw(Observable):
     An abstract class for total, coherent and incoherent dynamic structure
     factors
     """
-
-    __metaclass__ = ABCMeta
 
     @property
     def data(self):
@@ -602,8 +600,8 @@ class AbstractSQw(Observable):
         window = function(self.t[:len(self.E)] / 1000., params['sigma'],
                           norm=False)
 
-        # Tile the window so that it is applied for all Q values
-        return np.tile(window, [N_Q, 1]) * FQt
+        # Broadcast the window so that it is applied for all Q values
+        return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt
 
 
 class SQw(AbstractSQw):

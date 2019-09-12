@@ -40,11 +40,11 @@ N_Q_VALUES = 13
 
 @pytest.fixture(scope="module")
 def incoh_file():
-    return Dataset(data.OBS_DATA['SQw_incoh'],'r')
+    return Dataset(data.OBS_DATA['SQw_incoh'], 'r')
 
 @pytest.fixture(scope="module")
 def coh_file():
-    return Dataset(data.OBS_DATA['SQw_coh'],'r')
+    return Dataset(data.OBS_DATA['SQw_coh'], 'r')
 
 @pytest.fixture(scope="module")
 def Q_ref(incoh_file):
@@ -113,9 +113,9 @@ def trajectory():
     Trajectory is unzipped and unpickled.
     """
 
-    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'r').read()
+    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'rb').read()
     pickled_trajectory = zlib.decompress(compressed_trajectory)
-    trajectory = pickle.loads(pickled_trajectory)
+    trajectory = pickle.loads(pickled_trajectory, encoding='latin-1')
     return trajectory
 
 @pytest.fixture(scope="module")
@@ -130,7 +130,8 @@ def Q_vectors():
     used in nMOLDYN when generating the incoherent FQt and SQw
     """
 
-    return pickle.load(open(data.OBS_DATA['Q_vectors'], 'r'))
+    return pickle.load(open(data.OBS_DATA['Q_vectors'], 'rb'),
+                       encoding='latin-1')
 
 @pytest.fixture(scope="module")
 def SQw_obs(trajectory, Q_vectors):
