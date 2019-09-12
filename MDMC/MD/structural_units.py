@@ -1569,6 +1569,16 @@ class Dispersion(NonBondedInteraction):
             Specifies if the tail correction to the energy and pressure should
             be applied. This only affects the simulation dynamics if the
             simulation is being performed with constant pressure.
+
+    Raises
+    ------
+    TypeError
+        Atom types must be iterable
+    ValueError
+        Dispersion interactions should only be specified as existing between
+        pairs of atom types
+    TypeError
+        Each atom type must be int
     """
 
     # Python3 requires subclasses thay overwrite __eq__ to explicity inherit
@@ -1577,37 +1587,20 @@ class Dispersion(NonBondedInteraction):
 
     def __init__(self, universe, *atom_types, **settings):
 
-        # Add tuples to short format of atom_types
-        tmp = []
-        if not isinstance(atom_types, tuple):
-            raise ValueError('Atom types must be passed as a tuple')
-        if all([isinstance(type, int) for type in atom_types]):
-            if len(atom_types) == 1:
-                tmp = ((atom_types[0], atom_types[0]), )
-            elif len(atom_types) == 2:
-                tmp = ((atom_types[0], atom_types[1]), )
-            else:
+        def validate_atom_type_pair(atom_type_pair):
+            try:
+                atom_type_pair = tuple(sorted(atom_type_pair))
+            except TypeError as err:
+                raise TypeError('Atom types must be an iterable') from err
+            if len(atom_type_pair) != 2:
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
-                                 ' atom_types')
-        elif all([isinstance(type, tuple) for type in atom_types]):
-            for type in atom_types:
-                if isinstance(type, int):
-                    tmp.append((type, type))
-                elif isinstance(type, tuple):
-                    if len(type) == 1:
-                        tmp.append((type[0], type[0]))
-                    elif len(type) == 2:
-                        tmp.append(type)
-                    else:
-                        raise ValueError('Dispersion interactions should only'
-                                         ' be specified as existing between'
-                                         ' pairs of atom_types')
-        else:
-            raise ValueError("Can't pass atom types as a mix"
-                             " of tuples and ints")
-        atom_types = tuple(tmp)
-        self._atom_types = atom_types
+                                 ' atom types')
+            elif not all([isinstance(atom_type, int) for atom_type
+                          in atom_type_pair]):
+                raise TypeError('Each atom type must be int')
+            return atom_type_pair
+
         super(Dispersion, self).__init__(universe, **settings)
         self._atoms = [tuple([atom for atom_type in tpl
                               for atom in self.universe.atom_types[atom_type]])
