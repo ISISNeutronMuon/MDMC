@@ -1488,7 +1488,7 @@ class NonBondedInteraction(Interaction):
     def __hash__(self):
 
         # Simplified version of immutable hash which Python3 produces
-        # (marginally less efficient but shouldn't matter) 
+        # (marginally less efficient but shouldn't matter)
         return id(self) // 8
 
     @property
@@ -1590,14 +1590,14 @@ class Dispersion(NonBondedInteraction):
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
                                  ' atom_types')
-        elif all([isinstance(e, tuple) for e in atom_types]):
+        elif all([isinstance(type, tuple) for type in atom_types]):
             for type in atom_types:
                 if isinstance(type, int):
                     tmp.append((type, type))
                 elif isinstance(type, tuple):
                     if len(type) == 1:
                         tmp.append((type[0], type[0]))
-                    elif len(e) == 2:
+                    elif len(type) == 2:
                         tmp.append(type)
                     else:
                         raise ValueError('Dispersion interactions should only'
