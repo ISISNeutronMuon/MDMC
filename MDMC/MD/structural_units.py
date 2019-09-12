@@ -1601,6 +1601,9 @@ class Dispersion(NonBondedInteraction):
                 raise TypeError('Each atom type must be int')
             return atom_type_pair
 
+        # Remove duplicates
+        self._atom_types = tuple(set([validate_atom_type_pair(atp) for atp
+                                      in atom_types]))
         super(Dispersion, self).__init__(universe, **settings)
         self._atoms = [tuple([atom for atom_type in tpl
                               for atom in self.universe.atom_types[atom_type]])
