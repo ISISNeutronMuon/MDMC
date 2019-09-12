@@ -1587,6 +1587,8 @@ class Dispersion(NonBondedInteraction):
 
     def __init__(self, universe, *atom_types, **settings):
 
+        #Ignore pylint warning for inner function docstring
+        #pylint: disable=missing-docstring
         def validate_atom_type_pair(atom_type_pair):
             try:
                 atom_type_pair = tuple(sorted(atom_type_pair))
