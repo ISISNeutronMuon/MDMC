@@ -59,7 +59,7 @@ def water_SPCE_universe(water_molecule):
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
                        if atom.element == 'O')
-    O_dispersion = su.Dispersion(water_universe, O_atom_type)
+    O_dispersion = su.Dispersion(water_universe, (O_atom_type, O_atom_type))
     return water_universe
 
 @pytest.fixture

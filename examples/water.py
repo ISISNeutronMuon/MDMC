@@ -33,7 +33,7 @@ universe.constraint_algorithm = shake
 e_solver = PPPM(accuracy=1e-5)
 universe.electrostatic_solver = e_solver
 universe.fill(water_mol, num_density=0.03356718472021752)
-O_dispersion = Dispersion(universe, O.atom_type, cutoff=10.,
+O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                           vdw_tail_correction=True)
 universe.add_force_field('SPCE')
 

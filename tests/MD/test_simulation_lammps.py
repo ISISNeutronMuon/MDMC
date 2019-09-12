@@ -104,14 +104,14 @@ def universe_interactions(empty_universe, atoms):
         coulombics.append(Coulombic(empty_universe, atom_types=type,
                                     function=Coulomb((-1.0+type*0.5, 'e')),
                                     cutoff=COULOMBIC_CUTOFF))
-        dispersions.append(Dispersion(empty_universe, type,
+        dispersions.append(Dispersion(empty_universe, (type, type),
                                       function=LennardJones((type*0.1,
                                                              units.ENERGY),
                                                             (type*1.0,
                                                              units.LENGTH)),
                                       cutoff=10.0,
                                       vdw_tail_correction=True))
-        dispersions.append(Dispersion(empty_universe, type,
+        dispersions.append(Dispersion(empty_universe, (type, type),
                                       function=Buckingham((type * 0.1,
                                                            'kJ / mol'),
                                                           (type * 1.0, 'Ang'),
@@ -119,7 +119,7 @@ def universe_interactions(empty_universe, atoms):
                                                            'Ang^6 kJ / mol')),
                                       cutoff=DISP_CUTOFF,
                                       vdw_tail_correction=True))
-        dispersions.append(Dispersion(empty_universe, type,
+        dispersions.append(Dispersion(empty_universe, (type, type),
                                       function=LennardJones((type*0.1,
                                                              'kJ / mol'),
                                                             (type*1.0,
@@ -469,7 +469,7 @@ def test_unimplemented_interactions(lammps_universe, universe):
 def test_pair_style_coeff_commands(universe):
 
     """
-    
+
     """
 
 @pytest.mark.parametrize('interactions, expected',
