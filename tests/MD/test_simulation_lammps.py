@@ -23,7 +23,6 @@ COUL_CUTOFF = 8.0
 DISP_CUTOFF = 10.0
 N_ATOMS = 10
 UNIVERSE_DIM = 50.0
-COULOMBIC_CUTOFF = 8.0
 CONST = units.CODATA[units.CODATA_VERSION]
 
 @pytest.fixture
@@ -103,7 +102,7 @@ def universe_interactions(empty_universe, atoms):
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, atom_types=type,
                                     function=Coulomb((-1.0+type*0.5, 'e')),
-                                    cutoff=COULOMBIC_CUTOFF))
+                                    cutoff=COUL_CUTOFF))
         dispersions.append(Dispersion(empty_universe, (type, type),
                                       function=Buckingham((type * 0.1,
                                                            'kJ / mol'),
