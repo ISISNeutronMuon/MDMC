@@ -848,8 +848,7 @@ def test_mixing_unimplemented(lammps_universe, mix):
     """
 
     with pytest.raises(ValueError):
-        lammps_universe._add_topology(lammps_universe.universe,
-                                      nonbonded_mix=mix)
+        lammps_universe.nonbonded_mix = mix
 
 
 @pytest.mark.parametrize('solver_cls, accuracy, expected', [(PPPM, 0.001,
