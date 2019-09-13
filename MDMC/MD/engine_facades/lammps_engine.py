@@ -764,12 +764,12 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         Returns
         -------
-        pair_styles : list of str
-            A flattened list of pair_style commands to be set in the
+        tuple
+            (pair_styles, pair_coeff_cmds), where pair_styles is a flattened
+            list of str for the pair_style commands to be set in the LAMMPS
+            interface, and pair_coeff_cmds is a list of str for the pair_coeff
+            commands for each atom_type pair to be set individually in the
             LAMMPS interface.
-        pair_coeff_cmds : list of str
-            A list of pair_coeff commands for each atom_type pair to be
-            set individually in the LAMMPS interface.
         """
 
         pair_styles = []
