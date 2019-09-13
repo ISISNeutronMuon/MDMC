@@ -533,13 +533,20 @@ def test_parse_nonbonded_styles(inters, index, expected, solver_attr,
 
 @pytest.mark.parametrize("inters, indices, solver_attr, expected",
                          [(('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), None, ['coul/cut', COUL_CUTOFF,
-                                             'buck', DISP_CUTOFF,
-                                             'lj/cut', DISP_CUTOFF]),
+                           (0, 0, 1),
+                           None,
+                           [('buck/coul/cut',
+                             '{0} {1}'.format(DISP_CUTOFF, COUL_CUTOFF)),
+                            ('lj/cut/coul/cut',
+                             '{0} {1}'.format(DISP_CUTOFF, COUL_CUTOFF))]),
                           (('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), 'electrostatic_solver',
-                           ['coul/long', COUL_CUTOFF, 'buck', DISP_CUTOFF,
-                            'lj/cut', DISP_CUTOFF,])])
+                           (0, 0, 1),
+                           'electrostatic_solver',
+                           [('buck/coul/long',
+                             '{0} {1}'.format(DISP_CUTOFF, COUL_CUTOFF)),
+                            ('lj/cut/coul/long',
+                             '{0} {1}'.format(DISP_CUTOFF, COUL_CUTOFF))])
+                         ])
 def test_parse_all_nonbonded_styles_valid_diff_cutoffs(inters, indices,
                                                        solver_attr, expected,
                                                        universe, request):
@@ -550,7 +557,7 @@ def test_parse_all_nonbonded_styles_valid_diff_cutoffs(inters, indices,
     Dispersive and Coulombic cutoff distances are different.
 
     Doesn't test for interactions created in a universe with a
-    kspace_solver attribute as this creates an invalid command.
+    kspace_solver attribute as this creates an invalid LAMMPS command.
 
     Doesn't test for interactions created in a universe with a
     dispersive_solver attribute as this creates an invalid pair style.
@@ -566,17 +573,26 @@ def test_parse_all_nonbonded_styles_valid_diff_cutoffs(inters, indices,
 
 @pytest.mark.parametrize("interactions, indices, solver_attr, cutoff, expected",
                          [(('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), None, CUTOFF,
-                           ['coul/cut', CUTOFF, 'buck', CUTOFF,
-                            'lj/cut', CUTOFF]),
+                           (0, 0, 1),
+                           None,
+                           CUTOFF,
+                           [('buck/coul/cut', '{0}'.format(CUTOFF)),
+                            ('lj/cut/coul/cut', '{0}'.format(CUTOFF))]),
                           (('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), 'kspace_solver', CUTOFF,
-                           ['buck/long/coul/long', 'long long', CUTOFF,
-                            'lj/long/coul/long', 'long long', CUTOFF]),
+                           (0, 0, 1),
+                           'kspace_solver',
+                           CUTOFF,
+                           [('buck/long/coul/long', 'long long',
+                             '{0}'.format(CUTOFF)),
+                            ('lj/long/coul/long', 'long long',
+                             '{0}'.format(CUTOFF))]),
                           (('coulombics', 'dispersions', 'dispersions'),
-                           (0, 0, 1), 'electrostatic_solver', CUTOFF,
-                           ['coul/long', CUTOFF, 'buck', CUTOFF,
-                            'lj/cut', CUTOFF])])
+                           (0, 0, 1),
+                           'electrostatic_solver',
+                           CUTOFF,
+                           [('buck/coul/long', '{0}'.format(CUTOFF)),
+                            ('lj/cut/coul/long', '{0}'.format(CUTOFF))])
+                         ])
 def test_parse_all_nonbonded_styles_valid_same_cutoff(interactions, indices,
                                                       solver_attr, cutoff,
                                                       expected, universe,
