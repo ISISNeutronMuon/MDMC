@@ -459,7 +459,7 @@ def test_unimplemented_interactions(lammps_universe, universe):
     # Dummy class which does not require docstring
     #pylint: disable=missing-docstring, multiple-statements
     class Unimplemented(Dispersion): pass
-    unimplemented_interaction = Unimplemented(universe, 1)
+    unimplemented_interaction = Unimplemented(universe, (1, 1))
 
     # Create LAMMPS topology from universe, raising NotImplementedError
     with pytest.raises(NotImplementedError):
@@ -658,7 +658,8 @@ def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
 
 @pytest.mark.parametrize('interaction, arguments, parser',
                          [(Bond, ['atom_pair'], 'parse_bonded_styles'),
-                          (Dispersion, ['universe', 1], 'parse_nonbonded_styles')
+                          (Dispersion, ['universe', (1, 1)],
+                          'parse_nonbonded_styles')
                          ])
 def test_parse_unimplemented_styles(interaction, arguments, parser, request):
 

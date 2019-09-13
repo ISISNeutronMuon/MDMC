@@ -241,7 +241,7 @@ def test_add_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
                        if atom.element == 'O')
-    O_dispersion = su.Dispersion(universe, O_atom_type)
+    O_dispersion = su.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
     for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
@@ -255,7 +255,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
                        if atom.element == 'O')
-    O_dispersion = su.Dispersion(universe, O_atom_type)
+    O_dispersion = su.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
@@ -577,9 +577,9 @@ def test_dispersion_cutoff(water_SPCE_universe):
     specifying a cutoff results in a cutoff attribute set to None
     """
 
-    cutoff_disp = su.Dispersion(water_SPCE_universe, 1, cutoff=5.0)
+    cutoff_disp = su.Dispersion(water_SPCE_universe, (1, 1), cutoff=5.0)
     assert cutoff_disp.cutoff == 5.0
-    infinite_disp = su.Dispersion(water_SPCE_universe, 1)
+    infinite_disp = su.Dispersion(water_SPCE_universe, (1, 1))
     assert infinite_disp.cutoff is None
 
 
