@@ -485,7 +485,7 @@ def test_parse_bonded_styles(interactions, expected, request):
     assert lmp_eng.parse_bonded_styles(interactions[0]) == expected
 
 
-@pytest.mark.parametrize('interactions, index, expected, solver_attr',
+@pytest.mark.parametrize('inters, index, expected, solver_attr',
                          [('dispersions', 0, ['buck', 10.], None),
                           ('dispersions', 1, ['lj/cut', 10.], None),
                           ('coulombics', 0, ['coul/cut', 8.], None),
@@ -505,7 +505,7 @@ def test_parse_bonded_styles(interactions, expected, request):
                            'electrostatic_solver'),
                           ('coulombics', 0, ['coul/long', 8.],
                            'electrostatic_solver')])
-def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
+def test_parse_nonbonded_styles(inters, index, expected, solver_attr,
                                 universe, request):
 
     """
@@ -524,14 +524,14 @@ def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
     # As fixtures cannot be included in parameterization, the names of the
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
-    interactions = request.getfixturevalue(interactions)[index]
+    inters = request.getfixturevalue(inters)[index]
     # If a solver_attr is specified, add a PPPM solver to this attribute
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
-    assert lmp_eng.parse_nonbonded_styles(interactions) == expected
+    assert lmp_eng.parse_nonbonded_styles(inters) == expected
 
 
-@pytest.mark.parametrize("interactions, indices, solver_attr, expected",
+@pytest.mark.parametrize("inters, indices, solver_attr, expected",
                          [(('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1), None, ['coul/cut', COUL_CUTOFF,
                                              'buck', DISP_CUTOFF,
@@ -540,7 +540,7 @@ def test_parse_nonbonded_styles(interactions, index, expected, solver_attr,
                            (0, 0, 1), 'electrostatic_solver',
                            ['coul/long', COUL_CUTOFF, 'buck', DISP_CUTOFF,
                             'lj/cut', DISP_CUTOFF,])])
-def test_parse_all_nonbonded_styles_valid_diff_cutoffs(interactions, indices,
+def test_parse_all_nonbonded_styles_valid_diff_cutoffs(inters, indices,
                                                        solver_attr, expected,
                                                        universe, request):
 
@@ -557,11 +557,11 @@ def test_parse_all_nonbonded_styles_valid_diff_cutoffs(interactions, indices,
     """
 
     assert COUL_CUTOFF != DISP_CUTOFF
-    interactions = [request.getfixturevalue(interaction)[idx]
-                    for interaction, idx in zip(interactions, indices)]
+    inters = [request.getfixturevalue(inter)[idx]
+              for inter, idx in zip(inters, indices)]
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
-    assert lmp_eng.parse_all_nonbonded_styles(interactions) == expected
+    assert lmp_eng.parse_all_nonbonded_styles(inters) == expected
 
 
 @pytest.mark.parametrize("interactions, indices, solver_attr, cutoff, expected",
@@ -758,7 +758,10 @@ def test_update_individual_interactions(lammps_universe,
         for param in interaction.params:
             param.value *= 2
 
-    getattr(lammps_universe, update_method)(interactions)
+    if interaction_fixture == 'dispersions':
+        getattr(lammps_universe, update_method)(lammps_universe.universe)
+    else:
+        getattr(lammps_universe, update_method)(interactions)
 
 
 def test_update_all_interactions(lammps_universe, interactions):
