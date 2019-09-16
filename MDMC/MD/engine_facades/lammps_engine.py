@@ -18,6 +18,7 @@ when they are read from PyLammps e.g. int(lmp.variables['steps'].value).
 A minor bug in LAMMPS (Dec 2018 version) means that nangletypes returned
 by PyLammps is incorrectly set to ndihedraltypes."""
 
+from collections import OrderedDict
 from copy import copy
 from itertools import chain, combinations, count, product, tee
 from random import randint
@@ -2119,7 +2120,7 @@ def parse_all_nonbonded_styles(interactions):
             order as passed in interactions maintained.
         """
 
-        return [x for x in interactions if not (x in set() or set().add(x))]
+        return list(OrderedDict.fromkeys(interactions))
 
 
     def check_validity(pair_style, cutoffs=None):
