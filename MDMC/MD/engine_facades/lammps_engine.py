@@ -787,7 +787,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
             pair_coeff_cmds += coeff_cmds
 
         # Remove duplicates in pair_styles, create flattened list.
-        pair_styles = list(chain.from_iterable(pair_styles))_update_charges(self):
+        pair_styles = list(chain.from_iterable(pair_styles))
+
+        return pair_styles, pair_coeff_cmds
+
+    def _update_charges(self):
 
         """
         Updates the charges in LAMMPS
