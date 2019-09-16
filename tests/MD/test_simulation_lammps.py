@@ -24,6 +24,12 @@ DISP_CUTOFF = 10.0
 N_ATOMS = 10
 UNIVERSE_DIM = 50.0
 CONST = units.CODATA[units.CODATA_VERSION]
+CUTOFF = 3.14
+COUL_CUTOFF = 8.0
+DISP_CUTOFF = 10.0
+N_ATOMS = 10
+UNIVERSE_DIM = 50.0
+
 
 @pytest.fixture
 def empty_universe():
@@ -457,12 +463,6 @@ def test_unimplemented_interactions(lammps_universe, universe):
     with pytest.raises(NotImplementedError):
         lammps_universe._add_topology(universe)
 
-
-def test_pair_style_coeff_commands(universe):
-
-    """
-
-    """
 
 @pytest.mark.parametrize('interactions, expected',
                          [('bonds', 'harmonic'),

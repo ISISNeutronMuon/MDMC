@@ -787,11 +787,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             pair_coeff_cmds += coeff_cmds
 
         # Remove duplicates in pair_styles, create flattened list.
-        pair_styles = list(chain.from_iterable(pair_styles))
-
-        return pair_styles, pair_coeff_cmds
-
-    def _update_charges(self):
+        pair_styles = list(chain.from_iterable(pair_styles))_update_charges(self):
 
         """
         Updates the charges in LAMMPS
@@ -2046,6 +2042,7 @@ def parse_nonbonded_styles(interaction):
         dispersive = interaction.universe.dispersive_solver
         if (kspace or (electrostatic and interaction.name == 'Coulombic')
                 or (dispersive and interaction.name == 'Dispersion')):
+
             lmp_str[-1] += '/long'
         else:
             if interaction.function_name != 'Buckingham':
