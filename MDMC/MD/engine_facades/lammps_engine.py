@@ -773,21 +773,21 @@ class LAMMPSUniverse(PyLammpsAttribute):
             LAMMPS interface.
         """
 
-        pair_styles = []
+        pair_styles = set()
         pair_coeff_cmds = []
+
         for pair, inters in universe.nbis_by_atom_type_pairs.items():
             # Generates list of tuples containing styles and cutoffs.
             nb_styles = parse_all_nonbonded_styles(inters)
             # Generates list of tuples that contain each pair_coeff command.
-            coeff_cmds = parse_dispersion_coefficients(inters, nb_styles)
-            for idx, cmd in enumerate(coeff_cmds):
-                coeff_cmds[idx] = (' '.join(str(type) for type in pair)
-                                   + ' ' + cmd)
-            pair_styles += nb_styles
+            parsed_coeffs = parse_dispersion_coefficients(inters, nb_styles)
+            coeff_cmds = [' '.join([str(a_type) for a_type in pair]) + ' '
+                          + coeff for coeff in parsed_coeffs]
+            pair_styles.update(nb_styles)
             pair_coeff_cmds += coeff_cmds
 
         # Remove duplicates in pair_styles, create flattened list.
-        pair_styles = list(chain.from_iterable(list(set(pair_styles))))
+        pair_styles = list(chain.from_iterable(pair_styles))
 
         return pair_styles, pair_coeff_cmds
 
@@ -2045,7 +2045,7 @@ def parse_nonbonded_styles(interaction):
         electrostatic = interaction.universe.electrostatic_solver
         dispersive = interaction.universe.dispersive_solver
         if (kspace or (electrostatic and interaction.name == 'Coulombic')
-            or (dispersive and interaction.name == 'Dispersion')):
+                or (dispersive and interaction.name == 'Dispersion')):
             lmp_str[-1] += '/long'
         else:
             if interaction.function_name != 'Buckingham':
@@ -2176,27 +2176,23 @@ def parse_all_nonbonded_styles(interactions):
     for d_style, c_style in product(disp_styles, coul_styles):
         if d_style in flat_interactions and c_style in flat_interactions:
             for int1, int2 in combinations(parsed_interactions, 2):
-                if (int1[0] == d_style and int2[0] == c_style
-                        or int1[0] == c_style and int2[0] == d_style):
-                    combined.append(int1)
-                    combined.append(int2)
-                    indiv_cmd = []
-                    for element in check_validity('/'.join([d_style, c_style]),
-                                                  cutoffs=[int1[1], int2[1]]):
-                        indiv_cmd.append(element)
-                    if int1[0] == d_style:
+                if (int1[0] in [c_style, d_style]
+                        and int2[0] in [c_style, d_style]):
+                    combined.extend([int1, int2])
+                    indiv_cmd = check_validity('/'.join([d_style, c_style]),
+                                               cutoffs=[int1[1], int2[1]])
+                    # Format cutoffs so that disp cutoff precedes coul cutoff if
+                    # they are different
+                    if int1[1] == int2[1]:
                         cutoffs = str(int1[1])
-                        if int2[1] != int1[1]:
-                            cutoffs += ' ' + str(int2[1])
                     else:
-                        cutoffs = str(int2[1])
-                        if int2[1] != int1[1]:
-                            cutoffs += ' ' + str(int1[1])
+                        d_cut, c_cut = ((int1[1], int2[1]) if int1[0] == d_style
+                                        else (int2[1], int1[1]))
+                        cutoffs = '{0} {1}'.format(d_cut, c_cut)
                     lmp_str.append(tuple(indiv_cmd + [cutoffs]))
     # Remove interactions from parsed interactions if already combined
-    for parsed, used in product(parsed_interactions, combined):
-        if parsed == used and parsed in parsed_interactions:
-            parsed_interactions.remove(parsed)
+    parsed_interactions = [parsed for parsed in parsed_interactions
+                           if parsed not in combined]
     return lmp_str + parsed_interactions
 
 
