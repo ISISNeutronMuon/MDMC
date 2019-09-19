@@ -107,6 +107,11 @@ def universe():
     O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                               vdw_tail_correction=True)
     universe.add_force_field('SPCE')
+    # Change LJ epsilon parameter slightly so that it is exactly the same as
+    # LAMMPS value
+    for param in O_dispersion.params:
+        if param.name == 'epsilon':
+            param.value = 0.6501936
 
     return universe
 
