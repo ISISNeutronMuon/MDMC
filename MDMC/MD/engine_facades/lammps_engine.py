@@ -721,7 +721,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.bonds = bonds
         self.angles = angles
 
-        pair_styles, pair_coeff_cmds = self._pair_style_coeff_commands(universe)
+        pair_styles, pair_mods, pair_coeff_cmds = self._pair_commands(universe)
         if pair_styles:
             # hybrid/overlay allows multiple pair_styles for same atom_type pair
             self.lmp.pair_style('hybrid/overlay', *pair_styles)
@@ -843,7 +843,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         if not pair_coeff_cmds:
-            _, pair_coeff_cmds = self._pair_style_coeff_commands(universe)
+            _, _, pair_coeff_cmds = self._pair_commands(universe)
 
         for cmd in pair_coeff_cmds:
             self.lmp.pair_coeff(cmd)
