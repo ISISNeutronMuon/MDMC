@@ -528,7 +528,7 @@ def test_parse_nonbonded_styles(inters, index, expected, solver_attr,
     # If a solver_attr is specified, add a PPPM solver to this attribute
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
-    assert lmp_eng.parse_nonbonded_styles(inters) == expected
+    assert lmp_eng.parse_nonbonded_styles(inters)[0] == expected
 
 
 @pytest.mark.parametrize("inters, indices, solver_attr, expected",
@@ -568,10 +568,10 @@ def test_parse_all_nonbonded_styles_valid_diff_cutoffs(inters, indices,
               for inter, idx in zip(inters, indices)]
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
-    assert lmp_eng.parse_all_nonbonded_styles(inters) == expected
+    assert list(lmp_eng.parse_all_nonbonded_styles(inters).keys()) == expected
 
 
-@pytest.mark.parametrize("interactions, indices, solver_attr, cutoff, expected",
+@pytest.mark.parametrize("inters, indices, solver_attr, cutoff, expected",
                          [(('coulombics', 'dispersions', 'dispersions'),
                            (0, 0, 1),
                            None,
@@ -593,7 +593,7 @@ def test_parse_all_nonbonded_styles_valid_diff_cutoffs(inters, indices,
                            [('buck/coul/long', '{0}'.format(CUTOFF)),
                             ('lj/cut/coul/long', '{0}'.format(CUTOFF))])
                          ])
-def test_parse_all_nonbonded_styles_valid_same_cutoff(interactions, indices,
+def test_parse_all_nonbonded_styles_valid_same_cutoff(inters, indices,
                                                       solver_attr, cutoff,
                                                       expected, universe,
                                                       request):
@@ -607,14 +607,14 @@ def test_parse_all_nonbonded_styles_valid_same_cutoff(interactions, indices,
     dispersive_solver attribute as this creates an invalid pair style.
     """
 
-    interactions = [request.getfixturevalue(interaction)[idx]
-                    for interaction, idx in zip(interactions, indices)]
+    inters = [request.getfixturevalue(interaction)[idx]
+              for interaction, idx in zip(inters, indices)]
     # Set the cutoff to the same value for all interactions
-    for interaction in interactions:
+    for interaction in inters:
         interaction.cutoff = cutoff
     if solver_attr:
         setattr(universe, solver_attr, PPPM(accuracy=1e-4))
-    assert lmp_eng.parse_all_nonbonded_styles(interactions) == expected
+    assert list(lmp_eng.parse_all_nonbonded_styles(inters).keys()) == expected
 
 
 @pytest.mark.parametrize('index', [0, 1])
