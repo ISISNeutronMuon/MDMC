@@ -18,7 +18,7 @@ when they are read from PyLammps e.g. int(lmp.variables['steps'].value).
 A minor bug in LAMMPS (Dec 2018 version) means that nangletypes returned
 by PyLammps is incorrectly set to ndihedraltypes."""
 
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from copy import copy
 from itertools import chain, combinations, count, product, tee
 from random import randint
@@ -750,12 +750,18 @@ class LAMMPSUniverse(PyLammpsAttribute):
         if self.universe.constraint_algorithm:
             self.apply_constraints()
 
-    def _pair_style_coeff_commands(self, universe):
+    def _pair_commands(self, universe):
 
         """
         Parses all the NonBondedInteractions for every appropriate combination
         of atom_type pairs in an MDMC Universe, returning the correctly
         formatted input for pair_style and pair_coeff LAMMPS commands.
+
+        THE PARSING OF PAIR MODIFIERS IS LIMITED - if there is more than one
+        interaction with the same pair style, and if these pair styles have
+        different modifiers, all of the modifiers will be applied to this pair
+        style. The correct implementation would apply each modifier to a
+        copy of the pair style.
 
         Parameters
         ----------
@@ -766,30 +772,42 @@ class LAMMPSUniverse(PyLammpsAttribute):
         Returns
         -------
         tuple
-            (pair_styles, pair_coeff_cmds), where pair_styles is a flattened
-            list of str for the pair_style commands to be set in the LAMMPS
-            interface, and pair_coeff_cmds is a list of str for the pair_coeff
-            commands for each atom_type pair to be set individually in the
-            LAMMPS interface.
+            (pair_styles, pair_modifiers pair_coeff_cmds), where pair_styles is
+            a flattened list of str for the pair_style commands to be set in the
+            LAMMPS interface, pair_modifiers is a list of lists of str for the
+            pair_modify commands to be set in the LAMMPS interface, and
+            pair_coeff_cmds is a list of str for the pair_coeff commands for
+            each atom_type pair to be set individually in the LAMMPS interface.
         """
 
         pair_styles = set()
+        pair_modifiers = defaultdict(list)
         pair_coeff_cmds = []
 
         for pair, inters in universe.nbis_by_atom_type_pairs.items():
-            # Generates list of tuples containing styles and cutoffs.
-            nb_styles = parse_all_nonbonded_styles(inters)
-            # Generates list of tuples that contain each pair_coeff command.
-            parsed_coeffs = parse_dispersion_coefficients(inters, nb_styles)
+            # Generates list of tuples containing styles and cutoffs
+            styles_mods = parse_all_nonbonded_styles(inters)
+            # One list of pair modifier for
+            for style, mod in styles_mods.items():
+                # Only append if there is a modifier on the pair style
+                if mod:
+                    # Only the first style index is required as the rest contain
+                    # cutoffs etc
+                    pair_modifiers[style[0]].extend(mod)
+            # Generates list of tuples that contain each pair_coeff command
+            parsed_coeffs = parse_dispersion_coefficients(inters,
+                                                          styles_mods.keys())
             coeff_cmds = [' '.join([str(a_type) for a_type in pair]) + ' '
                           + coeff for coeff in parsed_coeffs]
-            pair_styles.update(nb_styles)
+            pair_styles.update(styles_mods.keys())
             pair_coeff_cmds += coeff_cmds
 
-        # Remove duplicates in pair_styles, create flattened list.
+        # Remove duplicates in pair_styles, create flattened list
         pair_styles = list(chain.from_iterable(pair_styles))
+        pair_modifiers = [[style, *mod] for style, mod
+                          in pair_modifiers.items()]
 
-        return pair_styles, pair_coeff_cmds
+        return pair_styles, pair_modifiers, pair_coeff_cmds
 
     def _update_charges(self):
 
