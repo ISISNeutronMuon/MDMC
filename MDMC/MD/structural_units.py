@@ -1488,7 +1488,7 @@ class NonBondedInteraction(Interaction):
     def __hash__(self):
 
         # Simplified version of immutable hash which Python3 produces
-        # (marginally less efficient but shouldn't matter) 
+        # (marginally less efficient but shouldn't matter)
         return id(self) // 8
 
     @property
@@ -1569,6 +1569,16 @@ class Dispersion(NonBondedInteraction):
             Specifies if the tail correction to the energy and pressure should
             be applied. This only affects the simulation dynamics if the
             simulation is being performed with constant pressure.
+
+    Raises
+    ------
+    TypeError
+        Atom types must be iterable
+    ValueError
+        Dispersion interactions should only be specified as existing between
+        pairs of atom types
+    TypeError
+        Each atom type must be int
     """
 
     # Python3 requires subclasses thay overwrite __eq__ to explicity inherit
@@ -1577,13 +1587,25 @@ class Dispersion(NonBondedInteraction):
 
     def __init__(self, universe, *atom_types, **settings):
 
-        # Add tuples to short format of atom_types
-        if isinstance(atom_types[0], int):
-            if len(atom_types) == 1:
-                atom_types = ((atom_types[0], ), (atom_types[0], ))
-            elif len(atom_types) == 2:
-                atom_types = ((atom_types[0], ), (atom_types[1], ))
-        self._atom_types = atom_types
+        #Ignore pylint warning for inner function docstring
+        #pylint: disable=missing-docstring
+        def validate_atom_type_pair(atom_type_pair):
+            try:
+                atom_type_pair = tuple(sorted(atom_type_pair))
+            except TypeError as err:
+                raise TypeError('Atom types must be an iterable') from err
+            if len(atom_type_pair) != 2:
+                raise ValueError('Dispersion interactions should only be'
+                                 ' specified as existing between pairs of'
+                                 ' atom types')
+            elif not all([isinstance(atom_type, int) for atom_type
+                          in atom_type_pair]):
+                raise TypeError('Each atom type must be int')
+            return atom_type_pair
+
+        # Remove duplicates
+        self._atom_types = tuple(set([validate_atom_type_pair(atp) for atp
+                                      in atom_types]))
         super(Dispersion, self).__init__(universe, **settings)
         self._atoms = [tuple([atom for atom_type in tpl
                               for atom in self.universe.atom_types[atom_type]])

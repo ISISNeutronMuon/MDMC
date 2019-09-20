@@ -59,7 +59,7 @@ def water_SPCE_universe(water_molecule):
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
                        if atom.element == 'O')
-    O_dispersion = su.Dispersion(water_universe, O_atom_type)
+    O_dispersion = su.Dispersion(water_universe, (O_atom_type, O_atom_type))
     return water_universe
 
 @pytest.fixture
@@ -241,7 +241,7 @@ def test_add_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
                        if atom.element == 'O')
-    O_dispersion = su.Dispersion(universe, O_atom_type)
+    O_dispersion = su.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
     for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
@@ -255,7 +255,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
                        if atom.element == 'O')
-    O_dispersion = su.Dispersion(universe, O_atom_type)
+    O_dispersion = su.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
@@ -504,11 +504,25 @@ def test_universe_atom_types(water_molecule, universe):
 
 
 @pytest.mark.parametrize("atom_types_init, atom_types_expected",
-                         [((1, ), ((1, ), (1, ))),
-                          (((1, ), (2, )), ((1, ), (2, ))),
-                          ((1, 2), ((1, ), (2, ))),
-                          (((1, 2), (3, )), ((1, 2), (3, ))),
-                          (((1, 2), (3, 4)), ((1, 2), (3, 4)))])
+                         [(((1, 1), ),
+                           ((1, 1), )),
+                          (((1, 2), ),
+                           ((1, 2), )),
+                          (((1, 1), (2, 2)),
+                           ((1, 1), (2, 2))),
+                          (((1, 1), (1, 1)),
+                           ((1, 1), )),
+                          (((1, 2), (2, 1)),
+                           ((1, 2), )),
+                          (((2, 1), ),
+                           ((1, 2), )),
+                          (((2, 3), (4, 1), (1, 2)),
+                           ((1, 2), (1, 4), (2, 3))),
+                          (([1, 2], ),
+                           ((1, 2), )),
+                          ([(1, 2), [2, 3]],
+                           ((1, 2), (2, 3)))
+                         ])
 def test_init_dispersion(atom_types_init, atom_types_expected,
                          water_SPCE_universe):
 
@@ -537,6 +551,25 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     assert disp.atom_types == atom_types_expected
 
 
+@pytest.mark.parametrize("atom_types_init, error",
+                         [((1), TypeError),
+                          ((1, 2, 3), ValueError),
+                          ((1, ), ValueError),
+                          (((1, 2), (1, 2, 3)), TypeError),
+                          ((1, 2, (3, 4)), TypeError),
+                          ((1.0, 1.0), TypeError)])
+def test_init_dispersion_atom_type_error(atom_types_init, error,
+                                         water_SPCE_universe):
+
+    """
+    Tests that the appropriate errors are raised when trying to initialize
+    a Dispersion interaction by passing invalid atom_types.
+    """
+
+    with pytest.raises(error):
+        su.Dispersion(water_SPCE_universe, atom_types_init)
+
+
 def test_dispersion_cutoff(water_SPCE_universe):
 
     """
@@ -544,9 +577,9 @@ def test_dispersion_cutoff(water_SPCE_universe):
     specifying a cutoff results in a cutoff attribute set to None
     """
 
-    cutoff_disp = su.Dispersion(water_SPCE_universe, 1, cutoff=5.0)
+    cutoff_disp = su.Dispersion(water_SPCE_universe, (1, 1), cutoff=5.0)
     assert cutoff_disp.cutoff == 5.0
-    infinite_disp = su.Dispersion(water_SPCE_universe, 1)
+    infinite_disp = su.Dispersion(water_SPCE_universe, (1, 1))
     assert infinite_disp.cutoff is None
 
 

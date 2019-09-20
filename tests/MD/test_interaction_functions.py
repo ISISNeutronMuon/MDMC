@@ -272,7 +272,7 @@ def test_interaction_setting_name(param_inter):
     """
 
     with pytest.raises(ValueError):
-        param_inter.interactions = Dispersion(Universe(1.0), [1],
+        param_inter.interactions = Dispersion(Universe(1.0), [1, 1],
                                               function=coulomb)
 
 
@@ -389,7 +389,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
         if index % 2:
             param.interactions = coulombic
         else:
-            param.interactions = Dispersion(Universe(1.0), [1],
+            param.interactions = Dispersion(Universe(1.0), [1, 1],
                                             function=LennardJones((1., 'arb'),
                                                                   (1., 'arb')))
 
@@ -416,7 +416,8 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
             function = coulomb
-        param.interactions = Dispersion(Universe(1.0), [1], function=function)
+        param.interactions = Dispersion(Universe(1.0), [1, 1],
+                                        function=function)
 
     assert (filter_parameters_function(parameters, function_name)
             == parameters[slice(*expected_slice)])
