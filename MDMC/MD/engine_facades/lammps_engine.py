@@ -2057,6 +2057,39 @@ def parse_nonbonded_styles(interaction):
                                   ' implemented in the LAMMPS facade')
 
     return lmp_str
+def parse_nonbonded_modifications(interaction):
+
+    """
+    Parses MDMC Interaction attributes into lists that can be used with LAMMPS
+    pair_modify command
+
+    Attributes
+    ----------
+    interaction : Interaction
+        The interaction for which the attributes are parsed
+
+    Returns
+    -------
+    list
+        A list of str which are a valid pair_modify command, or an empty list if
+        no Interaction attributes require setting pair_modify
+    """
+
+    # LAMMPS pair_modify is of the following form:
+    # pair_modify('pair', 'lj/cut', 'mix', 'geometric', 'tail', 'yes')
+    # pair_modify('coul/long', 'mix', 'arithmetic')
+    # where each pair style (lj/cut, coul/long etc) has any mix or tail keywords
+    # defined after the pair style. If the same pair_style occurs multiple times
+    # but with different modifiers
+    # (e.g. 'lj/cut', 'mix', 'geometric' and 'lj/cut', 'mix', 'arithmetic')
+    # whichever pair_modify occurs last will be applied to all identical
+    # pair_styles.
+
+    mods = []
+    if interaction.name == 'Dispersion' and interaction.vdw_tail_correction:
+        mods.extend(['tail', 'yes'])
+
+    return mods
 
 
 def parse_all_nonbonded_styles(interactions):
