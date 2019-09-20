@@ -729,7 +729,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.nonbonded_mix = settings.get('nonbonded_mix')
             self._update_dispersions(universe, pair_coeff_cmds)
             # Apply LAMMPS modifications to nonbonded interactions
-            self._modify_nonbonded_styles(disps+couls)
+            self._modify_nonbonded_styles(pair_mods)
 
         if bonds:
             # Set used to remove duplicate bond styles, which are not required
@@ -848,7 +848,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for cmd in pair_coeff_cmds:
             self.lmp.pair_coeff(cmd)
 
-    def _modify_nonbonded_styles(self, nonbonded_interactions):
+    def _modify_nonbonded_styles(self, pair_mods):
 
         """
         Applies modifications to nonbonded pair styles, such as the VdW tail
@@ -857,79 +857,17 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         Parameters
         ----------
-        nonbonded_interactions : list of NonbondedInteractions
-            NonBondedInteractions which will have modifications applied to the
-            corresponding pair styles.
-
-        Warns
-        -----
-        warnings.warn
-            If a pair style is specified which cannot have a vdw tail correction
-            applied
+        pair_mods : list
+            A list of lists which are valid pair_modify commands
         """
 
-        # LAMMPS pair_modify is of the following form:
-        # pair_modify('pair', 'lj/cut', 'mix', 'geometric', 'tail', 'yes')
-        # pair_modify('coul/long', 'mix', 'arithmetic')
-        # where each pair style (lj/cut, coul/long etc) has any mix or tail
-        # keywords defined after the pair style. If the same pair_style occurs
-        # multiple times but with different modifiers
-        # (e.g. 'lj/cut', 'mix', 'geometric' and 'lj/cut', 'mix', 'arithmetic')
-        # whichever pair_modify occurs last will be applied to all identical
-        # pair_styles.
+        # MDMC only allows nonbonding mixing on all NonbondedInteractions or
+        # none
+        if self.nonbonded_mix:
+            self.lmp.pair_modify('mix', self.nonbonded_mix)
 
-        # Some pair styles cannot have vdw tail corrections - exclude these and
-        # warn about this exclusion
-        excluded = ['lj/long/coul/long']
-
-        # Determine all pair_styles by parsing all nonbonded styles and removing
-        # the numerical values (e.g. if a cutoff is defined). Parsing all
-        # nonbonded styles has the effect of combining some pair styles that
-        # cannot be passed to lammps individually (e.g. lj/long/coul/long)
-        all_styles = [style for style
-                      in parse_all_nonbonded_styles(nonbonded_interactions)
-                      if isinstance(style, str)]
-
-        all_inter_str = []
-        for inter in nonbonded_interactions:
-            inter_style = parse_nonbonded_styles(inter)[0]
-            # Effectively tests if the parsed pair style of an interaction
-            # occurs within a combined pair style (e.g. lj/long occurs within
-            # the combined style lj/long/coul/long) - the combined style is then
-            # used, as this is what will be recognised by LAMMPS
-            for style in all_styles:
-                if inter_style in style:
-                    inter_str = (style, )
-                    if self.nonbonded_mix:
-                        inter_str += ('mix', self.nonbonded_mix)
-                    # Only dispersion interactions can have vdw tail corrections
-                    if inter.name == 'Dispersion' and inter.vdw_tail_correction:
-                        if style in excluded:
-                            warnings.warn('{0} pair style cannot have a'
-                                          ' vdw tail correction'
-                                          ' applied'.format(style))
-                        else:
-                            inter_str += ('tail', 'yes')
-                    # If either a tail or a mix has been added to the inter_str
-                    # add this to the list of all_inter_str
-                    if inter_str != (style, ):
-                        all_inter_str.append(inter_str)
-        if all_inter_str:
-            # if there are multiple identical interaction types then the
-            # inter_str of each will be duplicated in all_inter_str e.g.
-            # inter_str == [('lj/cut', 'tail', 'yes'),
-            #               ('lj/cut', 'tail', 'yes')]
-            # Remove these duplicates with set
-            #
-            # It should then be possible (based on LAMMPS documentation) to pass
-            # this set (with tuples unpacked) at once to pair_modify - however
-            # LAMMPS has a bug preventing this. Instead pass these tuples
-            # individually. LAMMPS does not overwrite the affects of previous
-            # pair_modify commands, as long as they are applied to different
-            # pair_styles.
-            lmp_str = set(all_inter_str)
-            for pair_style in lmp_str:
-                self.lmp.pair_modify('pair', *pair_style)
+        for mod in pair_mods:
+            self.lmp.pair_modify('pair', *mod)
 
     def _create_bonds(self, bonds):
 
