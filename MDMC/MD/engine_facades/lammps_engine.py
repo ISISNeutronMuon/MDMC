@@ -2117,18 +2117,15 @@ def parse_all_nonbonded_styles(interactions):
 
     Returns
     -------
-    list of tuple
-        A list of all of the combined LAMMPS pair styles corresponding to
-        `interactions`. Each tuple contains the combined pair_style as one
-        element, and the cutoffs as the second element, for example:
-
-            ('lj/cut/coul/cut', '5.0 10.0')
-
-        If additional arguments are required when combining styles, they will
-        be added and returned in the tuple as the third and middle element,
-        for example:
-
-            ('buck/long/coul/long', 'long long', '10.0')
+    dict
+        A dict with {pair_styles: pair_modifiers} where pair_styles is a tuple
+        of all of the combined LAMMPS pair styles corresponding to interactions.
+        Each tuple contains the combined pair_style as one element, and the
+        cutoffs as the second element (e.g. 'lj/cut/coul/cut', '5.0 10.0'). If
+        additional arguments are required when combining styles, they will be
+        added and returned in the tuple as the third and middle element
+        (e.g. 'buck/long/coul/long', 'long long', '10.0'). pair_modifiers is a
+        list of str for setting pair_modify for the corresponding pair_style.
 
     Raises
     ------
@@ -2138,28 +2135,13 @@ def parse_all_nonbonded_styles(interactions):
     ValueError
         If long range dispersive interaction not defined in conjunction with
         a long range Coulombic interaction.
+
+    Warns
+    -----
+    warnings.warn
+        If a pair style is specified which cannot have a vdw tail correction
+        applied
     """
-
-    def remove_duplicates(interactions):
-
-        """
-        Removes duplicates from list of tuples whilst maintaining order passed.
-
-        Parameters
-        ----------
-        interactions : list of tuple
-            List of parsed nonbonded interactions, where each element is a
-            tuple of the form (style, parameters), i.e. ('lj/cut', cutoff).
-
-        Returns
-        -------
-        list of tuple
-            List of tuples of the above form, with duplicates removed but
-            order as passed in interactions maintained.
-        """
-
-        return list(OrderedDict.fromkeys(interactions))
-
 
     def check_validity(pair_style, cutoffs=None):
 
@@ -2200,38 +2182,58 @@ def parse_all_nonbonded_styles(interactions):
 
         return [pair_style]
 
-    parsed_interactions = remove_duplicates([tuple(parse_nonbonded_styles(nb))
-                                             for nb in interactions])
-    # Flatten tuples of form (style, parameters), i.e. ('lj/cut', cutoff).
-    flat_interactions = list(chain.from_iterable(parsed_interactions))
+    # Some pair styles cannot have vdw tail corrections modifiers - exclude
+    # these and warn about this exclusion
+    # This is dealth with here rather than in parse_nonbonded_modifications as
+    # it is dependent on combined pair_styles
+    excluded = ['lj/long/coul/long']
+
+    # Change parse_nonbonded_styles to return the parsed nonbonded style and the
+    # parsed_ modifiers from that interaction
+    # Create a dictionary of parsed_interactions (keys) and modifiers (values)
+    single_parsed_inters = {tuple(parsed[0]): parsed[1] for parsed in
+                            [parse_nonbonded_styles(nb) for nb in interactions]}
+    combined_parsed_inters = copy(single_parsed_inters)
     # Define all Dispersion and Coulombic styles currently supported
     # Dispersion styles always precede coulombic styles in LAMMPS pair styles
     disp_styles = ['buck', 'buck/long', 'lj/cut', 'lj/long']
     coul_styles = ['coul/cut', 'coul/long']
 
-    lmp_str = []
-    combined = []
     for d_style, c_style in product(disp_styles, coul_styles):
-        if d_style in flat_interactions and c_style in flat_interactions:
-            for int1, int2 in combinations(parsed_interactions, 2):
-                if (int1[0] in [c_style, d_style]
-                        and int2[0] in [c_style, d_style]):
-                    combined.extend([int1, int2])
-                    indiv_cmd = check_validity('/'.join([d_style, c_style]),
-                                               cutoffs=[int1[1], int2[1]])
-                    # Format cutoffs so that disp cutoff precedes coul cutoff if
-                    # they are different
-                    if int1[1] == int2[1]:
-                        cutoffs = str(int1[1])
-                    else:
-                        d_cut, c_cut = ((int1[1], int2[1]) if int1[0] == d_style
-                                        else (int2[1], int1[1]))
-                        cutoffs = '{0} {1}'.format(d_cut, c_cut)
-                    lmp_str.append(tuple(indiv_cmd + [cutoffs]))
-    # Remove interactions from parsed interactions if already combined
-    parsed_interactions = [parsed for parsed in parsed_interactions
-                           if parsed not in combined]
-    return lmp_str + parsed_interactions
+        dc_styles = [d_style, c_style]
+        for int1, int2 in combinations(single_parsed_inters.keys(), 2):
+            if (int1[0] in dc_styles and int2[0] in dc_styles):
+                indiv_cmd = check_validity('/'.join(dc_styles),
+                                           cutoffs=[int1[1], int2[1]])
+                # Format cutoffs so that disp cutoff precedes coul cutoff if
+                # they are different
+                if int1[1] == int2[1]:
+                    cutoffs = str(int1[1])
+                else:
+                    d_cut, c_cut = ((int1[1], int2[1]) if int1[0] == d_style
+                                    else (int2[1], int1[1]))
+                    cutoffs = '{0} {1}'.format(d_cut, c_cut)
+
+                # Add indiv_cmd to parsed_interactions dict instead. Use
+                # modifier from parsed_interactions as value. set is used to
+                # remove duplicated modifiers which occur for both interactions.
+                # Delete int1 and int2 from parsed_interactions
+                mod = set(single_parsed_inters[int1]
+                          + single_parsed_inters[int2])
+                # Warn if incompatible pair_style and pair_modification have
+                # been used
+                if indiv_cmd in excluded and 'tail yes' in mod:
+                    warnings.warn('{0} pair style cannot have a vdw tail'
+                                  'correction applied'.format(indiv_cmd))
+                    mod = set(md for md in mod if md != 'tail yes')
+                combined_parsed_inters[tuple(indiv_cmd + [cutoffs])] = list(mod)
+                for key in [int1, int2]:
+                    try:
+                        del combined_parsed_inters[key]
+                    except KeyError:
+                        pass
+
+    return combined_parsed_inters
 
 
 def parse_bonded_coefficients(interaction):
