@@ -2018,8 +2018,10 @@ def parse_nonbonded_styles(interaction):
 
     Returns
     -------
-    list of str
-        LAMMPS pair style corresponding to `interaction`
+    tuple
+        (styles, mods) where styles is a list of str of LAMMPS pair style
+        corresponding to the interaction, and mods is a list of str of LAMMPS
+        pair modifications corresponding to the interaction
 
     Raises
     ------
@@ -2056,7 +2058,9 @@ def parse_nonbonded_styles(interaction):
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
 
-    return lmp_str
+    return lmp_str, parse_nonbonded_modifications(interaction)
+
+
 def parse_nonbonded_modifications(interaction):
 
     """
