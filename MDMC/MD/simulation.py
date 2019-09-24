@@ -488,26 +488,6 @@ class Universe:
         if force_field:
             self.add_force_field(force_field, *structural_unit.interactions)
 
-
-    def delete_structural_unit(self, structural_unit):
-
-        """
-        Deletes a single structural unit from the universe.
-
-        Parameters
-        ----------
-        structural_unit : StructuralUnit
-            The structural unit to be deleted from the Universe.
-
-        Raises
-        ------
-        NotImplementedError
-            HAS NOT BEEN IMPLEMENTED
-        """
-
-        raise NotImplementedError
-
-
     def fill(self, structural_unit, force_field=None, **settings):
 
         """
