@@ -2,7 +2,11 @@
 
 This includes defining units used in MDMC, converting units, and subclassing
 data strucures (float, NumPy array) so that they have a unit attribute.  This
-style follows that of the Atomic Simulation Environment."""
+style follows that of the Atomic Simulation Environment.
+
+As members of units.py are set dynamically, pylintrc excludes member checking
+for units.py using the generated-members keyword. Care must be taken to ensure
+members exist when importing from units.py, as these will not be linted."""
 
 from collections import Counter, defaultdict
 from copy import deepcopy
