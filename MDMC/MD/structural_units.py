@@ -1820,10 +1820,10 @@ class Coulombic(NonBondedInteraction):
 
     def __eq__(self, other):
 
-        return ((sorted(self.atom_types, key=id)
-                 == sorted(other.atom_types, key=id))
-                and sorted(self.atoms, key=id) == sorted(other.atoms, key=id)
-                and isinstance(other, type(self)))
+        return (isinstance(other, type(self))
+                and (sorted(self.atom_types, key=id)
+                     == sorted(other.atom_types, key=id))
+                and sorted(self.atoms, key=id) == sorted(other.atoms, key=id))
 
     @property
     def atoms(self):
