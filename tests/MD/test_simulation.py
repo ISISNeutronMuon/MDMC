@@ -3,7 +3,6 @@
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:05:13"""
 
 from collections import Counter
-from copy import deepcopy
 from itertools import combinations, permutations
 
 import numpy as np
@@ -1088,9 +1087,9 @@ def test_solvate_solvated_universe_different_density(density, tolerance,
                                                        False),
                                                       (0.1, [-7., 0, 0], True),
                                                       ([20., 15., 1.],
-                                                        [21., 15., 1.], True),
+                                                       [21., 15., 1.], True),
                                                       (10., [0., 0., -0.0001],
-                                                        True),
+                                                       True),
                                                       (10., [5, 5, 5], False)])
 def test_check_out_of_bounds(univ_dims, pos, expected):
 

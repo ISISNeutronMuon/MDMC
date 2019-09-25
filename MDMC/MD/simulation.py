@@ -397,6 +397,7 @@ class Universe:
 
         """
         Get the mass density of a solvent added using the solvate method
+
         Returns
         -------
         float
