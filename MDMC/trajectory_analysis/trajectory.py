@@ -39,7 +39,7 @@ class AtomCollection:
             self._universe = None
 
     @property
-    def dims(self):
+    def dimensions(self):
 
         """
         Get the dimensions of the Universe in which the AtomCollection exists
@@ -50,7 +50,7 @@ class AtomCollection:
             The dimensions of the Universe
         """
 
-        return self.universe.dims
+        return self.universe.dimensions
 
 
 class Configuration(AtomCollection):

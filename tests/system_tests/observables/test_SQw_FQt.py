@@ -23,7 +23,7 @@ import MDMC.trajectory_analysis.observables.obs_factory as of
 from tests.test_data import data
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
-DIMS = (39.4221067, 39.4221067, 39.4221067)
+DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
 T_RESOLUTION = 30.999425
 
 # Absolute tolerance is included to account for rounding differences in nMOLDYN
@@ -141,8 +141,8 @@ def SQw_obs(trajectory, Q_vectors):
     """
 
     SQw = of.ObservableFactory.create_observable('SQw')
-    SQw.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dims=DIMS,
-                          t_resolution=T_RESOLUTION)
+    SQw.calculate_from_MD(trajectory, Q_vectors=Q_vectors,
+                          dimensions=DIMENSIONS, t_resolution=T_RESOLUTION)
     return SQw
 
 @pytest.fixture(scope="module")
@@ -156,7 +156,8 @@ def SQw_incoh_obs(trajectory, Q_vectors):
     """
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
-    SQw_incoh.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dims=DIMS,
+    SQw_incoh.calculate_from_MD(trajectory, Q_vectors=Q_vectors,
+                                dimensions=DIMENSIONS,
                                 t_resolution=T_RESOLUTION)
     return SQw_incoh
 
@@ -171,8 +172,8 @@ def SQw_coh_obs(trajectory, Q_vectors):
     """
 
     SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
-    SQw_coh.calculate_from_MD(trajectory, Q_vectors=Q_vectors, dims=DIMS,
-                              t_resolution=T_RESOLUTION)
+    SQw_coh.calculate_from_MD(trajectory, Q_vectors=Q_vectors,
+                              dimensions=DIMENSIONS, t_resolution=T_RESOLUTION)
     return SQw_coh
 
 

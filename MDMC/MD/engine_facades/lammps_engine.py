@@ -597,7 +597,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         xlo = ylo = zlo = 0.
-        xhi, yhi, zhi = universe.dims
+        xhi, yhi, zhi = universe.dimensions
         region_ID = 'universe'
         # 'block' gives a cuboidal universe
         self.lmp.region(region_ID, 'block', xlo, xhi, ylo, yhi, zlo, zhi,
@@ -2658,10 +2658,10 @@ def convert_trajectory(trajectory_file, atom_type_properties, start=0,
                 #         dmin, dmax = [float(splt) for splt in line.split()]
                 #         print(line)
                 #         assert dmin == 0.0
-                #         # unit is taken from universe dims (which is a
+                #         # unit is taken from universe dimensions (which is a
                 #         # UnitArray)
-                #         assert dmax == convert_unit(universe.dims[i],
-                #                                     universe.dims.unit)
+                #         assert dmax == convert_unit(universe.dimensions[i],
+                #                                     universe.dimensions.unit)
 
             if 'ITEM: ATOMS' in line:
                 if frame_n == start:

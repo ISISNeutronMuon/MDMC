@@ -27,7 +27,8 @@ class SolventConfig(ABC):
 
     def __init__(self):
 
-        self._box_dims = deepcopy(self._solvent_config_dict['box_dims'])
+        self._box_dimensions = deepcopy(
+            self._solvent_config_dict['box_dimensions'])
         self._atom_types = deepcopy(self._solvent_config_dict['atom_types'])
         self._nonbonded_interactions = \
             deepcopy(self._solvent_config_dict['nonbonded_interactions'])
@@ -41,7 +42,7 @@ class SolventConfig(ABC):
         Returns
         -------
         dict
-            A dict with the description, box_dims, atom_types,
+            A dict with the description, box_dimensions, atom_types,
             bonded_interactions, nonbonded_interactions, constrained,
             molecule_name, and molecules
         """
@@ -68,7 +69,7 @@ class SolventConfig(ABC):
         return self._solvent_config_dict['description']
 
     @property
-    def box_dims(self):
+    def box_dimensions(self):
 
         """
         Get or set the box dimensions in Ang
@@ -79,13 +80,13 @@ class SolventConfig(ABC):
             The dimensions of the SolventConfig box in Ang
         """
 
-        return self._box_dims
+        return self._box_dimensions
 
-    @box_dims.setter
+    @box_dimensions.setter
     @unit_decorator(unit=units.LENGTH)
-    def box_dims(self, value):
+    def box_dimensions(self, value):
 
-        self._box_dims = value
+        self._box_dimensions = value
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
@@ -100,7 +101,7 @@ class SolventConfig(ABC):
             The volume of the SolventConfig in Ang^3
         """
 
-        return np.prod(self.box_dims)
+        return np.prod(self.box_dimensions)
 
     @property
     def atom_types(self):

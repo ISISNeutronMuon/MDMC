@@ -97,7 +97,7 @@ def unit_decorator_getter(unit):
         ...     @property
         ...     @unit_decorator_getter(unit=Unit('Ang') ^ 3)
         ...     def volume(self):
-        ...         return self.dims ** 3
+        ...         return self.dimensions ** 3
     """
 
     # Ignore pylint warning for decorator inner function docstrings
