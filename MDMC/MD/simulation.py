@@ -72,7 +72,7 @@ class Universe:
                  structures=None, **settings):
 
         self.shape = shape
-        self.dims = dimensions
+        self.dimensions = dimensions
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:
@@ -99,7 +99,7 @@ class Universe:
     # Unit decorator on getter due to operations in setter
     @property
     @unit_decorator_getter(unit=units.LENGTH)
-    def dims(self):
+    def dimensions(self):
 
         """
         Get or set the dimensions of the Universe
@@ -118,24 +118,25 @@ class Universe:
             The dimensions of the Universe
         """
 
-        return self._dims
+        return self._dimensions
 
-    @dims.setter
-    def dims(self, dims):
+    @dimensions.setter
+    def dimensions(self, dimensions):
 
-        if isinstance(dims, float):
+        if isinstance(dimensions, float):
             if self.shape == Shape.cubic:
-                self._dims = np.array([dims] * 3)
+                self._dimensions = np.array([dimensions] * 3)
             else:
                 raise TypeError("Only dimensions of cubic Universes can be"
                                 " specified with a float")
-        elif isinstance(dims, (list, tuple, np.ndarray)):
-            if len(dims) == 3:
-                self._dims = np.array(dims)
+        elif isinstance(dimensions, (list, tuple, np.ndarray)):
+            if len(dimensions) == 3:
+                self._dimensions = np.array(dimensions)
             else:
                 raise ValueError("3 dimensions must be specified")
         else:
-            raise TypeError("dims must be a float or 3 element list of floats")
+            raise TypeError("dimensions must be a float or 3 element list of"
+                            " floats")
 
     @property
     def interactions(self):
@@ -231,7 +232,7 @@ class Universe:
             Volume in Ang^3
         """
 
-        return np.prod(self.dims)
+        return np.prod(self.dimensions)
 
     @property
     def element_list(self):
@@ -536,9 +537,9 @@ class Universe:
             except KeyError:
                 raise ValueError('The fill method takes either num_density or'
                                  ' num_struc_units as a parameter.')
-            num_density = num_struc_units / np.prod(self.dims)
+            num_density = num_struc_units / np.prod(self.dimensions)
 
-        n_units_xyz = self.dims * (num_density ** (1 / 3.))
+        n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
         positions = []
@@ -546,8 +547,8 @@ class Universe:
         # position (CoM) and its bounding box
         bounds = structural_unit.bounding_box
         mn = np.array((0., 0., 0.)) - (bounds.min - structural_unit.position)
-        mx = self.dims - (bounds.min - structural_unit.position)
-        for i in range(len(self.dims)):
+        mx = self.dimensions - (bounds.min - structural_unit.position)
+        for i in range(len(self.dimensions)):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
                                          endpoint=False))
 
@@ -675,7 +676,7 @@ class Universe:
             False otherwise.
         """
 
-        return any(position > self.dims) or any(position < [0, 0, 0])
+        return any(position > self.dimensions) or any(position < [0, 0, 0])
 
     @mod_func_docstring({'DYNAMIC_SOLVENT_LIST':', '.join(get_solvent_names())})
     def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
@@ -714,7 +715,7 @@ class Universe:
 
         # Calculate useful properties from the original box
         solvent_mass = solvent_config.mass
-        orig_box_dims = solvent_config.box_dims
+        orig_box_dimensions = solvent_config.box_dimensions
         # density is adjusted to account for density of solvent already in box
         density = (density - self.solvent_density)
         # If this is already within the specified tolerance then return, as
@@ -748,8 +749,8 @@ class Universe:
 
             counter += 1
             dim_scaling *= 1 + scale_factor
-            box_dims = orig_box_dims * dim_scaling
-            num_tiles = np.array(self.dims / box_dims)
+            box_dimensions = orig_box_dimensions * dim_scaling
+            num_tiles = np.array(self.dimensions / box_dimensions)
             # Binary list for axes along which whole num of tiles are used.
             wrap = np.array([1 if dir.is_integer() else 0
                              for dir in num_tiles])
@@ -770,13 +771,14 @@ class Universe:
                     for pos in atom_positions:
 
                         pos += (dim_scaling
-                                * (CoM + trans_vect * orig_box_dims) - CoM)
+                                * (CoM + trans_vect * orig_box_dimensions)
+                                - CoM)
                         # Create binary list indicating the axes along
                         # which the atom is out of bounds.
                         axes = np.array([1 if i > j else 0
-                                         for i, j in zip(pos, self.dims)])
+                                         for i, j in zip(pos, self.dimensions)])
                         # Translates position if wrapping required.
-                        pos -= wrap * axes * num_tiles * box_dims
+                        pos -= wrap * axes * num_tiles * box_dimensions
                         remove = self._check_out_of_bounds(pos)
                         # Check for overlap with solute molecules.
                         if not remove:

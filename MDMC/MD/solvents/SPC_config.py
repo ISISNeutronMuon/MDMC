@@ -34,7 +34,7 @@ class SPCConfig(SolventConfig):
 # positive, and scaled by a factor of 10 to convert to Ang.
 SPC216 = {'description':'SPC water coordinates, 216 molecules, 300K, 18.6206'\
                         ' Ang box',
-          'box_dims': np.array([18.6206, 18.6206, 18.6206]),
+          'box_dimensions': np.array([18.6206, 18.6206, 18.6206]),
           'atom_types': {'H': 1,
                          'O': 2},
           'bonded_interactions': [['Bond', ('H1', 'O'), ('H2', 'O')],

@@ -23,13 +23,13 @@ def SQw_from_data():
 @pytest.fixture
 def SQw_from_MD(trajectory, universe):
     SQw = of.ObservableFactory.create_observable('SQw')
-    dims = universe.dims
+    dimensions = universe.dimensions
     n_Q = 10
     t_resolution = 30.999425
-    Q_values = [2 * np.pi * i / dims[0] for i in range(1, n_Q+1)]
+    Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
     SQw.calculate_from_MD(trajectory,
                           Q_values=Q_values,
-                          dims=dims,
+                          dimensions=dimensions,
                           t_resolution=t_resolution)
     return SQw
 

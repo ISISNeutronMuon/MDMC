@@ -9,7 +9,7 @@ from copy import deepcopy
 import MDMC.trajectory_analysis.trajectory as trj
 
 from tests.MD.test_simulation import universe, atom, water_molecule, \
-    water_SPCE_universe, UNIVERSE_DIMS
+    water_SPCE_universe, UNIVERSE_DIMENSIONS
 
 R_AXIS = [0., 20., 0.5]
 T_AXIS = [0., 5., 1.0]

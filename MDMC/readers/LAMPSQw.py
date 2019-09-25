@@ -232,7 +232,7 @@ class LAMPSQw(Reader):
         except ValueError:
             pass
 
-    def _get_data(self, str_iter, *dims):
+    def _get_data(self, str_iter, *dimensions):
 
         """
         Iterates over an iterator from a file and extracts the numerical values
@@ -242,13 +242,13 @@ class LAMPSQw(Reader):
         ----------
         str_iter : iterator
             An iterator of str
-        *dims
+        *dimensions
             A float specifying the size for every dimension of the data
 
         Returns
         -------
         array
-            An array of floats with dimensions specified by *dims
+            An array of floats with dimensions specified by *dimensions
         """
 
         def get_row_data(dim):
@@ -263,12 +263,12 @@ class LAMPSQw(Reader):
 
             return row_data
 
-        var = np.empty(dims)
+        var = np.empty(dimensions)
 
-        if len(dims) == 1:
-            var = get_row_data(dims[0])
+        if len(dimensions) == 1:
+            var = get_row_data(dimensions[0])
         else:
-            for k in range(dims[0]):
-                var[k] = get_row_data(dims[1])
+            for k in range(dimensions[0]):
+                var[k] = get_row_data(dimensions[1])
 
         return var

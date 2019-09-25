@@ -16,7 +16,7 @@ from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structural_units as su
 
 
-UNIVERSE_DIMS = (10., 10., 10.)
+UNIVERSE_DIMENSIONS = (10., 10., 10.)
 UNIVERSE_SHAPE = sim.Shape.cubic
 
 H1_POSITION = (0., 0., 0.)
@@ -29,15 +29,15 @@ WATER_NUM_DENSITY = 0.0333679
 
 TOLERANCE = 1
 SPCE_MASS = 18.01499
-SPCE_DIMS = SPC216['box_dims']
+SPCE_DIMENSIONS = SPC216['box_dimensions']
 SPCE_NUM_MOL = len(SPC216['molecules'])
-SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMS)
+SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
 
 
 @pytest.fixture
 def universe():
 
-    return sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
+    return sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
 
 @pytest.fixture
 def atom():
@@ -61,7 +61,7 @@ def water_molecule(atom):
 @pytest.fixture
 def water_SPCE_universe(water_molecule):
 
-    water_universe = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
+    water_universe = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
@@ -95,12 +95,14 @@ def large_diatomic():
     """
 
     return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
-                              su.Atom('H', position=(np.array(UNIVERSE_DIMS) / 2))])
+                              su.Atom('H',
+                                      position=(np.array(UNIVERSE_DIMENSIONS)/2)
+                                     )])
 
 @pytest.fixture
 def solvated_universe():
 
-    uni = sim.Universe(SPCE_DIMS)
+    uni = sim.Universe(SPCE_DIMENSIONS)
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
 
     return uni
@@ -109,7 +111,7 @@ def solvated_universe():
 def test_create_universe(universe):
 
     assert UNIVERSE_SHAPE == universe.shape
-    npt.assert_array_equal(UNIVERSE_DIMS, universe.dims)
+    npt.assert_array_equal(UNIVERSE_DIMENSIONS, universe.dimensions)
 
 
 def test_create_atom(atom):
@@ -331,7 +333,7 @@ def test_spce_water_box(water_SPCE_universe):
     Tests for correct number of interactions
     """
 
-    n_molecules_xyz = np.array(UNIVERSE_DIMS) * WATER_NUM_DENSITY**(1./3.)
+    n_molecules_xyz = np.array(UNIVERSE_DIMENSIONS) * WATER_NUM_DENSITY**(1./3.)
     n_molecules = np.prod(n_molecules_xyz.astype(int))
 
     assert int(n_molecules) == \
@@ -348,13 +350,14 @@ def test_spce_water_box(water_SPCE_universe):
     assert len(water_SPCE_universe.interactions) == N + 3
 
     # TODO: Test for correct positions
-    # water_positions = sorted([list(structural_unit.position) for structural_unit
-    #                                 in water_SPCE_universe.configuration])
-    # intermol_dist = np.array(UNIVERSE_DIMS) / int(n_molecules**(1./3.))
+    # water_positions = sorted([list(structural_unit.position)
+    #                           for structural_unit
+    #                           in water_SPCE_universe.configuration])
+    # intermol_dist = np.array(UNIVERSE_DIMENSIONS) / int(n_molecules**(1./3.))
     # calc_positions = []
-    # for x in np.arange(0, UNIVERSE_DIMS[0], intermol_dist[0]):
-    #     for y in np.arange(0, UNIVERSE_DIMS[1], intermol_dist[1]):
-    #         for z in np.arange(0, UNIVERSE_DIMS[2], intermol_dist[2]):
+    # for x in np.arange(0, UNIVERSE_DIMENSIONS[0], intermol_dist[0]):
+    #     for y in np.arange(0, UNIVERSE_DIMENSIONS[1], intermol_dist[1]):
+    #         for z in np.arange(0, UNIVERSE_DIMENSIONS[2], intermol_dist[2]):
     #             calc_positions.append([x, y, z])
     # assert sorted(calc_positions) == water_positions
 
@@ -429,9 +432,9 @@ def test_valid_position(atom):
     atom.position = [5., 5., 5.]
     assert atom.valid_position()
 
-    lt_dims = list(set(permutations([-3., 3., 3.])))
-    gt_dims = list(set(permutations([5.1, 3., 3.])))
-    invalid_positions = lt_dims + gt_dims
+    lt_dimensions = list(set(permutations([-3., 3., 3.])))
+    gt_dimensions = list(set(permutations([5.1, 3., 3.])))
+    invalid_positions = lt_dimensions + gt_dimensions
     for position in invalid_positions:
         atom.position = position
         assert atom.valid_position() is False
@@ -730,7 +733,7 @@ def test_universe_multiple_solvers(kspace_solver):
     passed when initializing a Universe
     """
 
-    uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+    uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
                        electrostatic_solver=kspace_solver,
                        dispersive_solver=kspace_solver)
     assert uni.electrostatic_solver == kspace_solver
@@ -746,13 +749,13 @@ def test_universe_multiple_solvers_error(kspace_solver):
     """
 
     with pytest.raises(ValueError):
-        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+        uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver)
-        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+        uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
                            kspace_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
-        uni = sim.Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE,
+        uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
@@ -806,7 +809,7 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
     tolerance = 1e-16
     for atom in universe.atom_list:
         assert all(atom.position > [0, 0, 0] - np.array([tolerance] * 3))
-        assert all(atom.position < universe.dims)
+        assert all(atom.position < universe.dimensions)
 
 
 @pytest.mark.parametrize('num_density', [3.14, 0.6, 1.0])
@@ -819,8 +822,8 @@ def test_universe_fill_num_density_num_struc_same_result(universe, num_density,
     difference in the actual number densityx achieved.
     """
 
-    num_strucs = num_density * np.prod(universe.dims)
-    universe2 = sim.Universe(universe.dims)
+    num_strucs = num_density * np.prod(universe.dimensions)
+    universe2 = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
     universe2.fill(water_molecule, num_struc_units=num_strucs)
 
@@ -848,7 +851,7 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
         assert exc.value.message == 'Cannot pass both'
 
 
-@pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMS * scalar)
+@pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar)
                                  for scalar in [0.9, 1.0, 1.1]])
 def test_solvate_spce_no_solute(uni):
 
@@ -875,7 +878,7 @@ def test_solvate_spce_with_solute(molecule):
     with SPCE water a universe containing a large diatomic molecule.
     """
 
-    univ = sim.Universe(SPCE_DIMS / 2)
+    univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     tot_mass = 0
@@ -894,7 +897,7 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
     """
 
     for atom in solvated_universe.atom_list:
-        assert all(atom.position <= solvated_universe.dims)
+        assert all(atom.position <= solvated_universe.dimensions)
         assert all(atom.position >= [0, 0, 0])
 
 
@@ -906,7 +909,7 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
 
-    univ = sim.Universe(SPCE_DIMS / 2)
+    univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     solute_bounds = molecule.bounding_box
@@ -930,8 +933,8 @@ def test_solvate_spce_bond_lengths(dim_scalings):
     """
 
     # Solvate 2 universes of different dimensions.
-    univ1 = sim.Universe(SPCE_DIMS * dim_scalings[0])
-    univ2 = sim.Universe(SPCE_DIMS * dim_scalings[1])
+    univ1 = sim.Universe(SPCE_DIMENSIONS * dim_scalings[0])
+    univ2 = sim.Universe(SPCE_DIMENSIONS * dim_scalings[1])
     univ1.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     univ2.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
 
@@ -961,7 +964,7 @@ def test_solvate_spce_bond_lengths(dim_scalings):
 
 
 @pytest.mark.parametrize('dim_scaling', [[1, 1, 1], [1, 2, 3], [2, 3, 1]])
-def test_solvate_spce_density_perfect_dims(dim_scaling):
+def test_solvate_spce_density_perfect_dimensions(dim_scaling):
 
     """
     Tests that a perfect density (i.e. the density of SPCE water box as
@@ -970,7 +973,7 @@ def test_solvate_spce_density_perfect_dims(dim_scaling):
     water box.
     """
 
-    univ = sim.Universe(SPCE_DIMS * np.array(dim_scaling))
+    univ = sim.Universe(SPCE_DIMENSIONS * np.array(dim_scaling))
     univ.solvate(SPCE_DENSITY)
     total_mass = 0
     for atom in univ.atom_list:
@@ -979,7 +982,7 @@ def test_solvate_spce_density_perfect_dims(dim_scaling):
             < 1e-10)
 
 
-def test_solvate_no_spce_wrapping_for_non_int_univ_dims():
+def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
 
     """
     Creates a universe with a dimension that is a non-integer multiple of the
@@ -990,19 +993,19 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dims():
 
     # Build a universe of dimensions of the SPCE box, but cut in half
     # along the z-axis, and solvate it.
-    univ_dims = SPCE_DIMS * np.array([1, 1, 0.5])
-    univ = sim.Universe(univ_dims)
+    univ_dimensions = SPCE_DIMENSIONS * np.array([1, 1, 0.5])
+    univ = sim.Universe(univ_dimensions)
     univ.solvate(SPCE_DENSITY)
     # Molecule 12 from the GROMACS spc216 configuration is known to have one
-    # atom that sits out of bounds of these universe dims, along the z-axis
-    # only. The molecule should therefore not be added to the universe, nor
-    # should the atom out-of-bounds be wrapped around.
+    # atom that sits out of bounds of these universe dimensions, along the
+    # z-axis only. The molecule should therefore not be added to the universe,
+    # nor should the atom out-of-bounds be wrapped around.
     pos1 = np.array([17.27, 3.79, 9.39])
     pos2 = np.array([15.81, 3.31, 8.84])
     pos3 = np.array([16.67, 3., 9.25])
     # If wrapped, the wrapped position is the position of the out-of-bounds
     # atom minus the universe dimension length in the z-direction.
-    wrapped_pos = pos1 - univ_dims * np.array([0, 0, 1])
+    wrapped_pos = pos1 - univ_dimensions * np.array([0, 0, 1])
     # Check that no atoms in the universe have these positions.
     for atom in univ.atom_list:
         for pos in [pos1, pos2, pos3, wrapped_pos]:
@@ -1083,22 +1086,20 @@ def test_solvate_solvated_universe_different_density(density, tolerance,
         solvated_universe.solvate(density=density, tolerance=tolerance)
 
 
-@pytest.mark.parametrize("univ_dims, pos, expected", [(10., [10., 10., 10.],
-                                                       False),
-                                                      (0.1, [-7., 0, 0], True),
-                                                      ([20., 15., 1.],
-                                                       [21., 15., 1.], True),
-                                                      (10., [0., 0., -0.0001],
-                                                       True),
-                                                      (10., [5, 5, 5], False)])
-def test_check_out_of_bounds(univ_dims, pos, expected):
+@pytest.mark.parametrize("univ_dimensions, pos, expected",
+                         [(10., [10., 10., 10.], False),
+                          (0.1, [-7., 0, 0], True),
+                          ([20., 15., 1.], [21., 15., 1.], True),
+                          (10., [0., 0., -0.0001], True),
+                          (10., [5, 5, 5], False)])
+def test_check_out_of_bounds(univ_dimensions, pos, expected):
 
     """
     Tests whether the correct bool is returned by the function that checks
     whether a position is outside the bounds of a universe.
     """
 
-    univ = sim.Universe(univ_dims)
+    univ = sim.Universe(univ_dimensions)
     assert univ._check_out_of_bounds(np.array(pos)) == expected
 
 

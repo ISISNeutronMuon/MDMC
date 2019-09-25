@@ -249,7 +249,7 @@ class AbstractSQw(Observable):
                 The maximum number of Q vectors for any Q value. The greater the
                 number of Q vectors, the more accurate the calculation, but the
                 longer it will take.
-            dims : list, tuple, array
+            dimensions : list, tuple, array
                 A 3 element tuple or NumPy array of floats specifying the
                 dimenions of the universe in units of Ang
         """
@@ -258,14 +258,14 @@ class AbstractSQw(Observable):
         self.trajectory = MD_input
         self.t = self.trajectory.times - self.trajectory.times[0]
         try:
-            self.universe_dims = self.trajectory.dims
+            self.universe_dimensions = self.trajectory.dimensions
         except AttributeError:
             try:
-                self.universe_dims = np.array(settings['dims'])
+                self.universe_dimensions = np.array(settings['dimensions'])
             except KeyError:
-                raise AttributeError('Either trajectory requires a dims'
-                ' attribute or dims must be passed when calling'
-                ' calculate_from_MD')
+                raise AttributeError('Either trajectory requires a dimensions'
+                                     ' attribute or dimensions must be passed'
+                                     ' when calling calculate_from_MD')
         self.t_res = settings['t_resolution']
         self._set_weights()
 
@@ -273,7 +273,7 @@ class AbstractSQw(Observable):
         if not hasattr(self, 'independent_variables'):
             self.independent_variables = {}
 
-        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dims)
+        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
                                  * UNIT_VECTOR)
 
         dt = self.t[1] - self.t[0]

@@ -353,7 +353,7 @@ class StructuralUnit(ABC):
         try:
             # (0., 0., 0.) is defined as the origin for all universes
             if (np.any(position < np.array([0., 0., 0])) or
-                    np.any(position > self.universe.dims)):
+                    np.any(position > self.universe.dimensions)):
                 return False
             elif np.any(position == np.float('nan')):
                 raise ValueError('position of {0} is undefined'.format(self))

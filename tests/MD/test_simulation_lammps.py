@@ -305,7 +305,7 @@ def lammps_engine(universe):
     return lammps_engine
 
 
-def test_universe_dims(lammps_universe):
+def test_universe_dimensions(lammps_universe):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the

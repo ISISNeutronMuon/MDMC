@@ -17,7 +17,7 @@ ATOM_TYPES = [1, 2, 3]
 POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
 TEST_CHARGE_1 = 3.14
 TEST_CHARGE_2 = -2.71
-UNIVERSE_DIMS = (10., 10., 10.)
+UNIVERSE_DIMENSIONS = (10., 10., 10.)
 UNIVERSE_SHAPE = Shape.cubic
 
 
@@ -37,7 +37,7 @@ def universe():
     Initializes an empty universe object.
     """
 
-    return Universe(UNIVERSE_DIMS, UNIVERSE_SHAPE)
+    return Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
 
 @pytest.fixture
 def atom_list():
