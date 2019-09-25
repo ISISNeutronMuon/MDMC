@@ -519,11 +519,31 @@ class CompositeStructuralUnit(StructuralUnit):
         Copies the CompositeStructuralUnit and all attributes, except ID which
         is generated
 
+        Copying a CompositeStructuralUnit (e.g. a Molecule) will copy all of the
+        atoms within it. All of these atoms will have identical bonded and
+        nonbonded interactions to the CompositeStructuralUnit from which they
+        were copied i.e. the CompositeStructuralUnit will be exacltly
+        duplicated. The only attributes of the CompositeStructuralUnit which
+        will will differ are the position (which is passed as a Parameter to
+        the copy method), and the id, which is generated automatically.
+
         This will not currently work if the CompositeStructuralUnit has any
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
         Interactions for Atoms may be reordered with respect to initial atoms
+
+        Parameters
+        ----------
+        position : list, tuple, NumPy array
+            3 element list, tuple or array of floats specifying the position of
+            the new StructuralUnit
+
+        Returns
+        -------
+        CompositeStructuralUnit
+            A CompositeStructuralUnit of the same type with all non-unique
+            attributes copied and a new position
         """
 
         return super(CompositeStructuralUnit, self).copy(position)
@@ -854,9 +874,12 @@ class Atom(StructuralUnit):
         """
         Copies the Atom and all attributes, except ID which is generated
 
-        Interactions are copied but the copied atom is substituted for the
-        original atom.  For BondedInteractions this means that the copied atom
-        will be bonded to all atoms to which the original atom is bonded.
+        Copying an Atom creates an exact duplicate at the specified position.
+        The copied atom will have identical bonded and nonbonded interactions as
+        the original. For BondedInteractions this means that the copied atom
+        will be bonded to all atoms to which the original atom is bonded. The id
+        of the copied atom will differ from the original, as they are
+        sequentially generated.
 
         Parameters
         ----------
@@ -867,6 +890,31 @@ class Atom(StructuralUnit):
         -------
         Atom
             A copy of the Atom with the specified position
+
+        Examples
+        --------
+        If the following atom is copied:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            H1 = Atom('H', position=(0., 0., 0.), charge=0.4238)
+            H2 = H1.copy(position=(1., 1., 1.))
+
+        then the new atom (H2) will have no BondedInteractions, but will have a
+        Coulombic interaction (with a charge parameter of 0.4238 e)
+
+        If these two atoms are then bonded together and a copy is made:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            HHbond = Bond((H1, H2))
+            H3 = H1.copy(position=(2., 2., 2.))
+
+        then the newest atom (H3) will have a Coulombic interaction (also with a
+        charge parameter of 0.4238 e), and it will also have a Bond interaction
+        with H2 (as H1 had a Bond interaction with H2).
         """
 
         return super(Atom, self).copy(position)
