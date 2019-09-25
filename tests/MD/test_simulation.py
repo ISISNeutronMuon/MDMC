@@ -4,7 +4,7 @@
 
 from collections import Counter
 from copy import deepcopy
-from itertools import permutations
+from itertools import combinations, permutations
 
 import numpy as np
 import numpy.testing as npt
@@ -27,8 +27,10 @@ WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
 TOLERANCE = 1
-SPCE_MASS = molec_from_dict(SPCE['molecules'].values()[0]).mass
-SPCE_DENSITY = SPCE_MASS * len(SPCE['molecules']) / np.prod(SPCE['box dims']))
+SPCE_MOLECULE = molec_from_dict(SPCE['molecules'].values()[0])
+SPCE_DIMS = SPCE['box dims']
+SPCE_NUM_MOL = len(SPCE['molecules'])
+SPCE_DENSITY = SPCE_MOLECULE.mass * SPCE_NUM_MOL / np.prod(SPCE_DIMS)
 
 
 @pytest.fixture
@@ -72,26 +74,47 @@ def kspace_solver():
     return sim.Ewald(accuracy=0.0001)
 
 @pytest.fixture
-def create_small_molecule():
+def small_diatomic():
 
     """
-    Creates a benzene molecule.
+    Creates molecular hydrogen (H2) with normal internuclear separation
+    and therefore a small bounding box relative to the size of the universe.
     """
 
-    return su.Molecule(atoms=[Atom('C', position=(0.00000, 1.40272, 0.00000)),
-                              Atom('H', position=(0.00000, 2.49029, 0.00000)),
-                              Atom('C', position=(-1.21479, 0.70136, 0.00000)),
-                              Atom('H', position=(-2.15666, 1.24515, 0.00000)),
-                              Atom('C', position=(-1.21479, -0.70136, 0.00000)),
-                              Atom('H', position=(-2.15666, -1.24515, 0.00000)),
-                              Atom('C', position=(0.00000, -1.40272, 0.00000)),
-                              Atom('H', position=(0.00000, -2.49029, 0.00000)),
-                              Atom('C', position=(1.21479, -0.70136, 0.00000)),
-                              Atom('H', position=(2.15666, -1.24515, 0.00000)),
-                              Atom('C', position=(1.21479, 0.70136, 0.00000)),
-                              Atom('H', position=(2.15666, 1.24515, 0.00000))])
+    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+                              su.Atom('H', position=([np.sqrt(3)] * 3))])
+
 @pytest.fixture
-def create_large_molecule():
+def large_diatomic():
+
+    """
+    Creates molecular hydrogen with a large internuclear separation,
+    orientated so that its bounding box is very large relative to
+    the universe.
+    """
+
+    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+                              su.Atom('H', position=(np.array(UNIVERSE_DIMS) / 2))])
+
+# @pytest.fixture
+# def benzene_molecule():
+#
+#     """
+#     Creates a benzene molecule.
+#     """
+#
+#     return su.Molecule(atoms=[su.Atom('C', position=(0., 1.40272, 0.)),
+#                               su.Atom('H', position=(0., 2.49029, 0.)),
+#                               su.Atom('C', position=(-1.21479, 0.70136, 0.)),
+#                               su.Atom('H', position=(-2.15666, 1.24515, 0.)),
+#                               su.Atom('C', position=(-1.21479, -0.70136, 0.)),
+#                               su.Atom('H', position=(-2.15666, -1.24515, 0.)),
+#                               su.Atom('C', position=(0., -1.40272, 0.)),
+#                               su.Atom('H', position=(0., -2.49029, 0.)),
+#                               su.Atom('C', position=(1.21479, -0.70136, 0.)),
+#                               su.Atom('H', position=(2.15666, -1.24515, 0.)),
+#                               su.Atom('C', position=(1.21479, 0.70136, 0.)),
+#                               su.Atom('H', position=(2.15666, 1.24515, 0.))])
 
 
 def test_create_universe(universe):
@@ -763,11 +786,9 @@ def test_universe_fill_orientations(universe):
     assert np.linalg.norm(pos1) == np.linalg.norm(pos2)
     # Build the 2 diatomics with different orientations.
     diatomic1 = su.Molecule(atoms=[su.Atom('H', position=origin),
-                                   su.Atom('H', position=pos1)])  #,
-                            # position=(0, 0.5, 0))
+                                   su.Atom('H', position=pos1)])
     diatomic2 = su.Molecule(atoms=[su.Atom('H', position=origin),
-                                   su.Atom('H', position=pos2)])  #,
-                            # position=(0.5 * coord, 0.5 * coord, 0))
+                                   su.Atom('H', position=pos2)])
     # Fill each respective universe.
     density = 0.567438
     univ1.fill(diatomic1, num_density=density)
@@ -776,18 +797,131 @@ def test_universe_fill_orientations(universe):
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
 
 
-def test_solvate_spce_no_solute(universe):
+@pytest.mark.parametrize('uni', [sim.Universe(SPCE_DIMS * scalar)
+                                 for scalar in [0.9, 1.0, 1.1]])
+def test_solvate_spce_no_solute(uni):
+
     """
-    Tests that the achieved density is within the tolerance for solvating an
-    empty universe with SPCE water.
+    Tests that the achieved density is within the tolerance for solvating
+    with SPCE water an empty universe of dimensions smaller, equal to, and
+    larger than those of the SPCE configuration box.
     """
 
-    universe.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
-    actual_dens = len(universe.molecule_list) * SPCE_MASS / universe.volume
+    uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    actual_dens = len(uni.molecule_list) * SPCE_MOLECULE.mass / uni.volume
     cond1 = SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
     cond2 = actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
     assert cond1 and cond2
 
+
+@pytest.mark.parametrize('molecule', [small_diatomic(), large_diatomic()])
+def test_solvate_spce_with_solute(molecule):
+
+    """
+    Tests that the achieved density is within the tolerance for solvating
+    with SPCE water a universe containing a small diatomic molecule.
+
+    Tests that the achieved density is within the tolerance for solvating
+    with SPCE water a universe containing a large diatomic molecule.
+    """
+
+    univ = sim.Universe(SPCE_DIMS / 2)
+    univ.add_structural_unit(molecule)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    tot_mass = 0
+    for mol in univ.molecule_list:
+        tot_mass += mol.mass
+    actual_dens = tot_mass / univ.volume
+    cond1 = SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
+    cond2 = actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+    assert cond1 and cond2
+
+
+def test_solvate_spce_no_out_of_bounds():
+
+    """
+    Tests that solvating an empty universe with SPCE water results in no
+    atoms of those solvent moleules being outside the universe bounds.
+    """
+
+    univ = sim.Universe(SPCE_DIMS)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    for atom in univ.atom_list:
+        cond1 = any(atom.position <= univ.dims)
+        cond2 = any(atom.position >= [0, 0, 0])
+        assert cond1 and cond2
+
+
+@pytest.mark.parametrize('molecule', [small_diatomic(), large_diatomic()])
+def test_solvate_spce_no_overlap_with_solute(molecule):
+
+    """
+    Tests that solvating a universe containing different solute molecules
+    with SPCE water gives no overlaps between solvent and solute molecules.
+    """
+
+    univ = sim.Universe(SPCE_DIMS / 2)
+    univ.add_structural_unit(molecule)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    solute_bounds = molecule.bounding_box
+    for mol in univ.molecule_list:
+        names = [atom.name for atom in mol.atom_list]
+        # Only compare bounding boxes of solute and SPCE water.
+        if not np.array_equal(np.sort(names), np.sort(['H', 'O', 'H'])):
+            for atom in mol.atom_list:
+                pos = atom.position
+                cond1 = all(pos > solute_bounds.min)
+                cond2 = all(pos < solute_bounds.max)
+                # Overlapping if both conditions are true
+                assert not (cond1 and cond2)
+
+
+@pytest.mark.parametrize('dim_scalings', [(0.9, 1.1), (0.5, 0.7)])
+def test_solvate_spce_bond_lengths(dim_scalings):
+
+    """
+    Tests that solvating 2 empty universes of different dimensions results
+    in no change of the intramolecular nuclear separation lengths in the
+    SPCE water solvent molecules.
+    """
+
+    # Solvate 2 universes of different dimensions.
+    univ1 = sim.Universe(SPCE_DIMS * dim_scalings[0])
+    univ2 = sim.Universe(SPCE_DIMS * dim_scalings[1])
+    univ1.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    univ2.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    # Retrieve 2 test molecules from each universe.
+    test_molecules = {}
+    univ_number = 0
+    for univ in (univ1, univ2):
+        univ_number += 1
+        min_pos = max_pos = SPCE_DIMS * min(dim_scalings) * 0.5
+        for mol in univ.molecule_list:
+            min_length = np.linalg.norm(min_pos)
+            max_length = np.linalg.norm(max_pos)
+
+            pos = mol.position
+            length = np.linalg.norm(pos)
+            if length < min_length:
+                min_pos = pos
+                min_mol = mol
+            elif length > max_length:
+                max_pos = pos
+                max_mol = mol
+        test_molecules['min ' + str(univ_number)] = min_mol
+        test_molecules['max ' + str(univ_number)] = max_mol
+    # Generate the distances between pairs of atoms in the test molecules.
+    distances = {}
+    for mol_key in test_molecules:
+        mol = test_molecules[mol_key]
+        pos = [atom.position for atom in mol.atom_list]
+        dists = np.sort([np.linalg.norm(i - j) for i, j in combinations(pos, 2)])
+        distances[mol_key] = dists
+    # Compare distances between molecules in each universe.
+    for label in ('min ', 'max '):
+        dist1 = distances[label + str(1)]
+        dist2 = distances[label + str(2)]
+        np.testing.assert_array_almost_equal(dist1, dist2)
 def test_solvate_SPCE_with_solute(universe):
 @pytest.mark.parametrize('param', ['num_density', 'num_struc_units'])
 def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
