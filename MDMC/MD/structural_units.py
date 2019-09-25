@@ -1091,6 +1091,25 @@ class Molecule(CompositeStructuralUnit):
         for atom in self.atom_list:
             self._CoM_frame_positions[atom] = atom.position - CoM
 
+    @property
+    @unit_decorator_getter(unit=units.MASS)
+    def mass(self):
+
+        """
+        Get the molecular mass of the Molecule in amu
+
+        Returns
+        -------
+        float
+            the molecular mass in amu
+        """
+
+        mass = 0
+        for atom in self.atom_list:
+            mass += atom.mass
+
+        return mass
+
 
 class BoundingBox:
 
@@ -1598,7 +1617,7 @@ class Dispersion(NonBondedInteraction):
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
                                  ' atom types')
-            elif not all([isinstance(atom_type, int) for atom_type
+            elif not all([isinstance(atom_type, (int, np.integer)) for atom_type
                           in atom_type_pair]):
                 raise TypeError('Each atom type must be int')
             return atom_type_pair
@@ -1734,7 +1753,7 @@ class Coulombic(NonBondedInteraction):
             if settings.get('atoms'):
                 raise TypeError('Cannot pass both atoms and atom_types '
                                 'as parameters.')
-            if isinstance(atom_types, int):
+            if isinstance(atom_types, (int, np.integer)):
                 # Account for init argument atom_types=atom_type
                 # rather than atom_types=[atom_type]
                 atom_types = [atom_types]
@@ -1801,10 +1820,10 @@ class Coulombic(NonBondedInteraction):
 
     def __eq__(self, other):
 
-        return ((sorted(self.atom_types, key=id)
-                 == sorted(other.atom_types, key=id))
-                and sorted(self.atoms, key=id) == sorted(other.atoms, key=id)
-                and isinstance(other, type(self)))
+        return (isinstance(other, type(self))
+                and (sorted(self.atom_types, key=id)
+                     == sorted(other.atom_types, key=id))
+                and sorted(self.atoms, key=id) == sorted(other.atoms, key=id))
 
     @property
     def atoms(self):

@@ -3,13 +3,15 @@
  Classes for the simulation box, minimizer and integrator."""
 
 from collections import defaultdict
-from itertools import product, filterfalse, count
+from itertools import count, filterfalse, product
 
 from enum import Enum
 import numpy as np
 
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
+    mod_func_docstring
 from MDMC.common import units
+from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.structural_units import Coulombic, Dispersion
@@ -27,7 +29,7 @@ class Universe:
 
     Parameters
     ----------
-    dims : np.array, list, float
+    dimensions : np.array, list, float
         Dimensions of the Universe, in units of Ang. A float can be used for a
         cubic universe.
     shape : enum
@@ -77,6 +79,7 @@ class Universe:
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
+        self._solvent_density = 0.
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         self.force_fields = force_field
@@ -380,7 +383,6 @@ class Universe:
 
         """
         Get the mass density of the Universe
-
         Returns
         -------
         float
@@ -388,6 +390,21 @@ class Universe:
         """
 
         return np.sum([atom.mass for atom in self.atom_list]) / self.volume
+
+    @property
+    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
+    def solvent_density(self):
+
+        """
+        Get the mass density of a solvent added using the solvate method
+
+        Returns
+        -------
+        float
+            The mass density of a solvent added using sovlate
+        """
+
+        return self._solvent_density
 
     def _update_atom_types(self, atom):
 
@@ -640,6 +657,175 @@ class Universe:
                     pairs_interactions[pair].append(inter)
 
         return pairs_interactions
+
+    def _check_out_of_bounds(self, position):
+
+        """
+        Checks whether a position lies outside the bounds of the universe.
+
+        Parameters
+        ----------
+        position : list, array
+            The position to be checked against bounds of the universe.
+
+        Returns
+        -------
+        bool
+            True if the position passed falls outside the universe,
+            False otherwise.
+        """
+
+        return any(position > self.dims) or any(position < [0, 0, 0])
+
+    @mod_func_docstring({'DYNAMIC_SOLVENT_LIST':', '.join(get_solvent_names())})
+    def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
+
+        """
+        Fills the universe with solvent molecules according to pre-defined
+        coordinates.
+
+        Parameters
+        ----------
+        density : float
+            The desired density of the solvent that solvates the universe,
+            in units of amu Ang ^ -3
+        tolerance : float, optional
+            The +/- percentage tolerance of the density to be achieved.
+            The default is 1 %. Tolerances of less than 1 % are at risk
+            of not converging.
+        solvent : str, optional
+            A str specifying an inbuilt solvent from the following:
+            DYNAMIC_SOLVENT_LIST.
+            The default is 'SPCE'.
+        **settings
+            constraint_algorithm : ConstraintAlgorithm
+                A ConstraintAlgorithm which is applied to the Universe.  If an
+                inbuilt solvent is selected (e.g. 'SPCE') and
+                constraint_algorithm is not passed, the ConstraintAlgorithm will
+                default to Shake(1e-4, 100).
+
+        Raises
+        ------
+        ValueError
+            If the universe has already been solvated with a different density.
+        """
+
+        solvent_config = get_solvent_config(solvent)
+
+        # Calculate useful properties from the original box
+        solvent_mass = solvent_config.mass
+        orig_box_dims = solvent_config.box_dims
+        # density is adjusted to account for density of solvent already in box
+        density = (density - self.solvent_density)
+        # If this is already within the specified tolerance then return, as
+        # calling solvate is redundant. Otherwise, raise an error, as solvate is
+        # not designed to be applied multiple times to change the
+        # solvent_density of a Universe.
+        if abs(density * 100) <= abs(tolerance):
+            return
+        elif self.solvent_density != 0.:
+            raise ValueError('The universe has already been solvated. The'
+                             ' density of a previously added solvent cannot be'
+                             ' changed.')
+        # Get the prelim scaling of the orig box required to achieve density
+        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
+                               * 3)
+
+        scale_factor = 0.
+        counter = 0
+        # Offset the atom_types of the solvent_config by the maximum atom_type
+        # in the Universe.
+        # Try/except accounts for empty universe (i.e. no atom_types)
+        try:
+            max_atom_type = np.max(list(self.atom_types.keys()))
+        except ValueError:
+            max_atom_type = 0
+        solvent_config.offset_atom_types(max_atom_type)
+        difference = np.float('inf')
+
+        while abs(difference * 100) >= abs(tolerance):
+
+
+            counter += 1
+            dim_scaling *= 1 + scale_factor
+            box_dims = orig_box_dims * dim_scaling
+            num_tiles = np.array(self.dims / box_dims)
+            # Binary list for axes along which whole num of tiles are used.
+            wrap = np.array([1 if dir.is_integer() else 0
+                             for dir in num_tiles])
+            num_tiles = np.ceil(num_tiles).astype(int)
+
+            mols = []
+            for trans_vect in product(range(0, num_tiles[0]),
+                                      range(0, num_tiles[1]),
+                                      range(0, num_tiles[2])):
+
+                solvent_config.reset_molecules()
+                for mol_key, mol in tuple(solvent_config.molecules.items()):
+
+                    atom_positions = mol.values()
+                    CoM = solvent_config.molec_from_dict(mol).position
+
+                    remove = False
+                    for pos in atom_positions:
+
+                        pos += (dim_scaling
+                                * (CoM + trans_vect * orig_box_dims) - CoM)
+                        # Create binary list indicating the axes along
+                        # which the atom is out of bounds.
+                        axes = np.array([1 if i > j else 0
+                                         for i, j in zip(pos, self.dims)])
+                        # Translates position if wrapping required.
+                        pos -= wrap * axes * num_tiles * box_dims
+                        remove = self._check_out_of_bounds(pos)
+                        # Check for overlap with solute molecules.
+                        if not remove:
+                            for solute in self.molecule_list:
+                                cond1 = all(pos > solute.bounding_box.min)
+                                cond2 = all(pos < solute.bounding_box.max)
+                                if cond1 and cond2:
+                                    remove = True
+                    if remove:
+                        del solvent_config.molecules[mol_key]
+                mols += solvent_config.molecules_from_coords(
+                    solvent_config.molecules,
+                    universe=self)
+
+            # Check the density
+            actual = (len(mols) * solvent_mass) / self.volume
+            difference = (actual - density) / density
+            scale_factor = difference / counter
+
+        # Once the correct density is achieved, add molecules to universe
+        # and get all bonded interactions
+        # Also determine the total density of the solvent
+        bonded_interactions = []
+        for molecule in mols:
+            self.add_structural_unit(molecule)
+            bonded_interactions += molecule.interactions
+
+
+        # Get nonbonded interactions from atom types
+        # Add interaction if any of its atom types are in atom_types
+        nonbonded_interactions = []
+        for interaction in self.nonbonded_interactions:
+            inter_atom_types = np.array(interaction.atom_types).flatten()
+            if len(set(inter_atom_types).intersection(
+                    solvent_config.atom_types.values())) >= 1:
+                nonbonded_interactions.append(interaction)
+
+        # Apply the force field of the solvent to the Universe
+        try:
+            self.add_force_field(solvent, *set(bonded_interactions
+                                               + nonbonded_interactions))
+            # If BondedInteractions are constrained, apply a constrain algorithm
+            if solvent_config.constrained:
+                self.constraint_algorithm = settings.get('constraint_algorithm',
+                                                         Shake(1e-4, 100))
+        except ImportError:
+            pass
+
+        self._solvent_density += len(mols) * solvent_mass / self.volume
 
 
 def _primitive_cubic(dimensions, number):

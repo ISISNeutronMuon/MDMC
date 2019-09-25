@@ -3,15 +3,16 @@
  AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:05:13"""
 
 from collections import Counter
-from copy import deepcopy
-from itertools import permutations
+from itertools import combinations, permutations
 
 import numpy as np
 import numpy.testing as npt
 import pytest
 
 from MDMC.MD.force_fields.ff import WaterModel
+from MDMC.MD.interaction_functions import Parameter
 import MDMC.MD.simulation as sim
+from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structural_units as su
 
 
@@ -25,6 +26,12 @@ H_MASS = 1.008
 O_MASS = 16.000
 WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
+
+TOLERANCE = 1
+SPCE_MASS = 18.01499
+SPCE_DIMS = SPC216['box_dims']
+SPCE_NUM_MOL = len(SPC216['molecules'])
+SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMS)
 
 
 @pytest.fixture
@@ -66,6 +73,37 @@ def water_SPCE_universe(water_molecule):
 def kspace_solver():
 
     return sim.Ewald(accuracy=0.0001)
+
+@pytest.fixture
+def small_diatomic():
+
+    """
+    Creates molecular hydrogen (H2) with normal internuclear separation
+    and therefore a small bounding box relative to the size of the universe.
+    """
+
+    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+                              su.Atom('H', position=([np.sqrt(3)] * 3))])
+
+@pytest.fixture
+def large_diatomic():
+
+    """
+    Creates molecular hydrogen with a large internuclear separation,
+    orientated so that its bounding box is very large relative to
+    the universe.
+    """
+
+    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+                              su.Atom('H', position=(np.array(UNIVERSE_DIMS) / 2))])
+
+@pytest.fixture
+def solvated_universe():
+
+    uni = sim.Universe(SPCE_DIMS)
+    uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+
+    return uni
 
 
 def test_create_universe(universe):
@@ -737,11 +775,9 @@ def test_universe_fill_orientations(universe):
     assert np.linalg.norm(pos1) == np.linalg.norm(pos2)
     # Build the 2 diatomics with different orientations.
     diatomic1 = su.Molecule(atoms=[su.Atom('H', position=origin),
-                                   su.Atom('H', position=pos1)])  #,
-                            # position=(0, 0.5, 0))
+                                   su.Atom('H', position=pos1)])
     diatomic2 = su.Molecule(atoms=[su.Atom('H', position=origin),
-                                   su.Atom('H', position=pos2)])  #,
-                            # position=(0.5 * coord, 0.5 * coord, 0))
+                                   su.Atom('H', position=pos2)])
     # Fill each respective universe.
     density = 0.567438
     univ1.fill(diatomic1, num_density=density)
@@ -810,6 +846,261 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
     with pytest.raises(ValueError) as exc:
         universe.fill(water_molecule, num_density=3.14, num_struc_units=100)
         assert exc.value.message == 'Cannot pass both'
+
+
+@pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMS * scalar)
+                                 for scalar in [0.9, 1.0, 1.1]])
+def test_solvate_spce_no_solute(uni):
+
+    """
+    Tests that the achieved density is within the tolerance for solvating
+    with SPCE water an empty universe of dimensions smaller, equal to, and
+    larger than those of the SPCE configuration box.
+    """
+
+    uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    actual_dens = len(uni.molecule_list) * SPCE_MASS / uni.volume
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
+    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+
+
+@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
+def test_solvate_spce_with_solute(molecule):
+
+    """
+    Tests that the achieved density is within the tolerance for solvating
+    with SPCE water a universe containing a small diatomic molecule.
+
+    Tests that the achieved density is within the tolerance for solvating
+    with SPCE water a universe containing a large diatomic molecule.
+    """
+
+    univ = sim.Universe(SPCE_DIMS / 2)
+    univ.add_structural_unit(molecule)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    tot_mass = 0
+    for mol in univ.molecule_list:
+        tot_mass += mol.mass
+    actual_dens = tot_mass / univ.volume
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
+    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+
+
+def test_solvate_spce_no_out_of_bounds(solvated_universe):
+
+    """
+    Tests that solvating an empty universe with SPCE water results in no
+    atoms of those solvent moleules being outside the universe bounds.
+    """
+
+    for atom in solvated_universe.atom_list:
+        assert all(atom.position <= solvated_universe.dims)
+        assert all(atom.position >= [0, 0, 0])
+
+
+@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
+def test_solvate_spce_no_overlap_with_solute(molecule):
+
+    """
+    Tests that solvating a universe containing different solute molecules
+    with SPCE water gives no overlaps between solvent and solute molecules.
+    """
+
+    univ = sim.Universe(SPCE_DIMS / 2)
+    univ.add_structural_unit(molecule)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    solute_bounds = molecule.bounding_box
+    for mol in univ.molecule_list:
+        names = [atom.name for atom in mol.atom_list]
+        # Only compare bounding boxes of solute and SPCE water.
+        if not np.array_equal(np.sort(names), np.sort(['H', 'O', 'H'])):
+            for atom in mol.atom_list:
+                pos = atom.position
+                assert not (all(pos > solute_bounds.min)
+                            and all(pos < solute_bounds.max))
+
+
+@pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
+def test_solvate_spce_bond_lengths(dim_scalings):
+
+    """
+    Tests that solvating 2 empty universes of different dimensions results
+    in no change of the intramolecular nuclear separation lengths in the
+    SPCE water solvent molecules.
+    """
+
+    # Solvate 2 universes of different dimensions.
+    univ1 = sim.Universe(SPCE_DIMS * dim_scalings[0])
+    univ2 = sim.Universe(SPCE_DIMS * dim_scalings[1])
+    univ1.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    univ2.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+
+    def _get_min_molecule(universe):
+
+        min_norm = np.float('inf')
+        for mol in universe.molecule_list:
+            mol_norm = np.linalg.norm(mol.position)
+            if mol_norm < min_norm:
+                min_mol = mol
+                min_norm = mol_norm
+        return min_mol
+
+    def _get_sorted_bond_lengths(molecule):
+
+        positions = [atom.position for atom in molecule.atom_list]
+        lengths = []
+        for pair in combinations(positions, 2):
+            lengths.append(abs(np.linalg.norm(pair[1] - pair[0])))
+        lengths.sort()
+        return lengths
+
+    lengths1 = _get_sorted_bond_lengths(_get_min_molecule(univ1))
+    lengths2 = _get_sorted_bond_lengths(_get_min_molecule(univ2))
+
+    assert lengths1 == lengths2
+
+
+@pytest.mark.parametrize('dim_scaling', [[1, 1, 1], [1, 2, 3], [2, 3, 1]])
+def test_solvate_spce_density_perfect_dims(dim_scaling):
+
+    """
+    Tests that a perfect density (i.e. the density of SPCE water box as
+    provided in GROMACS' spc216.gro at 300K) is achieved when solvating an
+    empty universe with dimensions that are integer multiples of the SPCE
+    water box.
+    """
+
+    univ = sim.Universe(SPCE_DIMS * np.array(dim_scaling))
+    univ.solvate(SPCE_DENSITY)
+    total_mass = 0
+    for atom in univ.atom_list:
+        total_mass += atom.mass
+    assert (abs(((total_mass / univ.volume) - SPCE_DENSITY) / SPCE_DENSITY)
+            < 1e-10)
+
+
+def test_solvate_no_spce_wrapping_for_non_int_univ_dims():
+
+    """
+    Creates a universe with a dimension that is a non-integer multiple of the
+    dimensions of the SPCE water box, and tests that a known SPCE molecule with
+    an out-of-bounds atom isn't added to the universe, nor that this atom is
+    wrapped around back into the universe.
+    """
+
+    # Build a universe of dimensions of the SPCE box, but cut in half
+    # along the z-axis, and solvate it.
+    univ_dims = SPCE_DIMS * np.array([1, 1, 0.5])
+    univ = sim.Universe(univ_dims)
+    univ.solvate(SPCE_DENSITY)
+    # Molecule 12 from the GROMACS spc216 configuration is known to have one
+    # atom that sits out of bounds of these universe dims, along the z-axis
+    # only. The molecule should therefore not be added to the universe, nor
+    # should the atom out-of-bounds be wrapped around.
+    pos1 = np.array([17.27, 3.79, 9.39])
+    pos2 = np.array([15.81, 3.31, 8.84])
+    pos3 = np.array([16.67, 3., 9.25])
+    # If wrapped, the wrapped position is the position of the out-of-bounds
+    # atom minus the universe dimension length in the z-direction.
+    wrapped_pos = pos1 - univ_dims * np.array([0, 0, 1])
+    # Check that no atoms in the universe have these positions.
+    for atom in univ.atom_list:
+        for pos in [pos1, pos2, pos3, wrapped_pos]:
+            assert all(atom.position != pos)
+
+
+@pytest.mark.parametrize("solvent, params", [('SPCE',
+                                              (('equilibrium_state', 1.),
+                                               ('potential_strength', 383.),
+                                               ('equilibrium_state', 109.47),
+                                               ('potential_strength', 4637.),
+                                               ('charge', 0.4238),
+                                               ('charge', -0.8476),
+                                               ('epsilon', 0.6502),
+                                               ('sigma', 3.166))
+                                             )])
+def test_solvate_parameter_setting(solvated_universe, solvent, params):
+
+    """
+    Tests that the parameters of the solvent molcules are set correctly when
+    the solvent has been selected from inbuilt solvents
+    """
+
+    test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
+                       for parameter in params]
+    uni_parameters = list(solvated_universe.parameters)
+
+    # Check lists are same length, then remove all Parameters that have a
+    # matching name and value, finally check list of Parameters is empty (i.e.
+    # all Parameters have matched)
+    assert len(test_parameters) == len(uni_parameters)
+    from copy import copy
+    for test_p in test_parameters:
+        print('test = {0}'.format(test_p))
+        for uni_p in copy(uni_parameters):
+            print('uni = {0}'.format(uni_p))
+            if (test_p.value == uni_p.value and test_p.name == uni_p.name):
+                uni_parameters.remove(uni_p)
+                break
+    assert uni_parameters == []
+
+
+@pytest.mark.parametrize("density, tolerance", [(0.7, 20.),
+                                                (0.59, 5.),
+                                                (0.602707, 1.)])
+def test_solvate_solvated_universe_same_density(density, tolerance,
+                                                solvated_universe):
+
+    """
+    Tests that if a previously solvated universe is solvated with the same
+    density, there is no change in the solvent_density or the number or atoms
+
+    Parametrizations test densities where the solvent_density is within the
+    solvate tolerance
+    """
+
+    solvent_density = solvated_universe.solvent_density
+    solvated_universe.solvate(density=density, tolerance=tolerance)
+    assert solvent_density == solvated_universe.solvent_density
+
+
+@pytest.mark.parametrize("density, tolerance", [(0.7, 1.),
+                                                (0.5, 5.),
+                                                (6.02, 0.01),
+                                                (6.03, 0.0001)])
+def test_solvate_solvated_universe_different_density(density, tolerance,
+                                                     solvated_universe):
+
+    """
+    Tests that if a previously solvated universe is solvated with a different
+    density, a ValueError is raised
+
+    Tested for densities that are both to high and too low (outside of the
+    solvate tolerance)
+    """
+
+    with pytest.raises(ValueError):
+        solvated_universe.solvate(density=density, tolerance=tolerance)
+
+
+@pytest.mark.parametrize("univ_dims, pos, expected", [(10., [10., 10., 10.],
+                                                       False),
+                                                      (0.1, [-7., 0, 0], True),
+                                                      ([20., 15., 1.],
+                                                       [21., 15., 1.], True),
+                                                      (10., [0., 0., -0.0001],
+                                                       True),
+                                                      (10., [5, 5, 5], False)])
+def test_check_out_of_bounds(univ_dims, pos, expected):
+
+    """
+    Tests whether the correct bool is returned by the function that checks
+    whether a position is outside the bounds of a universe.
+    """
+
+    univ = sim.Universe(univ_dims)
+    assert univ._check_out_of_bounds(np.array(pos)) == expected
+
 
 
 def test_water_model_inheritance():
