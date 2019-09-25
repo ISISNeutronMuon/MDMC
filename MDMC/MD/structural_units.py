@@ -1617,7 +1617,7 @@ class Dispersion(NonBondedInteraction):
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
                                  ' atom types')
-            elif not all([isinstance(atom_type, int) for atom_type
+            elif not all([isinstance(atom_type, (int, np.integer)) for atom_type
                           in atom_type_pair]):
                 raise TypeError('Each atom type must be int')
             return atom_type_pair
@@ -1753,7 +1753,7 @@ class Coulombic(NonBondedInteraction):
             if settings.get('atoms'):
                 raise TypeError('Cannot pass both atoms and atom_types '
                                 'as parameters.')
-            if isinstance(atom_types, int):
+            if isinstance(atom_types, (int, np.integer)):
                 # Account for init argument atom_types=atom_type
                 # rather than atom_types=[atom_type]
                 atom_types = [atom_types]

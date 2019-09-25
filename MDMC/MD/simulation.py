@@ -736,7 +736,7 @@ class Universe:
         # in the Universe.
         # Try/except accounts for empty universe (i.e. no atom_types)
         try:
-            max_atom_type = np.max(self.atom_types.keys())
+            max_atom_type = np.max(list(self.atom_types.keys()))
         except ValueError:
             max_atom_type = 0
         solvent_config.offset_atom_types(max_atom_type)
@@ -760,7 +760,7 @@ class Universe:
                                       range(0, num_tiles[2])):
 
                 solvent_config.reset_molecules()
-                for mol_key, mol in solvent_config.molecules.items():
+                for mol_key, mol in tuple(solvent_config.molecules.items()):
 
                     atom_positions = mol.values()
                     CoM = solvent_config.molec_from_dict(mol).position
@@ -809,7 +809,8 @@ class Universe:
         nonbonded_interactions = []
         for interaction in self.nonbonded_interactions:
             inter_atom_types = np.array(interaction.atom_types).flatten()
-            if len(set(inter_atom_types).intersection(solvent_config.atom_types.values())) >= 1:
+            if len(set(inter_atom_types).intersection(
+                    solvent_config.atom_types.values())) >= 1:
                 nonbonded_interactions.append(interaction)
 
         # Apply the force field of the solvent to the Universe

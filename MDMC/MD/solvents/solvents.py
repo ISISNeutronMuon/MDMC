@@ -154,7 +154,7 @@ def get_solvent_names():
         A list of str with the names of the inbuilt solvents
     """
 
-    return list(set(WATER_MODELS.keys()
+    return list(set(list(WATER_MODELS.keys())
                     + [name.replace('Config', '') for name
                        in _get_solvent_configs().keys()]))
 

@@ -2,7 +2,7 @@
 Module for the SolventConfig abstract class
 """
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from copy import deepcopy
 
 import numpy as np
@@ -12,7 +12,7 @@ from MDMC.common import units
 from MDMC.MD import structural_units
 
 
-class SolventConfig:
+class SolventConfig(ABC):
 
     """
     Abstract class defining solvent configs
@@ -25,8 +25,6 @@ class SolventConfig:
     properties are just references, to reduce memory usage.
     """
 
-    __metaclass__ = ABCMeta
-
     def __init__(self):
 
         self._box_dims = deepcopy(self._solvent_config_dict['box_dims'])
@@ -35,7 +33,8 @@ class SolventConfig:
             deepcopy(self._solvent_config_dict['nonbonded_interactions'])
         self._molecules = deepcopy(self._solvent_config_dict['molecules'])
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _solvent_config_dict(self):
 
         """
@@ -242,7 +241,7 @@ class SolventConfig:
             The mass of the solvent molecule in amu
         """
 
-        return self.molec_from_dict(self.molecules.values()[0]).mass
+        return self.molec_from_dict(list(self.molecules.values())[0]).mass
 
     @property
     @unit_decorator_getter(unit=units.MASS / (units.LENGTH ** 3))
@@ -328,7 +327,7 @@ class SolventConfig:
                               atom_name_tuples)
             b_i[0].atoms += atom_tuples
 
-        return structural_units.Molecule(atoms=atoms.values())
+        return structural_units.Molecule(atoms=list(atoms.values()))
 
     def molecules_from_coords(self, coords, universe=None):
 
@@ -371,7 +370,6 @@ class SolventConfig:
                                        universe=universe)
             molecules.append(mol)
 
-
         if self.nonbonded_interactions:
             for nb_i in self.nonbonded_interactions:
                 # Different __init__ for Coulombic than other
@@ -381,5 +379,5 @@ class SolventConfig:
                                                        atom_types=nb_i[1])
                 else:
                     dummy = getattr(structural_units, nb_i[0])(universe,
-                                                               *nb_i[1])
+                                                               *nb_i[1:])
         return molecules
