@@ -314,7 +314,7 @@ class Universe:
 
             parent = unit.parent
             parents = [parent]
-            if parent is not parent.top_level_structure():
+            if parent is not parent.top_level_structure:
                 parents += add_all_parents(parent)
             return parents
 

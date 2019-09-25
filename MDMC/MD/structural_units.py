@@ -241,6 +241,25 @@ class StructuralUnit(ABC):
 
         return self.__class__.__name__
 
+    @property
+    def top_level_structure(self):
+
+        """
+        Get the top level structure (i.e. StructuralUnit which has no parent) of
+        the StructuralUnut
+
+        Returns
+        -------
+        StructuralUnit
+            Highest level StructuralUnit of which it is a member
+        """
+
+        if issubclass(type(self.parent), StructuralUnit) \
+        and self.parent is not self:
+            return self.parent.top_level_structure
+        else:
+            return self
+
     def copy(self, position):
 
         """
@@ -276,24 +295,6 @@ class StructuralUnit(ABC):
 
         return next(self._ID_generator)
 
-    def top_level_structure(self):
-
-        """
-        Get the top level structure (i.e. StructuralUnit which has no parent) of
-        the StructuralUnut
-
-        Returns
-        -------
-        StructuralUnit
-            Highest level StructuralUnit of which it is a member
-        """
-
-        if issubclass(type(self.parent), StructuralUnit) \
-        and self.parent is not self:
-            return self.parent.top_level_structure()
-        else:
-            return self
-
     def _position_in_parent_CoM_frame(self):
 
         """
@@ -310,7 +311,7 @@ class StructuralUnit(ABC):
             If StructuralUnit has no parent
         """
 
-        if self.top_level_structure() is self:
+        if self.top_level_structure is self:
             raise AttributeError("This structure has no parent")
         else:
             return self.position - self.parent._get_center_of_mass()
@@ -486,7 +487,7 @@ class CompositeStructuralUnit(StructuralUnit):
             self._universe = None
 
         # If top level structure then set the universe of all subunits
-        if self.top_level_structure() == self:
+        if self.top_level_structure == self:
             for structure in self.structure_list:
                 structure.universe = value
 

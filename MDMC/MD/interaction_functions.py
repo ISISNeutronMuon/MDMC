@@ -694,7 +694,7 @@ def filter_parameters_structure(parameters, structure_name):
         structure_names = set()
         def add_name(structure):
             structure_names.add(structure.name)
-            if structure.top_level_structure() == structure:
+            if structure.top_level_structure == structure:
                 return
             add_name(structure.parent)
 
