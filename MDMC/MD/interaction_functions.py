@@ -14,7 +14,7 @@ Contains filters for filtering list of parameters based on a predicate."""
 import ast
 import functools
 from inspect import getargspec, getmembers
-from itertools import chain
+from itertools import chain, zip_longest
 import operator
 import warnings
 import weakref
@@ -599,7 +599,8 @@ class Periodic(InteractionFunction):
     K1 : float
         The K parameter (energy) of the first order term, in units of kJ mol^-1
     n1 : int
-        The n parameter of the first order term, which is unitless
+        The n parameter of the first order term, which is unitless. This must be
+        a non-negative int.
     d1 : float
         The d parameter (angle) of the first order term, in units of deg
     *params
@@ -612,7 +613,28 @@ class Periodic(InteractionFunction):
     def __init__(self, K1, n1, d1, *params):
 
         # Check that total number of parameters is divisible by 3
-        pass
+        # Check that all n values are non-negative ints
+        val_dict = {}
+        all_params = [iter((K1, n1, d1) + params)] * 3
+        for order, order_params in enumerate(zip_longest(*all_params), start=1):
+            # If *params is not divisible by three, one or two indexes of
+            # order_params will be None
+            if None in order_params:
+                raise TypeError('*params must contain a K, n, and d value for'
+                                ' each order >2 (i.e. it should contain a'
+                                ' number of values exactly divisible by 3)')
+            if not isinstance(order_params[1], int):
+                raise TypeError('All n values must be of type int')
+            if order_params[1] < 0.:
+                raise ValueError('All n values must be non-negative ints')
+            val_dict['K{0}'.format(order)] = (units.UnitFloat(order_params[0],
+                                                              units.ENERGY))
+            val_dict['n{0}'.format(order)] = (units.UnitInt(order_params[1],
+                                                            ''))
+            val_dict['d{0}'.format(order)] = (units.UnitFloat(order_params[2],
+                                                              units.ANGLE))
+
+        super().__init__(val_dict)
 
 
 class LennardJones(InteractionFunction):
