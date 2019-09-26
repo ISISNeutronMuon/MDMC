@@ -306,18 +306,18 @@ class InteractionFunction:
 
         # locals which are excluded from Parameter creation
         excluded = ['self', 'settings', '__class__']
-        try:
-            self.params = [Parameter(value, name) for name, value
-                           in val_dict.items()
-                           if name not in excluded]
-        except AttributeError:
-            # If value is a (float, str) tuple, create a UnitFloat object from
-            # this. Parameters should not be arrays, so UnitFloat can be used.
-            self.params = [Parameter(units.UnitFloat(value[0],
-                                                     units.Unit(value[1])),
-                                     name)
-                           for name, value in val_dict.items()
-                           if name not in excluded]
+        params = []
+        for name, value in val_dict.items():
+            if name not in excluded:
+                try:
+                    param = Parameter(value, name)
+                except AttributeError:
+                    param = Parameter(units.UnitFloat(value[0],
+                                                      units.Unit(value[1])),
+                                      name)
+                params.append(param)
+                setattr(self, param.name, param)
+        self.params = params
 
     @property
     def params(self):

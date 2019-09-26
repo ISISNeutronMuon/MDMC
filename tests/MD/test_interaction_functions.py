@@ -571,3 +571,27 @@ def test_interaction_function_subclass_params(object, values, names):
     for idx, param in enumerate(object.params):
         assert param.value == values[idx]
         assert param.name == names[idx]
+
+
+@pytest.mark.parametrize("inter_func_fixture, params",
+                         [('buckingham', ['A', 'B', 'C']),
+                          ('coulomb', ['charge']),
+                          ('harmonic', ['equilibrium_state',
+                                        'potential_strength']),
+                          ('lennardjones', ['epsilon', 'sigma'])])
+def test_interaction_function_attributes(inter_func_fixture, params, request):
+
+    """
+    Tests that initializing a subclass of InteractionFunction creates an
+    attribute with the name of each Parameter passed to __init__
+
+    For example, a LennardJones object should have attributes epsilon and
+    sigma, with a value of the corresponding Parameters
+    """
+
+    for param in params:
+        inter_func = request.getfixturevalue(inter_func_fixture)
+        # Test both for existence of attribute and that the Parameter has the
+        # correct name
+        assert hasattr(inter_func, param)
+        assert getattr(inter_func, param).name == param
