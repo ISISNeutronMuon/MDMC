@@ -1,12 +1,15 @@
 """Tests for classes and functions in interaction_functions.py"""
 
+from math import ceil
+
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential,
                                            InteractionFunction, LennardJones,
-                                           Parameter, filter_parameters,
+                                           Periodic, Parameter,
+                                           filter_parameters,
                                            filter_parameters_atom_attribute,
                                            filter_parameters_function,
                                            filter_parameters_interaction,
@@ -669,3 +672,84 @@ def test_harmonic_potential_no_inter_type():
 
     with pytest.raises(TypeError):
         HarmonicPotential(6.0, 7.0, inter_tye='bond')
+
+
+@pytest.mark.parametrize("params",
+                         [(3., 1, 2.),
+                          (5., 1, -30., 7., 3, 45.),
+                          (9., 3, -40., 20., 4, -45., 60., 1, 9.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 9.9)])
+def test_periodic_init(params):
+
+    """
+    Tests that initializing a Periodic InteractionFunction of different orders
+    (first, second, third, and fourth) produces the expected parameters
+
+    Tests that parameters are assigned the correct names and values
+    """
+
+    periodic = Periodic(*params)
+    for index, param in enumerate(params, start=1):
+        order = ceil(index / 3.)
+        if index % 3 == 0:
+            assert getattr(periodic, 'd{0}'.format(order)).value == param
+        elif index % 2 == 0:
+            assert getattr(periodic, 'n{0}'.format(order)).value == param
+        elif index % 1 == 0:
+            assert getattr(periodic, 'K{0}'.format(order)).value == param
+
+
+@pytest.mark.parametrize("params",
+                         [(1.),
+                          (3., 1),
+                          (2., 9, 7., 4.),
+                          (5., 1, -30., 7., 3),
+                          (2., 9, 5., 2., 3, 9., 5),
+                          (9., 3, -40., 20., 4, -45., 60., 1),
+                          (4., 2, 10., 1., 1, -60., 2., 2, 90., 10.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 19., 10.)])
+def test_periodic_invalid_num_parameters(params):
+
+    """
+    Tests that initializing a Periodic InteractionFunction with the incorrect
+    number of parameters (i.e. not a multiple of 3), raises a ValueError
+
+    Tests all numbers of parameters up to 13 (inclusive), except multiples of 3
+    """
+
+    with pytest.raises(ValueError):
+        Periodic(*params)
+
+
+@pytest.mark.parametrize("params",
+                         [(3., 1.2, 2.),
+                          (5., 1, -30., 7., 3., 45.),
+                          (9., 3, -40., 20., 4, -45., 60., 7.2, 9.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1.6, 9.9),
+                          (5., 1., 0.5, 7., 3., 8., 9., 0., 7., 4., 1., 9.9)])
+def test_periodic_init_types(params):
+
+    """
+    Tests that initializing a Periodic InteractiongFunction with an n value (of
+    any order) which is not an int, raises a TypeError
+    """
+
+    with pytest.raises(TypeError):
+        Periodic(*params)
+
+@pytest.mark.parametrize("params",
+                         [(3., -1, 2.),
+                          (5., 1, -30., 7., -3, 45.),
+                          (9., 3, -40., 20., 4, -45., 60., -7, 9.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., -1, 9.9),
+                          (5., -1, 0.5, 7., -3, 8., 9., -10, 7., 4., -1, 9.9)])
+def test_periodic_init_values(params):
+
+    """
+    Tests that initializing a Periodic InteractiongFunction with an n value (of
+    any order) which is negative, raises a ValueError
+    """
+
+    with pytest.raises(ValueError):
+        Periodic(*params)
