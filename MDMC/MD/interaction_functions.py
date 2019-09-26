@@ -581,6 +581,18 @@ class HarmonicPotential(InteractionFunction):
     _init = __init__
 
 
+class Periodic(InteractionFunction):
+
+    r"""
+    Periodic potential for proper and improper Dihedral interactions, with the
+    form:
+
+    .. math::
+
+        E = \sum_{i=1,m}K_i[1.0+\textup{cos}(n_i\phi-d_i)]
+    """
+
+
 class LennardJones(InteractionFunction):
 
     r"""
