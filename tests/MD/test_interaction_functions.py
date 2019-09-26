@@ -34,6 +34,9 @@ HARMPOT_POT_STREN_ANGLE_UNIT = Unit('kJ') / (Unit('mol') * Unit('deg') ** 2)
 LJ_EPSILON, LJ_SIGMA = 15., 5.
 LJ_EPSILON_UNIT = Unit('kJ') / Unit('mol')
 LJ_SIGMA_UNIT = Unit('Ang')
+K1, K2, K3, K4 = 1., 2., 3., 4.
+N1, N2, N3, N4 = 5, 6, 7, 8
+D1, D2, D3, D4 = 9., 10., 11., 12.
 NAME = 'length'
 UNIT = Unit('Ang')
 VALUE = 1.0
@@ -169,6 +172,19 @@ def lennardjones():
 
     return LennardJones(LJ_EPSILON, LJ_SIGMA)
 
+@pytest.fixture
+def periodic():
+
+    """
+    Returns
+    -------
+    Periodic
+        A Periodic InteractionFunction initialized with four order of parameter
+        values e.g. K1, n1, d1, K2, n2, d2, K3, n3, d3, K4, n4, d4
+    """
+
+    return Periodic(K1, N1, D1, K2, N2, D2, K3, N3, D3, K4, N4, D4)
+
 
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
                                          (UnitFloat(VALUE, UNIT), None)])
@@ -298,6 +314,7 @@ def test_interaction_setting_function_name(param_inter):
         param_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
                                              function=LennardJones((1., 'arb'),
                                                                    (1., 'arb')))
+
 
 @pytest.mark.parametrize('expression, expected', [('*2.', VALUE * 2.),
                                                   ('/2.', VALUE / 2.),
@@ -570,7 +587,11 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
                           (harmonic(), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
                            ['equilibrium_state', 'potential_strength']),
                           (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
-                           ['epsilon', 'sigma'])])
+                           ['epsilon', 'sigma']),
+                          (periodic(),
+                           [K1, K2, K3, K4, D1, D2, D3, D4, N1, N2, N3, N4],
+                           ['K1', 'K2', 'K3', 'K4', 'd1', 'd2', 'd3', 'd4',
+                            'n1', 'n2', 'n3', 'n4'])])
 def test_interaction_function_subclass_params(obj, values, names):
 
     """
@@ -588,7 +609,9 @@ def test_interaction_function_subclass_params(obj, values, names):
                           ('coulomb', ['charge']),
                           ('harmonic', ['equilibrium_state',
                                         'potential_strength']),
-                          ('lennardjones', ['epsilon', 'sigma'])])
+                          ('lennardjones', ['epsilon', 'sigma']),
+                          ('periodic', ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
+                                        'K3', 'n3', 'd3', 'K4', 'n4', 'd4'])])
 def test_interaction_function_attributes(inter_func_fixture, params, request):
 
     """
@@ -688,19 +711,20 @@ def test_periodic_init(params):
     Tests that parameters are assigned the correct names and values
     """
 
-    periodic = Periodic(*params)
+    period = Periodic(*params)
     for index, param in enumerate(params, start=1):
         order = ceil(index / 3.)
-        if index % 3 == 0:
-            assert getattr(periodic, 'd{0}'.format(order)).value == param
-        elif index % 2 == 0:
-            assert getattr(periodic, 'n{0}'.format(order)).value == param
-        elif index % 1 == 0:
-            assert getattr(periodic, 'K{0}'.format(order)).value == param
+        mod3_index = (order * 3)
+        if mod3_index == 1:
+            assert getattr(period, 'K{0}'.format(order)).value == param
+        elif mod3_index == 2:
+            assert getattr(period, 'n{0}'.format(order)).value == param
+        elif mod3_index == 13:
+            assert getattr(period, 'd{0}'.format(order)).value == param
 
 
 @pytest.mark.parametrize("params",
-                         [(1.),
+                         [(1., ),
                           (3., 1),
                           (2., 9, 7., 4.),
                           (5., 1, -30., 7., 3),
@@ -713,12 +737,12 @@ def test_periodic_invalid_num_parameters(params):
 
     """
     Tests that initializing a Periodic InteractionFunction with the incorrect
-    number of parameters (i.e. not a multiple of 3), raises a ValueError
+    number of parameters (i.e. not a multiple of 3), raises a TypeError
 
     Tests all numbers of parameters up to 13 (inclusive), except multiples of 3
     """
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Periodic(*params)
 
 
