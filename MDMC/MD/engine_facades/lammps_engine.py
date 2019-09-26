@@ -2486,9 +2486,13 @@ def partition_interactions(interactions, names, unpartitioned=False, lst=False):
 
     Example
     -------
-    Partion interactions into Bonds and BondAngles::
-        bonds, angles = partition_interactions(interactions,
-                                               ['Bond, BondAngle'])
+    Partion interactions into Bonds and BondAngles:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            bonds, angles = partition_interactions(interactions,
+                                                   ['Bond, BondAngle'])
     """
 
     interaction_lst = [None] * len(names)

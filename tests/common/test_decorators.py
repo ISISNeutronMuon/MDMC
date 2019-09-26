@@ -52,7 +52,7 @@ def docstring():
             -----
             Here is an equation:
 
-            ..math::
+            .. math::
 
                 {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
             """)

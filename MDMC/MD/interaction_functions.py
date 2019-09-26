@@ -387,11 +387,11 @@ class InteractionFunction:
 
 class Buckingham(InteractionFunction):
 
-    """
+    r"""
     The Buckingham potential (in units of kJ mol^-1) for the interaction of
     2 atoms at distance r (in Ang) has the form:
 
-    ..math::
+    .. math::
 
         {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
 
@@ -418,10 +418,10 @@ class Buckingham(InteractionFunction):
 
 class Coulomb(InteractionFunction):
 
-    """
+    r"""
     Coulomb interaction for charged particles:
 
-    ..math::
+    .. math::
 
         E = \frac{Cq_{i}q_{j}}{r}
 
@@ -438,10 +438,10 @@ class Coulomb(InteractionFunction):
 
 class HarmonicPotential(InteractionFunction):
 
-    """
+    r"""
     Harmonic potential for bond stretching and angular vibration, with the form:
 
-    math::
+    .. math::
 
         E = K(r-r_0)^2
 
@@ -472,10 +472,10 @@ class HarmonicPotential(InteractionFunction):
 
 class LennardJones(InteractionFunction):
 
-    """
+    r"""
     Dispersive Lennard-Jones interaction with the form:
 
-    ..math::
+    .. math::
 
         E = 4{\epsilon}[(\frac{\sigma}{r})^{12} - (\frac{\sigma}{r})^6)]
         \qquad r < r_c

@@ -225,7 +225,7 @@ def _wrap_docstring(docstring, line_length):
 
     This maintains any indentation which exists at the start of a line. While
     equations should not be affected by this wrapping, it is recommended that
-    docstrings with math:: are visually checked after wrapping.
+    docstrings with .. math:: are visually checked after wrapping.
 
     Parameters
     ----------
@@ -259,7 +259,7 @@ def _wrap_docstring(docstring, line_length):
         # If previous line was wrapped and has same length of indent, then
         # prepend it to this line
         if prev_line is not None:
-            if prev_indent == indent and not 'math::' in line:
+            if prev_indent == indent and not '.. math::' in line:
                 line = prev_line + ' ' + textwrap.dedent(line)
             else:
                 wrapped.append('\n' + prev_line)
