@@ -1039,9 +1039,7 @@ def test_solvate_parameter_setting(solvated_universe, solvent, params):
     assert len(test_parameters) == len(uni_parameters)
     from copy import copy
     for test_p in test_parameters:
-        print('test = {0}'.format(test_p))
         for uni_p in copy(uni_parameters):
-            print('uni = {0}'.format(uni_p))
             if (test_p.value == uni_p.value and test_p.name == uni_p.name):
                 uni_parameters.remove(uni_p)
                 break
