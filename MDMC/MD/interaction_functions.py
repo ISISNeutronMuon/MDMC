@@ -590,7 +590,29 @@ class Periodic(InteractionFunction):
     .. math::
 
         E = \sum_{i=1,m}K_i[1.0+\textup{cos}(n_i\phi-d_i)]
+
+    where \phi is angle between the ijk and jkl planes (where i, j, k, and l are
+    the four atoms of the dihedral).
+
+    Parameters
+    ----------
+    K1 : float
+        The K parameter (energy) of the first order term, in units of kJ mol^-1
+    n1 : int
+        The n parameter of the first order term, which is unitless
+    d1 : float
+        The d parameter (angle) of the first order term, in units of deg
+    *params
+        K, n, and d parameters for higher order terms. These must be ordered K2,
+        n2, d2, K3, n3, d3, K4, n4, d4 etc. The types and units of these
+        parameters are the same as the corresponding first order parameters
+        listed above.
     """
+
+    def __init__(self, K1, n1, d1, *params):
+
+        # Check that total number of parameters is divisible by 3
+        pass
 
 
 class LennardJones(InteractionFunction):
