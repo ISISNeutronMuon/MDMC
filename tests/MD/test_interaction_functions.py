@@ -17,14 +17,20 @@ from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import Atom, Bond, Coulombic, Dispersion, Molecule
 
 
-BUCK_A = UnitFloat(1, 'kJ mol ^ -1')
-BUCK_B = UnitFloat(2, 'Ang ^ -1')
-BUCK_C = UnitFloat(3, 'Ang ^ 6 kJ mol ^ -1')
-COULOMB_CHARGE = UnitFloat(5.0, 'e')
-HARMPOT_EQUIL_STATE = UnitFloat(10, 'Ang')
-HARMPOT_POT_STREN = UnitFloat(100, 'kJ mol ^ -1')
-LJ_EPSILON = UnitFloat(15, 'kJ mol ^ -1')
-LJ_SIGMA = UnitFloat(5, 'Ang')
+BUCK_A, BUCK_B, BUCK_C = 1., 2., 3.
+BUCK_A_UNIT = Unit('kJ') / Unit('mol')
+BUCK_B_UNIT = Unit('Ang') ** -1
+BUCK_C_UNIT = Unit('Ang') ** 6 * Unit('kJ') / Unit('mol')
+COULOMB_CHARGE = 5.0
+COULOMB_CHARGE_UNIT = Unit('e')
+HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN = 10., 100.
+HARMPOT_EQUIL_STATE_BOND_UNIT = Unit('Ang')
+HARMPOT_POT_STREN_BOND_UNIT = Unit('kJ') / (Unit('mol') * Unit('Ang') ** 2)
+HARMPOT_EQUIL_STATE_ANGLE_UNIT = Unit('deg')
+HARMPOT_POT_STREN_ANGLE_UNIT = Unit('kJ') / (Unit('mol') * Unit('deg') ** 2)
+LJ_EPSILON, LJ_SIGMA = 15., 5.
+LJ_EPSILON_UNIT = Unit('kJ') / Unit('mol')
+LJ_SIGMA_UNIT = Unit('Ang')
 NAME = 'length'
 UNIT = Unit('Ang')
 VALUE = 1.0
