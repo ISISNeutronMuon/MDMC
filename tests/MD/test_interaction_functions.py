@@ -602,3 +602,70 @@ def test_interaction_function_attributes(inter_func_fixture, params, request):
         # correct name
         assert hasattr(inter_func, param)
         assert getattr(inter_func, param).name == param
+
+
+@pytest.mark.parametrize("inter_func_fixture, units",
+                         [('buckingham', {'A':BUCK_A_UNIT,
+                                          'B':BUCK_B_UNIT,
+                                          'C':BUCK_C_UNIT}),
+                          ('coulomb', {'charge':COULOMB_CHARGE_UNIT}),
+                          ('lennardjones', {'epsilon':LJ_EPSILON_UNIT,
+                                            'sigma':LJ_SIGMA_UNIT})])
+def test_interaction_function_units(inter_func_fixture, units, request):
+
+    """
+    Tests that the units of the parameters of all subclasses of
+    InteractionFunction (except HarmonicPotential) are set correctly
+    """
+
+    inter_func = request.getfixturevalue(inter_func_fixture)
+    for param_name, unit in units.items():
+        assert getattr(inter_func, param_name).unit == unit
+        # Test an incorrect unit
+        assert getattr(inter_func, param_name).unit != Unit('DOES_NOT_EXIST')
+
+
+@pytest.mark.parametrize("inter_type, units",
+                         [('bond', [HARMPOT_EQUIL_STATE_BOND_UNIT,
+                                    HARMPOT_POT_STREN_BOND_UNIT]),
+                          ('BoNd', [HARMPOT_EQUIL_STATE_BOND_UNIT,
+                                    HARMPOT_POT_STREN_BOND_UNIT]),
+                          ('angle', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
+                                     HARMPOT_POT_STREN_ANGLE_UNIT]),
+                          ('improper', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
+                                        HARMPOT_POT_STREN_ANGLE_UNIT])])
+def test_harmonic_potential_units(inter_type, units):
+
+    """
+    Tests that the units of the parameters of HarmonicPotential are set
+    correctly, dependent on the interaction_type that is passed to it
+    """
+
+    h_pot = HarmonicPotential(1.0, 2.0, interaction_type=inter_type)
+    # Ignore pylint warning for no member as both equilibrium_state and
+    # potential_strength are created dynamically
+    #pylint: disable=no-member
+    assert h_pot.equilibrium_state.unit == units[0]
+    assert h_pot.potential_strength.unit == units[1]
+
+
+def test_harmonic_potential_invalid_inter_type():
+
+    """
+    Tests that if an invalid interaction_type is passed to HarmonicPotential, it
+    raises a ValueError
+    """
+
+    with pytest.raises(ValueError):
+        HarmonicPotential(5.0, 4.0, interaction_type='Bonded')
+
+
+def test_harmonic_potential_no_inter_type():
+
+    """
+    Tests that if an interaction_type is no passed to HarmonicPotential, it
+    raises a TypeError
+    """
+
+    with pytest.raises(TypeError):
+        HarmonicPotential(6.0, 7.0, inter_tye='bond')
