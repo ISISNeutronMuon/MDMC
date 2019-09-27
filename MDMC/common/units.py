@@ -97,6 +97,8 @@ class Unit(str):
 
         if string is None:
             return None
+        if isinstance(string, Unit):
+            return string
         unit = super(Unit, cls).__new__(cls, string)
         if not components:
             components = defaultdict(list)
