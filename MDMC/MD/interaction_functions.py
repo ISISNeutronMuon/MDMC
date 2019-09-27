@@ -12,6 +12,7 @@ fixed, has constraints or is tied.
 Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
+import functools
 from inspect import getargspec, getmembers
 from itertools import chain
 import operator
@@ -383,6 +384,72 @@ class InteractionFunction:
         for param in self.params:
 
             param.interactions = interaction
+
+
+def inter_func_decorator(*param_units):
+
+    """
+    Decorates a method to add units to all non-keyword arguments
+
+    Designed for adding units to parameters of __init__ method for subclasses of
+    InteractionFunction.
+
+    Parameters
+    ----------
+    *param_units
+        one or more str or units.Unit, where each str (or Unit) is a unit which
+        is applied to the corresponding value passed to the decorated method. If
+        one of the values is unitless, pass None at the corresponding index in
+        *param_units.
+
+    Examples
+    --------
+    The following adds units of 'Ang' to parameter alpha, units of 's' to the
+    parameter beta, and units of 'atm' to the parameter gamma:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @inter_func_decorator('Ang', 's', 'Pa')
+            def __init__(self, alpha, beta, gamma):
+                ...
+
+    If one of the parameters is unitless, this can be set with None (in which
+    case the returned type will be the same as the original value i.e. a
+    UnitFloat or UnitNDArray will not be created). So to set epsilon as
+    unitless:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @inter_func_decorator('arb', None, 'deg')
+            def __init__(self, delta, epsilon, gamma):
+                ...
+    """
+
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
+    def decorator(func):
+        def unit_creator(value, unit):
+            # If no unit is provided, assume unitless and just return value
+            if unit is None:
+                return value
+            # try/except to determine whether value is float or array
+            try:
+                return units.UnitFloat(value, unit)
+            except TypeError:
+                return units.unit_array(value, unit)
+
+        @functools.wraps(func)
+        def wrapper(self, *values, **settings):
+            # Use zip to associate each value in *values with the corresponding
+            # unit in *param_units. unit_creator return a UnitFloat or
+            # UnitNDArray with this unit, or returns the original value if the
+            # unit is None.
+            return func(self, *[unit_creator(value, unit) for value, unit in
+                                zip(values, param_units)], **settings)
+        return wrapper
+    return decorator
 
 
 class Buckingham(InteractionFunction):
