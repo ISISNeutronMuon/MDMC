@@ -310,13 +310,9 @@ class InteractionFunction:
         params = []
         for name, value in val_dict.items():
             if name not in excluded:
-                try:
-                    param = Parameter(value, name)
-                except AttributeError:
-                    param = Parameter(units.UnitFloat(value[0],
-                                                      units.Unit(value[1])),
-                                      name)
+                param = Parameter(value, name)
                 params.append(param)
+                # Create an attribute with the same name as the Parameter
                 setattr(self, param.name, param)
         self.params = params
 
