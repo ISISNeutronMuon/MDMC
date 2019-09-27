@@ -150,7 +150,8 @@ def harmonic():
         state and a linear potential strength.
     """
 
-    return HarmonicPotential(HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN)
+    return HarmonicPotential(HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN,
+                             interaction_type='bond')
 
 @pytest.fixture
 def lennardjones():
@@ -559,7 +560,7 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
             assert isinstance(inter, Coulombic)
 
 
-@pytest.mark.parametrize("object, values, names",
+@pytest.mark.parametrize("obj, values, names",
                          [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
                           (coulomb(), [COULOMB_CHARGE], ['charge']),
@@ -567,14 +568,14 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
                            ['equilibrium_state', 'potential_strength']),
                           (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
                            ['epsilon', 'sigma'])])
-def test_interaction_function_subclass_params(object, values, names):
+def test_interaction_function_subclass_params(obj, values, names):
 
     """
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
 
-    for idx, param in enumerate(object.params):
+    for idx, param in enumerate(obj.params):
         assert param.value == values[idx]
         assert param.name == names[idx]
 
@@ -595,8 +596,8 @@ def test_interaction_function_attributes(inter_func_fixture, params, request):
     sigma, with a value of the corresponding Parameters
     """
 
+    inter_func = request.getfixturevalue(inter_func_fixture)
     for param in params:
-        inter_func = request.getfixturevalue(inter_func_fixture)
         # Test both for existence of attribute and that the Parameter has the
         # correct name
         assert hasattr(inter_func, param)
