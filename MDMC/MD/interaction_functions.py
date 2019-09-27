@@ -460,23 +460,19 @@ class Buckingham(InteractionFunction):
 
     Parameters
     ----------
-    A : UnitFloat, tuple
-        The Buckingham parameter A in units of kJ mol^-1. Can either be a
-        UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
-    B : UnitFloat, tuple
-        The Buckingham parameter B in units of Ang^-1. Can either be a
-        UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
+    A : float
+        The Buckingham parameter A in units of kJ mol^-1
+    B : float
+        The Buckingham parameter B in units of Ang^-1
     C : float
-        The Buckingham parameter C in units of Ang^6 kJ mol^-1. Can either
-        be a UnitFloat, or a (float, str) tuple, where float is the value
-        and str is the unit.
+        The Buckingham parameter C in units of Ang^6 kJ mol^-1
     """
 
+    @inter_func_decorator(units.ENERGY, units.LENGTH ** -1,
+                          units.LENGTH ** 6 * units.ENERGY)
     def __init__(self, A, B, C):
 
-        super(self.__class__, self).__init__(locals())
+        super().__init__(locals())
 
 
 class Coulomb(InteractionFunction):
@@ -494,9 +490,10 @@ class Coulomb(InteractionFunction):
         The charge in units of e
     """
 
+    @inter_func_decorator(units.CHARGE)
     def __init__(self, charge):
 
-        super(self.__class__, self).__init__(locals())
+        super().__init__(locals())
 
 
 class HarmonicPotential(InteractionFunction):
@@ -545,12 +542,10 @@ class LennardJones(InteractionFunction):
 
     Parameters
     ----------
-    epsilon : UnitFloat, tuple
-        The LJ epsilon value in units of kJ mol^-1. Can either be a UnitFloat,
-        or a (float, str) tuple, where float is the value and str is the unit.
-    sigma : UnitFloat, tuple
-        The LJ sigma value in units of Ang. Can either be a UnitFloat, or a
-        (float, str) tuple, where float is the value and str is the unit.
+    epsilon : float
+        The LJ epsilon value in units of kJ mol^-1
+    sigma : float
+        The LJ sigma value in units of Ang
     **settings
         cutoff : float
             The distance in Ang at which the potential is cutoff
@@ -560,9 +555,10 @@ class LennardJones(InteractionFunction):
             solvers
     """
 
+    @inter_func_decorator(units.ENERGY, units.LENGTH)
     def __init__(self, epsilon, sigma, **settings):
 
-        super(self.__class__, self).__init__(locals())
+        super().__init__(locals())
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)
 
