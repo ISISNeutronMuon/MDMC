@@ -768,8 +768,7 @@ class Atom(StructuralUnit):
                     except AttributeError:
                         # creates an interaction function if the Atom's
                         # Coulomb interaction doesn't have one
-                        inter.function = Coulomb(units.UnitFloat(value,
-                                                                 units.CHARGE))
+                        inter.function = Coulomb(value)
                     return
                 # else if the charge has value None
                 raise ValueError("Can't set charge to None when a "
@@ -1758,7 +1757,7 @@ class Coulombic(NonBondedInteraction):
                 O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
                                         charge=-0.84)
                 O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
-                                        function=Coulomb((-0.84, 'e')))
+                                        function=Coulomb(-0.84))
 
             Passing a charge will overwrite any other interaction functions that
             are set, i.e. it makes the function keyword redundant
@@ -1840,7 +1839,7 @@ class Coulombic(NonBondedInteraction):
         if charge is not None:
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
-            self.function = Coulomb(units.UnitFloat(charge, units.CHARGE))
+            self.function = Coulomb(charge)
             warnings.warn(UserWarning('Coulombic interaction for the Atom '
                                       'object initialized with the Coulomb '
                                       'interaction function.'))
