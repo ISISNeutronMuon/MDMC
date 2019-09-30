@@ -385,7 +385,7 @@ class CompositeStructuralUnit(StructuralUnit):
 
     def __init__(self, position, velocity, name):
 
-        super(CompositeStructuralUnit, self).__init__(position, velocity, name)
+        super().__init__(position, velocity, name)
         self.universe = None
 
     def __deepcopy__(self, memo):
@@ -546,7 +546,7 @@ class CompositeStructuralUnit(StructuralUnit):
             attributes copied and a new position
         """
 
-        return super(CompositeStructuralUnit, self).copy(position)
+        return super().copy(position)
 
 
 class Atom(StructuralUnit):
@@ -581,7 +581,7 @@ class Atom(StructuralUnit):
                  charge=None, **settings):
 
         self.universe = None
-        super(Atom, self).__init__(position, velocity, name=element)
+        super().__init__(position, velocity, name=element)
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
         self.element = element
@@ -916,7 +916,7 @@ class Atom(StructuralUnit):
         with H2 (as H1 had a Bond interaction with H2).
         """
 
-        return super(Atom, self).copy(position)
+        return super().copy(position)
 
     def add_interaction(self, interaction, from_interaction=False):
 
@@ -1037,7 +1037,7 @@ class Molecule(CompositeStructuralUnit):
         self._calc_subunit_position_in_CoM_frame()
         if position is None:
             position = self._calc_CoM()
-        super(Molecule, self).__init__(position, velocity, name)
+        super().__init__(position, velocity, name)
 
     @property
     def position(self):
@@ -1541,7 +1541,7 @@ class NonBondedInteraction(Interaction):
         if self.universe:
             self.universe.add_nonbonded_interaction(self)
         self.cutoff = settings.get('cutoff')
-        super(NonBondedInteraction, self).__init__(**settings)
+        super().__init__(**settings)
 
     @abstractmethod
     def __eq__(self, other):
@@ -1673,7 +1673,7 @@ class Dispersion(NonBondedInteraction):
         # Remove duplicates
         self._atom_types = tuple(set([validate_atom_type_pair(atp) for atp
                                       in atom_types]))
-        super(Dispersion, self).__init__(universe, **settings)
+        super().__init__(universe, **settings)
         self._atoms = [tuple([atom for atom_type in tpl
                               for atom in self.universe.atom_types[atom_type]])
                        for tpl in self.atom_types]
@@ -1813,7 +1813,7 @@ class Coulombic(NonBondedInteraction):
             self._atom_types = atom_types
             self._atoms = [atom for atom_type in self.atom_types
                            for atom in universe.atom_types[atom_type]]
-            super(Coulombic, self).__init__(universe, **settings)
+            super().__init__(universe, **settings)
             # Add interaction to atoms
             for atom in self.atoms:
                 atom.add_interaction(self)
@@ -1833,7 +1833,7 @@ class Coulombic(NonBondedInteraction):
 
             # Assumes all atoms are in the same universe (or None)
             universe = self.atoms[0].universe
-            super(Coulombic, self).__init__(universe, **settings)
+            super().__init__(universe, **settings)
 
         charge = settings.get('charge')
         if charge is not None:
@@ -2003,7 +2003,7 @@ class BondedInteraction(Interaction):
             for tpl in atom_tuples:
                 self._validate_atoms(tpl, settings.get('n_atoms'))
         self.atoms = list(atom_tuples)
-        super(BondedInteraction, self).__init__(**settings)
+        super().__init__(**settings)
 
     def __len__(self):
 
@@ -2240,7 +2240,7 @@ class Constrainable:
     def __init__(self, *atom_tuples, **settings):
 
         self.constrained = settings.get('constrained', False)
-        super(Constrainable, self).__init__(*atom_tuples, **settings)
+        super().__init__(*atom_tuples, **settings)
 
 
 class Bond(Constrainable, BondedInteraction):
@@ -2260,7 +2260,7 @@ class Bond(Constrainable, BondedInteraction):
     def __init__(self, *atom_tuples, **settings):
 
         settings['n_atoms'] = (2, )
-        super(Bond, self).__init__(*atom_tuples, **settings)
+        super().__init__(*atom_tuples, **settings)
 
 
 class BondAngle(Constrainable, BondedInteraction):
@@ -2284,7 +2284,7 @@ class BondAngle(Constrainable, BondedInteraction):
     def __init__(self, *atom_tuples, **settings):
 
         settings['n_atoms'] = (3, )
-        super(BondAngle, self).__init__(*atom_tuples, **settings)
+        super().__init__(*atom_tuples, **settings)
 
 
 class DihedralAngle(BondedInteraction):
@@ -2316,4 +2316,4 @@ class DihedralAngle(BondedInteraction):
 
         settings['n_atoms'] = (4, )
         self.improper = settings.get('improper', False)
-        super(DihedralAngle, self).__init__(*atom_tuples, **settings)
+        super().__init__(*atom_tuples, **settings)

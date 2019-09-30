@@ -225,7 +225,7 @@ class AbstractSQw(Observable):
             The name of the file
         """
 
-        super(AbstractSQw, self).read_from_file(reader, file_name)
+        super().read_from_file(reader, file_name)
         self._independent_variables = self.reader.independent_variables
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors

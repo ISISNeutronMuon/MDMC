@@ -99,7 +99,7 @@ class Unit(str):
             return None
         if isinstance(string, Unit):
             return string
-        unit = super(Unit, cls).__new__(cls, string)
+        unit = super().__new__(cls, string)
         if not components:
             components = defaultdict(list)
             # String is compound if it contains either ' ', '/' or '^' (e.g.
@@ -580,7 +580,7 @@ class UnitNDArray(np.ndarray):
 
     def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0,
                 strides=None, order=None):
-        obj = super(UnitNDArray, cls).__new__(cls, shape, dtype,
+        obj = super().__new__(cls, shape, dtype,
                                               buffer, offset, strides,
                                               order)
         obj.unit = unit
@@ -614,9 +614,9 @@ class UnitNDArray(np.ndarray):
 
     def __repr__(self):
         try:
-            return super(UnitNDArray, self).__repr__() + ' ' + self.unit
+            return super().__repr__() + ' ' + self.unit
         except TypeError:
-            return super(UnitNDArray, self).__repr__()
+            return super().__repr__()
 
     def __str__(self):
 

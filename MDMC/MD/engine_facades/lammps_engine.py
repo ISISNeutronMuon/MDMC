@@ -322,8 +322,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 will generally be appropriate.
         """
 
-        super(LAMMPSEngine, self).__init__(atom_style=settings.get('atom_style',
-                                                                   'full'))
+        super().__init__(atom_style=settings.get('atom_style', 'full'))
         self.universe = universe
         self.lmp_universe = LAMMPSUniverse(self.universe, self.lmp, **settings)
         self._saved_config = None
@@ -472,8 +471,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
     def __init__(self, universe, lmp=None, **settings):
 
-        super(LAMMPSUniverse, self).__init__(lmp, settings.get('atom_style',
-                                                               'full'))
+        super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
         self.atom_dict = {}
         self.atom_types = {}
@@ -1054,8 +1052,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     def __init__(self, universe, lmp=None, **settings):
 
-        super(LAMMPSSimulation, self).__init__(lmp, settings.get('atom_style',
-                                                                 'full'))
+        super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
         self.ensemble = Ensemble(self.lmp, **settings)
         self.temperature = settings.get('temperature')
@@ -1403,7 +1400,7 @@ class Ensemble(PyLammpsAttribute):
 
         # Requires a lmp object as thermostats cannot be applied before
         # configuration is defined
-        super(Ensemble, self).__init__(lmp)
+        super().__init__(lmp)
         # Setting _thermostat and _barostat allows apply_ensemble_fixes to be
         # called when setting self.temperature and self.pressure
         self._thermostat = None
