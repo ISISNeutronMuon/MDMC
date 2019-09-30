@@ -781,7 +781,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         pair_styles = set()
-        pair_modifiers = defaultdict(list)
+        pair_modifiers = defaultdict(set)
         pair_coeff_cmds = []
 
         for pair, inters in universe.nbis_by_atom_type_pairs.items():
@@ -793,7 +793,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 if mod:
                     # Only the first style index is required as the rest contain
                     # cutoffs etc
-                    pair_modifiers[style[0]].extend(mod)
+                    pair_modifiers[style[0]].update(set(mod))
             # Generates list of tuples that contain each pair_coeff command
             parsed_coeffs = parse_dispersion_coefficients(inters,
                                                           styles_mods.keys())
@@ -2047,7 +2047,7 @@ def parse_nonbonded_modifications(interaction):
 
     mods = []
     if interaction.name == 'Dispersion' and interaction.vdw_tail_correction:
-        mods.extend(['tail', 'yes'])
+        mods.extend(['tail yes'])
 
     return mods
 
