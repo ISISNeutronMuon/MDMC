@@ -362,8 +362,7 @@ class TemporalConfiguration(Configuration):
 
     def __init__(self, time, *structural_units, **settings):
 
-        super(TemporalConfiguration, self).__init__(*structural_units,
-                                                    **settings)
+        super().__init__(*structural_units, **settings)
         self.time = time
 
     def __add__(self, configuration):

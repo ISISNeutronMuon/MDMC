@@ -913,7 +913,7 @@ class Ewald(KSpaceSolver):
 
     def __init__(self, **settings):
 
-        super(Ewald, self).__init__(**settings)
+        super().__init__(**settings)
 
 
 class PPPM(KSpaceSolver):
@@ -931,7 +931,7 @@ class PPPM(KSpaceSolver):
 
     def __init__(self, **settings):
 
-        super(PPPM, self).__init__(**settings)
+        super().__init__(**settings)
 
     def __eq__(self, other):
 
@@ -1031,7 +1031,7 @@ class Shake(ConstraintAlgorithm):
 
     def __init__(self, accuracy, max_iterations):
 
-        super(Shake, self).__init__(accuracy, max_iterations)
+        super().__init__(accuracy, max_iterations)
 
 
 class Rattle(ConstraintAlgorithm):
@@ -1052,7 +1052,7 @@ class Rattle(ConstraintAlgorithm):
 
     def __init__(self, accuracy, max_iterations):
 
-        super(Rattle, self).__init__(accuracy, max_iterations)
+        super().__init__(accuracy, max_iterations)
 
 
 class EnergyMinimizer:
