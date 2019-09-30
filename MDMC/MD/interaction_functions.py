@@ -619,6 +619,8 @@ class Periodic(InteractionFunction):
         # Check that all n values are non-negative ints
         val_dict = {}
         all_params = [iter((K1, n1, d1) + params)] * 3
+        # Assign attributes K$, n$, d$, where $ is the order (e.g. K1, n1, d1
+        # for the first order etc.)
         for order, order_params in enumerate(zip_longest(*all_params), start=1):
             # If *params is not divisible by three, one or two indexes of
             # order_params will be None
