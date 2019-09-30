@@ -1,12 +1,15 @@
 """Tests for classes and functions in interaction_functions.py"""
 
+from math import ceil
+
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential,
                                            InteractionFunction, LennardJones,
-                                           Parameter, filter_parameters,
+                                           Periodic, Parameter,
+                                           filter_parameters,
                                            filter_parameters_atom_attribute,
                                            filter_parameters_function,
                                            filter_parameters_interaction,
@@ -31,6 +34,10 @@ HARMPOT_POT_STREN_ANGLE_UNIT = Unit('kJ') / (Unit('mol') * Unit('deg') ** 2)
 LJ_EPSILON, LJ_SIGMA = 15., 5.
 LJ_EPSILON_UNIT = Unit('kJ') / Unit('mol')
 LJ_SIGMA_UNIT = Unit('Ang')
+K1, K2, K3, K4 = 1., 2., 3., 4.
+N1, N2, N3, N4 = 5, 6, 7, 8
+D1, D2, D3, D4 = 9., 10., 11., 12.
+K_UNIT, D_UNIT = Unit('kJ'), Unit('deg')
 NAME = 'length'
 UNIT = Unit('Ang')
 VALUE = 1.0
@@ -166,6 +173,19 @@ def lennardjones():
 
     return LennardJones(LJ_EPSILON, LJ_SIGMA)
 
+@pytest.fixture
+def periodic():
+
+    """
+    Returns
+    -------
+    Periodic
+        A Periodic InteractionFunction initialized with four order of parameter
+        values e.g. K1, n1, d1, K2, n2, d2, K3, n3, d3, K4, n4, d4
+    """
+
+    return Periodic(K1, N1, D1, K2, N2, D2, K3, N3, D3, K4, N4, D4)
+
 
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
                                          (UnitFloat(VALUE, UNIT), None)])
@@ -295,6 +315,7 @@ def test_interaction_setting_function_name(param_inter):
         param_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
                                              function=LennardJones((1., 'arb'),
                                                                    (1., 'arb')))
+
 
 @pytest.mark.parametrize('expression, expected', [('*2.', VALUE * 2.),
                                                   ('/2.', VALUE / 2.),
@@ -567,7 +588,11 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
                           (harmonic(), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
                            ['equilibrium_state', 'potential_strength']),
                           (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
-                           ['epsilon', 'sigma'])])
+                           ['epsilon', 'sigma']),
+                          (periodic(),
+                           [K1, K2, K3, K4, D1, D2, D3, D4, N1, N2, N3, N4],
+                           ['K1', 'K2', 'K3', 'K4', 'd1', 'd2', 'd3', 'd4',
+                            'n1', 'n2', 'n3', 'n4'])])
 def test_interaction_function_subclass_params(obj, values, names):
 
     """
@@ -585,7 +610,9 @@ def test_interaction_function_subclass_params(obj, values, names):
                           ('coulomb', ['charge']),
                           ('harmonic', ['equilibrium_state',
                                         'potential_strength']),
-                          ('lennardjones', ['epsilon', 'sigma'])])
+                          ('lennardjones', ['epsilon', 'sigma']),
+                          ('periodic', ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
+                                        'K3', 'n3', 'd3', 'K4', 'n4', 'd4'])])
 def test_interaction_function_attributes(inter_func_fixture, params, request):
 
     """
@@ -669,3 +696,89 @@ def test_harmonic_potential_no_inter_type():
 
     with pytest.raises(TypeError):
         HarmonicPotential(6.0, 7.0, inter_tye='bond')
+
+
+@pytest.mark.parametrize("params",
+                         [(3., 1, 2.),
+                          (5., 1, -30., 7., 3, 45.),
+                          (9., 3, -40., 20., 4, -45., 60., 1, 9.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 9.9)])
+def test_periodic_init(params):
+
+    """
+    Tests that initializing a Periodic InteractionFunction of different orders
+    (first, second, third, and fourth) produces the expected parameters
+
+    Tests that parameters are assigned the correct names, values and units
+    """
+
+    period = Periodic(*params)
+    for index, param in enumerate(params, start=1):
+        order = ceil(index / 3.)
+        mod3_index = (order * 3)
+        if mod3_index == 1:
+            assert getattr(period, 'K{0}'.format(order)).value == param
+            assert getattr(period, 'K{0}'.format(order)).unit == K_UNIT
+        elif mod3_index == 2:
+            assert getattr(period, 'n{0}'.format(order)).value == param
+            # n is unitless
+            assert getattr(period, 'n{0}'.format(order)).unit == None
+        elif mod3_index == 13:
+            assert getattr(period, 'd{0}'.format(order)).value == param
+            assert getattr(period, 'd{0}'.format(order)).unit == D_UNIT
+
+
+@pytest.mark.parametrize("params",
+                         [(1., ),
+                          (3., 1),
+                          (2., 9, 7., 4.),
+                          (5., 1, -30., 7., 3),
+                          (2., 9, 5., 2., 3, 9., 5),
+                          (9., 3, -40., 20., 4, -45., 60., 1),
+                          (4., 2, 10., 1., 1, -60., 2., 2, 90., 10.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 19., 10.)])
+def test_periodic_invalid_num_parameters(params):
+
+    """
+    Tests that initializing a Periodic InteractionFunction with the incorrect
+    number of parameters (i.e. not a multiple of 3), raises a TypeError
+
+    Tests all numbers of parameters up to 13 (inclusive), except multiples of 3
+    """
+
+    with pytest.raises(TypeError):
+        Periodic(*params)
+
+
+@pytest.mark.parametrize("params",
+                         [(3., 1.2, 2.),
+                          (5., 1, -30., 7., 3., 45.),
+                          (9., 3, -40., 20., 4, -45., 60., 7.2, 9.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1.6, 9.9),
+                          (5., 1., 0.5, 7., 3., 8., 9., 0., 7., 4., 1., 9.9)])
+def test_periodic_init_types(params):
+
+    """
+    Tests that initializing a Periodic InteractiongFunction with an n value (of
+    any order) which is not an int, raises a TypeError
+    """
+
+    with pytest.raises(TypeError):
+        Periodic(*params)
+
+@pytest.mark.parametrize("params",
+                         [(3., -1, 2.),
+                          (5., 1, -30., 7., -3, 45.),
+                          (9., 3, -40., 20., 4, -45., 60., -7, 9.),
+                          (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., -1, 9.9),
+                          (5., -1, 0.5, 7., -3, 8., 9., -10, 7., 4., -1, 9.9)])
+def test_periodic_init_values(params):
+
+    """
+    Tests that initializing a Periodic InteractiongFunction with an n value (of
+    any order) which is negative, raises a ValueError
+    """
+
+    with pytest.raises(ValueError):
+        Periodic(*params)

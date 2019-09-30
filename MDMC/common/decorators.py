@@ -56,8 +56,16 @@ def unit_decorator(unit):
                 return func(self, unit_array(value, unit))
 
         def wrapper(self, value):
+            # If decorator doesn't have a unit passed to it, use the unit of the
+            # object to which the method belongs. If this unit is None then the
+            # property is unitless, so return the setter applied to the value
+            # (i.e. don't apply setter to a type with a unit attribute.) This is
+            # necessary for cases where a property can either have a unit or be
+            # unitless.
             if unit is None:
-                return unit_creator(self, value, self.unit)
+                if self.unit:
+                    return unit_creator(self, value, self.unit)
+                return func(self, value)
             return unit_creator(self, value, unit)
         return wrapper
     return decorator
@@ -110,6 +118,8 @@ def unit_decorator_getter(unit):
                 return unit_array(func(self), unit)
 
         def wrapper(self):
+            # If decorator doesn't have a unit passed to it, use the unit of the
+            # object to which the method belongs.
             if unit is None:
                 return unit_creator(self, self.unit)
             return unit_creator(self, unit)
