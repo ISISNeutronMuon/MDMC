@@ -93,7 +93,7 @@ def universe_interactions(empty_universe, atoms):
     # Create InteractionFunctions for bonds, angles and dispersive interactions
     bond1_harmonic = HarmonicPotential(1.0, 2.0, interaction_type='bond')
     bond2_harmonic = HarmonicPotential(2.0, 4.0, interaction_type='bond')
-    angle_harmonic = HarmonicPotential(1.0, 2.0, interaction_type='angle')
+    angle_harmonic = HarmonicPotential(1.0, 0.0005, interaction_type='angle')
 
     # Create 2 bonds for some atoms, and one angle, coulombic and dispersive
     # interaction
