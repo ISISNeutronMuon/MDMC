@@ -9,7 +9,8 @@ from MDMC.common import units
 from MDMC.common.units import UnitFloat
 from MDMC.MD.force_fields.ff import WaterModel
 import MDMC.MD.structural_units as su
-import MDMC.MD.interaction_functions as ifu
+from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
+                                           LennardJones)
 
 
 class SPC(WaterModel):
@@ -24,26 +25,27 @@ class SPC(WaterModel):
     def interaction_dictionary(self):
 
         # Charge Params
-        q_O = UnitFloat(-0.82, units.CHARGE)         # e
-        q_H = UnitFloat(abs(q_O/2), units.CHARGE)    # e
+        q_O = -0.82         # e
+        q_H = abs(q_O/2)    # e
 
         # LJ Params
-        sigma = UnitFloat(3.166, units.LENGTH)       # Ang
-        epsilon = UnitFloat(0.6502, units.ENERGY)    # kJ mol^-1
+        sigma = 3.166      # Ang
+        epsilon = 0.6502   # kJ mol^-1
 
         # Bond Params
-        r_OH = UnitFloat(1.000, units.LENGTH)        # Ang
-        f_OH = UnitFloat(4637.,                      # kJ mol^-1 Ang^-2
-                         units.ENERGY / units.LENGTH**2)
+        r_OH = 1.000       # Ang
+        f_OH = 4637.       # kJ mol^-1 Ang^-2
 
         # Bond Angle Params
-        a_HOH = UnitFloat(109.47, units.ANGLE)      # deg
-        f_HOH = UnitFloat(383.,                     # kJ mol^-1 rad^-2
-                          units.ENERGY / units.ANGLE**2)
+        a_HOH = 109.47     # deg
+        f_HOH = 383.       # kJ mol^-1 rad^-2
 
         return {
-            (su.Coulombic, ('O',)):ifu.Coulomb(q_O),
-            (su.Coulombic, ('H',)):ifu.Coulomb(q_H),
-            (su.Dispersion, ('O', 'O')):ifu.LennardJones(epsilon, sigma),
-            (su.Bond, ('H', 'O')):ifu.HarmonicPotential(r_OH, f_OH),
-            (su.BondAngle, ('H', 'O', 'H')):ifu.HarmonicPotential(a_HOH, f_HOH)}
+            (su.Coulombic, ('O',)):Coulomb(q_O),
+            (su.Coulombic, ('H',)):Coulomb(q_H),
+            (su.Dispersion, ('O', 'O')):LennardJones(epsilon, sigma),
+            (su.Bond,
+             ('H', 'O')):HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
+            (su.BondAngle,
+             ('H', 'O', 'H')):HarmonicPotential(a_HOH, f_HOH,
+                                                interaction_type='angle')}

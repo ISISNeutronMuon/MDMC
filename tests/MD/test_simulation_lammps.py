@@ -91,9 +91,9 @@ def universe_interactions(empty_universe, atoms):
         empty_universe.add_structural_unit(atom)
 
     # Create InteractionFunctions for bonds, angles and dispersive interactions
-    bond1_harmonic = HarmonicPotential((1.0, units.LENGTH), (2.0, units.ENERGY))
-    bond2_harmonic = HarmonicPotential((2.0, units.LENGTH), (4.0, units.ENERGY))
-    angle_harmonic = HarmonicPotential((1.0, units.LENGTH), (2.0, units.ENERGY))
+    bond1_harmonic = HarmonicPotential(1.0, 2.0, interaction_type='bond')
+    bond2_harmonic = HarmonicPotential(2.0, 4.0, interaction_type='bond')
+    angle_harmonic = HarmonicPotential(1.0, 0.0005, interaction_type='angle')
 
     # Create 2 bonds for some atoms, and one angle, coulombic and dispersive
     # interaction
@@ -107,21 +107,17 @@ def universe_interactions(empty_universe, atoms):
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, atom_types=type,
-                                    function=Coulomb((-1.0+type*0.5, 'e')),
+                                    function=Coulomb(-1.0+type*0.5),
                                     cutoff=COUL_CUTOFF))
         dispersions.append(Dispersion(empty_universe, (type, type),
-                                      function=Buckingham((type * 0.1,
-                                                           'kJ / mol'),
-                                                          (type * 1.0, 'Ang'),
-                                                          (type * 2.0,
-                                                           'Ang^6 kJ / mol')),
+                                      function=Buckingham(type * 0.1,
+                                                          type * 1.0,
+                                                          type * 2.0),
                                       cutoff=DISP_CUTOFF,
                                       vdw_tail_correction=True))
         dispersions.append(Dispersion(empty_universe, (type, type),
-                                      function=LennardJones((type*0.1,
-                                                             'kJ / mol'),
-                                                            (type*1.0,
-                                                             'Ang')),
+                                      function=LennardJones(type*0.1,
+                                                            type*1.0),
                                       cutoff=DISP_CUTOFF,
                                       vdw_tail_correction=True))
 

@@ -17,14 +17,20 @@ from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import Atom, Bond, Coulombic, Dispersion, Molecule
 
 
-BUCK_A = UnitFloat(1, 'kJ mol ^ -1')
-BUCK_B = UnitFloat(2, 'Ang ^ -1')
-BUCK_C = UnitFloat(3, 'Ang ^ 6 kJ mol ^ -1')
-COULOMB_CHARGE = UnitFloat(5.0, 'e')
-HARMPOT_EQUIL_STATE = UnitFloat(10, 'Ang')
-HARMPOT_POT_STREN = UnitFloat(100, 'kJ mol ^ -1')
-LJ_EPSILON = UnitFloat(15, 'kJ mol ^ -1')
-LJ_SIGMA = UnitFloat(5, 'Ang')
+BUCK_A, BUCK_B, BUCK_C = 1., 2., 3.
+BUCK_A_UNIT = Unit('kJ') / Unit('mol')
+BUCK_B_UNIT = Unit('Ang') ** -1
+BUCK_C_UNIT = Unit('Ang') ** 6 * Unit('kJ') / Unit('mol')
+COULOMB_CHARGE = 5.0
+COULOMB_CHARGE_UNIT = Unit('e')
+HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN = 10., 100.
+HARMPOT_EQUIL_STATE_BOND_UNIT = Unit('Ang')
+HARMPOT_POT_STREN_BOND_UNIT = Unit('kJ') / (Unit('mol') * Unit('Ang') ** 2)
+HARMPOT_EQUIL_STATE_ANGLE_UNIT = Unit('deg')
+HARMPOT_POT_STREN_ANGLE_UNIT = Unit('kJ') / (Unit('mol') * Unit('deg') ** 2)
+LJ_EPSILON, LJ_SIGMA = 15., 5.
+LJ_EPSILON_UNIT = Unit('kJ') / Unit('mol')
+LJ_SIGMA_UNIT = Unit('Ang')
 NAME = 'length'
 UNIT = Unit('Ang')
 VALUE = 1.0
@@ -144,7 +150,8 @@ def harmonic():
         state and a linear potential strength.
     """
 
-    return HarmonicPotential(HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN)
+    return HarmonicPotential(HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN,
+                             interaction_type='bond')
 
 @pytest.fixture
 def lennardjones():
@@ -553,7 +560,7 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
             assert isinstance(inter, Coulombic)
 
 
-@pytest.mark.parametrize("object, values, names",
+@pytest.mark.parametrize("obj, values, names",
                          [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
                           (coulomb(), [COULOMB_CHARGE], ['charge']),
@@ -561,14 +568,14 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
                            ['equilibrium_state', 'potential_strength']),
                           (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
                            ['epsilon', 'sigma'])])
-def test_interaction_function_subclass_params(object, values, names):
+def test_interaction_function_subclass_params(obj, values, names):
 
     """
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
 
-    for idx, param in enumerate(object.params):
+    for idx, param in enumerate(obj.params):
         assert param.value == values[idx]
         assert param.name == names[idx]
 
@@ -589,9 +596,76 @@ def test_interaction_function_attributes(inter_func_fixture, params, request):
     sigma, with a value of the corresponding Parameters
     """
 
+    inter_func = request.getfixturevalue(inter_func_fixture)
     for param in params:
-        inter_func = request.getfixturevalue(inter_func_fixture)
         # Test both for existence of attribute and that the Parameter has the
         # correct name
         assert hasattr(inter_func, param)
         assert getattr(inter_func, param).name == param
+
+
+@pytest.mark.parametrize("inter_func_fixture, units",
+                         [('buckingham', {'A':BUCK_A_UNIT,
+                                          'B':BUCK_B_UNIT,
+                                          'C':BUCK_C_UNIT}),
+                          ('coulomb', {'charge':COULOMB_CHARGE_UNIT}),
+                          ('lennardjones', {'epsilon':LJ_EPSILON_UNIT,
+                                            'sigma':LJ_SIGMA_UNIT})])
+def test_interaction_function_units(inter_func_fixture, units, request):
+
+    """
+    Tests that the units of the parameters of all subclasses of
+    InteractionFunction (except HarmonicPotential) are set correctly
+    """
+
+    inter_func = request.getfixturevalue(inter_func_fixture)
+    for param_name, unit in units.items():
+        assert getattr(inter_func, param_name).unit == unit
+        # Test an incorrect unit
+        assert getattr(inter_func, param_name).unit != Unit('DOES_NOT_EXIST')
+
+
+@pytest.mark.parametrize("inter_type, units",
+                         [('bond', [HARMPOT_EQUIL_STATE_BOND_UNIT,
+                                    HARMPOT_POT_STREN_BOND_UNIT]),
+                          ('BoNd', [HARMPOT_EQUIL_STATE_BOND_UNIT,
+                                    HARMPOT_POT_STREN_BOND_UNIT]),
+                          ('angle', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
+                                     HARMPOT_POT_STREN_ANGLE_UNIT]),
+                          ('improper', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
+                                        HARMPOT_POT_STREN_ANGLE_UNIT])])
+def test_harmonic_potential_units(inter_type, units):
+
+    """
+    Tests that the units of the parameters of HarmonicPotential are set
+    correctly, dependent on the interaction_type that is passed to it
+    """
+
+    h_pot = HarmonicPotential(1.0, 2.0, interaction_type=inter_type)
+    # Ignore pylint warning for no member as both equilibrium_state and
+    # potential_strength are created dynamically
+    #pylint: disable=no-member
+    assert h_pot.equilibrium_state.unit == units[0]
+    assert h_pot.potential_strength.unit == units[1]
+
+
+def test_harmonic_potential_invalid_inter_type():
+
+    """
+    Tests that if an invalid interaction_type is passed to HarmonicPotential, it
+    raises a ValueError
+    """
+
+    with pytest.raises(ValueError):
+        HarmonicPotential(5.0, 4.0, interaction_type='Bonded')
+
+
+def test_harmonic_potential_no_inter_type():
+
+    """
+    Tests that if an interaction_type is no passed to HarmonicPotential, it
+    raises a TypeError
+    """
+
+    with pytest.raises(TypeError):
+        HarmonicPotential(6.0, 7.0, inter_tye='bond')

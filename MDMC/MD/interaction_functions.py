@@ -12,6 +12,7 @@ fixed, has constraints or is tied.
 Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
+import functools
 from inspect import getargspec, getmembers
 from itertools import chain
 import operator
@@ -309,13 +310,9 @@ class InteractionFunction:
         params = []
         for name, value in val_dict.items():
             if name not in excluded:
-                try:
-                    param = Parameter(value, name)
-                except AttributeError:
-                    param = Parameter(units.UnitFloat(value[0],
-                                                      units.Unit(value[1])),
-                                      name)
+                param = Parameter(value, name)
                 params.append(param)
+                # Create an attribute with the same name as the Parameter
                 setattr(self, param.name, param)
         self.params = params
 
@@ -385,6 +382,72 @@ class InteractionFunction:
             param.interactions = interaction
 
 
+def inter_func_decorator(*param_units):
+
+    """
+    Decorates a method to add units to all non-keyword arguments
+
+    Designed for adding units to parameters of __init__ method for subclasses of
+    InteractionFunction.
+
+    Parameters
+    ----------
+    *param_units
+        one or more str or units.Unit, where each str (or Unit) is a unit which
+        is applied to the corresponding value passed to the decorated method. If
+        one of the values is unitless, pass None at the corresponding index in
+        *param_units.
+
+    Examples
+    --------
+    The following adds units of 'Ang' to parameter alpha, units of 's' to the
+    parameter beta, and units of 'atm' to the parameter gamma:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @inter_func_decorator('Ang', 's', 'Pa')
+            def __init__(self, alpha, beta, gamma):
+                ...
+
+    If one of the parameters is unitless, this can be set with None (in which
+    case the returned type will be the same as the original value i.e. a
+    UnitFloat or UnitNDArray will not be created). So to set epsilon as
+    unitless:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @inter_func_decorator('arb', None, 'deg')
+            def __init__(self, delta, epsilon, gamma):
+                ...
+    """
+
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
+    def decorator(func):
+        def unit_creator(value, unit):
+            # If no unit is provided, assume unitless and just return value
+            if unit is None:
+                return value
+            # try/except to determine whether value is float or array
+            try:
+                return units.UnitFloat(value, unit)
+            except TypeError:
+                return units.unit_array(value, unit)
+
+        @functools.wraps(func)
+        def wrapper(self, *values, **settings):
+            # Use zip to associate each value in *values with the corresponding
+            # unit in *param_units. unit_creator return a UnitFloat or
+            # UnitNDArray with this unit, or returns the original value if the
+            # unit is None.
+            return func(self, *[unit_creator(value, unit) for value, unit in
+                                zip(values, param_units)], **settings)
+        return wrapper
+    return decorator
+
+
 class Buckingham(InteractionFunction):
 
     r"""
@@ -397,23 +460,19 @@ class Buckingham(InteractionFunction):
 
     Parameters
     ----------
-    A : UnitFloat, tuple
-        The Buckingham parameter A in units of kJ mol^-1. Can either be a
-        UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
-    B : UnitFloat, tuple
-        The Buckingham parameter B in units of Ang^-1. Can either be a
-        UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
+    A : float
+        The Buckingham parameter A in units of kJ mol^-1
+    B : float
+        The Buckingham parameter B in units of Ang^-1
     C : float
-        The Buckingham parameter C in units of Ang^6 kJ mol^-1. Can either
-        be a UnitFloat, or a (float, str) tuple, where float is the value
-        and str is the unit.
+        The Buckingham parameter C in units of Ang^6 kJ mol^-1
     """
 
+    @inter_func_decorator(units.ENERGY, units.LENGTH ** -1,
+                          units.LENGTH ** 6 * units.ENERGY)
     def __init__(self, A, B, C):
 
-        super(self.__class__, self).__init__(locals())
+        super().__init__(locals())
 
 
 class Coulomb(InteractionFunction):
@@ -431,43 +490,95 @@ class Coulomb(InteractionFunction):
         The charge in units of e
     """
 
+    @inter_func_decorator(units.CHARGE)
     def __init__(self, charge):
 
-        super(self.__class__, self).__init__(locals())
+        super().__init__(locals())
 
 
 class HarmonicPotential(InteractionFunction):
 
     r"""
-    Harmonic potential for bond stretching and angular vibration, with the form:
+    Harmonic potential for bond stretching, and angular and improper dihedral
+    vibration, with the form:
 
     .. math::
 
         E = K(r-r_0)^2
 
+    As HarmonicPotential can be used with several different Interaction types,
+    the Interaction type must be specified, so that the correct units can be
+    assigned to the equilibrium_state and potential_strength parameters.
+
     Parameters
     ----------
-    equilibrium_state : UnitFloat, tuple
-        The equilibrium state of the object in either Ang or degrees. Can either
-        be a UnitFloat, or a (float, str) tuple, where float is the value and
-        str is the unit.
-    potential_strength : UnitFloat, tuple
+    equilibrium_state : float
+        The equilibrium state of the object in either Ang or degrees, depending
+        on the interaction_type passed.
+    potential_strength : float
         The potential strength in units of kJ mol^-1 Ang^-2 (linear) or
-        kJ mol^-1 rad^-2 (angular). Can either be a UnitFloat, or a (float, str)
-        tuple, where float is the value and str is the unit.
+        kJ mol^-1 rad^-2 (angular/improper), depending on the interaction_type
+        passed.
+    **settings
+        interaction_type : str
+            A str specifying either 'bond', 'angle' or 'improper'. This assigns
+            the correct units to equilibrium_state and potential_strength. This
+            keyword must be passed.
 
-    Examples
-    --------
-    The following result in equivalent InteractionFunctions::
+    Raises
+    ------
+    ValueError
+        The interaction_type must be 'bond', 'angle', or 'improper'
+    TypeError
+        An interaction_type of 'bond', 'angle', or 'improper' must be passed
 
-    >>> HarmonicPotential(UnitFloat(1.0, 'Ang'), UnitFloat(2.0, 'kJ'))
+    Example
+    -------
+    The following result creates a HarmonicPotential for a Bond interaction::
 
-    >>> HarmonicPotential((1.0, 'Ang'), (2.0, 'kJ'))
+        HarmonicPotential(1.0, 2.0, interaction_type='bond')
     """
 
-    def __init__(self, equilibrium_state, potential_strength):
+    def __new__(cls, equilibrium_state, potential_strength, **settings):
 
-        super(self.__class__, self).__init__(locals())
+        # interaction_type is a required keyword, but has to be passed through
+        # settings so that it can be correctly passed in inter_func_decorator
+        try:
+            if settings['interaction_type'].lower() == 'bond':
+                eq_unit = units.LENGTH
+                pot_unit = units.ENERGY / units.LENGTH ** 2
+            elif settings['interaction_type'].lower() in ('angle', 'improper'):
+                eq_unit = units.ANGLE
+                pot_unit = units.ENERGY / units.ANGLE ** 2
+            else:
+                raise ValueError('The interaction_type must be "bond", "angle",'
+                                 ' or "improper"')
+        except KeyError as err:
+            raise TypeError('An interaction_type of "bond", "angle" or improper"'
+                            ' must be passed') from err
+        # Create a new (uninitialized) HarmonicPotential
+        h_pot = super().__new__(cls)
+        # Decorate __init__ with inter_func_decorator to apply to correct units
+        # (which are dependent on the interaction_type) to the equilibrium_state
+        # and potential_strength parameters. This decoration has to be done in
+        # new rather than directly on __init__ as it requires the dynamically
+        # defined interaction_type to determine the units. cls_init (which is a
+        # copy of the original cls.__init__) is required (rather than just
+        # applying the decorator directly to cls.__init__) because after the
+        # first HarmonicPotential is called, the cls.__init__ will be decorated.
+        # Therefore, after this if cls.__init__ is decorated again, it will be
+        # irrelevant, as the original decorator will be the last called. So
+        # cls._init is used as it will always be equivalent to the undecorated
+        # __init__ visible below.
+        cls.__init__ = inter_func_decorator(eq_unit, pot_unit)(cls._init)
+        return h_pot
+
+    def __init__(self, equilibrium_state, potential_strength, **settings):
+
+        super().__init__(locals())
+
+    # Declare a class method equal to the __init__ method
+    _init = __init__
 
 
 class LennardJones(InteractionFunction):
@@ -482,12 +593,10 @@ class LennardJones(InteractionFunction):
 
     Parameters
     ----------
-    epsilon : UnitFloat, tuple
-        The LJ epsilon value in units of kJ mol^-1. Can either be a UnitFloat,
-        or a (float, str) tuple, where float is the value and str is the unit.
-    sigma : UnitFloat, tuple
-        The LJ sigma value in units of Ang. Can either be a UnitFloat, or a
-        (float, str) tuple, where float is the value and str is the unit.
+    epsilon : float
+        The LJ epsilon value in units of kJ mol^-1
+    sigma : float
+        The LJ sigma value in units of Ang
     **settings
         cutoff : float
             The distance in Ang at which the potential is cutoff
@@ -497,9 +606,10 @@ class LennardJones(InteractionFunction):
             solvers
     """
 
+    @inter_func_decorator(units.ENERGY, units.LENGTH)
     def __init__(self, epsilon, sigma, **settings):
 
-        super(self.__class__, self).__init__(locals())
+        super().__init__(locals())
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)
 
