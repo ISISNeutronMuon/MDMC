@@ -37,6 +37,7 @@ LJ_SIGMA_UNIT = Unit('Ang')
 K1, K2, K3, K4 = 1., 2., 3., 4.
 N1, N2, N3, N4 = 5, 6, 7, 8
 D1, D2, D3, D4 = 9., 10., 11., 12.
+K_UNIT, D_UNIT = Unit('kJ'), Unit('deg')
 NAME = 'length'
 UNIT = Unit('Ang')
 VALUE = 1.0
@@ -708,7 +709,7 @@ def test_periodic_init(params):
     Tests that initializing a Periodic InteractionFunction of different orders
     (first, second, third, and fourth) produces the expected parameters
 
-    Tests that parameters are assigned the correct names and values
+    Tests that parameters are assigned the correct names, values and units
     """
 
     period = Periodic(*params)
@@ -717,10 +718,14 @@ def test_periodic_init(params):
         mod3_index = (order * 3)
         if mod3_index == 1:
             assert getattr(period, 'K{0}'.format(order)).value == param
+            assert getattr(period, 'K{0}'.format(order)).unit == K_UNIT
         elif mod3_index == 2:
             assert getattr(period, 'n{0}'.format(order)).value == param
+            # n is unitless
+            assert getattr(period, 'n{0}'.format(order)).unit == None
         elif mod3_index == 13:
             assert getattr(period, 'd{0}'.format(order)).value == param
+            assert getattr(period, 'd{0}'.format(order)).unit == D_UNIT
 
 
 @pytest.mark.parametrize("params",
