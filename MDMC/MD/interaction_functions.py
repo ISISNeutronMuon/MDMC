@@ -57,7 +57,10 @@ class Parameter:
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
         self.name = name
-        self.unit = settings['unit'] if 'unit' in settings else value.unit
+        try:
+            self.unit = settings['unit'] if 'unit' in settings else value.unit
+        except AttributeError:
+            self.unit = None
         self.constraints = constraints
         self.value = value
         self.fixed = fixed
@@ -629,8 +632,7 @@ class Periodic(InteractionFunction):
                 raise ValueError('All n values must be non-negative ints')
             val_dict['K{0}'.format(order)] = (units.UnitFloat(order_params[0],
                                                               units.ENERGY))
-            val_dict['n{0}'.format(order)] = (units.UnitInt(order_params[1],
-                                                            ''))
+            val_dict['n{0}'.format(order)] = order_params[1]
             val_dict['d{0}'.format(order)] = (units.UnitFloat(order_params[2],
                                                               units.ANGLE))
 
