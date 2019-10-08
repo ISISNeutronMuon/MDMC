@@ -380,20 +380,23 @@ def test_number_interaction_types(lammps_universe):
 
     - bond
     - angle
-    - dihedral
     - improper
 
-    DIHEDRAL AND IMPROPER ARE NOT CURRENTLY IMPLEMENTED
+    PyLammps does not allow polling for ndihedraltypes (unlike nbondtypes,
+    nimpropertypes, and nangletypes) so there is no test for the number of
+    proper dihedral types.
     """
 
     assert lammps_universe.system_state.nbondtypes == 2
+    assert lammps_universe.system_state.nimpropertypes == 1
     # LAMMPS versions <= 20190104 have a bug which incorrectly assigns the
     # number of angle types, so only test this if using a more recent version
     if lammps_universe.lmp.lmp.version() > 20190104:
         assert lammps_universe.system_state.nangletypes == 1
 
 
-def test_number_interactions(lammps_universe, bonds, angles):
+def test_number_interactions(lammps_universe, bonds, angles, propers,
+                             impropers):
 
     """
     Tests that creating a simulation box from an MDMC universe results in the
@@ -411,6 +414,10 @@ def test_number_interactions(lammps_universe, bonds, angles):
                                                        b in bonds])
     assert lammps_universe.system_state.nangles == sum([len(a) for
                                                         a in angles])
+    assert lammps_universe.system_state.ndihedrals == sum([len(p) for
+                                                           p in propers])
+    assert lammps_universe.system_state.nimpropers == sum([len(i) for
+                                                           i in impropers])
 
 
 def test_atom_type_properties(lammps_universe, universe):
@@ -495,7 +502,9 @@ def test_unimplemented_interactions(lammps_universe, universe):
 
 @pytest.mark.parametrize('interactions, expected',
                          [('bonds', 'harmonic'),
-                          ('angles', 'harmonic')])
+                          ('angles', 'harmonic'),
+                          ('propers', 'fourier'),
+                          ('impropers', 'harmonic')])
 def test_parse_bonded_styles(interactions, expected, request):
 
     """
@@ -696,7 +705,7 @@ def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
 @pytest.mark.parametrize('interaction, arguments, parser',
                          [(Bond, ['atom_pair'], 'parse_bonded_styles'),
                           (Dispersion, ['universe', (1, 1)],
-                          'parse_nonbonded_styles')
+                           'parse_nonbonded_styles')
                          ])
 def test_parse_unimplemented_styles(interaction, arguments, parser, request):
 
@@ -774,13 +783,14 @@ def test_atom_charges_update(lammps_universe, universe):
                 == universe.atom_list[i].charge)
 
 
-@pytest.mark.parametrize('interaction_fixture, update_method',
-                         [('bonds', '_update_bonds'),
-                          ('angles', '_update_angles'),
-                          ('dispersions', '_update_dispersions')])
-def test_update_individual_interactions(lammps_universe,
-                                        interaction_fixture, update_method,
-                                        request):
+@pytest.mark.parametrize('interaction_fixture, lmp_name',
+                         [('bonds', 'bond'),
+                          ('angles', 'angle'),
+                          ('propers', 'dihedral'),
+                          ('impropers', 'improper'),
+                          ('dispersions', None)])
+def test_update_individual_interactions(lammps_universe, interaction_fixture,
+                                        lmp_name, request):
 
     """
     Tests that updating each individual interaction does not result in a fatal
@@ -804,9 +814,9 @@ def test_update_individual_interactions(lammps_universe,
             param.value *= 2
 
     if interaction_fixture == 'dispersions':
-        getattr(lammps_universe, update_method)(lammps_universe.universe)
+        lammps_universe._update_dispersions(lammps_universe.universe)
     else:
-        getattr(lammps_universe, update_method)(interactions)
+        lammps_universe._update_bonded_interactions(lmp_name, interactions)
 
 
 def test_update_all_interactions(lammps_universe, interactions):
@@ -1706,12 +1716,13 @@ def test_partition_interactions_unpartitioned(interactions, dispersions):
     in the names argument
     """
 
-    _, _, _, p_dispersions = lmp_eng.partition_interactions(interactions,
-                                                            ['Bond',
-                                                             'BondAngle',
-                                                             'Coulombic'],
-                                                            unpartitioned=True)
-    assert list(p_dispersions) == dispersions
+    _, _, _, _, p_disps = lmp_eng.partition_interactions(interactions,
+                                                         ['Bond',
+                                                          'BondAngle',
+                                                          'Coulombic',
+                                                          'DihedralAngle'],
+                                                         unpartitioned=True)
+    assert list(p_disps) == dispersions
 
 
 def test_partion_interactions_return_list(interactions, bonds, angles):
