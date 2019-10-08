@@ -532,8 +532,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         self._update_charges()
-        self._update_bonds(self.bonds)
-        self._update_angles(self.angles)
+        self._update_bonded_interactions('bond', self.bonds)
+        self._update_bonded_interactions('angle', self.angles)
         self._update_dispersions(self.universe)
 
     def _define_simulation_box(self, universe):
@@ -735,15 +735,15 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.bond_style('hybrid',
                                 *set(tuple([parse_bonded_styles(b)
                                             for b in bonds])))
-            self._create_bonds(bonds)
+            self._create_bonded_interactions('bond', bonds)
 
         if angles:
-            # Set used to remove duplicate bond styles, which are not required
+            # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             self.lmp.angle_style('hybrid',
                                  *set(tuple([parse_bonded_styles(a)
                                              for a in angles])))
-            self._create_angles(angles)
+            self._create_bonded_interactions('angle', angles)
 
         if self.universe.constraint_algorithm:
             self.apply_constraints()
@@ -872,123 +872,92 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for mod in pair_mods:
             self.lmp.pair_modify('pair', *mod)
 
-    def _create_bonds(self, bonds):
+    def _create_bonded_interactions(self, lmp_name, bonded_interactions):
 
         """
-        Creates coefficients and bonds in LAMMPS, and fills the bond_ID
-        dictionary with bond: ID pairs
+        Creates coefficients and new bonded interactions in LAMMPS, and fills
+        the relevant bonded interaction ID (e.g. self.bond_ID for bonds,
+        self.angle_ID for angles) dictionary with bonded_interaction: ID pairs
+
+        This generic method can be used for bonds, angles, dihedrals (proper),
+        and impropers. It can only be used for a single type of
+        bonded_interactions (e.g. only bonds)
 
         Parameters
         ----------
-        bonds : list of Bonds
-            Bond interactions which will be created in LAMMPS.
+        lmp_name : str
+            The name of the bonded interaction type used for setting coeffs in
+            LAMMPS. This must be one of: 'bond', 'angle', 'dihedral',
+            'improper'. In the case of 'dihedral', LAMMPS is just referring to
+            proper dihedral interactions.
+        bonded_interactions : list of bonded_interactions (or single type)
+            BondedInteractions which will be created in LAMMPS. This list must
+            only contain a single type of bonded_interactions (e.g. only bonds),
+            which must correspond to lmp_name.
         """
 
         special = 'no'
+        ID_attr = getattr(self, '{0}_ID'.format(lmp_name)
+                          if lmp_name != 'dihedral' else 'proper_ID')
+        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
         # If bonds already exist, new bond IDs are generated from lowest unused
         # integer
-        if self.bond_ID:
-            start = max(self.bond_ID.values()) + 1
+        if ID_attr:
+            start = max(ID_attr.values()) + 1
         else:
             start = 1
-        for ID, bond in enumerate(bonds, start=start):
-            # Create the bond coefficients
-            self.lmp.bond_coeff(ID, *parse_bonded_coefficients(bond))
+        for ID, b_i in enumerate(bonded_interactions, start=start):
+            # Create the bonded interaction coefficients
+            coeff_function(ID, *parse_bonded_coefficients(b_i))
 
-            # Relate each bond with its ID
-            self.bond_ID[bond] = ID
+            # Relate each bonded interaction with its ID
+            ID_attr[b_i] = ID
 
-            # Create the bonds
+            # Create the bonded_interactions
             # Special triggers the internal interaction list in LAMMPS
             # This must at least occur at the end, and is an expensive
             # operation
-            if bond is bonds[-1]:
+            if b_i is bonded_interactions[-1]:
                 special = 'yes'
-            for atom_tpl in bond.atoms:
+
+            # LAMMPS create_bonds is used for creating all types of bonded
+            # interactions, by appending the lmp_name to 'single/'
+            c_b_type = 'single/{0}'.format(lmp_name)
+            for atom_tpl in b_i.atoms:
                 atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
-                self.lmp.create_bonds('single/bond',
+                self.lmp.create_bonds(c_b_type,
                                       ID,
-                                      atom_IDs[0],
-                                      atom_IDs[1],
+                                      *atom_IDs,
                                       'special',
                                       special)
 
-    def _update_bonds(self, bonds):
+    def _update_bonded_interactions(self, lmp_name, bonded_interactions):
 
         """
-        Updates the bond coefficients, which are then applied to any bonds which
-        have previously been set
+        Updates the bonded interaction coefficients, which are then applied to
+        any bonded interactions which have previously been set
 
         Parameters
         ----------
-        bonds : list of Bonds
-            Bond interactions which will be updated in LAMMPS.
+        lmp_name : str
+            The name of the bonded interaction type used for setting coeffs in
+            LAMMPS. This must be one of: 'bond', 'angle', 'dihedral',
+            'improper'. In the case of 'dihedral', LAMMPS is just referring to
+            proper dihedral interactions.
+        bonded_interactions : list of BondedInteractions
+            BondedInteractions which will be updated in LAMMPS. This list must
+            only contain a single type of bonded_interactions (e.g. only bonds),
+            which must correspond to lmp_name.
         """
 
-        for bond in bonds:
-            self.lmp.bond_coeff(self.bond_ID[bond],
-                                *parse_bonded_coefficients(bond))
-
-    def _create_angles(self, angles):
-
-        """
-        Creates coefficients and angles in LAMMPS, and fills the angle_ID
-        dictionary with angle: ID pairs
-
-        Parameters
-        ----------
-        angles : list of BondAngles
-            BondAngle interactions which will be created in LAMMPS
-        """
-
-        special = 'no'
-        # If bonds already exist, new bond IDs are generated from lowest unused
-        # integer
-
-        if self.angle_ID:
-            start = max(self.angle_ID.values()) + 1
-        else:
-            start = 1
-        for ID, angle in enumerate(angles, start=start):
-            # Create the bond coefficients
-            self.lmp.angle_coeff(ID, *parse_bonded_coefficients(angle))
-
-            # Relate each bond with its ID
-            self.angle_ID[angle] = ID
-
-            # Create the angles
-            # Special triggers the internal interaction list in LAMMPS
-            # This must at least occur at the end, and is an expensive
-            # operation
-            if angle is angles[-1]:
-                special = 'yes'
-            for atom_tpl in angle.atoms:
-                atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
-                # angles are also created with lmp.create_bonds, just with a
-                # keyword of single/angle
-                self.lmp.create_bonds('single/angle',
-                                      ID,
-                                      atom_IDs[0],
-                                      atom_IDs[1],
-                                      atom_IDs[2],
-                                      'special',
-                                      special)
-
-    def _update_angles(self, angles):
-
-        """
-        Updates the angle coefficients, which are then applied to any angles
-        which have been previously set
-
-        Parameters
-        ----------
-        angles : list of BondAngles
-         BondAngle interactions which will be updated in LAMMPS
-        """
-
-        for angle in angles:
-            self.lmp.angle_coeff(self.angle_ID[angle],
-                                 *parse_bonded_coefficients(angle))
+        # Get LAMMPS function for setting bonded interaction attributes (e.g.
+        # bond_coeff)
+        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
+        # Get ID dict attribute from self (e.g. bond_ID)
+        b_i_IDs = getattr(self, '{0}_ID'.format(lmp_name)
+                          if lmp_name != 'dihedral' else 'proper_ID')
+        for b_i in bonded_interactions:
+            coeff_function(b_i_IDs[b_i], *parse_bonded_coefficients(b_i))
 
     def apply_constraints(self):
 
