@@ -479,10 +479,14 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = []
         self.angles = []
+        self.propers = []
+        self.impropers = []
         # ID is an acronym
         #pylint: disable=invalid-name
         self.bond_ID = {}
         self.angle_ID = {}
+        self.proper_ID = {}
+        self.improper_ID = {}
         self.nonbonded_mix = None
 
         self._define_simulation_box(self.universe)
@@ -534,6 +538,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self._update_charges()
         self._update_bonded_interactions('bond', self.bonds)
         self._update_bonded_interactions('angle', self.angles)
+        self._update_bonded_interactions('dihedral', self.propers)
+        self._update_bonded_interactions('improper', self.impropers)
         self._update_dispersions(self.universe)
 
     def _define_simulation_box(self, universe):
@@ -556,17 +562,22 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # Determine number of bond and angle types
         bonded_interaction_types = [i.name for i in set(universe.interactions)
                                     if issubclass(type(i), BondedInteraction)]
+        # Dihedrals are only separated into proper and improper at the attribute
+        # level
+        dihedrals = partition_interactions(set(universe.interactions),
+                                           ['DihedralAngle'])[0]
+        dihedral_types = [dihedral.improper for dihedral in dihedrals]
         n_bond_types = bonded_interaction_types.count('Bond')
         n_angle_types = bonded_interaction_types.count('BondAngle')
-        n_dihedral_types = 0
-        n_improper_types = 0
+        n_dihedral_types = dihedral_types.count(False)
+        n_improper_types = dihedral_types.count(True)
 
         # Determine max number of bonds and angles per atom
         atoms = universe.atom_list
         max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
-        max_dihedrals_per_atom = 0
-        max_improper_per_atom = 0
+        max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
+        max_improper_per_atom = self._max_n_interaction(atoms, 'improper')
         self.lmp.create_box(n_elements,
                             region_ID,
                             'bond/types', n_bond_types,
@@ -682,9 +693,18 @@ class LAMMPSUniverse(PyLammpsAttribute):
             in `atoms` possesses
         """
 
-        return max([len(list(filter(lambda i: i.name == name,
-                                    atom.interactions)))
-                    for atom in atoms])
+        max_inters = 0
+        for atom in atoms:
+            # Filter interactions by name
+            if name in ['proper', 'improper']:
+                improper = bool(name == 'improper')
+                inters = filter(lambda i: i.name == 'DihedralAngle' and
+                                i.improper == improper, atom.interactions)
+            else:
+                inters = filter(lambda i: i.name == name, atom.interactions)
+            n_inters = len(list(inters))
+            max_inters = n_inters if n_inters > max_inters else max_inters
+        return max_inters
 
     def _add_topology(self, universe, **settings):
 
@@ -706,9 +726,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
             implemented in the LAMMPS facade
         """
 
-        bonds, angles, disps, couls, others = partition_interactions(
+        bonds, angles, dihedrals, disps, couls, others = partition_interactions(
             set(universe.interactions),
-            ['Bond', 'BondAngle', 'Dispersion', 'Coulombic'],
+            ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
             lst=True)
 
@@ -744,6 +764,24 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                  *set(tuple([parse_bonded_styles(a)
                                              for a in angles])))
             self._create_bonded_interactions('angle', angles)
+
+        if dihedrals:
+            # Split dihedrals into proper and impropers
+            impropers, propers = partition(dihedrals, lambda d: d.improper)
+            self.impropers, self.propers = list(impropers), list(propers)
+            # Set used to remove duplicate dihedral styles, which are not
+            # required to be (and in fact cannot) be passed to LAMMPS hybrid
+            # dihedral_style or improper_style
+            proper_styles = set(tuple([parse_bonded_styles(p) for p
+                                       in self.propers]))
+            improper_styles = set(tuple([parse_bonded_styles(i) for i
+                                         in self.impropers]))
+            if proper_styles:
+                self.lmp.dihedral_style('hybrid', *proper_styles)
+                self._create_bonded_interactions('dihedral', self.propers)
+            if improper_styles:
+                self.lmp.improper_style('hybrid', *improper_styles)
+                self._create_bonded_interactions('improper', self.impropers)
 
         if self.universe.constraint_algorithm:
             self.apply_constraints()
