@@ -10,11 +10,12 @@ import pytest
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp_eng
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
-                                           HarmonicPotential, LennardJones)
+                                           HarmonicPotential, LennardJones,
+                                           Periodic)
 from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
                                 Ewald, PPPM, KSpaceSolver)
 from MDMC.MD.structural_units import (Atom, Bond, BondAngle, Coulombic,
-                                      Dispersion)
+                                      DihedralAngle, Dispersion)
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
@@ -90,10 +91,17 @@ def universe_interactions(empty_universe, atoms):
     for atom in atoms:
         empty_universe.add_structural_unit(atom)
 
-    # Create InteractionFunctions for bonds, angles and dispersive interactions
+    # Create InteractionFunctions for bonds, angles, dihedrals and dispersive
+    # interactions
     bond1_harmonic = HarmonicPotential(1.0, 2.0, interaction_type='bond')
     bond2_harmonic = HarmonicPotential(2.0, 4.0, interaction_type='bond')
     angle_harmonic = HarmonicPotential(1.0, 0.0005, interaction_type='angle')
+    proper_periodic = Periodic(1.0, 1, 90.,
+                               2.0, 2, 180.,
+                               0.1, 3, -90.,
+                               0.5, 4, -45.)
+    improper_harmonic = HarmonicPotential(1.0, 0.0002,
+                                          interaction_type='improper')
 
     # Create 2 bonds for some atoms, and one angle, coulombic and dispersive
     # interaction
@@ -104,6 +112,10 @@ def universe_interactions(empty_universe, atoms):
     angles = [BondAngle(*[(atoms[i], atoms[i+1], atoms[i+2]) for i
                           in range(0, len(atoms)-2, 3)],
                         function=angle_harmonic)]
+    propers = [DihedralAngle(tuple(atom for atom in atoms[:4]),
+                             function=proper_periodic, improper=False)]
+    impropers = [DihedralAngle(tuple(atom for atom in atoms[:4]),
+                               function=improper_harmonic, improper=True)]
     coulombics, dispersions = [], []
     for type in empty_universe.atom_types:
         coulombics.append(Coulombic(empty_universe, atom_types=type,
@@ -121,7 +133,8 @@ def universe_interactions(empty_universe, atoms):
                                       cutoff=DISP_CUTOFF,
                                       vdw_tail_correction=True))
 
-    return (empty_universe, bonds, angles, coulombics, dispersions)
+    return (empty_universe, bonds, angles, propers, impropers, coulombics,
+            dispersions)
 
 @pytest.fixture
 def universe(universe_interactions):
@@ -155,6 +168,26 @@ def angles(universe_interactions):
     return universe_interactions[2]
 
 @pytest.fixture
+def propers(universe_interactions):
+
+    """
+    Returns:
+    A list of proper dihedrals
+    """
+
+    return universe_interactions[3]
+
+@pytest.fixture
+def impropers(universe_interactions):
+
+    """
+    Returns:
+    A list of improper dihedrals
+    """
+
+    return universe_interactions[4]
+
+@pytest.fixture
 def coulombics(universe_interactions):
 
     """
@@ -162,7 +195,7 @@ def coulombics(universe_interactions):
     A list of coulombic interactions
     """
 
-    return universe_interactions[3]
+    return universe_interactions[5]
 
 @pytest.fixture
 def dispersions(universe_interactions):
@@ -172,17 +205,17 @@ def dispersions(universe_interactions):
     A list of dispersion interactions
     """
 
-    return universe_interactions[4]
+    return universe_interactions[6]
 
 @pytest.fixture
-def interactions(bonds, angles, coulombics, dispersions):
+def interactions(bonds, angles, propers, impropers, coulombics, dispersions):
 
     """
     Returns:
     A list of bond, angle, coulombic and dispersion interactions
     """
 
-    return bonds + angles + coulombics + dispersions
+    return bonds + angles + propers + impropers + coulombics + dispersions
 
 @pytest.fixture
 def constrained_bonds(bonds):
