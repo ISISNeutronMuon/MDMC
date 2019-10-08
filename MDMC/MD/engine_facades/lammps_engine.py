@@ -1952,10 +1952,22 @@ def parse_bonded_styles(interaction):
     """
 
     if interaction.function_name == 'HarmonicPotential':
+        if interaction.name == 'DihedralAngle' and not interaction.improper:
+            raise TypeError('LAMMPS does not support harmonic proper dihedrals')
         return 'harmonic'
-    else:
-        raise NotImplementedError('This InteractionFunction has not been'
-                                  ' implemented in the LAMMPS facade')
+    if interaction.function_name == 'Periodic':
+        if interaction.name != 'DihedralAngle':
+            raise TypeError('LAMMPS only supports periodic interaction function'
+                            ' for Dihedrals')
+        if interaction.improper:
+            # LAMMPS has an improper_style called cvff, which is a Simplified
+            # version of Periodic (it is only first order and d1=0). Return cvff
+            # here and deal with incompatible Periodic interactions (e.g. d1!=0)
+            # in parse_bonded_coefficients
+            return 'cvff'
+        return 'fourier'
+    raise NotImplementedError('This InteractionFunction has not been'
+                              ' implemented in the LAMMPS facade')
 
 
 def parse_nonbonded_styles(interaction):
@@ -2219,6 +2231,35 @@ def parse_bonded_coefficients(interaction):
     if style == 'harmonic':
         ordered_parameters = [parameters['potential_strength'],
                               parameters['equilibrium_state']]
+    elif style == 'fourier':
+        # There are three parameters (K, n and d) for each order of the equation
+        fourier_order = int(len(interaction.params) / 3)
+        # LAMMPS requires parameters to be ordered K1, n1, d1, K2, n2, d2 etc
+        # So the letter sequence is:
+        ord_let = ('K', 'n', 'd')
+        # Sort by fourier_order first and then by letter sequence
+        ordered_p_names = sorted(parameters,
+                                 key=lambda p_name: (p_name[1],
+                                                     ord_let.index(p_name[0])))
+        # Get parameters values and prepend the order of the equation
+        ordered_parameters = [fourier_order] + [parameters[p_name] for p_name
+                                                in ordered_p_names]
+    elif style == 'cvff':
+        if len(parameters) > 3:
+            raise TypeError('LAMMPS improper dihedrals can only have a Periodic'
+                            ' interaction function with first order'
+                            ' coefficients (e.g. K1, n1, d1)')
+        if parameters['d1'] != 0. and parameters['d1'] != 180.:
+            raise TypeError('LAMMPS improper dihedrals can only have a Periodic'
+                            ' interaction with d1 = 0 deg or d = 180 deg')
+        if not 0 <= parameters['n1'] <= 6:
+            raise TypeError('LAMMPS improper dihedrals can only have a Periodic'
+                            ' interaction 0 <= n1 <= 6')
+        # fourier and cvff have different d parameters. The definition of
+        # Periodic is the same as the fourier style, so need to convert to cvff
+        # d parameter (which can only take values of 1 or -1)
+        cvff_d = 1 if parameters['d1'] == 0. else -1
+        ordered_parameters = [parameters['K1'], cvff_d, parameters['n1']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')

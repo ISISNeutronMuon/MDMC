@@ -592,7 +592,7 @@ class Periodic(InteractionFunction):
 
     .. math::
 
-        E = \sum_{i=1,m}K_i[1.0+\textup{cos}(n_i\phi-d_i)]
+        E = \sum_{i=1,m}K_i[1.0+\cos(n_i\phi-d_i)]
 
     where \phi is angle between the ijk and jkl planes (where i, j, k, and l are
     the four atoms of the dihedral).
