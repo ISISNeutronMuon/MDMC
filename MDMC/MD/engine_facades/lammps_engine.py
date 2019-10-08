@@ -479,10 +479,14 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = []
         self.angles = []
+        self.propers = []
+        self.impropers = []
         # ID is an acronym
         #pylint: disable=invalid-name
         self.bond_ID = {}
         self.angle_ID = {}
+        self.proper_ID = {}
+        self.improper_ID = {}
         self.nonbonded_mix = None
 
         self._define_simulation_box(self.universe)
@@ -532,8 +536,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         self._update_charges()
-        self._update_bonds(self.bonds)
-        self._update_angles(self.angles)
+        self._update_bonded_interactions('bond', self.bonds)
+        self._update_bonded_interactions('angle', self.angles)
+        self._update_bonded_interactions('dihedral', self.propers)
+        self._update_bonded_interactions('improper', self.impropers)
         self._update_dispersions(self.universe)
 
     def _define_simulation_box(self, universe):
@@ -556,17 +562,22 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # Determine number of bond and angle types
         bonded_interaction_types = [i.name for i in set(universe.interactions)
                                     if issubclass(type(i), BondedInteraction)]
+        # Dihedrals are only separated into proper and improper at the attribute
+        # level
+        dihedrals = partition_interactions(set(universe.interactions),
+                                           ['DihedralAngle'])[0]
+        dihedral_types = [dihedral.improper for dihedral in dihedrals]
         n_bond_types = bonded_interaction_types.count('Bond')
         n_angle_types = bonded_interaction_types.count('BondAngle')
-        n_dihedral_types = 0
-        n_improper_types = 0
+        n_dihedral_types = dihedral_types.count(False)
+        n_improper_types = dihedral_types.count(True)
 
         # Determine max number of bonds and angles per atom
         atoms = universe.atom_list
         max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
-        max_dihedrals_per_atom = 0
-        max_improper_per_atom = 0
+        max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
+        max_improper_per_atom = self._max_n_interaction(atoms, 'improper')
         self.lmp.create_box(n_elements,
                             region_ID,
                             'bond/types', n_bond_types,
@@ -682,9 +693,18 @@ class LAMMPSUniverse(PyLammpsAttribute):
             in `atoms` possesses
         """
 
-        return max([len(list(filter(lambda i: i.name == name,
-                                    atom.interactions)))
-                    for atom in atoms])
+        max_inters = 0
+        for atom in atoms:
+            # Filter interactions by name
+            if name in ['proper', 'improper']:
+                improper = bool(name == 'improper')
+                inters = filter(lambda i: i.name == 'DihedralAngle' and
+                                i.improper == improper, atom.interactions)
+            else:
+                inters = filter(lambda i: i.name == name, atom.interactions)
+            n_inters = len(list(inters))
+            max_inters = n_inters if n_inters > max_inters else max_inters
+        return max_inters
 
     def _add_topology(self, universe, **settings):
 
@@ -706,9 +726,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
             implemented in the LAMMPS facade
         """
 
-        bonds, angles, disps, couls, others = partition_interactions(
+        bonds, angles, dihedrals, disps, couls, others = partition_interactions(
             set(universe.interactions),
-            ['Bond', 'BondAngle', 'Dispersion', 'Coulombic'],
+            ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
             lst=True)
 
@@ -735,15 +755,33 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.bond_style('hybrid',
                                 *set(tuple([parse_bonded_styles(b)
                                             for b in bonds])))
-            self._create_bonds(bonds)
+            self._create_bonded_interactions('bond', bonds)
 
         if angles:
-            # Set used to remove duplicate bond styles, which are not required
+            # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             self.lmp.angle_style('hybrid',
                                  *set(tuple([parse_bonded_styles(a)
                                              for a in angles])))
-            self._create_angles(angles)
+            self._create_bonded_interactions('angle', angles)
+
+        if dihedrals:
+            # Split dihedrals into proper and impropers
+            impropers, propers = partition(dihedrals, lambda d: d.improper)
+            self.impropers, self.propers = list(impropers), list(propers)
+            # Set used to remove duplicate dihedral styles, which are not
+            # required to be (and in fact cannot) be passed to LAMMPS hybrid
+            # dihedral_style or improper_style
+            proper_styles = set(tuple([parse_bonded_styles(p) for p
+                                       in self.propers]))
+            improper_styles = set(tuple([parse_bonded_styles(i) for i
+                                         in self.impropers]))
+            if proper_styles:
+                self.lmp.dihedral_style('hybrid', *proper_styles)
+                self._create_bonded_interactions('dihedral', self.propers)
+            if improper_styles:
+                self.lmp.improper_style('hybrid', *improper_styles)
+                self._create_bonded_interactions('improper', self.impropers)
 
         if self.universe.constraint_algorithm:
             self.apply_constraints()
@@ -811,6 +849,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         """
         Updates the charges in LAMMPS
+
+        Raises
+        ------
+        AttributeError
+            If one or more atoms do not have a charge (or charge is None)
         """
 
         for atom, lmp_atom in self.atom_dict.items():
@@ -819,7 +862,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              lmp_atom.id,
                              'charge',
                              convert_unit(atom.charge))
-            except AttributeError:
+            except ValueError:
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.')
 
@@ -867,123 +910,92 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for mod in pair_mods:
             self.lmp.pair_modify('pair', *mod)
 
-    def _create_bonds(self, bonds):
+    def _create_bonded_interactions(self, lmp_name, bonded_interactions):
 
         """
-        Creates coefficients and bonds in LAMMPS, and fills the bond_ID
-        dictionary with bond: ID pairs
+        Creates coefficients and new bonded interactions in LAMMPS, and fills
+        the relevant bonded interaction ID (e.g. self.bond_ID for bonds,
+        self.angle_ID for angles) dictionary with bonded_interaction: ID pairs
+
+        This generic method can be used for bonds, angles, dihedrals (proper),
+        and impropers. It can only be used for a single type of
+        bonded_interactions (e.g. only bonds)
 
         Parameters
         ----------
-        bonds : list of Bonds
-            Bond interactions which will be created in LAMMPS.
+        lmp_name : str
+            The name of the bonded interaction type used for setting coeffs in
+            LAMMPS. This must be one of: 'bond', 'angle', 'dihedral',
+            'improper'. In the case of 'dihedral', LAMMPS is just referring to
+            proper dihedral interactions.
+        bonded_interactions : list of bonded_interactions (or single type)
+            BondedInteractions which will be created in LAMMPS. This list must
+            only contain a single type of bonded_interactions (e.g. only bonds),
+            which must correspond to lmp_name.
         """
 
         special = 'no'
+        ID_attr = getattr(self, '{0}_ID'.format(lmp_name)
+                          if lmp_name != 'dihedral' else 'proper_ID')
+        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
         # If bonds already exist, new bond IDs are generated from lowest unused
         # integer
-        if self.bond_ID:
-            start = max(self.bond_ID.values()) + 1
+        if ID_attr:
+            start = max(ID_attr.values()) + 1
         else:
             start = 1
-        for ID, bond in enumerate(bonds, start=start):
-            # Create the bond coefficients
-            self.lmp.bond_coeff(ID, *parse_bonded_coefficients(bond))
+        for ID, b_i in enumerate(bonded_interactions, start=start):
+            # Create the bonded interaction coefficients
+            coeff_function(ID, *parse_bonded_coefficients(b_i))
 
-            # Relate each bond with its ID
-            self.bond_ID[bond] = ID
+            # Relate each bonded interaction with its ID
+            ID_attr[b_i] = ID
 
-            # Create the bonds
+            # Create the bonded_interactions
             # Special triggers the internal interaction list in LAMMPS
             # This must at least occur at the end, and is an expensive
             # operation
-            if bond is bonds[-1]:
+            if b_i is bonded_interactions[-1]:
                 special = 'yes'
-            for atom_tpl in bond.atoms:
+
+            # LAMMPS create_bonds is used for creating all types of bonded
+            # interactions, by appending the lmp_name to 'single/'
+            c_b_type = 'single/{0}'.format(lmp_name)
+            for atom_tpl in b_i.atoms:
                 atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
-                self.lmp.create_bonds('single/bond',
+                self.lmp.create_bonds(c_b_type,
                                       ID,
-                                      atom_IDs[0],
-                                      atom_IDs[1],
+                                      *atom_IDs,
                                       'special',
                                       special)
 
-    def _update_bonds(self, bonds):
+    def _update_bonded_interactions(self, lmp_name, bonded_interactions):
 
         """
-        Updates the bond coefficients, which are then applied to any bonds which
-        have previously been set
+        Updates the bonded interaction coefficients, which are then applied to
+        any bonded interactions which have previously been set
 
         Parameters
         ----------
-        bonds : list of Bonds
-            Bond interactions which will be updated in LAMMPS.
+        lmp_name : str
+            The name of the bonded interaction type used for setting coeffs in
+            LAMMPS. This must be one of: 'bond', 'angle', 'dihedral',
+            'improper'. In the case of 'dihedral', LAMMPS is just referring to
+            proper dihedral interactions.
+        bonded_interactions : list of BondedInteractions
+            BondedInteractions which will be updated in LAMMPS. This list must
+            only contain a single type of bonded_interactions (e.g. only bonds),
+            which must correspond to lmp_name.
         """
 
-        for bond in bonds:
-            self.lmp.bond_coeff(self.bond_ID[bond],
-                                *parse_bonded_coefficients(bond))
-
-    def _create_angles(self, angles):
-
-        """
-        Creates coefficients and angles in LAMMPS, and fills the angle_ID
-        dictionary with angle: ID pairs
-
-        Parameters
-        ----------
-        angles : list of BondAngles
-            BondAngle interactions which will be created in LAMMPS
-        """
-
-        special = 'no'
-        # If bonds already exist, new bond IDs are generated from lowest unused
-        # integer
-
-        if self.angle_ID:
-            start = max(self.angle_ID.values()) + 1
-        else:
-            start = 1
-        for ID, angle in enumerate(angles, start=start):
-            # Create the bond coefficients
-            self.lmp.angle_coeff(ID, *parse_bonded_coefficients(angle))
-
-            # Relate each bond with its ID
-            self.angle_ID[angle] = ID
-
-            # Create the angles
-            # Special triggers the internal interaction list in LAMMPS
-            # This must at least occur at the end, and is an expensive
-            # operation
-            if angle is angles[-1]:
-                special = 'yes'
-            for atom_tpl in angle.atoms:
-                atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
-                # angles are also created with lmp.create_bonds, just with a
-                # keyword of single/angle
-                self.lmp.create_bonds('single/angle',
-                                      ID,
-                                      atom_IDs[0],
-                                      atom_IDs[1],
-                                      atom_IDs[2],
-                                      'special',
-                                      special)
-
-    def _update_angles(self, angles):
-
-        """
-        Updates the angle coefficients, which are then applied to any angles
-        which have been previously set
-
-        Parameters
-        ----------
-        angles : list of BondAngles
-         BondAngle interactions which will be updated in LAMMPS
-        """
-
-        for angle in angles:
-            self.lmp.angle_coeff(self.angle_ID[angle],
-                                 *parse_bonded_coefficients(angle))
+        # Get LAMMPS function for setting bonded interaction attributes (e.g.
+        # bond_coeff)
+        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
+        # Get ID dict attribute from self (e.g. bond_ID)
+        b_i_IDs = getattr(self, '{0}_ID'.format(lmp_name)
+                          if lmp_name != 'dihedral' else 'proper_ID')
+        for b_i in bonded_interactions:
+            coeff_function(b_i_IDs[b_i], *parse_bonded_coefficients(b_i))
 
     def apply_constraints(self):
 
@@ -1094,7 +1106,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         try:
             # Set the timestep in LAMMPS wrapper
             self.lmp.timestep(convert_unit(self._time_step))
-        except AttributeError:
+        except ValueError:
             pass
 
     @property
@@ -1123,7 +1135,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                 self.lmp.velocity('all', 'create',
                                   convert_unit(self._temperature),
                                   randint(1, 9999))
-        except AttributeError:
+        except ValueError:
             pass
 
     @property
@@ -1892,7 +1904,13 @@ def convert_unit(value, unit=None, to_lammps=True):
 
     # If no unit argument is passed, the value must possess a unit
     if not unit:
-        unit = value.unit
+        # If value is unitless, no conversion is required
+        try:
+            unit = value.unit
+        except AttributeError:
+            if value is None:
+                raise ValueError('Cannot convert NoneType value')
+            return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
         l_sys = copy(SYSTEM)
@@ -1952,10 +1970,22 @@ def parse_bonded_styles(interaction):
     """
 
     if interaction.function_name == 'HarmonicPotential':
+        if interaction.name == 'DihedralAngle' and not interaction.improper:
+            raise TypeError('LAMMPS does not support harmonic proper dihedrals')
         return 'harmonic'
-    else:
-        raise NotImplementedError('This InteractionFunction has not been'
-                                  ' implemented in the LAMMPS facade')
+    if interaction.function_name == 'Periodic':
+        if interaction.name != 'DihedralAngle':
+            raise TypeError('LAMMPS only supports periodic interaction function'
+                            ' for Dihedrals')
+        if interaction.improper:
+            # LAMMPS has an improper_style called cvff, which is a Simplified
+            # version of Periodic (it is only first order and d1=0). Return cvff
+            # here and deal with incompatible Periodic interactions (e.g. d1!=0)
+            # in parse_bonded_coefficients
+            return 'cvff'
+        return 'fourier'
+    raise NotImplementedError('This InteractionFunction has not been'
+                              ' implemented in the LAMMPS facade')
 
 
 def parse_nonbonded_styles(interaction):
@@ -2219,6 +2249,35 @@ def parse_bonded_coefficients(interaction):
     if style == 'harmonic':
         ordered_parameters = [parameters['potential_strength'],
                               parameters['equilibrium_state']]
+    elif style == 'fourier':
+        # There are three parameters (K, n and d) for each order of the equation
+        fourier_order = int(len(interaction.params) / 3)
+        # LAMMPS requires parameters to be ordered K1, n1, d1, K2, n2, d2 etc
+        # So the letter sequence is:
+        ord_let = ('K', 'n', 'd')
+        # Sort by fourier_order first and then by letter sequence
+        ordered_p_names = sorted(parameters,
+                                 key=lambda p_name: (p_name[1],
+                                                     ord_let.index(p_name[0])))
+        # Get parameters values and prepend the order of the equation
+        ordered_parameters = [fourier_order] + [parameters[p_name] for p_name
+                                                in ordered_p_names]
+    elif style == 'cvff':
+        if len(parameters) > 3:
+            raise TypeError('LAMMPS improper dihedrals can only have a Periodic'
+                            ' interaction function with first order'
+                            ' coefficients (e.g. K1, n1, d1)')
+        if parameters['d1'] != 0. and parameters['d1'] != 180.:
+            raise TypeError('LAMMPS improper dihedrals can only have a Periodic'
+                            ' interaction with d1 = 0 deg or d = 180 deg')
+        if not 0 <= parameters['n1'] <= 6:
+            raise TypeError('LAMMPS improper dihedrals can only have a Periodic'
+                            ' interaction 0 <= n1 <= 6')
+        # fourier and cvff have different d parameters. The definition of
+        # Periodic is the same as the fourier style, so need to convert to cvff
+        # d parameter (which can only take values of 1 or -1)
+        cvff_d = 1 if parameters['d1'] == 0. else -1
+        ordered_parameters = [parameters['K1'], cvff_d, parameters['n1']]
     else:
         raise NotImplementedError('This InteractionFunction has not been'
                                   ' implemented in the LAMMPS facade')
