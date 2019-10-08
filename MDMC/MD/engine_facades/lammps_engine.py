@@ -811,6 +811,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         """
         Updates the charges in LAMMPS
+
+        Raises
+        ------
+        AttributeError
+            If one or more atoms do not have a charge (or charge is None)
         """
 
         for atom, lmp_atom in self.atom_dict.items():
@@ -819,7 +824,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              lmp_atom.id,
                              'charge',
                              convert_unit(atom.charge))
-            except AttributeError:
+            except ValueError:
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.')
 
@@ -1094,7 +1099,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         try:
             # Set the timestep in LAMMPS wrapper
             self.lmp.timestep(convert_unit(self._time_step))
-        except AttributeError:
+        except ValueError:
             pass
 
     @property
@@ -1123,7 +1128,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                 self.lmp.velocity('all', 'create',
                                   convert_unit(self._temperature),
                                   randint(1, 9999))
-        except AttributeError:
+        except ValueError:
             pass
 
     @property
@@ -1892,7 +1897,13 @@ def convert_unit(value, unit=None, to_lammps=True):
 
     # If no unit argument is passed, the value must possess a unit
     if not unit:
-        unit = value.unit
+        # If value is unitless, no conversion is required
+        try:
+            unit = value.unit
+        except AttributeError:
+            if value is None:
+                raise ValueError('Cannot convert NoneType value')
+            return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
         l_sys = copy(SYSTEM)
