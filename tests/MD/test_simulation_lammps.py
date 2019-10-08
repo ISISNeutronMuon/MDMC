@@ -731,6 +731,86 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
         getattr(lmp_eng, parser)(undefined_interaction_function)
 
 
+
+@pytest.mark.parametrize('inter_type, fun_type, parameters, settings, expected',
+                         [('Bond',
+                           'HarmonicPotential',
+                           (5., 2.5),
+                           {'interaction_type':'bond'},
+                           ['harmonic', 0.5975143403441683, 5.]),
+                          ('BondAngle',
+                           'HarmonicPotential',
+                           (90., 1.),
+                           {'interaction_type':'angle'},
+                           ['harmonic', 784.6095482819655, 90.]),
+                          ('DihedralAngle',
+                           'Periodic',
+                           (1., 2, 30.),
+                           {},
+                           ['fourier', 1, 0.2390057361376673, 2, 30.]),
+                          ('DihedralAngle',
+                           'Periodic',
+                           (4.184, 2, 30., 8.368, 8, -45.),
+                           {},
+                           ['fourier', 2, 1., 2, 30., 2., 8, -45.]),
+                          ('DihedralAngle',
+                           'HarmonicPotential',
+                           (110., 15.),
+                           {'improper':True, 'interaction_type':'improper'},
+                           ['harmonic', 11769.143224229483, 110.]),
+                          ('DihedralAngle',
+                           'Periodic',
+                           (5.5, 3, 0.),
+                           {'improper':True},
+                           ['cvff', 1.31453154875717, 1, 3]),
+                          ('DihedralAngle',
+                           'Periodic',
+                           (2.5, 4, 180.),
+                           {'improper':True},
+                           ['cvff', 0.5975143403441683, -1, 4])])
+def test_parse_bonded_coefficients(inter_type, fun_type, parameters, settings,
+                                   expected):
+
+    """
+    Tests that parsing the bonded coefficients produces the expected input for
+    the LAMMPS coeff commands
+
+    Creates an Interaction and InteractionFunction of the types specified. The
+    parameters for the InteractionFunction are specified by 'parameters' and
+    all required keywords for both the Interaction and InteractionFunction are
+    in 'settings'.
+
+    The differences between the values specified in 'parameters' and those in
+    'expected' are due to unit conversion which occurs in bond coefficient
+    parsing. The differences between the order is because LAMMPS requires some
+    Parameters to be ordered differently to MDMC.
+
+    Note that the first numerical coefficient of parsed Periodic interactions
+    is the order of the Periodic interaction.
+
+    The following BondedInteractions are tested:
+    - Bond with HarmonicPotential
+    - BondAngle with HarmonicPotential
+    - Proper DihedralAngle with Periodic (first order)
+    - Proper DihedralAngle with Periodic (second order)
+    - Improper DihedralAngle with HarmonicPotential
+    - Improper DihedralAngle with Periodic (d = 0)
+    - Improper DihedralAngle with Periodic (d = 180)
+    """
+
+    # Create InteractionFunction and Interaction classes from classes that have
+    # been imported (and so are in the global namespace)
+    # Pass the settings dict to both of these - this is valid as long as the
+    # InteractionFunction and Interaction do not have any of the same keywords
+    # try/except accounts for InteractionFunctions which do not accept keywords
+    try:
+        function = globals()[fun_type](*parameters, **settings)
+    except TypeError:
+        function = globals()[fun_type](*parameters)
+    interaction = globals()[inter_type](function=function, **settings)
+    assert lmp_eng.parse_bonded_coefficients(interaction) == expected
+
+
 @pytest.mark.parametrize('system_attr, expected',
                          [('bond_style', 'hybrid'),
                           ('angle_style', 'hybrid'),
@@ -1517,6 +1597,16 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # Test that the largest step number in the LAMMPS wrapper runs attribute
     # (which records ThermoData from the previous run) is correct
     assert max(lammps_engine.lmp.runs[0][0].Step) == n_steps
+
+
+@pytest.mark.parametrize("value", [1., 5, -100, -13.])
+def test_convert_unit_no_unit(value):
+
+    """
+    Tests that converting a value without a unit just returns the value
+    """
+
+    assert value == lmp_eng.convert_unit(value)
 
 
 @pytest.mark.parametrize("unit_str, expected",
