@@ -450,7 +450,6 @@ def create_units(codata_version):
     # 1 kcal = 4.184 kJ
     units['kcal'] = units['kJ'] * 4.184
 
-
     # Force
     # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
     units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
@@ -464,6 +463,9 @@ def create_units(codata_version):
     # Angle
     # 1 rad = (180 / pi) deg
     units['rad'] = units['deg'] * (180. / np.pi)
+
+    # Amount
+    units['mol'] = codata['_Nav']
 
     return units
 
