@@ -1,0 +1,298 @@
+""" This is a module for reading TINKER .prm files and converting them to MDMC
+force field python files."""
+
+from datetime import datetime
+from itertools import product
+import os
+import textwrap
+
+import numpy as np
+import pandas as pd
+
+from MDMC.common.atom_properties import ATOMIC_NUMBER
+from MDMC.common.decorators import wrap_docstring
+from MDMC.common.df_operations import filter_dataframe
+from MDMC.common import units
+from MDMC.MD import force_fields
+
+
+def read_prm(fname, ncols=14):
+
+    """
+    Reads a TINKER prm (force field) file
+
+    Ignores all errors raised by incorrectly formatted data, so will be
+    susceptible to incorrectly formatted prm files
+
+    Parameters
+    ----------
+    fname : str
+        The name of the prm file
+    ncols : int
+        The largest number of columns that should be read. The default is 14,
+        which is the number of columns required for the torsion (proper
+        dihedral) in oplsaa.prm
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe with columns (named c0, c1, ...) up to (but not including)
+        ncols. Each row contains a row read correctly (i.e. no Error thrown)
+        from the prm file.
+    """
+
+    return pd.read_csv(fname, delim_whitespace=True, error_bad_lines=False,
+                       header=None, names=dummy_headers(0, 14))
+
+
+def parse_prm(dataframe):
+
+    """
+    Parses a prm file into DataFrames
+
+    Parameters
+    ----------
+    dataframe : pd.DataFrame
+        A dataframe of raw data read from a prm file
+
+    Returns
+    -------
+    tuple
+        A tuple of dataframes, with each dataframe possessing only the entries
+        starting with the corresponding definition
+    """
+
+    ncols = len(dataframe.columns)
+    dtypes = np.array([['atom',
+                        ['c3'] + dummy_headers(8, ncols),
+                        ['atom_type', 'atom_group', 'name', 'atomic_num',
+                         'mass', 'nbonds']],
+                       ['vdw',
+                        dummy_headers(4, ncols),
+                        ['atom_type', 'sigma', 'epsilon']],
+                       ['bond',
+                        dummy_headers(5, ncols),
+                        ['atom_group1', 'atom_group2', 'potential_strength',
+                         'equilibrium_state']],
+                       ['angle',
+                        dummy_headers(6, ncols),
+                        ['atom_group1', 'atom_group2', 'atom_group3',
+                         'potential_strength', 'equilibrium_state']],
+                       ['imptors',
+                        dummy_headers(8, ncols),
+                        ['atom_group2', 'atom_group3', 'atom_group1',
+                         'atom_group4', 'K1', 'd1', 'n1']],
+                       ['torsion',
+                        [],
+                        ['atom_group1', 'atom_group2', 'atom_group3',
+                         'atom_group4', 'K1', 'd1', 'n1', 'K2', 'd2', 'n2',
+                         'K3', 'd3', 'n3']],
+                       ['charge',
+                        dummy_headers(3, ncols),
+                        ['atom_type', 'charge']]])
+
+    atoms, disps, bonds, angles, impropers, propers, charges = \
+        tuple(parse_dataframe(filter_dataframe([dtype[0]], dataframe, ['c0']),
+                              *dtype[1:])
+              for dtype in dtypes)
+
+    # Combine charges with atoms
+    atoms.insert(3, 'charge', charges.charge.to_numpy())
+
+    # Change atomic number to element
+    atoms['atomic_num'] = \
+        atoms['atomic_num'].apply(lambda x: ATOMIC_NUMBER[int(x)])
+    atoms.rename(columns={'atomic_num':'element'}, inplace=True)
+
+    # Rearrange order of proper and improper dihedrals
+    # For proper dihedrals, just the parameters need to be rearranged, as the
+    # convention for the atom order is the same as MDMC (end1 central1 central2
+    # end2).
+    propers = propers[['atom_group1', 'atom_group2', 'atom_group3',
+                       'atom_group4', 'K1', 'n1', 'd1', 'K2', 'n2', 'd2',
+                       'K3', 'n3', 'd3']]
+    # For improper dihedrals, the atom_groups are rearranged so that the central
+    # atom is first (in keeping with LAMMPS anf GROMACS). This occurs because
+    # the atom order in TINKER is end1, end2, central, end3 for impropers.
+    impropers = impropers[['atom_group1', 'atom_group2', 'atom_group3',
+                           'atom_group4', 'K1', 'n1', 'd1']]
+
+    # Convert units
+    disps.epsilon = convert_units(disps.epsilon)
+    bonds.potential_strength = convert_units(bonds.potential_strength)
+    angles.potential_strength = convert_units(angles.potential_strength)
+    impropers.K1 = convert_units(impropers.K1)
+    for k_param in ['K1', 'K2', 'K3']:
+        propers[k_param] = convert_units(propers[k_param])
+
+    return atoms, disps, bonds, angles, impropers, propers
+
+
+def write_force_field_module(fname, atoms, *interactions, path=None,
+                             module_docstring=None, class_docstring=None,
+                             **settings):
+
+    """
+    atoms : DataFrame
+    *interactions
+        DataFrame
+    fname : str
+        name of the module (excluding the file extension) and the class
+    module_docstring : str
+    class_docstring : str
+
+    Notes
+    -----
+    Windows and Mac OS are case insensitive, so if a file exists in the
+    specified path with the same case insensitive name as fname (e.g. if
+    fname='spce' and 'SPCE' already exists), the existing file will be
+    overwritten. So on case insensitive OS, fname should always be unique,
+    without considering the case.
+    """
+
+    line_length = settings.get('line_length', 80)
+    data_fname = settings.get('data_fname', fname)
+
+    imports = ('from MDMC.MD.force_fields.ff import FileForceField\n')
+
+    if path is None:
+        path = os.path.abspath(force_fields.__file__).replace('__init__.py', '')
+    if module_docstring is None:
+        module_docstring = ('"""A module for defining the {0} force field. This'
+                            ' was generated from the corresponding TINKER'
+                            ' file."""'.format(fname))
+    if class_docstring is None:
+        class_docstring = ('"""\n'
+                           '{0} force field, with defined atoms and'
+                           ' interactions\n'
+                           '"""'.format(fname))
+    data_fname = path + 'data/' + data_fname + '.dat'
+    with open(path + fname + '.py', 'w') as module:
+        module.write(wrap_docstring(module_docstring, line_length) + '\n' * 2)
+        module.write(imports + '\n' * 2)
+        module.write('class {0}(FileForceField):\n\n'.format(fname))
+        module.write(textwrap.indent(wrap_docstring(class_docstring,
+                                                    line_length), ' ' * 4)
+                     + '\n\n')
+        module.write(textwrap.indent('file_name = "{0}"\n'.format(data_fname),
+                                     ' ' * 4))
+
+    # Write a dat file which contains all atoms and interactions
+    # Use pandas to output as CSV
+
+
+def write_data(fname, atoms, path=None, **settings):
+
+    inter_types = ['disps', 'bonds', 'angles', 'propers', 'impropers']
+    disps, bonds, angles, propers, impropers = [settings.get(inter_type, []) for
+                                                inter_type in inter_types]
+
+    inter_functions = [settings.get(inter_type[:-1] + '_function', None) for
+                       inter_type in inter_types]
+
+    orig_file = settings.get('orig_file', None)
+
+    if path is None:
+        path = os.path.abspath(force_fields.__file__).replace('__init__.py',
+                                                              'data/')
+    full_fname = path + fname + '.dat'
+    # First line describes number of each data type
+    description = ('Atoms={0} Dispersions={1} Bonds={2} BondAngles={3}'
+                   ' Propers={4} Impropers={5}\n'.format(len(atoms),
+                                                         len(disps),
+                                                         len(bonds),
+                                                         len(angles),
+                                                         len(propers),
+                                                         len(impropers)))
+    # Second line describes types of interactions
+    inter_functions = ('Dispersion={0} Bond={1} BondAngle={2} Proper={3}'
+                       ' Improper={4}\n'.format(*inter_functions))
+    # Metadata about the file
+    original_file_str = (' It was generated from {0}\n'.format(orig_file)
+                         if orig_file else '\n')
+    date = datetime.today().strftime('%Y-%m-%d')
+    metadata = wrap_docstring('\nThis file contains the {0} force field. It was'
+                              ' created on {1}.'.format(fname, date)
+                              + original_file_str, 80)
+    with open(full_fname, 'w') as out_datafile:
+        out_datafile.write(description)
+        out_datafile.write(inter_functions)
+        out_datafile.write(metadata)
+
+    for name, data in [('Atoms', atoms),
+                       ('Dispersions', disps),
+                       ('Bonds', bonds),
+                       ('Bond Angles', angles),
+                       ('Proper Dihedrals', propers),
+                       ('Improper Dihedrals', impropers)]:
+        with open(full_fname, 'a') as out_datafile:
+            out_datafile.write('\n' + name + '\n')
+            data.to_csv(out_datafile, sep='\t', index=False)
+
+
+def dummy_headers(start, end):
+
+    """
+    Generates dummy headers c0, c1, c2, ... until end (exclusive)
+
+    Parameters
+    ----------
+    start : int
+        The start of the header (inclusive)
+    end : int
+        The end of the header (exclusive)
+
+    Returns
+    -------
+    list of str
+        A str (c{i}) for each i between start and end (exclusive)
+    """
+
+    return ['c{0}'.format(i) for i in range(start, end)]
+
+
+def parse_dataframe(dataframe, drop, names):
+
+    """
+    Parses a dataframe containing single datatype (e.g. atom or angles) by
+    dropping any unnecessary columns and setting correct header names
+
+    If the dataframe has a header 'c0' this is always dropped
+
+    Parameters
+    ----------
+    dataframe : pd.DataFrame
+        The dataframe to be parsed
+    drop : list
+        A list of names of headers which will be dropped
+    names : list
+        A list of the header names which will be set for the remaining columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        A parsed dataframe
+    """
+
+    try:
+        # Assume that dataframe will have a header 'c0' which is always dropped
+        dataframe = dataframe.drop(columns=['c0'] + drop)
+    except KeyError:
+        dataframe = dataframe.drop(columns=drop)
+    dataframe.columns = names
+    return dataframe
+
+
+def convert_units(series):
+
+    """
+    Converts from TINKER units (kcal) to kJ
+
+    Parameters
+    ----------
+    series : pd.Series
+        The series for which the parameters will be converted
+    """
+
+    return (series.astype(float) * units.kcal
+            / units.mol).round(decimals=5).astype(str)
