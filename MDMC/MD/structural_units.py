@@ -1674,12 +1674,11 @@ class Dispersion(NonBondedInteraction):
         self._atom_types = tuple(set([validate_atom_type_pair(atp) for atp
                                       in atom_types]))
         super().__init__(universe, **settings)
-        self._atoms = [tuple([atom for atom_type in tpl
-                              for atom in self.universe.atom_types[atom_type]])
-                       for tpl in self.atom_types]
-        for tpl in self.atoms:
-            for atom in tpl:
-                atom.add_interaction(self)
+        # Add interactions to all atoms
+        for atom_type_pair in self.atoms:
+            for atoms in atom_type_pair:
+                for atom in atoms:
+                    atom.add_interaction(self)
 
         self.vdw_tail_correction = settings.get('vdw_tail_correction', False)
 
@@ -1709,7 +1708,8 @@ class Dispersion(NonBondedInteraction):
             exactly correct if no cutoff has been specified.
         """
 
-        return self._atoms
+        return [map(lambda x: self.universe.atom_types[x], tpl) for tpl
+                in self.atom_types]
 
     def element_list(self):
 
