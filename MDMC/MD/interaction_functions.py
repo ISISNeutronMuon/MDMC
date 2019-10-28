@@ -628,7 +628,7 @@ class Periodic(InteractionFunction):
                 raise TypeError('*params must contain a K, n, and d value for'
                                 ' each order >2 (i.e. it should contain a'
                                 ' number of values exactly divisible by 3)')
-            if not isinstance(order_params[1], int):
+            if not isinstance(order_params[1], (int, np.integer)):
                 raise TypeError('All n values must be of type int')
             if order_params[1] < 0.:
                 raise ValueError('All n values must be non-negative ints')
