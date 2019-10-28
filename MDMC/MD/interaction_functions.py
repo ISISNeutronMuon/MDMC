@@ -550,7 +550,8 @@ class HarmonicPotential(InteractionFunction):
             if settings['interaction_type'].lower() == 'bond':
                 eq_unit = units.LENGTH
                 pot_unit = units.ENERGY / units.LENGTH ** 2
-            elif settings['interaction_type'].lower() in ('angle', 'improper'):
+            elif settings['interaction_type'].lower() in ('angle', 'bondangle',
+                                                          'improper'):
                 eq_unit = units.ANGLE
                 pot_unit = units.ENERGY / units.ANGLE ** 2
             else:
@@ -628,7 +629,7 @@ class Periodic(InteractionFunction):
                 raise TypeError('*params must contain a K, n, and d value for'
                                 ' each order >2 (i.e. it should contain a'
                                 ' number of values exactly divisible by 3)')
-            if not isinstance(order_params[1], int):
+            if not isinstance(order_params[1], (int, np.integer)):
                 raise TypeError('All n values must be of type int')
             if order_params[1] < 0.:
                 raise ValueError('All n values must be non-negative ints')

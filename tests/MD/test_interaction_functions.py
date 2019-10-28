@@ -2,6 +2,7 @@
 
 from math import ceil
 
+import numpy as np
 import pytest
 
 from MDMC.common.units import Unit, UnitFloat
@@ -659,6 +660,8 @@ def test_interaction_function_units(inter_func_fixture, units, request):
                                     HARMPOT_POT_STREN_BOND_UNIT]),
                           ('angle', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
                                      HARMPOT_POT_STREN_ANGLE_UNIT]),
+                          ('BondAngle', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
+                                     HARMPOT_POT_STREN_ANGLE_UNIT]),
                           ('improper', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
                                         HARMPOT_POT_STREN_ANGLE_UNIT])])
 def test_harmonic_potential_units(inter_type, units):
@@ -701,6 +704,8 @@ def test_harmonic_potential_no_inter_type():
 @pytest.mark.parametrize("params",
                          [(3., 1, 2.),
                           (5., 1, -30., 7., 3, 45.),
+                          (5., np.int64(1), -30., 7., 3, 45.),
+                          (5., 1, -30., 7., np.int32(3), 45.),
                           (9., 3, -40., 20., 4, -45., 60., 1, 9.),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 9.9)])
 def test_periodic_init(params):
@@ -710,6 +715,9 @@ def test_periodic_init(params):
     (first, second, third, and fourth) produces the expected parameters
 
     Tests that parameters are assigned the correct names, values and units
+
+    The third and fourth parametrizations test that numpy integers can also be
+    used for specifying the n parameters
     """
 
     period = Periodic(*params)
@@ -722,7 +730,7 @@ def test_periodic_init(params):
         elif mod3_index == 2:
             assert getattr(period, 'n{0}'.format(order)).value == param
             # n is unitless
-            assert getattr(period, 'n{0}'.format(order)).unit == None
+            assert getattr(period, 'n{0}'.format(order)).unit is None
         elif mod3_index == 13:
             assert getattr(period, 'd{0}'.format(order)).value == param
             assert getattr(period, 'd{0}'.format(order)).unit == D_UNIT
