@@ -179,6 +179,64 @@ def test_opls_water_model_bond_angle_params(water_universe, model, eq_state,
 
 
 @pytest.mark.parametrize('atoms_info, parameters',
+                         [([('F', 1), ('C', 2)],
+                           [1.38, 1535.528]),
+                          ([('C', 3), ('C', 3)],
+                           [1.51, 1464.4]),
+                          ([('S', 26), ('C', 90)],
+                           [1.76, 1046.0]),
+                          ([('C', 441), ('C', 602)],
+                           [1.352, 2284.464])
+                         ])
+def test_ff_parametrize_bond(atoms_info, parameters):
+
+    """
+    Tests that FileForceField correctly parametrizes Bond interactions
+
+    The atoms_info parametrization provides 2 tuples, one for each atom. Each
+    tuple consists of an element and a name (which is just the OPLS atom type)
+
+    The HarmonicPotential parameters shown in the parametrization are listed in
+    the following order: equilibrium_state, potential_strength
+    """
+
+    atoms = [Atom(element, name=name) for element, name in atoms_info]
+    _validate_interaction_parameters(_parametrize_interaction(Bond,
+                                                              'OPLSAA',
+                                                              *atoms),
+                                     parameters)
+
+
+@pytest.mark.parametrize('atoms_info, parameters',
+                         [([('C', 15), ('C', 16), ('C', 16)],
+                           [118., 292.88]),
+                          ([('C', 2), ('C', 16), ('C', 2)],
+                           [124., 292.88]),
+                          ([('C', 90), ('N', 54), ('O', 702)],
+                           [121., 292.88]),
+                          ([('O', 5), ('S', 434), ('C', 279)],
+                           [96.4, 313.8])
+                         ])
+def test_ff_parametrize_bond_angle(atoms_info, parameters):
+
+    """
+    Tests that FileForceField correctly parametrizes BondAngle interactions
+
+    The atoms_info parametrization provides 3 tuples, one for each atom. Each
+    tuple consists of an element and a name (which is just the OPLS atom type)
+
+    The HarmonicPotential parameters shown in the parametrization are listed in
+    the following order: equilibrium_state, potential_strength
+    """
+
+    atoms = [Atom(element, name=name) for element, name in atoms_info]
+    _validate_interaction_parameters(_parametrize_interaction(BondAngle,
+                                                              'OPLSAA',
+                                                              *atoms),
+                                     parameters)
+
+
+@pytest.mark.parametrize('atoms_info, parameters',
                          [([('C', 294), ('C', 277), ('N', 207), ('C', 294)],
                            [9.6232, 25.47638, 0., 0., 180., 0., 1, 2, 3]),
                           ([('H', 287), ('C', 277), ('C', 277), ('H', 287)],
