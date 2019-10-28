@@ -165,7 +165,7 @@ def set_func_docstring(docstring):
         # docstring must be set outside of wrapper. This means that
         # functools.wraps can be used to preserve the docstring after the
         # function has been wrapped.
-        func.__doc__ = _wrap_docstring(docstring, 80)
+        func.__doc__ = wrap_docstring(docstring, 80)
         @wraps(func)
         def wrapper(*args, **settings):
             func(*args, **settings)
@@ -220,7 +220,7 @@ def mod_func_docstring(replacements):
         # function has been wrapped.
         for old, new in replacements.items():
             func.__doc__ = func.__doc__.replace(old, new)
-        func.__doc__ = _wrap_docstring(func.__doc__, 80)
+        func.__doc__ = wrap_docstring(func.__doc__, 80)
         @wraps(func)
         def wrapper(*args, **settings):
             func(*args, **settings)
@@ -228,7 +228,7 @@ def mod_func_docstring(replacements):
     return decorator
 
 
-def _wrap_docstring(docstring, line_length):
+def wrap_docstring(docstring, line_length):
 
     """
     Wraps a docstring to a specific line length.

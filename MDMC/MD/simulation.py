@@ -420,7 +420,8 @@ class Universe:
 
         # Sorting is just to ensure consistent order. As interactions will have
         # different types, sort by id
-        inter_key = (atom.element, ) + tuple(sorted(atom.interactions, key=id))
+        inter_key = (atom.element, atom.name) + tuple(sorted(atom.interactions,
+                                                             key=id))
         if atom.atom_type:
             atom_type = atom.atom_type
             if atom_type not in self.atom_types:
@@ -582,9 +583,16 @@ class Universe:
         self.force_fields = force_field
 
         if not interactions:
-            self.force_fields.parameterize_interactions(self.interactions)
+            self.force_fields.parameterize_interactions(set(self.interactions))
         else:
-            self.force_fields.parameterize_interactions(interactions)
+            self.force_fields.parameterize_interactions(set(interactions))
+
+        # FileForceFields also contain mass definitions for atoms, so set these
+        try:
+            for atom in self.atom_list:
+                self.force_fields.set_atom_mass(atom)
+        except AttributeError:
+            pass
 
     def add_bonded_interaction_pairs(self, *bonded_interaction_pairs):
 
