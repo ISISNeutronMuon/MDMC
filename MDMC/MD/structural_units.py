@@ -581,7 +581,7 @@ class Atom(StructuralUnit):
                  charge=None, **settings):
 
         self.universe = None
-        super().__init__(position, velocity, name=element)
+        super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
         self.element = element
