@@ -6,5 +6,5 @@ setup(
     packages=find_packages(),
     author="Thomas Farmer",
     url="https://github.com/MDMCproject",
-    install_requires=["numpy==1.8","scipy==0.13"]
+    install_requires=["numpy","scipy","netCDF4","pandas"]
 )
