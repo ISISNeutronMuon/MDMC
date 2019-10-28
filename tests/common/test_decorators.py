@@ -104,7 +104,7 @@ def wrap(docstring):
     docstring wrapped with a line length of 40
     """
 
-    return decorators._wrap_docstring(docstring, 40)
+    return decorators.wrap_docstring(docstring, 40)
 
 
 @pytest.mark.parametrize('length, n_expected_lines', [(100, 39),
@@ -121,7 +121,7 @@ def test_wrap_docstring_wrapping(docstring, length, n_expected_lines):
     length.
     """
 
-    wrap = decorators._wrap_docstring(docstring, length)
+    wrap = decorators.wrap_docstring(docstring, length)
     for line in wrap.split('\n'):
         assert len(line) <= length
     assert len(wrap.split('\n')) == n_expected_lines
@@ -136,7 +136,7 @@ def test_wrap_docstring_invalid_length(docstring, length):
     """
 
     with pytest.raises(ValueError):
-        decorators._wrap_docstring(docstring, length)
+        decorators.wrap_docstring(docstring, length)
 
 
 def test_wrap_docstring_blank_lines(docstring, wrap):
@@ -177,7 +177,7 @@ def test_wrap_docstring_math():
                  .. math:: x^2
                  """)
 
-    math_wrap = decorators._wrap_docstring(math_doc, 40).split('\n')
+    math_wrap = decorators.wrap_docstring(math_doc, 40).split('\n')
     assert len(math_wrap) == 5
     assert dedent(math_wrap[-2]) == r'.. math:: x^2'
 
