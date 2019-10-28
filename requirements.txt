@@ -1,2 +1,3 @@
 netCDF4
-NumPy==1.8
+NumPy
+pandas
