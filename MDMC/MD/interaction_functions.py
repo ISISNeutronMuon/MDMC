@@ -550,7 +550,8 @@ class HarmonicPotential(InteractionFunction):
             if settings['interaction_type'].lower() == 'bond':
                 eq_unit = units.LENGTH
                 pot_unit = units.ENERGY / units.LENGTH ** 2
-            elif settings['interaction_type'].lower() in ('angle', 'improper'):
+            elif settings['interaction_type'].lower() in ('angle', 'bondangle',
+                                                          'improper'):
                 eq_unit = units.ANGLE
                 pot_unit = units.ENERGY / units.ANGLE ** 2
             else:
