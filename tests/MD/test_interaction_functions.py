@@ -659,6 +659,8 @@ def test_interaction_function_units(inter_func_fixture, units, request):
                                     HARMPOT_POT_STREN_BOND_UNIT]),
                           ('angle', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
                                      HARMPOT_POT_STREN_ANGLE_UNIT]),
+                          ('BondAngle', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
+                                     HARMPOT_POT_STREN_ANGLE_UNIT]),
                           ('improper', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
                                         HARMPOT_POT_STREN_ANGLE_UNIT])])
 def test_harmonic_potential_units(inter_type, units):
