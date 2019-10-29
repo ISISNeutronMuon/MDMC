@@ -4,6 +4,7 @@ and setting their attributes.
 """
 
 from copy import deepcopy
+from itertools import combinations, permutations
 
 import numpy as np
 import pytest
@@ -69,6 +70,22 @@ def atom_charge():
     """
 
     return Atom('H', charge=TEST_CHARGE_1)
+
+@pytest.fixture
+def water_molecule():
+
+    """
+    Returns
+    -------
+    Molecule
+        A water molecule with no interactions (i.e. just atoms defined)
+    """
+
+    return Molecule(position=(0, 0, 0),
+                    atoms=[Atom('H'),
+                           Atom('H', position=(0., 1.63298, 0.)),
+                           Atom('O', position=(0., 0.81649, 0.57736))],
+                    name='water')
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
@@ -350,3 +367,63 @@ def test_molecule_mass(atom_list):
     for atom in atom_list:
         exp_mass += atom.mass
     assert mol.mass == exp_mass
+
+
+@pytest.mark.parametrize('position', [(0., 0., 0.),
+                                      (5., 5., 5.),
+                                      (1., 2., 3.)])
+def test_molecule_rotation_preserves_CoM(position, water_molecule):
+
+    """
+    Tests that the molecular center of mass remains constant when
+    Molecule.rotate is called
+    """
+
+    water_molecule.position = position
+    for x, y, z in permutations([0., 45., 90.]):
+        water_molecule.rotate(x=x, y=y, z=z)
+        assert all(water_molecule.position == position)
+
+
+@pytest.mark.parametrize('angles', [(90., 0., 0.),
+                                    (0., 90., 0.),
+                                    (0., 0., 90.),
+                                    (45., 45., -45.),
+                                    (180., 30., 60.)])
+def test_molecule_rotation_preserves_distances(angles, water_molecule):
+
+    """
+    Tests that the distances between atoms are preserved when Molecule.rotate is
+    called
+    """
+
+    def get_separations(atoms):
+
+        # rounding is just to avoid floating point errors
+        return [round(np.linalg.norm(atom1.position - atom2.position), 5)
+                for atom1, atom2 in combinations(atoms, 2)]
+
+    initial_separations = get_separations(water_molecule.atom_list)
+    water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
+    final_separations = get_separations(water_molecule.atom_list)
+    assert initial_separations == final_separations
+
+
+@pytest.mark.parametrize('angles, expected',
+                         [((90., 0., 0.), [0., 0.51275077, -0.81649]),
+                          ((0., 90., 0.), [-0.51275077, -0.81649, 0.]),
+                          ((0., 0., 90.), [0.81649, 0., -0.51275077]),
+                          ((180., 180., 180.), [0., -0.81649, -0.51275077]),
+                          ((90., 90., 90.), [-0.51275077, -0.81649, 0.]),
+                          ((360., 360., 360.), [0., -0.81649, -0.51275077])])
+def test_molecule_rotation(angles, expected, water_molecule):
+
+    """
+    Tests that the rotation results in the expected position for first H atom
+
+    H atom starts at: [0., -0.81649 , -0.51275077]
+    """
+
+    water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
+    assert np.allclose(water_molecule.atom_list[0].position, expected,
+                       atol=1e-5)
