@@ -6,7 +6,7 @@ class."""
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from itertools import count
+from itertools import count, permutations
 from types import MethodType
 import warnings
 import weakref
@@ -2098,13 +2098,11 @@ class BondedInteraction(Interaction):
     def atoms(self, atom_tuples):
 
         # Check for duplicate tuples in list
-        self._check_duplicates(atom_tuples, 'Each tuple in the list of atom'
-                                            ' tuples must be unique')
+        self._check_duplicates(atom_tuples)
         # Check for duplicate atoms in each tuple
         try:
             for tpl in atom_tuples:
-                self._check_duplicates(tpl, 'Each atom in an atom tuple must be'
-                                            ' unique')
+                self._check_duplicates(tpl)
         # try/except accounts for single atom passed rather than (atom,) tuple
         # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
         except TypeError:
@@ -2204,8 +2202,7 @@ class BondedInteraction(Interaction):
             the atoms
         """
 
-        self._check_duplicates(atoms, 'Each atom in an atom tuple must be'
-                                      ' unique')
+        self._check_duplicates(atoms)
         if atoms in self.atoms:
             raise ValueError('This interaction has already been applied to this'
                              ' atom(s)')
@@ -2219,14 +2216,14 @@ class BondedInteraction(Interaction):
         if self.universe:
             self._add_to_universe(self.universe, atoms)
 
-    def _check_duplicates(self, struct, err_msg):
+    def _check_duplicates(self, structs):
 
         """
         Checks for duplicates StructuralUnit
 
         Parameters
         ----------
-        struc : list
+        structs : list
             A list of StructuralUnits
         err_msg : str
             A str to provide as an Error message if there is a duplicate
@@ -2238,8 +2235,30 @@ class BondedInteraction(Interaction):
             If there is a duplicate StructuralUnit
         """
 
-        if len(set(struct)) != len(struct):
+        err_msg = ('Each tuple in the list of atom tuples must be unique, and'
+                   ' each atom in a tuple must be unique')
+
+        # Check for duplicates (or reverse duplicates)
+        try:
+            equivalent_structs = self._get_equivalent_structures(structs)
+        except TypeError:
+            equivalent_structs = structs
+        if len(set(equivalent_structs)) != len(equivalent_structs):
             raise ValueError(err_msg)
+
+    # _get_equivalent_structures is a method because of the override in
+    # DihedralAngle
+    #pylint: disable=R0201
+    def _get_equivalent_structures(self, structs):
+
+        """
+        Returns
+        -------
+        list
+            list of tuples of atom orderings which are equivalent
+        """
+
+        return structs + [tuple(reversed(atom_tuple)) for atom_tuple in structs]
 
     def _add_to_universe(self, universe, tpl):
 
@@ -2338,6 +2357,21 @@ class DihedralAngle(BondedInteraction):
     Dihedral angles can be both proper and improper, where the angle between the
     two planes of ijk and jkl is fixed for improper dihedrals.
 
+    The atoms of a proper DihedralAngle are ordered i, j, k, l, where j and k
+    are the two central atoms.
+
+    So DihedralAngle(i, j, k, l) == DihedralAngle(l, k, j, i)
+
+    The atoms of an improper DihedralAngle are ordered i, j, k, l, where i is
+    the central atom to which j, k, and l are all connected.
+
+    So (DihedralAngle(i, j, k, l, improper=True)
+        == DihedralAngle(i, j, l, k, improper=True)
+        == DihedralAngle(i, l, k, j, improper=True)
+        == DihedralAngle(i, l, j, k, improper=True))
+        == DihedralAngle(i, k, j, l, improper=True))
+        == DihedralAngle(i, k, l, j, improper=True))
+
     Parameters
     ----------
     atom_tuples : list
@@ -2360,3 +2394,24 @@ class DihedralAngle(BondedInteraction):
         settings['n_atoms'] = (4, )
         self.improper = settings.get('improper', False)
         super().__init__(*atom_tuples, **settings)
+
+    def _get_equivalent_structures(self, structs):
+
+        """
+        Returns
+        -------
+        list
+            list of tuples of atom orderings which are equivalent
+        """
+
+        # Improper dihedrals are equivalent if they have the same first
+        # (central) atom, and any permutation of the other three atoms
+        if self.improper:
+            equivalent = []
+            for atom_tuple in structs:
+                equivalent += [(atom_tuple[0], ) + permutation for permutation
+                               in permutations(atom_tuple[1:])]
+            return equivalent
+        # Proper dihedrals are equivalent if they are reversed (as with Bond and
+        # BondAngle)
+        return super()._get_equivalent_structures(structs)

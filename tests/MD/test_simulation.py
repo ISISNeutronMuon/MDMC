@@ -505,7 +505,7 @@ def test_bonded_interactions(Int, n_atoms, atom):
     Tests that only the correct number of atoms can be used for the interaction
 
     Tests that atoms added to interactions are unique i.e. there are no
-    duplicates
+    duplicate atoms
     """
 
     for n in n_atoms:
@@ -521,7 +521,7 @@ def test_bonded_interactions(Int, n_atoms, atom):
     empty_bond = Int()
     assert len(empty_bond.atoms) == 0
 
-    # Test duplicates for bonded interactions
+    # Test duplicate atoms for bonded interactions
     atoms_duplicate = []
     n_duplicates = max(n_atoms)
     for _ in range(n_duplicates):
@@ -537,6 +537,57 @@ def test_bonded_interactions(Int, n_atoms, atom):
             atoms.append(atom.copy([1., 1., 1.]))
         with pytest.raises(TypeError):
             invalid_bond = Int(*atoms)
+
+
+@pytest.mark.parametrize("interaction, n_atoms", [(su.Bond, 4),
+                                                  (su.BondAngle, 6),
+                                                  (su.DihedralAngle, 8)])
+def test_bonded_interactions_duplicate_tuples(interaction, n_atoms):
+
+    """
+    Tests that atom tuples added to BondedInteractions are unique i.e. there are
+    no duplicates.
+
+    For instance reversed atom order is equivalent for Bond, BondAngle and
+    proper Dihedral e.g. (1, 2, 3, 4) and (4, 3, 2, 1) are equivalent for proper
+    Dihedrals, and should raise an error if both are passed.
+    """
+
+    atoms = [su.Atom('H', position=np.array([1., 1., 1.]) * n)
+             for n in range(n_atoms)]
+
+    # Test a valid BondedInteraction.__init__ (i.e. no equivalent permutations)
+    # doesn't raise an error
+    subset = tuple(atoms[:n_atoms//2])
+    interaction(subset, tuple(atoms[n_atoms//2:]))
+
+    with pytest.raises(ValueError):
+        interaction(subset, tuple(reversed(subset)))
+
+
+def test_improper_dihedral_duplicate_tuples():
+
+    """
+    Tests that atom tuples added to improper Dihedrals are unique i.e. there are
+    no duplicates.
+
+    For instance tuples with the same first atom and any permutation of same
+    other three atoms for are equivalent e.g. (1, 2, 3, 4) and (1, 3, 4, 2) are
+    equivalent, and should raise an error if both are passed.
+    """
+
+    atoms = [su.Atom('H', position=np.array([1., 1., 1.]) * n)
+             for n in range(8)]
+
+    # Test a valid Dihedral.__init__(improper=True) (i.e. no equivalent
+    # permutations) doesn't raise an error
+    subset = tuple(atoms[:4])
+    su.DihedralAngle(subset, tuple(atoms[4:]), improper=True)
+
+    for permutation in permutations(subset[1:]):
+        duplicates = (subset[0], ) + tuple(permutation)
+        with pytest.raises(ValueError):
+            su.DihedralAngle(subset, duplicates, improper=True)
 
 
 def test_universe_atom_types(water_molecule, universe):
