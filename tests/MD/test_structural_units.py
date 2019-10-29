@@ -142,6 +142,21 @@ def test_charge_after_init(atom):
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
+def test_atom_charge_cutoff(atom):
+
+    """
+    Tests that the cutoff of the Coulombic interaction created when the charge
+    of an Atom is set is 10.0, if the Atom did not already possess a Coulombic
+    interaction.
+
+    Ignores any warnings thrown.
+    """
+
+    atom.charge = TEST_CHARGE_1
+    assert atom.interactions[0].cutoff == 10.
+
+
+@pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_change_no_coulomb(atom_charge):
 
     """
