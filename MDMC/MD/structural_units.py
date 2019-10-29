@@ -549,6 +549,71 @@ class CompositeStructuralUnit(StructuralUnit):
 
         return super().copy(position)
 
+    def _set_subunit_positions(self):
+
+        """
+        Sets the position of all subunits in the global frame in units of Ang
+        """
+
+        for atom in self.atom_list:
+            atom.position = self.position + self._CoM_frame_positions[atom]
+
+    def _calc_CoM(self):
+
+        """
+        Returns
+        -------
+        array
+            Position of the center of mass of the CompositeStructuralUnit in
+            units of Ang
+        """
+
+        mass = 0.
+        weighted_positions = np.zeros(3)
+        for atom in self.atom_list:
+            mass += atom.mass
+            weighted_positions += (atom.position * atom.mass)
+        return weighted_positions / mass
+
+    def _calc_subunit_position_in_CoM_frame(self):
+
+        """
+        Calculate the position of all subunits in the CompositeStructuralUnit
+        CoM frame in units of Ang
+        """
+
+        self._CoM_frame_positions = {}
+        CoM = self._calc_CoM()
+        for atom in self.atom_list:
+            self._CoM_frame_positions[atom] = atom.position - CoM
+
+    def rotate(self, x=0., y=0., z=0.):
+
+        """
+        Rotates the CompositeStructuralUnit around its center of mass
+
+        In all cases (e.g. x, y and z) the rotation is anticlockwise about the
+        specific axis
+
+        Parameters
+        ----------
+        x : float, optional
+            The angle of rotation around the x-axis in degrees. The default is
+            0.
+        y : float, optional
+            The angle of rotation around the y-axis in degrees. The default is
+            0.
+        z : float, optional
+            The angle of rotation around the z-axis in degrees. The default is
+            0.
+        """
+
+        rotation = Rotation.from_euler('xyz', [x, y, z], degrees=True)
+        CoM = self.position
+        for atom in self.atom_list:
+            atom.position = (CoM
+                             + rotation.apply(self._CoM_frame_positions[atom]))
+
 
 class Atom(StructuralUnit):
 
@@ -1103,43 +1168,6 @@ class Molecule(CompositeStructuralUnit):
         return list(set([pair for atom in self.atom_list
                          for pair in atom.bonded_interaction_pairs]))
 
-    def _set_subunit_positions(self):
-
-        """
-        Sets the position of all subunits in the global frame in units of Ang
-        """
-
-        for atom in self.atom_list:
-            atom.position = self.position + self._CoM_frame_positions[atom]
-
-    def _calc_CoM(self):
-
-        """
-        Returns
-        -------
-        array
-            Position of the center of mass of the molecule in units of Ang
-        """
-
-        mass = 0.
-        weighted_positions = np.zeros(3)
-        for atom in self.atom_list:
-            mass += atom.mass
-            weighted_positions += (atom.position * atom.mass)
-        return weighted_positions / mass
-
-    def _calc_subunit_position_in_CoM_frame(self):
-
-        """
-        Calculate the position of all subunits in the Molecule CoM frame in
-        units of Ang
-        """
-
-        self._CoM_frame_positions = {}
-        CoM = self._calc_CoM()
-        for atom in self.atom_list:
-            self._CoM_frame_positions[atom] = atom.position - CoM
-
     @property
     @unit_decorator_getter(unit=units.MASS)
     def mass(self):
@@ -1158,32 +1186,6 @@ class Molecule(CompositeStructuralUnit):
             mass += atom.mass
 
         return mass
-
-    def rotate(self, x=0., y=0., z=0.):
-
-        """
-        Rotates the CompositeStructuralUnit around its center of mass
-
-        In all cases (e.g. x, y and z) the rotation is anticlockwise about the
-        specific axis
-
-        Parameters
-        ----------
-        x : float, optional
-            The angle of rotation around the x-axis in degrees. The default is
-            0.
-        y : float, optional
-            The angle of rotation around the y-axis in degrees. The default is
-            0.
-        z : float, optional
-            The angle of rotation around the z-axis in degrees. The default is
-            0.
-        """
-
-        rotation = Rotation.from_euler('xyz', [x, y, z], degrees=True)
-        CoM = self.position
-        for atom in self.atom_list:
-            atom.position = CoM + rotation.apply(self._CoM_frame_positions[atom])
 
 
 class BoundingBox:
