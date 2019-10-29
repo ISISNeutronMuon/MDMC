@@ -787,6 +787,10 @@ class Atom(StructuralUnit):
         """
         Get or set the charge in e if one has been applied to the Atom
 
+        If the Atom does not have a Coulombic interaction, setting a value of
+        the charge will create one, and a default cutoff of 10 Ang will be
+        applied
+
         Returns
         -------
         float
@@ -812,8 +816,8 @@ class Atom(StructuralUnit):
                     # Check that only one Coulombic interaction exists.
                     num_coul += 1
                     if num_coul > 1:
-                        raise ValueError('Atom should not have more than one '
-                                         'Coulombic interaction')
+                        raise ValueError('Atom should not have more than one'
+                                         ' Coulombic interaction')
                     # Check that a charge parameter exists.
                     charge_params = 0
                     for param in interaction.params:
@@ -821,8 +825,8 @@ class Atom(StructuralUnit):
                             charge_params += 1
                             value = param.value
                     if charge_params == 0:
-                        raise ValueError('Coulombic interaction does not have a '
-                                         'parameter "charge".')
+                        raise ValueError('Coulombic interaction does not have a'
+                                         ' parameter "charge".')
             return value
         except AttributeError:
             return None
@@ -839,20 +843,20 @@ class Atom(StructuralUnit):
                             if param.name == 'charge':
                                 param.value = value
                                 return
-                        raise ValueError('Coulombic interaction does not have '
-                                         'a parameter "charge".')
+                        raise ValueError('Coulombic interaction does not have'
+                                         ' a parameter "charge".')
                     except AttributeError:
                         # creates an interaction function if the Atom's
                         # Coulomb interaction doesn't have one
                         inter.function = Coulomb(value)
                     return
                 # else if the charge has value None
-                raise ValueError("Can't set charge to None when a "
-                                 "Coulombic interaction exists.")
+                raise ValueError("Can't set charge to None when a"
+                                 " Coulombic interaction exists.")
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
         if value is not None:
-            Coulombic(atoms=self, charge=value)
+            Coulombic(atoms=self, charge=value, cutoff=10.)
 
     @property
     def mass(self):
