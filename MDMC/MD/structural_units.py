@@ -12,6 +12,7 @@ import warnings
 import weakref
 
 import numpy as np
+from scipy.spatial.transform import Rotation
 
 import MDMC.common.atom_properties as atom_properties
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
@@ -1157,6 +1158,32 @@ class Molecule(CompositeStructuralUnit):
             mass += atom.mass
 
         return mass
+
+    def rotate(self, x=0., y=0., z=0.):
+
+        """
+        Rotates the CompositeStructuralUnit around its center of mass
+
+        In all cases (e.g. x, y and z) the rotation is anticlockwise about the
+        specific axis
+
+        Parameters
+        ----------
+        x : float, optional
+            The angle of rotation around the x-axis in degrees. The default is
+            0.
+        y : float, optional
+            The angle of rotation around the y-axis in degrees. The default is
+            0.
+        z : float, optional
+            The angle of rotation around the z-axis in degrees. The default is
+            0.
+        """
+
+        rotation = Rotation.from_euler('xyz', [x, y, z], degrees=True)
+        CoM = self.position
+        for atom in self.atom_list:
+            atom.position = CoM + rotation.apply(self._CoM_frame_positions[atom])
 
 
 class BoundingBox:
