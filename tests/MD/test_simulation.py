@@ -153,6 +153,22 @@ def test_copy_structural_unit(unit, changed_attr):
             assert np.all(getattr(cpy_unit, attr) == getattr(unit, attr))
 
 
+def test_copy_composite_rotation(water_molecule):
+
+    """
+    Tests that CompositeStructuralUnit.copy can have rotate passed
+    """
+
+    cpy_unit = water_molecule.copy(position=(5., 5., 5.),
+                                   rotation=(90., 0., 270.))
+    water_molecule.rotate(x=90., z=270.)
+    position_diff = np.array([5., 5., 5.]) - np.array(WATER_POSITION)
+    for original, copied in zip(water_molecule.atom_list, cpy_unit.atom_list):
+        assert np.allclose(original.position,
+                           (copied.position - position_diff),
+                           5)
+
+
 def test_structure_unique_ID(water_SPCE_universe):
 
     """

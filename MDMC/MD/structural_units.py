@@ -512,9 +512,10 @@ class CompositeStructuralUnit(StructuralUnit):
 
         self._structure_list = value
 
-    def copy(self, position):
-    # pylint:disable=useless-super-delegation
-    # Docstring specific to CompositeStructuralUnit
+    def copy(self, position, rotation=None):
+    # pylint:disable=arguments-differ
+    # CompositeStructuralUnit's can be rotated, which is meaningless for
+    # StructuralUnits in general
 
         """
         Copies the CompositeStructuralUnit and all attributes, except ID which
@@ -539,6 +540,12 @@ class CompositeStructuralUnit(StructuralUnit):
         position : list, tuple, NumPy array
             3 element list, tuple or array of floats specifying the position of
             the new StructuralUnit
+        rotation : list, tuple, NumPy array, optional
+            3 element list, tuple or array of floats specifying the degrees of
+            anticlockwise rotation around the x, y, and z axes respectively. The
+            rotation is centered on the center of mass of the
+            CompositeStructuralUnit. The default rotation is None, which applies
+            no rotation to the copied CompositeStructuralUnit.
 
         Returns
         -------
@@ -547,7 +554,10 @@ class CompositeStructuralUnit(StructuralUnit):
             attributes copied and a new position
         """
 
-        return super().copy(position)
+        composite = super().copy(position)
+        if rotation is not None:
+            composite.rotate(x=rotation[0], y=rotation[1], z=rotation[2])
+        return composite
 
     def _set_subunit_positions(self):
 
