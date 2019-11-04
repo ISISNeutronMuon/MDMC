@@ -9,7 +9,7 @@ from enum import Enum
 import numpy as np
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    mod_func_docstring
+    mod_docstring
 from MDMC.common import units
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
@@ -21,7 +21,11 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
                        'rhombic_dodecahedron', 'truncated_octahedron'])
 
+_FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
+                 ', '.join(ForceFieldFactory.get_force_field_names())}
 
+
+@mod_docstring(_FF_DOCSTRING)
 class Universe:
 
     """
@@ -35,7 +39,8 @@ class Universe:
     shape : enum
         Member of the Shape enum.
     force_field : ForceField
-        A force field to apply to the Universe.
+        A force field to apply to the Universe. The force fields available are:
+        DYNAMIC_FORCE_FIELD_LIST
     structures : list
         Structures contained in the Universe.
 
@@ -326,10 +331,14 @@ class Universe:
         return list(set(structural_units))
 
     @property
+    @mod_docstring(_FF_DOCSTRING)
     def force_fields(self):
 
         """
         Get or set the force fields acting on the Universe
+
+        The available force fields are:
+        DYNAMIC_FORCE_FIELD_LIST
 
         Returns
         -------
@@ -467,6 +476,7 @@ class Universe:
                             ' atom_type_interactions keys which already possess'
                             ' values')
 
+    @mod_docstring(_FF_DOCSTRING)
     def add_structural_unit(self, structural_unit, force_field=None):
 
         """
@@ -478,7 +488,9 @@ class Universe:
         structural_unit : StructuralUnit
             The structural unit to be added to the Universe
         force_field : str, optional
-            The force field to be applied to the structural unit
+            The force field to be applied to the structural unit. The available
+            force fields are:
+            DYNAMIC_FORCE_FIELD_LIST
         """
 
         structural_unit.universe = self
@@ -491,6 +503,7 @@ class Universe:
         if force_field:
             self.add_force_field(force_field, *structural_unit.interactions)
 
+    @mod_docstring(_FF_DOCSTRING)
     def fill(self, structural_unit, force_field=None, **settings):
 
         """
@@ -509,7 +522,9 @@ class Universe:
         structural_unit : StructuralUnit
             The structural unit with which to fill the Universe
         force_field : str
-            Applies a force field to the Universe
+            Applies a force field to the Universe. The available force fields
+            are:
+            DYNAMIC_FORCE_FIELD_LIST
         **settings
             num_density : float
                 Non-negative float specifying the number density of the
@@ -565,6 +580,7 @@ class Universe:
                 new_unit = structural_unit.copy(position)
                 self.add_structural_unit(new_unit)
 
+    @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field, *interactions):
 
         """
@@ -575,7 +591,8 @@ class Universe:
         ----------
         force_field : str
             The ForceField to parameterize *interactions (if provided), or all
-            the interactions in the universe
+            the interactions in the universe. The available force fields are:
+            DYNAMIC_FORCE_FIELD_LIST
         *interactions
             Interactions to parameterize with the force field
         """
@@ -686,7 +703,7 @@ class Universe:
 
         return any(position > self.dimensions) or any(position < [0, 0, 0])
 
-    @mod_func_docstring({'DYNAMIC_SOLVENT_LIST':', '.join(get_solvent_names())})
+    @mod_docstring({'DYNAMIC_SOLVENT_LIST':', '.join(get_solvent_names())})
     def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
 
         """

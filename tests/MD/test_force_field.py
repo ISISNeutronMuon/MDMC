@@ -443,3 +443,22 @@ def _parametrize_interaction(interaction_class, force_field_name, *atoms,
                         else 'bonded')
     getattr(force_field, '_parametrize_' + interaction_type)(interaction)
     return interaction
+
+
+def test_specific_force_fields_names():
+
+    """
+    Tests that ForceFieldFactory.get_force_field_names includes certain force
+    field names
+
+    This is an imperfect test of this method, as it doesn't test exactly what is
+    returned; however this avoids the need to update this test with each new
+    force field added, and should be a sufficiently robust test.
+
+    To increase robustness, the names of new force fields could be added to this
+    test.
+    """
+
+    force_field_names = ForceFieldFactory.get_force_field_names()
+    for name in ['SPC', 'SPCE', 'OPLSAA']:
+        assert name in force_field_names

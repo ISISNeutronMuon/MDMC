@@ -2,6 +2,7 @@
 
 from functools import wraps
 import textwrap
+from types import FunctionType
 
 from MDMC.common.units import UnitFloat, unit_array
 
@@ -127,10 +128,10 @@ def unit_decorator_getter(unit):
     return decorator
 
 
-def set_func_docstring(docstring):
+def set_docstring(docstring):
 
     """
-    Decorator for setting the docstring of a function or method.
+    Decorator for setting the docstring of a function, method, class or property
 
     The new docstring is text wrapped to ensure that the line length is valid.
     It is assumed that the specified docstring has the correct indentations.
@@ -138,22 +139,53 @@ def set_func_docstring(docstring):
     Parameters
     ----------
     docstring : str
-        The new docstring for the function or method
+        The new docstring for the function, method, class or property
 
     Returns
     -------
     function
-        A decorator which sets the docstring of a function or method
+        A decorator which sets the docstring of a function, method, class or
+        property
 
-    Example
-    -------
+    Raises
+    ------
+    TypeError
+        If set_docstring is applied to an object which is not a function,
+        method, class, or property
+
+    Examples
+    --------
     To dynamically set the docstring of a function:
 
         .. highlight:: python
         .. code-block:: python
 
-            @set_func_docstring("This is the new docstring")
+            @set_docstring("This is the new docstring")
             def function():
+                \"\"\"
+                This docstring will be replaced
+                \"\"\"
+
+    To dynamically set the docstring of a class:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @set_docstring("This is the new docstring")
+            class DocClass():
+                \"\"\"
+                This is a class level docstring. This docstring will be
+                replaced.
+                \"\"\"
+
+    To dynamically set the docstring of a property:
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @property
+            @set_docstring("This is the new docstring")
+            def prop():
                 \"\"\"
                 This docstring will be replaced
                 \"\"\"
@@ -161,22 +193,29 @@ def set_func_docstring(docstring):
 
     # Ignore pylint warning for decorator inner function docstrings
     #pylint: disable=missing-docstring
-    def decorator(func):
+    def decorator(doc_object):
         # docstring must be set outside of wrapper. This means that
-        # functools.wraps can be used to preserve the docstring after the
-        # function has been wrapped.
-        func.__doc__ = wrap_docstring(docstring, 80)
-        @wraps(func)
-        def wrapper(*args, **settings):
-            func(*args, **settings)
-        return wrapper
+        # functools.wraps can be used to preserve the docstring of a function,
+        # after it has been wrapped.
+        doc_object.__doc__ = wrap_docstring(docstring, 80)
+        # Decoration of function, method or property requires returning wrapper
+        if isinstance(doc_object, FunctionType):
+            @wraps(doc_object)
+            def wrapper(*args, **settings):
+                return doc_object(*args, **settings)
+            return wrapper
+        # Decoration of classes
+        if isinstance(doc_object, type):
+            return doc_object
+        raise TypeError('set_docstring cannot be applied to this type')
     return decorator
 
 
-def mod_func_docstring(replacements):
+def mod_docstring(replacements):
 
     """
-    Decorator for modifying the docstring of a function or method.
+    Decorator for modifying the docstring of a function, method, class or
+    property
 
     This is done by replacing specified substrings. After replacement the
     docstring is text wrapped to ensure that line length and indentations are
@@ -195,36 +234,78 @@ def mod_func_docstring(replacements):
     Returns
     -------
     function
-        A decorator which modifies the docstring of a function or method
+        A decorator which modifies the docstring of a function, method, class or
+        property
 
-    Example
-    -------
+    Raises
+    ------
+    TypeError
+        If mod_docstring is applied to an object which is not a function,
+        method, class, or property
+
+    Examples
+    --------
     To dynamically modify the docstring of a function so 'this' is replaced
     with 'that':
 
         .. highlight:: python
         .. code-block:: python
 
-            @set_func_docstring({'this':'that'})
+            @mod_docstring({'this':'that'})
             def function():
                 \"\"\"
                 The word this will be replaced
+                \"\"\"
+
+    To dynamically modify the docstring of a class so 'this' is replaced
+    with 'that':
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @mod_docstring({'this':'that'})
+            class DocClass():
+                \"\"\"
+                This is the class level docstring. The word this will be
+                replaced.
+                \"\"\"
+
+    To dynamically modify the docstring of a property so 'this' is replaced
+    with 'that':
+
+        .. highlight:: python
+        .. code-block:: python
+
+            @property
+            @mod_docstring({'this':'that'})
+            def prop():
+                \"\"\"
+                The word this will be replaced.
                 \"\"\"
     """
 
     # Ignore pylint warning for decorator inner function docstrings
     #pylint: disable=missing-docstring
-    def decorator(func):
+    def decorator(doc_object):
         # docstring must be modified outside of wrapper. This means that
-        # functools.wraps can be used to preserve the docstring after the
-        # function has been wrapped.
+        # functools.wraps can be used to preserve the docstring of a function,
+        # after it has been wrapped.
         for old, new in replacements.items():
-            func.__doc__ = func.__doc__.replace(old, new)
-        func.__doc__ = wrap_docstring(func.__doc__, 80)
-        @wraps(func)
-        def wrapper(*args, **settings):
-            func(*args, **settings)
-        return wrapper
+            doc_object.__doc__ = doc_object.__doc__.replace(old, new)
+        doc_object.__doc__ = wrap_docstring(doc_object.__doc__, 80)
+        # Decoration of functions, methods or properties requires returning
+        # wrapper
+        # Don't type check for properties as this decorator must precede
+        # property decorator
+        if isinstance(doc_object, FunctionType):
+            @wraps(doc_object)
+            def wrapper(*args, **settings):
+                return doc_object(*args, **settings)
+            return wrapper
+        # Decoration of classes
+        if isinstance(doc_object, type):
+            return doc_object
+        raise TypeError('mod_docstring cannot be applied to this type')
     return decorator
 
 
