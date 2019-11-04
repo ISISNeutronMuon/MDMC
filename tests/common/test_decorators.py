@@ -182,13 +182,13 @@ def test_wrap_docstring_math():
     assert dedent(math_wrap[-2]) == r'.. math:: x^2'
 
 
-def test_set_func_docstring_function(docstring):
+def test_set_docstring_function(docstring):
 
     """
     Tests setting a docstring to a function
     """
 
-    @decorators.set_func_docstring(docstring)
+    @decorators.set_docstring(docstring)
     def test_func():
 
         """
@@ -200,7 +200,7 @@ def test_set_func_docstring_function(docstring):
     assert test_func.__doc__ == docstring
 
 
-def test_set_func_docstring_method(docstring):
+def test_set_docstring_method(docstring):
 
     """
     Tests setting a docstring to a method
@@ -208,7 +208,7 @@ def test_set_func_docstring_method(docstring):
 
     class TestClass:
 
-        @decorators.set_func_docstring(docstring)
+        @decorators.set_docstring(docstring)
         def test_method(self):
 
             pass
@@ -216,13 +216,49 @@ def test_set_func_docstring_method(docstring):
     assert TestClass.test_method.__doc__ == docstring
 
 
-def test_mod_func_docstring_function(modified_docstring):
+def test_set_docstring_class(docstring):
+
+    """
+    Tests setting a docstring to a class
+    """
+
+    @decorators.set_docstring(docstring)
+    class TestClass:
+
+        pass
+
+    assert TestClass.__doc__ == docstring
+
+
+def test_set_docstring_property(docstring):
+
+    """
+    Tests setting a docstring to a property
+    """
+
+    class TestClass:
+
+        @property
+        @decorators.set_docstring(docstring)
+        def prop(self):
+
+            pass
+
+        @prop.setter
+        def prop(self):
+
+            pass
+
+    assert TestClass.prop.__doc__ == docstring
+
+
+def test_mod_docstring_function(modified_docstring):
 
     """
     Tests modifying the docstring of a function
     """
 
-    @decorators.mod_func_docstring(modified_docstring['replacements'])
+    @decorators.mod_docstring(modified_docstring['replacements'])
     def test_func():
 
         """
@@ -248,7 +284,7 @@ def test_mod_func_docstring_function(modified_docstring):
     assert dedent(test_func.__doc__) == dedent(modified_docstring['after'])
 
 
-def test_mod_func_docstring_method(modified_docstring):
+def test_mod_docstring_method(modified_docstring):
 
     """
     Tests modifying the docstring of a method
@@ -256,7 +292,7 @@ def test_mod_func_docstring_method(modified_docstring):
 
     class TestClass:
 
-        @decorators.mod_func_docstring(modified_docstring['replacements'])
+        @decorators.mod_docstring(modified_docstring['replacements'])
         def test_method(self):
 
             """
@@ -279,4 +315,77 @@ def test_mod_func_docstring_method(modified_docstring):
 
     # dedent removes common leading whitespace - accounts for docstring fixture
     # and method docstring starting with different indents
-    assert dedent(TestClass.test_method.__doc__) == dedent(modified_docstring['after'])
+    assert (dedent(TestClass.test_method.__doc__)
+            == dedent(modified_docstring['after']))
+
+
+def test_mod_docstring_class(modified_docstring):
+
+    """
+    Tests modifying the docstring of a class
+    """
+
+    @decorators.mod_docstring(modified_docstring['replacements'])
+    class TestClass:
+
+        """
+        This is a docstring with parts to be replaced
+
+        Arguments
+        ----------
+        a : int
+            An int
+        b : int
+            Another int
+
+        Returns
+        -------
+        str
+            Replace this description with a longer description
+        """
+
+        pass
+
+    # dedent removes common leading whitespace - accounts for docstring fixture
+    # and method docstring starting with different indents
+    assert dedent(TestClass.__doc__) == dedent(modified_docstring['after'])
+
+
+def test_mod_docstring_property(modified_docstring):
+
+    """
+    Tests modifying the docstring of a property
+    """
+
+    class TestClass:
+
+        @property
+        @decorators.mod_docstring(modified_docstring['replacements'])
+        def prop(self):
+
+            """
+            This is a docstring with parts to be replaced
+
+            Arguments
+            ----------
+            a : int
+                An int
+            b : int
+                Another int
+
+            Returns
+            -------
+            str
+                Replace this description with a longer description
+            """
+
+            pass
+
+        @prop.setter
+        def prop(self):
+
+            pass
+
+    # dedent removes common leading whitespace - accounts for docstring fixture
+    # and method docstring starting with different indents
+    assert dedent(TestClass.prop.__doc__) == dedent(modified_docstring['after'])
