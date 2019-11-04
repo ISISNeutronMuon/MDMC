@@ -1,7 +1,9 @@
 """Factory class for generating force fields"""
 
+from glob import glob
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
+from os.path import basename, dirname, join, isfile
 
 from MDMC.MD.force_fields.ff import ForceField
 
@@ -15,10 +17,44 @@ class ForceFieldFactory:
 
     @staticmethod
     def create_force_field(module_name):
-        module = import_module('.' + module_name, __package__)
 
+        """
+        Returns
+        -------
+        ForceField
+            A ForceField object specified by module_name
+        """
+
+        try:
+            module = import_module('.' + module_name, __package__)
+        except ImportError:
+            raise ValueError('{0} is not a supported force'
+                             ' field'.format(module_name))
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, ForceField)))
-
         return classes[0][1]()
+
+    @staticmethod
+    def get_force_field_names():
+
+        """
+        Get the names of available force fields
+
+        Requires all ForceField derived classes to be in modules of the same
+        name
+
+        Returns
+        -------
+        list
+            A list of str with the names of the available force fields
+        """
+
+        force_field_names = []
+        for full_module_name in glob(join(dirname(__file__), "*.py")):
+            if isfile(full_module_name) and full_module_name != __file__:
+                module_name = basename(full_module_name)
+                if not module_name.startswith('_') and module_name != 'ff.py':
+                    force_field_names.append(module_name.replace('.py', ''))
+
+        return force_field_names
