@@ -17,6 +17,6 @@ before_install:
 script:
     - docker run --mount type=bind,source="$(pwd)",target="$(pwd)" tfarmer/mdmc_dependencies:latest python -m pytest -v "$(pwd)"/tests/
 
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
