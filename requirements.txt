@@ -2,3 +2,4 @@ netCDF4
 NumPy
 pandas
 scipy
+numba
