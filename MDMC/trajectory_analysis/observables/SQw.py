@@ -212,24 +212,6 @@ class AbstractSQw(Observable):
 
         self._t_res = value
 
-    def read_from_file(self, reader, file_name):
-
-        """
-        Reads in experimental data from a file using a specified reader
-
-        Parameters
-        ----------
-        reader : str
-            The name of the required file reader
-        file_name : str
-            The name of the file
-        """
-
-        super().read_from_file(reader, file_name)
-        self._independent_variables = self.reader.independent_variables
-        self._dependent_variables = self.reader.dependent_variables
-        self._errors = self.reader.errors
-
     def calculate_from_MD(self, MD_input, **settings):
 
         """
@@ -408,7 +390,7 @@ class AbstractSQw(Observable):
             An array of one or more Q vectors with the same Q value
         """
 
-        pass
+        raise NotImplementedError
 
     def _calculate_rho(self, Q_vector):
 
@@ -507,8 +489,8 @@ class AbstractSQw(Observable):
                         continue
 
                     vector = np.array(l * self.reciprocal_basis[0]
-                                       + m * self.reciprocal_basis[1]
-                                       + n * self.reciprocal_basis[2])
+                                      + m * self.reciprocal_basis[1]
+                                      + n * self.reciprocal_basis[2])
 
                     if Q_min < np.linalg.norm(vector) <= Q_max:
                         vectors.append(vector)
@@ -667,7 +649,7 @@ class SQw(AbstractSQw):
 
         # Calculates the incoherent contribution to SQw
         incoh_weights = [self.weights[atom.element]['incoh'] for atom
-                        in self.trajectory.atoms]
+                         in self.trajectory.atoms]
         for i in np.arange(n_atoms):
             rho_atom = np.array([rho_t[i] for rho_t in rho])
             FQt_single_Q_atom = correlation(rho_atom,
