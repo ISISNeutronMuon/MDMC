@@ -82,6 +82,18 @@ class PairDistributionFunction(Observable):
 
         self._errors = value
 
+    @property
+    def r(self):
+
+        """
+        Get the value of the atomc separation distance (in Ang)
+        """
+
+        try:
+            return self.independent_variables['r']
+        except KeyError:
+            raise AttributeError
+
     def calculate_from_MD(self, MD_input, **settings):
 
         """
@@ -181,6 +193,10 @@ class PairDistributionFunction(Observable):
 
         # Sum the partials and scale by the remainder of the prefactor (e.g.
         # anything not element dependent)
+        prefactor = 1 / (4.0 * np.pi * self.r**2 * self.r_step)
+        for elements, partial in self.partial_pdfs.items():
+            weighting = np.multiply(*[self.weights[elem] for elem in elements])
+            partial *= (prefactor * weighting)
 
     def _parse_calc_MD_settings(self, trajectory, settings):
 
@@ -225,10 +241,14 @@ class PairDistributionFunction(Observable):
         self.elements = set(chain.from_iterable(self.partial_strings))
         self.weights = self._set_weights(self.elements,
                                          settings.get('b_coh', {}))
+        self.numbers = self._set_numbers(self.elements,
+                                         self.trajectory.element_list)
 
         self.universe_dimensions = np.array((settings.get('dimensions')
                                              or trajectory.dimensions))
         self.universe_volume = np.prod(self.universe_dimensions)
+        # PDF only valid where number of atoms is conserved over trajectories
+        self.n_atoms = len(self.trajectory[0].atoms)
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
@@ -240,11 +260,13 @@ class PairDistributionFunction(Observable):
         r_kwargs = ['r_min', 'r_max', 'r_step']
         if all(r_kw in settings.keys() for r_kw in r_kwargs):
             self.independent_variables['r'] = np.arange(settings['r_min'],
-                                                        settings['r_max'],
+                                                        settings['r_max'] +
+                                                        settings['r_step'],
                                                         settings['r_step'])
         elif any(r_kw in settings.keys() for r_kw in r_kwargs):
             warnings.warn('Setting r requires r_min, r_max and r_step to all be'
                           ' set. Using existing r instead.')
+        self.r_step = self.r[1] - self.r[0]
 
         self.partial_pdfs = {partial_string:
                              np.zeros(np.shape(self.independent_variables['r']))
@@ -263,8 +285,12 @@ class PairDistributionFunction(Observable):
         def get_component_lengths(universe_dim):
 
             """
-            Use  r values for each component that are at least as big as r_max,
+            Use r values for each component that are at least as big as r_max,
             but that are a factor of the dimensions
+
+            When r > r_max, some atom pairs within each partition will have
+            separations which will not be histogrammed (as they are > r_max),
+            however this is unavoidable
             """
 
             r_max = np.max(self.independent_variables['r'])
@@ -272,40 +298,69 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        original_partitions = self._partition(configuration.atom_positions,
-                                              configuration.element_list,
-                                              part_comps)
-        displaced_partitions = self._partition(configuration.atom_positions,
-                                               configuration.element_list,
-                                               part_comps,
-                                               displacement=True)
+        partitions = self._partition(configuration.atom_positions,
+                                     configuration.element_list,
+                                     part_comps)
+        # Get the partition_indexes and the pairs of partitions. As well as
+        # calculating atom pairs within a partition, each partition will have 26
+        # neighbors for which atom pairs must be calculated.
+        partition_indexes = list(self._calculate_partition_indexes(part_comps))
+        partition_pair_indexes = self._get_partition_pairs(part_comps)
 
-        # Get the partition_indexes
-        partition_indexes = self._calculate_partition_indexes(part_comps)
         # Calculate the histograms of all atoms in each partition for element
         # combinations that are in self.partial_strings
         for partial_string in self.partial_strings:
             elem1, elem2 = partial_string
+            like_elems = elem1 == elem2
             pos_pairs = []
-            # For both partitions, get generators of pairs of positions for each
-            # partition index
+
+            # Get the atom pairs for atoms in the same partition
             for part_i in partition_indexes:
-                for partitions in [original_partitions, displaced_partitions]:
-                    if elem1 == elem2:
-                        pos_pairs.append(combinations(partitions[elem1][part_i],
-                                                      2))
-                    else:
-                        pos_pairs.append(product(partitions[elem1][part_i],
-                                                 partitions[elem2][part_i]))
-            # Convert pos_pairs from a list of generators to a set - this will
-            # remove the duplicates from displaced partitions. Then cast to an
-            # iterator to reduce memory consumption.
-            pos_pairs = iter(set(list(chain(*pos_pairs))))
+                if like_elems:
+                    # combinations avoids an atom and itself being an atom pair
+                    pos_pairs.append(combinations(partitions[elem1][part_i], 2))
+                else:
+                    # atom and itself as an atom pair not an issue for unlike
+                    # elements
+                    pos_pairs.append(product(partitions[elem1][part_i],
+                                             partitions[elem2][part_i]))
+
+            # Get the atom pairs for atoms in different partitions
+            for part1, part2 in partition_pair_indexes:
+                # Correct for periodic boundary conditions, which will only
+                # occur if modulus of separation distance in any direction is
+                # greater than 1 (i.e. the partitions would not be neighbors
+                # without pdb)
+                wrap = np.zeros([3])
+                for i in range(3):
+                    component_separation = part1[i] - part2[i]
+                    if component_separation > 1:
+                        wrap[i] = 1
+                    elif component_separation < -1:
+                        wrap[i] = -1
+                wrap *= self.universe_dimensions
+
+                # try/excepts are in case partitions[elem1][part1] is empty
+                try:
+                    pos_pairs.append(product(partitions[elem1][part1] - wrap,
+                                             partitions[elem2][part2]))
+                except ValueError:
+                    pass
+                # For unlike elements, also consider other element/partition
+                # combination
+                if not like_elems:
+                    try:
+                        pos_pairs.append(product(partitions[elem2][part1] -wrap,
+                                                 partitions[elem1][part2]))
+                    except ValueError:
+                        pass
+            # pos_pairs is a list of iterators - flatten this to a single
+            # iterator
+            pos_pairs = chain(*pos_pairs)
             self.partial_pdfs[partial_string] += \
                 self._calculate_histogram_from_position_pairs(pos_pairs)
 
-    def _partition(self, positions, element_list, part_comps,
-                   displacement=None):
+    def _partition(self, positions, element_list, part_comps):
         # Set up a partitions dictionarty separated by element
         partitions = {element:defaultdict(list) for element
                       in self.elements}
@@ -317,35 +372,49 @@ class PairDistributionFunction(Observable):
             for part_index in self._calculate_partition_indexes(part_comps):
                 partitions[element][part_index] = []
 
-        if displacement:
-            # Use modulo to wrap positions round in pbc
-            # Cast positions to tuple so that they can be hashed for a set
-            positions = tuple(map(lambda x: tuple((x + (part_comps / 2))
-                                                  % self.universe_dimensions),
-                                  positions))
-        else:
-            # Just cast positions
-            positions = tuple(map(tuple, positions))
+        # Drop positions of atoms of elements not included
+        mask = np.isin(element_list, list(self.elements))
+        element_array = np.array(element_list)[mask]
+        positions = positions[mask]
+
         # Get element and position of each atom
-        for elem, position in zip(element_list, positions):
+        for elem, position in zip(element_array, positions):
             partition_index = []
             for component, part_comp in zip(position, part_comps):
                 partition_index.append(component // part_comp)
-            # If displacement then reset position back before adding to partials
-            # This will allow position pairs to be directly compared for both
-            # undisplaced and displaced partitions
-            if displacement:
-                position = tuple(((position[i] - (part_comps[i] / 2.))
-                                  % self.universe_dimensions[i])
-                                 for i in range(3))
             # Add each position to correct partition
             partitions[elem][tuple(partition_index)].append(position)
-        return partitions
+        # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
+        # of positions from list to array)
+        return {elem:{partition_index:np.array(positions)
+                      for partition_index, positions in elem_partitions.items()}
+                for elem, elem_partitions in partitions.items()}
+
+    def _get_partition_pairs(self, partition_components):
+
+        p_indexes = self._calculate_partition_indexes(partition_components)
+        max_indices = (self.universe_dimensions
+                       / partition_components).astype('int32') - 1
+        identities = ([(-1, 1, 0), (-1, 1, 1), (-1, 1, -1),
+                       (1, 0, -1), (0, 1, -1), (1, 1, -1)]
+                      + list(product(*map(np.arange, (2, 2, 2))))[1:])
+        pairs = []
+        for p_index in p_indexes:
+            select_neighbors = [np.add(p_index, iden) for iden in identities]
+            for neighbor in select_neighbors:
+                above_upper_bound = np.where(neighbor > max_indices)
+                neighbor[above_upper_bound] = 0
+                below_lower_bound = np.where(neighbor < 0)
+                neighbor[below_lower_bound] = max_indices[below_lower_bound]
+                pairs.append((p_index, tuple(neighbor)))
+
+        return pairs
 
     def _calculate_partition_indexes(self, partition_components):
 
         return product(*map(np.arange, (self.universe_dimensions
-                                        / partition_components)))
+                                        / partition_components).astype('int32'))
+                      )
 
     def _calculate_histogram_from_position_pairs(self, position_pairs):
 
@@ -367,11 +436,10 @@ class PairDistributionFunction(Observable):
         """
 
         # Use np.histogram to get empty array of correct size and bin edges
-        r_min = np.min(self.independent_variables['r'])
-        r_max = np.max(self.independent_variables['r'])
-        hist, bin_edges = np.histogram([],
-                                       len(self.independent_variables['r']),
-                                       range=(r_min, r_max))
+        # Assumes constant r step size
+        r_step = self.r[1] - self.r[0]
+        r_min, r_max = np.min(self.r) - r_step / 2, np.max(self.r) + r_step / 2
+        hist, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
 
         @jit('float64[:], float64[:]', nopython=True)
         def jit_histogram(separations, bin_edges):
@@ -387,16 +455,13 @@ class PairDistributionFunction(Observable):
         exhausted = False
         while not exhausted:
             # Using next with default means pair_block will be filled with
-            # (0., 0.) if StopIteration is returned. Then change exhauted so
-            # that the while loop will stop.
-            pair_block = [np.subtract(*next(position_pairs, (np.array([0.]),
-                                                             np.array([0.]))))
+            # np.array(['inf']) if StopIteration is returned. Then change
+            # exhausted so that the while loop will stop.
+            pair_block = [np.subtract(*next(position_pairs, ([np.float('inf')],
+                                                             [0.])))
                           for _ in range(BLOCK)]
-            print(pair_block[-1])
-            exhausted = all(pair_block[-1] == np.array([0.]))
-            with futures.MPIPoolExecutor(MPI.COMM_WORLD.size) as executor:
-                separations = executor.map(self._calculate_separation,
-                                           pair_block)
+            exhausted = np.float('inf') in pair_block[-1]
+            separations = map(self._calculate_separation, pair_block)
             hist += jit_histogram(np.fromiter(separations,
                                               dtype=np.float64,
                                               count=BLOCK),
@@ -426,7 +491,7 @@ class PairDistributionFunction(Observable):
         return np.sum(positions ** 2) ** 0.5
 
     @staticmethod
-    def _set_weights(elements, b_coh):
+    def _set_weights(unique_elements, b_coh):
 
         """
         Sets the weights for each element
@@ -436,12 +501,12 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        elements : list of str
+        unique_elements : list of str
             Where each str specifies an element
         b_coh : dict
             (element:b_c) where element is a str specifying an element occuring
-            in elements, and b_c is the weight (coherent scattering length) to
-            be set for that element
+            in unique_elements, and b_c is the weight (coherent scattering
+            length) to be set for that element
 
         Returns
         -------
@@ -451,4 +516,27 @@ class PairDistributionFunction(Observable):
         """
 
         return {element:b_coh.get(element, B_COH[element]) for element
-                in elements}
+                in unique_elements}
+
+    @staticmethod
+    def _set_numebrs(unique_elements, element_list):
+
+        """
+        Sets the number of atoms of each element
+
+        Parameters
+        ----------
+        unique_elements : list of str
+            Where each str specifies an element
+        element_list : list of str
+            A list of the elements for every atom in the trajectory
+
+        Returns
+        -------
+        dict
+            (element:number) where element is a str and number is the number of
+            atoms of the that element in the element list
+        """
+
+        return {element:element_list.count(element) for element
+                in unique_elements}
