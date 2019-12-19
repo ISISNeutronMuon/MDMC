@@ -14,7 +14,6 @@ _EXP_DATA_PATH = '/experimental_data'
 _CALC_OBS_PATH = '/calculated_observables'
 _OBJECT_PATH = '/MDMC_objects'
 
-# TODO: introspective method to add abs_dir_path (use dir() to get all var names)
 
 # Reader/experimental data
 #
@@ -36,7 +35,7 @@ for key in READER_DATA:
 #
 # Dynamic incoherent structure factor (DISF i.e. incoherent SQw)
 # MD simulation on 2048 water molecules for 50000 timesteps of 1 fs length. DISF
-# calculated from time start:end:step of 50:5000:10, q start:end:step of
+# calculated from time start:end:step of 51:5001:100, q start:end:step of
 # 1.6:22.4:1.6, with a qshell width of 0.1, maxmimum 50 q vectors per shell
 # and a resolution of 0.05. File format is netcdf.
 #
@@ -48,10 +47,16 @@ for key in READER_DATA:
 # Q vector. Each list contains a collection of Q vectors that have the same Q
 # value. These Q vectors were used in calculating the SQw_incoh and SQw_coh data
 # from nMOLDYN.
+#
+# Pair distribution function (PDF)
+# Same simulation/trajectory as DISF. PDF calculated from time start:end:step of
+# 51:5001:1000, with rvalues start:end:step of 0.:1.05:0.01. File format is
+# netcdf.
 
 OBS_DATA = {'SQw_incoh':'/nMOLDYN_DISF_water.nc',
             'SQw_coh':'/nMOLDYN_DCSF_water.nc',
-            'Q_vectors':'/qVectors.dat'}
+            'Q_vectors':'/qVectors.dat',
+            'PDF':'/nMOLDYN_PDF_water.nc'}
 
 # Add paths to data values
 for key in OBS_DATA:
