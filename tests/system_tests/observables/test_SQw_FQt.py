@@ -6,12 +6,6 @@ realies on the calculation of FQt they are tested together.
 
 AUTHOR :    Thomas Farmer        START DATE :    24/07/2018, 15:34:26"""
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-import zlib
-
 from netCDF4 import Dataset
 import numpy as np
 from numpy.testing import assert_allclose
@@ -21,6 +15,7 @@ import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 
 from tests.test_data import data
+from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
@@ -103,35 +98,6 @@ def SQw_coh_ref(SQw_coh_HH_ref, SQw_coh_HO_ref, SQw_coh_OO_ref):
                    + SQw_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
                    + SQw_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
     return SQw_coh_ref
-
-@pytest.fixture(scope="module")
-def trajectory():
-
-    """
-    Read the trajectory
-
-    Trajectory is unzipped and unpickled.
-    """
-
-    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'rb').read()
-    pickled_trajectory = zlib.decompress(compressed_trajectory)
-    trajectory = pickle.loads(pickled_trajectory, encoding='latin-1')
-    return trajectory
-
-@pytest.fixture(scope="module")
-def Q_vectors():
-
-    """
-    Returns:
-    An array of arrays of Q vectors for each Q value
-
-    As Q vector calculations make a random selection of Q vectors from the set
-    of all valid Q vectors, the Q vectors are set to the same values as those
-    used in nMOLDYN when generating the incoherent FQt and SQw
-    """
-
-    return pickle.load(open(data.OBS_DATA['Q_vectors'], 'rb'),
-                       encoding='latin-1')
 
 @pytest.fixture(scope="module")
 def SQw_obs(trajectory, Q_vectors):

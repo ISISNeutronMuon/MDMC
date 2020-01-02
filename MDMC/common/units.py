@@ -426,6 +426,10 @@ def create_units(codata_version):
     # 1 nm = 1e1 Ang
     units['nm'] = units['Ang'] * 1e1
 
+    # Area
+    # 1 barn = 1e-28 m^2 = 1e-8 Ang^2
+    units['barn'] = units['Ang'] * units['Ang'] * 1e8
+
     # Time
     # 1 ns = 1e6 fs
     units['ns'] = units['fs'] * 1e6

@@ -13,7 +13,7 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
 import functools
-from inspect import getargspec, getmembers
+from inspect import getmembers
 from itertools import chain, zip_longest
 import operator
 import warnings

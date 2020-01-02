@@ -72,7 +72,7 @@ class Observable(ABC):
             The independent, dependent and error data
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -87,7 +87,7 @@ class Observable(ABC):
             The independent variables
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -102,7 +102,7 @@ class Observable(ABC):
             The dependent variables
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -117,7 +117,7 @@ class Observable(ABC):
             The errors
         """
 
-        pass
+        raise NotImplementedError
 
     def read_from_file(self, reader, file_name):
 
@@ -136,6 +136,9 @@ class Observable(ABC):
         self.reader = ReaderFactory.create_reader(reader)
         self.reader.open(file_name)
         self.reader.parse()
+        self._independent_variables = self.reader.independent_variables
+        self._dependent_variables = self.reader.dependent_variables
+        self._errors = self.reader.errors
 
     @abstractmethod
     def calculate_from_MD(self, MD_input, **params):
@@ -151,4 +154,4 @@ class Observable(ABC):
             additional parameters required for calculation specific Observables
         """
 
-        pass
+        raise NotImplementedError

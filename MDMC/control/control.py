@@ -232,7 +232,7 @@ class MDMCControl:
         ----------
         MD_engine : MDEngine
             MDEngine with defined trajectory attribute
-        observable_pairs - list of ObservablePairs
+        observable_pairs : list of ObservablePairs
             ObservablesPairs for which the MD observable will be calculated
         """
 
