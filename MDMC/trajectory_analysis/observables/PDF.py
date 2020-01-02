@@ -10,6 +10,8 @@ from numba import jit
 import numpy as np
 
 from MDMC.common.atom_properties import B_COH
+from MDMC.common import units
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
@@ -86,7 +88,7 @@ class PairDistributionFunction(Observable):
     def r(self):
 
         """
-        Get the value of the atomc separation distance (in Ang)
+        Get or set the value of the atomc separation distance (in Ang)
         """
 
         try:
@@ -94,10 +96,53 @@ class PairDistributionFunction(Observable):
         except KeyError:
             raise AttributeError
 
-    def calculate_from_MD(self, MD_input, **settings):
+    @r.setter
+    @unit_decorator(unit=units.Unit('Ang'))
+    def r(self, value):
+
+        try:
+            self._independent_variables['r'] = value
+        except AttributeError:
+            self._independent_variables = {'r':value}
+
+    @property
+    @unit_decorator_getter(unit=units.Unit('barn'))
+    def PDF(self):
 
         """
-        Calculate the pair distribution function, G(r) from a MD Trajectory
+        Get the value of the total pair distribution function (in barn)
+        """
+
+        try:
+            return self.dependent_variables['PDF']
+        except KeyError:
+            raise AttributeError
+
+    def calculate_from_MD(self, MD_input, **settings):
+
+        r"""
+        Calculate the pair distribution function, :math:`G(r)`` from a
+        Trajectory
+
+        The total pair distribution function (``pdf.PDF``) has the form:
+
+        .. math::
+
+            G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
+
+        where :math:`c_i` is the number concentration of element :math:`i`,
+        :math:`b_i` is the (coherent) scattering length of element :math:`i`,
+        and the partial pair distribution, :math:`g_{ij}`, is:
+
+        .. math::
+
+            g_{ij}(r) = \frac{h_{ij}(r)}{4 \pi r^2 \rho_{j} \Delta{r}}
+
+        where :math:`h_{ij}`` is the histogram of distances of :math:`j` element
+        atoms around atoms of element :math:`i`, with bins of size
+        :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
+        atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
+        :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
 
         Independent variables can either be set previously or defined within
         settings.
@@ -132,17 +177,26 @@ class PairDistributionFunction(Observable):
                 The minimum r (atomic separation) for which the PDF will be
                 calculated. If this, r_max, and r_step are passed then these
                 will create a range for the independent variable r, which will
-                overwrite any r which has previously been defined.
+                overwrite any r which has previously been defined. This cannot
+                be passed if r is passed.
             r_max : float
                 The maximum r (atomic separation) for which the PDF will be
                 calculated. If this, r_min, and r_step are passed then these
                 will create a range for the independent variable r, which will
-                overwrite any r which has previously been defined.
+                overwrite any r which has previously been defined. This cannot
+                be passed if r is passed.
             r_step : float
                 The step size of r (atomic separation) for which the PDF will be
                 calculated. If this, r_min, and r_max are passed then these
                 will create a range for the independent variable r, which will
-                overwrite any r which has previously been defined.
+                overwrite any r which has previously been defined. This cannot
+                be passed if r is passed.
+            r : array
+                The uniform r values for which the PDF will be calculated. This
+                cannot be passed if r_min, r_max, and r_step are passed.
+            dimensions : array-like
+                A 3 element array-like (list, tuple) with the dimensions of the
+                Universe.
 
         Examples
         --------
@@ -166,37 +220,54 @@ class PairDistributionFunction(Observable):
             .. highlight:: python
             .. code-block:: python
 
-            pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08}
+            pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08})
 
         To calculate the total PDF for r values of [1., 2., 3., 4., ]:
 
             .. highlight:: python
             .. code-block:: python
 
-            pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08}
+            pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08})
         """
 
         self.origin = 'MD'
         self._parse_calc_MD_settings(MD_input, settings)
 
         for trajectory in self.trajectory:
-            # Filter the atoms so that we are only considering elements included
-            # in self.elements
-
-
-            # Partition the atoms in each frame of the reduced trajectory so
-            # that only atoms within r_max of each other are paired (as atom
-            # pairs with separations > r_max cannot contribute to pdf)
-            # trajectory is of a single frame so will only have 1
-            # configuration (i.e. index zero)
             self._calculate_histogram(trajectory.configurations[0])
 
-        # Sum the partials and scale by the remainder of the prefactor (e.g.
-        # anything not element dependent)
-        prefactor = 1 / (4.0 * np.pi * self.r**2 * self.r_step)
-        for elements, partial in self.partial_pdfs.items():
-            weighting = np.multiply(*[self.weights[elem] for elem in elements])
-            partial *= (prefactor * weighting)
+        self._sum_partial_pairs()
+
+    def _sum_partial_pairs(self):
+
+        """
+        Normalize the partial pairs and sum them to get the total PDF
+        """
+        # Partial independent prefactor (e.g. anything element independent)
+        prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
+                                            * self.r_step)
+        self._dependent_variables['PDF'] = np.zeros(np.shape(self.r))
+        concentration_norm = np.sum(list(self.numbers.values())) ** 2
+        for partial_string, partial in self.partial_pdfs.items():
+            numbers = np.multiply(*[self.numbers[elem] for elem
+                                    in partial_string])
+            concentration = numbers / concentration_norm
+            weights = np.multiply(*[self.weights[elem] for elem
+                                    in partial_string])
+            # Also need to normalise by the number of trajectories used for
+            # averaging
+            partial *= prefactor / (numbers * len(self.trajectory))
+            # Like partials need to be scaled by 2 so that they tend to 1 as r
+            # tends to infinity. Unlike partials need to be scaled by 2 when
+            # added to total, as only one of the indentical pairs is considered
+            # (e.g. for water H-O is added but not O-H)
+            if len(set(partial_string)) == 1:
+                partial *= 2
+                fac = 1.
+            else:
+                fac = 2.
+            self._dependent_variables['PDF'] += ((partial - 1) * fac * weights
+                                                 * concentration)
 
     def _parse_calc_MD_settings(self, trajectory, settings):
 
@@ -217,6 +288,14 @@ class PairDistributionFunction(Observable):
         settings : dict
             A dictionary of settings to be parsed
 
+        Raises
+        ------
+        ValueError
+            If n_frames is less than 1 or greater than the number of frames in
+            the trajectory
+        TypeError
+            If r is in settings as well any of r_min,. r_max, and r_step
+
         Warnings
         --------
         UserWarning
@@ -228,13 +307,21 @@ class PairDistributionFunction(Observable):
         # total_n_frames < 100)
         total_n_frames = len(trajectory)
         n_frames = settings.get('n_frames', np.max([1, total_n_frames // 100]))
+        if n_frames < 1 or n_frames > total_n_frames:
+            raise ValueError('n_frames must be between 1 and the total number'
+                             ' of frames in the trajectory (inclusive)')
         # If only a single frame then set frame_step > total_n_frames
         frame_step = (total_n_frames + 1 if n_frames == 1
-                      else total_n_frames // (n_frames - 1))
+                      else ((total_n_frames - 1) // n_frames) + 1)
         self.trajectory = trajectory[0:total_n_frames:frame_step]
 
+        # If no subset is specified, combinations of all elements are used, so
+        # that all possible partials will be calculated. The element set is
+        # sorted so that partial pair strings will always be ordered
+        # alphabetically.
         self.partial_strings = settings.get('subset', \
-            list(combinations_with_replacement(trajectory.element_set, 2)))
+            list(combinations_with_replacement(sorted(trajectory.element_set),
+                                               2)))
 
         # Create element set from elements in partials. The weights are then
         # determined from these.
@@ -245,25 +332,31 @@ class PairDistributionFunction(Observable):
                                          self.trajectory.element_list)
 
         self.universe_dimensions = np.array((settings.get('dimensions')
-                                             or trajectory.dimensions))
+                                             or trajectory.universe.dimensions))
         self.universe_volume = np.prod(self.universe_dimensions)
         # PDF only valid where number of atoms is conserved over trajectories
         self.n_atoms = len(self.trajectory[0].atoms)
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
-            self.independent_variables = {}
+            self.independent_variables = ({'r':settings['r']} if 'r' in settings
+                                          else {})
 
         # If rmin, rmax and rstep are in settings, overwrite existing values for
         # independent variable. If one or two are in settings, warn the user
         # that all three are required to set r.
         r_kwargs = ['r_min', 'r_max', 'r_step']
+        r_kwarg_defined = any(r_kw in settings.keys() for r_kw in r_kwargs)
+        if 'r' in settings:
+            self.r = settings.get('r')
+            if r_kwarg_defined:
+                raise TypeError('r cannot be passed if r_min, r_max or r_step'
+                                ' are passed')
         if all(r_kw in settings.keys() for r_kw in r_kwargs):
-            self.independent_variables['r'] = np.arange(settings['r_min'],
-                                                        settings['r_max'] +
-                                                        settings['r_step'],
-                                                        settings['r_step'])
-        elif any(r_kw in settings.keys() for r_kw in r_kwargs):
+            self.r = np.arange(settings['r_min'],
+                               settings['r_max'] + settings['r_step'],
+                               settings['r_step'])
+        elif r_kwarg_defined:
             warnings.warn('Setting r requires r_min, r_max and r_step to all be'
                           ' set. Using existing r instead.')
         self.r_step = self.r[1] - self.r[0]
@@ -272,6 +365,7 @@ class PairDistributionFunction(Observable):
                              np.zeros(np.shape(self.independent_variables['r']))
                              for partial_string in self.partial_strings}
 
+        self._dependent_variables = {}
         # Release memory from full trajectory
         del trajectory
 
@@ -361,7 +455,37 @@ class PairDistributionFunction(Observable):
                 self._calculate_histogram_from_position_pairs(pos_pairs)
 
     def _partition(self, positions, element_list, part_comps):
-        # Set up a partitions dictionarty separated by element
+
+        """
+        Partitions the atomic positions into paritions of dimensions specified
+        by part_comps
+
+        Atoms are grouped in partitions by element
+
+        Parameters
+        ----------
+        positions : array
+            array of arrays, where each array is 3 elements specifying the
+            position of an atom
+        element_list : list
+            A list of strings with the same length as positions. Each string
+            specifies the element of the atom for the corresponding index in
+            positions.
+        part_comps : array
+            A 3 element array specifying the length of each component for all
+            partitions
+
+        Returns
+        -------
+        dict
+            elem:partitions, where each elem is taken from element_list, and
+            partitions is a dictionary of index:positions, where index is a
+            tuple of 3 ints specifying the index of a partition, and positions
+            is an array of the positions of the atoms which are located within
+            the partition.
+        """
+
+        # Set up a partitions dictionary separated by element
         partitions = {element:defaultdict(list) for element
                       in self.elements}
 
@@ -391,6 +515,26 @@ class PairDistributionFunction(Observable):
                 for elem, elem_partitions in partitions.items()}
 
     def _get_partition_pairs(self, partition_components):
+
+        """
+        Calculates which partitions are neighbours and pairs them. This includes
+        partitions that are neighbours due to periodic boundary conditions.
+
+        Parameters
+        ----------
+        partition_components : array
+            3 element array of floats, where each float is the length of one
+            component of a partition. For example (1., 2., 3.) would mean that
+            every component was length 1. in the x direction, 2. in the y
+            direction, and 3. in the z direction.
+
+        Returns
+        -------
+        list of tuples
+            (parition1, partition2) where partition1 and partition2 are 3
+            element arrays with the indexes of the partition. Each pair of
+            partitions are neighbours.
+        """
 
         p_indexes = self._calculate_partition_indexes(partition_components)
         max_indices = (self.universe_dimensions
@@ -437,8 +581,8 @@ class PairDistributionFunction(Observable):
 
         # Use np.histogram to get empty array of correct size and bin edges
         # Assumes constant r step size
-        r_step = self.r[1] - self.r[0]
-        r_min, r_max = np.min(self.r) - r_step / 2, np.max(self.r) + r_step / 2
+        r_min = np.min(self.r) - self.r_step / 2
+        r_max = np.max(self.r) + self.r_step / 2
         hist, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
 
         @jit('float64[:], float64[:]', nopython=True)
@@ -461,34 +605,30 @@ class PairDistributionFunction(Observable):
                                                              [0.])))
                           for _ in range(BLOCK)]
             exhausted = np.float('inf') in pair_block[-1]
-            separations = map(self._calculate_separation, pair_block)
+            separations = map(self._calculate_euclidean_norm, pair_block)
             hist += jit_histogram(np.fromiter(separations,
                                               dtype=np.float64,
                                               count=BLOCK),
                                   bin_edges)
         return hist
 
-        # Calculate the seperation distances
-        # Should be possible to use numba for this
-        # Use mpi4py to parallelise - split up the total number of atoms
-        # After each separation distance is calculated, bin it in the
-        # histogram. This is done in preference to using np.histogram,
-        # as otherwise all atom separations will need to be in memory
-        # simultaneously - for large systems this will be prohibitive,
-        # as it will scale with N!
-
-        # Calculate the element dependent prefactor and scale by this
-        # Use settings.get to check if settings has b_cohs defined
-
     @staticmethod
     @jit('float64(float64[:])', nopython=True)
-    def _calculate_separation(positions):
+    def _calculate_euclidean_norm(vector):
 
         """
+        Calculates the Euclidean norm of a vector
+
         numba.jit results in ~10x speed up over np.linalg.norm
+
+        Parameters
+        ----------
+        vector : array
+            The vector for which the Euclidean norm (Euclidean length,
+            L2 distance) is calculated
         """
 
-        return np.sum(positions ** 2) ** 0.5
+        return np.sum(vector ** 2) ** 0.5
 
     @staticmethod
     def _set_weights(unique_elements, b_coh):
@@ -519,7 +659,7 @@ class PairDistributionFunction(Observable):
                 in unique_elements}
 
     @staticmethod
-    def _set_numebrs(unique_elements, element_list):
+    def _set_numbers(unique_elements, element_list):
 
         """
         Sets the number of atoms of each element
