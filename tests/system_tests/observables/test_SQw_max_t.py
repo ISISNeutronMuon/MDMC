@@ -22,23 +22,7 @@ import pytest
 
 from MDMC.common.constants import h_bar
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from tests.test_data import data
-
-
-@pytest.fixture(scope="module")
-def trajectory():
-
-    """
-    Trajectory is read, unzipped and unpickled.
-
-    Returns:
-    Trajectory
-    """
-
-    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'rb').read()
-    pickled_trajectory = zlib.decompress(compressed_trajectory)
-    trajectory = pickle.loads(pickled_trajectory, encoding='latin-1')
-    return trajectory
+from tests.system_tests.observables.data_manager import trajectory
 
 
 @pytest.fixture(scope="module")
