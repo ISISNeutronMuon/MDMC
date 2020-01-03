@@ -31,17 +31,11 @@ def trajectory(water_SPCE_universe):
     is passed to Trajectory.
     """
 
-    # TODO: Change the configurations to scaled copies once configuration scaling has been implemented
-
     configurations = []
     for time in TIMES:
         configurations.append(trj.TemporalConfiguration(
             time, *water_SPCE_universe.configuration.atom_list))
     return trj.Trajectory(*configurations)
-
-@pytest.fixture
-def histogram(trajectory):
-    return trj.Histogram(trajectory, r = R_AXIS, time = T_AXIS)
 
 def test_configuration(configuration):
 
@@ -88,21 +82,3 @@ def test_trajectory(trajectory):
 
     assert single_time_traj.times == trajectory.times[START]
     assert np.all(slice_time_traj.times) == np.all(trajectory.times[START:STOP])
-
-
-def test_histogram(configuration, histogram):
-
-    """
-    Test for:
-
-    number of elements of histogram - for the first time bin this should be
-    equal to the sum of the pairwise distances (i.e. range(len(configuration)))
-    multiplied by the number of histograms grouped in the bin (i.e. the time
-    step of the trajectories divided by the histogram time bin size)
-    equal bin sizes
-    number of frames
-    """
-
-    assert sum(range(len(configuration))) == \
-        int(sum(histogram.data['histogram'][0][0]) / (
-        T_AXIS[2] / TRAJ_TIME_STEP))
