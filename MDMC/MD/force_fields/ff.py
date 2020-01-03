@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from inspect import signature
 from itertools import chain, permutations
+import os
 from re import escape, sub
 
 import pandas as pd
@@ -112,7 +113,7 @@ class FileForceField(ForceField):
     def __init__(self):
 
         self.data = {}
-        with open(self.file_name) as file:
+        with open(self.absolute_path) as file:
             n_datatypes = self._parse_header(file.readline(), int)
             self.inter_functions = dict(self._parse_header(file.readline(),
                                                            str))
@@ -134,6 +135,27 @@ class FileForceField(ForceField):
                                         self.atoms.atom_group))
         self.atom_type_name = dict(zip(self.atoms.atom_type,
                                        self.atoms.name))
+
+    @property
+    def absolute_path(self):
+
+        """
+        Get the absolute path of the data
+
+        Returns
+        -------
+        str
+            The absolute path (including file name) of the force field data file
+        """
+
+        # Either the file name is defined with the path, in which case it is the
+        # same as the absolute path
+        if os.path.isfile(self.file_name):
+            return self.file_name
+        # Or it is assumed that the path is the force field data directory
+        return (os.path.dirname(os.path.realpath(__file__))
+                + '/data/'
+                + self.file_name)
 
     @property
     @abstractmethod
