@@ -10,4 +10,4 @@ class OPLSAA(FileForceField):
     OPLSAA force field, with defined atoms and interactions
     """
 
-    file_name = "/Users/thomasfarmer/Documents/GitHub/MDMCv0.2_pilot/MDMC/MD/force_fields/data/OPLSAA.dat"
+    file_name = 'oplsaa.dat'
