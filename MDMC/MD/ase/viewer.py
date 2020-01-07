@@ -1,6 +1,6 @@
 """
-This module is the interface to the Atomic Simulation Environment (ASE, 
-https://wiki.fysik.dtu.dk/ase/) GUI, which enables a molecular viewer to be 
+This module is the interface to the Atomic Simulation Environment (ASE,
+https://wiki.fysik.dtu.dk/ase/) GUI, which enables a molecular viewer to be
 launched. This viewer allows the visualization of atomic positions and bonds.
 
 """
@@ -43,6 +43,11 @@ def get_bonds(atoms):
     """
     Adds (0, 0, 0,) to each bonded atom pair defined within an ``ASEAtoms``
     object
+
+    Parameters
+    ----------
+    atoms : ASEAtoms
+        The ASEAtoms object for which the bonds are required for plotting
     """
 
     bonds = [pair + (0, 0, 0) for pair in atoms.bonds]
@@ -68,7 +73,10 @@ class Viewer(GUI):
         This method is defined purely so that an alternative to the
         ``get_bonds`` function is used. Now the bonds are set during __init__.
 
-        Comments related to MDMC modifications are prepended with "MDMC"
+        Parameters
+        ----------
+        atoms : ASEAtoms
+            The atoms which will be set
         """
 
         natoms = len(atoms)
@@ -79,12 +87,9 @@ class Viewer(GUI):
         else:
             B1 = B2 = np.zeros((0, 3))
 
-        # MDMC: Added second condition so that bonds are only shown if there are
-        # any
         if self.showing_bonds():
             atomscopy = atoms.copy()
             atomscopy.cell *= self.images.repeat[:, np.newaxis]
-            # MDMC: call MDMC specific get_bonds method
             bonds = get_bonds(atoms)
         else:
             bonds = np.empty((0, 5), int)

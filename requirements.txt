@@ -3,4 +3,4 @@ NumPy
 pandas
 scipy
 numba
-ase
+ase>=3.19

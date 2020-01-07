@@ -4,38 +4,29 @@
 from MDMC.MD.ase import viewer
 
 
-PARAM_ERROR = ValueError('One of atoms and universe can be passed')
-
-def view(atoms=None, universe=None):
+def view(atom_collection):
 
     """
     Launches a GUI for viewing collections of Atoms
 
     Parameters
     ----------
-    atoms : list, optional
-        A list of the atoms to plot in the viewer. This cannot be passed if
-        ``universe`` is passed.
-    universe : Universe
-        The Universe to be plotted in the viewer. All atoms within the Universe
-        are plotted, and the dimensions of the Universe are dileneated with
-        dotted lines. This cannot be passed if ``atoms`` is passed.
-
-    Raises
-    ------
-    ValueError
-        If neither or both of atoms and universe are passed
+    atom_collection : list of Atoms, Molecule, Universe
+        An object which contains some atoms. This can either be in the sense
+        that it is a list of ``Atom`` objects, or it could be an object which
+        has the ``atom_list`` attribute, such as ``Molecule`` or ``Universe``.
+        If ``atom_collection`` also has a ``dimensions`` attribute (such as
+        ``Universe``), then this is used to set the volume displayed; otherwise
+        the volume is determined by the extents of the atoms.
     """
 
-    if atoms:
-        if universe:
-            raise PARAM_ERROR
+    try:
+        dimensions = atom_collection.dimensions
+    except AttributeError:
         dimensions = None
-    else:
-        try:
-            dimensions = universe.dimensions
-        except AttributeError:
-            raise PARAM_ERROR
-        atoms = universe.atom_list
+    try:
+        atoms = atom_collection.atom_list
+    except AttributeError:
+        atoms = atom_collection
 
     viewer.view(atoms, cell=dimensions)

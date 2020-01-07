@@ -11,6 +11,16 @@ from MDMC.MD.structural_units import Atom, Bond
 
 class ASEAtoms(ase.atoms.Atoms):
 
+    """
+    A subclass of ``ase.atoms.Atoms`` with explicit bonds defined between atoms
+
+    Attributes
+    ----------
+    bonds : array
+        An array of tuples, where each tuple is an atom pair, which are
+        specified by the indexes (int) of each atom.
+    """
+
     def __init__(self, *args, **kwargs):
 
         bonds = kwargs.pop('bonds', None)
@@ -21,15 +31,20 @@ class ASEAtoms(ase.atoms.Atoms):
 def convert_to_ase_atom(atom, index=None):
 
     """
+    Converts an MDMC ``Atom`` to an ``ase.atom.Atom``
+
     Parameters
     ----------
     atom : Atom
-        An MDMC Atom object to be converted to an ase.atom.Atom object
+        An MDMC ``Atom`` object to be converted to an ase.atom.Atom object
+    index : int, optional
+        The index of the ``ase.atom.Atom`` object which is created. If this is
+        not set, the MDMC ``Atom.ID`` is used.
 
     Returns
     -------
     ase.atom.Atom
-        An ASE Atom object which is equivalent to ``atom``
+        An ASE ``Atom`` object which is equivalent to ``atom``
     """
 
     index = index if index else atom.ID
@@ -43,8 +58,10 @@ def convert_to_ase_atom(atom, index=None):
 def convert_from_ase_atom(ase_atom):
 
     """
+    Converts an ``ase.atom.Atom`` to an MDMC ```Atom``.
+
     As MDMC automatically generates atom IDs, ``ase_atom.index`` is not passed
-    when initializing an ``Atom``.  Bonds are also not preserved.
+    when initializing an ``Atom``.
 
     Parameters
     ----------
@@ -66,13 +83,17 @@ def convert_from_ase_atom(ase_atom):
 def get_ase_atoms(atoms, cell=None):
 
     """
+    Gets an ``ASEAtoms`` object equivalent to ``atoms``, including the bonding
+
     Parameters
     ----------
     atoms : iterable
         An iterable of MDMC Atom objects to be converted to an ase.atoms.Atoms
         object
-    cell : array
-        A 3 element array specifying the unit cell of the ASE Atoms object
+    cell : array, optional
+        A 3 element array specifying the unit cell of the ASE Atoms object. The
+        default is None.
+
 
     Returns
     -------
@@ -97,12 +118,17 @@ def get_ase_atoms(atoms, cell=None):
 def convert_bond(bond, index_conv=None):
 
     """
-    Convert Bond objects into the input required for ASE GUI
+    Converts ``Bond`` objects into the form required by the ASE GUI
 
     Parameters
     ----------
     bond : Bond
         The bond which will be converted.
+    index_conv : dict
+        A dictionary of MDMC_ID: ASE_index pairs, where MDMC_ID is an int
+        specifying an ``Atom.ID``, and ASE_index is the corresponding
+        ``ase.atom.Atom.index``. The default is ``None``, which means that the
+        IDs and indexes will be assumed to be identical.
 
     Returns
     -------
@@ -117,6 +143,27 @@ def convert_bond(bond, index_conv=None):
 
 
 def convert_bonds(bonds, index_conv=None):
+
+    """
+    Converts ``Bond`` objects into the form required by the ASE GUI
+
+
+    Parameters
+    ----------
+    bonds : list
+        The list of bonds to be converted
+    index_conv : dict
+        A dictionary of MDMC_ID: ASE_index pairs, where MDMC_ID is an int
+        specifying an ``Atom.ID``, and ASE_index is the corresponding
+        ``ase.atom.Atom.index``. The default is ``None``, which means that the
+        IDs and indexes will be assumed to be identical.
+
+    Returns
+    -------
+    np.array
+        An array of 2 element lists where each element is the integer index of
+        an atom between which the bond exists.
+    """
 
     # conditional because only bond objects are supported
     return list(chain.from_iterable([convert_bond(bond, index_conv)
