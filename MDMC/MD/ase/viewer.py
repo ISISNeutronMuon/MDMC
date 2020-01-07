@@ -1,0 +1,200 @@
+"""This module is the interface to the ASE GUI, which enables a molecular viewer
+to be launched. This viewer allows the visualization of atomic positions and
+bonds.
+"""
+
+from functools import partial
+
+from ase.gui.gui import GUI
+from ase.gui.i18n import _
+from ase.gui.images import Images
+from ase.gui.ui import MenuItem
+from ase.gui.view import get_cell_coordinates
+import numpy as np
+
+from MDMC.MD.ase.convert_atoms import get_ase_atoms
+
+
+def view(atoms, cell=None):
+
+    """
+    Launches the ASE GUI for a collection of atoms
+
+    Parameters
+    ----------
+    atoms : list
+        A list of Atom objects (MDMC.MD.structural_unit.Atom) to view
+    cell : array, optional
+        An array of floats specifying the dimensions of the cell to view. The
+        default is None.
+    """
+
+    atom_images = Images()
+    atom_images.initialize([get_ase_atoms(atoms, cell=cell)])
+
+    viewer = Viewer(atom_images)
+    viewer.run()
+
+
+def get_bonds(atoms):
+
+    """
+    Adds (0, 0, 0,) to each bonded atom pair defined within an ``ASEAtoms``
+    object
+    """
+
+    bonds = [pair + (0, 0, 0) for pair in atoms.bonds]
+    return np.array(bonds)
+
+
+class Viewer(GUI):
+
+    """
+    Subclasses the ASE GUI to provide a molecular viewer for MDMC.
+
+    It modifies how bonds are plotted by using an alternative ``get_bonds``
+    function in the ``set_atoms`` method.
+
+    It removes GUI menu options that are not applicable in MDMC.
+    """
+
+    def set_atoms(self, atoms):
+
+        """
+        Almost an exact copy from ASE
+
+        This method is defined purely so that an alternative to the
+        ``get_bonds`` function is used. Now the bonds are set during __init__.
+
+        Comments related to MDMC modifications are prepended with "MDMC"
+        """
+
+        natoms = len(atoms)
+
+        if self.showing_cell():
+            B1, B2 = get_cell_coordinates(atoms.cell,
+                                          self.config['shift_cell'])
+        else:
+            B1 = B2 = np.zeros((0, 3))
+
+        # MDMC: Added second condition so that bonds are only shown if there are
+        # any
+        if self.showing_bonds():
+            atomscopy = atoms.copy()
+            atomscopy.cell *= self.images.repeat[:, np.newaxis]
+            # MDMC: No longer calling get_bonds function
+            bonds = get_bonds(atoms)
+        else:
+            bonds = np.empty((0, 5), int)
+
+        # X is all atomic coordinates, and starting points of vectors
+        # like bonds and cell segments.
+        # The reason to have them all in one big list is that we like to
+        # eventually rotate/sort it by Z-order when rendering.
+
+        # Also B are the end points of line segments.
+
+        self.X = np.empty((natoms + len(B1) + len(bonds), 3))
+        self.X_pos = self.X[:natoms]
+        self.X_pos[:] = atoms.positions
+        self.X_cell = self.X[natoms:natoms + len(B1)]
+        self.X_bonds = self.X[natoms + len(B1):]
+
+        cell = atoms.cell
+        ncellparts = len(B1)
+        nbonds = len(bonds)
+
+        self.X_cell[:] = np.dot(B1, cell)
+        self.B = np.empty((ncellparts + nbonds, 3))
+        self.B[:ncellparts] = np.dot(B2, cell)
+
+        if nbonds > 0:
+            P = atoms.positions
+            Af = self.images.repeat[:, np.newaxis] * cell
+            a = P[bonds[:, 0]]
+            b = P[bonds[:, 1]] + np.dot(bonds[:, 2:], Af) - a
+            d = (b**2).sum(1)**0.5
+            r = 0.65 * self.get_covalent_radii()
+            x0 = (r[bonds[:, 0]] / d).reshape((-1, 1))
+            x1 = (r[bonds[:, 1]] / d).reshape((-1, 1))
+            self.X_bonds[:] = a + b * x0
+            b *= 1.0 - x0 - x1
+            b[bonds[:, 2:].any(1)] *= 0.5
+            self.B[ncellparts:] = self.X_bonds + b
+
+    def get_menu_data(self):
+
+        """
+        Subset of default ASE GUI menu options which are applicable to MDMC
+        """
+
+        M = MenuItem
+        return [
+            (_('_File'),
+             [M(_('_Open'), self.open, 'Ctrl+O'),
+              M(_('_New'), self.new, 'Ctrl+N'),
+              M(_('_Save'), self.save, 'Ctrl+S'),
+              M('---'),
+              M(_('_Quit'), self.exit, 'Ctrl+Q')]),
+
+            (_('_Edit'),
+             [M(_('Select _all'), self.select_all),
+              M(_('_Invert selection'), self.invert_selection),
+              M('---'),
+              M(_('Hide selected atoms'), self.hide_selected),
+              M(_('Show selected atoms'), self.show_selected),
+              M('---'),
+              M(_('_First image'), self.step, 'Home'),
+              M(_('_Previous image'), self.step, 'Page-Up'),
+              M(_('_Next image'), self.step, 'Page-Down'),
+              M(_('_Last image'), self.step, 'End'),
+              M(_('Append image copy'), self.copy_image)]),
+
+            (_('_View'),
+             [M(_('Show _unit cell'), self.toggle_show_unit_cell, 'Ctrl+U',
+                value=self.config['show_unit_cell']),
+              M(_('Show _axes'), self.toggle_show_axes,
+                value=self.config['show_axes']),
+              M(_('Show _velocities'), self.toggle_show_velocities, 'Ctrl+G',
+                value=False),
+              M(_('Show _forces'), self.toggle_show_forces, 'Ctrl+F',
+                value=False),
+              M(_('Show _bonds'), self.toggle_show_bonds, 'Ctrl+B',
+                value=self.config['show_bonds']),
+              M(_('Show _Labels'), self.show_labels,
+                choices=[_('_None'),
+                         _('Atom _Index'),
+                         _('_Magnetic Moments'),
+                         _('_Element Symbol'),
+                         _('_Initial Charges'),
+                         ]),
+              M('---'),
+              M(_('Quick Info ...'), self.quick_info_window, 'Ctrl+I'),
+              M(_('Repeat ...'), self.repeat_window, 'R'),
+              M(_('Rotate ...'), self.rotate_window),
+              M(_('Colors ...'), self.colors_window, 'C'),
+              # TRANSLATORS: verb
+              M(_('Focus'), self.focus, 'F'),
+              M(_('Zoom in'), self.zoom, '+'),
+              M(_('Zoom out'), self.zoom, '-'),
+              M(_('Change View'),
+                submenu=[
+                    M(_('Reset View'), self.reset_view, '='),
+                    M(_('xy-plane'), self.set_view, 'Z'),
+                    M(_('yz-plane'), self.set_view, 'X'),
+                    M(_('zx-plane'), self.set_view, 'Y'),
+                    M(_('yx-plane'), self.set_view, 'Alt+Z'),
+                    M(_('zy-plane'), self.set_view, 'Alt+X'),
+                    M(_('xz-plane'), self.set_view, 'Alt+Y'),
+                    M(_('a2,a3-plane'), self.set_view, '1'),
+                    M(_('a3,a1-plane'), self.set_view, '2'),
+                    M(_('a1,a2-plane'), self.set_view, '3'),
+                    M(_('a3,a2-plane'), self.set_view, 'Alt+1'),
+                    M(_('a1,a3-plane'), self.set_view, 'Alt+2'),
+                    M(_('a2,a1-plane'), self.set_view, 'Alt+3')]),
+              M(_('Settings ...'), self.settings),
+              M('---'),
+              M(_('VMD'), partial(self.external_viewer, 'vmd')),
+              M(_('RasMol'), partial(self.external_viewer, 'rasmol')),
+              M(_('xmakemol'), partial(self.external_viewer, 'xmakemol')),
+              M(_('avogadro'), partial(self.external_viewer, 'avogadro'))])]
