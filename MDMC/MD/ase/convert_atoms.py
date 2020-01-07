@@ -6,7 +6,7 @@ from itertools import chain
 
 import ase
 
-from MDMC.MD.structural_units import Atom
+from MDMC.MD.structural_units import Atom, Bond
 
 
 class ASEAtoms(ase.atoms.Atoms):
@@ -84,9 +84,9 @@ def get_ase_atoms(atoms, cell=None):
     # any ase.atom.Atom objects which belong to it (so Atoms[i].index == i,
     # regardless of the index of the Atom at that index). This means that the
     # atom IDs used for the bond atom pairs need to be converted.
-    index_conversion = {atom.ID:index for index, atom in enumerate(atoms)}
+    index_conv = {atom.ID:index for index, atom in enumerate(atoms)}
     bonds = set(chain.from_iterable([convert_bonds(atom.bonded_interactions,
-                                                   index_conversion)
+                                                   index_conv)
                                      for atom in atoms]))
     return ASEAtoms([convert_to_ase_atom(atom, index) for index, atom
                      in enumerate(atoms)],
@@ -94,7 +94,7 @@ def get_ase_atoms(atoms, cell=None):
                     bonds=bonds)
 
 
-def convert_bond(bond, index_conversion=None):
+def convert_bond(bond, index_conv=None):
 
     """
     Convert Bond objects into the input required for ASE GUI
@@ -111,14 +111,14 @@ def convert_bond(bond, index_conversion=None):
         an atom between which the bond exists.
     """
 
-    indexing = (lambda x: index_conversion[x.ID] if index_conversion else
-                lambda x: x.ID)
+    indexing = (lambda x: index_conv[x.ID]) if index_conv else lambda x: x.ID
     # Ensure atom IDs are ordered in each atom pair
-    return [tuple(sorted(map(lambda x: index_conversion[x.ID], atom_pair)))
-            for atom_pair in bond.atoms]
+    return [tuple(sorted(map(indexing, atom_pair))) for atom_pair in bond.atoms]
 
 
-def convert_bonds(bonds, index_conversion=None):
+def convert_bonds(bonds, index_conv=None):
 
-    return list(chain.from_iterable([convert_bond(bond, index_conversion)
-                                     for bond in bonds]))
+    # conditional because only bond objects are supported
+    return list(chain.from_iterable([convert_bond(bond, index_conv)
+                                     for bond in bonds
+                                     if isinstance(bond, Bond)]))
