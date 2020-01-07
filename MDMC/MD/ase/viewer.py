@@ -1,6 +1,8 @@
-"""This module is the interface to the ASE GUI, which enables a molecular viewer
-to be launched. This viewer allows the visualization of atomic positions and
-bonds.
+"""
+This module is the interface to the Atomic Simulation Environment (ASE, 
+https://wiki.fysik.dtu.dk/ase/) GUI, which enables a molecular viewer to be 
+launched. This viewer allows the visualization of atomic positions and bonds.
+
 """
 
 from functools import partial
@@ -82,7 +84,7 @@ class Viewer(GUI):
         if self.showing_bonds():
             atomscopy = atoms.copy()
             atomscopy.cell *= self.images.repeat[:, np.newaxis]
-            # MDMC: No longer calling get_bonds function
+            # MDMC: call MDMC specific get_bonds method
             bonds = get_bonds(atoms)
         else:
             bonds = np.empty((0, 5), int)
