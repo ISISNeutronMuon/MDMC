@@ -11,9 +11,10 @@ import numpy as np
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     mod_docstring
 from MDMC.common import units
-from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
+from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
+from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structural_units import Coulombic, Dispersion
 from MDMC.trajectory_analysis.trajectory import Configuration
 
@@ -26,7 +27,7 @@ _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
 
 
 @mod_docstring(_FF_DOCSTRING)
-class Universe:
+class Universe(AtomContainer):
 
     """
     Class where configuration and topology are defined
