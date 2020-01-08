@@ -9,9 +9,8 @@ class AtomContainer(ABC):
     """
     A collection of ``Atom`` objects
 
-    The ``AtomContainer`` has a length equal to the number of ``Atom`` objects,
-    and can also be indexed. However indexing cannot be used for setting or
-    deleting an `Atom`.
+    The ``AtomContainer`` can be indexed and returns an ``Atom``. However
+    indexing cannot be used for setting or deleting an `Atom`.
 
     Attributes
     ----------
@@ -31,10 +30,6 @@ class AtomContainer(ABC):
         """
 
         raise NotImplementedError
-
-    def __len__(self):
-
-        return len(self.atom_list)
 
     def __getitem__(self, index):
 
