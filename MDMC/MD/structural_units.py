@@ -17,6 +17,7 @@ from scipy.spatial.transform import Rotation
 import MDMC.common.atom_properties as atom_properties
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common import units
+from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
 
 
@@ -378,7 +379,7 @@ class StructuralUnit(ABC):
         return BoundingBox(self.atom_list)
 
 
-class CompositeStructuralUnit(StructuralUnit):
+class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     """
     Base class for structural units comprised of more than one atom
