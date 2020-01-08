@@ -14,7 +14,7 @@ from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond, \
                                      Coulombic
 from MDMC.MD.simulation import Universe, Shape
-from MDMC.readers.reader_factory import ReaderFactory
+from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.observables.SQw import SQw
 
 
@@ -159,7 +159,7 @@ def reader_info(request):
     and the names, values and units of the properties for testing
     """
 
-    reader = ReaderFactory.create_reader(request.param[0])
+    reader = ObservableReaderFactory.create_reader(request.param[0])
     for prop in request.param[1]:
         setattr(reader, prop['name'], prop['value'])
 
