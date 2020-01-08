@@ -6,10 +6,10 @@ import xml.etree.ElementTree as ET
 from MDMC.common import units
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator
-from MDMC.readers.readers import Reader
+from MDMC.readers.observables.obs_reader import ObservableReader
 
 
-class XML_SQw(Reader):
+class XML_SQw(ObservableReader):
 
     """
     An XML reader for SQw data

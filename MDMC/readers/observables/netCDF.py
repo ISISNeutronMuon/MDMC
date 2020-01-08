@@ -6,10 +6,10 @@ from netCDF4 import Dataset
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator
 from MDMC.common.constants import h_bar
-from MDMC.readers.readers import Reader
+from MDMC.readers.observables.obs_reader import ObservableReader
 
 
-class netCDF(Reader):
+class netCDF(ObservableReader):
 
     """
     Currently only setup for parsing MMTK/nMOLDYN SQw netcdf files

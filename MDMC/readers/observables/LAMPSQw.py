@@ -6,9 +6,10 @@ import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator
-from MDMC.readers.readers import Reader
+from MDMC.readers.observables.obs_reader import ObservableReader
 
-class LAMPSQw(Reader):
+
+class LAMPSQw(ObservableReader):
 
     """
     A class for reading SQw files from LAMP
