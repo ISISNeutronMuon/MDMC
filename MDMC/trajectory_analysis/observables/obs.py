@@ -3,7 +3,7 @@ from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
 
-from MDMC.readers.reader_factory import ReaderFactory
+from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
 class Observable(ABC):
 
@@ -17,7 +17,7 @@ class Observable(ABC):
 
     Attributes
     ----------
-    reader : Reader
+    reader : ObservableReader
         The file reader for reading experimental data
     """
 
@@ -133,7 +133,7 @@ class Observable(ABC):
         """
 
         self._origin = 'experiment'
-        self.reader = ReaderFactory.create_reader(reader)
+        self.reader = ObservableReaderFactory.create_reader(reader)
         self.reader.open(file_name)
         self.reader.parse()
         self._independent_variables = self.reader.independent_variables

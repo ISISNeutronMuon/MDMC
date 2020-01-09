@@ -7,12 +7,14 @@ same name as the correspoding reader.
 
 AUTHOR :    Thomas Farmer        START DATE :    09/07/2018, 17:07:03"""
 
-import pytest
-import numpy as np
 import inspect
 
-from MDMC.readers.reader_factory import ReaderFactory
+import pytest
+import numpy as np
+
+from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from tests.test_data import data
+
 
 """
 READER_TEST_INFO contains the following:
@@ -36,7 +38,7 @@ def reader_info(request):
     Dictionary of data contained in reader test info
     """
 
-    return {'reader':ReaderFactory.create_reader(request.param[0]),
+    return {'reader':ObservableReaderFactory.create_reader(request.param[0]),
             'indep_datatypes':request.param[1],
             'dep_datatype':request.param[2]}
 
