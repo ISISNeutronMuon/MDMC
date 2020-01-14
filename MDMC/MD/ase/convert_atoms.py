@@ -55,7 +55,7 @@ def convert_to_ase_atom(atom, index=None):
                          charge=atom.charge)
 
 
-def convert_from_ase_atom(ase_atom):
+def convert_from_ase_atom(ase_atom, name=None):
 
     """
     Converts an ``ase.atom.Atom`` to an MDMC ```Atom``.
@@ -67,6 +67,8 @@ def convert_from_ase_atom(ase_atom):
     ----------
     ase_atom : ASEAtom
         An ``ASEAtom`` object to be converted to an MDMC ``Atom`` object
+    name : str, optional
+        A name for the MDMC ``Atom``. The default is the element symbol.
 
     Returns
     -------
@@ -74,10 +76,12 @@ def convert_from_ase_atom(ase_atom):
         An MDMC ``Atom`` object which is equivalent to ``ase_atom``
     """
 
+    name = name if name else ase_atom.symbol
     return Atom(ase_atom.symbol,
                 position=ase_atom.position,
                 mass=ase_atom.mass,
-                charge=ase_atom.charge)
+                charge=ase_atom.charge,
+                name=name)
 
 
 def get_ase_atoms(atoms, cell=None):
