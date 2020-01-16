@@ -41,7 +41,7 @@ def view(atoms, cell=None):
 def get_bonds(atoms):
 
     """
-    Adds (0, 0, 0,) to each bonded atom pair defined within an ``ASEAtoms``
+    Adds (0, 0, 0,) to each bonded atom pair defined within an `ASEAtoms`
     object
 
     Parameters
@@ -59,8 +59,8 @@ class Viewer(GUI):
     """
     Subclasses the ASE GUI to provide a molecular viewer for MDMC.
 
-    It modifies how bonds are plotted by using an alternative ``get_bonds``
-    function in the ``set_atoms`` method.
+    It modifies how bonds are plotted by using an alternative `get_bonds`
+    function in the `set_atoms` method.
 
     It removes GUI menu options that are not applicable in MDMC.
     """
@@ -71,7 +71,7 @@ class Viewer(GUI):
         Almost an exact copy from ASE
 
         This method is defined purely so that an alternative to the
-        ``get_bonds`` function is used. Now the bonds are set during __init__.
+        `get_bonds` function is used. Now the bonds are set during __init__.
 
         Parameters
         ----------
@@ -129,6 +129,18 @@ class Viewer(GUI):
             b[bonds[:, 2:].any(1)] *= 0.5
             self.B[ncellparts:] = self.X_bonds + b
 
+    def update_labels(self):
+        index = self.window['show-labels']
+        if index == 0:
+            self.labels = None
+        elif index == 1:
+            self.labels = self.atoms.IDs
+        elif index == 3:
+            Q = self.atoms.get_initial_charges()
+            self.labels = ['{0:.4g}'.format(q) for q in Q]
+        else:
+            self.labels = self.atoms.get_chemical_symbols()
+
     def get_menu_data(self):
 
         """
@@ -170,10 +182,9 @@ class Viewer(GUI):
                 value=self.config['show_bonds']),
               M(_('Show _Labels'), self.show_labels,
                 choices=[_('_None'),
-                         _('Atom _Index'),
-                         _('_Magnetic Moments'),
+                         _('Atom _ID'),
                          _('_Element Symbol'),
-                         _('_Initial Charges'),
+                         _('_Charges'),
                          ]),
               M('---'),
               M(_('Quick Info ...'), self.quick_info_window, 'Ctrl+I'),
