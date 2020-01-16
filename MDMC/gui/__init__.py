@@ -13,10 +13,10 @@ def view(atom_container):
     ----------
     atom_container : list of Atoms or an AtomContainer
         An object which contains some atoms. This can either be in the sense
-        that it is a list of ``Atom`` objects, or it could be an object which
-        has the ``atom_list`` attribute (e.g. an ``AtomContainer``). If
-        ``atom_collection`` also has a ``dimensions`` attribute (such as
-        ``Universe``), then this is used to set the volume displayed; otherwise
+        that it is a list of `Atom` objects, or it could be an object which
+        has the `atom_list` attribute (e.g. an `AtomContainer`). If
+        `atom_collection` also has a `dimensions` attribute (such as
+        `Universe`), then this is used to set the volume displayed; otherwise
         the volume is determined by the extents of the atoms.
     """
 

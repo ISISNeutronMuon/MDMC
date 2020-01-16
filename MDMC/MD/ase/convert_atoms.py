@@ -12,7 +12,7 @@ from MDMC.MD.structural_units import Atom, Bond
 class ASEAtoms(ase.atoms.Atoms):
 
     """
-    A subclass of ``ase.atoms.Atoms`` with explicit bonds defined between atoms
+    A subclass of `ase.atoms.Atoms` with explicit bonds defined between atoms
 
     Attributes
     ----------
@@ -24,8 +24,12 @@ class ASEAtoms(ase.atoms.Atoms):
     def __init__(self, *args, **kwargs):
 
         bonds = kwargs.pop('bonds', None)
+        IDs = kwargs.pop('IDs', None)
+
         super().__init__(*args, **kwargs)
+
         self.bonds = bonds
+        self.IDs = IDs
 
 
 def convert_to_ase_atom(atom, index=None):
@@ -102,7 +106,7 @@ def get_ase_atoms(atoms, cell=None):
     Returns
     -------
     ase.atoms.Atoms
-        An ASE Atoms object which is equivalent to ``atoms``
+        An ASE Atoms object which is equivalent to `atoms`
     """
 
     # The ase.atoms.Atoms object unhelpfully overwrites the index attribute of
@@ -113,16 +117,18 @@ def get_ase_atoms(atoms, cell=None):
     bonds = set(chain.from_iterable([convert_bonds(atom.bonded_interactions,
                                                    index_conv)
                                      for atom in atoms]))
+    IDs = [atom.ID for atom in atoms]
     return ASEAtoms([convert_to_ase_atom(atom, index) for index, atom
                      in enumerate(atoms)],
                     cell=cell,
-                    bonds=bonds)
+                    bonds=bonds,
+                    IDs=IDs)
 
 
 def convert_bond(bond, index_conv=None):
 
     """
-    Converts ``Bond`` objects into the form required by the ASE GUI
+    Converts `Bond` objects into the form required by the ASE GUI
 
     Parameters
     ----------
