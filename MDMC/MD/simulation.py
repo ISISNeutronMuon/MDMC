@@ -582,7 +582,7 @@ class Universe(AtomContainer):
                 self.add_structural_unit(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_force_field(self, force_field, *interactions):
+    def add_force_field(self, force_field, *interactions, **settings):
 
         """
         Adds a force field to *interactions.  If no interactions are
@@ -596,13 +596,39 @@ class Universe(AtomContainer):
             DYNAMIC_FORCE_FIELD_LIST
         *interactions
             Interactions to parameterize with the force field
+        **settings
+            add_dispersions : bool or list of Atoms
+                If True, a Dispersion interaction will be added to all atoms in
+                the Universe. If a list of Atom objects is provided, the
+                Dispersion will be added to these instead. Any added Dispersion
+                interactions (and any previously defined) will then be
+                parametrized by the ForceField. The Dispersion interactions
+                added will only be like-like. By default, no Dispersion
+                interactions are added.
         """
 
         self.force_fields = force_field
+        add_dispersions = settings.get('add_dispersions', False)
+
+        if add_dispersions:
+            if isinstance(add_dispersions, list):
+                atoms = add_dispersions
+            elif isinstance(add_dispersions, bool):
+                atoms = self.atom_list
+            else:
+                raise TypeError('add_dispersions must be a list of Atoms or a'
+                                ' bool')
+            dispersions = []
+            # Get unique atom types and add dispersions for each of these
+            atom_types = {atom.atom_type for atom in atoms}
+            for atom_type in atom_types:
+                dispersions.append(Dispersion(self, (atom_type,) * 2))
 
         if not interactions:
             self.force_fields.parameterize_interactions(set(self.interactions))
         else:
+            if add_dispersions:
+                interactions = interactions + tuple(dispersions)
             self.force_fields.parameterize_interactions(set(interactions))
 
         # FileForceFields also contain mass definitions for atoms, so set these
