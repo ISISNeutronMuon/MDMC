@@ -1223,3 +1223,68 @@ def test_universe_density(structural_units, expected, universe):
     for structural_unit in structural_units:
         universe.add_structural_unit(structural_unit)
     assert universe.density == expected
+
+
+def get_dispersions(inters):
+
+    """
+    Parameters
+    ----------
+    inters : list
+        A list of Interaction objects
+
+    Returns
+    -------
+    list
+        A list of all Dispersion interactions
+    """
+    return list(filter(lambda x: isinstance(x, su.Dispersion), inters))
+
+
+def test_add_force_field_dispersions_bool(universe):
+
+    """
+    Tests that the correct Dispersion interactions are created when True is
+    passed as add_dispersions to add_force_field. Tests that the correct number
+    of dispersions are created, and that these have the correct atom_types.
+    """
+
+    # Create some suitable atoms for OPLSAA
+    atoms = [su.Atom('S', name='26', atom_type=1),
+             su.Atom('H', position=(1., 1., 1.), name='7', atom_type=2),
+             su.Atom('N', position=(2., 2., 2.), name='204', atom_type=3)]
+    for atom in atoms:
+        universe.add_structural_unit(atom)
+    #pylint: disable=len-as-condition
+    assert len(get_dispersions(universe.nonbonded_interactions)) == 0
+
+    universe.add_force_field('OPLSAA', add_dispersions=True)
+    dispersions = get_dispersions(universe.nonbonded_interactions)
+    assert len(dispersions) == 3
+    atom_types = [disp.atom_types for disp in dispersions]
+
+    assert sorted(atom_types) == [((1, 1), ),
+                                  ((2, 2), ),
+                                  ((3, 3), )]
+
+
+def test_add_force_field_dispersions_atom_list(universe, water_molecule):
+
+    """
+    Tests that the correct Dispersion interactions are created when a list of
+    atoms is passed as add_dispersions to add_force_field. Tests that the
+    correct number of dispersions are created, and that these have the correct
+    atom_types.
+    """
+
+    universe.add_structural_unit(water_molecule)
+    #pylint: disable=len-as-condition
+    assert len(get_dispersions(universe.nonbonded_interactions)) == 0
+
+    O_atoms = su.filter_atoms_element(water_molecule.atom_list, 'O')
+    universe.add_force_field('SPCE', add_dispersions=O_atoms)
+    dispersions = get_dispersions(universe.nonbonded_interactions)
+    assert len(dispersions) == 1
+    atom_types = [disp.atom_types for disp in dispersions]
+
+    assert atom_types == [((O_atoms[0].atom_type, O_atoms[0].atom_type), )]
