@@ -343,6 +343,20 @@ def test_spce_water_molecule(universe, water_molecule):
         SPCEparams.remove(param)
 
 
+@pytest.mark.parametrize('structural_unit', ['atom', 'water_molecule'])
+def test_add_structural_unit_center(universe, structural_unit, request):
+
+    """
+    Tests that passing center=True to Universe.add_structural_unit adds the
+    structural_unit to the center of the Universe
+    """
+
+    structural_unit = request.getfixturevalue(structural_unit)
+    assert all(structural_unit.position != universe.dimensions / 2)
+    universe.add_structural_unit(structural_unit, center=True)
+    assert all(structural_unit.position == universe.dimensions / 2)
+
+
 def test_spce_water_box(water_SPCE_universe):
 
     """

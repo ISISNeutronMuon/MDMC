@@ -478,7 +478,8 @@ class Universe(AtomContainer):
                             ' values')
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structural_unit(self, structural_unit, force_field=None):
+    def add_structural_unit(self, structural_unit, force_field=None,
+                            center=False):
 
         """
         Adds a single structural unit to the universe, with optional force field
@@ -492,8 +493,13 @@ class Universe(AtomContainer):
             The force field to be applied to the structural unit. The available
             force fields are:
             DYNAMIC_FORCE_FIELD_LIST
+        center : bool, optional
+            Whether to center to `structural_unit` within the Universe as it
+            is added
         """
 
+        if center:
+            structural_unit.position = self.dimensions / 2.
         structural_unit.universe = self
         self.configuration.add_structural_unit(structural_unit)
         for atom in structural_unit.atom_list:
