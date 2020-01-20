@@ -2,6 +2,9 @@
 
 It should be possible to extend the CIF reader to include the additional
 definitions in the mmCIF format.
+
+It is expected that some of the behaviour in ase_read_cif will be extracted into
+MDMC.readers.configurations.cif when an MDMC CIF reader is implemented
 """
 
 from itertools import groupby
@@ -15,10 +18,14 @@ from MDMC.MD.interaction_functions import Coulomb
 
 
 
-def ase_read_cif(file, index=0, add_bonds=True, add_charges = True, **settings):
+def ase_read_cif(file, **settings):
 
     """
-    Reads a configuration file and returns an MDMC Configuration
+    Reads a configuration file and returns a list of `Atom` objects.
+
+    These Atom objects can optionally have `Coulombic` interactions and also
+    `BondedInteraction` objects if bonded interactions are defined in the CIF
+    file.
 
     If `names` or `atom_types` is passed, then equivalent interactions
     (`Coulombic` and `BondedInteraction`, if bonded interactions are defined in
@@ -41,20 +48,11 @@ def ase_read_cif(file, index=0, add_bonds=True, add_charges = True, **settings):
     ----------
     file : File, str
         A `File` object, or the absolute file name of the configuration file
-    index : int, optional
-        The index of the configuration in the CIF file. Only a single
-        configuration can be read from a CIF file, with the default being the
-        first (index=0) configuration.
-    add_bonds : bool, optional
-        Whether or not any bonded interactions defined in the CIF file will be
-        included. By default this is True.
-    add_charges : bool, optional
-        Whether or not each atom in the CIF file will be assigned a `Coulombic`
-        interaction with a `Coulomb` function. CIF files do not contain charge
-        information, so the charge of the `Coulombic` interaction will be set to
-        0. This enables the charges to be set by the application of a
-        `ForceField` object. By default this is True.
     **settings
+        index : int, optional
+            The index of the configuration in the CIF file. Only a single
+            configuration can be read from a CIF file, with the default being
+            the first (index=0) configuration.
         names : list of str
             A list of names for the atoms in the CIF file. These names must have
             the same order as the order the atoms in the file. A `name` must be
@@ -65,12 +63,25 @@ def ase_read_cif(file, index=0, add_bonds=True, add_charges = True, **settings):
         cutoff : float
             A distance (in Ang) at which the `Coulombic` interactions are
             cutoff. If this is not passed, the `cutoff` will be set to 10.
+        add_bonds : bool, optional
+            Whether or not any bonded interactions defined in the CIF file will
+            be included. By default this is True.
+        add_charges : bool, optional
+            Whether or not each atom in the CIF file will be assigned a
+            `Coulombic` interaction with a `Coulomb` function. CIF files do not
+            contain charge information, so the charge of the `Coulombic`
+            interaction will be set to 0. This enables the charges to be set by
+            the application of a `ForceField` object. By default this is True.
 
     Returns
     -------
     list of Atom
         The `Atom` objects corresponding to the data in the CIF file
     """
+
+    index = settings.get('index', 0)
+    add_bonds = settings.get('add_bonds', True)
+    add_charges = settings.get('add_charges', True)
 
     # ASE does not explicity define bonds, however when it reads a CIF file, it
     # also reads the bonding information (if this is defined in the file).
@@ -112,9 +123,10 @@ def ase_read_cif(file, index=0, add_bonds=True, add_charges = True, **settings):
     else:
         coulombic_key = bonded_key = None
 
-    _create_coulombic_interactions(atoms,
-                                   settings.get('cutoff', 10.0),
-                                   coulombic_key)
+    if add_charges:
+        _create_coulombic_interactions(atoms,
+                                       settings.get('cutoff', 10.0),
+                                       coulombic_key)
 
     if add_bonds:
         # The CIF defintions which relate to bonded interactions. Note that
