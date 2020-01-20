@@ -46,7 +46,7 @@ class LAMPSQw(ObservableReader):
         self.file_dep = open(file_name + 'ascii')
         self.file_dep_err = open(file_name + 'ascii_e')
 
-    def parse(self):
+    def parse(self, **settings):
 
         """
         Parse into SQw format

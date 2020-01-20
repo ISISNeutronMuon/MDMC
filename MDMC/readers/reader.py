@@ -26,7 +26,7 @@ class Reader(ABC):
         self.file = open(file_name, 'r')
 
     @abstractmethod
-    def parse(self):
+    def parse(self, **settings):
 
         """
         Parses the file data so that it is in a format expected by the class

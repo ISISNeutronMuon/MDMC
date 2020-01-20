@@ -33,7 +33,7 @@ class netCDF(ObservableReader):
 
         self.file = Dataset(file_name, 'r')
 
-    def parse(self):
+    def parse(self, **settings):
 
         """
         Parse into SQw format
