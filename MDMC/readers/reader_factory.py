@@ -32,7 +32,12 @@ class ReaderFactory(ABC):
             A Reader object
         """
 
-        module = import_module('.' + module_name, getmodule(cls).__package__)
+        try:
+            module = import_module('.' + module_name,
+                                   getmodule(cls).__package__)
+        except ImportError:
+            module = import_module('.' + cls._name_from_alias(module_name),
+                                   getmodule(cls).__package__)
 
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
@@ -52,3 +57,12 @@ class ReaderFactory(ABC):
         """
 
         raise NotImplementedError
+
+    @staticmethod
+    def _name_from_alias(alias):
+
+        """
+        Converts an alias into a module name
+        """
+
+        return alias.lower()

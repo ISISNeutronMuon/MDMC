@@ -15,7 +15,7 @@ class XML_SQw(ObservableReader):
     An XML reader for SQw data
     """
 
-    def parse(self):
+    def parse(self, **settings):
 
         """
         Parses the xml file

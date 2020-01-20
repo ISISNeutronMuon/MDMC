@@ -15,12 +15,23 @@ class ConfigurationReader(Reader):
     """
 
     @property
+    @staticmethod
     @abstractmethod
-    def configuration(self):
+    def extension():
 
         """
-        All subclasses must implement configuration, which returns a
-        Configuration object from the data read from the file
+        The expected file extension for the ConfigurationReader
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def atoms(self):
+
+        """
+        All subclasses must implement atoms, which returns a list of `Atom`
+        objects from the data read from the file
         """
 
         raise NotImplementedError
