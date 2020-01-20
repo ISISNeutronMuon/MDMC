@@ -226,8 +226,13 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
         raise TypeError('{} is not a valid number of atoms for a bonded'
                         ' interaction'.format(n_inter_atoms))
 
-    if key:
-        interactions_atoms = _group_atoms(interactions_atoms, key)
+    # If no key is passed, group by id - this will result in each tuple of atoms
+    # being in its own group (i.e. no tuples of atoms are grouped together).
+    # This ensures that interactions_atoms will always have the correct
+    # dimensions
+    if not key:
+        key = id
+    interactions_atoms = _group_atoms(interactions_atoms, key)
 
     for interaction_atoms in interactions_atoms:
         # BondedInteractions require atoms to hashable, so tuple of np.arrays
