@@ -5,8 +5,11 @@ defined.  All shared behaviour is included within the StructuralUnit base
 class."""
 
 from abc import ABC, abstractmethod
+from collections import Counter, OrderedDict
 from copy import deepcopy
+from functools import reduce
 from itertools import count, permutations
+from math import gcd
 from types import MethodType
 import warnings
 import weakref
@@ -457,6 +460,36 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                 setattr(unit, k, deepcopy(v, memo))
         return unit
 
+    def __repr__(self):
+
+        """
+        Returns
+        -------
+        str
+            The symbols and center of mass position of the
+            `CompositeStructuralUnit`
+        """
+
+        return ("<{0}"
+                " {{'formula': {1},"
+                " 'position': {2}}}>".format(self.__class__.__name__,
+                                         self.symbols,
+                                         self.position))
+
+    @property
+    def symbols(self):
+
+        """
+        Get the chemical formula of the `CompositeStructuralUnit`
+
+        Returns
+        -------
+        str
+            The chemical formula using the Hill system
+        """
+
+        return get_reduced_chemical_formula([atom.element for atom
+                                             in self.atom_list])
 
     @property
     def universe(self):
@@ -1326,6 +1359,84 @@ def filter_atoms_element(atoms, element):
     """
 
     return list(filter(lambda a: a.element == element, atoms))
+
+
+def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
+
+    """
+    Get the reduced chemical formula
+
+    Parameters
+    ----------
+    symbols : list of str
+        The chemical formula to be reduced. It is expressed as a list of
+        elements, with a single element for each atom. Elements are grouped by
+        type but not ordered e.g. all 'O' values, then all 'H' values etc.
+    factor : int, optional
+        The factor by which the total number of symbols will be reduced. If
+        None, the greatest common divisor of the different symbols will be used.
+        The default is None.
+    system : str, optional
+        Determines the order of the chemical formula. If 'Hill' the Hill system
+        is used to determine the order. If None, the order is based on the order
+        of `symbols`. The default is 'Hill'.
+
+    Returns
+    -------
+    str
+        The chemical formula corresponding to symbols, except with only n_atoms.
+        If `system` is 'Hill', the formula will be ordered as per the Hill
+        system, otherwise the formula will be ordered based on the order of
+        `symbols`.
+
+    Example
+    -------
+    Reducing the formula for four water molecules to a single water molecules::
+
+        >>> get_reduced_chemical_formula(['H'] * 8 + ['O'] * 4)
+        'H2O'
+
+    Reducing the formula for four water molecules to two water molecules:
+
+        >>> get_reduced_chemical_formula(['H'] * 8 + ['O'] * 4, factor=2)
+        'H4O2'
+
+    """
+
+    if not factor:
+        factor = reduce(gcd, Counter(symbols).values())
+
+    n_symbols = len(symbols)
+    if n_symbols % factor != 0:
+        raise ValueError('factor ({0}) must be a factor of the number of'
+                         ' symbols {1}'.format(factor, n_symbols))
+
+    n_reduced_atoms = n_symbols // factor
+    reduced_symbols = symbols[::n_symbols // n_reduced_atoms]
+
+    reduced_symbols_count = OrderedDict()
+    # Use keys of OrderedDict to maintain order (and backwards compatibility)
+    for symbol in OrderedDict((symbol, None) for symbol
+                              in reduced_symbols).keys():
+        number = reduced_symbols.count(symbol)
+        reduced_symbols_count[symbol] = str(number) if number != 1 else ''
+
+    if system == 'Hill':
+        reduced_formula = ''
+        if 'C' in reduced_symbols_count:
+            reduced_formula = 'C' + reduced_symbols_count.pop('C')
+            try:
+                reduced_formula += 'H' + reduced_symbols_count.pop('H')
+            except KeyError:
+                pass
+
+        reduced_formula += ''.join(sorted([symbol + count for symbol, count
+                                           in reduced_symbols_count.items()]))
+    else:
+        reduced_formula = ''.join([symbol + count for symbol, count
+                                   in reduced_symbols_count.items()])
+
+    return reduced_formula
 
 
 class Interaction(ABC):
