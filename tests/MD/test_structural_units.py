@@ -11,7 +11,8 @@ import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Shape, Universe
-from MDMC.MD.structural_units import Atom, BoundingBox, Coulombic, Molecule
+from MDMC.MD.structural_units import (Atom, BoundingBox, Coulombic, Molecule,
+                                      get_reduced_chemical_formula)
 
 
 ATOM_TYPES = [1, 2, 3]
@@ -442,3 +443,52 @@ def test_molecule_rotation(angles, expected, water_molecule):
     water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
     assert np.allclose(water_molecule.atom_list[0].position, expected,
                        atol=1e-5)
+
+
+@pytest.mark.parametrize('symbols, factor, formula, system',
+                         [(['C'] * 4 + ['H'] * 16,
+                           4,
+                           'CH4',
+                           'Hill'),
+                          (['C'] * 4 + ['H'] * 16,
+                           None,
+                           'CH4',
+                           'Hill'),
+                          (['C'] * 4 + ['H'] * 16,
+                           2,
+                           'C2H8',
+                           'Hill'),
+                          (['C'] * 24 + ['H'] * 27 + ['N'] * 3 + ['O'] * 6,
+                           None,
+                           'C8H9NO2',
+                           'Hill'),
+                          (['O'] * 6 + ['N'] * 3 + ['H'] * 27 + ['C'] * 24,
+                           None,
+                           'C8H9NO2',
+                           'Hill'),
+                          (['C'] * 24 + ['H'] * 27 + ['N'] * 3 + ['O'] * 6,
+                           None,
+                           'C8H9NO2',
+                           None),
+                          (['O'] * 6 + ['N'] * 3 + ['H'] * 27 + ['C'] * 24,
+                           None,
+                           'O2NH9C8',
+                           None),
+                          (['C'] * 24 + ['H'] * 56 + ['N'] * 8 + ['O'] * 8,
+                           4,
+                           'C6H14N2O2',
+                           'Hill'),
+                          (['C'] * 12 + ['N'] * 4 + ['H'] * 28 + ['O'] * 4,
+                           None,
+                           'C3H7NO',
+                           'Hill')])
+def test_get_reduced_chemical_formula_error(symbols, factor, formula, system):
+
+    """
+    Tests that get_reduced_chemical_formula returns the reduced chemical formula
+    for the symbols, based on the factor. Includes tests both with and without a
+    passed factor, with different orderings of the symbols, and with both `Hill`
+    system and no system.
+    """
+
+    assert get_reduced_chemical_formula(symbols, factor, system) == formula
