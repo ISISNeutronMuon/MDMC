@@ -13,9 +13,9 @@ from ase.io.cif import read_cif
 import numpy as np
 
 from MDMC.MD.ase.convert_atoms import ASEAtoms, convert_from_ase_atom
-from MDMC.MD.structural_units import Bond, BondAngle, Coulombic, DihedralAngle
+from MDMC.MD.structural_units import (Bond, BondAngle, Coulombic, DihedralAngle,
+                                      get_reduced_chemical_formula)
 from MDMC.MD.interaction_functions import Coulomb
-
 
 
 def ase_read_cif(file, **settings):
@@ -292,7 +292,7 @@ def _reduce_ase_unit_cell(ase_atoms):
     Returns
     -------
     ASEAtoms
-        An ASeAtoms objects containing the atoms of a single molecule
+        An ASEAtoms objects containing the atoms of a single molecule
     """
 
     # The number of atoms in a molecule can be determined from info in CIF file
@@ -308,35 +308,7 @@ def _reduce_ase_unit_cell(ase_atoms):
     positions = np.array([ase_atoms.info['_atom_site_fract_' + dim]
                           for dim in ['x', 'y', 'z']]).T
     formula = get_reduced_chemical_formula(ase_atoms.get_chemical_symbols(),
-                                           n_atoms_molecule)
+                                           len(ase_atoms) // n_atoms_molecule,
+                                           system=None)
     return ASEAtoms(formula, scaled_positions=positions, cell=ase_atoms.cell,
                     info=ase_atoms.info)
-
-
-def get_reduced_chemical_formula(symbols, n_atoms):
-
-    """
-    Parameters
-    ----------
-    symbols : list of str
-        The chemical formula to be reduced. It is expressed as a list of
-        elements, with a single element for each atom. Elements are grouped by
-        type but not ordered e.g. all 'O' values, then all 'H' values etc.
-    n_atoms : int
-        The total number of atoms that will be in the reduced formula
-
-    Returns
-    -------
-    str
-        The chemical formula corresponding to symbols, except with only n_atoms
-
-    Example
-    -------
-    Reducing the formula for three water molecules to a single water molecules::
-
-        >>> get_reduced_chemical_formula(['H'] * 6 + ['O'] * 3, 3)
-        'H2O'
-
-    """
-
-    return ''.join(symbols[::len(symbols) // n_atoms])
