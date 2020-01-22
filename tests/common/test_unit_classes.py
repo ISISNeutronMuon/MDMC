@@ -75,19 +75,6 @@ def test_repr_contains_unit(uclass):
     assert UNIT in repr(uclass)
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray()])
-def test_str_equals_repr(uclass):
-
-    """
-    Tests that for all classes that add units to the representation, __repr__
-    and __str__ have the same return
-    """
-
-    assert repr(uclass) == str(uclass)
-
-    uclass.unit = 'mg'
-    assert repr(uclass) == str(uclass)
-
 @pytest.mark.parametrize("op,args", [(np.exp, ()),
                                      (np.sin, ()),
                                      (np.sum, ()),
