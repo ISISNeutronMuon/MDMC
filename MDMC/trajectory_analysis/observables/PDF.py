@@ -5,7 +5,6 @@ from itertools import (chain, combinations, combinations_with_replacement,
                        product)
 import warnings
 
-from mpi4py import MPI, futures
 from numba import jit
 import numpy as np
 
@@ -100,15 +99,16 @@ class PairDistributionFunction(Observable):
         try:
             return self.independent_variables['r']
         except KeyError:
-            raise AttributeError
+            return None
 
     @r.setter
     @unit_decorator(unit=units.Unit('Ang'))
     def r(self, value):
 
-        try:
+        if (hasattr(self, '_independent_variables')
+                and self._independent_variables):
             self._independent_variables['r'] = value
-        except AttributeError:
+        else:
             self._independent_variables = {'r':value}
 
     @property
@@ -122,7 +122,7 @@ class PairDistributionFunction(Observable):
         try:
             return self.dependent_variables['PDF']
         except KeyError:
-            raise AttributeError
+            return None
 
     def calculate_from_MD(self, MD_input, **settings):
 

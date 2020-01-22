@@ -7,7 +7,7 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
 
-@repr_decorator('name', 'origin', 'data')
+@repr_decorator('origin', 'data')
 class Observable(ABC):
 
     """

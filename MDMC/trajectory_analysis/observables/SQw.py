@@ -103,10 +103,11 @@ class AbstractSQw(Observable):
         array
             1D array of Q floats (in Ang^-1)
         """
+
         try:
             return self.independent_variables['Q']
         except KeyError:
-            raise AttributeError
+            return None
 
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
@@ -121,10 +122,12 @@ class AbstractSQw(Observable):
             1D array of energy floats (in meV)
         """
 
-        try:
-            return self.independent_variables['E']
-        except KeyError:
-            raise AttributeError
+        if self.independent_variables:
+            try:
+                return self.independent_variables['E']
+            except KeyError:
+                pass
+        return None
 
     @property
     @unit_decorator_getter(unit=units.ANGLE / units.Unit('ps'))
@@ -157,7 +160,7 @@ class AbstractSQw(Observable):
         try:
             return self.dependent_variables['SQw']
         except KeyError:
-            raise AttributeError
+            return None
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
@@ -174,7 +177,7 @@ class AbstractSQw(Observable):
         try:
             return self.errors['SQw']
         except KeyError:
-            raise AttributeError
+            return None
 
     @property
     def t(self):
@@ -267,15 +270,17 @@ class AbstractSQw(Observable):
         dt = self.t[1] - self.t[0]
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
-        try:
+        if self.E:
             assert_allclose(self._calculate_E(len(self.E), dt),
                             self.E,
                             rtol=1e-5,
                             err_msg=("Set E values and calculated E values are"
                                      " not consistent"))
-        except AttributeError:
+        elif self.independent_variables:
             self.independent_variables['E'] = self._calculate_E(len(self.t), dt)
-
+        else:
+            self.independent_variables = {'E':self._calculate_E(len(self.t),
+                                                                dt)}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])
