@@ -22,6 +22,12 @@ class PairDistributionFunction(Observable):
     function
     """
 
+    def __init__(self):
+
+        self._independent_variables = None
+        self._dependent_variables = None
+        self._errors = None
+
     @property
     def data(self):
 

@@ -2,11 +2,24 @@
 
 from abc import ABC, abstractmethod
 
+
 class MDEngine(ABC):
 
     """
     Abstract base class for MD engine facades
     """
+
+    def __repr__(self):
+
+        return ('<{0}\n'
+                ' {{MD_engine: {MD_engine},\n'
+                ' exp_datasets: {exp_datasets},\n'
+                ' FoM_calculator: {FoM_calculator},\n'
+                ' minimizer: {minimizer},\n'
+                ' reset_config: {reset_config},\n'
+                ' fit_params: {fit_params},\n'
+                ' settings: {settings}}}>').format(self.__class__.__name__,
+                                                   **self.__dict__)
 
     @property
     @abstractmethod

@@ -17,11 +17,13 @@ from re import escape, sub
 
 import pandas as pd
 
+from MDMC.common.decorators import repr_decorator
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
 from MDMC.MD.structural_units import BondedInteraction, Coulombic
 from MDMC.MD import interaction_functions
 
 
+@repr_decorator('interaction_dictionary')
 class ForceField(ABC):
 
     """
@@ -80,6 +82,7 @@ class ForceField(ABC):
                            " for these element types")
 
 
+@repr_decorator('interaction_dictionary', 'n_body')
 class WaterModel(ForceField):
 
     """
@@ -104,6 +107,7 @@ class WaterModel(ForceField):
         raise NotImplementedError
 
 
+@repr_decorator('file_name')
 class FileForceField(ForceField):
 
     """

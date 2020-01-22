@@ -586,9 +586,7 @@ class UnitNDArray(np.ndarray):
 
     def __new__(cls, shape, unit, dtype=float, buffer=None, offset=0,
                 strides=None, order=None):
-        obj = super().__new__(cls, shape, dtype,
-                                              buffer, offset, strides,
-                                              order)
+        obj = super().__new__(cls, shape, dtype, buffer, offset, strides, order)
         obj.unit = unit
         return obj
 
@@ -625,8 +623,10 @@ class UnitNDArray(np.ndarray):
             return super().__repr__()
 
     def __str__(self):
-
-        return  self.__repr__()
+        try:
+            return super().__str__() + ' ' + self.unit
+        except TypeError:
+            return super().__str__()
 
 
 def unit_array(obj, unit, dtype=None):

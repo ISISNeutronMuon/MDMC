@@ -7,11 +7,14 @@ from copy import deepcopy
 
 import numpy as np
 
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import repr_decorator, unit_decorator,\
+    unit_decorator_getter
 from MDMC.common import units
 from MDMC.MD import structural_units
 
 
+@repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
+                'n_molecules', 'bonded_interactions', 'nonbonded_interactions')
 class SolventConfig(ABC):
 
     """
@@ -33,6 +36,10 @@ class SolventConfig(ABC):
         self._nonbonded_interactions = \
             deepcopy(self._solvent_config_dict['nonbonded_interactions'])
         self._molecules = deepcopy(self._solvent_config_dict['molecules'])
+
+    def __str__(self):
+
+        return self.description
 
     @property
     @abstractmethod

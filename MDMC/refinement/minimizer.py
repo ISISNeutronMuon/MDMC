@@ -7,7 +7,11 @@ from abc import ABC, abstractmethod
 from mpi4py import MPI
 import numpy as np
 
+from MDMC.common.decorators import repr_decorator
 
+
+@repr_decorator('comm', 'FoM', 'FoM_old', 'MC_norm', 'distribution',
+                'state_changed', 'params', 'params_old_values')
 class Minimizer(ABC):
 
     """
@@ -36,7 +40,7 @@ class Minimizer(ABC):
         The FoM from the previous Minimizer step
     params : list
         A list of Parameter objects being fitted
-    params : list
+    params_old_values : list
         A list of the values of the Parameter objects from the previous
         minimizer step
     state_changed : bool

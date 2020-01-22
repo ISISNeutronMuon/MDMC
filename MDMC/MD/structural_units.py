@@ -18,12 +18,15 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import repr_decorator, unit_decorator,\
+    unit_decorator_getter
 from MDMC.common import units
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
 
 
+@repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
+                'atom_list')
 class StructuralUnit(ABC):
 
     """Abstract base class for all structural units
@@ -382,6 +385,8 @@ class StructuralUnit(ABC):
         return BoundingBox(self.atom_list)
 
 
+@repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
+                'atom_list')
 class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     """
@@ -460,24 +465,37 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                 setattr(unit, k, deepcopy(v, memo))
         return unit
 
-    def __repr__(self):
+    def __str__(self):
 
         """
         Returns
         -------
         str
-            The symbols and center of mass position of the
+            The formula and center of mass position of the
             `CompositeStructuralUnit`
         """
 
-        return ("<{0}"
-                " {{'formula': {1},"
-                " 'position': {2}}}>".format(self.__class__.__name__,
-                                         self.symbols,
-                                         self.position))
+        name = self.name + ' ' if self.name else ''
+        return ('{0}{1}  formula: {2}  position: {3}'.format(
+            name,
+            self.__class__.__name__,
+            self.formula,
+            self.position))
 
     @property
-    def symbols(self):
+    @abstractmethod
+    def nonbonded_interactions(self):
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def bonded_interaction_pairs(self):
+
+        raise NotImplementedError
+
+    @property
+    def formula(self):
 
         """
         Get the chemical formula of the `CompositeStructuralUnit`
@@ -659,6 +677,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                              + rotation.apply(self._CoM_frame_positions[atom]))
 
 
+@repr_decorator('name', 'ID', 'element', 'position', 'velocity')
 class Atom(StructuralUnit):
 
     """
@@ -768,7 +787,18 @@ class Atom(StructuralUnit):
 
     def __str__(self):
 
-        return '{0}'.format(self.element)
+        """
+        Returns
+        -------
+        str
+            The element, charge and position of the Atom
+        """
+
+        return ('{0} {1}  charge: {2}  position: {3}'.format(
+            self.element,
+            self.__class__.__name__,
+            self.charge,
+            self.position))
 
     @property
     def atom_list(self):
@@ -1115,6 +1145,7 @@ class Group(CompositeStructuralUnit):
         raise NotImplementedError
 
 
+
 class Molecule(CompositeStructuralUnit):
 
     """
@@ -1236,6 +1267,7 @@ class Molecule(CompositeStructuralUnit):
         return mass
 
 
+@repr_decorator('min', 'max', 'volume')
 class BoundingBox:
 
     """
@@ -1439,6 +1471,7 @@ def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
     return reduced_formula
 
 
+@repr_decorator('function')
 class Interaction(ABC):
 
     """
@@ -1519,27 +1552,6 @@ class Interaction(ABC):
         """
 
         self.__deepcopy__()
-
-    def __repr__(self):
-
-        try:
-            params = self.params
-        except AttributeError:
-            params = None
-
-        return ('{0}'
-                '  function: {1},'
-                '  parameters: {2},'
-                '  universe: {3},'
-                '  elements: {4}'.format(self.name,
-                                         self.function,
-                                         params,
-                                         self.universe,
-                                         self.element_list()))
-
-    def __str__(self):
-
-        return self.__repr__
 
     @property
     @abstractmethod
@@ -1674,6 +1686,7 @@ class Interaction(ABC):
             atom.add_interaction(self, from_interaction=True)
 
 
+@repr_decorator('function', 'atom_types', 'cutoff')
 class NonBondedInteraction(Interaction):
 
     """
@@ -1712,6 +1725,20 @@ class NonBondedInteraction(Interaction):
         # Simplified version of immutable hash which Python3 produces
         # (marginally less efficient but shouldn't matter)
         return id(self) // 8
+
+    def __str__(self):
+
+        """
+        Returns
+        -------
+        str
+            The type, atom_types and cutoff of the NonBondedInteraction
+        """
+
+        return ('{0} interaction  atom_types: {1}  cutoff: {2}'.format(
+            self.__class__.__name__,
+            self.atom_types,
+            self.cutoff))
 
     @property
     @abstractmethod
@@ -2115,6 +2142,7 @@ def _add_atoms(self, *atoms):
             self._atom_types.append(atom.atom_type)
 
 
+@repr_decorator('function', 'n_atoms')
 class BondedInteraction(Interaction):
 
     """
@@ -2183,6 +2211,19 @@ class BondedInteraction(Interaction):
         """
 
         return self.atoms[key]
+
+    def __str__(self):
+
+        """
+        Returns
+        -------
+        str
+            The type, and number of atoms of the BondedInteraction
+        """
+
+        return ('{0} interaction applied to {1} atom tuples'.format(
+            self.__class__.__name__,
+            len(self.atoms)))
 
     @property
     def atoms(self):
@@ -2387,7 +2428,7 @@ class BondedInteraction(Interaction):
 
         universe.add_bonded_interaction_pairs((self, tpl))
 
-
+@repr_decorator('constrained')
 class Constrainable:
 
     """
@@ -2417,6 +2458,7 @@ class Constrainable:
         super().__init__(*atom_tuples, **settings)
 
 
+@repr_decorator('function', 'constrained')
 class Bond(Constrainable, BondedInteraction):
 
     """
@@ -2437,6 +2479,7 @@ class Bond(Constrainable, BondedInteraction):
         super().__init__(*atom_tuples, **settings)
 
 
+@repr_decorator('function', 'constrained')
 class BondAngle(Constrainable, BondedInteraction):
 
     """
@@ -2461,6 +2504,7 @@ class BondAngle(Constrainable, BondedInteraction):
         super().__init__(*atom_tuples, **settings)
 
 
+@repr_decorator('function', 'constrained', 'improper')
 class DihedralAngle(BondedInteraction):
 
     """

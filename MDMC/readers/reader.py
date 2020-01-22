@@ -2,6 +2,9 @@
 
 from abc import ABC, abstractmethod
 
+from MDMC.common.decorators import repr_decorator
+
+@repr_decorator('file')
 class Reader(ABC):
 
     """
