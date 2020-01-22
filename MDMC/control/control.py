@@ -4,11 +4,14 @@ from copy import deepcopy
 
 import numpy as np
 
+from MDMC.common.decorators import repr_decorator
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 
 
+@repr_decorator('MD_engine', 'exp_datasets', 'FoM_calculator', 'minimizer',
+                'reset_config', 'fit_params', 'settings')
 class MDMCControl:
 
     """
@@ -73,7 +76,7 @@ class MDMCControl:
 
     def __init__(self, MD_engine, exp_datasets, fit_params, MC_norm=1.,
                  minimizer_type='MMC', FoM_type='standard',
-                 reset_config = True, **settings):
+                 reset_config=True, **settings):
 
         self.MD_engine = MD_engine
         self.exp_datasets = exp_datasets
@@ -103,6 +106,15 @@ class MDMCControl:
         # Use specified MD_steps if supplied, else calculate
         self.MD_steps = settings.get('MD_steps')
 
+    def __str__(self):
+
+        exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
+        return "{0} refining {1} {2} using {3} data types".format(
+            self.__class__.__name__,
+            len(self.fit_params),
+            'parameter' if len(self.fit_params) == 1 else 'parameters',
+            exp_dataset_types)
+
     def refine(self, n_steps):
 
         """
@@ -118,9 +130,9 @@ class MDMCControl:
 
         while count < n_steps and not self.minimizer.has_converged():
 
-            FoM = self.generate_FoM()
+            fom = self.generate_FoM()
             print(self.MD_engine.engine.universe.energy())
-            self.minimizer.step(FoM)
+            self.minimizer.step(fom)
             self.MD_engine.engine.update_parameters()
             count += 1
 

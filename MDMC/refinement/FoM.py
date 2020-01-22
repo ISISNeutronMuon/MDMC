@@ -1,10 +1,14 @@
 """A module for Figure of Merits"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 
 import numpy as np
 
-class FigureOfMeritCalculator:
+from MDMC.common.decorators import repr_decorator
+
+
+@repr_decorator('value', 'obs_pairs')
+class FigureOfMeritCalculator(ABC):
 
     """
     Abstract class that defines methods common to all figure of merit
@@ -22,8 +26,6 @@ class FigureOfMeritCalculator:
     value : float
         The Figure of Merit for all obs_pairs
     """
-
-    __metaclass__ = ABCMeta
 
     def __init__(self, obs_pairs):
 
@@ -99,6 +101,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                                          / obs_pair.calculate_errors()) ** 2)
 
 
+@repr_decorator('weight', 'exp_obs', 'MD_obs')
 class ObservablePair:
 
     """

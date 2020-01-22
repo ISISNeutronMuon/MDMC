@@ -389,3 +389,26 @@ def test_mod_docstring_property(modified_docstring):
     # dedent removes common leading whitespace - accounts for docstring fixture
     # and method docstring starting with different indents
     assert dedent(TestClass.prop.__doc__) == dedent(modified_docstring['after'])
+
+
+def test_repr_decorator():
+
+    """
+    Tests that calls repr_decorator implements a __repr__ method with the
+    expected output
+    """
+
+    @decorators.repr_decorator('a', 'b')
+    class ReprClass:
+
+        def __init__(self, a):
+
+            self.a = a
+
+        @property
+        def b(self):
+
+            return 'b'
+
+    repr_class = ReprClass('a')
+    assert repr(repr_class) == "<ReprClass\n {a: 'a',\n  b: 'b'}>"

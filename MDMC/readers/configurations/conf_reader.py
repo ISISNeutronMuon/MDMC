@@ -2,9 +2,11 @@
 
 from abc import abstractmethod
 
+from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
 
+@repr_decorator('file', 'extension', 'atoms')
 class ConfigurationReader(Reader):
 
     """

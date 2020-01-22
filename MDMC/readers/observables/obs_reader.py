@@ -1,10 +1,12 @@
 """Module for observable reader abstract class"""
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
+from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
 
+@repr_decorator('data')
 class ObservableReader(Reader):
 
     """
@@ -44,7 +46,7 @@ class ObservableReader(Reader):
             A dictionary of the independent variables
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -59,7 +61,7 @@ class ObservableReader(Reader):
             A dictionary of the dependent variables
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -74,4 +76,4 @@ class ObservableReader(Reader):
             A dictionary of the errors on the dependent variables
         """
 
-        pass
+        raise NotImplementedError

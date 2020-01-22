@@ -4,7 +4,8 @@ import weakref
 
 import numpy as np
 
-# TODO: SORT OUT EFFECTS OF PBC
+from MDMC.common.decorators import repr_decorator
+
 
 class AtomCollection:
 
@@ -53,6 +54,7 @@ class AtomCollection:
         return self.universe.dimensions
 
 
+@repr_decorator('data')
 class Configuration(AtomCollection):
 
     """
@@ -347,6 +349,7 @@ class Configuration(AtomCollection):
         raise NotImplementedError
 
 
+@repr_decorator('time', 'data')
 class TemporalConfiguration(Configuration):
 
     """
@@ -381,6 +384,7 @@ class TemporalConfiguration(Configuration):
         return self.__class__(time, *structure_list)
 
 
+@repr_decorator('times', 'data')
 class Trajectory(AtomCollection):
 
     """

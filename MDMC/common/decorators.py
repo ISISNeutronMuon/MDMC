@@ -375,3 +375,79 @@ def wrap_docstring(docstring, line_length):
         wrapped[0] = wrapped[0][1:]
 
     return ''.join(wrapped)
+
+
+def repr_decorator(attribute, *attributes):
+
+    """
+    Implements __repr__ for a class using passed attributes (including
+    properties)
+
+    The first element of all __repr__ returns is always the name of the class
+
+    .. warning:: Testing for repr_decorator is restricted to testing the
+    decorator outputs the correct format, not whether each occurence it is used
+    is valid. It is strongly recommended that classes decorated with
+    repr_decorator are tested to ensure that repr(class) is valid, for instance
+    whether the class actually has all of the attributes passed as str to
+    repr_decorator.
+
+    Parameters
+    ----------
+    attribute : str
+        The name of an attribute of the class being decorated. This attribute
+        (or property) will be included in the __repr__ of the class.
+    *attributes : str
+        Zero or more str with the name of an attribute (or property) of the
+        class being decorated. These attributes will be included in the __repr__
+        of the class.
+
+    Returns
+    -------
+    class
+        A class with __repr__ implemented such that `attribute` and `attributes`
+        are printed
+
+    Example
+    -------
+    Add a repr_decorator to the Atom class to include the name attribute and the
+    position property::
+
+        >>> @repr_decorator('name', 'position')
+        ... Class Atom(StructuralUnit):
+        ...
+        ...     def __init__(self, element, name, position):
+        ...         self.element = element
+        ...         self.name = name
+        ...         self.position = position
+        ...
+        ...     @property
+        ...     def position(self):
+        ...         return self._position
+        ...
+        ... atom = Atom('H', 'Hydrogen', [1., 1., 1.])
+        ... atom
+        < Atom
+         {name: 'Hydrogen',
+          position: [1., 1., 1.]}>
+    """
+
+    # Ignore pylint warning for decorator inner function docstrings
+    #pylint: disable=missing-docstring
+    def decorator(cls):
+        def __repr__(self):
+            # import pdb;pdb.set_trace()
+            attrs = (attribute,) + attributes
+            # Using getattr rather than __dict__ avoids problems with __slots__
+            # and properties
+            repr_dict = {attr:getattr(self, attr) for attr in attrs}
+            attributes_str = ''.join([key + ': ' + repr(value) +',\n  '
+                                      for key, value in repr_dict.items()])
+            attributes_str = attributes_str.strip(',\n ')
+            return ('<{0}\n'
+                    ' {{{1}}}>').format(self.__class__.__name__, attributes_str)
+
+        cls.__repr__ = __repr__
+
+        return cls
+    return decorator

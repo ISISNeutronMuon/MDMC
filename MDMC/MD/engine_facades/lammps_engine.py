@@ -18,7 +18,7 @@ when they are read from PyLammps e.g. int(lmp.variables['steps'].value).
 A minor bug in LAMMPS (Dec 2018 version) means that nangletypes returned
 by PyLammps is incorrectly set to ndihedraltypes."""
 
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from copy import copy
 from itertools import chain, combinations, count, product, tee
 from random import randint
@@ -29,7 +29,8 @@ from lammps import PyLammps
 import numpy as np
 
 from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
+    repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom, BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
@@ -125,6 +126,7 @@ class PyLammpsAttribute:
         return [fix['name'] for fix in self.fixes]
 
 
+@repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
 class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     """
@@ -180,7 +182,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Simulation time step in fs
         """
 
-        return self.lmp_simulation.time_step
+        try:
+            return self.lmp_simulation.time_step
+        except AttributeError:
+            return None
 
     @time_step.setter
     @unit_decorator(unit=units.TIME)
@@ -201,7 +206,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             stored
         """
 
-        return self.lmp_simulation.traj_step
+        try:
+            return self.lmp_simulation.traj_step
+        except AttributeError:
+            return None
 
     @traj_step.setter
     def traj_step(self, value):
@@ -415,6 +423,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe.set_config(self.saved_config)
 
 
+@repr_decorator('universe')
 class LAMMPSUniverse(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
@@ -467,6 +476,12 @@ class LAMMPSUniverse(PyLammpsAttribute):
     angle_ID : dict
         A dictionary of {angle: ID pairs} relating each BondAngle object to
         a LAMMPS ID.
+    proper_ID : dict
+        A dictionary of {proper: ID pairs} relating each Dihedral object (with
+        improper == False) to a LAMMPS ID.
+    improper_ID : dict
+        A dictionary of {improper: ID pairs} relating each Dihedral object (with
+        improper == True) to a LAMMPS ID.
     """
 
     def __init__(self, universe, lmp=None, **settings):
@@ -1019,13 +1034,15 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # angles - the fix will be applied to this group. Applying constraint
         # fix only to this group improves performance.
         # chain is used to flatten inter.atoms, which is a list of tuples
-        atom_types = set([atom.atom_type for inter in bonds+angles
-                          for atom in chain.from_iterable(inter.atoms)])
+        atom_types = {atom.atom_type for inter in bonds+angles
+                      for atom in chain.from_iterable(inter.atoms)}
         constrain_group = 'constrain_group'
         self.lmp.group(constrain_group, 'type', *atom_types)
         self.lmp.fix('constrain', constrain_group, *algorithm)
 
 
+@repr_decorator('universe', 'time_step', 'traj_step', 'skin', 'neighbor_steps',
+                'lin_momentum_steps', 'ang_momentum_steps', 'ensemble')
 class LAMMPSSimulation(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
@@ -1370,6 +1387,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                             ' an electrostatic solver')
 
 
+@repr_decorator('temperature', 'pressure', 'thermostat', 'barostat')
 class Ensemble(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not

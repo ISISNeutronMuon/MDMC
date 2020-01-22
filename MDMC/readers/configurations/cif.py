@@ -12,6 +12,10 @@ class CIF(ConfigurationReader):
 
     extension = 'cif'
 
+    def __init__(self):
+
+        self._atoms = None
+
     def parse(self, **settings):
 
         self._atoms = None

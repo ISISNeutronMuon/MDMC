@@ -5,8 +5,11 @@ defined.  All shared behaviour is included within the StructuralUnit base
 class."""
 
 from abc import ABC, abstractmethod
+from collections import Counter, OrderedDict
 from copy import deepcopy
+from functools import reduce
 from itertools import count, permutations
+from math import gcd
 from types import MethodType
 import warnings
 import weakref
@@ -15,12 +18,15 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import repr_decorator, unit_decorator,\
+    unit_decorator_getter
 from MDMC.common import units
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
 
 
+@repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
+                'atom_list')
 class StructuralUnit(ABC):
 
     """Abstract base class for all structural units
@@ -379,6 +385,8 @@ class StructuralUnit(ABC):
         return BoundingBox(self.atom_list)
 
 
+@repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
+                'atom_list')
 class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     """
@@ -457,6 +465,49 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                 setattr(unit, k, deepcopy(v, memo))
         return unit
 
+    def __str__(self):
+
+        """
+        Returns
+        -------
+        str
+            The formula and center of mass position of the
+            `CompositeStructuralUnit`
+        """
+
+        name = self.name + ' ' if self.name else ''
+        return ('{0}{1}  formula: {2}  position: {3}'.format(
+            name,
+            self.__class__.__name__,
+            self.formula,
+            self.position))
+
+    @property
+    @abstractmethod
+    def nonbonded_interactions(self):
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def bonded_interaction_pairs(self):
+
+        raise NotImplementedError
+
+    @property
+    def formula(self):
+
+        """
+        Get the chemical formula of the `CompositeStructuralUnit`
+
+        Returns
+        -------
+        str
+            The chemical formula using the Hill system
+        """
+
+        return get_reduced_chemical_formula([atom.element for atom
+                                             in self.atom_list])
 
     @property
     def universe(self):
@@ -626,6 +677,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                              + rotation.apply(self._CoM_frame_positions[atom]))
 
 
+@repr_decorator('name', 'ID', 'element', 'position', 'velocity')
 class Atom(StructuralUnit):
 
     """
@@ -735,7 +787,18 @@ class Atom(StructuralUnit):
 
     def __str__(self):
 
-        return '{0}'.format(self.element)
+        """
+        Returns
+        -------
+        str
+            The element, charge and position of the Atom
+        """
+
+        return ('{0} {1}  charge: {2}  position: {3}'.format(
+            self.element,
+            self.__class__.__name__,
+            self.charge,
+            self.position))
 
     @property
     def atom_list(self):
@@ -1082,6 +1145,7 @@ class Group(CompositeStructuralUnit):
         raise NotImplementedError
 
 
+
 class Molecule(CompositeStructuralUnit):
 
     """
@@ -1203,6 +1267,7 @@ class Molecule(CompositeStructuralUnit):
         return mass
 
 
+@repr_decorator('min', 'max', 'volume')
 class BoundingBox:
 
     """
@@ -1328,6 +1393,85 @@ def filter_atoms_element(atoms, element):
     return list(filter(lambda a: a.element == element, atoms))
 
 
+def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
+
+    """
+    Get the reduced chemical formula
+
+    Parameters
+    ----------
+    symbols : list of str
+        The chemical formula to be reduced. It is expressed as a list of
+        elements, with a single element for each atom. Elements are grouped by
+        type but not ordered e.g. all 'O' values, then all 'H' values etc.
+    factor : int, optional
+        The factor by which the total number of symbols will be reduced. If
+        None, the greatest common divisor of the different symbols will be used.
+        The default is None.
+    system : str, optional
+        Determines the order of the chemical formula. If 'Hill' the Hill system
+        is used to determine the order. If None, the order is based on the order
+        of `symbols`. The default is 'Hill'.
+
+    Returns
+    -------
+    str
+        The chemical formula corresponding to symbols, except with only n_atoms.
+        If `system` is 'Hill', the formula will be ordered as per the Hill
+        system, otherwise the formula will be ordered based on the order of
+        `symbols`.
+
+    Example
+    -------
+    Reducing the formula for four water molecules to a single water molecules::
+
+        >>> get_reduced_chemical_formula(['H'] * 8 + ['O'] * 4)
+        'H2O'
+
+    Reducing the formula for four water molecules to two water molecules:
+
+        >>> get_reduced_chemical_formula(['H'] * 8 + ['O'] * 4, factor=2)
+        'H4O2'
+
+    """
+
+    if not factor:
+        factor = reduce(gcd, Counter(symbols).values())
+
+    n_symbols = len(symbols)
+    if n_symbols % factor != 0:
+        raise ValueError('factor ({0}) must be a factor of the number of'
+                         ' symbols {1}'.format(factor, n_symbols))
+
+    n_reduced_atoms = n_symbols // factor
+    reduced_symbols = symbols[::n_symbols // n_reduced_atoms]
+
+    reduced_symbols_count = OrderedDict()
+    # Use keys of OrderedDict to maintain order (and backwards compatibility)
+    for symbol in OrderedDict((symbol, None) for symbol
+                              in reduced_symbols).keys():
+        number = reduced_symbols.count(symbol)
+        reduced_symbols_count[symbol] = str(number) if number != 1 else ''
+
+    if system == 'Hill':
+        reduced_formula = ''
+        if 'C' in reduced_symbols_count:
+            reduced_formula = 'C' + reduced_symbols_count.pop('C')
+            try:
+                reduced_formula += 'H' + reduced_symbols_count.pop('H')
+            except KeyError:
+                pass
+
+        reduced_formula += ''.join(sorted([symbol + count for symbol, count
+                                           in reduced_symbols_count.items()]))
+    else:
+        reduced_formula = ''.join([symbol + count for symbol, count
+                                   in reduced_symbols_count.items()])
+
+    return reduced_formula
+
+
+@repr_decorator('function')
 class Interaction(ABC):
 
     """
@@ -1408,27 +1552,6 @@ class Interaction(ABC):
         """
 
         self.__deepcopy__()
-
-    def __repr__(self):
-
-        try:
-            params = self.params
-        except AttributeError:
-            params = None
-
-        return ('{0}'
-                '  function: {1},'
-                '  parameters: {2},'
-                '  universe: {3},'
-                '  elements: {4}'.format(self.name,
-                                         self.function,
-                                         params,
-                                         self.universe,
-                                         self.element_list()))
-
-    def __str__(self):
-
-        return self.__repr__
 
     @property
     @abstractmethod
@@ -1563,6 +1686,7 @@ class Interaction(ABC):
             atom.add_interaction(self, from_interaction=True)
 
 
+@repr_decorator('function', 'atom_types', 'cutoff')
 class NonBondedInteraction(Interaction):
 
     """
@@ -1601,6 +1725,20 @@ class NonBondedInteraction(Interaction):
         # Simplified version of immutable hash which Python3 produces
         # (marginally less efficient but shouldn't matter)
         return id(self) // 8
+
+    def __str__(self):
+
+        """
+        Returns
+        -------
+        str
+            The type, atom_types and cutoff of the NonBondedInteraction
+        """
+
+        return ('{0} interaction  atom_types: {1}  cutoff: {2}'.format(
+            self.__class__.__name__,
+            self.atom_types,
+            self.cutoff))
 
     @property
     @abstractmethod
@@ -2004,6 +2142,7 @@ def _add_atoms(self, *atoms):
             self._atom_types.append(atom.atom_type)
 
 
+@repr_decorator('function', 'n_atoms')
 class BondedInteraction(Interaction):
 
     """
@@ -2072,6 +2211,19 @@ class BondedInteraction(Interaction):
         """
 
         return self.atoms[key]
+
+    def __str__(self):
+
+        """
+        Returns
+        -------
+        str
+            The type, and number of atoms of the BondedInteraction
+        """
+
+        return ('{0} interaction applied to {1} atom tuples'.format(
+            self.__class__.__name__,
+            len(self.atoms)))
 
     @property
     def atoms(self):
@@ -2276,7 +2428,7 @@ class BondedInteraction(Interaction):
 
         universe.add_bonded_interaction_pairs((self, tpl))
 
-
+@repr_decorator('constrained')
 class Constrainable:
 
     """
@@ -2306,6 +2458,7 @@ class Constrainable:
         super().__init__(*atom_tuples, **settings)
 
 
+@repr_decorator('function', 'constrained')
 class Bond(Constrainable, BondedInteraction):
 
     """
@@ -2326,6 +2479,7 @@ class Bond(Constrainable, BondedInteraction):
         super().__init__(*atom_tuples, **settings)
 
 
+@repr_decorator('function', 'constrained')
 class BondAngle(Constrainable, BondedInteraction):
 
     """
@@ -2350,6 +2504,7 @@ class BondAngle(Constrainable, BondedInteraction):
         super().__init__(*atom_tuples, **settings)
 
 
+@repr_decorator('function', 'constrained', 'improper')
 class DihedralAngle(BondedInteraction):
 
     """

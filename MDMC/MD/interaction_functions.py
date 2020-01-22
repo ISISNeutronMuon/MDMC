@@ -13,7 +13,6 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import ast
 import functools
-from inspect import getmembers
 from itertools import chain, zip_longest
 import operator
 import warnings
@@ -21,10 +20,13 @@ import weakref
 
 import numpy as np
 
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import repr_decorator, unit_decorator, \
+    unit_decorator_getter
 from MDMC.common import units
 
 
+@repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
+                'interactions_name', 'functions_name', 'tied')
 class Parameter:
 
     """
@@ -238,17 +240,13 @@ class Parameter:
         self._tie_param = weakref.ref(parameter)
         self._tie = ast.parse('self._tie_param().value' + expr, mode='eval')
 
-    def __repr__(self):
+    def __str__(self):
 
-        """
-        Returns
-        -------
-        str
-            The Parameter name and a dictionary containing properties and their
-            values, except self.tie and self.interactions
-        """
-
-        return self._get_attr_strings(['tie', 'interactions'])
+        condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
+                     'Constrained ' if self.constraints else '')
+        function = self.functions_name + ' ' if self.functions_name else ''
+        return '{0}{_value} {1}{name}'.format(condition, function,
+                                               **self.__dict__)
 
     def __getitem__(self, key):
 
@@ -272,26 +270,7 @@ class Parameter:
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
-    def _get_attr_strings(self, excluded=[]):
-
-        """
-        Returns
-        -------
-        str
-            The Parameter name and a dictionary containing properties and their
-            values
-        """
-
-        # Determine which attributes are in the form of properties
-        properties = getmembers(self.__class__,
-                                lambda o: isinstance(o, property))
-        rpr = {p[0]:getattr(self, p[0]) for p in properties
-               if p[0] not in excluded}
-
-        return '{name} = {rpr}'.format(name=self.name.replace('_', ' '),
-                                       rpr=rpr)
-
-
+@repr_decorator('params')
 class InteractionFunction:
 
     """
@@ -318,6 +297,12 @@ class InteractionFunction:
                 # Create an attribute with the same name as the Parameter
                 setattr(self, param.name, param)
         self.params = params
+
+    def __str__(self):
+
+        params = ' '.join([p.name + ': ' + str(p.value) + ','
+                           for p in self.params]).strip(',')
+        return '{0} {1}'.format(self.__class__.__name__, params)
 
     @property
     def params(self):
