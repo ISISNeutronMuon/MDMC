@@ -270,7 +270,7 @@ class AbstractSQw(Observable):
         dt = self.t[1] - self.t[0]
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
-        if self.E:
+        if self.E is not None:
             assert_allclose(self._calculate_E(len(self.E), dt),
                             self.E,
                             rtol=1e-5,

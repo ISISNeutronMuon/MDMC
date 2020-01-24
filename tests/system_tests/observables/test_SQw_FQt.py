@@ -13,6 +13,7 @@ import pytest
 
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
+from MDMC.trajectory_analysis.observables import SQw
 
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
@@ -30,7 +31,10 @@ N_H = 4096
 N_O = 2048
 N_TOTAL = N_H + N_O
 N_H_O = np.sqrt(N_H * N_O)
-B_FACTOR = (ap.B_INCOH['H']**2 * N_H + ap.B_INCOH['O']**2 * N_O) / N_TOTAL
+# B_FACTOR is set to a constant rather than calculated using B_COH and B_INCOH
+# as MDMC has a different oxygen B_INCOH value to nMOLDYN
+# B_FACTOR = (ap.B_INCOH['H']**2 * N_H + ap.B_INCOH['O']**2 * N_O) / N_TOTAL
+B_FACTOR = 425.792524267738
 N_Q_VALUES = 13
 
 @pytest.fixture(scope="module")
@@ -99,20 +103,36 @@ def SQw_coh_ref(SQw_coh_HH_ref, SQw_coh_HO_ref, SQw_coh_OO_ref):
                    + SQw_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
     return SQw_coh_ref
 
+@pytest.fixture(scope='module')
+def monkeymodule():
+
+    """
+    This is an ugly workaround because pytest does not currently allow
+    monkeypatch to be used in module scoped fixtures.
+    """
+
+    from _pytest.monkeypatch import MonkeyPatch
+    mpatch = MonkeyPatch()
+    yield mpatch
+    mpatch.undo()
+
 @pytest.fixture(scope="module")
-def SQw_obs(trajectory, Q_vectors):
+def SQw_obs(monkeymodule, trajectory, Q_vectors):
 
     """
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
-    SQw = of.ObservableFactory.create_observable('SQw')
-    SQw.calculate_from_MD(trajectory, Q_vectors=Q_vectors,
-                          dimensions=DIMENSIONS, t_resolution=T_RESOLUTION)
-    return SQw
+    SQw_total = of.ObservableFactory.create_observable('SQw')
+    monkeymodule.setitem(SQw.B_INCOH, 'O', 0.)
+    SQw_total.calculate_from_MD(trajectory,
+                                Q_vectors=Q_vectors,
+                                dimensions=DIMENSIONS,
+                                t_resolution=T_RESOLUTION)
+    return SQw_total
 
 @pytest.fixture(scope="module")
-def SQw_incoh_obs(trajectory, Q_vectors):
+def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
 
     """
     Setup the container for Q, time, w, incoherent FQt and incoherent SQt
@@ -122,7 +142,9 @@ def SQw_incoh_obs(trajectory, Q_vectors):
     """
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
-    SQw_incoh.calculate_from_MD(trajectory, Q_vectors=Q_vectors,
+    monkeymodule.setitem(SQw.B_INCOH, 'O', 0.)
+    SQw_incoh.calculate_from_MD(trajectory,
+                                Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
                                 t_resolution=T_RESOLUTION)
     return SQw_incoh
@@ -138,8 +160,10 @@ def SQw_coh_obs(trajectory, Q_vectors):
     """
 
     SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
-    SQw_coh.calculate_from_MD(trajectory, Q_vectors=Q_vectors,
-                              dimensions=DIMENSIONS, t_resolution=T_RESOLUTION)
+    SQw_coh.calculate_from_MD(trajectory,
+                              Q_vectors=Q_vectors,
+                              dimensions=DIMENSIONS,
+                              t_resolution=T_RESOLUTION)
     return SQw_coh
 
 
