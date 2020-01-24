@@ -288,14 +288,6 @@ B_COH = {
 # Incoherent scattering lengths are calculated from incoherent cross sections
 # using b_incoh = np.sqrt(100 * xs_incoh / (4 * np.pi))
 B_INCOH = {
-    'H':25.27229286,
-
-    'C':0.,
-    'O':0.,
-    'Na':3.59,
-    'K':0.
-}
-B_INCOH = {
     'H': 25.27229286,
     'He': 0.0,
     'Li': 2.705758189,
