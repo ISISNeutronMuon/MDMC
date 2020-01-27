@@ -12,7 +12,7 @@ from itertools import groupby
 from ase.io.cif import read_cif
 import numpy as np
 
-from MDMC.MD.ase.convert_atoms import ASEAtoms, convert_from_ase_atom
+from MDMC.MD.ase.conversions import ASEAtoms, convert_from_ase_atom
 from MDMC.MD.structural_units import (Bond, BondAngle, Coulombic, DihedralAngle,
                                       get_reduced_chemical_formula)
 from MDMC.MD.interaction_functions import Coulomb
