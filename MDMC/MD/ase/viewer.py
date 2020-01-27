@@ -14,7 +14,7 @@ from ase.gui.ui import MenuItem
 from ase.gui.view import get_cell_coordinates
 import numpy as np
 
-from MDMC.MD.ase.convert_atoms import get_ase_atoms
+from MDMC.MD.ase.conversions import get_ase_atoms
 
 
 def view(atoms, cell=None):
@@ -64,6 +64,13 @@ class Viewer(GUI):
 
     It removes GUI menu options that are not applicable in MDMC.
     """
+
+    def __init__(self, images=None, rotations='', expr=None):
+
+        # Override in order to set show bonds
+        super().__init__(images=images, rotations=rotations, show_bonds=True,
+                         expr=expr)
+
 
     def set_atoms(self, atoms):
 
