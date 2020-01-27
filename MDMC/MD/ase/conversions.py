@@ -19,6 +19,11 @@ class ASEAtoms(ase.atoms.Atoms):
     bonds : array
         An array of tuples, where each tuple is an atom pair, which are
         specified by the indexes (int) of each atom.
+
+    Raises
+    ------
+    ValueError
+        If there are not the same number of IDs as there are atoms
     """
 
     def __init__(self, *args, **kwargs):
@@ -29,6 +34,8 @@ class ASEAtoms(ase.atoms.Atoms):
         super().__init__(*args, **kwargs)
 
         self.bonds = bonds
+        if IDs and len(IDs) != len(self):
+            raise ValueError('There must be an ID for every atom')
         self.IDs = IDs
 
 
@@ -105,17 +112,17 @@ def get_ase_atoms(atoms, cell=None):
     Parameters
     ----------
     atoms : iterable
-        An iterable of MDMC Atom objects to be converted to an ase.atoms.Atoms
+        An iterable of MDMC Atom objects to be converted to an ASEAtoms
         object
     cell : array, optional
-        A 3 element array specifying the unit cell of the ASE Atoms object. The
+        A 3 element array specifying the unit cell of the ASEAtoms object. The
         default is None.
 
 
     Returns
     -------
-    ase.atoms.Atoms
-        An ASE Atoms object which is equivalent to `atoms`
+    ASEAtoms
+        An ASEAtoms object which is equivalent to `atoms`
     """
 
     # The ase.atoms.Atoms object unhelpfully overwrites the index attribute of
@@ -165,7 +172,6 @@ def convert_bonds(bonds, index_conv=None):
 
     """
     Converts `Bond` objects into the form required by the ASE GUI
-
 
     Parameters
     ----------
