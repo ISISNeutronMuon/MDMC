@@ -157,9 +157,18 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
     Parameters
     ----------
     ase_atoms_info : dct
-        A dictionary containing
+        A dictionary containing site labels for one or more of bonds, angles,
+        and torsions. The corresponding values are a list with label (str) for
+        each interaction. The number of site label keys is 2 for bonds, 3 for
+        angles and 4 for torsions. For instance, for bonds there should be
+        '_geom_bond_atom_site_label_1' and '_geom_bond_atom_site_label_2', with
+        each being a list containing the first (or second) site label for each
+        interaction.
     cif_geom_def : str
-    atoms_labels
+        Specifies whether the interaction type is a bond, angle, or torsion
+    atoms_labels : dict
+        (label:atom) pairs, where label is a str with the _atom_site_label from
+        the CIF file, and atom is the corresponding MDMC `Atom` object.
 
     Returns
     -------
@@ -176,7 +185,6 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
     # There are a maximum of 4 atom sites in a geometry definition (for
     # torsions)
     cif_geom_defs = [cif_geom_def + str(index) for index in range(1, 5)]
-
     site_labels = np.array([ase_atoms_info[geom_def] for geom_def
                             in cif_geom_defs if geom_def in ase_atoms_info]).T
     label_to_atom = np.vectorize(atoms_labels.__getitem__)
@@ -203,7 +211,7 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
         atoms = _group_atoms(atoms, key)
     # If no grouping then each atom_group is a single atom
     for atom_group in atoms:
-        # A Coulomb function is set so that
+        # A Coulomb function is set so that the interaction can be parametrized
         Coulombic(atoms=atom_group, cutoff=cutoff, function=Coulomb(0.))
 
 
@@ -214,6 +222,20 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
 
     Parameters
     ----------
+    interaction_atoms : np.array
+        A 2D array with dimensions (n_interactions, n_atoms_per_interaction). So
+        for 5 bond interactions, the dimensions of the array must be (5, 2),
+        with the zeroeth index containing the two Atoms involved in the zeroeth
+        bond, the first index containing the two Atoms involved in the first
+        bond etc. For bond angle and dihedral interactions, the order of the
+        atoms must correspond to the order required for BondAngle and
+        DihedralAngle interactions.
+    key : function
+        A function by which the atoms tuples are grouped. Each group will have a
+        single bonded interaction applied. For example, for a bonded interaction
+        where the key is atom_type, if an atom pair has atom_types (1, 2), this
+        will be grouped with all other atom pairs with atom_types (1, 2), and
+        a single `Bond` will be applied to the group.
     **settings
         Settings to be passed for BondedInteraction initialization. For example
         improper=True can be passed to initialize a DihedralAngle to be an
