@@ -11,6 +11,10 @@ class Reader(ABC):
     Abstract class that defines methods common to all readers
     """
 
+    def __init__(self):
+
+        self.file = None
+
     # TODO: Consider if splitting these methods may cause issue - should I be using a with ... as statement?
     def open(self, file_name):
 

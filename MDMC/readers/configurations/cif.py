@@ -16,6 +16,7 @@ class CIF(ConfigurationReader):
 
     def __init__(self):
 
+        super().__init__()
         self._atoms = None
 
     # Dynamically set docstring
