@@ -18,6 +18,7 @@ script:
   - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) tfarmer/mdmc_dependencies:latest python3 -m pytest --cov -s $(pwd)/tests/ --ignore=$(pwd)/tests/system_tests
 
 afer_sucess:
+  - bash <(curl -s https://codecov.io/bash)
   - codecov
 
 branches:
