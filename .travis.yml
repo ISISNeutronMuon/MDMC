@@ -15,7 +15,10 @@ before_install:
   - docker pull tfarmer/mdmc_dependencies:latest
 
 script:
-    - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) tfarmer/mdmc_dependencies:latest python3 -m pytest -s $(pwd)/tests/
+  - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) tfarmer/mdmc_dependencies:latest python3 -m pytest --cov -s $(pwd)/tests/ --ignore=$(pwd)/tests/system_tests
+
+afer_sucess:
+  - codecov
 
 branches:
   only:
