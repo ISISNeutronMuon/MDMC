@@ -21,8 +21,6 @@ after_sucess:
   - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
   - bash <(curl -s https://codecov.io/bash)
 
-
 branches:
   only:
     - master
-    - travis_fix
