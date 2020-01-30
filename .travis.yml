@@ -18,7 +18,7 @@ script:
   - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) tfarmer/mdmc_dependencies:latest python3 -m pytest -s $(pwd)/tests/ --ignore=$(pwd)/tests/system_tests --ignore=$(pwd)/tests/MD --ignore=$(pwd)/tests/trajectory_analysis --cov --cov-report xml
 
 after_sucess:
-  - docker cp $(docker ps -lq):$(pwd)/coverage.xml coverage.xml
+  - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
   - bash <(curl -s https://codecov.io/bash)
 
 
