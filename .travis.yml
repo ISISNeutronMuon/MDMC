@@ -6,7 +6,7 @@ services:
   - docker
 
 python:
-  - "2.7"
+  - "3.6"
 
 notifications:
   email: false
@@ -15,7 +15,11 @@ before_install:
   - docker pull tfarmer/mdmc_dependencies:latest
 
 script:
-    - docker run --mount type=bind,source="$(pwd)",target="$(pwd)" tfarmer/mdmc_dependencies:latest python -m pytest -v "$(pwd)"/tests/
+  - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) tfarmer/mdmc_dependencies:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+
+after_sucess:
+  - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+  - bash <(curl -s https://codecov.io/bash)
 
 branches:
   only:
