@@ -131,7 +131,6 @@ class MDMCControl:
         while count < n_steps and not self.minimizer.has_converged():
 
             fom = self.generate_FoM()
-            print(self.MD_engine.engine.universe.energy())
             self.minimizer.step(fom)
             self.MD_engine.engine.update_parameters()
             count += 1
