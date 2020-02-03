@@ -33,7 +33,7 @@ except ModuleNotFoundError as err:
                               ' not in the PYTHONPATH. See LAMMPS documentation'
                               ' on Python to rectify this.'
                               ).with_traceback(err.__traceback__)
-
+from mpi4py import MPI
 import numpy as np
 
 from MDMC.common import units
@@ -70,10 +70,16 @@ class PyLammpsAttribute:
 
     def __init__(self, lmp=None, atom_style='full'):
 
+        # Set communicator to MPI predefined intracommunicator instance which
+        # contains all processes
+        self.comm = MPI.COMM_WORLD
+
         if lmp:
             self.lmp = lmp
         else:
-            self.lmp = PyLammps()
+            # Pass communicator to PyLammps to ensure consistency with process
+            # ranks
+            self.lmp = PyLammps(comm=self.comm)
             self.lmp.units('real')
             self.lmp.atom_style(atom_style)
 
@@ -89,7 +95,19 @@ class PyLammpsAttribute:
                 Contains the properties of the simulation box.
         """
 
-        return self.lmp.system
+        # PyLammps system attribute only exists on rank 0 process, so only set
+        # system_state from this.
+        if self.comm.rank == 0:
+            # Conversion from System class (which is a namedtuple) to ordered
+            # dict - required as System cannot be pickled
+            system_state = self.lmp.system._asdict()
+        else:
+            system_state = None
+        # So that system state exists for PyLammpsAttribute objects on all
+        # ranks, broadcast from rank 0 process to all other processes.
+        system_state = self.comm.bcast(system_state, root=0)
+        return system_state
+
 
     @property
     def fixes(self):
@@ -104,7 +122,16 @@ class PyLammpsAttribute:
             ``fix` which is applied
         """
 
-        return self.lmp.fixes
+        # PyLammps fixes attribute only exists on rank 0 process, so only set
+        # fixes from this.
+        if self.comm.rank == 0:
+            fixes = self.lmp.fixes
+        else:
+            fixes = None
+        # So that fixes exists for PyLammpsAttribute objects on all ranks,
+        # broadcast from rank 0 process to all other processes.
+        fixes = self.comm.bcast(fixes, root=0)
+        return fixes
 
     @property
     def fix_styles(self):
@@ -133,6 +160,27 @@ class PyLammpsAttribute:
         """
 
         return [fix['name'] for fix in self.fixes]
+
+    @property
+    def dumps(self):
+
+        """
+        Get the PyLammps wrapper list of dumps
+
+        Dumps are LAMMPS commands which write atom quantities to file for
+        specified timesteps
+        """
+
+        # PyLammps dumps attribute only exists on rank 0 process, so only set
+        # dumps from this.
+        if self.comm.rank == 0:
+            dumps = self.lmp.dumps
+        else:
+            dumps = None
+        # So that dumps exists for PyLammpsAttribute objects on all ranks,
+        # broadcast from rank 0 process to all other processes.
+        dumps = self.comm.bcast(dumps, root=0)
+        return dumps
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
@@ -384,10 +432,17 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def run(self, n_steps, equilibration=False):
         if not equilibration:
             # Remove previous dumps if they exist
-            if 'traj1' in [dump['name'] for dump in self.lmp.dumps]:
+            if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
-            self.trajectory_file = NamedTemporaryFile()
+            if self.comm.rank == 0:
+                self.trajectory_file = NamedTemporaryFile()
+                f_name = self.trajectory_file.name
+            else:
+                f_name = None
+            f_name = self.comm.bcast(f_name, root=0)
+            if self.comm.rank != 0:
+                self.trajectory_file = open(f_name)
             # Custom trajectory output just saves the atom ID, type and
             # positions
             self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
@@ -418,18 +473,30 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     def save_config(self):
 
-        # It is not possible to deepcopy the LAMMPS wrapper atoms attribute, or
-        # the individual atoms, so instead this saves the x, y, z, mass and
-        # charge in a NumPy array with the indexes given by the atom ID (with a
-        # -1 offset due to zero index)
-        # The atoms attribute also is not iterable
-        n_atoms = self.system_state.natoms
-        atoms = np.zeros([n_atoms, 5])
-        for i in range(n_atoms):
-            atom = self.lmp.atoms[i]
-            atoms[atom.id-1, :] = ([component for component in atom.position]
-                                   + [atom.mass, atom.charge])
-        self._saved_config = atoms
+        # So that the identical calculation is not performed for all processes,
+        # only calculate for rank 0 process
+        if self.comm.rank == 0:
+            # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
+            # or the individual atoms, so instead this saves the x, y, z, mass
+            # and charge in a NumPy array with the indexes given by the atom ID
+            # (with a -1 offset due to zero index)
+            # The atoms attribute also is not iterable
+            n_atoms = self.system_state['natoms']
+            atoms = np.zeros([n_atoms, 5])
+            for i in range(n_atoms):
+                atom = self.lmp.atoms[i]
+                atoms[atom.id-1, :] = ([component for component
+                                        in atom.position]
+                                       + [atom.mass, atom.charge])
+            saved_config = atoms
+        else:
+            saved_config = None
+        # Broadcast rank 0 saved config to all processes - this is not required
+        # as anything that accesses the _saved_config attribute could be set so
+        # that it only accesses the rank 0 saved config, however currently it is
+        # simpler to duplicate saved config for all processes.
+        saved_config = self.comm.bcast(saved_config, root=0)
+        self._saved_config = saved_config
 
     def reset_config(self):
 
