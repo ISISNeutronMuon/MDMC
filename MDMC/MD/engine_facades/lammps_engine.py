@@ -182,6 +182,25 @@ class PyLammpsAttribute:
         dumps = self.comm.bcast(dumps, root=0)
         return dumps
 
+    @property
+    def lmp_atoms(self):
+
+        """
+        Get the atoms that exist in LAMMPS
+
+        Returns
+        -------
+        lammps.AtomList
+            The object containing the atoms that exist in LAMMPS
+        """
+
+        if self.comm.rank == 0:
+            lmp_atoms = self.lmp.atoms
+        else:
+            lmp_atoms = None
+        lmp_atoms = self.comm.bcast(lmp_atoms, root=0)
+        return lmp_atoms
+
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
 class LAMMPSEngine(PyLammpsAttribute, MDEngine):
@@ -480,11 +499,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             # or the individual atoms, so instead this saves the x, y, z, mass
             # and charge in a NumPy array with the indexes given by the atom ID
             # (with a -1 offset due to zero index)
-            # The atoms attribute also is not iterable
+            # The atoms attribute also is not itera`ble
             n_atoms = self.system_state['natoms']
             atoms = np.zeros([n_atoms, 5])
             for i in range(n_atoms):
-                atom = self.lmp.atoms[i]
+                atom = self.lmp_atoms[i]
                 atoms[atom.id-1, :] = ([component for component
                                         in atom.position]
                                        + [atom.mass, atom.charge])
@@ -736,7 +755,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
-                self.atom_dict[atom] = self.lmp.atoms[self.lmp.atoms.natoms - 1]
+                self.atom_dict[atom] = self.lmp_atoms[self.lmp_atoms.natoms - 1]
 
     def set_config(self, config):
 
