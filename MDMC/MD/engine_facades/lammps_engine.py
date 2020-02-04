@@ -19,7 +19,7 @@ variables when they are read from ``PyLammps`` e.g.
 A minor bug in LAMMPS (Dec 2018 version) means that ``nangletypes`` returned
 by ``PyLammps`` is incorrectly set to ``ndihedraltypes``."""
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from copy import copy
 from itertools import chain, combinations, count, product, tee
 from random import randint
@@ -106,7 +106,8 @@ class PyLammpsAttribute:
         # So that system state exists for PyLammpsAttribute objects on all
         # ranks, broadcast from rank 0 process to all other processes.
         system_state = self.comm.bcast(system_state, root=0)
-        return system_state
+        # Cast back to namedtuple to remain consist with LAMMPS system attribute
+        return namedtuple('System', system_state.keys())(*system_state.values())
 
 
     @property
@@ -181,25 +182,6 @@ class PyLammpsAttribute:
         # broadcast from rank 0 process to all other processes.
         dumps = self.comm.bcast(dumps, root=0)
         return dumps
-
-    @property
-    def lmp_atoms(self):
-
-        """
-        Get the atoms that exist in LAMMPS
-
-        Returns
-        -------
-        lammps.AtomList
-            The object containing the atoms that exist in LAMMPS
-        """
-
-        if self.comm.rank == 0:
-            lmp_atoms = self.lmp.atoms
-        else:
-            lmp_atoms = None
-        lmp_atoms = self.comm.bcast(lmp_atoms, root=0)
-        return lmp_atoms
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
@@ -500,10 +482,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             # and charge in a NumPy array with the indexes given by the atom ID
             # (with a -1 offset due to zero index)
             # The atoms attribute also is not itera`ble
-            n_atoms = self.system_state['natoms']
+            n_atoms = self.system_state.natoms
             atoms = np.zeros([n_atoms, 5])
             for i in range(n_atoms):
-                atom = self.lmp_atoms[i]
+                atom = self.lmp.atoms[i]
                 atoms[atom.id-1, :] = ([component for component
                                         in atom.position]
                                        + [atom.mass, atom.charge])
@@ -552,8 +534,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         The MDMC ``Universe`` which has been converted to this
         ``LAMMPSUniverse``.
     atom_dict : dict
-        A `dict` with {``MDMC_atom``: ``LAMMPS_atom``}, where ``MDMC_atom`` is
-        an MDMC ``Atom`` and ``LAMMPS_atom`` is the corresponding LAMMPS
+        A `dict` with {``MDMC_atom``: ``LAMMPS_atom_id``}, where ``MDMC_atom``
+        is an MDMC ``Atom`` and ``LAMMPS_atom`` is the corresponding LAMMPS
         ``Atom``.
     atom_types : dict
         A `dict` with {``type_ID``: ``MDMC_atom_group``}, where the ``type_ID``
@@ -755,7 +737,12 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
-                self.atom_dict[atom] = self.lmp_atoms[self.lmp_atoms.natoms - 1]
+                if self.comm.rank == 0:
+                    lmp_atom_id = self.lmp.atoms[self.lmp.atoms.natoms - 1].id
+                else:
+                    lmp_atom_id = None
+
+                self.atom_dict[atom] = lmp_atom_id
 
     def set_config(self, config):
 
@@ -978,10 +965,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
             ``charge is None``)
         """
 
-        for atom, lmp_atom in self.atom_dict.items():
+        for atom, lmp_atom_id in self.atom_dict.items():
             try:
                 self.lmp.set('atom',
-                             lmp_atom.id,
+                             lmp_atom_id,
                              'charge',
                              convert_unit(atom.charge))
             except ValueError:
@@ -1086,7 +1073,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # interactions, by appending the lmp_name to 'single/'
             c_b_type = 'single/{0}'.format(lmp_name)
             for atom_tpl in b_i.atoms:
-                atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
+                atom_IDs = [self.atom_dict[atom] for atom in atom_tpl]
                 self.lmp.create_bonds(c_b_type,
                                       ID,
                                       *atom_IDs,
