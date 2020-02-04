@@ -742,7 +742,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 else:
                     lmp_atom_id = None
 
-                self.atom_dict[atom] = lmp_atom_id
+                self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
 
     def set_config(self, config):
 
