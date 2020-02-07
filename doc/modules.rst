@@ -1,9 +1,8 @@
+.. _modules-label:
+
 Modules
 =======
 
-.. toctree::
-   :maxdepth: 3
-
-   common
-   control
-   md
+common
+control
+md

@@ -1,6 +1,16 @@
 MD
 ==
 
+structural_units
+================
+.. automodule:: MDMC.MD.structural_units
+    :members:
+
+simulation
+================
+.. automodule:: MDMC.MD.simulation
+    :members:
+
 facade_factory
 ==============
 .. automodule:: MDMC.MD.engine_facades.facade_factory

@@ -1,28 +1,15 @@
-MDMC documentation
+MDMC Documentation
 ==================
 
 MDMC is a Python package for optimising classical molecular dynamics (MD)
 potential parameters by refining against experimental data, particularly
-dynamical data such as the dynamic structure factor (DSF). The refinement uses
-derivative free optimisation algorithms, e.g. Monte Carlo (MC).
+dynamical data such as the dynamic structure factor. The refinement uses
+derivative free optimisation algorithms, e.g. Monte Carlo (MC).  See
+:ref:`introduction-label` and :ref:`installation-label` to start using MDMC.
 
-MDMC is separated into two sections, the simulation and the refinement:
-
-Simulation
-----------
-To run a refinement using MDMC it is first necessary to define the simulation
-setup for which the parameters will be refined.
-
-MDMC can also be used to run MD simulations without refinement, providing the
-power of Python scripting and a number of helper methods to simplify setting up
-simulations.
-
-Refinement
-----------
-To refine the parameters of a simulation, one or more experimental datasets must
-be provided and a minimiser must be selected.  It is possible to refine all of
-the parameters, or to specify a subset to be refined.
-
+MDMC was originally developed at the ISIS Neutron and Muon Source,
+Chalmers University, the European Spallation Source, and the University of
+Copenhagen.
 
 Python
 ------
@@ -33,16 +20,36 @@ up refinements quicker and scripts more flexible. There is a short introduction
 to Python here.
 
 
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   modules
-
 Indices and tables
 ------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+.. toctree::
+   :maxdepth: 2
+   :numbered:
+   :hidden:
+   :caption: Contents
+
+   introduction
+   installation
+   simulation
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Tutorials
+
+   tutorials/building-a-universe.ipynb
+   tutorials/solvating-a-universe.ipynb
+   tutorials/running-a-simulation.ipynb
+
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+  :caption: Modules
+
+  modindex
