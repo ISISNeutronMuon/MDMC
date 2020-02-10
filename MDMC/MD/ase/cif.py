@@ -35,7 +35,7 @@ def ase_read_cif(file, **settings):
     which will include all 6 of the atom pairs.
     If both `names` and `atom_types` are passed, `atom_types` will be used to
     group `Atom` objects.
-    If neither `names` or `atom_types` is passed then each interaction in will
+    If neither `names` or `atom_types` is passed then each interaction will
     become a separate object.
 
     .. note:: Not all CIF files contain bonded interactions (it is only common
