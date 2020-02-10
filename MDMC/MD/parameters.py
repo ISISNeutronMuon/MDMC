@@ -8,6 +8,7 @@ a sequence of Parameter objects.
 """
 
 import ast
+from collections.abc import Iterable
 from itertools import chain
 import operator
 import warnings
@@ -264,6 +265,13 @@ class Parameters(list):
     A list-like object where every element is a Parameter, which contains a
     number of helper methods for filtering
     """
+
+    def __getitem__(self, key):
+
+        item = super().__getitem__(key)
+        if isinstance(key, slice):
+            return self.__class__(item)
+        return item
 
     def filter(self, predicate):
 
