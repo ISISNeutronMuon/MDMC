@@ -399,11 +399,18 @@ class Parameters(list):
             the specified value of the specified attribute
         """
 
+        def flatten(iterable):
+            for element in iterable:
+                if isinstance(element, Iterable):
+                    yield from flatten(element)
+                else:
+                    yield element
+
         return Parameters(filter(lambda p:
                                  value in [getattr(atom, attribute)
                                            for int in p.interactions
                                            for atom
-                                           in chain.from_iterable(int.atoms)],
+                                           in flatten(int.atoms)],
                                  self))
 
 
