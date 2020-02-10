@@ -5,6 +5,7 @@ from copy import deepcopy
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.MD.parameters import Parameters
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
@@ -26,7 +27,7 @@ class MDMCControl:
         ('file_name'), the type of observable ('type'), the reader required for
         the file ('reader'), and the weighting of the dataset in the Figure of
         Merit calculation('weighting').
-    fit_params : list
+    fit_params : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
         Determines the accept/reject ratio of the MC. Default is 1.
@@ -57,7 +58,7 @@ class MDMCControl:
     ----------
     MD_engine : MDEngine
     exp_datasets : list of dicts
-    fit_params : list of Parameters
+    fit_params : Parameters
     minimizer : Minimizer
         Refines the potential parameters.
     settings - dict
@@ -80,7 +81,7 @@ class MDMCControl:
 
         self.MD_engine = MD_engine
         self.exp_datasets = exp_datasets
-        self.fit_params = fit_params
+        self.fit_params = Parameters(fit_params)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
