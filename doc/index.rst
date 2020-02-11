@@ -17,11 +17,15 @@ Python is a powerful high level programming language which has a simple syntax,
 which is why it is commonly used for scripting.  Detailed knowledge of Python
 is **not** required to run MDMC, however a basic understanding will make setting
 up refinements quicker and scripts more flexible. There is a short introduction
-to Python here.
+to Python `here <https://www.mantidproject.org/Introduction_To_Python>`_.
 
+Acknowledgements
+----------------
+Funding for the development of MDMC has been provided by the Swedish Research
+Council under grant ????.
 
-Indices and tables
-------------------
+Indices
+-------
 
 * :ref:`genindex`
 * :ref:`modindex`
@@ -36,7 +40,8 @@ Indices and tables
 
    introduction
    installation
-   simulation
+   simulations
+   parameter-refinement
 
 .. toctree::
    :maxdepth: 2
@@ -46,10 +51,17 @@ Indices and tables
    tutorials/building-a-universe.ipynb
    tutorials/solvating-a-universe.ipynb
    tutorials/running-a-simulation.ipynb
+   tutorials/selecting-fitting-parameters.ipynb
 
 .. toctree::
   :maxdepth: 1
   :hidden:
   :caption: Modules
 
-  modindex
+  common
+  control
+  gui
+  md
+  readers
+  refinement
+  trajectory_analysis

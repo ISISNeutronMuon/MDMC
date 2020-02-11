@@ -1,5 +1,9 @@
+.. _control-label:
+
 Control
 =======
 
-.. automodule:: MDMC.control.control
-    :members:
+.. toctree::
+   :maxdepth: 1
+
+   ./control/control

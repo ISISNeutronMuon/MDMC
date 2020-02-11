@@ -1,32 +1,26 @@
+.. _md-modules-label:
+
 MD
 ==
 
-structural_units
-================
-.. automodule:: MDMC.MD.structural_units
-    :members:
+.. toctree::
+  :maxdepth: 1
 
-simulation
-================
-.. automodule:: MDMC.MD.simulation
-    :members:
-
-facade_factory
-==============
-.. automodule:: MDMC.MD.engine_facades.facade_factory
-    :members:
-
-facade
-======
-.. automodule:: MDMC.MD.engine_facades.facade
-    :members:
-
-lammps_engine
-=============
-.. automodule:: MDMC.MD.engine_facades.lammps_engine
-    :members:
-
-interaction_functions
-=====================
-.. automodule:: MDMC.MD.interaction_functions
-    :members:
+  ./md/container
+  ./md/interaction_functions
+  ./md/parameters
+  ./md/simulation
+  ./md/structural_units
+  ./md/ase/cif
+  ./md/ase/conversions
+  ./md/ase/viewer
+  ./md/engine_facades/facade_factory
+  ./md/engine_facades/facade
+  ./md/engine_facades/lammps_engine
+  ./md/force_fields/ff
+  ./md/force_fields/force_field_factory
+  ./md/force_field/OPLSAA
+  ./md/force_field/SPC
+  ./md/force_field/SPCE
+  ./md/solvents/solvents
+  ./md/solvents/SPC_config
