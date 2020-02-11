@@ -8,6 +8,7 @@ a sequence of Parameter objects.
 """
 
 import ast
+from collections.abc import Iterable
 from itertools import chain
 import operator
 import warnings
@@ -265,6 +266,13 @@ class Parameters(list):
     number of helper methods for filtering
     """
 
+    def __getitem__(self, key):
+
+        item = super().__getitem__(key)
+        if isinstance(key, slice):
+            return self.__class__(item)
+        return item
+
     def filter(self, predicate):
 
         """
@@ -399,11 +407,18 @@ class Parameters(list):
             the specified value of the specified attribute
         """
 
+        def flatten(iterable):
+            for element in iterable:
+                if isinstance(element, Iterable):
+                    yield from flatten(element)
+                else:
+                    yield element
+
         return Parameters(filter(lambda p:
                                  value in [getattr(atom, attribute)
                                            for int in p.interactions
                                            for atom
-                                           in chain.from_iterable(int.atoms)],
+                                           in flatten(int.atoms)],
                                  self))
 
 
