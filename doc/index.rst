@@ -38,10 +38,10 @@ Indices
    :hidden:
    :caption: Contents
 
-   introduction
-   installation
-   simulations
-   parameter-refinement
+   pages/introduction
+   pages/installation
+   pages/simulations
+   pages/parameter-refinement
 
 .. toctree::
    :maxdepth: 2
@@ -58,10 +58,10 @@ Indices
   :hidden:
   :caption: Modules
 
-  common
-  control
-  gui
-  md
-  readers
-  refinement
-  trajectory_analysis
+  pages/modules/common
+  pages/modules/control
+  pages/modules/gui
+  pages/modules/md
+  pages/modules/readers
+  pages/modules/refinement
+  pages/modules/trajectory_analysis

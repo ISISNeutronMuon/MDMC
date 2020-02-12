@@ -12,8 +12,7 @@ Running a refinement requires:
 These objects are then passed to a :class:`~MDMC.control.control.Control` object
 along with other parameters such as the minimizer type.  This
 :class:`~MDMC.control.control.Control` object is then
-used to :py:meth:`~MDMC.control.Control.refine` the
+used to :py:meth:`~MDMC.control.control.Control.refine` the
 :class:`~MDMC.MD.parameters.Parameters`.
 
-.. rubric::
-Related Tutorials
+.. rubric:: Related Tutorials

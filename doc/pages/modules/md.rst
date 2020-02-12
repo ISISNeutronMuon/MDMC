@@ -19,8 +19,8 @@ MD
   ./md/engine_facades/lammps_engine
   ./md/force_fields/ff
   ./md/force_fields/force_field_factory
-  ./md/force_field/OPLSAA
-  ./md/force_field/SPC
-  ./md/force_field/SPCE
+  ./md/force_fields/oplsaa
+  ./md/force_fields/spc
+  ./md/force_fields/spce
   ./md/solvents/solvents
   ./md/solvents/SPC_config

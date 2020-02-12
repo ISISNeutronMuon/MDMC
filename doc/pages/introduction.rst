@@ -32,13 +32,14 @@ available experimental observables, the minimisers, and the
 
 It is possible to refine all of the parameters, or to specify a subset to be
 refined, which is shown in the interactive tutorial `Selecting Fitting
-Parameters <tutorials/selecting-fitting-parameters.ipynb>`_.
+Parameters <../tutorials/selecting-fitting-parameters.ipynb>`_.
 
 For a full demonstration of MDMC, including setting up a simulation and running
 a refinement, please see the tutorial `Refining the potential parameters of
-liquid Argon <tutorials/refining-liquid-argon.ipynb>`_.
+liquid Argon <../tutorials/refining-liquid-argon.ipynb>`_.
 
 .. _tutorials-label:
+
 Tutorials
 ---------
 There are a number of tutorials covering different aspects of MDMC located in
