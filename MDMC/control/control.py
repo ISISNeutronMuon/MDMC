@@ -13,7 +13,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
 
 @repr_decorator('MD_engine', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_params', 'settings')
-class MDMCControl:
+class Control:
 
     """
     Controls the MDMC refinement
@@ -131,7 +131,7 @@ class MDMCControl:
 
         while count < n_steps and not self.minimizer.has_converged():
 
-            fom = self.generate_FoM()
+            fom = self._generate_FoM()
             self.minimizer.step(fom)
             self.MD_engine.engine.update_parameters()
             count += 1
@@ -154,7 +154,7 @@ class MDMCControl:
 
         print(np.array([p.value for p in self.fit_params]))
 
-    def generate_FoM(self):
+    def _generate_FoM(self):
 
         """
         The methods required to generate a FoM
@@ -165,7 +165,7 @@ class MDMCControl:
             Non-negative float FoM
         """
 
-        self.run_MD()
+        self._run_MD()
         self._calculate_observables(self.MD_engine, self.observable_pairs)
 
         # TODO: Remove arbitrary normalization
@@ -179,7 +179,7 @@ class MDMCControl:
 
         return self._calculate_FoM()
 
-    def run_MD(self):
+    def _run_MD(self):
 
         """
         Run a molecular dynamics simulation
