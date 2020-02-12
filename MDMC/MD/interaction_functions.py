@@ -135,7 +135,7 @@ def inter_func_decorator(*param_units):
         one or more str or units.Unit, where each str (or Unit) is a unit which
         is applied to the corresponding value passed to the decorated method. If
         one of the values is unitless, pass None at the corresponding index in
-        *param_units.
+        param_units.
 
     Examples
     --------

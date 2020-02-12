@@ -203,8 +203,8 @@ class Universe(AtomContainer):
         -------
         For an O Atom with two bonds, one to H1 and one to H2::
 
-        >>> print(O.bonded_interaction_pairs)
-        [(Bond, (H1, O)), (Bond, (H2, O))]
+            >>> print(O.bonded_interaction_pairs)
+            [(Bond, (H1, O)), (Bond, (H2, O))]
         """
 
         # bonded_interaction_pairs is a set to avoid double counting of
@@ -592,13 +592,14 @@ class Universe(AtomContainer):
     def add_force_field(self, force_field, *interactions, **settings):
 
         """
-        Adds a force field to *interactions.  If no interactions are
-        passed, the force field is applied to all interactions in the Universe.
+        Adds a force field to the specified interactions.  If no interactions
+        are passed, the force field is applied to all interactions in the
+        Universe.
 
         Parameters
         ----------
         force_field : str
-            The ForceField to parameterize *interactions (if provided), or all
+            The ForceField to parameterize interactions (if provided), or all
             the interactions in the universe. The available force fields are:
             DYNAMIC_FORCE_FIELD_LIST
         *interactions
@@ -692,8 +693,9 @@ class Universe(AtomContainer):
         pairs_interactions : dict of {tuple: list} pairs
             A dictionary of {pair: interactions} pairs, where:
                 - pair is a tuple for a pair of atom types in the universe,
-                - interactions is a list of nonbonded interactions
-                that exist for this pair of atom types.
+                - interactions is a list of nonbonded interactions that exist
+                  for this pair of atom types.
+
             Any Dispersions in interactions are ones that exist explicity
             for this pair, whereas any Coulombics in interactions are ones
             that exist for either of the atom types in pair.

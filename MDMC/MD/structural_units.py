@@ -1748,6 +1748,7 @@ class NonBondedInteraction(Interaction):
         Get the atom_types for which the NonBondedInteraction applies
 
         Returns
+        -------
         list
             A list of int for the atom_types
         """
