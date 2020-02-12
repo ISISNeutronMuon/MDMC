@@ -64,13 +64,13 @@ for p in universe.parameters:
         p.fixed = True
 
 fit_params = set([p for p in universe.parameters if p.fixed is False])
-control = MDMCControl(MD_engine=md_engine,
-                      exp_datasets=exp_datasets,
-                      fit_params=fit_params,
-                      MC_norm=1,
-                      minimizer_type="MMC",
-                      MD_steps=208000,
-                      t_resolution=114.)
+control = Control(MD_engine=md_engine,
+                  exp_datasets=exp_datasets,
+                  fit_params=fit_params,
+                  MC_norm=1,
+                  minimizer_type="MMC",
+                  MD_steps=208000,
+                  t_resolution=114.)
 
 # Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
 # a non-uniform E step.
