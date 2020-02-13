@@ -44,6 +44,9 @@ def ase_read_cif(file, **settings):
     .. note:: improper dihedrals are not explicitly defined in CIF, so these
     must be set after initialization of `DihedralAngle` objects.
 
+    .. note:: CIF reader cannot parse CIF files with user defined text sections,
+    so these must be stripped out before reading.
+
     Parameters
     ----------
     file : File, str
