@@ -22,7 +22,7 @@ to Python `here <https://www.mantidproject.org/Introduction_To_Python>`_.
 Acknowledgements
 ----------------
 Funding for the development of MDMC has been provided by the Swedish Research
-Council under grant ????.
+Council.
 
 Indices
 -------
@@ -50,6 +50,7 @@ Indices
 
    tutorials/building-a-universe.ipynb
    tutorials/solvating-a-universe.ipynb
+   tutorials/molecular-visualization.ipynb
    tutorials/running-a-simulation.ipynb
    tutorials/selecting-fitting-parameters.ipynb
 
