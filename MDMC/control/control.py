@@ -57,11 +57,14 @@ class Control:
     Attributes
     ----------
     MD_engine : MDEngine
+        The ``MDEngine`` on which is used to perform the refinement
     exp_datasets : list of dicts
+        One ``dict`` per experimental dataset used for the refinement
     fit_params : Parameters
+        All Parameter objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    settings - dict
+    settings : dict
         settings for the MD and minimization.
     observable_pairs : list of ObservablePairs
         Experimental observable/MD observable pairs which are used to calculate
