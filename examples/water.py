@@ -8,7 +8,7 @@ from scipy.interpolate import interp2d
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, Molecule
-from MDMC.control.control import MDMCControl
+from MDMC.control.control import Control
 from tests.test_data import data
 
 # Build universe
@@ -38,16 +38,16 @@ O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
 universe.add_force_field('SPCE')
 
 # MD Engine setup
-md_engine = Simulation(universe,
-                       engine="lammps",
-                       time_step=1.057564,
-                       temperature=263.,
-                       traj_step=1000)
+simulation = Simulation(universe,
+                        engine="lammps",
+                        time_step=1.057564,
+                        temperature=263.,
+                        traj_step=1000)
 
 # Energy Minimization and equilibration
-md_engine.minimize(n_steps=5000)
+simulation.minimize(n_steps=5000)
 print("Minimization Complete")
-md_engine.run(n_steps=25000, equilibration=True)
+simulation.run(n_steps=25000, equilibration=True)
 print("Equilibration Complete")
 
 # Setup refinement
@@ -64,7 +64,7 @@ for p in universe.parameters:
         p.fixed = True
 
 fit_params = set([p for p in universe.parameters if p.fixed is False])
-control = Control(MD_engine=md_engine,
+control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_params=fit_params,
                   MC_norm=1,

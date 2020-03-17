@@ -39,8 +39,7 @@ Parameters <../tutorials/selecting-fitting-parameters.ipynb>`_.
 For an explanation of the refinement steps, please see the tutorial `Running a
 Refinement <../tutorials/running-a-refinement.ipynb>`_, and for a full
 demonstration of MDMC, including setting up a simulation and running
-a refinement, please see the tutorial `Refining the potential parameters of
-liquid Argon <../tutorials/refining-liquid-argon.ipynb>`_.
+a refinement, please see the .py files within 'examples'.
 
 .. _tutorials-label:
 
@@ -72,7 +71,7 @@ The pages in the sidebar under the Modules heading provide documentation for
 every function, class and class method in MDMC, including descriptions of
 parameters (or options) which can be used in each of these cases.  This
 documentation is also available when Python is run interactively using Python's
-`help` function.  For example, to get the documentation for the `Universe`
+`help()` function.  For example, to get the documentation for the `Universe`
 class:
 
 .. code-block:: Python

@@ -76,20 +76,32 @@ class FigureOfMeritCalculator(ABC):
 
 class StandardFoMCalculator(FigureOfMeritCalculator):
 
-    """
-    Calculates the error normalised square difference, with an optional
-    weighting
+    r"""
+    Calculates the error normalised square difference:
+
+    .. math::
+
+        FoM = \sum_{i} w_{i} \frac{F_{i}^{exp} - F_{i}^{sim}}{\sigma_{i}^{exp}}
+
+    where the sum is over the total number of experimental datasets,
+    :math:`w_{i}` is an importance weighting assigned to each dataset,
+    :math:`F_{i}` is a 1-D or 2-D array of the experimental ``Observable``
+    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
+    :math:`\sigma_{i}^{exp}` is a 1-D or 2-D array of the errors on the
+    experimental ``Observable``. The subtraction and divison over the arrays are
+    element-wise.
     """
 
     def calculate_single_FoM(self, obs_pair):
 
         """
-        Performs the error normalised square difference for an ObservablePair
+        Performs the error normalised square difference for an
+        ``ObservablePair``
 
         Parameters
         ----------
         obs_pair : ObservablePair
-            An ObservablePair for which the FoM is calculated
+            An ``ObservablePair`` for which the FoM is calculated
 
         Returns
         -------
