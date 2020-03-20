@@ -2486,9 +2486,10 @@ class BondAngle(Constrainable, BondedInteraction):
     """
     A bond angle between any two bonds
 
-    Requires either three atoms (rotation around central atom) or four atoms
-    (rotation around central bond - dihedral or torsional rotation) in each
-    atom_tuple.
+    Requires three atoms (rotation around central atom) in each atom_tuple. The
+    atoms are ordered i, j, k, where j is the central atom.
+
+    So BondAngle(i, j, k) == BondAngle(k, j, i)
 
     Parameters
     ----------
@@ -2505,7 +2506,7 @@ class BondAngle(Constrainable, BondedInteraction):
         super().__init__(*atom_tuples, **settings)
 
 
-@repr_decorator('function', 'constrained', 'improper')
+@repr_decorator('function', 'improper')
 class DihedralAngle(BondedInteraction):
 
     """

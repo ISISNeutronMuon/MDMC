@@ -57,7 +57,7 @@ class Control:
     Attributes
     ----------
     simulation : Simulation
-        The ``MDEngine`` on which is used to perform the refinement
+        The ``Simulation`` on which is used to perform the refinement
     exp_datasets : list of dicts
         One ``dict`` per experimental dataset used for the refinement
     fit_params : Parameters
