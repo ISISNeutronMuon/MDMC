@@ -61,8 +61,9 @@ def ase_read_cif(file, **settings):
             the same order as the order the atoms in the file. A `name` must be
             be provided for each atom in the CIF file.
         atom_types : list of int
-            A list of int for atom types of the atoms in the CIF file. An
-            `atom_type` must be provided for each atom in the CIF file.
+            A list of int for atom types of the atoms in the CIF file. These
+            names must have the same order as the order the atoms in the file.
+            An `atom_type` must be provided for each atom in the CIF file.
         cutoff : float
             A distance (in Ang) at which the `Coulombic` interactions are
             cutoff. If this is not passed, the `cutoff` will be set to 10.

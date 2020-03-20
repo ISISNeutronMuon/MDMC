@@ -11,7 +11,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 
 
-@repr_decorator('MD_engine', 'exp_datasets', 'FoM_calculator', 'minimizer',
+@repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_params', 'settings')
 class Control:
 
@@ -20,7 +20,7 @@ class Control:
 
     Parameters
     ----------
-    MD_engine : MDEngine
+    simulation : simulation
         Performs a simulation for a given set of potential parameters.
     exp_datasets : list of dicts
         Each dictionary is an experimental dataset, containing the file name
@@ -56,12 +56,15 @@ class Control:
 
     Attributes
     ----------
-    MD_engine : MDEngine
+    simulation : Simulation
+        The ``Simulation`` on which is used to perform the refinement
     exp_datasets : list of dicts
+        One ``dict`` per experimental dataset used for the refinement
     fit_params : Parameters
+        All Parameter objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    settings - dict
+    settings : dict
         settings for the MD and minimization.
     observable_pairs : list of ObservablePairs
         Experimental observable/MD observable pairs which are used to calculate
@@ -75,11 +78,11 @@ class Control:
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
-    def __init__(self, MD_engine, exp_datasets, fit_params, MC_norm=1.,
+    def __init__(self, simulation, exp_datasets, fit_params, MC_norm=1.,
                  minimizer_type='MMC', FoM_type='standard',
                  reset_config=True, **settings):
 
-        self.MD_engine = MD_engine
+        self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.fit_params = Parameters(fit_params)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
@@ -133,22 +136,22 @@ class Control:
 
             fom = self._generate_FoM()
             self.minimizer.step(fom)
-            self.MD_engine.engine.update_parameters()
+            self.simulation.engine.update_parameters()
             count += 1
 
             if self.reset_config:
                 if self.minimizer.state_changed:
                     # Set MD engine to remember new config
-                    self.MD_engine.engine.save_config()
+                    self.simulation.engine.save_config()
                 else:
                     # Set MD engine to reset to old config
-                    self.MD_engine.engine.reset_config()
+                    self.simulation.engine.reset_config()
 
         # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
-            self.MD_engine.engine.update_parameters()
+            self.simulation.engine.update_parameters()
         except TypeError:
             pass
 
@@ -166,7 +169,7 @@ class Control:
         """
 
         self._run_MD()
-        self._calculate_observables(self.MD_engine, self.observable_pairs)
+        self._calculate_observables(self.simulation, self.observable_pairs)
 
         # TODO: Remove arbitrary normalization
         for pair in self.observable_pairs:
@@ -185,7 +188,7 @@ class Control:
         Run a molecular dynamics simulation
         """
 
-        self.MD_engine.run(self.MD_steps)
+        self.simulation.run(self.MD_steps)
 
     def _read_observable_from_file(self, type, reader, file_name):
 
@@ -235,14 +238,14 @@ class Control:
             exp_observable.independent_variables)
         return observable
 
-    def _calculate_observables(self, MD_engine, observable_pairs):
+    def _calculate_observables(self, simulation, observable_pairs):
 
         """
         Calculates all of the Observables from the MD trajectory/configurations
 
         Parameters
         ----------
-        MD_engine : MDEngine
+        simulation : simulation
             MDEngine with defined trajectory attribute
         observable_pairs : list of ObservablePairs
             ObservablesPairs for which the MD observable will be calculated
@@ -250,7 +253,7 @@ class Control:
 
         # slc = self._calculate_trajectory_slice(self.observable_pairs[0].exp_obs,
         # )
-        trj = MD_engine.engine.convert_trajectory()
+        trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
 

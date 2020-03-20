@@ -385,12 +385,13 @@ def repr_decorator(attribute, *attributes):
 
     The first element of all __repr__ returns is always the name of the class
 
-    .. warning:: Testing for repr_decorator is restricted to testing the
-    decorator outputs the correct format, not whether each occurence it is used
-    is valid. It is strongly recommended that classes decorated with
-    repr_decorator are tested to ensure that repr(class) is valid, for instance
-    whether the class actually has all of the attributes passed as str to
-    repr_decorator.
+    .. warning::
+        Testing for repr_decorator is restricted to testing the decorator
+        outputs the correct format, not whether each occurence it is used is
+        valid. It is strongly recommended that classes decorated with
+        repr_decorator are tested to ensure that repr(class) is valid, for
+        instance whether the class actually has all of the attributes passed as
+        str to repr_decorator.
 
     Parameters
     ----------
