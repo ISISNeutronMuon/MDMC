@@ -16,3 +16,6 @@ used to :py:meth:`~MDMC.control.control.Control.refine` the
 :class:`~MDMC.MD.parameters.Parameters`.
 
 .. rubric:: Related Tutorials
+
+| `Selecting fitting Parameters <../tutorials/selecting-fitting-parameters.ipynb>`_
+| `Running a Refinement <../tutorials/running-a-refinement.ipynb>`_

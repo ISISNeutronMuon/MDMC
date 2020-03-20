@@ -55,6 +55,7 @@ Indices
    tutorials/molecular-visualization.ipynb
    tutorials/running-a-simulation.ipynb
    tutorials/selecting-fitting-parameters.ipynb
+   tutorials/running-a-refinement.ipynb
 
 .. toctree::
   :maxdepth: 1
