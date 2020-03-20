@@ -36,7 +36,7 @@ Indices
    :maxdepth: 2
    :numbered:
    :hidden:
-   :caption: Contents
+   :caption: Overview
 
    pages/introduction
    pages/installation
@@ -49,6 +49,8 @@ Indices
    :caption: Tutorials
 
    tutorials/building-a-universe.ipynb
+   tutorials/read-configurations.ipynb
+   tutorials/applying-a-forcefield.ipynb
    tutorials/solvating-a-universe.ipynb
    tutorials/molecular-visualization.ipynb
    tutorials/running-a-simulation.ipynb

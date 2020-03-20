@@ -41,18 +41,21 @@ to:
 
  - :py:meth:`~MDMC.readers.configurations.read` in configuration and topology
    (except :class:`~MDMC.MD.structural_units.Dispersive` interactions) from CIF
-   files
+   files (see `Reading atoms from configuration files <../tutorials/read-configurations.ipynb>`_
+   tutorial)
 
  - :py:meth:`~MDMC.gui.view` the configuration and topology in a GUI, to check
    the setup is correct
 
  - Use :py:meth:`~MDMC.MD.simulation.Universe.add_force_field` to apply
    established force fields (e.g. OPLSAA) to the topology to set the interaction
-   functions and parameters.
+   functions and parameters (see `Applying a FieldField` <../tutorials/applying-a-forcefield.ipynb>`_`)
 
 
 .. rubric:: Related Tutorials
 
-| `Building a Universe <../tutorials/building-a-universe.ipynb>`__
+| `Building a Universe <../tutorials/building-a-universe.ipynb>`_
+| `Reading atoms from configuration files <../tutorials/read-configurations.ipynb>`_
+| `Applying a ForceField <../tutorials/applying-a-forcefield.ipynb>`_
 | `Solvating a Universe <../tutorials/solvating-a-universe.ipynb>`_
-| `Running a Simulation <../tutorials/running-a-simulation.ipynb>`__
+| `Running a Simulation <../tutorials/running-a-simulation.ipynb>`_
