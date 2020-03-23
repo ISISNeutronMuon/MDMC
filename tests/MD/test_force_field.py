@@ -445,6 +445,25 @@ def _parametrize_interaction(interaction_class, force_field_name, *atoms,
     return interaction
 
 
+@pytest.mark.parametrize('force_field_name, element, expected_number',
+                         [('OPLSAA', 'Cl', 11),
+                          ('OPLSAA', 'F', 13),
+                          ('OPLSAA', 'Ca', 2),
+                          ('OPLSAA', 'P', 6)])
+def test_filter_element(force_field_name, element, expected_number):
+
+    """
+    Tests that filtering the atoms of a FileForceField by an element produces
+    the expected number of rows in the returned DataFrame, and that all of these
+    rows have the correct element type
+    """
+
+    force_field = ForceFieldFactory.create_force_field(force_field_name)
+    atoms = force_field.filter_element(element)
+    assert len(atoms) == expected_number
+    assert all(atoms['element'] == element)
+
+
 def test_specific_force_fields_names():
 
     """
