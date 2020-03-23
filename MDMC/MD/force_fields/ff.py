@@ -275,6 +275,26 @@ class FileForceField(ForceField):
             self._interaction_dictionary = None
             return self._interaction_dictionary
 
+    def filter_element(self, element):
+
+        """
+        Filters the atoms in the FileForceField by element
+
+        Parameters
+        ----------
+        element : str
+            The element by which the atoms in the FileForceField will be
+            filtered
+
+        Returns
+        -------
+        DataFrame
+            A filtered DataFrame where each row is an atom type that has an
+            element specified by `element`
+        """
+
+        return filter_dataframe([element], self.atoms, column_names=['element'])
+
     def set_atom_mass(self, atom):
 
         """
