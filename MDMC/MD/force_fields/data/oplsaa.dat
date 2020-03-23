@@ -64,7 +64,7 @@ atom_type	atom_group	name	charge	element	mass	nbonds
 57	25	Dummy Atom	0.0000	Vr	1.000	0
 58	26	Helium Atom	0.0000	He	4.003	0
 59	27	Neon Atom	0.0000	Ne	20.179	0
-60	28	Argon Atom	0.0000	K	39.948	0
+60	28	Argon Atom	0.0000	Ar	39.948	0
 61	29	Krypton Atom	0.0000	Kr	83.800	0
 62	30	Xenon Atom	0.0000	Xe	131.300	0
 63	31	TIP3P Water O	-0.8340	O	15.999	2
@@ -350,11 +350,11 @@ atom_type	atom_group	name	charge	element	mass	nbonds
 343	1	Fluoride Ion F-	-1.0000	F	18.998	0
 344	21	Chloride Ion Cl-	-1.0000	Cl	35.453	0
 345	65	Bromide Ion Br-	-1.0000	Br	79.904	0
-346	66	Iodide Ion I-	-1.0000	Te	126.905	0
+346	66	Iodide Ion I-	-1.0000	I	126.905	0
 347	67	Ammonium Ion NH4+ (UA)	1.0000	N	18.039	0
 348	68	Lithium Ion Li+	1.0000	Li	6.941	0
 349	69	Sodium Ion Na+	1.0000	Na	22.990	0
-350	70	Potassium Ion K+	1.0000	Ar	39.098	0
+350	70	Potassium Ion K+	1.0000	K	39.098	0
 351	71	Rubidium Ion Rb+	1.0000	Rb	85.468	0
 352	72	Cesium Ion Cs+	1.0000	Cs	132.905	0
 353	73	Magnesium Ion Mg+2	2.0000	Mg	24.305	0
@@ -677,7 +677,7 @@ atom_type	atom_group	name	charge	element	mass	nbonds
 670	48	Bromobenzene CBr	0.2000	C	12.011	3
 671	65	Bromobenzene CBr	-0.2000	Br	79.904	1
 672	48	Iodobenzene CI	0.1000	C	12.011	3
-673	66	Iodobenzene CI	-0.1000	Te	126.905	1
+673	66	Iodobenzene CI	-0.1000	I	126.905	1
 674	91	cProp/cBut Benzene C-Ar	0.0550	C	12.011	4
 675	15	Thiophenol SH	-0.2200	S	32.060	2
 676	48	Thiophenol C-SH	0.0650	C	12.011	3
@@ -842,7 +842,7 @@ atom_type	atom_group	name	charge	element	mass	nbonds
 835	13	Alkyl Iodide RCH2-I	-0.0700	C	12.011	4
 836	13	Alkyl Iodide R2CH-I	0.0300	C	12.011	4
 837	13	Alkyl Iodide R3C-I	0.1300	C	12.011	4
-838	66	Alkyl Iodide C-I	-0.1300	Te	126.905	1
+838	66	Alkyl Iodide C-I	-0.1300	I	126.905	1
 839	46	Alkyl Iodide H-C-I	0.1000	H	1.008	1
 840	24	N-Ph Sulfonamide -NHPh	-0.6850	N	14.007	3
 841	48	N-Ph Sulfonamide Cipso	0.1550	C	12.011	3
@@ -882,10 +882,10 @@ atom_type	atom_group	name	charge	element	mass	nbonds
 875	1	Fluoride Ion (GBSA)	-1.0000	F	18.998	0
 876	21	Chloride Ion (GBSA)	-1.0000	Cl	35.453	0
 877	65	Bromide Ion (GBSA)	-1.0000	Br	79.904	0
-878	66	Iodide Ion (GBSA)	-1.0000	Te	126.905	0
+878	66	Iodide Ion (GBSA)	-1.0000	I	126.905	0
 879	68	Lithium Ion (GBSA)	1.0000	Li	6.941	0
 880	69	Sodium Ion (GBSA)	1.0000	Na	22.990	0
-881	70	Potassium Ion (GBSA)	1.0000	Ar	39.098	0
+881	70	Potassium Ion (GBSA)	1.0000	K	39.098	0
 882	71	Rubidium Ion (GBSA)	1.0000	Rb	85.468	0
 883	72	Cesium Ion (GBSA)	1.0000	Cs	132.905	0
 884	73	Magnesium Ion (GBSA)	2.0000	Mg	24.305	0
