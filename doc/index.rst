@@ -1,6 +1,9 @@
 MDMC Documentation
 ==================
 
+Please note this documentation is in testing before the first official
+release of MDMC.
+
 MDMC is a Python package for optimising classical molecular dynamics (MD)
 potential parameters by refining against experimental data, particularly
 dynamical data such as the dynamic structure factor. The refinement uses
@@ -21,8 +24,8 @@ to Python `here <https://www.mantidproject.org/Introduction_To_Python>`_.
 
 Acknowledgements
 ----------------
-Funding for the development of MDMC has been provided by the Swedish Research
-Council.
+... Suggestion for placeholder section for acknowledging such things as the
+Swedish Research Council etc.
 
 Indices
 -------
