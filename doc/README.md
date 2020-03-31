@@ -1,4 +1,5 @@
-# To build doc
+# To build doc using Sphinx
 
-Require Pandoc installed - and from https://pandoc.org/installing.html.
-The version of Pandoc, which is available from `pip install pandoc` is not sufficient.
+Requires [Pandoc](https://pandoc.org/installing.html) to be installed.  The
+version of Pandoc which is available on PyPI (accessible using
+`pip install pandoc`) is **not** sufficient.
