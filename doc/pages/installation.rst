@@ -34,7 +34,10 @@ MDMC is then installed using pip and Git:
 This will install MDMC and all Python dependencies; this does not include the
 molecular dynamics engines.
 
-**Note: If MDMC is made available on** `PyPI <https://pypi.org>`_ **, the
+**Note1: While MDMC is in a private repository, the above** `pip install`
+**require username and password**
+
+**Note2: When MDMC is made available on** `PyPI <https://pypi.org>`_ **, the
 installation will simply be:** `pip install MDMC`
 
 Docker
@@ -97,7 +100,7 @@ Docker and GUI
 By default, Docker is not configured to enable GUI visualisation.  To enable
 this it is possible to use the X11 system, described below.  To also enable this
 with Jupyter, add `-p 8888:8888` to commands below - see
-:ref:`docker-jupyter-label`)
+:ref:`docker-jupyter-label`.
 
 **Windows**
 
@@ -105,10 +108,11 @@ To use X11, either of the following can be installed:
 
 * `VcXsrv <https://sourceforge.net/projects/vcxsrv/>`_ - After installation, In
   Extra Settings select "Native opengl" and "Disable access control".
-* `Xming <https://sourceforge.net/projects/xming/>`_ - After installation run
-XLaunch to configure Xming.  Use the provided defaults except in the "Specify
-parameter settings" window, select "No Access Control".  Use the generated
-`config.xlaunch` file in order to run Xming.
+* `Xming <https://sourceforge.net/projects/xming/>`_ - After installation, run
+  XLaunch to configure Xming. Use the provided defaults except in the
+  "Specify parameter settings" window, select "No Access Control".
+  Optionally, use the generated `config.xlaunch` file when re-running Xming.
+
 Next, open a standard Windows command prompt and type :code:`ipconfig` to get
 the IP address (if e.g. using wireless then look for Wireless LAN adapter Wi-Fi
 and IPv4 Address) and use it to replace the two letters "IP" in the following
