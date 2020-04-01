@@ -8,9 +8,9 @@ AUTHOR :    Thomas Farmer        START DATE :    02/11/2018, 13:24:21"""
 from MDMC.common import units
 from MDMC.common.units import UnitFloat
 from MDMC.MD.force_fields.ff import WaterModel
-import MDMC.MD.structural_units as su
 from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
                                            LennardJones)
+from MDMC.MD.structural_units import Bond, BondAngle, Coulombic, Dispersion
 
 class SPCE(WaterModel):
 
@@ -44,11 +44,11 @@ class SPCE(WaterModel):
         f_HOH = 383.       # kJ mol^-1 rad^-2
 
         return {
-            (su.Coulombic, ('O',)):Coulomb(q_O),
-            (su.Coulombic, ('H',)):Coulomb(q_H),
-            (su.Dispersion, ('O', 'O')):LennardJones(epsilon, sigma),
-            (su.Bond,
+            (Coulombic, ('O',)):Coulomb(q_O),
+            (Coulombic, ('H',)):Coulomb(q_H),
+            (Dispersion, ('O', 'O')):LennardJones(epsilon, sigma),
+            (Bond,
              ('H', 'O')):HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
-            (su.BondAngle,
+            (BondAngle,
              ('H', 'O', 'H')):HarmonicPotential(a_HOH, f_HOH,
                                                 interaction_type='angle')}
