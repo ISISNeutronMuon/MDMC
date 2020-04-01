@@ -1,9 +1,9 @@
 """A subpackage for reading files containing atomic configurations
 """
 
-from MDMC.readers.configurations.conf_reader_factory import \
-    ConfigurationReaderFactory
-
+from . conf_reader_factory import ConfigurationReaderFactory
+from . import cif
+from . import conf_reader
 
 def read(file, docstring=False, **settings):
 

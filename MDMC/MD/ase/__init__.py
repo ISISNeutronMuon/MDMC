@@ -5,3 +5,7 @@ MDMC interfaces to ASE in two ways:
 - MDMC Atom objects can be converted to and from ASE Atom objects
 - The ASE GUI can be used to plot MDMC Atom and Bond objects
 """
+
+from . import cif
+from . import conversions
+from . import viewer
