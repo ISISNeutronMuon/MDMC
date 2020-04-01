@@ -105,6 +105,8 @@ html_static_path = ['_static']
 #
 # html_sidebars = {}
 
+# Hide the copyright in the HTML footer
+html_show_copyright = False
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

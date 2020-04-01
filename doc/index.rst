@@ -1,3 +1,6 @@
+**THIS DOCUMENTATION IS ONLY AVAILABLE FOR INTERNAL TESTING. ACCESS TO MDMC IS
+CURRENTLY RESTRICTED.**
+
 MDMC Documentation
 ==================
 
@@ -22,7 +25,7 @@ to Python `here <https://www.mantidproject.org/Introduction_To_Python>`_.
 Acknowledgements
 ----------------
 Funding for the development of MDMC has been provided by the Swedish Research
-Council.
+Council ...
 
 Indices
 -------
