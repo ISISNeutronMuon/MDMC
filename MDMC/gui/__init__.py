@@ -1,4 +1,8 @@
-"""This subpackage contains the GUI elements of MDMC.
+"""Contains the GUI elements of MDMC
+
+Contents
+--------
+view
 """
 
 from MDMC.MD.ase import viewer
