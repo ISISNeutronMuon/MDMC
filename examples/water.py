@@ -5,10 +5,8 @@ An example MDMC script for optimizing spce parameters for water at 263 K
 import numpy as np
 from scipy.interpolate import interp2d
 
-from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
-from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
-    Dispersion, Molecule
-from MDMC.control.control import Control
+from MDMC.control import Control
+from MDMC.MD import *
 from tests.test_data import data
 
 # Build universe
