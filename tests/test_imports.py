@@ -14,6 +14,17 @@ def get_paths(modules=True):
 
     """
     Gets the import paths of all packages
+
+    Parameters
+    ----------
+    modules : bool, optional
+        If True then the paths of all modules are included in the return,
+        otherwise only packages are included. The default is True.
+
+    Returns
+    -------
+    list
+        The import paths of each package, or each package and module
     """
 
     # Get the `ModuleInfo` for each subpackage and module in MDMC
@@ -34,11 +45,3 @@ def test_valid_imports(path):
     """
 
     import_module(path, __package__)
-
-
-@pytest.mark.parametrize('path, namespace')
-def test_complete_namespaces():
-
-    """
-    Tests that the desired imports end up in the namespace
-    """
