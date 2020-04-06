@@ -10,10 +10,10 @@ from MDMC.readers.reader import Reader
 class ConfigurationReader(Reader):
 
     """
-    Abstract class (as it does not implement Reader.parse) that defines
+    Abstract class (as it does not implement ``Reader.parse``) that defines
     properties common to all readers for configurations
 
-    ConfigurationReaders are created using ConfigurationReaderFactory
+    A ``ConfigurationReader`` is created using ``ConfigurationReaderFactory``
     """
 
     @property
@@ -22,7 +22,7 @@ class ConfigurationReader(Reader):
     def extension():
 
         """
-        The expected file extension for the ConfigurationReader
+        The expected file extension for the ``ConfigurationReader``
         """
 
         raise NotImplementedError
@@ -32,7 +32,7 @@ class ConfigurationReader(Reader):
     def atoms(self):
 
         """
-        All subclasses must implement atoms, which returns a list of `Atom`
+        All subclasses must implement atoms, which returns a list of ``Atom``
         objects from the data read from the file
         """
 
