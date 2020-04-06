@@ -9,7 +9,7 @@ from enum import Enum
 import numpy as np
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    mod_docstring
+    mod_docstring, repr_decorator
 from MDMC.common import units
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
@@ -26,7 +26,8 @@ Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                  ', '.join(ForceFieldFactory.get_force_field_names())}
 
-
+@repr_decorator('dimensions', 'kspace_solver', 'electrostatic_solver',
+                'dispersive_solver', 'constraint_algorithm', 'parameters')
 @mod_docstring(_FF_DOCSTRING)
 class Universe(AtomContainer):
 
@@ -102,6 +103,16 @@ class Universe(AtomContainer):
                              ' passed')
 
         self.constraint_algorithm = settings.get('constraint_algorithm')
+
+    def __str__(self):
+
+        return ('{0} Universe with {1} atoms, {2} bonded interactions,'
+                ' {3} nonbonded interactions, and dimensions of {4}'.format(
+                    str(self.shape).split('.')[1],
+                    len(self.atom_list),
+                    len(self.bonded_interactions),
+                    len(self.nonbonded_interactions),
+                    self.dimensions))
 
     # Unit decorator on getter due to operations in setter
     @property
