@@ -422,9 +422,11 @@ class AbstractSQw(Observable):
         @jit('float64[:,:], float64[:,:]', nopython=True)
         def func(positions, Q_vector):
 
-            return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i in range(len(positions))]
+            return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
+                    in range(len(positions))]
 
-        rho_all_atoms = [func(conf.positions, np.array(Q_vector)) for conf in self.trajectory]
+        rho_all_atoms = [func(conf.positions, np.array(Q_vector)) for conf
+                         in self.trajectory]
 
         return np.array(rho_all_atoms)
 
@@ -466,28 +468,6 @@ class AbstractSQw(Observable):
         self.Q_values = updated_Q_values
 
         return np.array(Q_vectors)
-
-    @staticmethod
-    @jit('float64[:], float64[:,:]', nopython=True)
-    def _rho(r, Q_vector):
-
-        """
-        Calculates the reciprocal space density
-
-        Parameters
-        ----------
-        r : array
-            A 3 element array specifying the position vector
-        Q_vector : array
-            An array of one or more orthogonal Q vectors (arrays)
-
-        Returns
-        -------
-        array
-            The reciprocal space density for a position and Q vectors
-        """
-
-        return np.exp(-1j * np.dot(Q_vector, r))
 
     def _calculate_vectors_single_Q(self, Q_min, Q_max):
 
@@ -614,8 +594,8 @@ class SQw(AbstractSQw):
         """
 
         self.weights = {element:{'coh':B_COH[element],
-                                    'incoh':B_INCOH[element]}
-                           for element in self.trajectory.element_set}
+                                 'incoh':B_INCOH[element]}
+                        for element in self.trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, Q_vector):
 
