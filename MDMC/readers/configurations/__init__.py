@@ -12,10 +12,10 @@ def read(file, docstring=False, **settings):
     atoms in the file
 
     .. note:: The docstring of the required reader (as determined from the file)
-    can be accessed by passing `help=True`. This may be necessary to determine
-    the reader specific `**settings` that can be passed. In this case, the file
-    will not be read and None will be returned, rather than a list of `Atom`
-    objects.
+              can be accessed by passing `help=True`. This may be necessary to
+              determine the reader specific `**settings` that can be passed. In
+              this case, the file will not be read and None will be returned,
+              rather than a list of `Atom` objects.
 
     Parameters
     ----------
