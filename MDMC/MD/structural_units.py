@@ -1,7 +1,7 @@
 """Module in which all structural units are defined.
 
-Atoms are the fundamental structural unit in terms of which all others must be
-defined.  All shared behaviour is included within the StructuralUnit base
+``Atom`` is the fundamental structural unit in terms of which all others must be
+defined.  All shared behaviour is included within the ``StructuralUnit`` base
 class."""
 
 from abc import ABC, abstractmethod
@@ -33,23 +33,25 @@ class StructuralUnit(ABC):
 
     Parameters
     ----------
-    position : list, tuple, NumPy array
-        A 3 element list, tuple or array with the position in units of Ang.
-    velocity : list, tuple, NumPy array
-        A 3 element list, tuple or array with the velocity in units of Ang.
+    position : list, tuple, numpy.ndarray
+        A 3 element `list`, `tuple` or ``array`` with the position in units of
+        ``Ang``.
+    velocity : list, tuple, numpy.ndarray
+        A 3 element `list`, `tuple` or ``array`` with the velocity in units of
+        ``Ang``.
     name : str
         The name of the structure.
 
  	Attributes
     ----------
  	ID : int
-        A unique identifier for each StructuralUnit.
+        A unique identifier for each ``StructuralUnit``.
     universe : Universe
-        The universe to which the StructuralUnit belongs.
+        The ``Universe`` to which the ``StructuralUnit`` belongs.
     name : str
         The name of the structure.
     parent : StructuralUnit
-        StructuralUnit to which this unit belongs, or self
+        ``StructuralUnit`` to which this unit belongs, or ``self``
     """
 
     # ID exists to facilitate a 1 to 1 association with structural units within
@@ -57,15 +59,6 @@ class StructuralUnit(ABC):
     _ID_generator = count(start=1, step=1)
 
     def __init__(self, position, velocity, name):
-
-        """
-        Arguments:
-        position - a tuple or NumPy array specifying the position in units of
-        Ang
-        velocity - a tuple of NumPy array specifying the velocity in units of
-        Ang fs^-1
-        name - a string specifying the name
-        """
 
         self.ID = self._generate_ID()
         self.position = position
@@ -77,12 +70,12 @@ class StructuralUnit(ABC):
     def position(self):
 
         """
-        Get or set the position of the center of mass of the StructuralUnit in
-        Ang
+        Get or set the position of the center of mass of the ``StructuralUnit``
+        in ``Ang``
 
         Returns
         -------
-        NumPy array
+        numpy.ndarray
         """
 
         return self._position
@@ -91,25 +84,17 @@ class StructuralUnit(ABC):
     @unit_decorator(unit=units.LENGTH)
     def position(self, position):
 
-        """
-        Provides a warning if the specified position is not within the
-        StructuralUnit's universe
-        """
-
-        # if not self.valid_position(position):
-        #     raise RuntimeWarning("Warning: Structural unit lies outside of the"
-        #                          "universe bounds")
         self._position = position
 
     @property
     def velocity(self):
 
         """
-        Get or set the velocity of the StructuralUnit in Ang/fs
+        Get or set the velocity of the ``StructuralUnit`` in ``Ang/fs``
 
         Returns
         -------
-        NumPy array
+        numpy.ndarray
         """
 
         return self._velocity
@@ -124,8 +109,8 @@ class StructuralUnit(ABC):
     def atom_list(self):
 
         """
-        Get a list of all of the atoms in the structure by recursively calling
-        atom_list for all substructures
+        Get a `list` of all of the `Atom` objects in the structure by
+        recursively calling ``atom_list`` for all substructures
 
         Returns
         -------
@@ -143,12 +128,12 @@ class StructuralUnit(ABC):
     def universe(self):
 
         """
-        Get the Universe to which the StructuralUnit belongs
+        Get the ``Universe`` to which the ``StructuralUnit`` belongs
 
         Returns
         -------
         Universe
-            The Universe to which the StructuralUnit belongs or None
+            The ``Universe`` to which the ``StructuralUnit`` belongs or `None`
         """
 
         raise NotImplementedError
@@ -160,8 +145,8 @@ class StructuralUnit(ABC):
 
         Parameters
         ----------
-        Displacement : tuple, NumPy array
-            A three element tuple or array of floats
+        Displacement : tuple, numpy.ndarray
+            A three element tuple or ``array`` of `float`
         """
 
         self.position = self.position + np.array(displacement)
@@ -170,12 +155,12 @@ class StructuralUnit(ABC):
     def interactions(self):
 
         """
-        Get a list of the interactions acting on the StructuralUnit
+        Get a list of the interactions acting on the ``StructuralUnit``
 
         Returns
         -------
         list
-            Interactions acting on the StructuralUnit
+            Interactions acting on the ``StructuralUnit``
         """
 
         return self.bonded_interactions + self.nonbonded_interactions
@@ -184,12 +169,12 @@ class StructuralUnit(ABC):
     def bonded_interactions(self):
 
         """
-        Get a list of the bonded interactions acting on the StructuralUnit
+        Get a list of the bonded interactions acting on the ``StructuralUnit``
 
         Returns
         -------
         list
-            BondedInteractions acting on the StructuralUnit
+            ``BondedInteractions`` acting on the ``StructuralUnit``
         """
 
         return [pair[0] for pair in self.bonded_interaction_pairs]
@@ -199,12 +184,13 @@ class StructuralUnit(ABC):
     def nonbonded_interactions(self):
 
         """
-        Get a list of the nonbonded interactions acting on the StructuralUnit
+        Get a list of the nonbonded interactions acting on the
+        ``StructuralUnit``
 
         Returns
         -------
         list
-            NonBondedInteractions acting on the StructuralUnit
+            ``NonBondedInteractions`` acting on the ``StructuralUnit``
         """
 
         raise NotImplementedError
@@ -214,20 +200,21 @@ class StructuralUnit(ABC):
     def bonded_interaction_pairs(self):
 
         """
-        Get bonded interactions acting on the StructuralUnit and the other atoms
-        to which the atom is bonded
+        Get bonded interactions acting on the ``StructuralUnit`` and the other
+        atoms to which the atom is bonded
 
 
         Returns
         -------
         list
-            (interaction, atoms) pairs acting on the StructuralUnit, where atoms
-            is a tuple of all atoms for that specific bonded interaction. At
-            least one of these atoms belongs to the StructuralUnit
+            (``interaction``, ``atoms``) pairs acting on the ``StructuralUnit``,
+            where ``atoms`` is a `tuple` of all ``Atom`` objects for that
+            specific bonded ``interaction``. At least one of these ``Atom``
+            objects belongs to the ``StructuralUnit``
 
         Example
         -------
-        For an O Atom with two bonds, one to H1 and one to H2::
+        For an O ``Atom`` with two bonds, one to H1 and one to H2::
 
             >>> print(O.bonded_interaction_pairs)
             [(Bond, (H1, O)), (Bond, (H2, O))]
@@ -239,7 +226,7 @@ class StructuralUnit(ABC):
     def structure_type(self):
 
         """
-        Get the class of the StructuralUnit.
+        Get the class of the ``StructuralUnit``.
 
         Returns
         -------
@@ -253,13 +240,13 @@ class StructuralUnit(ABC):
     def top_level_structure(self):
 
         """
-        Get the top level structure (i.e. StructuralUnit which has no parent) of
-        the StructuralUnut
+        Get the top level structure (i.e. ``StructuralUnit`` which has no
+        ``parent``) of the ``StructuralUnit``
 
         Returns
         -------
         StructuralUnit
-            Highest level StructuralUnit of which it is a member
+            Highest level ``StructuralUnit`` of which it is a member
         """
 
         if issubclass(type(self.parent), StructuralUnit) \
@@ -271,19 +258,19 @@ class StructuralUnit(ABC):
     def copy(self, position):
 
         """
-        Copies the structural unit and sets the position
+        Copies the structural unit and sets the ``position``
 
         Parameters
         ----------
-        position : list, tuple, NumPy array
-            3 element list, tuple or array of floats specifying the position of
-            the new StructuralUnit
+        position : list, tuple, numpy.ndarray
+            3 element `list`, `tuple` or ``array`` of `float` specifying the
+            ``position`` of the new ``StructuralUnit``
 
         Returns
         -------
         StructuralUnit
-            A StructuralUnit of the same type with all non-unique attributes
-            copied and a new position
+            A ``StructuralUnit`` of the same type with all non-unique attributes
+            copied and a new ``position``
         """
 
         structural_unit = deepcopy(self)
@@ -293,12 +280,13 @@ class StructuralUnit(ABC):
     def _generate_ID(self):
 
         """
-        Uses class attribute to generate a unique ID for each StructuralUnit
+        Uses class attribute to generate a unique ``ID`` for each
+        ``StructuralUnit``
 
         Returns
         -------
         int
-            Unique integer
+            Unique `int`
         """
 
         return next(self._ID_generator)
@@ -306,17 +294,17 @@ class StructuralUnit(ABC):
     def _position_in_parent_CoM_frame(self):
 
         """
-        Get the position in the parent center of mass frame
+        Get the position in the ``parent`` center of mass frame
 
         Returns
         -------
-        NumPy array
-            Position in parent CoM frame with units of Ang
+        numpy.ndarray
+            Position in ``parent`` CoM frame with units of ``Ang``
 
         Raises
         ------
         AttributeError
-            If StructuralUnit has no parent
+            If ``StructuralUnit`` has no ``parent``
         """
 
         if self.top_level_structure is self:
@@ -327,7 +315,7 @@ class StructuralUnit(ABC):
     def _added_to_structure(self):
 
         """
-        Method is called if it becomes subunit of another StructuralUnit
+        Method is called if it becomes subunit of another ``StructuralUnit``
         """
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
@@ -335,26 +323,28 @@ class StructuralUnit(ABC):
     def valid_position(self, position=None):
 
         """
-        Checks if the specified position is within the bounds of the
-        StructuralUnit's universe, if it is associated with one
+        Checks if the specified ``position`` is within the bounds of the
+        ``StructuralUnit.universe``, if it has one
 
         Parameters
         ----------
-        position : list, tuple, NumPy array
-            3 element list, tuple or NumPy array with units of Ang or None. If
-            None then the position of the StructuralUnit is used.
+        position : list, tuple, numpy.ndarray
+            3 element `list`, `tuple` or ``array`` with units of ``Ang`` or
+            `None`. If `None` then the ``position`` of the ``StructuralUnit`` is
+            used.
 
         Returns
         -------
         bool
-            True if position is within universe or there is no associated
-            universe. False if StructuralUnit has an associated universe but the
-            position is not within its bounds.
+            `True` if ``position`` is within ``Universe`` or there is no
+            associated ``Universe``. `False` if ``StructuralUnit`` has an
+            associated ``Universe`` but the ``position`` is not within its
+            bounds.
 
         Raises
         ------
         ValueError
-            If the position if undefined
+            If ``position`` if undefined
         """
 
         if position is None:
@@ -379,7 +369,7 @@ class StructuralUnit(ABC):
         Returns
         -------
         BoundingBox
-            Contains the lower and upper extents of the Molecule
+            Contains the lower and upper extents of the ``Molecule``
         """
 
         return BoundingBox(self.atom_list)
@@ -390,7 +380,7 @@ class StructuralUnit(ABC):
 class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     """
-    Base class for structural units comprised of more than one atom
+    Base class for structural units comprised of more than one ``Atom``
     """
 
     def __init__(self, position, velocity, name):
@@ -401,19 +391,20 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def __deepcopy__(self, memo):
 
         """
-        Copies the CompositeStructuralUnit and all attributes, except ID which
-        is generated
+        Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
+        which is generated
 
-        This will not currently work if the CompositeStructuralUnit has any
+        This will not currently work if the ``CompositeStructuralUnit`` has any
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
-        Interactions for Atoms may be reordered with respect to initial atoms
+        Interactions for ``Atom`` objecys may be reordered with respect to
+        initial atoms
 
         Arguments
         ---------
         memo : dict
-            The memo dict
+            The memoization `dict`
         """
 
         cls = self.__class__
@@ -472,7 +463,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         -------
         str
             The formula and center of mass position of the
-            `CompositeStructuralUnit`
+            ``CompositeStructuralUnit``
         """
 
         name = self.name + ' ' if self.name else ''
@@ -498,7 +489,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def formula(self):
 
         """
-        Get the chemical formula of the `CompositeStructuralUnit`
+        Get the chemical formula of the ``CompositeStructuralUnit``
 
         Returns
         -------
@@ -513,8 +504,14 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def universe(self):
 
         """
-        Returns:
-        The universe to which the atom belongs or None
+        Get or set the ``Universe`` to which the ``CompositeStructuralUnit``
+        belongs
+
+        Returns
+        -------
+        Universe
+            The Universe to which the ``CompositeStructuralUnit`` belongs or
+            `None`
         """
 
         try:
@@ -524,15 +521,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     @universe.setter
     def universe(self, value):
-
-        """
-        Get or set the Universe to which the CompositeStructuralUnit belongs
-
-        Returns
-        -------
-        Universe
-            The Universe to which the CompositeStructuralUnit belongs or None
-        """
 
         try:
             self._universe = weakref.ref(value)
@@ -548,13 +536,14 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def structure_list(self):
 
         """
-        Get or set the StructuralUnits that are subunits of this
-        CompositeStructuralUnit
+        Get or set the ``StructuralUnit`` objects that are subunits of this
+        ``CompositeStructuralUnit``
 
         Returns
         -------
         list
-            StructuralUnits that are subunits of this CompositeStructuralUnit
+            `list` of ``StructuralUnit`` that are subunits of this
+            ``CompositeStructuralUnit``
         """
 
         return self._structure_list
@@ -570,40 +559,42 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     # StructuralUnits in general
 
         """
-        Copies the CompositeStructuralUnit and all attributes, except ID which
-        is generated
+        Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
+        which is generated
 
-        Copying a CompositeStructuralUnit (e.g. a Molecule) will copy all of the
-        atoms within it. All of these atoms will have identical bonded and
-        nonbonded interactions to the CompositeStructuralUnit from which they
-        were copied i.e. the CompositeStructuralUnit will be exacltly
-        duplicated. The only attributes of the CompositeStructuralUnit which
-        will will differ are the position (which is passed as a Parameter to
-        the copy method), and the id, which is generated automatically.
+        Copying a ``CompositeStructuralUnit`` (e.g. a ``Molecule``) will copy
+        all of the ``Atom`` objects within it. All of these atoms will have
+        identical bonded and nonbonded interactions to the
+        ``CompositeStructuralUnit`` from which they were copied i.e. the
+        ``CompositeStructuralUnit`` will be exacltly duplicated. The only
+        attributes of the ``CompositeStructuralUnit`` which will differ are the
+        ``position`` (which is passed as a Parameter to ``copy``), and the
+        ``ID``, which is generated automatically.
 
-        This will not currently work if the CompositeStructuralUnit has any
+        This will not currently work if the ``CompositeStructuralUnit`` has any
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
-        Interactions for Atoms may be reordered with respect to initial atoms
+        Interactions for ``Atom`` objects may be reordered with respect to
+        initial atoms
 
         Parameters
         ----------
-        position : list, tuple, NumPy array
-            3 element list, tuple or array of floats specifying the position of
-            the new StructuralUnit
-        rotation : list, tuple, NumPy array, optional
-            3 element list, tuple or array of floats specifying the degrees of
-            anticlockwise rotation around the x, y, and z axes respectively. The
-            rotation is centered on the center of mass of the
-            CompositeStructuralUnit. The default rotation is None, which applies
-            no rotation to the copied CompositeStructuralUnit.
+        position : list, tuple, numpy.ndarray
+            3 element `list`, `tuple` or ``array`` of `float` specifying the
+            ``position`` of the new ``StructuralUnit``
+        rotation : list, tuple, numpy.ndarray, optional
+            3 element `list`, `tuple` or ``array`` of `floats` specifying the
+            degrees of anticlockwise rotation around the x, y, and z axes
+            respectively. The rotation is centered on the center of mass of the
+            ``CompositeStructuralUnit``. The default ``rotation`` is `None`,
+            which applies no rotation to the copied ``CompositeStructuralUnit``.
 
         Returns
         -------
         CompositeStructuralUnit
-            A CompositeStructuralUnit of the same type with all non-unique
-            attributes copied and a new position
+            A ``CompositeStructuralUnit`` of the same type with all non-unique
+            attributes copied and a new ``position``
         """
 
         composite = super().copy(position)
@@ -614,7 +605,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def _set_subunit_positions(self):
 
         """
-        Sets the position of all subunits in the global frame in units of Ang
+        Sets the position of all subunits in the global frame in units of
+        ``Ang``
         """
 
         for atom in self.atom_list:
@@ -625,9 +617,9 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         """
         Returns
         -------
-        array
-            Position of the center of mass of the CompositeStructuralUnit in
-            units of Ang
+        numpy.ndarray
+            Position of the center of mass of the ``CompositeStructuralUnit`` in
+            units of ``Ang``
         """
 
         mass = 0.
@@ -640,8 +632,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def _calc_subunit_position_in_CoM_frame(self):
 
         """
-        Calculate the position of all subunits in the CompositeStructuralUnit
-        CoM frame in units of Ang
+        Calculate the position of all subunits in the
+        ``CompositeStructuralUnit`` CoM frame in units of ``Ang``
         """
 
         self._CoM_frame_positions = {}
@@ -652,7 +644,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def rotate(self, x=0., y=0., z=0.):
 
         """
-        Rotates the CompositeStructuralUnit around its center of mass
+        Rotates the ``CompositeStructuralUnit`` around its center of mass
 
         In all cases (e.g. x, y and z) the rotation is anticlockwise about the
         specific axis
@@ -660,13 +652,13 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         Parameters
         ----------
         x : float, optional
-            The angle of rotation around the x-axis in degrees. The default is
+            The angle of rotation around the x-axis in ``deg``. The default is
             0.
         y : float, optional
-            The angle of rotation around the y-axis in degrees. The default is
+            The angle of rotation around the y-axis in ``deg``. The default is
             0.
         z : float, optional
-            The angle of rotation around the z-axis in degrees. The default is
+            The angle of rotation around the z-axis in ``deg``. The default is
             0.
         """
 
@@ -687,18 +679,20 @@ class Atom(StructuralUnit):
     ----------
     element : str
         The atomic element label.
-    position : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the position in units of Ang.
-        The default is (0., 0., 0.).
-    velocity : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the velocity in units of Ang.
-        The default is (0., 0., 0.).
+    position : list, tuple, numpy.ndarray, optional
+        A 3 element `list`, `tuple` or ``array`` with the position in units of
+        ``Ang``. The default is ``(0., 0., 0.)``.
+    velocity : list, tuple, numpy.ndarray, optional
+        A 3 element `list`, `tuple` or ``array`` with the velocity in units of
+        ``Ang``. The default is ``(0., 0., 0.)``.
     charge : float
-        The charge of the atom in units of elementary charge. The default
-        is None
+        The charge of the ``Atom`` in units of elementary charge (``e)``. The
+        default is `None`, meaning that a ``Coulomb`` interaction is not applied
+        to the ``Atom``.
     **settings
-        mass : float
-            The atomic mass in amu. If not provided a lookup table will be used.
+        ``mass`` (`float`)
+            The atomic mass in ``amu``. If not provided a lookup table will be
+            used.
 
     Attributes
     ----------
@@ -724,16 +718,17 @@ class Atom(StructuralUnit):
     def __deepcopy__(self, memo):
 
         """
-        Copies the Atom and all attributes, except ID which is generated
+        Copies the Atom and all attributes, except ``ID`` which is generated
 
-        Interactions are copied but the copied atom is substituted for the
-        original atom.  For BondedInteractions this means that the copied atom
-        will be bonded to all atoms to which the original atom is bonded.
+        Interactions are copied but the copied ``Atom`` is substituted for the
+        original ``Atom``.  For ``BondedInteractions`` this means that the
+        copied ``Atom`` will be bonded to all atoms to which the original
+        ``Atom`` is bonded.
 
         Arguments
         ---------
         memo : dict
-            The memo dict
+            The memoization `dict`
         """
 
         cls = self.__class__
@@ -772,8 +767,9 @@ class Atom(StructuralUnit):
         Returns
         -------
         tuple
-            The element, mass, charge, universe, position, velocity and names of
-            all interactions that apply to this atom
+            The ``element``, ``mass``, ``charge``, ``universe``, ``position``,
+            ``velocity`` and names of all ``interactions`` that apply to this
+            ``Atom``
         """
 
         return ('{0} atom,'
@@ -791,7 +787,7 @@ class Atom(StructuralUnit):
         Returns
         -------
         str
-            The element, charge and position of the Atom
+            The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
         return ('{0} {1}  charge: {2}  position: {3}'.format(
@@ -804,12 +800,12 @@ class Atom(StructuralUnit):
     def atom_list(self):
 
         """
-        Get a list of the atoms, just consisting of the Atom
+        Get a `list` of the atoms, just consisting of the ``Atom``
 
         Returns
         -------
         list
-            A list with a single element, the Atom
+            A `list` with a single item, the ``Atom``
         """
 
         return [self]
@@ -818,12 +814,12 @@ class Atom(StructuralUnit):
     def universe(self):
 
         """
-        Get the Universe to which the StructuralUnit belongs
+        Get the ``Universe`` to which the ``Atomm`` belongs
 
         Returns
         -------
         Universe
-            The Universe to which the StructuralUnit belongs or None
+            The ``Universe`` to which the ``Atom`` belongs or `None`
         """
 
         try:
@@ -849,26 +845,26 @@ class Atom(StructuralUnit):
     def charge(self):
 
         """
-        Get or set the charge in e if one has been applied to the Atom
+        Get or set the charge in ``e`` if one has been applied to the ``Atom``
 
-        If the Atom does not have a Coulombic interaction, setting a value of
-        the charge will create one, and a default cutoff of 10 Ang will be
-        applied
+        If the ``Atom`` does not have a ``Coulombic`` interaction, setting a
+        value of the ``charge`` will create one, and a default ``cutoff`` of
+        ``10. Ang`` will be applied
 
         Returns
         -------
         float
-            The charge in units of e, or None if no charge has been set
+            The charge in units of ``e``, or `None` if no charge has been set
 
         Raises
         ------
         ValueError
-            When the Atom has more than one Coulombic interaction
+            When the ``Atom`` has more than one ``Coulombic`` interaction
         ValueError
-            When the Atom has more than one parameter; i.e. should only
+            When the ``Atom`` has more than one parameter; i.e. should only
             have charge as a parameter
         ValueError
-            When setting charge to None when a Coulombic interaction
+            When setting charge to `None` when a ``Coulombic`` interaction
             already exists.
         """
 
@@ -926,12 +922,12 @@ class Atom(StructuralUnit):
     def mass(self):
 
         """
-        Get or set the atomic mass in amu
+        Get or set the atomic mass in ``amu``
 
         Returns
         -------
         float
-            the atomic mass in amu
+            the atomic mass in ``amu``
         """
         return self._mass
 
@@ -945,7 +941,7 @@ class Atom(StructuralUnit):
     def atom_type(self):
 
         """
-        Get or set the atom_type of the Atom
+        Get or set the atom type of the ``Atom``
 
         Returns
         -------
@@ -955,7 +951,7 @@ class Atom(StructuralUnit):
         Raises
         ------
         AttributeError
-            The atom_type cannot be changed once it has been set
+            The ``atom_type`` cannot be changed once it has been set
         """
 
         return self._atom_type
@@ -976,12 +972,12 @@ class Atom(StructuralUnit):
     def nonbonded_interactions(self):
 
         """
-        Get a list of the nonbonded interactions acting on the StructuralUnit
+        Get a `list` of the nonbonded interactions acting on the ``Atom``
 
         Returns
         -------
         list
-            NonBondedInteractions acting on the StructuralUnit
+            ``NonBondedInteractions`` acting on the ``Atom``
         """
 
         return self._nonbonded_interactions
@@ -990,20 +986,20 @@ class Atom(StructuralUnit):
     def bonded_interaction_pairs(self):
 
         """
-        Get bonded interactions acting on the StructuralUnit and the other atoms
-        to which the atom is bonded
+        Get bonded interactions acting on the ``Atom`` and the other atoms
+        to which the ``Atom`` is bonded
 
 
         Returns
         -------
         list
-            (interaction, atoms) pairs acting on the StructuralUnit, where atoms
-            is a tuple of all atoms for that specific bonded interaction. At
-            least one of these atoms belongs to the StructuralUnit
+            (``interaction``, ``atoms``) pairs acting on the ``Atom``, where
+            ``atoms`` is a `tuple` of all `Atom` objects for that specific
+            bonded ``interaction``.
 
         Example
         -------
-        For an O Atom with two bonds, one to H1 and one to H2::
+        For an O ``Atom`` with two bonds, one to H1 and one to H2::
 
             >>> print(O.bonded_interaction_pairs)
             [(Bond, (H1, O)), (Bond, (H2, O))]
@@ -1015,49 +1011,51 @@ class Atom(StructuralUnit):
     # pylint:disable=useless-super-delegation
     # Docstring specific to Atom
         """
-        Copies the Atom and all attributes, except ID which is generated
+        Copies the ``Atom`` and all attributes, except ``ID`` which is generated
 
-        Copying an Atom creates an exact duplicate at the specified position.
-        The copied atom will have identical bonded and nonbonded interactions as
-        the original. For BondedInteractions this means that the copied atom
-        will be bonded to all atoms to which the original atom is bonded. The id
-        of the copied atom will differ from the original, as they are
-        sequentially generated.
+        Copying an ``Atom`` creates an exact duplicate at the specified
+        ``position``.  The copied ``Atom`` will have identical bonded and
+        nonbonded interactions as the original. For ``BondedInteractions`` this
+        means that the copied atom will be bonded to all atoms to which the
+        original atom is bonded. The ``ID`` of the copied atom will differ from
+        the original, as they are sequentially generated.
 
         Parameters
         ----------
-        position : list, tuple, NumPy array
-            A 3 element list, tuple or array with the position of the new Atom
+        position : list, tuple, numpy.ndarray
+            A 3 element `list`, `tuple` or ``array`` with the ``position`` of
+            the new ``Atom``
 
         Returns
         -------
         Atom
-            A copy of the Atom with the specified position
+            A copy of the ``Atom`` with the specified ``position``
 
         Examples
         --------
-        If the following atom is copied:
+        If the following ``Atom`` is copied:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. highlight:: python
+        .. code-block:: python
 
             H1 = Atom('H', position=(0., 0., 0.), charge=0.4238)
             H2 = H1.copy(position=(1., 1., 1.))
 
-        then the new atom (H2) will have no BondedInteractions, but will have a
-        Coulombic interaction (with a charge parameter of 0.4238 e)
+        then the new ``Atom`` (``H2``) will have no ``BondedInteractions``, but
+        will have a ``Coulombic`` interaction, with a ``charge`` of ``0.4238 e``
 
-        If these two atoms are then bonded together and a copy is made:
+        If ``H1`` and ``H2`` are then bonded together and a copy is made:
 
-            .. highlight:: python
-            .. code-block:: python
+        .. highlight:: python
+        .. code-block:: python
 
             HHbond = Bond((H1, H2))
             H3 = H1.copy(position=(2., 2., 2.))
 
-        then the newest atom (H3) will have a Coulombic interaction (also with a
-        charge parameter of 0.4238 e), and it will also have a Bond interaction
-        with H2 (as H1 had a Bond interaction with H2).
+        then the newest ``Atom`` (``H3``) will have a ``Coulombic`` interaction
+        (also with a ``charge`` of ``0.4238 e``), and it will also have a
+        ``Bond`` interaction with ``H2`` (as ``H1`` had a ``Bond`` interaction
+        with ``H2``).
         """
 
         return super().copy(position)
@@ -1065,19 +1063,19 @@ class Atom(StructuralUnit):
     def add_interaction(self, interaction, from_interaction=False):
 
         """
-        Adds an interaction to the atom
+        Adds an interaction to the ``Atom``
 
         Parameters
         ----------
         interaction : Interaction
-            Any class dervied from Interaction, or any object with base class
-            Interaction.  If an interaction class is passed then it must be a
-            non-bonded Interaction i.e. only takes a single atom as an argument.
-            If an interaction object is passed then this atom must be in the
-            interaction.atom_list.
+            Any class dervied from ``Interaction``, or any object with base
+            class ``Interaction``.  If an ``Interaction`` class is passed then
+            it must be a ``NonBondedInteraction`` i.e. only takes a single
+            ``Atom`` as an argument. If an ``Interaction`` object is passed then
+            this ``Atom`` must be in the ``interaction.atom_list``.
         from_interaction : bool, optional
-            Specifies if this method has been called from an interaction.
-            Default is False.
+            Specifies if this method has been called from an ``Interaction``.
+            Default is `False`.
         """
 
         if issubclass(type(interaction), BondedInteraction):
@@ -1098,19 +1096,19 @@ class Atom(StructuralUnit):
     def copy_interactions(self, atom, memo={}):
 
         """
-        This replicates the interactions from self for atom, but with self
-        substituted by atom in the atoms attribute for each interaction.  These
-        interactions are added to any that already exist for the atom object.
+        This replicates the interactions from ``self`` for ``Atom``, but with
+        ``self`` substituted by ``atom`` in the ``Interaction.atoms``. These
+        interactions are added to any that already exist for the ``Atom``.
 
-        Passing the memo dictionary enables specific interactions to be excluded
-        from being copied, duplicating the behaviour of __deepcopy__
+        Passing the ``memo`` `dict` enables specific interactions to be excluded
+        from being copied, duplicating the behaviour of ``__deepcopy__``
 
         Parameters
         ----------
         atom : Atom
-            The Atom for which self.interactions are being replicated
+            The ``Atom`` for which ``self.interactions`` are being replicated
         memo : dict, optional
-            The memo dictionary
+            The memoization `dict`
         """
 
         # if/else required for deepcopy (where _bonded_interaction_pairs attribute
@@ -1129,10 +1127,12 @@ class Atom(StructuralUnit):
                 memo[id(inter)] = inter
 
 
-class Group(CompositeStructuralUnit):
+class _Group(CompositeStructuralUnit):
 
     """
-    Two or more atoms that form a subset of a molcule
+    Two or more `Atom` objecys that form a subset of a ``Molecule``
+
+    THIS CLASS HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
 
     Raises
     ------
@@ -1149,28 +1149,29 @@ class Group(CompositeStructuralUnit):
 class Molecule(CompositeStructuralUnit):
 
     """
-    Two or more bonded atoms, passed either as individual atoms or as groups
+    Two or more bonded atoms
 
-    Must be declared with at least 2 atoms.
+    Must be declared with at least 2 ``Atom`` objects.
 
     Parameters
     ----------
-    position : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the position in units of Ang. The
-        default is None, which sets the position of the Molecule to be equal to
-        the center of mass of the atoms in the Molecule.
-    velocity : list, tuple, NumPy array, optional
-        A 3 element list, tuple or array with the velocity in units of Ang. The
-        default is (0., 0., 0.).
+    position : list, tuple, numpy.ndarray, optional
+        A 3 element `list`, `tuple` or ``array`` with the position in units of
+        ``Ang``. The default is `None`, which sets the position of the
+        ``Molecule`` to be equal to the center of mass of the atoms in the
+        ``Molecule``.
+    velocity : list, tuple, numpy.ndarray, optional
+        A 3 element `list`, `tuple` or ``array`` with the velocity in units of
+        ``Ang``. The default is ``(0., 0., 0.)``.
     name : str, optional
-        The name of the structure. The default is None.
+        The name of the structure. The default is `None`.
     **settings
-        interactions : list
-            A list of Interactions acting on atoms within the Molecule. The
-            interactions keyword provides a convenience for declaring
-            interactions on atoms when a Molecule is initialized. It is not
+        ``interactions`` (`list`)
+            A `list` of ``Interaction`` acting on atoms within the ``Molecule``.
+            The ``interactions`` provides a convenience for declaring
+            interactions on atoms when a ``Molecule`` is initialized. It is not
             required and is exactly equivalent to initializing the interactions
-            prior to the Molecule.
+            prior to the ``Molecule``.
     """
 
     def __init__(self, position=None, velocity=(0, 0, 0), name=None,
@@ -1188,13 +1189,14 @@ class Molecule(CompositeStructuralUnit):
     def position(self):
 
         """
-        Get or set the position of the center of mass of the Molecule in Ang
+        Get or set the position of the center of mass of the ``Molecule`` in
+        ``Ang``
 
         Also sets the positions of all subunits
 
         Returns
         -------
-        NumPy array
+        numpy.ndarray
         """
 
         return self._position
@@ -1210,12 +1212,12 @@ class Molecule(CompositeStructuralUnit):
     def nonbonded_interactions(self):
 
         """
-        Get a list of the nonbonded interactions acting on the StructuralUnit
+        Get a list of the nonbonded interactions acting on the ``Molecule``
 
         Returns
         -------
         list
-            NonBondedInteractions acting on the StructuralUnit
+            ``NonBondedInteraction`` objects acting on the ``Molecule``
         """
 
         return [inter for atom in self.atom_list
@@ -1225,20 +1227,19 @@ class Molecule(CompositeStructuralUnit):
     def bonded_interaction_pairs(self):
 
         """
-        Get bonded interactions acting on the StructuralUnit and the other atoms
-        to which the atom is bonded
-
+        Get bonded interactions acting on the ``Molecule``
 
         Returns
         -------
         list
-            (interaction, atoms) pairs acting on the StructuralUnit, where atoms
-            is a tuple of all atoms for that specific bonded interaction. At
-            least one of these atoms belongs to the StructuralUnit
+            (``interaction``, ``atoms``) pairs acting on the ``Molecule``, where
+            ``atoms`` is a `tuple` of all atoms for that specific bonded
+            ``interaction``. At least one of these ``atoms`` belongs to the
+            ``Molecule``
 
         Example
         -------
-        For an O Atom with two bonds, one to H1 and one to H2::
+        For an ``O`` ``Atom`` with two bonds, one to ``H1`` and one to ``H2``::
 
             >>> print(O.bonded_interaction_pairs)
             [(Bond, (H1, O)), (Bond, (H2, O))]
@@ -1252,12 +1253,12 @@ class Molecule(CompositeStructuralUnit):
     def mass(self):
 
         """
-        Get the molecular mass of the Molecule in amu
+        Get the molecular mass of the ``Molecule`` in ``amu``
 
         Returns
         -------
         float
-            the molecular mass in amu
+            The molecular mass in ``amu``
         """
 
         mass = 0
@@ -1277,16 +1278,11 @@ class BoundingBox:
     Parameters
     ----------
     atom_list : list
-        Atoms for which the minimum and maximum extents are determined
+        ``Atom`` objects for which the minimum and maximum extents are
+        determined
     """
 
     def __init__(self, atom_list):
-
-        """
-        Arguments:
-        atom_list - a list of the Atoms which comprise the StructuralUnit in
-        units of Ang
-        """
 
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
@@ -1303,8 +1299,8 @@ class BoundingBox:
 
         Returns
         -------
-        array
-            The minimum extent in Ang
+        numpy.ndarray
+            The minimum extent in ``Ang``
         """
 
         return self._min
@@ -1323,8 +1319,8 @@ class BoundingBox:
 
         Returns
         -------
-        array
-            The maximum extent in Ang
+        numpy.ndarray
+            The maximum extent in ``Ang``
         """
 
         return self._max
@@ -1340,7 +1336,7 @@ class BoundingBox:
     def volume(self):
 
         """
-        Get the volume of the bounding box, in units of Ang ^ 3
+        Get the volume of the bounding box, in units of ``Ang ^ 3``
 
         Returns
         -------
@@ -1359,14 +1355,14 @@ def filter_atoms(atoms, predicate):
     Parameters
     ----------
     atoms : list
-        A list of Atoms
+        A `list` of ``Atom``
     predicate : function
-        A function that returns a boolean
+        A function that returns a `bool`
 
     Returns
     -------
     list
-        Atoms which meet the condition of the predicate
+        ``Atom`` objects in ``atoms`` which meet the condition of ``predicate``
     """
 
     return list(filter(predicate, atoms))
@@ -1380,14 +1376,14 @@ def filter_atoms_element(atoms, element):
     Parameters
     ----------
     atoms : list
-        A list of Atoms
+        A ``list`` of ``Atom``
     element : str
         The atomic element label
 
     Returns
     -------
     list
-        Atoms of a specific element
+        ``Atom`` objects of a specific element
     """
 
     return list(filter(lambda a: a.element == element, atoms))
@@ -1401,38 +1397,44 @@ def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
     Parameters
     ----------
     symbols : list of str
-        The chemical formula to be reduced. It is expressed as a list of
+        The chemical formula to be reduced. It is expressed as a `list` of
         elements, with a single element for each atom. Elements are grouped by
-        type but not ordered e.g. all 'O' values, then all 'H' values etc.
+        type but not ordered e.g. all ``'O'`` values, then all ``'H'`` values
+        etc.
     factor : int, optional
         The factor by which the total number of symbols will be reduced. If
-        None, the greatest common divisor of the different symbols will be used.
-        The default is None.
+        `None`, the greatest common divisor of the different symbols will be
+        used. The default is `None`.
     system : str, optional
-        Determines the order of the chemical formula. If 'Hill' the Hill system
-        is used to determine the order. If None, the order is based on the order
-        of `symbols`. The default is 'Hill'.
+        Determines the order of the chemical formula. If ``'Hill'`` the Hill
+        system is used to determine the order. If `None`, the order is based on
+        the order of ```symbols``. The default is ``'Hill'``.
 
     Returns
     -------
     str
-        The chemical formula corresponding to symbols, except with only n_atoms.
-        If `system` is 'Hill', the formula will be ordered as per the Hill
-        system, otherwise the formula will be ordered based on the order of
-        `symbols`.
+        The chemical formula corresponding to ``symbols``, except with only
+        ``n_atoms``. If `system` is ``'Hill'``, the formula will be ordered as
+        per the Hill system, otherwise the formula will be ordered based on the
+        order of ``symbols``.
 
     Example
     -------
-    Reducing the formula for four water molecules to a single water molecules::
+    Reducing the formula for four water molecules to a single water molecules:
+
+    .. highlight:: python
+    .. code-block:: python
 
         >>> get_reduced_chemical_formula(['H'] * 8 + ['O'] * 4)
         'H2O'
 
     Reducing the formula for four water molecules to two water molecules:
 
+    .. highlight:: python
+    .. code-block:: python
+
         >>> get_reduced_chemical_formula(['H'] * 8 + ['O'] * 4, factor=2)
         'H4O2'
-
     """
 
     if not factor:
@@ -1477,23 +1479,23 @@ class Interaction(ABC):
     """
     Base class for interactions, both bonded, non-bonded and constraints
 
-    Each different type of interaction should have an Interaction object. This
-    object contains a list of all of the atoms (or atom pairs, triplets or
-    quadruplets,  dependeing on the type of interaction) for which this
-    Interaction applies. For example, an Ocoulombic interaction would contain a
-    list of tuples where each tuple contains a different O atom, and a HObond
-    interaction would contain a list of tuples where each tuple contains a
-    different H and O pair. Interaction objects can be sliced to return a
-    sublist of the tuples.
+    Each different type of interaction should have an ``Interaction`` object.
+    This object contains a `list` of the ``Atom`` (or ```Atom`` pairs, triplets
+    or quadruplets,  depending on the type of interaction) for which this
+    ``Interaction`` applies. For example, an oxygen ``Coulombic`` interaction
+    would contain a `list` of `tuple` where each `tuple` contains a different O
+    ``Atom``, and a hydrogen-oxygen ``Bond`` interaction would contain a `list`
+    of `tuple` where each `tuple` contains a different H and O pair.
+    ``Interaction`` objects can be sliced to return a sublist of the `tuple`.
 
-    When Atoms are passed to Interactions, the Interaction is also added to the
-    Atoms.
+    When an ``Atom`` is passed to an ``Interaction``, the ``Interaction`` is
+    also added to the ``Atom``.
 
     Parameters
     ----------
     **settings
-        function : InteractionFunction
-            A class of interaction function (e.g. HarmonicPotential)
+        ``function`` (`InteractionFunction`)
+            A class of interaction function (e.g. ``HarmonicPotential``)
     """
 
     def __init__(self, **settings):
@@ -1538,9 +1540,6 @@ class Interaction(ABC):
 
         """
         Interactions cannot be copied
-
-        Arguments:
-        memo - the memo dict
         """
 
         raise AttributeError('Interactions cannot be copied')
@@ -1558,7 +1557,7 @@ class Interaction(ABC):
     def atoms(self):
 
         """
-        Get the atoms on which the interaction is applied
+        Get the atoms on which the ``Interaction`` is applied
         """
 
         raise NotImplementedError
@@ -1567,13 +1566,13 @@ class Interaction(ABC):
     def params(self):
 
         """
-        Get the Parameters belonging to the InteractionFunction belonging to the
-        Interaction
+        Get the ``Parameter`` objects belonging to the ``InteractionFunction``
+        belonging to the ``Interaction``
 
         Returns
         -------
         list
-            A list of the Parameters
+            A `list` of the ``Parameter``
         """
 
         return self.function.params
@@ -1582,11 +1581,12 @@ class Interaction(ABC):
     def function(self):
 
         """
-        Get or set the InteractionFunction of the Interaction
+        Get or set the ``InteractionFunction`` of the ``Interaction``
 
         Returns
         -------
         InteractionFunction
+            The interaction function of the ``Interaction``
         """
 
         return self._function
@@ -1600,13 +1600,14 @@ class Interaction(ABC):
     def function_name(self):
 
         """
-        Get the name of the InteractionFunction belonging to the Interaction
+        Get the name of the ``InteractionFunction`` belonging to the
+        ``Interaction``
 
         Returns
         -------
         str
-            The name of the InteractionFunction, or None if no
-            InteractionFunction has been set
+            The name of the ``InteractionFunction``, or `None` if no
+            ``InteractionFunction`` has been set
         """
 
         try:
@@ -1619,12 +1620,12 @@ class Interaction(ABC):
     def universe(self):
 
         """
-        Get the Universe to which the Interaction belongs
+        Get the ``Universe`` to which the ``Interaction`` belongs
 
         Returns
         -------
         Universe
-            The Universe to which the Interaction belongs or None
+            The ``Universe`` to which the ``Interaction`` belongs or `None`
         """
 
         raise NotImplementedError
@@ -1634,12 +1635,12 @@ class Interaction(ABC):
     def element_list(self):
 
         """
-        Get a list of the elements for which the Interaction applies
+        Get a `list` of the elements for which the ``Interaction`` applies
 
         Returns
         -------
         list
-            The elements for which the Interaction applies
+            The elements for which the ``Interaction`` applies
         """
 
         raise NotImplementedError
@@ -1647,12 +1648,12 @@ class Interaction(ABC):
     def sorted_element_list(self):
 
         """
-        Sort the list of elements for which the Interaction applies
+        Sort the list of elements for which the ``Interaction`` applies
 
         Returns
         -------
         list
-            The elements for which the Interaction applies, sorted
+            The elements for which the ``Interaction`` applies, sorted
             alphabetically
         """
 
@@ -1661,12 +1662,12 @@ class Interaction(ABC):
     def element_tuple(self):
 
         """
-        A tuple of elements for which the Interaction applies
+        A `tuple` of elements for which the ``Interaction`` applies
 
         Returns
         -------
         tuple
-            The elements for which the Interaction applies
+            The elements for which the ``Interaction`` applies
         """
 
         return tuple(self.element_list())
@@ -1674,12 +1675,13 @@ class Interaction(ABC):
     def _add_interaction_atoms(self, atoms):
 
         """
-        Add the Interaction to atoms for which the Interaction has been applied
+        Add the ``Interaction`` to atoms for which the ``Interaction`` has been
+        applied
 
         Parameters
         ----------
         atoms : list
-            Atoms which have been added to the Interaction
+            ``Atom`` objects which have been added to the ``Interaction``
         """
 
         for atom in atoms:
@@ -1695,12 +1697,14 @@ class NonBondedInteraction(Interaction):
     Parameters
     ----------
     universe : Universe
-        The Universe in which the NonBondedInteraction exists
+        The ``Universe`` in which the ``NonBondedInteraction`` exists
     *atom_types
-        int for each atom_type for which the NonBondedInteraction applies
+        `int` for each ``atom_type`` for which the ``NonBondedInteraction``
+        applies
     **settings
-        cutoff : float
-            The distance in Ang at which the interaction potential is truncated
+        ``cutoff`` (`float`)
+            The distance in ``Ang`` at which the interaction potential is
+            truncated
     """
 
     def __init__(self, universe, *atom_types, **settings):
@@ -1732,7 +1736,8 @@ class NonBondedInteraction(Interaction):
         Returns
         -------
         str
-            The type, atom_types and cutoff of the NonBondedInteraction
+            The ``type``, ``atom_types`` and ``cutoff`` of the
+            ``NonBondedInteraction``
         """
 
         return ('{0} interaction  atom_types: {1}  cutoff: {2}'.format(
@@ -1745,12 +1750,12 @@ class NonBondedInteraction(Interaction):
     def atom_types(self):
 
         """
-        Get the atom_types for which the NonBondedInteraction applies
+        Get the atom types for which the ``NonBondedInteraction`` applies
 
         Returns
         -------
         list
-            A list of int for the atom_types
+            A list of `int` for the ``atom_types``
         """
 
         raise NotImplementedError
@@ -1759,12 +1764,14 @@ class NonBondedInteraction(Interaction):
     def universe(self):
 
         """
-        Get or set the Universe to which the NonBondedInteraction belongs
+        Get or set the ``Universe`` to which the ``NonBondedInteraction``
+        belongs
 
         Returns
         -------
         Universe
-            The Universe to which the NonBondedInteraction belongs or None
+            The ``Universe`` to which the ``NonBondedInteraction`` belongs or
+            `None`
         """
 
         try:
@@ -1784,13 +1791,13 @@ class NonBondedInteraction(Interaction):
     def cutoff(self):
 
         """
-        Get or set the distance in Ang at which the interaction potential is
+        Get or set the distance in ``Ang`` at which the interaction potential is
         truncated
 
         Returns
         -------
         float
-            The distance in Ang of the cutoff
+            The distance in ``Ang`` of the ``cutoff``
         """
         return self._cutoff
 
@@ -1809,13 +1816,14 @@ class Dispersion(NonBondedInteraction):
     Parameters
     ----------
     universe : Universe
-        The Universe in which the NonBondedInteraction exists
+        The ``Universe`` in which the ``NonBondedInteraction`` exists
     *atom_types
-        int for each atom_type for which the NonBondedInteraction applies
+        `int` for each atom type for which the ``NonBondedInteraction`` applies
     **settings
-        cutoff : float
-            The distance in Ang at which the interaction potential is truncated
-        vdw_tail_correction : bool
+        ``cutoff`` (`float`)
+            The distance in ``Ang`` at which the interaction potential is
+            truncated
+        ``vdw_tail_correction`` (`bool`)
             Specifies if the tail correction to the energy and pressure should
             be applied. This only affects the simulation dynamics if the
             simulation is being performed with constant pressure.
@@ -1823,15 +1831,15 @@ class Dispersion(NonBondedInteraction):
     Raises
     ------
     TypeError
-        Atom types must be iterable
+        ``atom_types`` must be iterable
     ValueError
-        Dispersion interactions should only be specified as existing between
-        pairs of atom types
+        ``Dispersion`` should only be specified as existing between pairs of
+        ``atom_types``
     TypeError
-        Each atom type must be int
+        Each ``atom_type`` must be `int`
     """
 
-    # Python3 requires subclasses thay overwrite __eq__ to explicity inherit
+    # Python3 requires subclasses that overwrite __eq__ to explicity inherit
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
@@ -1848,14 +1856,14 @@ class Dispersion(NonBondedInteraction):
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
                                  ' atom types')
-            elif not all([isinstance(atom_type, (int, np.integer)) for atom_type
-                          in atom_type_pair]):
+            if not all([isinstance(atom_type, (int, np.integer)) for atom_type
+                        in atom_type_pair]):
                 raise TypeError('Each atom type must be int')
             return atom_type_pair
 
         # Remove duplicates
-        self._atom_types = tuple(set([validate_atom_type_pair(atp) for atp
-                                      in atom_types]))
+        self._atom_types = tuple(validate_atom_type_pair(atp) for atp
+                                 in atom_types)
         super().__init__(universe, **settings)
         # Add interactions to all atoms
         for atom_type_pair in self.atoms:
@@ -1879,16 +1887,17 @@ class Dispersion(NonBondedInteraction):
     def atoms(self):
 
         """
-        Get the atoms on which the Dispersion is applied
+        Get the atoms on which the ``Dispersion`` is applied
 
         Returns
         -------
         list
-            A list of two tuples, where each tuple contains a list atoms. Every
-            atom in the first tuple has a dispersion interaction with every atom
-            in the second tuple (excluding self interactions). This is the
-            complete list of possible dispersion interactions, i.e. it is only
-            exactly correct if no cutoff has been specified.
+            A `list` of two `tuple`, where each `tuple` contains a `list` of
+            `Atom`. Every ``Atom`` in the first `tuple` has a dispersion
+            interaction with every ``Atom`` in the second `tuple` (excluding
+            self interactions). This is the complete list of possible dispersion
+            interactions, i.e. it is only exactly correct if no cutoff has been
+            specified.
         """
 
         return [map(lambda x: self.universe.atom_types[x], tpl) for tpl
@@ -1897,12 +1906,12 @@ class Dispersion(NonBondedInteraction):
     def element_list(self):
 
         """
-        Get a list of the elements for which the Interaction applies
+        Get a list of the elements for which the ``Interaction`` applies
 
         Returns
         -------
         list
-            The elements for which the Interaction applies
+            The elements for which the ``Interaction`` applies
         """
 
         # Each value in universe.atom_types dictionary contain list of atoms
@@ -1921,34 +1930,22 @@ class Coulombic(NonBondedInteraction):
     Parameters
     ----------
     universe : Universe, optional
-        The Universe in which the NonBondedInteraction exists. Default is None.
-        Must be passed as a parameter if atom_types if passed.
+        The ``Universe`` in which the ``Coulombic`` exists. Default is `None`.
+        Must be passed as a parameter if ``atom_types`` if passed.
     **settings
-        charge : float
-            The charge parameter of the Coulombic interaction, in units of e. If
-            this argument is passed, the interaction function of this Coulombic
-            object is set to a Coulomb InteractionFunction with this float as
-            its parameter. For example, upon initializing an Atom object and
-            adding it to a universe::
+        ``charge`` (`float`)
+            The charge parameter of the ``Coulombic`` interaction, in units of
+            ``e``. If this argument is passed, the ``interaction_function`` of
+            this ``Coulombic`` is set to ``Coulomb`` with this `float` as its
+            ``Parameter``. Passing ``charge`` will overwrite any other
+            ``interaction_functions`` that are set, i.e. it makes ``function``
+            parameter redundant
+        ``atoms`` (`list`)
+            ``Atom`` objects to which the ``Coulombic`` applies. If specifying
+            the ``atoms``, ``universe`` does not need to be passed as a
+            parameter.
 
-                O = Atom('O', atom_type=1)
-                universe = Universe(10.0)
-                universe.add_structural_unit('O')
 
-            The following initializations of Coulombic are equivalent::
-
-                O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
-                                        charge=-0.84)
-                O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
-                                        function=Coulomb(-0.84))
-
-            Passing a charge will overwrite any other interaction functions that
-            are set, i.e. it makes the function keyword redundant
-        atoms : list
-            Atoms to which the Coulombic interaction applies. If specifying the
-            Atoms, a universe doesn't need to be passed as a parameter::
-
-                O_coulombic = Coulombic(atoms=[O], charge=-0.84)
 
         atom_types : list of int
             int for each atom_type for which the NonBondedInteraction applies.
@@ -1971,6 +1968,34 @@ class Coulombic(NonBondedInteraction):
         If a charge is set when the Atom has no Coulombic interaction,
         resulting in the initialization of a Coulomb interaction function.
         Warning only raised in the first instance of triggering behaviour.
+
+    Examples
+    --------
+    Upon initializing an ``Atom`` object and adding it to a ``Universe``:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        O = Atom('O', atom_type=1)
+        universe = Universe(10.0)
+        universe.add_structural_unit('O')
+
+    The following initializations of Coulombic are equivalent:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
+                                charge=-0.84)
+        O_coulombic = Coulombic(universe, atom_types=[O.atom_type],
+                                function=Coulomb(-0.84))
+
+    If ``atoms`` is passed then a ``Universe`` does not need to be passed:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        O_coulombic = Coulombic(atoms=[O], charge=-0.84)
     """
 
     # Python3 requires subclasses thay overwrite __eq__ to explicity inherit
@@ -2044,7 +2069,7 @@ class Coulombic(NonBondedInteraction):
         Returns
         -------
         tuple
-            The tuple of atoms at the specified indeix in the atoms attribute.
+            The `tuple` of atoms at the specified index in ``atoms``.
         """
 
         return self.atoms[key]
@@ -2060,12 +2085,12 @@ class Coulombic(NonBondedInteraction):
     def atoms(self):
 
         """
-        Get the atoms on which the Coulombic interaction is applied
+        Get the atoms on which the ``Coulombic`` interaction is applied
 
         Returns
         -------
         list
-            A list of Atoms on which the Coulombic interaction is applied
+            A `list` of ``Atom`` on which the ``Coulombic`` is applied
         """
 
         return self._atoms
@@ -2074,16 +2099,16 @@ class Coulombic(NonBondedInteraction):
     def atom_types(self):
 
         """
-        Get the atom_types for which the Coulombic interaction applies
+        Get the atom types for which the ``Coulombic`` applies
 
         Returns
         -------
         list
-            All atom_types to which the Coulombic interaction applies. If the
-            interaction was initialized with the atoms argument, all atom_types
-            of the atoms to which the Coulombic interaction was applied are
+            All atom types to which the ``Coulombic`` applies. If the
+            interaction was initialized with ``atoms``, all ``atom_types``
+            of the ``atoms`` to which the ``Coulombic`` was applied are
             returned; HOWEVER THE COULOMBIC INTERACTION IS NOT APPLIED TO ALL
-            ATOMS OF THESE ATOM_TYPES, ONLY THE ATOMS IN self.atoms
+            ATOMS OF THESE ``atom_types``, ONLY THE ATOMS IN ``self.atoms``
         """
 
         return self._atom_types
@@ -2091,12 +2116,12 @@ class Coulombic(NonBondedInteraction):
     def element_list(self):
 
         """
-        Get a list of the elements for which the Coulombic interaction applies
+        Get a list of the elements for which the ``Coulombic`` interaction applies
 
         Returns
         -------
         list
-            The elements for which the Coulombic interaction applies
+            The elements for which the ``Coulombic`` interaction applies
         """
 
         return list(set([atom.element for atom in self._atoms]
@@ -2107,13 +2132,14 @@ class Coulombic(NonBondedInteraction):
 def _add_atom_types(self, *atom_types):
 
     """
-    Function for dynamically creating an add_atom_types method in Coulombic
+    Function for dynamically creating an ``add_atom_types`` method in
+    ``Coulombic``
 
     Parameters
     ----------
     atom_types : list
-        one or more integers specifying atom_types that exist in universe of the
-        Coulombic interaction
+        One or more `int` specifying ``atom_types`` that exist in ``universe``
+        of the ``Coulombic``
     """
 
     self._atom_types.append(*atom_types)
@@ -2122,15 +2148,15 @@ def _add_atom_types(self, *atom_types):
 def _add_atoms(self, *atoms):
 
     """
-    Function for dynamically creating an add_atoms method in Coulombic
+    Function for dynamically creating an ``add_atoms`` method in ``Coulombic``
 
-    Adds atoms to Coulombic object and adds Coulombic object to atoms
-    nonbonded_interactions
+    Adds ``*atoms`` to ``Coulombic`` and adds ``Coulombic`` to
+    ``atoms.nonbonded_interactions``
 
     Parameters
     ----------
     atoms : list
-        One or more Atoms
+        list of ``Atom``
     """
 
     for atom in atoms:
@@ -2152,27 +2178,39 @@ class BondedInteraction(Interaction):
     Parameters
     ----------
     atom_tuples : list
-        A list of tuples. Each tuples contains Atoms which are bonded together.
-        For three or more Atoms the order of the Atoms within each tuple is
-        important.
+        A `list` of `tuple`. Each `tuple` contains ``Atom`` objects which are
+        bonded together. For three or more ``Atom`` objects, the order of the
+        ``Atom`` objecys within each `tuple` is important.
     **settings
         n_atoms : int
-            The number of atoms to which this interaction applies, for example
-            2 for a bond.
+            The number of atoms to which this ``BondedInteraction`` applies, for
+            example 2 for a ``Bond``.
 
     Examples
     --------
-    For a single bonded interaction wchih applies to H1, O1, and H2::
+    For a single bonded interactions which applies to ``H1``, ``O1``, and
+    ``H2``:
+
+    .. highlight:: python
+    .. code-block:: python
 
         BondedInteraction(H1, O1, H2)
 
-    For two bonded interactions of the same BondedInteraction type, one applied
-    to H1, O1 and H2 Atoms, and the other applied to H3, O2 and H4 Atoms::
+    For two bonded interactions of the same ``BondedInteraction`` type, one
+    applied to ``H1``, ``O1`` and ``H2`` ``Atom`` objects, and the other applied
+    to ``H3``, ``O2`` and ``H4`` ``Atom`` objects:
+
+    .. highlight:: python
+    .. code-block:: python
 
         BondedInteraction((H1, O1, H2), (H3, O2, H4))
 
     Whereas the above examples are both specifying a H-O-H ordered
-    BondedInteraction, the following specifies a H-H-O BondedInteraction::
+    ``BondedInteraction``, the following specifies a H-H-O
+    ``BondedInteraction``:
+
+    .. highlight:: python
+    .. code-block:: python
 
         BondAngle(H1, H2, O)
     """
@@ -2206,8 +2244,8 @@ class BondedInteraction(Interaction):
         Returns
         -------
         tuple
-            The tuple of atoms at the specified index.  For a single index (as
-            opposed to a slice) this is a group of atoms which are bonded
+            The `tuple` of ``Atom`` at the specified index.  For a single index
+            (as opposed to a slice) this is a group of atoms which are bonded
             together.
         """
 
@@ -2219,7 +2257,7 @@ class BondedInteraction(Interaction):
         Returns
         -------
         str
-            The type, and number of atoms of the BondedInteraction
+            The type, and number of atoms of the ``BondedInteraction``
         """
 
         return ('{0} interaction applied to {1} atom tuples'.format(
@@ -2230,20 +2268,20 @@ class BondedInteraction(Interaction):
     def atoms(self):
 
         """
-        Get or set the atoms on which the Coulombic interaction is applied
+        Get or set the atoms on which the ``Coulombic`` interaction is applied
 
         Returns
         -------
         list
-            A list of tuples containing one or more Atoms. Each tuple contains
-            all of the atoms involved in one example of the interaction. For
-            example a BondAngle interaction each tuple would contain 3 or 4
-            atoms.
+            A `list` of `tuple` containing one or more ``Atom``. Each `tuple`
+            contains all of the atoms involved in one example of the
+            interaction. For example a ``BondAngle`` interaction each `tuple`
+            would contain 3 or 4 atoms.
 
         Raises
         ------
         TypeError
-            If a list of tuples is not set
+            If a `list` of `tuple` is not set
         """
 
         return self._atoms
@@ -2283,12 +2321,13 @@ class BondedInteraction(Interaction):
     def universe(self):
 
         """
-        Get the Universe to which the BondedInteraction belongs
+        Get the ``Universe`` to which the ``BondedInteraction`` belongs
 
         Returns
         -------
         Universe
-            The Universe to which the BondedInteraction belongs or None
+            The ``Universe`` to which the ``BondedInteraction`` belongs or
+            `None`
         """
 
         try:
@@ -2299,12 +2338,12 @@ class BondedInteraction(Interaction):
     def element_list(self):
 
         """
-        Get a list of the elements for which the BondedInteraction applies
+        Get a `list` of the elements for which the ``BondedInteraction`` applies
 
         Returns
         -------
         list
-            The elements for which the BondedInteraction applies
+            The elements for which the ``BondedInteraction`` applies
         """
 
         try:
@@ -2322,14 +2361,15 @@ class BondedInteraction(Interaction):
         Parameters
         ----------
         atoms : list
-            A list of Atoms to validate
+            A `list` of ``Atom`` to validate
         n_atoms : int
-            The expected number of Atoms in atoms parameter
+            The expected number of ``Atom`` objects in ``atoms``
 
         Raises
         ------
         TypeError
-            If the number of Atoms in atoms parameter is not equal to n_atoms
+            If the number of ``Atom`` objects in ``atoms`` is not equal to
+            ``n_atoms``
         """
 
         if len(atoms) not in n_atoms:
@@ -2344,16 +2384,16 @@ class BondedInteraction(Interaction):
         Parameters
         ----------
         *atoms
-            one or more Atom objects
+            one or more ``Atom`` objects
         **settings
-            from_structure : bool
-                If this method has been called from a StructuralUnit
+            ``from_structure`` (`bool`)
+                If ``add_atoms`` has been called from a ``StructuralUnit``
 
         Raises
         ------
         ValueError
-            If this BondedInteraction has already been applied to one or more of
-            the atoms
+            If this ``BondedInteraction`` has already been applied to one or
+            more of the ``atoms``
         """
 
         self._check_duplicates(atoms)
@@ -2373,20 +2413,20 @@ class BondedInteraction(Interaction):
     def _check_duplicates(self, structs):
 
         """
-        Checks for duplicates StructuralUnit
+        Checks for duplicates ``StructuralUnit``
 
         Parameters
         ----------
         structs : list
-            A list of StructuralUnits
+            A `list` of ``StructuralUnit``
         err_msg : str
-            A str to provide as an Error message if there is a duplicate
-            StructuralUnit
+            A `str` to provide as an error message if there is a duplicate
+            ``StructuralUnit``
 
         Raises
         ------
         ValueError
-            If there is a duplicate StructuralUnit
+            If there is a duplicate ``StructuralUnit``
         """
 
         err_msg = ('Each tuple in the list of atom tuples must be unique, and'
@@ -2409,7 +2449,7 @@ class BondedInteraction(Interaction):
         Returns
         -------
         list
-            list of tuples of atom orderings which are equivalent
+            `list` of `tuple` of ``Atom`` orderings which are equivalent
         """
 
         return structs + [tuple(reversed(atom_tuple)) for atom_tuple in structs]
@@ -2417,14 +2457,14 @@ class BondedInteraction(Interaction):
     def _add_to_universe(self, universe, tpl):
 
         """
-        Adds interaction and atom tuple to universe
+        Adds interaction and atom tuple to ``universe``
 
         Parameters
         ----------
         universe : Universe
-            The Universe to which to add the Interaction and tuple of atoms
+            The ``Universe`` to which to add the ``Interaction`` and `tpl`
         tpl : tuple
-            A tuple of Atoms
+            A `tuple` of ``Atom``
         """
 
         universe.add_bonded_interaction_pairs((self, tpl))
@@ -2433,18 +2473,19 @@ class BondedInteraction(Interaction):
 class Constrainable:
 
     """
-    A mixin class enabling classes inheriting from BondedInteraction to be
+    A mixin class enabling classes inheriting from ``BondedInteraction`` to be
     constrained
 
     These constraints are then applied by a constraint algorithm (e.g. SHAKE),
-    which is specified in the Universe which the BondedInteraction belongs to.
+    which is specified in the ``Universe`` to which the ``BondedInteraction``
+    belongs.
 
     Parameters
     ----------
     atom_tuples : list
-        A list of tuples. Each tuples contains Atoms which are bonded together.
-        For three or more Atoms the order of the Atoms within each tuple is
-        important.
+        A `list` of `tuple`. Each `tuple` contains ``Atom`` objects which are
+        bonded together. For three or more ``Atom`` objects, the order of the
+        ``Atom`` objects within each `tuple` is important.
     **settings
 
     Attributes
@@ -2463,14 +2504,14 @@ class Constrainable:
 class Bond(Constrainable, BondedInteraction):
 
     """
-    A bond between any two atoms. Requires exactly two atoms in each atom_tuple.
+    A bond between any two atoms. Requires exactly two atoms in each
+    ``atom_tuple``.
 
     Parameters
     ----------
     atom_tuples : list
-        A list of tuples. Each tuples contains Atoms which are bonded together.
-        For three or more Atoms the order of the Atoms within each tuple is
-        important.
+        A `list` of `tuple`. Each `tuple` contains ``Atom`` which are bonded
+        together.
     **settings
     """
 
@@ -2486,17 +2527,21 @@ class BondAngle(Constrainable, BondedInteraction):
     """
     A bond angle between any two bonds
 
-    Requires three atoms (rotation around central atom) in each atom_tuple. The
-    atoms are ordered i, j, k, where j is the central atom.
+    Requires three ``Atom`` objects (rotation around central atom) in each
+    ``atom_tuple``. The atoms are ordered ``i``, ``j``, ``k``, where ``j`` is
+    the central atom.  So:
 
-    So BondAngle(i, j, k) == BondAngle(k, j, i)
+    .. highlight:: python
+    .. code-block:: python
+
+        BondAngle(i, j, k) == BondAngle(k, j, i)
 
     Parameters
     ----------
     atom_tuples : list
-        A list of tuples. Each tuples contains Atoms which are bonded together.
-        For three or more Atoms the order of the Atoms within each tuple is
-        important.
+        A `list` of `tuple`. Each `tuple` contains ``Atom`` which are bonded
+        together. For three or more ``Atom`` objects, the order of the ``Atom``
+        objects within each `tuple` is important.
     **settings
     """
 
@@ -2510,20 +2555,27 @@ class BondAngle(Constrainable, BondedInteraction):
 class DihedralAngle(BondedInteraction):
 
     """
-    A dihedral angle between any two sets of three atoms, ijk and jkl.
+    A dihedral angle between any two sets of three atoms, ``ijk`` and ``jkl``.
 
     Dihedral angles can be both proper and improper, where the angle between the
-    two planes of ijk and jkl is fixed for improper dihedrals.
+    two planes of ``ijk`` and ``jkl`` is fixed for improper dihedrals.
 
-    The atoms of a proper DihedralAngle are ordered i, j, k, l, where j and k
-    are the two central atoms.
+    The atoms of a proper ``DihedralAngle`` are ordered ``i``, ``j``, ``k``,
+    ``l``, where ``j`` and ``k`` are the two central atoms.  So:
 
-    So DihedralAngle(i, j, k, l) == DihedralAngle(l, k, j, i)
+    .. highlight:: python
+    .. code-block:: python
 
-    The atoms of an improper DihedralAngle are ordered i, j, k, l, where i is
-    the central atom to which j, k, and l are all connected.
+        DihedralAngle(i, j, k, l) == DihedralAngle(l, k, j, i)
 
-    So (DihedralAngle(i, j, k, l, improper=True)
+    The atoms of an improper ``DihedralAngle`` are ordered ``i``, ``j``, ``k``,
+    ``l``, where ``i`` is the central atom to which ``j``, ``k``, and ``l`` are
+    all connected. So:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        (DihedralAngle(i, j, k, l, improper=True)
         == DihedralAngle(i, j, l, k, improper=True)
         == DihedralAngle(i, l, k, j, improper=True)
         == DihedralAngle(i, l, j, k, improper=True))
@@ -2533,18 +2585,19 @@ class DihedralAngle(BondedInteraction):
     Parameters
     ----------
     atom_tuples : list
-        A list of tuples. Each tuples contains four Atoms which are bonded
-        together by the DihedralAngle, in the order specified.
+        A `list` of `tuple`. Each `tuple` contains four `Atom` objects which are
+        bonded together by the ``DihedralAngle``, in the order specified.
     **settings
-        improper : bool
-            Whether the DihedralAngle is improper or not.
+        ``improper`` (`bool`)
+            Whether the ``DihedralAngle`` is improper or not.
 
     Attributes
     ----------
     improper : bool
-        Whether the DihedralAngle is improper or not, which affects the
-        InteractionFunctions which can be set for this DihedralAngle. By default
-        this is set to False i.e. the interaction is a proper dihedral.
+        Whether the ``DihedralAngle`` is improper or not, which affects the
+        ``InteractionFunction`` which can be set for this ``DihedralAngle``. By
+        default this is set to `False` i.e. the interaction is a proper
+        dihedral.
     """
 
     def __init__(self, *atom_tuples, **settings):
@@ -2559,7 +2612,7 @@ class DihedralAngle(BondedInteraction):
         Returns
         -------
         list
-            list of tuples of atom orderings which are equivalent
+            `list` of `tuple` of ``Atom`` orderings which are equivalent
         """
 
         # Improper dihedrals are equivalent if they have the same first

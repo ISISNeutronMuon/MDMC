@@ -330,7 +330,7 @@ def wrap_docstring(docstring, line_length):
 
     Returns
     -------
-    `str`
+    str
         The wrapped docstring
 
     Raises

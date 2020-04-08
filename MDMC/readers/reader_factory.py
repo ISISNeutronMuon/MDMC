@@ -8,7 +8,7 @@ from inspect import isclass, isabstract, getmembers, getmodule
 class ReaderFactory(ABC):
 
     """
-    Provides a abstract base class for methods and properties common to all.
+    Provides a abstract base class for methods and properties common to all
     reader factories
     """
 
@@ -19,7 +19,7 @@ class ReaderFactory(ABC):
         Creates a reader object from a module name
 
         The reader object must be the first class in the module. The base class
-        which the reader must inherit is defined by cls.base_class
+        which the reader must inherit is defined by ``cls.base_class``
 
         Parameters
         ----------
@@ -29,7 +29,7 @@ class ReaderFactory(ABC):
         Returns
         -------
         Reader
-            A Reader object
+            A ``Reader`` object
         """
 
         try:
@@ -62,7 +62,7 @@ class ReaderFactory(ABC):
     def _name_from_alias(alias):
 
         """
-        Converts an alias into a module name
+        Converts an ``alias`` into a module name
         """
 
         return alias.lower()

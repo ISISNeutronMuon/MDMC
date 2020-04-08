@@ -30,10 +30,10 @@ class InteractionFunction:
     Parameters
     ---------
     val_dict : dict
-        name:value pairs. Currently this must be ordered alphabetically. Value
-        must either be a object with a value and a unit (e.g. a UnitFloat
-        object), or a (float, str) tuple, where float is the value and str is
-        the unit.
+        ``name:value`` pairs. Currently this must be ordered alphabetically.
+        ``value`` must either be an object with a ``value`` and a ``unit`` (e.g.
+        a ``UnitFloat`` object), or a (`float`, `str`) `tuple`, where `float` is
+        the value and `str` is the unit.
     """
 
     def __init__(self, val_dict):
@@ -59,15 +59,15 @@ class InteractionFunction:
     def params(self):
 
         """
-        Get or set the array of Parameters
+        Get or set the ``array`` of ``Parameter`` objects
 
-        On setting the Parameters, they are ordered alphabetically by
-        Parameter.name
+        On setting the ``Parameter`` objects, they are ordered alphabetically by
+        ``Parameter.name``
 
         Returns
         -------
-        np.ndarray
-            A NumPy array of Parameters
+        numpy.ndarray
+            A NumPy ``array`` of ``Parameter``
         """
 
         return self._params
@@ -81,12 +81,12 @@ class InteractionFunction:
     def params_values(self):
 
         """
-        Get the values for all Parameters
+        Get the values for all ``Parameters`` objects
 
         Returns
         -------
-        np.ndarray
-            A NumPy array of values for all Parameters
+        numpy.ndarray
+            A NumPy ``array`` of values for all ``Parameter``
         """
 
         return np.array([p.value for p in self.params])
@@ -95,7 +95,7 @@ class InteractionFunction:
     def name(self):
 
         """
-        Get the name of the class of the InteractionFunction
+        Get the name of the class of the ``InteractionFunction``
 
         Returns
         -------
@@ -108,12 +108,13 @@ class InteractionFunction:
     def set_params_interactions(self, interaction):
 
         """
-        Sets the parent interaction for all Parameters
+        Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
 
         Parameters
         ----------
         interaction : Interaction
-            An interaction to set as the parent of all the Parameters
+            An ``Interaction`` to set as the ``parent`` of all the
+            ``Parameters``
         """
 
         for param in self.params:
@@ -126,21 +127,22 @@ def inter_func_decorator(*param_units):
     """
     Decorates a method to add units to all non-keyword arguments
 
-    Designed for adding units to parameters of __init__ method for subclasses of
-    InteractionFunction.
+    Designed for adding units to parameters of ``__init__`` method for
+    subclasses of ``InteractionFunction``.
 
     Parameters
     ----------
     *param_units
-        one or more str or units.Unit, where each str (or Unit) is a unit which
-        is applied to the corresponding value passed to the decorated method. If
-        one of the values is unitless, pass None at the corresponding index in
-        param_units.
+        one or more `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
+        which is applied to the corresponding value passed to the decorated
+        method. If one of the values is unitless, pass `None` at the
+        corresponding index in ``param_units``.
 
     Examples
     --------
-    The following adds units of 'Ang' to parameter alpha, units of 's' to the
-    parameter beta, and units of 'atm' to the parameter gamma:
+    The following adds units of ``'Ang'`` to parameter ``alpha``, units of
+    ``'s'`` to the parameter ``beta``, and units of ``'atm'`` to the parameter
+    ``gamma``:
 
         .. highlight:: python
         .. code-block:: python
@@ -149,10 +151,10 @@ def inter_func_decorator(*param_units):
             def __init__(self, alpha, beta, gamma):
                 ...
 
-    If one of the parameters is unitless, this can be set with None (in which
+    If one of the parameters is unitless, this can be set with `None` (in which
     case the returned type will be the same as the original value i.e. a
-    UnitFloat or UnitNDArray will not be created). So to set epsilon as
-    unitless:
+    ``UnitFloat`` or ``UnitNDArray`` will not be created). So to set ``epsilon``
+    as unitless:
 
         .. highlight:: python
         .. code-block:: python
@@ -190,8 +192,8 @@ def inter_func_decorator(*param_units):
 class Buckingham(InteractionFunction):
 
     r"""
-    The Buckingham potential (in units of kJ mol^-1) for the interaction of
-    2 atoms at distance r (in Ang) has the form:
+    The Buckingham potential (in units of ``kJ mol^-1``) for the interaction of
+    2 atoms at distance r (in ``Ang``) has the form:
 
     .. math::
 
@@ -200,11 +202,11 @@ class Buckingham(InteractionFunction):
     Parameters
     ----------
     A : float
-        The Buckingham parameter A in units of kJ mol^-1
+        The Buckingham parameter A in units of ``kJ mol^-1``
     B : float
-        The Buckingham parameter B in units of Ang^-1
+        The Buckingham parameter B in units of ``Ang^-1``
     C : float
-        The Buckingham parameter C in units of Ang^6 kJ mol^-1
+        The Buckingham parameter C in units of ``Ang^6 kJ mol^-1``
     """
 
     @inter_func_decorator(units.ENERGY, units.LENGTH ** -1,
@@ -226,7 +228,7 @@ class Coulomb(InteractionFunction):
     Parameters
     ----------
     charge : float
-        The charge in units of e
+        The charge in units of ``e``
     """
 
     @inter_func_decorator(units.CHARGE)
@@ -245,35 +247,39 @@ class HarmonicPotential(InteractionFunction):
 
         E = K(r-r_0)^2
 
-    As HarmonicPotential can be used with several different Interaction types,
-    the Interaction type must be specified, so that the correct units can be
-    assigned to the equilibrium_state and potential_strength parameters.
+    As ``HarmonicPotential`` can be used with several different ``Interaction``
+    types, the ``Interaction`` type must be specified, so that the correct units
+    can be assigned to the ``equilibrium_state`` and ``potential_strength``
+    parameters.
 
     Parameters
     ----------
     equilibrium_state : float
-        The equilibrium state of the object in either Ang or degrees, depending
-        on the interaction_type passed.
+        The equilibrium state of the object in either ``Ang`` or ``degrees``,
+        depending on the ``interaction_type`` passed.
     potential_strength : float
-        The potential strength in units of kJ mol^-1 Ang^-2 (linear) or
-        kJ mol^-1 rad^-2 (angular/improper), depending on the interaction_type
-        passed.
+        The potential strength in units of ``kJ mol^-1 Ang^-2`` (linear) or
+        ``kJ mol^-1 rad^-2`` (angular/improper), depending on the
+        ``interaction_type`` passed.
     **settings
         interaction_type : str
-            A str specifying either 'bond', 'angle' or 'improper'. This assigns
-            the correct units to equilibrium_state and potential_strength. This
-            keyword must be passed.
+            A `str` specifying either ``'bond'``, ``'angle'`` or ``'improper'``.
+            This assigns the correct units to ``equilibrium_state`` and
+            ``potential_strength``. This keyword must be passed.
 
     Raises
     ------
     ValueError
-        The interaction_type must be 'bond', 'angle', or 'improper'
+        The ``interaction_type`` must be ``'bond'``, ``'angle'``, or
+        ``'improper'``
     TypeError
-        An interaction_type of 'bond', 'angle', or 'improper' must be passed
+        An ``interaction_type`` of ``'bond'``, ``'angle'``, or ``'improper'``
+        must be passed
 
     Example
     -------
-    The following result creates a HarmonicPotential for a Bond interaction::
+    The following result creates a ``HarmonicPotential`` for a ``Bond``
+    interaction::
 
         HarmonicPotential(1.0, 2.0, interaction_type='bond')
     """
@@ -324,7 +330,7 @@ class HarmonicPotential(InteractionFunction):
 class Periodic(InteractionFunction):
 
     r"""
-    Periodic potential for proper and improper Dihedral interactions, with the
+    Periodic potential for proper and improper dihedral interactions, with the
     form:
 
     .. math::
@@ -337,12 +343,13 @@ class Periodic(InteractionFunction):
     Parameters
     ----------
     K1 : float
-        The K parameter (energy) of the first order term, in units of kJ mol^-1
+        The K parameter (energy) of the first order term, in units of
+        ``kJ mol^-1``
     n1 : int
         The n parameter of the first order term, which is unitless. This must be
-        a non-negative int.
+        a non-negative `int`.
     d1 : float
-        The d parameter (angle) of the first order term, in units of deg
+        The d parameter (angle) of the first order term, in units of ``deg``
     *params
         K, n, and d parameters for higher order terms. These must be ordered K2,
         n2, d2, K3, n3, d3, K4, n4, d4 etc. The types and units of these
@@ -391,14 +398,14 @@ class LennardJones(InteractionFunction):
     Parameters
     ----------
     epsilon : float
-        The LJ epsilon value in units of kJ mol^-1
+        The LJ epsilon value in units of ``kJ mol^-1``
     sigma : float
-        The LJ sigma value in units of Ang
+        The LJ sigma value in units of ``Ang``
     **settings
         cutoff : float
-            The distance in Ang at which the potential is cutoff
+            The distance in ``Ang`` at which the potential is cutoff
         long_range_solver : str
-            The long range solver, either 'PPPM', 'PME', or 'E' for
+            The long range solver, either ``'PPPM'``, ``'PME'``, or ``'E'`` for
             Particle-Particle Particle-Mesh, Particle Mesh Ewald, or Ewald
             solvers
     """

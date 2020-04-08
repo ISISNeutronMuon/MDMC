@@ -39,9 +39,9 @@ class ForceField(ABC):
     def interaction_dictionary(self):
 
         """
-        Returns a dictionary with keys of (Interaction:Elements) where Elements
-        is an ordered tuple of elemental symbols, and values of interaction
-        Functions.
+        Returns a `dict` with keys of (``Interaction``:``Elements``) where
+        ``Elements`` is an ordered tuple of elemental symbols, and values of
+        ``InteractionFunction`` objects.
         """
 
         raise NotImplementedError
@@ -50,12 +50,12 @@ class ForceField(ABC):
 
         """
         Parameterizes the interactions with the parameters speicifed in the
-        interaction dictionary
+        ``interaction`` `dict`
 
         Parameters
         ----------
         interactions : list
-            A list of Interaction objects to be parameterized
+            A `list` of ``Interaction`` objects to be parameterized
         """
 
         for interaction in interactions:
@@ -65,11 +65,12 @@ class ForceField(ABC):
 
         """
         Parameterizes the interaction with the parameters specified in the
-        interaction dictionary
+        ``interaction`` `dict`
 
-        Arguments:
+        Parameters
+        ----------
         interaction : Interaction
-            An Interaction object to be parameterized
+            An ``Interaction`` to be parameterized
         """
 
         elements = interaction.element_tuple()
@@ -96,7 +97,8 @@ class WaterModel(ForceField):
         """
         This is the number of bodies in the water model.
 
-        THIS MUST BE IMPLEMENTED USING A STATIC VARIABLE, INSTEAD OF A PROPERTY.
+        .. note:: THIS MUST BE IMPLEMENTED USING A STATIC VARIABLE, INSTEAD OF A
+                  PROPERTY.
 
         Returns
         -------
@@ -183,8 +185,8 @@ class FileForceField(ForceField):
 
         Returns
         -------
-        DataFrame
-            A dataframe with the force field atom type, atom group, element,
+        pandas.DataFrame
+            A ``DataFrame`` with the force field atom type, atom group, element,
             mass, charge, and name
         """
 
@@ -198,9 +200,9 @@ class FileForceField(ForceField):
 
         Returns
         -------
-        DataFrame
-            A dataframe with all bonds , atom groups, and the
-            parameters of the bonds
+        pandas.DataFrame
+            A ``DataFrame`` with all bonds, atom groups, and the parameters of
+            the bonds
         """
 
         return self.data['bonds']
@@ -213,8 +215,8 @@ class FileForceField(ForceField):
 
         Returns
         -------
-        DataFrame
-            A dataframe with all bond angles, atom groups, and the
+        pandas.DataFrame
+            A ``DataFrame`` with all bond angles, atom groups, and the
             parameters of the bond angle
         """
 
@@ -224,12 +226,12 @@ class FileForceField(ForceField):
     def propers(self):
 
         """
-        Get file parameters for the iroper dihedrals of the force field
+        Get file parameters for the proper dihedrals of the force field
 
         Returns
         -------
-        DataFrame
-            A dataframe with all proper dihedrals, atom groups, and the
+        pandas.DataFrame
+            A ``DataFrame`` with all proper dihedrals, atom groups, and the
             parameters of the proper dihedral
         """
 
@@ -243,8 +245,8 @@ class FileForceField(ForceField):
 
         Returns
         -------
-        DataFrame
-            A dataframe with all improper dihedrals, atom groups, and the
+        pandas.DataFrame
+            A ``DataFrame`` with all improper dihedrals, atom groups, and the
             parameters of the improper dihedral
         """
 
@@ -258,9 +260,9 @@ class FileForceField(ForceField):
 
         Returns
         -------
-        DataFrame
-            A dataframe with all dispersion interactions, atom types, and the
-            parameters of the dispersion interaction
+        pandas.DataFrame
+            A ``DataFrame`` with all dispersion interactions, atom types, and
+            the parameters of the dispersion interaction
         """
 
         return self.data['dispersions']
@@ -278,7 +280,7 @@ class FileForceField(ForceField):
     def filter_element(self, element):
 
         """
-        Filters the atoms in the FileForceField by element
+        Filters the atoms in the ``FileForceField`` by element
 
         Parameters
         ----------
@@ -288,9 +290,9 @@ class FileForceField(ForceField):
 
         Returns
         -------
-        DataFrame
-            A filtered DataFrame where each row is an atom type that has an
-            element specified by `element`
+        pandas.DataFrame
+            A filtered ``DataFrame`` where each row is an atom type that has an
+            element specified by ``element``
         """
 
         return filter_dataframe([element], self.atoms, column_names=['element'])
@@ -298,13 +300,13 @@ class FileForceField(ForceField):
     def set_atom_mass(self, atom):
 
         """
-        Sets the mass of an atom to the mass defined in the force field for that
-        atom type
+        Sets ``Atom.mass`` to the mass defined in the force field for that atom
+        type
 
         Parameters
         ----------
         atom : Atom
-            The atom for which the mass will be set
+            The ``Atom`` for which the mass will be set
         """
 
         ff_atom = filter_ordered_dataframe([atom.name, atom.element],
@@ -316,11 +318,11 @@ class FileForceField(ForceField):
 
         """
         Parameterizes the interaction with the parameters specified in the
-        interaction dictionary
+        ``interaction`` `dict`
 
         Arguments:
         interaction : Interaction
-            An Interaction object to be parameterized
+            An ``Interaction`` to be parameterized
         """
 
         # Add parametrize coulombic
@@ -334,12 +336,12 @@ class FileForceField(ForceField):
     def _parametrize_bonded(self, bonded):
 
         """
-        Parametrizes a BondedInteraction
+        Parametrizes a ``BondedInteraction``
 
         Parameters
         ----------
         bonded : BondedInteraction
-            A subclass of BondedInteraction which will be parametrized
+            A subclass of ``BondedInteraction`` which will be parametrized
         """
 
         groups = set()
@@ -431,12 +433,12 @@ class FileForceField(ForceField):
     def _parametrize_coulombic(self, coulombic):
 
         """
-        Assumes that all force fields have a Coulomb InteractionFunction
+        Assumes that all force fields have a ``Coulomb`` ``InteractionFunction``
 
         Parameters
         ----------
         coulombic : Coulombic
-            The Coulombic to be parametrized
+            The ``Coulombic`` to be parametrized
         """
 
         # Different atom names could be defined within the same coulombic
@@ -475,7 +477,7 @@ class FileForceField(ForceField):
         Parameters
         ----------
         dispersion : Dispersion
-            The Dispersion to be parametrized
+            The ``Dispersion`` to be parametrized
         """
 
         # As the atoms in a dispersion are determined by dispersion.atom_type,
@@ -523,18 +525,19 @@ class FileForceField(ForceField):
     def _get_interaction_function(self, interaction_type):
 
         """
-        Gets the InteractionFunction for the corresponding Interaction
+        Gets the ``InteractionFunction`` for the corresponding ``Interaction``
 
         Parameters
         ----------
         interaction_type : str
-            A string specifying an interaction type, which must be a key in
-            self._inter_functions
+            A `str` specifying an interaction type, which must be a key in
+            ``self._inter_functions``
 
         Returns
         -------
         InteractionFunction
-            The subclass of InteractionFunction correspoding to interaction_type
+            The subclass of ``InteractionFunction`` correspoding to
+            ``interaction_type``
         """
 
         function_name = self.inter_functions[interaction_type.lower()]
@@ -545,24 +548,25 @@ class FileForceField(ForceField):
     def _convert_atom_type_name(self, atom):
 
         """
-        Converts all atoms with atom names that are a valid force field type
-        (i.e. can be cast to an int) into the corresponding force field atom
-        name.
+        Converts all ``Atom`` objects with ``Atom.name`` that are a valid force
+        field type (i.e. can be cast to an `int`) into the corresponding force
+        field atom name.
 
-        Atom names only need to be convert once, however they will be converted
-        for every interaction in which they appear - avoid this with lrucache
+        Each ``Atom.name`` only needs to be converted once, however they will be
+        converted for every interaction in which they appear - avoid this with
+        lrucache
 
         Parameters
         ----------
         atom : Atom
-            The atom for which the name will be converted
+            The ``Atom`` for which the name will be converted
 
         Raises
         ------
         ValueError
-            If the atom does not have a valid force field type or a force field
-            atom name, raise a ValueError. This atom cannot be interpreted as
-            valid within the force field.
+            If the ``Atom`` does not have a valid force field type or a force
+            field atom name, raise a ValueError. This atom cannot be interpreted
+            as valid within the force field.
         """
 
         # int cast as atom names will be strings, even if they are numerical
@@ -581,29 +585,29 @@ class FileForceField(ForceField):
     def _get_parameter_names(function, file_param_names=None):
 
         """
-        Gets the names of the parameters of function, excluding self and
-        **settings
+        Gets the names of the parameters of function, excluding ``self`` and
+        ``**settings``
 
-        If *args is included in the function signature, then the parameter names
-        are taken from the file.
+        If ``*args`` is included in the function signature, then the parameter
+        names are taken from the file.
 
         Parameters
         ----------
         function : callable
             Any callable (e.g. function, method)
         file_param_names : list
-            List of str with the parameter names from the file
+            `list` of `str` with the parameter names from the file
 
         Returns
         -------
-        list of str
+        `list` of `str`
             The parameters of the function
 
         Raises
         ------
         ValueError
-            If the function signature has *args and the parameter names in the
-            file are incorrectly ordered.
+            If the function signature has ``*args`` and the parameter names in
+            the file are incorrectly ordered.
         """
 
         # VAR_POSITIONAL is the Python Parameter kind which is used for *args
@@ -638,25 +642,26 @@ class FileForceField(ForceField):
                                     matching_inters):
 
         """
-        Checks that the parameters for an InteractionFunction for a
-        NonBondedInteraction are valid
+        Checks that the parameters for an ``InteractionFunction`` for a
+        ``NonBondedInteraction`` are valid
 
         Parameters
         ----------
         function_parameters : list
-            The parameters which will be passed to an InteractionFunction
+            The parameters which will be passed to an ``InteractionFunction``
         function_parameter_names : list
-            A list of the names of the function_parameters
-        matching_inters : DataFrame
-            A Dataframe of the lines of the interaction in the force field file
-            which match the NonBondedInteraction which is being parametrized
+            A list of the names of the ``function_parameters``
+        matching_inters : pandas.DataFrame
+            A ``Dataframe`` of the lines of the interaction in the force field
+            file which match the ``NonBondedInteraction`` which is being
+            parametrized
 
         Raises
         ------
         ValueError
-            If atoms which have been added to the NonBondedInteraction do not
-            have the same InteractionFunction parameters for the force field,
-            they cannot be included in the same NonBondedInteraction.
+            If atoms which have been added to the ``NonBondedInteraction`` do
+            not have the same ``InteractionFunction`` parameters for the force
+            field, they cannot be included in the same ``NonBondedInteraction``.
         """
 
         if len(function_parameters) != len(function_parameter_names):
@@ -668,20 +673,22 @@ class FileForceField(ForceField):
                                   function_parameters, function_settings=None):
 
         """
-        Initialises an InteractionFunction with specified parameters and
-        settings and sets it for an Interaction
+        Initialises an ``InteractionFunction`` with specified parameters and
+        settings and sets it for an ``Interaction``
 
         Parameters
         ----------
         interaction : Interaction
-            The Interaction for which the InteractionFunction will be set
+            The ``Interaction`` for which the ``InteractionFunction`` will be
+            set
         function_type : InteractionFunction class
-            The InteractionFunction class which will be initialised
+            The ``InteractionFunction`` class which will be initialised
         function_parameters : list
-            The parameters which are passed to the function_type
+            The parameters which are passed to the ``function_type``
         function_settings : dict, optional
-            Any **settings to be passed to the function_type for initialising.
-            The default is None, which results in no **settings being passed.
+            Any ``**settings`` to be passed to the ``function_type`` for
+            initialising. The default is `None`, which results in no
+            ``**settings`` being passed.
         """
 
         function_settings = function_settings if function_settings else {}
@@ -700,14 +707,15 @@ class FileForceField(ForceField):
         header : str
             The header line to be parsed
         dtype : class
-            The expected datatype of the header parameters, e.g. int or str
+            The expected datatype of the ``header`` parameters, e.g. `int` or
+            `str`
 
         Returns
         -------
         list of tuples
-            (keyword, parameter) where keyword is a str which specifies a force
-            field file section, and parameter is the description associated with
-            it.
+            (``keyword``, ``parameter``) where ``keyword`` is a `str` which
+            specifies a force field file section, and ``parameter`` is the
+            description associated with it.
         """
 
         # Strip newline formatting
@@ -718,12 +726,12 @@ class FileForceField(ForceField):
     def _set_col_type(column):
 
         """
-        Sets the type of a DataFrame column to either a float or an int, if
-        possible
+        Sets the type of a ``DataFrame`` column to either a `float` or an `int`,
+        if possible
 
         Parameters
         ----------
-        column : pd.Series
+        column : pandas.Series
             The column for which the type will be converted
         """
 

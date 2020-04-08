@@ -10,9 +10,9 @@ from MDMC.MD.force_fields.ff import ForceField
 class ForceFieldFactory:
 
     """
-    Provides a factory for creating force fields.  Any facade within
+    Provides a factory for creating a ``ForceField``.  Any force field within
     the force fields folder can be created with a string of the class name, as
-    long as it is a subclass of ForceField.
+    long as it is a subclass of ``ForceField``.
     """
 
     @staticmethod
@@ -22,7 +22,7 @@ class ForceFieldFactory:
         Returns
         -------
         ForceField
-            A ForceField object specified by module_name
+            A ``ForceField`` specified by ``module_name``
         """
 
         try:
@@ -41,13 +41,14 @@ class ForceFieldFactory:
         """
         Get the names of available force fields
 
-        Requires all ForceField derived classes to be in modules of the same
+        Requires all ``ForceField`` derived classes to be in modules of the same
         name
 
         Returns
         -------
         list
-            A list of str with the names of the available force fields
+            A `list` of `str` with the names of the available ``ForceField``
+            objects
         """
 
         force_field_names = []

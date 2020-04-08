@@ -15,7 +15,6 @@ class Reader(ABC):
 
         self.file = None
 
-    # TODO: Consider if splitting these methods may cause issue - should I be using a with ... as statement?
     def open(self, file_name):
 
         """

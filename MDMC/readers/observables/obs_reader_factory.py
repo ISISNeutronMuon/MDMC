@@ -9,7 +9,7 @@ class ObservableReaderFactory(ReaderFactory):
     """
     Provides a factory for creating readers.  Any module within the readers
     submodule can be created with a string of the class name, as long as it is a
-    subclass of Reader.
+    subclass of ``Reader``.
     """
 
     @staticmethod

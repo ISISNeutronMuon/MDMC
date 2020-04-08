@@ -13,7 +13,7 @@ from MDMC.MD.solvents._solvent_config import SolventConfig
 class SPCConfig(SolventConfig):
 
     """
-    The SPC SolventConfig, which uses the SPC216 dict
+    The SPC ``SolventConfig``, which uses the SPC216 dict
     """
 
     def __str__(self):

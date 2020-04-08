@@ -48,7 +48,8 @@ class AbstractSQw(Observable):
     def independent_variables(self):
 
         """
-        Get or set the independent variables, Q (in Ang^-1) and E (in meV)
+        Get or set the independent variables, Q (in ``Ang^-1``) and E (in
+        ``meV``)
 
         Returns
         -------
@@ -67,7 +68,7 @@ class AbstractSQw(Observable):
     def dependent_variables(self):
 
         """
-        Get or set the dependent variables, SQw (in arb)
+        Get or set the dependent variables, SQw (in ``arb``)
 
         Returns
         -------
@@ -101,7 +102,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         array
-            1D array of Q floats (in Ang^-1)
+            1D array of Q `float` (in ``Ang^-1``)
         """
 
         try:
@@ -119,7 +120,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         array
-            1D array of energy floats (in meV)
+            1D array of energy `float` (in ``meV``)
         """
 
         if self.independent_variables:
@@ -139,7 +140,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         array
-            1D array of angular frequency floats in units of rad ps^-1
+            1D array of angular frequency `float` in units of ``r``ad ps^-1``
         """
 
         return self.E / (h_bar * 1e15)
@@ -154,7 +155,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         array
-            2D array of S(Q, w) floats with arbitrary units
+            2D array of S(Q, w) `float` with arbitrary units
         """
 
         try:
@@ -171,7 +172,7 @@ class AbstractSQw(Observable):
 
         Returns
         -------
-            2D array of S(Q, w) error floats with arbitrary units
+            2D array of S(Q, w) error `float` with arbitrary units
         """
 
         try:
@@ -184,12 +185,12 @@ class AbstractSQw(Observable):
 
         """
         Get or set the times of the intermediate scattering function in units of
-        fs
+        ``fs``
 
         Returns
         -------
         array
-            1D array of times in fs
+            1D array of times in ``fs``
         """
 
         return self._t
@@ -224,25 +225,25 @@ class AbstractSQw(Observable):
     def calculate_from_MD(self, MD_input, **settings):
 
         """
-        Calculate the dynamic structure factor, S(Q, w) from a MD Trajectory
+        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
 
-        Currently sets all errors to 0 when S(Q,w) is calculated from MD
+        Currently sets all errors to 0 when S(Q, w) is calculated from MD
 
-        Independent variables can either be set previously or defined within
-        settings.
+        ``independent_variables`` can either be set previously or defined within
+        ``**settings``.
 
         Parameters
         ----------
         MD_input : Trajectory
-            An MD Trajectory
+            An MD ``Trajectory`` from which the S(Q, w) will be calculated
         **settings
-            n_Q_vectors : int
-                The maximum number of Q vectors for any Q value. The greater the
-                number of Q vectors, the more accurate the calculation, but the
-                longer it will take.
-            dimensions : list, tuple, array
-                A 3 element tuple or NumPy array of floats specifying the
-                dimenions of the universe in units of Ang
+            ``n_Q_vectors`` (`int`)
+                The maximum number of ``Q_vectors`` for any ``Q`` value. The
+                greater the number of ``Q_vectors``, the more accurate the
+                calculation, but the longer it will take.
+            ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
+                A 3 element `tuple` or ``array`` of `float` specifying the
+                dimensions of the ``Universe`` in units of ``Ang``
         """
 
         self._origin = 'MD'
@@ -315,19 +316,19 @@ class AbstractSQw(Observable):
     def _calculate_E(self, nE, dt):
 
         """
-        Calculates E from trajectory times
+        Calculates ``E`` from the ``Trajectory`` times
 
         Parameters
         ----------
         nE : int
-            The number of E values to be calculated
+            The number of ``E`` values to be calculated
         dt : float
-            The step size of the time in fs
+            The step size of the time in ``fs``
 
         Returns
         -------
-        array
-            An array of floats specifying the energy in units of meV
+        numpy.ndarray
+            An ``array`` of `float` specifying the energy in units of ``meV``
         """
 
         return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt / 1000)
@@ -335,14 +336,14 @@ class AbstractSQw(Observable):
     def calculate_FQt(self):
 
         """
-        Calculates the intermediate scattering function for all Q vectors for
-        all time intervals
+        Calculates the intermediate scattering function for all ``Q_vectors``
+        for all time intervals
 
         Returns
         -------
-        array
-            An array of dimensions determined by the number of times and Q
-            values
+        numpy.ndarray
+            An ``array`` of dimensions determined by the number of ``t`` and
+            ``Q`` values
         """
 
         comm = MPI.COMM_WORLD
@@ -392,13 +393,13 @@ class AbstractSQw(Observable):
     def _calculate_FQt_single_Q(self, Q_vector):
 
         """
-        Calculates intermediate scattering function for a single Q value for all
-        time intervals (t)
+        Calculates intermediate scattering function for a single Q value for
+        all ``t`` intervals
 
         Parameters
         ----------
-        Q_vector : array
-            An array of one or more Q vectors with the same Q value
+        Q_vector : numpy.ndarray
+            An ``array`` of one or more Q vectors with the same Q value
         """
 
         raise NotImplementedError
@@ -406,17 +407,17 @@ class AbstractSQw(Observable):
     def _calculate_rho(self, Q_vector):
 
         """
-        Calculates time dependent number density in reciprocal space for all Q
-        vectors
+        Calculates ``t`` dependent number density in reciprocal space for all
+        Q vectors
 
         As rho is the sum of the contributions for all of the specified Q
         vectors, these Q vectors should have the same Q value. Includes
-        contributions from all atoms in the trajectory.
+        contributions from all ``Atom`` objects in the ``Trajectory``.
 
         Parameters
         ----------
-        Q_vector : array
-            An array of one or more Q vectors with the same Q value
+        Q_vector : numpy.ndarray
+            An ``array`` of one or more Q vectors with the same Q value
         """
 
         @jit('float64[:,:], float64[:,:]', nopython=True)
@@ -436,17 +437,17 @@ class AbstractSQw(Observable):
         Calculates a number of Q vectors for each Q value
 
         The upper limit of the number of Q vectors for a specific Q value is
-        determined by self.n_Q_vectors
+        determined by ``self.n_Q_vectors``
 
         Parameters
         ----------
         Q_value : list
-            A list of floats for the Q values
+            A `list` of `float` for the Q values
 
         Returns
         -------
-        array
-            an array of arrays of Q vectors, one array for each Q value
+        numpy.ndarray
+            An ``array`` of arrays of Q vectors, one array for each ``Q_value``
         """
 
         # Only valid for uniform Q_values
@@ -475,7 +476,7 @@ class AbstractSQw(Observable):
         Calculates a number of Q vectors for Q values within a range
 
         The upper limit of the number of Q vectors is determined by
-        self.n_Q_vectors
+        ``self.n_Q_vectors``
 
         Parameters
         ----------
@@ -486,9 +487,9 @@ class AbstractSQw(Observable):
 
         Returns
         -------
-        array
-            an array of Q vectors which lie within the range defined by Q_min
-            and Q_max
+        numpy.ndarray
+            An ``array`` of Q vectors which lie within the range defined by
+            ``Q_min`` and ``Q_max``
         """
 
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
@@ -521,7 +522,7 @@ class AbstractSQw(Observable):
 
         Returns
         -------
-        array
+        numpy.ndarray
             The S(Q, w) calculated from F(Q, t)
         """
 
@@ -553,22 +554,23 @@ class AbstractSQw(Observable):
         than by convolution.  Assumes that the temporal resolution has no Q
         dependence.
 
-        CURRENTLY SQw is hard coded to only apply Gaussian resolution functions
+        .. note:: Currently SQw is hard coded to only apply Gaussian resolution
+                  functions
 
         Parameters
         ----------
-        FQt : array
+        FQt : numpy.ndarray
             The F(Q, t) to which the resolution function is applied
         function : function, optional
             The resolution function to apply. The default is gaussian.
         **params
-            sigma : float
+            ``sigma`` (`float`)
                 The sigma of the gaussian distribution.
 
         Returns
         -------
-        array
-            An array of the same dimensions as FQt
+        numpy.ndarray
+            An ``array`` of the same dimensions as ``FQt``
         """
 
         # Functions other than Gaussians must be FFT before multiplication
@@ -609,13 +611,13 @@ class SQw(AbstractSQw):
 
         Parameters
         ----------
-        Q_vector : array
-            an array of one or more Q vectors with the same Q value
+        Q_vector : numpy.ndarray
+            An ``array`` of one or more Q vectors with the same Q value
 
         Returns
         -------
-        array
-            An array with dimensions of self.t
+        numpy.ndarray
+            An ``array`` with dimensions of ``self.t``
         """
 
         rho = self._calculate_rho(Q_vector)

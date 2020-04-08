@@ -9,9 +9,9 @@ from MDMC.trajectory_analysis.observables.obs import \
 class ObservableFactory:
 
     """
-    Provides a factory for creating Observables.  Any module within the
+    Provides a factory for creating an ``Observable``.  Any module within the
     observables submodule can be created with a string of the class name, as
-    long as it is a subclass of Observable.
+    long as it is a subclass of ``Observable``.
     """
 
     @staticmethod
@@ -25,12 +25,12 @@ class ObservableFactory:
         Parameters
         ----------
         module_name : str
-            The name of the module where the Observable is the first class
+            The name of the module where the ``Observable`` is the first class
 
         Returns
         -------
         Observable
-            An Observable object
+            An ``Observable`` object
         """
 
         module = import_module('.' + module_name, __package__)

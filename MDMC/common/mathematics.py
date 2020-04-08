@@ -18,21 +18,21 @@ def correlation(input1, input2=None, normalise=False):
 
     Parameters
     ----------
-    input1 : array
-        A 1D array of data.
-    input2 :  array, optional
-        A 1D array of data. If None, autocorrelation of input1 is calculated.
-        Default is None.
+    input1 : numpy.ndarray
+        A 1D ``array`` of data.
+    input2 :  numpy.ndarray, optional
+        A 1D ``array`` of data. If `None`, autocorrelation of ``input1`` is
+        calculated. Default is `None`.
     normalise : bool, optional
-        If True, the correlation is normalised at each point to the number of
-        contributions to that point. Default is False.
+        If `True`, the correlation is normalised at each point to the number of
+        contributions to that point. Default is `False`.
 
     Returns
     -------
-    array
-        A 1D array of the same length as the input1 containing the correlation
-        between input1 and input2 (or autocorrelation of input1 if input2 is
-        None)
+    numpy.ndarray
+        A 1D ``array`` of the same length as the ``input1`` containing the
+        correlation between ``input1`` and ``input2`` (or autocorrelation of
+        ``input1`` if ``input2`` is `None`)
     """
 
     N = len(input1)
@@ -62,19 +62,19 @@ def correlation(input1, input2=None, normalise=False):
     return corr
 
 
-def convolution(input1, input2):
+def _convolution(input1, input2):
 
     """
     The convolution of two inputs
 
-    THIS FUNCTION HAS NOT BEEN IMPLEMENTED
+    THIS FUNCTION HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
 
     Parameters
     ----------
-    input1 : array
-        A 1D array of data.
-    input2 :  array
-        A 1D array of data.
+    input1 : numpy.ndarray
+        A 1D ``array`` of data.
+    input2 :  numpy.ndarray
+        A 1D ``array`` of data.
 
     Raises
     -------

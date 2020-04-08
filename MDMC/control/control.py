@@ -20,24 +20,25 @@ class Control:
 
     Parameters
     ----------
-    simulation : simulation
-        Performs a simulation for a given set of potential parameters.
+    simulation : Simulation
+        Performs a simulation for a given set of potential ``Parameter``
+        objects.
     exp_datasets : list of dicts
-        Each dictionary is an experimental dataset, containing the file name
-        ('file_name'), the type of observable ('type'), the reader required for
-        the file ('reader'), and the weighting of the dataset in the Figure of
-        Merit calculation('weighting').
+        Each `dict` is an experimental dataset, containing the file name
+        (``file_name``), the type of observable (``type``), the reader required
+        for the file (``reader``), and the weighting of the dataset in the
+        Figure of Merit calculation(``weighting``).
     fit_params : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
         Determines the accept/reject ratio of the MC. Default is 1.
     minimizier_type : str, optional
-        The minimizer type. Default is 'MMC'.
+        The ``Minimizer`` type. Default is 'MMC'.
     FoM_type : str, optional
-        The type of Figure of Merit calculation. Default is standard.
+        The type of ``FigureOfMeritCalculator``. Default is ``standard``.
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
-        state. Default is true.
+        state. Default is `True`.
     **settings
         Keyword arguments.
 
@@ -58,21 +59,21 @@ class Control:
     ----------
     simulation : Simulation
         The ``Simulation`` on which is used to perform the refinement
-    exp_datasets : list of dicts
-        One ``dict`` per experimental dataset used for the refinement
+    exp_datasets : `list of dicts`
+        One `dict` per experimental dataset used for the refinement
     fit_params : Parameters
-        All Parameter objects which will be refined
+        All ``Parameter`` objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    settings : dict
-        settings for the MD and minimization.
-    observable_pairs : list of ObservablePairs
+    settings : `dict`
+        Settings for the MD and minimization.
+    observable_pairs : `list` of ``ObservablePairs``
         Experimental observable/MD observable pairs which are used to calculate
         the Figure of Merit
-    FoM_calculator : FoMCalculator
-        Calculates the FoM float from the observable_pairs.
-    MD_steps : int
-        number of molecular dynamics steps for each step of the refinement
+    FoM_calculator : FigureOfMeritCalculator
+        Calculates the FoM `float` from the ``observable_pairs``.
+    MD_steps : `int`
+        Number of molecular dynamics steps for each step of the refinement
     """
 
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
@@ -164,8 +165,8 @@ class Control:
 
         Returns
         -------
-        float
-            Non-negative float FoM
+        `float`
+            Non-negative `float` FoM
         """
 
         self._run_MD()
@@ -198,16 +199,16 @@ class Control:
         Parameters
         ----------
         type : str
-            the type of the Observable.
+            The ``type`` of the ``Observable``.
         reader : str
-            the type of the reader.
+            The ``type`` of the ``Reader``.
         file_name : str
-            the absolute or relative path and the file name.
+            The absolute or relative path and the file name.
 
         Returns
         -------
-        Observable
-            An observable of specified type
+        ``Observable``
+            An ``Observable`` of specified ``type``
         """
 
         observable = ObservableFactory.create_observable(type)
@@ -217,19 +218,20 @@ class Control:
     def _create_empty_observable(self, exp_observable):
 
         """
-        Creates a Observable without data but with independent variables
-        specified from another Observable.  This is a placeholder in which
-        the observable can be calculated from an MD trajectory.
+        Creates a ``Observable`` without data but with independent variables
+        specified from another ``Observable``.  This is a placeholder in which
+        the ``Observable`` can be calculated from an MD trajectory.
 
         Parameters
         ----------
         exp_observable : Observable
-            An Observable with defined independent variables.
+            An ``Observable`` with defined independent variables.
 
         Returns
         -------
-        Observable
-            An observable with only independent variables and origin = 'MD'
+        ``Observable``
+            An ``Observable`` with only independent variables and
+            ``origin == 'MD'``
         """
 
         observable = ObservableFactory.create_observable(exp_observable.name)
@@ -241,14 +243,16 @@ class Control:
     def _calculate_observables(self, simulation, observable_pairs):
 
         """
-        Calculates all of the Observables from the MD trajectory/configurations
+        Calculates all of the ``Observable`` objects from the MD
+        trajectory/configurations
 
         Parameters
         ----------
-        simulation : simulation
-            MDEngine with defined trajectory attribute
+        simulation : Simulation
+            ``MDEngine`` with defined trajectory attribute
         observable_pairs : list of ObservablePairs
-            ObservablesPairs for which the MD observable will be calculated
+            ``ObservablesPairs`` for which the MD ``Observable`` will be
+            calculated
         """
 
         # slc = self._calculate_trajectory_slice(self.observable_pairs[0].exp_obs,
@@ -260,12 +264,12 @@ class Control:
     def _calculate_FoM(self):
 
         """
-        Calculates the total FoM for all observable pairs
+        Calculates the total FoM for all ``ObservablePair`` objects
 
         Returns
         -------
-        float
-            Non-negative float FoM
+        `float`
+            Non-negative `float` FoM
         """
 
         return self.FoM_calculator.calculate()
@@ -274,15 +278,15 @@ class Control:
 
         """
         Calculates the minimum number of steps required for the MD engine in
-        order to calculate MD observables with the same independent variables as
-        the experimental observables.
+        order to calculate MD ``Observables`` objects with the same independent
+        variables as the experimental ``Observable`` objects.
 
         THIS METHOD IS NOT IMPLEMENTED
 
         Returns
         -------
-        int
-            number of molecular dynamics steps
+        `int`
+            Number of molecular dynamics steps
 
         Raises
         ------
