@@ -46,6 +46,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
     'sphinx.ext.napoleon',
+    'sphinx.ext.intersphinx',
     'nbsphinx'
 ]
 
@@ -76,6 +77,11 @@ exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+# intersphinx mapping to other documentation
+intersphinx_mapping = {'python': ('https://docs.python.org/3/', None),
+                       'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+                       'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+                       'ase': ('https://wiki.fysik.dtu.dk/ase/', None)}
 
 # -- Options for HTML output -------------------------------------------------
 
