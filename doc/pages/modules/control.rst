@@ -1,6 +1,6 @@
 .. _control-label:
 
-Control
+control
 =======
 
 .. toctree::
