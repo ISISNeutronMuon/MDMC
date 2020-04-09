@@ -1862,8 +1862,8 @@ class Dispersion(NonBondedInteraction):
             return atom_type_pair
 
         # Remove duplicates
-        self._atom_types = tuple(validate_atom_type_pair(atp) for atp
-                                 in atom_types)
+        self._atom_types = tuple({validate_atom_type_pair(atp) for atp
+                                  in atom_types})
         super().__init__(universe, **settings)
         # Add interactions to all atoms
         for atom_type_pair in self.atoms:
