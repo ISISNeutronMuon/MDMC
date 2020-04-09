@@ -39,9 +39,15 @@ class ForceField(ABC):
     def interaction_dictionary(self):
 
         """
-        Returns a `dict` with keys of (``Interaction``:``Elements``) where
-        ``Elements`` is an ordered tuple of elemental symbols, and values of
-        ``InteractionFunction`` objects.
+        The `dict` of interactions that exist within the ``ForceField``
+
+        Returns
+        -------
+        dict
+            {``Interaction``:``Elements``} where ``Elements`` is an ordered
+            `tuple` of elemental symbols, and values of ``InteractionFunction``
+            objects.
+
         """
 
         raise NotImplementedError

@@ -1,10 +1,10 @@
-"""Contains helper functions for initiating SolventConfig subclasses for
+"""Contains helper functions for initiating ``SolventConfig`` subclasses for
 solvents
 
-It has two public functions, get_solvent_names and get_solvent_config, for
-initating SolventConfig classes. It has a number of private functions for
-finding SolventConfig subclasses and WaterModel subclasses which can be used
-as solvents."""
+It has two public functions, ``get_solvent_names`` and ``get_solvent_config``,
+for initating ``SolventConfig``. It has a number of private functions for
+finding ``SolventConfig`` subclasses and ``WaterModel`` subclasses which can be
+used as solvents."""
 
 from glob import glob
 from importlib import import_module
@@ -126,7 +126,7 @@ def get_solvent_config(name):
 
     Returns
     -------
-    SolventConfig
+    ``SolventConfig``
         An object from a subclass of ``SolventConfig`` for the specified solvent
         name
     """

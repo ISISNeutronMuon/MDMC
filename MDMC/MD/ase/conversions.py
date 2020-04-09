@@ -114,7 +114,7 @@ def get_ase_atoms(atoms, cell=None):
     atoms : iterable
         An ``iterable`` of MDMC ``Atom`` objects to be converted to an
         ``ASEAtoms`` object
-    cell : array, optional
+    cell : numpy.ndarray, optional
         A 3 element ``array`` specifying the unit cell of the ``ASEAtoms``
         object. The default is `None`.
 

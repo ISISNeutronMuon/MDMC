@@ -2182,7 +2182,7 @@ class BondedInteraction(Interaction):
         bonded together. For three or more ``Atom`` objects, the order of the
         ``Atom`` objecys within each `tuple` is important.
     **settings
-        n_atoms : int
+        ``n_atoms`` (`int`)
             The number of atoms to which this ``BondedInteraction`` applies, for
             example 2 for a ``Bond``.
 

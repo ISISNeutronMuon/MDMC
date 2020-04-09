@@ -539,9 +539,9 @@ class Universe(AtomContainer):
         bounding sphere, this method is most suitable for atoms or molecules
         with approximately equal dimensions.
 
-        CURRENT APPROACH RESULTS IN NUMBER DENSITY DIFFERENT TO WHAT IS
-        SPECIFIED DEPENDING ON HOW CLOSE CUBE ROOT OF N_MOLECULES IS TO AN
-        `int`.
+        .. note:: CURRENT APPROACH RESULTS IN NUMBER DENSITY DIFFERENT TO WHAT
+                  IS SPECIFIED DEPENDING ON HOW CLOSE CUBE ROOT OF N_MOLECULES
+                  IS TO AN `int`.
 
         Parameters
         ----------
@@ -552,10 +552,10 @@ class Universe(AtomContainer):
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
         **settings
-            num_density : float
+            ``num_density`` (`float`)
                 Non-negative `float` specifying the number density of the
                 ``StructuralUnit``, in units of ``StructuralUnit / Ang ^ -3``
-            num_struc_units : int
+            ``num_struc_units`` (`int`)
                 Non-negative `int` specifying the number of passed
                 ``StructuralUnit`` objects that the universe should be filled
                 with, regardless of ``Universe.dimensions``.
@@ -624,7 +624,7 @@ class Universe(AtomContainer):
         *interactions
             ``Interaction`` objects to parameterize with the ``ForceField``
         **settings
-            add_dispersions : bool or list of Atoms
+            ``add_dispersions`` (`bool` or `list` of ``Atoms``)
                 If `True`, a ``Dispersion`` interaction will be added to all
                 atoms in the ``Universe``. If a list of ``Atom`` objects is
                 provided, the ``Dispersion`` will be added to these instead. Any
@@ -782,7 +782,7 @@ class Universe(AtomContainer):
             DYNAMIC_SOLVENT_LIST.
             The default is 'SPCE'.
         **settings
-            constraint_algorithm : ConstraintAlgorithm
+            ``constraint_algorithm`` (`ConstraintAlgorithm`)
                 A ``ConstraintAlgorithm`` which is applied to the ``Universe``.
                 If an inbuilt ``Solvent`` is selected (e.g. 'SPCE') and
                 ``constraint_algorithm`` is not passed, the
@@ -991,7 +991,7 @@ class Ewald(KSpaceSolver):
     Parameters
     ----------
     **settings
-        accuracy : float
+        ``accuracy`` (`float`)
             The relative RMS error in per-atom forces
     """
 
@@ -1009,7 +1009,7 @@ class PPPM(KSpaceSolver):
     Parameters
     ----------
     **settings
-        accuracy : float
+        ``accuracy`` (`float`)
             The relative RMS error in per-atom forces
     """
 
@@ -1153,21 +1153,21 @@ class Simulation:
     engine : str
         The ``MDEngine`` used for the simulation.
     **settings
-        temperature : float
+        ``temperature`` (`float`)
             Simulation temperature in ``K``.
-        time_step : float
+        ``time_step``  (`float`)
             Simulation timestep in ``fs``.
-        integrator : str
+        ``integrator`` (`str`)
             Simulation time integrator.
-        lj_options : dict
+        ``lj_options`` (`dict`)
             ``option:value`` pairs for Lennard-Jones interactions.
-        es_options : dict
+        ``es_options`` (`dict`)
             ``option:value`` pairs for electrostatic interactions.
-        thermostat : str
+        ``thermostat`` (`str`)
             The name of the thermostat e.g. Nose-Hoover.
-        barostat : str
+        ``barostat`` (`str`)
             The name of the barostat e.g. Nose-Hoover.
-        pressure : float
+        ``pressure`` (`float`)
             Simulation pressure in ``Pa``. This is required if a barostat is
             passed.
 

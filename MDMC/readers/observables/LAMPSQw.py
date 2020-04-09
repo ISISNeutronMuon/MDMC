@@ -1,6 +1,4 @@
-"""Readers for dynamic data
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 14:38:55"""
+"""Readers for dynamic data"""
 
 import numpy as np
 

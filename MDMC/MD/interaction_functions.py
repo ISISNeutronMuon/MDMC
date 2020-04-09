@@ -207,6 +207,17 @@ class Buckingham(InteractionFunction):
         The Buckingham parameter B in units of ``Ang^-1``
     C : float
         The Buckingham parameter C in units of ``Ang^6 kJ mol^-1``
+
+    Examples
+    --------
+    The following creates a ``Dispersion`` interaction with a ``Buckingham``
+    functional form:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        buck = Buckingham(3.65e-18, 6.71, 6.94e-22)
+        O_disp = Dispersion(universe, (O.atom_type, O.atom_type), function=buck)
     """
 
     @inter_func_decorator(units.ENERGY, units.LENGTH ** -1,
@@ -229,6 +240,27 @@ class Coulomb(InteractionFunction):
     ----------
     charge : float
         The charge in units of ``e``
+
+    Examples
+    --------
+    The following creates a ``Coulombic`` interaction with a ``Coulomb``
+    functional form:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        O = Atom('O')
+        coul = Coulomb(-0.8476)
+        O_coulombic = Coulombic(atoms=O, cutoff=10., function=coul)
+
+    As ``Coulomb`` is the default functional form of ``Coulombic`` interactions
+    when an ``Atom`` is created, this is equivalent to setting the ``charge``
+    on an ``Atom``:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        O = Atom('O', charge=-0.8476)
     """
 
     @inter_func_decorator(units.CHARGE)
@@ -276,12 +308,30 @@ class HarmonicPotential(InteractionFunction):
         An ``interaction_type`` of ``'bond'``, ``'angle'``, or ``'improper'``
         must be passed
 
-    Example
-    -------
-    The following result creates a ``HarmonicPotential`` for a ``Bond``
-    interaction::
+    Examples
+    --------
+    The following creates a ``HarmonicPotential`` for a ``Bond`` interaction:
 
-        HarmonicPotential(1.0, 2.0, interaction_type='bond')
+    .. highlight:: python
+    .. code-block:: python
+
+        hp = HarmonicPotential(1., 4637., interaction_type='bond')
+
+    The following creates a ``HarmonicPotential`` for a ``BondAngle``
+    interaction:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        hp = HarmonicPotential(109.47, 383., interaction_type='angle')
+
+    The following creates a ``HarmonicPotential`` for a ``DihedralAngle``
+    interaction with ``improper==True`` (i.e. an improper dihedral):
+
+    .. highlight:: python
+    .. code-block:: python
+
+        hp = HarmonicPotential(180., 20.92, interaction_type='improper')
     """
 
     def __new__(cls, equilibrium_state, potential_strength, **settings):
@@ -355,6 +405,29 @@ class Periodic(InteractionFunction):
         n2, d2, K3, n3, d3, K4, n4, d4 etc. The types and units of these
         parameters are the same as the corresponding first order parameters
         listed above.
+
+    Examples
+    --------
+    The following creates a first order ``Periodic`` for a ``DihedralAngle``
+    interaction with ``improper==True`` (i.e. an improper dihedral):
+
+    .. highlight:: python
+    .. code-block:: python
+
+        periodic = Periodic(87.864, 2, 180.)
+        improper = DihedralAngle(atoms=[C, H1, H2, O], improper=True,
+                                 function=periodic)
+
+    The following creates a third order ``Periodic`` for a ``DihedralAngle``
+    interaction with ``improper==False`` (i.e. a proper dihedral), with
+    ``K1=3.53548``, ``K2=-4.02501`` and ``K3=2.98319``:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        periodic = Periodic(3.53548, 1, 0., -4.02501, 2, 180., 2.98319, 3, 0.)
+        proper = DihedralAngle(atoms=[N, C1, C2, C3], improper=False,
+                               function=periodic)
     """
 
     def __init__(self, K1, n1, d1, *params):
@@ -408,6 +481,17 @@ class LennardJones(InteractionFunction):
             The long range solver, either ``'PPPM'``, ``'PME'``, or ``'E'`` for
             Particle-Particle Particle-Mesh, Particle Mesh Ewald, or Ewald
             solvers
+
+    Examples
+    --------
+    The following creates a ``Dispersion`` interaction with a ``LennardJones``
+    functional form:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        lj = LennardJones(0.6502, 3.166)
+        O_disp = Disperion(universe, (O.atom_type, O.atom_type), function=lj)
     """
 
     @inter_func_decorator(units.ENERGY, units.LENGTH)

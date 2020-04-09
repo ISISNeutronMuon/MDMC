@@ -197,7 +197,7 @@ class PairDistributionFunction(Observable):
                 then these will create a range for the independent variable
                 ``r``, which will overwrite any ``r`` which has previously been
                 defined. This cannot be passed if ``r`` is passed.
-            r : array
+            r : numpy.ndarray
                 The uniform ``r`` values for which the PDF will be calculated.
                 This cannot be passed if ``r_min``, ``r_max``, and ``r_step``
                 are passed.
@@ -479,7 +479,7 @@ class PairDistributionFunction(Observable):
             A `list` of `str` with the same length as ``positions``. Each `str`
             specifies the ``Atom.element`` for the corresponding index in
             ``positions``.
-        part_comps : array
+        part_comps : numpy.ndarray
             A 3 element array specifying the length of each component for all
             partitions
 

@@ -26,7 +26,7 @@ def view(atoms, cell=None):
     ----------
     atoms : list
         A `list` of ``Atom`` (``MDMC.MD.structural_unit.Atom``) to view
-    cell : array, optional
+    cell : numpy.ndarray, optional
         An ``array`` of `float` specifying the dimensions of the cell to view.
         The default is `None`.
     """

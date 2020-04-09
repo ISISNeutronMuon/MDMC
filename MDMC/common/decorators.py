@@ -22,7 +22,7 @@ def unit_decorator(unit):
 
     Parameters
     ----------
-    unit : string or None
+    unit : str or None
         The ``unit`` applied to the property. If `None` then ``self.unit`` is
         used, which enables classes to have properties with units defined at
         runtime.
@@ -89,7 +89,7 @@ def unit_decorator_getter(unit):
 
     Parameters
     ----------
-    unit : string or None
+    unit : str or None
         The ``unit`` applied to the property. If `None` then ``self.unit`` is
         used, which enables classes to have properties with units defined at
         runtime.

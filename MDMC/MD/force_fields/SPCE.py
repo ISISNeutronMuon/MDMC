@@ -1,9 +1,7 @@
 """A module for defining the SPCE forcefield
 
 This definition of the SPCE forcefield includes bond and bond angle strengths,
-and so can be used for simulating a flexible SPCE water molecule
-
-AUTHOR :    Thomas Farmer        START DATE :    02/11/2018, 13:24:21"""
+and so can be used for simulating a flexible SPCE water molecule"""
 
 from MDMC.common import units
 from MDMC.common.units import UnitFloat

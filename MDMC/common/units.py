@@ -1,7 +1,7 @@
 """Module for all unit definitions and operations
 
 This includes defining units used in MDMC, converting units, and subclassing
-data strucures (`float`, NumPy ``array``) so that they have a ``unit``
+data strucures (`float`, ``array``) so that they have a ``unit``
 attribute.  This style follows that of the Atomic Simulation Environment.
 
 As members of units.py are set dynamically, pylintrc excludes member checking
@@ -488,7 +488,7 @@ class UnitFloat(float):
     ----------
     value : float
         the value of the ``UnitFloat``.
-    unit : unit, str
+    unit : Unit, str
         a ``Unit`` or a `str` representing the unit.
 
     Note
@@ -574,7 +574,7 @@ class UnitNDArray(np.ndarray):
     ----------
     shape : tuple of ints
         Shape of created ``array``.
-    unit : unit, str
+    unit : Unit, str
         a ``Unit`` or a `str` representing the unit.
     dtype : data-type, optional
         Any object that can be interpreted as a NumPy data type.
@@ -651,7 +651,7 @@ def unit_array(obj, unit, dtype=None):
     object : None or array_like
         An object derived from ``collections.Sequence``. If `None`, then `None`
         is returned.
-    unit : unit, str
+    unit : Unit, str
         a ``Unit`` or a `str` representing the unit.
     dtype : data-type, optional
         Any object that can be interpreted as a NumPy data type.
