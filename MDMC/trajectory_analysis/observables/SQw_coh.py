@@ -34,13 +34,13 @@ class SQwCoherent(AbstractSQw):
 
         Parameters
         ----------
-        Q_vector : array
-            An array of one or more Q vectors with the same Q value
+        Q_vector : numpy.ndarray
+            An ``array`` of one or more Q vectors with the same Q value
 
         Returns
         -------
-        array
-            An array with dimensions of self.t
+        numpy.ndarray
+            An ``array`` with dimensions of ``self.t``
         """
 
         rho = self._calculate_rho(Q_vector)

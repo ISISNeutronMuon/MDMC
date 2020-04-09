@@ -35,7 +35,7 @@ def read_prm(fname, ncols=14):
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         A dataframe with columns (named c0, c1, ...) up to (but not including)
         ncols. Each row contains a row read correctly (i.e. no Error thrown)
         from the prm file.
@@ -52,7 +52,7 @@ def parse_prm(dataframe):
 
     Parameters
     ----------
-    dataframe : pd.DataFrame
+    dataframe : pandas.DataFrame
         A dataframe of raw data read from a prm file
 
     Returns
@@ -133,9 +133,9 @@ def write_force_field_module(fname, atoms, *interactions, path=None,
                              **settings):
 
     """
-    atoms : DataFrame
+    atoms : pandas.DataFrame
     *interactions
-        DataFrame
+        pandas.DataFrame
     fname : str
         name of the module (excluding the file extension) and the class
     module_docstring : str
@@ -245,7 +245,7 @@ def dummy_headers(start, end):
     Returns
     -------
     list of str
-        A str (c{i}) for each i between start and end (exclusive)
+        A `str` (``c{i}``) for each i between start and end (exclusive)
     """
 
     return ['c{0}'.format(i) for i in range(start, end)]
@@ -261,7 +261,7 @@ def parse_dataframe(dataframe, drop, names):
 
     Parameters
     ----------
-    dataframe : pd.DataFrame
+    dataframe : pandas.DataFrame
         The dataframe to be parsed
     drop : list
         A list of names of headers which will be dropped
@@ -270,8 +270,8 @@ def parse_dataframe(dataframe, drop, names):
 
     Returns
     -------
-    pd.DataFrame
-        A parsed dataframe
+    pandas.DataFrame
+        A parsed ``DataFrame``
     """
 
     try:
@@ -290,8 +290,8 @@ def convert_units(series):
 
     Parameters
     ----------
-    series : pd.Series
-        The series for which the parameters will be converted
+    series : pandas.Series
+        The ``Series`` for which the parameters will be converted
     """
 
     return (series.astype(float) * units.kcal

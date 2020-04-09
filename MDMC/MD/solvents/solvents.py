@@ -1,10 +1,10 @@
-"""Contains helper functions for initiating SolventConfig subclasses for
+"""Contains helper functions for initiating ``SolventConfig`` subclasses for
 solvents
 
-It has two public functions, get_solvent_names and get_solvent_config, for
-initating SolventConfig classes. It has a number of private functions for
-finding SolventConfig subclasses and WaterModel subclasses which can be used
-as solvents."""
+It has two public functions, ``get_solvent_names`` and ``get_solvent_config``,
+for initating ``SolventConfig``. It has a number of private functions for
+finding ``SolventConfig`` subclasses and ``WaterModel`` subclasses which can be
+used as solvents."""
 
 from glob import glob
 from importlib import import_module
@@ -20,12 +20,12 @@ from MDMC.MD.solvents.SPC_config import SPCConfig
 def _get_water_models():
 
     """
-    Gets a list of water model force fields that exist
+    Gets a `list` of ``WaterModel`` force fields that exist
 
     Returns
     -------
     list
-        A list of classes which inherit from WaterModel
+        A `list` of classes which inherit from ``WaterModel``
     """
 
     force_fields_dir = dirname(force_fields.__file__)
@@ -53,17 +53,18 @@ def _get_water_models():
 def _get_water_model_configs():
 
     """
-    Gets the SolventConfig for each water model
+    Gets the ``SolventConfig`` for each ``WaterModel``
 
     This is required because every water model does not have a unique
-    solvent_config. For example, all 3 body water models use SPC_config.
+    ``SolventConfig``. For example, all 3 body water models use ``SPC_config``.
 
     Returns
     -------
     dict
-        {w_model: solvent_config} pairs, where each w_model is a str specifying
-        an available water model, and solvent_config is the SolventConfig class
-        that will be used for sovlating with that water model.
+        {``w_model``: ``solvent_config``} pairs, where each ``w_model`` is a
+        `str` specifying an available ``WaterModel``, and ``solvent_config`` is
+        the ``SolventConfig`` class that will be used for sovlating with that
+        ``WaterModel``.
     """
 
     w_model_configs = {}
@@ -81,14 +82,14 @@ def _get_water_model_configs():
 def _get_solvent_configs():
 
     """
-    Gets a dict of the names of solvent configs and their classes
+    Gets a `dict` of the names of ``SolventConfig`` and their classes
 
     Returns
     -------
     dict
-        {name: solvent_config} pairs, where each name is a str specifying
-        an available SolventConfig subclass, and solvent_config is the
-        corresponding class.
+        {``name``: ``solvent_config``} pairs, where each ``name`` is a `str`
+        specifying an available ``SolventConfig`` subclass, and
+        ``solvent_config`` is the corresponding class.
     """
 
     # Import all modules in same directory, except this one
@@ -116,7 +117,7 @@ def _get_solvent_configs():
 def get_solvent_config(name):
 
     """
-    Gets the solvent_config for a solvent
+    Gets the ``solvent_config`` for a solvent
 
     Parameters
     ----------
@@ -125,8 +126,8 @@ def get_solvent_config(name):
 
     Returns
     -------
-    SolventConfig
-        An object from a subclass of SolventConfig for the specified solvent
+    ``SolventConfig``
+        An object from a subclass of ``SolventConfig`` for the specified solvent
         name
     """
 
@@ -146,12 +147,12 @@ def get_solvent_names():
 
     """
     Get the names of the inbuilt solvents which can be passed as parameters to
-    get_solvent_config
+    ``get_solvent_config``
 
     Returns
     -------
     list
-        A list of str with the names of the inbuilt solvents
+        A `list` of `str` with the names of the inbuilt solvents
     """
 
     return list(set(list(WATER_MODELS.keys())

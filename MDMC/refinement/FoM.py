@@ -17,14 +17,14 @@ class FigureOfMeritCalculator(ABC):
     Parameters
     ----------
     obs_pairs : list
-        A list of ObservablePairs
+        A `list` of ``ObservablePairs``
 
     Attributes
     ----------
     obs_pairs : list
-        A list of ObservablePairs
+        A `list` of ``ObservablePairs``
     value : float
-        The Figure of Merit for all obs_pairs
+        The Figure of Merit for all ``obs_pairs``
     """
 
     def __init__(self, obs_pairs):
@@ -35,13 +35,13 @@ class FigureOfMeritCalculator(ABC):
     def calculate(self):
 
         """
-        Calculates the FoM value by calculating the FoM for every observable
-        pair
+        Calculates the FoM value by calculating the FoM for every
+        ``ObservablePair``
 
         Returns
         -------
         float
-            A non-negative float Figure of Merit
+            A non-negative `float` Figure of Merit
 
         Raises
         ------
@@ -63,12 +63,12 @@ class FigureOfMeritCalculator(ABC):
         Parameters
         ----------
         obs_pair : ObservablePair
-            An ObservablePair for which the FoM is calculated
+            An ``ObservablePair`` for which the FoM is calculated
 
         Returns
         -------
         float
-            The FoM for the obs_pair
+            The FoM for the ``obs_pair``
         """
 
         raise NotImplementedError
@@ -124,9 +124,9 @@ class ObservablePair:
     Parameters
     ----------
     exp_obs : Observable
-        An Observable with the origin 'experiment'
+        An ``Observable`` with ``Observable.origin == 'experiment'``
     MD_obs : Observable
-        An Observable with the origin 'MD'
+        An ``Observable`` with ``Observable.origin == 'MD'``
     weight : float
         The relative weight of this pair on a total FoM
     """
@@ -141,14 +141,14 @@ class ObservablePair:
     def exp_obs(self):
 
         """
-        Get or set the experimental Observable
+        Get or set the experimental ``Observable``
 
-        Setting the Observable checks its validity
+        Setting the ``Observable`` checks its validity
 
         Returns
         -------
         Observable
-            The experimental observable
+            The experimental ``Observable``
         """
 
         return self._exp_obs
@@ -163,14 +163,14 @@ class ObservablePair:
     def MD_obs(self):
 
         """
-        Get or set the MD Observable
+        Get or set the MD ``Observable``
 
-        Setting the Observable checks its validity
+        Setting the ``Observable`` checks its validity
 
         Returns
         -------
         Observable
-            The MD observable
+            The MD ``Observable``
         """
 
         return self._MD_obs
@@ -195,7 +195,7 @@ class ObservablePair:
         Raises
         ------
         TypeError
-            If weight is set with a non-numeric
+            If ``weight`` is set with a non-numeric
         """
 
         return self._weight
@@ -213,40 +213,43 @@ class ObservablePair:
     def validate_obs(self, obs, origin):
 
         """
-        Performs checks to test the validity of an observable
+        Performs checks to test the validity of an ``Observable``
 
-        Tests that the origin is as expected. If the ObservablePair has another
-        Observable (i.e. the other origin), then this tests that the independent
-        variables are identical, the dependent variables have the same shape,
-        the errors have the same shape, and that the Observables are of the same
-        type.
+        Tests that the ``Observable.origin`` is as expected. If the
+        ``ObservablePair`` has another ``Observable`` (i.e. the other
+        ``origin``), then this tests that the ``independent_variables`` are
+        identical, the ``dependent_variables`` have the same shape,
+        the ``errors`` have the same shape, and that the ``Observable`` objects
+        are of the same type.
 
         Parameters
         ----------
         obs : Observable
-            The Observable to validate
+            The ``Observable`` to validate
         origin : str
-            The origin of the observable ('experiment' or 'MD')
+            The ``Observable.origin`` (``'experiment'`` or ``'MD'``)
 
         Raises
         ------
         AssertionError
-            If the origin of the Observable is not the same as the origin
+            If the ``Observable.origin`` is not the same as the ``origin``
             Parameter
         AssertionError
-            If Observable does not have identical independent variables to any
-            Observable of the other origin that already exists in the
-            ObservablePair
+            If ``Observable`` does not have identical ``independent_variables``
+            to any ``Observable`` of the other ``Observable.origin`` that
+            already exists in the ``ObservablePair``
         AssertionError
-            If Observable does not have identical dependent variables to any
-            Observable of the other origin that already exists in the
-            ObservablePair
+            If ``Observable`` does not have identical ``dependent_variables`` to
+            any ``Observable`` of the other ``Observable.origin`` that already
+            exists in the ``ObservablePair``
         AssertionError
-            If Observable does not have identical errors to any Observable of
-            the other origin that already exists in the ObservablePair
+            If ``Observable`` does not have identical ``errors`` to any
+            ``Observable`` of the other ``Observable.origin`` that already
+            exists in the ``ObservablePair``
         AssertionError
-            If Observable does not have identical type to any Observable of the
-            other origin that already exists in the ObservablePair
+            If ``Observable`` does not have identical type to any ``Observable``
+            of the other ``Observable.origin`` that already exists in the
+            ``ObservablePair``
         """
 
         # Check origin is correct
@@ -297,17 +300,17 @@ class ObservablePair:
     def validate_weight(self, weight):
 
         """
-        Performs checks to test the validity of the weight
+        Performs checks to test the validity of the ``weight``
 
         Parameters
         ----------
         weight : float
-            The weight to be validated
+            The ``weight`` to be validated
 
         Raises
         ------
         AssertionError
-            If the weight is not positive or is infinite
+            If the ``weight`` is not positive or is infinite
         """
 
         assert weight > 0. and weight != np.float('inf'), ('Weight must be a'
@@ -317,7 +320,7 @@ class ObservablePair:
     def check_types(self):
 
         """
-        Checks that observables are of the same type
+        Checks that ``Observable`` objects are of the same type
         """
 
         raise NotImplementedError
@@ -325,8 +328,8 @@ class ObservablePair:
     def check_indep_var(self):
 
         """
-        Checks that observables have the same independent variables and that are
-        finite
+        Checks that ``Observable`` objects have the same
+        ``independent_variables`` and that are finite
         """
 
         raise NotImplementedError
@@ -334,7 +337,8 @@ class ObservablePair:
     def check_dep_var(self):
 
         """
-        Checks that an observable has dependent variable data that are finite
+        Checks that ``Observable`` objects have the same ``dependent_variables``
+        and that are finite
         """
 
         raise NotImplementedError
@@ -342,8 +346,8 @@ class ObservablePair:
     def check_errors(self):
 
         """
-        Checks that an observable has errors on the dependent variable and that
-        these are floats and not NaN
+        Checks that an ``Observable`` has errors on the ``dependent_variable``
+        and that these are `float` and not `NaN`
         """
 
         raise NotImplementedError
@@ -351,7 +355,8 @@ class ObservablePair:
     def check_origin(self, origin):
 
         """
-        Checks that the origin ('experiment' or 'MD') is correct
+        Checks that the ``Observable.origin`` (``'experiment'`` or ``'MD'``) is
+        correct
         """
 
         raise NotImplementedError
@@ -359,14 +364,14 @@ class ObservablePair:
     def calculate_difference(self):
 
         """
-        Assumes a single dependent variable for each observable
+        Assumes a single dependent variable for each ``Observable``
 
         Returns
         -------
-        array
-            An array with the same dimensions as the dependent variables of the
-            Observables. The array contains the absolute difference between the
-            dependent variables.
+        numpy.ndarray
+            An array with the same dimensions as the ``dependent_variables`` of
+            the ``exp_obs`` and ``MD_obs``. The array contains the absolute
+            difference between the ``dependent_variables``.
         """
 
         diff = (np.array(*self.exp_obs.dependent_variables.values())
@@ -377,14 +382,14 @@ class ObservablePair:
     def calculate_errors(self):
 
         """
-        Assumes a single dependent variable error for each observable
+        Assumes a single dependent variable error for each ``Observable``
 
         Returns
         -------
-        array
-            An array with the same dimensions as the errors variables of the
-            Observables. The array contains the combination of the errors in
-            quadrature.
+        numpy.ndarray
+            An array with the same dimensions as the ``errors`` of the
+            ``exp_obs`` and ``MD_obs``. The array contains the combination of
+            the ``errors`` in quadrature.
         """
 
         errors = (np.array(*self.exp_obs.errors.values()) ** 2

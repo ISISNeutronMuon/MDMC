@@ -12,18 +12,18 @@ from MDMC.MD.structural_units import Atom, Bond
 class ASEAtoms(ase.atoms.Atoms):
 
     """
-    A subclass of `ase.atoms.Atoms` with explicit bonds defined between atoms
+    A subclass of ```ase.atoms.Atoms`` with explicit bonds defined between atoms
 
     Attributes
     ----------
-    bonds : array
-        An array of tuples, where each tuple is an atom pair, which are
-        specified by the indexes (int) of each atom.
+    bonds : numpy.ndarray
+        An ``array`` of ``tuple``, where each ``tuple`` is an atom pair, which
+        are specified by the indexes (`int`) of each atom.
 
     Raises
     ------
     ValueError
-        If there are not the same number of IDs as there are atoms
+        If there are not the same number of ``ID`` as there are atoms
     """
 
     def __init__(self, *args, **kwargs):
@@ -42,20 +42,20 @@ class ASEAtoms(ase.atoms.Atoms):
 def convert_to_ase_atom(atom, index=None):
 
     """
-    Converts an MDMC `Atom` to an `ase.atom.Atom`
+    Converts an MDMC ``Atom`` to an ``ase.atom.Atom``
 
     Parameters
     ----------
     atom : Atom
-        An MDMC `Atom` object to be converted to an ase.atom.Atom object
+        An MDMC ``Atom`` object to be converted to an ``ase.atom.Atom`` object
     index : int, optional
-        The index of the `ase.atom.Atom` object which is created. If this is
-        not set, the MDMC `Atom.ID` is used.
+        The ``index`` of the ``ase.atom.Atom`` object which is created. If this
+        is not set, the MDMC ``Atom.ID`` is used.
 
     Returns
     -------
     ase.atom.Atom
-        An ASE `Atom` object which is equivalent to `atom`
+        An ``ASE.atom.Atom`` object which is equivalent to ``atom``
     """
 
     index = index if index else atom.ID
@@ -69,30 +69,30 @@ def convert_to_ase_atom(atom, index=None):
 def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
 
     """
-    Converts an `ase.atom.Atom` to an MDMC `Atom`.
+    Converts an ``ase.atom.Atom`` to an MDMC ``Atom``.
 
-    As MDMC automatically generates atom IDs, `ase_atom.index` is not passed
-    when initializing an `Atom`.
+    As MDMC automatically generates atom ``ID``, ``ase_atom.index`` is not
+    passed when initializing an ``Atom``.
 
     Parameters
     ----------
     ase_atom : ASEAtom
-        An `ASEAtom` object to be converted to an MDMC `Atom` object
+        An ``ASEAtom`` object to be converted to an MDMC ``Atom`` object
     atom_type : int
-        The atom_type of the MDMC `Atom` object.
+        The atom_type of the MDMC ``Atom`` object.
     name : str, optional
-        A name for the MDMC `Atom`. The default is the element symbol.
+        A name for the MDMC ``Atom``. The default is the element symbol.
     set_charge : bool, optional
-        Whether the charge is set to the charge of the ase.atom.Atom, or left
-        unset. All ase.atom.Atom objects have a charge, which is set to 0. if it
-        is uninitialized. As MDMC Atom objects can have charge=None, in some
-        cases it might be preferential to leave the charge unset. The default is
-        to set the charge.
+        Whether the ``charge`` is set to the ``charge`` of the ``ase.atom.Atom,
+        or left unset. All ``ase.atom.Atom`` objects have a ``charge``, which is
+        set to 0. if it is uninitialized. As MDMC ``Atom`` objects can have
+        ``charge=None`, in some cases it might be preferential to leave the
+        ``charge`` unset. The default is to set the ``charge``.
 
     Returns
     -------
-    Atom
-        An MDMC `Atom` object which is equivalent to `ase_atom`
+    ``Atom``
+        An MDMC ``Atom`` object which is equivalent to ``ase_atom``
     """
 
     name = name if name else ase_atom.symbol
@@ -107,22 +107,22 @@ def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
 def get_ase_atoms(atoms, cell=None):
 
     """
-    Gets an `ASEAtoms` object equivalent to `atoms`, including the bonding
+    Gets an ``ASEAtoms`` object equivalent to ``atoms``, including the bonding
 
     Parameters
     ----------
     atoms : iterable
-        An iterable of MDMC Atom objects to be converted to an ASEAtoms
-        object
-    cell : array, optional
-        A 3 element array specifying the unit cell of the ASEAtoms object. The
-        default is None.
+        An ``iterable`` of MDMC ``Atom`` objects to be converted to an
+        ``ASEAtoms`` object
+    cell : numpy.ndarray, optional
+        A 3 element ``array`` specifying the unit cell of the ``ASEAtoms``
+        object. The default is `None`.
 
 
     Returns
     -------
     ASEAtoms
-        An ASEAtoms object which is equivalent to `atoms`
+        An ``ASEAtoms`` object which is equivalent to ``atoms``
     """
 
     # The ase.atoms.Atoms object unhelpfully overwrites the index attribute of
@@ -144,23 +144,23 @@ def get_ase_atoms(atoms, cell=None):
 def convert_bond(bond, index_conv=None):
 
     """
-    Converts `Bond` objects into the form required by the ASE GUI
+    Converts ``Bond`` objects into the form required by the ASE GUI
 
     Parameters
     ----------
     bond : Bond
         The bond which will be converted.
     index_conv : dict
-        A dictionary of MDMC_ID: ASE_index pairs, where MDMC_ID is an int
-        specifying an `Atom.ID`, and ASE_index is the corresponding
-        `ase.atom.Atom.index`. The default is `None`, which means that the
-        IDs and indexes will be assumed to be identical.
+        A dictionary of ``MDMC_ID``: ``ASE_index`` pairs, where ``MDMC_ID`` is
+        an `int` specifying an ``Atom.ID``, and ``ASE_index`` is the
+        corresponding ``ase.atom.Atom.index``. The default is `None`, which
+        means that the ``ID`` and ``index`` will be assumed to be identical.
 
     Returns
     -------
-    np.array
-        An array of 2 element lists where each element is the integer index of
-        an atom between which the bond exists.
+    numpy.ndarray
+        An ``array`` of 2 element `list` where each element is the `int`
+        ``index`` of an atom between which the bond exists.
     """
 
     indexing = (lambda x: index_conv[x.ID]) if index_conv else lambda x: x.ID
@@ -171,23 +171,23 @@ def convert_bond(bond, index_conv=None):
 def convert_bonds(bonds, index_conv=None):
 
     """
-    Converts `Bond` objects into the form required by the ASE GUI
+    Converts ``Bond`` objects into the form required by the ASE GUI
 
     Parameters
     ----------
     bonds : list
-        The list of bonds to be converted
+        The `list` of ``Bond`` objects to be converted
     index_conv : dict
-        A dictionary of MDMC_ID: ASE_index pairs, where MDMC_ID is an int
-        specifying an `Atom.ID`, and ASE_index is the corresponding
-        `ase.atom.Atom.index`. The default is `None`, which means that the
-        IDs and indexes will be assumed to be identical.
+        A `dict` of ``MDMC_ID``: ``ASE_index`` pairs, where ``MDMC_ID`` is an
+        `int` specifying an ``Atom.ID``, and ``ASE_index`` is the corresponding
+        ``ase.atom.Atom.index``. The default is `None`, which means that the
+        ``ID`` and ``index`` will be assumed to be identical.
 
     Returns
     -------
-    np.array
-        An array of 2 element lists where each element is the integer index of
-        an atom between which the bond exists.
+    numpy.ndarray
+        An ``array`` of 2 element `list` where each element is the `int`
+        ``index`` of an atom between which the bond exists.
     """
 
     # conditional because only bond objects are supported

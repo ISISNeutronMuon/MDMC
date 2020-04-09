@@ -25,7 +25,7 @@ class Parameter:
     """
     A force field parameter which can be fixed or constrained within limits
 
-    The value of a parameter cannot be set if fixed=True.
+    The value of a parameter cannot be set if ``fixed==True``.
 
     Parameters
     ----------
@@ -36,12 +36,12 @@ class Parameter:
     fixed : bool
         Whether or not the value can be changed.
     constraints : tuple
-        The closed range of the Parameter value, (lower, upper). Constraints
-        must have the same units as value.
+        The closed range of the ``Parameter.value``, (lower, upper).
+        ``constraints`` must have the same units as ``value``.
     **settings
-        unit : str
+        ``unit`` (`str`)
             The unit. If this is not provided then the unit will be taken from
-            the object passed as value.
+            the object passed as ``value``.
     """
 
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
@@ -63,22 +63,23 @@ class Parameter:
     def value(self):
 
         """
-        Get or set the value of the Parameter
+        Get or set the value of the ``Parameter``
 
-        The value will not be changed if it is fixed or tied, or if it is set
-        outside the bounds of a constraint
+        The value will not be changed if it is ``fixed`` or ``tied``, or if it
+        is set outside the bounds of ``constraints``
 
         Returns
         -------
         float
-            The value of the Parameter, including if the parameter is tied
+            The value of the ``Parameter``, including if the ``Parameter`` is
+            ``tied``
 
         Warns
         --------
         warnings.warn
-            If the Parameter is fixed.
+            If the ``Parameter`` is ``fixed``.
         warnings.warn
-            If the Parameter is tied.
+            If the ``Parameter`` is ``tied``.
         """
 
         if self.tied:
@@ -103,17 +104,17 @@ class Parameter:
     def constraints(self):
 
         """
-        Get or set the constraint of the Parameter
+        Get or set the constraint of the ``Parameter``
 
         Returns
         -------
         tuple
-            The closed range of the Parameter value
+            The closed range of the ``Parameter.value``
 
         Raises
         ------
         ValueError
-            If the constraint tuple is not (lower, upper).
+            If the constraint tuple is not ``(lower, upper)``.
         """
 
         return self._constraints
@@ -135,12 +136,13 @@ class Parameter:
     def interactions(self):
 
         """
-        Get or append to the parent Interaction objects for this Parameter
+        Get or append to the parent ``Interaction`` objects for this
+        ``Parameter``
 
         Returns
         -------
         list
-            All parent Interaction objects
+            All parent ``Interaction`` objects
 
         Raises
         ------
@@ -148,8 +150,8 @@ class Parameter:
             If an added interaction name is not consistent with existing
             interaction names
         ValueError
-            If an added interaction has a function name not consistent with
-            the function names of existing interactions
+            If an added ``Interaction`` has a function name not consistent with
+            the function names of an existing ``Interaction``
         """
 
         return [interaction() for interaction in self._interactions]
@@ -176,12 +178,13 @@ class Parameter:
     def tie(self):
 
         """
-        Get the value of a the Parameter object that this Parameter is tied to
+        Get the ``value`` of a the ``Parameter`` that this ``Parameter`` is tied
+        to
 
         Returns
         -------
         float
-            The value of the tied Parameter
+            The ``value`` of the ``tied`` ``Parameter``
         """
 
         if self._tie is None:
@@ -193,12 +196,13 @@ class Parameter:
     def tied(self):
 
         """
-        Get whether this Parameter is tied
+        Get whether this ``Parameter`` is tied
 
         Returns
         -------
         bool
-            True if this Parameter is tied to another Parameter, else False
+            `True` if this ``Parameter`` is tied to another ``Parameter``, else
+            `False`
         """
 
         if hasattr(self, 'tie') and self.tie is not None:
@@ -209,18 +213,19 @@ class Parameter:
     def set_tie(self, parameter, expr):
 
         """
-        This ties the parameter's value to the value of another parameter
+        This ``ties`` the ``Parameter.value`` to the ``value`` of another
+        ``Parameter``
 
         Parameters
         ---------
         parameter : Parameter
-            The Parameter to tie to
+            The ``Parameter`` to tie to
         expr : str
             A mathematical expression
 
         Examples
         --------
-        To set the Parameters return value to p1.value * 2::
+        To set the ``Parameter.value`` to ``p1.value * 2``::
 
         >>> Parameter.set_tie(p1, "* 2")
         """
@@ -247,12 +252,18 @@ class Parameter:
     def validate_value(self, value, constraints):
 
         """
-        Validates the parameter value by testing if it is within the constraints
+        Validates the ``Parameter.value`` by testing if it is within the
+        ``constraints``
+
+        Parameters
+        ----------
+        values : float
+            The value of the ``Parameter``
 
         Raises
         ------
         ValueError
-            If the value is not within the constraints
+            If the ``value`` is not within the ``constraints``
         """
 
         if value < constraints[0] or value > constraints[1]:
@@ -262,8 +273,8 @@ class Parameter:
 class Parameters(list):
 
     """
-    A list-like object where every element is a Parameter, which contains a
-    number of helper methods for filtering
+    A `list-like` object where every element is a ``Parameter``, which contains
+    a number of helper methods for filtering
     """
 
     def __getitem__(self, key):
@@ -281,13 +292,13 @@ class Parameters(list):
         Parameters
         ----------
         predicate : function
-            A function that returns a boolean which takes a Parameter as an
+            A function that returns a `bool` which takes a ``Parameter`` as an
             argument.
 
         Returns
         -------
         Parameters
-            The Parameter objects which meet the condition of the predicate
+            The ``Parameter`` objects which meet the condition of the predicate
         """
 
         return Parameters(filter(predicate, self))
@@ -296,17 +307,17 @@ class Parameters(list):
     def filter_name(self, name):
 
         """
-        Filters by name
+        Filters by ``name``
 
         Parameters
         ----------
         name : str
-            The name of the Parameter objects to return.
+            The ``name`` of the ``Parameter`` objects to return.
 
         Returns
         -------
         Parameters
-            The Parameter objects with name
+            The ``Parameter`` objects with ``name``
         """
 
         return Parameters(filter(lambda p: p.name == name, self))
@@ -315,22 +326,22 @@ class Parameters(list):
     def filter_value(self, comparison, value):
 
         """
-        Filters by value
+        Filters by ``value``
 
         Parameters
         ----------
         comparison : str
-            A string representing a comparison operator, '>', '<', '>=', '<=', '==',
-            '!='.
+            A `str` representing a comparison operator, ``'>'``, ``'<'``,
+            ``'>='``, ``'<='``, ``'=='``, ``'!='``.
         value : float
-            A float with which Parameter values are compared, using the comparison
-            operator.
+            A `float` with which ``Parameter`` values are compared, using the
+            ``comparison`` operator.
 
         Returns
         -------
         Parameters
-            The Parameter objects which return a True when their values are
-            compared with value using the comparison operator
+            The ``Parameter`` objects which return a `True` when their values
+            are compared with ``value`` using the ``comparison`` operator
         """
 
         ops = {'>':operator.gt,
@@ -346,19 +357,19 @@ class Parameters(list):
     def filter_interaction(self, interaction_name):
 
         """
-        Filters based on the name of the Interaction of each Parameter
+        Filters based on the name of the ``Interaction`` of each ``Parameter``
 
         Parameters
         ----------
         interaction_name : str
-            The name of the Interaction of Parameter objects to return, for example
-            'Bond'.
+            The name of the ``Interaction`` of ``Parameter`` objects to return,
+            for example ``'Bond'``.
 
         Returns
         -------
         Parameters
-            The Parameter objects which have an interaction with the specified
-            name
+            The ``Parameter`` objects which have an ``Interaction`` with the
+            specified ``interaction_name``
         """
 
         return Parameters(filter(lambda p: p.interactions_name == interaction_name,
@@ -368,18 +379,20 @@ class Parameters(list):
     def filter_function(self, function_name):
 
         """
-        Filters based on the name of the InteractionFunction of each Parameter
+        Filters based on the name of the ``InteractionFunction`` of each
+        ``Parameter``
 
         Parameters
         ----------
         function_name : str
-            The name of the InteractionFunction of Parameter objects to return, for
-            example 'LennardJones' or 'HarmonicPotential'.
+            The name of the ``InteractionFunction`` of ``Parameter`` objects to
+            return, for example ``'LennardJones'`` or ``'HarmonicPotential'``.
 
         Returns
         -------
         Parameters
-            The Parameter objects which have a function with the specified name
+            The ``Parameter`` objects which have a ``function`` with the
+            specified ``function_name``
         """
 
         return Parameters(filter(lambda p: p.functions_name == function_name, self))
@@ -388,23 +401,23 @@ class Parameters(list):
     def filter_atom_attribute(self, attribute, value):
 
         """
-        Filters based on the attribute of Atoms which have each Parameter
-        applied to them
+        Filters based on the attribute of ``Atom`` objects which have each
+        ``Parameter`` applied to them
 
 
         Parameters
         ----------
         attribute : str
-            An attribute of an Atom. Attributes to match to must be either float or
-            str.
+            An attribute of an ``Atom``. Attributes to match to must be either
+            `float` or str.
         value : str, float
-            The value of the Atom attribute.
+            The value of the ``Atom`` ``attribute``.
 
         Returns
         -------
         Parameters
-            The Parameter objects which are applied to an Atom object which has
-            the specified value of the specified attribute
+            The ``Parameter`` objects which are applied to an ``Atom`` object
+            which has the specified ``value`` of the specified ``attribute``
         """
 
         def flatten(iterable):
@@ -425,19 +438,19 @@ class Parameters(list):
     def filter_structure(self, structure_name):
 
         """
-        Filters based on the name of the structural units to which each
-        Parameter applies
+        Filters based on the name of the ``StructuralUnit`` to which each
+        ``Parameter`` applies
 
         Parameters
         ----------
         structure_name : str
-            The name of a structural_unit.
+            The name of a ``StructuralUnit``.
 
         Returns
         -------
         Parameters
-            The Parameter objects which are applied to a structural_unit which
-            has the specified name
+            The ``Parameter`` objects which are applied to a ``StructuralUnit``
+            which has the specified ``zstructure_name``
         """
 
         def check_structure_name(parameter):
@@ -448,7 +461,7 @@ class Parameters(list):
             Returns
             -------
             list
-                A list of str with the names of structural_units
+                A `list` of `str` with the names of ``StructuralUnit`` objects
             """
 
             # Recursively add structure.name to structure_names set until the

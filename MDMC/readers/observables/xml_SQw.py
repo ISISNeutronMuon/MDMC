@@ -22,8 +22,8 @@ class XML_SQw(ObservableReader):
 
         Currently only parses SQw files
 
-        E is the energy transfer (in meV)
-        Q is wavevector transfer (in Ang^-1)
+        E is the energy transfer (in ``meV``)
+        Q is wavevector transfer (in ``Ang^-1``)
         """
 
         self._tree = ET.parse(self.file)
@@ -67,7 +67,7 @@ class XML_SQw(ObservableReader):
     def independent_variables(self):
 
         """
-        Get the independent variables, Q (in Ang^-1) and E (meV)
+        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
         Returns
         -------
@@ -81,12 +81,12 @@ class XML_SQw(ObservableReader):
     def dependent_variables(self):
 
         """
-        Get the dependent variables, SQw (in arb)
+        Get the dependent variables, SQw (in ``arb``)
 
         Returns
         -------
         dict
-            The dependent variables, SQw (in arb)
+            The dependent variables, SQw (in ``arb``)
         """
 
         return {"SQw":self.SQw}
@@ -100,7 +100,7 @@ class XML_SQw(ObservableReader):
         Returns
         -------
         dict
-            The error on SQw (in arb)
+            The error on SQw (in ``arb``)
         """
 
         return {"SQw":self.SQw_err}
@@ -109,12 +109,12 @@ class XML_SQw(ObservableReader):
     def E(self):
 
         """
-        Get or set the energy transfer, E, in meV
+        Get or set the energy transfer, E, in ``meV``
 
         Returns
         -------
         array
-            Energy transfer, E, in meV
+            Energy transfer, E, in ``meV``
         """
 
         return self._E
@@ -129,12 +129,12 @@ class XML_SQw(ObservableReader):
     def Q(self):
 
         """
-        Get or set the momentum transfer, Q, in Ang^-1
+        Get or set the momentum transfer, Q, in ``Ang^-1``
 
         Returns
         -------
         array
-            Momentum transfer, Q, in Ang^-1
+            Momentum transfer, Q, in ``Ang^-1``
         """
 
         return self._Q

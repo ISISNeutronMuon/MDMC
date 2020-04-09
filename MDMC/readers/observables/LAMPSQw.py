@@ -1,6 +1,4 @@
-"""Readers for dynamic data
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-6 14:38:55"""
+"""Readers for dynamic data"""
 
 import numpy as np
 
@@ -68,7 +66,7 @@ class LAMPSQw(ObservableReader):
     def independent_variables(self):
 
         """
-        Get the independent variables, Q (in Ang^-1) and E (meV)
+        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
         Returns
         -------
@@ -82,12 +80,12 @@ class LAMPSQw(ObservableReader):
     def dependent_variables(self):
 
         """
-        Get the dependent variables, SQw (in arb)
+        Get the dependent variables, SQw (in ``arb``)
 
         Returns
         -------
         dict
-            The dependent variables, SQw (in arb)
+            The dependent variables, SQw (in ``arb``)
         """
 
         return {"SQw":self.SQw}
@@ -101,7 +99,7 @@ class LAMPSQw(ObservableReader):
         Returns
         -------
         dict
-            The error on SQw (in arb)
+            The error on SQw (in ``arb``)
         """
 
         return {"SQw":self.SQw_err}
@@ -114,8 +112,8 @@ class LAMPSQw(ObservableReader):
 
         Returns
         -------
-        array
-            Energy transfer, E, in meV
+        numpy.ndarray
+            Energy transfer, E, in ``meV``
         """
 
         return self._E
@@ -130,12 +128,12 @@ class LAMPSQw(ObservableReader):
     def Q(self):
 
         """
-        Get or set the momentum transfer, Q, in Ang^-1
+        Get or set the momentum transfer, Q, in ``Ang^-1``
 
         Returns
         -------
-        array
-            Momentum transfer, Q, in Ang^-1
+        numpy.ndarray
+            Momentum transfer, Q, in ``Ang^-1``
         """
 
         return self._Q
@@ -151,8 +149,8 @@ class LAMPSQw(ObservableReader):
         """
         Parses the independent variables
 
-        Splits the file so that the data can be extracted into a numpy array by
-        self._get_data
+        Splits the file so that the data can be extracted into a ``array`` by
+        ``self._get_data``
 
         Parameters
         ----------
@@ -204,7 +202,7 @@ class LAMPSQw(ObservableReader):
 
         Returns
         -------
-        array
+        numpy.ndarray
             A 2d array with dimensions of the two independent variables
         """
 
@@ -215,17 +213,17 @@ class LAMPSQw(ObservableReader):
     def _make_float(self, i):
 
         """
-        Casts the input to a float, or passes if the input cannot be cast
+        Casts the input to a `float`, or passes if the input cannot be cast
 
         Parameters
         ----------
         i : numeric
-            Input to be cast to float
+            Input to be cast to `float`
 
         Returns
         -------
         float
-            A non-negative float, if the input can be converted to a float.
+            A non-negative `float`, if the input can be converted to a `float`.
         """
 
         try:
@@ -244,12 +242,12 @@ class LAMPSQw(ObservableReader):
         str_iter : iterator
             An iterator of str
         *dimensions
-            A float specifying the size for every dimension of the data
+            A `float` specifying the size for every dimension of the data
 
         Returns
         -------
-        array
-            An array of floats with dimensions specified by *dimensions
+        numpy.ndarray
+            An array of `float` with dimensions specified by ``*dimensions``
         """
 
         def get_row_data(dim):

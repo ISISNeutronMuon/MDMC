@@ -38,11 +38,12 @@ class netCDF(ObservableReader):
         """
         Parse into SQw format
 
-        E is the energy transfer (in meV)
-        Q is wavevector transfer (in Ang^-1)
+        E is the energy transfer (in ``meV``)
+        Q is wavevector transfer (in ``Ang^-1``)
         """
 
-        self.E = np.array(self.file.variables['angular_frequency']) * 1e15 * h_bar
+        self.E = (np.array(self.file.variables['angular_frequency']) * 1e15
+                  * h_bar)
         Q = self.file.variables['q']
         if 'nm' in Q.units:
             Q =  np.array(Q) * 0.1
@@ -55,7 +56,7 @@ class netCDF(ObservableReader):
     def independent_variables(self):
 
         """
-        Get the independent variables, Q (in Ang^-1) and E (meV)
+        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
         Returns
         -------
@@ -69,12 +70,12 @@ class netCDF(ObservableReader):
     def dependent_variables(self):
 
         """
-        Get the dependent variables, SQw (in arb)
+        Get the dependent variables, SQw (in ``arb``)
 
         Returns
         -------
         dict
-            The dependent variables, SQw (in arb)
+            The dependent variables, SQw (in ``arb``)
         """
 
         return {"SQw":self.SQw}
@@ -88,7 +89,7 @@ class netCDF(ObservableReader):
         Returns
         -------
         dict
-            The error on SQw (in arb)
+            The error on SQw (in ``arb``)
         """
 
         return {"SQw":self.SQw_err}
@@ -97,12 +98,12 @@ class netCDF(ObservableReader):
     def E(self):
 
         """
-        Get or set the energy transfer, E, in meV
+        Get or set the energy transfer, E, in ``meV``
 
         Returns
         -------
         array
-            Energy transfer, E, in meV
+            Energy transfer, E, in ``meV``
         """
 
         return self._E
@@ -117,12 +118,12 @@ class netCDF(ObservableReader):
     def Q(self):
 
         """
-        Get or set the momentum transfer, Q, in Ang^-1
+        Get or set the momentum transfer, Q, in ``Ang^-1``
 
         Returns
         -------
         array
-            Momentum transfer, Q, in Ang^-1
+            Momentum transfer, Q, in ``Ang^-1``
         """
 
         return self._Q

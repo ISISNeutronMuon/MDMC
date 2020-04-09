@@ -16,25 +16,25 @@ def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
     ----------
     values : iterable
         The values for which to filter. If any of these values occur in any of
-        the columns defined by `column_names` or `column_regex`, the row will be
-        included in the filtered return.
-    dataframe : DataFrame
-        The pd.DataFrame object to be filtered
+        the columns defined by ``column_names`` or ``column_regex``, the row
+        will be included in the filtered return.
+    dataframe : pandas.DataFrame
+        The ``pd.DataFrame`` object to be filtered
     column_names: list, optional
-        A list of str specifying the names of the columns which will be used to
-        filter the Dataframe. This cannot be passed if `column_regex` is also
-        passed.
+        A `list` of `str` specifying the names of the columns which will be used
+        to filter the ``Dataframe``. This cannot be passed if ``column_regex``
+        is also passed.
     column_regex : str
         A regular expression matching one or more column names. This specifies
-        which columns will be used to filter the DataFrame. This cannot be
-        passed if `column_names` is also passed.
+        which columns will be used to filter the ``DataFrame``. This cannot be
+        passed if ``column_names`` is also passed.
 
     Returns
     -------
-    DataFrame
-        A DataFrame which has been filtered so that each value in `values`
-        must occur in one of the columns of DataFrame that are specified by
-        `column_names` or matched by `column_regex`
+    pandas.DataFrame
+        A ``DataFrame`` which has been filtered so that each value in ``values``
+        must occur in one of the columns of ``DataFrame`` that are specified by
+        ``column_names`` or matched by ``column_regex``
     """
 
     if column_names and column_regex:
@@ -71,10 +71,10 @@ def filter_ordered_dataframe(values, dataframe, column_names=None,
                              column_regex=None, wildcard=None):
 
     """
-    Filters a pd.DataFrame with an iterable of ordered values. The values must
-    occur in columns in the correct order, with the order specified by
-    `column_names`, or by the order which column order which occurs from using
-    `column_regex`.
+    Filters a ``pd.DataFrame`` with an iterable of ordered values. The values
+    must occur in columns in the correct order, with the order specified by
+    ``column_names``, or by the order which column order which occurs from using
+    ``column_regex``.
 
     This filter ignores rows which are duplicated (i.e. it only returns the
     first occurence of any duplicated rows).
@@ -83,27 +83,27 @@ def filter_ordered_dataframe(values, dataframe, column_names=None,
     ----------
     values : iterable
         The values for which to filter. If any of these values occur in any of
-        the columns defined by `column_names` or `column_regex`, the row will be
-        included in the filtered return.
-    dataframe : DataFrame
-        The pd.DataFrame object to be filtered
+        the columns defined by ``column_names`` or ``column_regex``, the row
+        will be included in the filtered return.
+    dataframe : pandas.DataFrame
+        The ``pd.DataFrame`` object to be filtered
     column_names: list, optional
-        A list of str specifying the names of the columns which will be used to
-        filter the Dataframe. This cannot be passed if `column_regex` is also
-        passed.
+        A `list` of `str` specifying the names of the columns which will be used
+        to filter the ``Dataframe``. This cannot be passed if ``column_regex``
+        is also passed.
     column_regex : str
         A regular expression matching one or more column names. This specifies
-        which columns will be used to filter the DataFrame. This cannot be
-        passed if `column_names` is also passed.
+        which columns will be used to filter the ``DataFrame``. This cannot be
+        passed if ``column_names`` is also passed.
     wildcard : str
-        A str which will be a match in any column
+        A `str` which will be a match in any column
 
     Returns
     -------
-    DataFrame
-        A DataFrame which has been filtered so that each value in `values`
-        must occur in one of the columns of DataFrame that are specified by
-        `column_names` or matched by `column_regex`
+    pandas.DataFrame
+        A ``DataFrame`` which has been filtered so that each value in ``values``
+        must occur in one of the columns of ``DataFrame`` that are specified by
+        ``column_names`` or matched by ``column_regex``
     """
 
     if column_names and column_regex:

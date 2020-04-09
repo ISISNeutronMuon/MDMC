@@ -16,7 +16,7 @@ class Observable(ABC):
 
     Observable data can either be from a file or calculated from
     MD and stored in the data property, along with the associated uncertainty.
-    The boolean property from_MD states the source of the information.
+    The `bool` property ``from_MD`` states the source of the information.
 
     Attributes
     ----------
@@ -33,7 +33,7 @@ class Observable(ABC):
         Returns
         -------
         str
-            The name of the module in which the Observable is located
+            The name of the module in which the ``Observable`` is located
         """
 
         return self._name
@@ -52,7 +52,8 @@ class Observable(ABC):
         Returns
         -------
         str
-            The origin of the Observable, either experiment or MD
+            The origin of the ``Observable``, either ``'experiment'`` or
+            ``'MD'``
         """
 
         return self._origin
@@ -152,9 +153,10 @@ class Observable(ABC):
         Parameters
         ----------
         MD_input : Object
-            Some input from an MD simulation, commonly a trajectory
+            Some input from an MD simulation, commonly a ``Trajectory``
         **params
-            additional parameters required for calculation specific Observables
+            Additional parameters required for calculation specific
+            ``Observable`` objects
         """
 
         raise NotImplementedError

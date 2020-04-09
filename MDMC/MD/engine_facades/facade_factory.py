@@ -8,9 +8,9 @@ from MDMC.MD.engine_facades.facade import MDEngine
 class MDEngineFacadeFactory:
 
     """
-    Provides a factory for creating facades to MD engines.  Any facade within
-    the engine_facades folder can be created with a string of the class name, as
-    long as it is a subclass of MDEngine.
+    Provides a factory for creating facades to ``MDEngine``.  Any facade within
+    the ``engine_facades`` folder can be created with a `str` of the class
+    ``name``, as long as it is a subclass of ``MDEngine``.
     """
 
     @staticmethod
@@ -20,13 +20,13 @@ class MDEngineFacadeFactory:
         Parameters
         ----------
         module_name : str
-            a module name in engine_facades. Aliases to these module names are
-            also valid.
+            A module name in ``engine_facades``. Aliases to these module names
+            are also valid.
 
         Returns
         -------
-        MDEngine
-            The specified MDEngine, as determined by the module_name
+        ``MDEngine``
+            The specified ``MDEngine``, as determined by the ``module_name``
         """
 
         try:
@@ -44,7 +44,7 @@ class MDEngineFacadeFactory:
     def _import_from_alias(alias):
 
         """
-        Converts an alias into a module name
+        Converts an ``alias`` into a module name
         """
 
         if alias.upper() == 'MMTK':

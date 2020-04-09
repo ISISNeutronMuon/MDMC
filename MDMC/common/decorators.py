@@ -10,30 +10,32 @@ from MDMC.common.units import UnitFloat, unit_array
 def unit_decorator(unit):
 
     """
-    Decorates property.setter methods to add units
+    Decorates ``property.setter`` methods to add units
 
-    Adds units to the values passed to property.setter methods. These units are
-    displayed when either repr or str is called for the corresponding
-    property.getter method.
+    Adds units to the values passed to ``property.setter`` methods. These units
+    are displayed when either ``repr`` or ``str`` is called for the
+    corresponding ``property.getter`` method.
 
-    Suitable for use with setter methods that either take floats (or objects
-    that can be cast to floats), or NumPy arrays (or objects that can be cast
-    to NumPy arrays)
+    Suitable for use with setter methods that either take `float` (or objects
+    that can be cast to `float`), or NumPy `array` (or objects that can be cast
+    to NumPy `array`)
 
     Parameters
     ----------
-    unit : string or None
-        The unit applied to the property. If None then self.unit is used, which
-        enables classes to have properties with units defined at runtime.
+    unit : str or None
+        The ``unit`` applied to the property. If `None` then ``self.unit`` is
+        used, which enables classes to have properties with units defined at
+        runtime.
 
     Returns
     -------
-    function
-        A property.setter function with a value parameter which has a unit.
+    `function`
+        A ``property.setter`` `function` with a ``value`` parameter which has a
+        ``unit``.
 
     Example
     -------
-    Add a unit_decorator to the position property::
+    Add a ``unit_decorator`` to the ``position`` ``property``::
 
         >>> Class Atom(StructuralUnit):
         ...
@@ -75,31 +77,32 @@ def unit_decorator(unit):
 def unit_decorator_getter(unit):
 
     """
-    Decorates property.getter methods to add units
+    Decorates ``property.getter`` methods to add units
 
-    Adds units to the return values of property.getter methods. These units are
-    displayed when either repr or str is called.
+    Adds units to the return values of ``property.getter`` methods. These units
+    are displayed when either ``repr`` or ``str`` is called.
 
-    Suitable for use with setter methods that either take floats (or objects
-    that can be cast to floats), or NumPy arrays (or objects that can be cast
-    to NumPy arrays). This method exists for properties which have no setter
+    Suitable for use with setter methods that either take `float` (or objects
+    that can be cast to `float`), or NumPy `array` (or objects that can be cast
+    to NumPy `array`). This method exists for properties which have no setter
     method.
 
     Parameters
     ----------
-    unit : string or None
-        The unit applied to the property. If None then self.unit is used, which
-    enables classes to have properties with units defined at runtime.
+    unit : str or None
+        The ``unit`` applied to the property. If `None` then ``self.unit`` is
+        used, which enables classes to have properties with units defined at
+        runtime.
 
     Returns
     -------
-    function
-        A property.getter function with a return type which has a unit (e.g.
-        UnitFloat or UnitArray)
+    `function`
+        A ``property.getter`` `function` with a return type which has a unit
+        (e.g. ``UnitFloat`` or ``UnitArray``)
 
     Example
     -------
-    Add a unit_decorator_getter to the volume property::
+    Add a ``unit_decorator_getter`` to the ``volume`` property::
 
         >>> Class Universe:
         ...
@@ -143,14 +146,14 @@ def set_docstring(docstring):
 
     Returns
     -------
-    function
+    `function`
         A decorator which sets the docstring of a function, method, class or
         property
 
     Raises
     ------
     TypeError
-        If set_docstring is applied to an object which is not a function,
+        If ``set_docstring`` is applied to an object which is not a function,
         method, class, or property
 
     Examples
@@ -228,25 +231,25 @@ def mod_docstring(replacements):
     Parameters
     ----------
     replacements : dict
-        {old:new} pairs where old is a str in the docstring which will be
-        replaced, and new is the str it should be replaced with.
+        {old:new} pairs where old is a `str` in the docstring which will be
+        replaced, and new is the `str` it should be replaced with.
 
     Returns
     -------
-    function
+    `function`
         A decorator which modifies the docstring of a function, method, class or
         property
 
     Raises
     ------
     TypeError
-        If mod_docstring is applied to an object which is not a function,
+        If ``mod_docstring`` is applied to an object which is not a function,
         method, class, or property
 
     Examples
     --------
-    To dynamically modify the docstring of a function so 'this' is replaced
-    with 'that':
+    To dynamically modify the docstring of a function so "this" is replaced
+    with "that":
 
         .. highlight:: python
         .. code-block:: python
@@ -257,8 +260,8 @@ def mod_docstring(replacements):
                 The word this will be replaced
                 \"\"\"
 
-    To dynamically modify the docstring of a class so 'this' is replaced
-    with 'that':
+    To dynamically modify the docstring of a class so "this" is replaced
+    with "that":
 
         .. highlight:: python
         .. code-block:: python
@@ -270,8 +273,8 @@ def mod_docstring(replacements):
                 replaced.
                 \"\"\"
 
-    To dynamically modify the docstring of a property so 'this' is replaced
-    with 'that':
+    To dynamically modify the docstring of a property so "this" is replaced
+    with "that":
 
         .. highlight:: python
         .. code-block:: python
@@ -333,8 +336,8 @@ def wrap_docstring(docstring, line_length):
     Raises
     ------
     ValueError
-        If any indent has more characters than the line_length, as the wrapping
-        cannot then preserve the correct indent
+        If any indent has more characters than the ``line_length``, as the
+        wrapping cannot then preserve the correct indent
     """
 
     wrapped = []
@@ -380,39 +383,40 @@ def wrap_docstring(docstring, line_length):
 def repr_decorator(attribute, *attributes):
 
     """
-    Implements __repr__ for a class using passed attributes (including
+    Implements ``__repr__`` for a class using passed attributes (including
     properties)
 
-    The first element of all __repr__ returns is always the name of the class
+    The first element of all ``__repr__`` returns is always the name of the
+    class
 
     .. warning::
-        Testing for repr_decorator is restricted to testing the decorator
+        Testing for ``repr_decorator`` is restricted to testing the decorator
         outputs the correct format, not whether each occurence it is used is
         valid. It is strongly recommended that classes decorated with
-        repr_decorator are tested to ensure that repr(class) is valid, for
-        instance whether the class actually has all of the attributes passed as
-        str to repr_decorator.
+        ``repr_decorator`` are tested to ensure that ``repr(class)`` is valid,
+        for instance whether the class actually has all of the attributes passed
+        as `str` to ``repr_decorator``.
 
     Parameters
     ----------
     attribute : str
         The name of an attribute of the class being decorated. This attribute
-        (or property) will be included in the __repr__ of the class.
+        (or property) will be included in the ``__repr__`` of the class.
     *attributes : str
-        Zero or more str with the name of an attribute (or property) of the
-        class being decorated. These attributes will be included in the __repr__
-        of the class.
+        Zero or more `str` with the name of an attribute (or property) of the
+        class being decorated. These attributes will be included in the
+        ``__repr__`` of the class.
 
     Returns
     -------
     class
-        A class with __repr__ implemented such that `attribute` and `attributes`
-        are printed
+        A class with ``__repr__`` implemented such that ``attribute`` and
+        ``attributes`` are printed
 
     Example
     -------
-    Add a repr_decorator to the Atom class to include the name attribute and the
-    position property::
+    Add a ``repr_decorator`` to the ``Atom`` class to include the ``name``
+    attribute and the ``position`` property::
 
         >>> @repr_decorator('name', 'position')
         ... Class Atom(StructuralUnit):

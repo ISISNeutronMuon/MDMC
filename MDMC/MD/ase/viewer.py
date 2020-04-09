@@ -1,6 +1,6 @@
 """
 This module is the interface to the Atomic Simulation Environment (ASE,
-https://wiki.fysik.dtu.dk/ase/) GUI, which enables a molecular viewer to be
+https://wiki.fysik.dtu.dk/ase/) ``GUI``, which enables a molecular viewer to be
 launched. This viewer allows the visualization of atomic positions and bonds.
 
 """
@@ -20,15 +20,15 @@ from MDMC.MD.ase.conversions import get_ase_atoms
 def view(atoms, cell=None):
 
     """
-    Launches the ASE GUI for a collection of atoms
+    Launches the ASE ``GUI`` for a collection of atoms
 
     Parameters
     ----------
     atoms : list
-        A list of Atom objects (MDMC.MD.structural_unit.Atom) to view
-    cell : array, optional
-        An array of floats specifying the dimensions of the cell to view. The
-        default is None.
+        A `list` of ``Atom`` (``MDMC.MD.structural_unit.Atom``) to view
+    cell : numpy.ndarray, optional
+        An ``array`` of `float` specifying the dimensions of the cell to view.
+        The default is `None`.
     """
 
     atom_images = Images()
@@ -41,13 +41,14 @@ def view(atoms, cell=None):
 def get_bonds(atoms):
 
     """
-    Adds (0, 0, 0,) to each bonded atom pair defined within an `ASEAtoms`
+    Adds ``(0, 0, 0,)`` to each bonded atom pair defined within an ``ASEAtoms``
     object
 
     Parameters
     ----------
     atoms : ASEAtoms
-        The ASEAtoms object for which the bonds are required for plotting
+        The ``ASEAtoms`` object for which the ``bonds`` are required for
+        plotting
     """
 
     bonds = [pair + (0, 0, 0) for pair in atoms.bonds]
@@ -57,12 +58,12 @@ def get_bonds(atoms):
 class Viewer(GUI):
 
     """
-    Subclasses the ASE GUI to provide a molecular viewer for MDMC.
+    Subclasses the ASE ``GUI`` to provide a molecular viewer for MDMC.
 
-    It modifies how bonds are plotted by using an alternative `get_bonds`
-    function in the `set_atoms` method.
+    It modifies how ``bonds`` are plotted by using an alternative ``get_bonds``
+    function in the ``set_atoms`` method.
 
-    It removes GUI menu options that are not applicable in MDMC.
+    It removes ``GUI`` menu options that are not applicable in MDMC.
     """
 
     def __init__(self, images=None, rotations='', expr=None):
@@ -78,12 +79,13 @@ class Viewer(GUI):
         Almost an exact copy from ASE
 
         This method is defined purely so that an alternative to the
-        `get_bonds` function is used. Now the bonds are set during __init__.
+        ``get_bonds`` function is used. Now the ``bonds`` are set during
+        ``__init__``.
 
         Parameters
         ----------
         atoms : ASEAtoms
-            The atoms which will be set
+            The ``atoms`` which will be set
         """
 
         natoms = len(atoms)
@@ -151,7 +153,7 @@ class Viewer(GUI):
     def get_menu_data(self):
 
         """
-        Subset of default ASE GUI menu options which are applicable to MDMC
+        Subset of default ASE ``GUI`` menu options which are applicable to MDMC
         """
 
         M = MenuItem

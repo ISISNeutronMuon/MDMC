@@ -3,8 +3,8 @@
 It should be possible to extend the CIF reader to include the additional
 definitions in the mmCIF format.
 
-It is expected that some of the behaviour in ase_read_cif will be extracted into
-MDMC.readers.configurations.cif when an MDMC CIF reader is implemented
+It is expected that some of the behaviour in ``ase_read_cif`` will be extracted
+into ``MDMC.readers.configurations.cif`` when an MDMC CIF reader is implemented.
 """
 
 from itertools import groupby
@@ -21,66 +21,66 @@ from MDMC.MD.interaction_functions import Coulomb
 def ase_read_cif(file, **settings):
 
     """
-    Reads a configuration file and returns a list of `Atom` objects.
+    Reads a configuration file and returns a list of ``Atom`` objects.
 
-    These Atom objects can optionally have `Coulombic` interactions and also
-    `BondedInteraction` objects if bonded interactions are defined in the CIF
+    These Atom objects can optionally have ``Coulombic`` interactions and also
+    ``BondedInteraction`` objects if bonded interactions are defined in the CIF
     file.
 
-    If `names` or `atom_types` is passed, then equivalent interactions
-    (`Coulombic` and `BondedInteraction`, if bonded interactions are defined in
-    the CIF file) will be initialized as a single object. For instance if the
-    CIF file includes a benzene ring, then as long as the correct `names` or
-    `atom_types` are passed, then there will only be a single C-C `Bond` object,
-    which will include all 6 of the atom pairs.
-    If both `names` and `atom_types` are passed, `atom_types` will be used to
-    group `Atom` objects.
-    If neither `names` or `atom_types` is passed then each interaction will
+    If ``names`` or ``atom_types`` is passed, then equivalent interactions
+    (``Coulombic`` and ``BondedInteraction``, if bonded interactions are defined
+    in the CIF file) will be initialized as a single object. For instance if the
+    CIF file includes a benzene ring, then as long as the correct ``names`` or
+    ``atom_types`` are passed, then there will only be a single C-C ``Bond``
+    object, which will include all 6 of the atom pairs.
+    If both ``names`` and ``atom_types`` are passed, ``atom_types`` will be used
+    to group ``Atom`` objects.
+    If neither ``names`` or ``atom_types`` is passed then each interaction will
     become a separate object.
 
     .. note:: Not all CIF files contain bonded interactions (it is only common
-    for biomolecules).
+              for biomolecules).
 
     .. note:: improper dihedrals are not explicitly defined in CIF, so these
-    must be set after initialization of `DihedralAngle` objects.
+              must be set after initialization of ``DihedralAngle`` objects.
 
     .. note:: CIF reader cannot parse CIF files with user defined text sections,
-    so these must be stripped out before reading.
+              so these must be stripped out before reading.
 
     Parameters
     ----------
-    file : File, str
-        A `File` object, or the absolute file name of the configuration file
+    file : file, str
+        A ``file``, or the absolute file name of the configuration file
     **settings
-        index : int, optional
+        ``index`` (`int`, optional)
             The index of the configuration in the CIF file. Only a single
             configuration can be read from a CIF file, with the default being
-            the first (index=0) configuration.
-        names : list of str
-            A list of names for the atoms in the CIF file. These names must have
-            the same order as the order the atoms in the file. A `name` must be
-            be provided for each atom in the CIF file.
-        atom_types : list of int
-            A list of int for atom types of the atoms in the CIF file. These
+            the first (``index=0``) configuration.
+        ``names`` : (`list` of `str`)
+            A `list` of ``names`` for the atoms in the CIF file. These ``names``
+            must have the same order as the order the atoms in the file. A
+            ``name`` must be be provided for each atom in the CIF file.
+        ``atom_types`` : (`list` of `int`)
+            A `list` of `int` for atom types of the atoms in the CIF file. These
             names must have the same order as the order the atoms in the file.
-            An `atom_type` must be provided for each atom in the CIF file.
-        cutoff : float
-            A distance (in Ang) at which the `Coulombic` interactions are
-            cutoff. If this is not passed, the `cutoff` will be set to 10.
-        add_bonds : bool, optional
+            An ``atom_type`` must be provided for each atom in the CIF file.
+        ``cutoff`` : (`float`)
+            A distance (in Ang) at which the ``Coulombic`` interactions are
+            cutoff. If this is not passed, the ``cutoff`` will be set to 10.
+        ``add_bonds`` : (`bool`, optional)
             Whether or not any bonded interactions defined in the CIF file will
-            be included. By default this is True.
-        add_charges : bool, optional
+            be included. By default this is `True`.
+        ``add_charges`` : (`bool`, optional)
             Whether or not each atom in the CIF file will be assigned a
-            `Coulombic` interaction with a `Coulomb` function. CIF files do not
-            contain charge information, so the charge of the `Coulombic`
+            ``Coulombic`` interaction with a ``Coulomb`` function. CIF files do
+            not contain charge information, so the charge of the ``Coulombic``
             interaction will be set to 0. This enables the charges to be set by
-            the application of a `ForceField` object. By default this is True.
+            the application of a ``ForceField`` object. By default this is True.
 
     Returns
     -------
-    list of Atom
-        The `Atom` objects corresponding to the data in the CIF file
+    `list` of ``Atom``
+        The ``Atom`` objects corresponding to the data in the CIF file
     """
 
     index = settings.get('index', 0)
@@ -160,11 +160,11 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
 
     Parameters
     ----------
-    ase_atoms_info : dct
-        A dictionary containing site labels for one or more of bonds, angles,
-        and torsions. The corresponding values are a list with label (str) for
-        each interaction. The number of site label keys is 2 for bonds, 3 for
-        angles and 4 for torsions. For instance, for bonds there should be
+    ase_atoms_info : dict
+        A `dict` containing site labels for one or more of bonds, angles, and
+        torsions. The corresponding values are a list with label (str) for each
+        interaction. The number of site label keys is 2 for bonds, 3 for angles
+        and 4 for torsions. For instance, for bonds there should be
         '_geom_bond_atom_site_label_1' and '_geom_bond_atom_site_label_2', with
         each being a list containing the first (or second) site label for each
         interaction.
@@ -172,18 +172,18 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
         Specifies whether the interaction type is a bond, angle, or torsion
     atoms_labels : dict
         (label:atom) pairs, where label is a str with the _atom_site_label from
-        the CIF file, and atom is the corresponding MDMC `Atom` object.
+        the CIF file, and atom is the corresponding MDMC ``Atom`` object.
 
     Returns
     -------
-    np.array
-        A 2D array with dimensions (n_interactions, n_atoms_per_interaction). So
-        for 5 bond interactions, the dimensions of the array will be (5, 2),
-        with the zeroeth index containing the two Atoms involved in the zeroeth
-        bond, the first index containing the two Atoms involved in the first
-        bond etc. For bond angle and dihedral interactions, the order of the
-        atoms corresponds to the order required for BondAngle and DihedralAngle
-        interactions.
+    numpy.ndarray
+        A 2D ``array`` with dimensions (n_interactions,
+        n_atoms_per_interaction). So for 5 bond interactions, the dimensions of
+        the array will be (5, 2), with the zeroeth index containing the two
+        ``Atoms`` involved in the zeroeth bond, the first index containing the
+        two ``Atoms`` involved in the first bond etc. For bond angle and
+        dihedral interactions, the order of the atoms corresponds to the order
+        required for ``BondAngle`` and ``DihedralAngle`` interactions.
     """
 
     # There are a maximum of 4 atom sites in a geometry definition (for
@@ -200,15 +200,16 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
 def _create_coulombic_interactions(atoms, cutoff, key=None):
 
     """
-    Creates `Coulombic` interactions
+    Creates ``Coulombic`` interactions
 
     Parameters
     ----------
     atoms : list of Atom
-        The `Atom` objects for which a `Coulombic` interaction will be created
+        The ``Atom`` objects for which a ``Coulombic`` interaction will be
+        created
     key : function
-        The key which will be used to group `Atom` objects. Grouped `Atom`
-        objects will have a single `Coulombic` interaction.
+        The key which will be used to group ``Atom`` objects. Grouped ``Atom``
+        objects will have a single ``Coulombic`` interaction.
     """
 
     if key:
@@ -222,28 +223,28 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
 def _create_bonded_interactions(interactions_atoms, key=None, **settings):
 
     """
-    Creates `BondedInteraction` objects
+    Creates ``BondedInteraction`` objects
 
     Parameters
     ----------
-    interaction_atoms : np.array
-        A 2D array with dimensions (n_interactions, n_atoms_per_interaction). So
-        for 5 bond interactions, the dimensions of the array must be (5, 2),
-        with the zeroeth index containing the two Atoms involved in the zeroeth
-        bond, the first index containing the two Atoms involved in the first
-        bond etc. For bond angle and dihedral interactions, the order of the
-        atoms must correspond to the order required for BondAngle and
-        DihedralAngle interactions.
+    interaction_atoms : numpy.ndarray
+        A 2D ``array`` with dimensions (n_interactions,
+        n_atoms_per_interaction). So for 5 bond interactions, the dimensions of
+        the array must be (5, 2), with the zeroeth index containing the two
+        ``Atoms`` involved in the zeroeth bond, the first index containing the
+        two ``Atoms`` involved in the first bond etc. For bond angle and
+        dihedral interactions, the order of the atoms must correspond to the
+        order required for ``BondAngle`` and ``DihedralAngle`` interactions.
     key : function
         A function by which the atoms tuples are grouped. Each group will have a
         single bonded interaction applied. For example, for a bonded interaction
-        where the key is atom_type, if an atom pair has atom_types (1, 2), this
-        will be grouped with all other atom pairs with atom_types (1, 2), and
-        a single `Bond` will be applied to the group.
+        where the key is atom_type, if an atom pair has ``atom_types`` (1, 2),
+        this will be grouped with all other atom pairs with ``atom_types``
+        (1, 2), and a single ``Bond`` will be applied to the group.
     **settings
-        Settings to be passed for BondedInteraction initialization. For example
-        improper=True can be passed to initialize a DihedralAngle to be an
-        improper dihedral.
+        Settings to be passed for ``BondedInteraction`` initialization. For
+        example ``improper=True`` can be passed to initialize a
+        ``DihedralAngle`` to be an improper dihedral.
 
     Raises
     ------
@@ -286,15 +287,15 @@ def _group_atoms(atoms, key):
     Parameters
     ----------
     atoms : list of Atom
-        The `Atom` objects to be grouped
+        The ``Atom`` objects to be grouped
     key : function
-        The `key` with which the Atom objects will be grouped
+        The ``key`` with which the ``Atom`` objects will be grouped
 
     Returns
     -------
     list of tuples
-        Where each tuple contains a group of equivalent `Atom` objects, based on
-        `key`
+        Where each tuple contains a group of equivalent ``Atom`` objects, based
+        on ``key``
     """
 
     atoms = sorted(atoms, key=key)
@@ -304,8 +305,8 @@ def _group_atoms(atoms, key):
 def _reduce_ase_unit_cell(ase_atoms):
 
     """
-    Reduces an ase.atoms.Atoms object from a unit cell of molecules to a single
-    molecule
+    Reduces an ``ase.atoms.Atoms`` object from a unit cell of molecules to a
+    single molecule
 
     Uses the number of atoms present in the CIF file to determine the size of
     the molecule
@@ -313,12 +314,13 @@ def _reduce_ase_unit_cell(ase_atoms):
     Parameters
     ----------
     ase_atoms : ase.atoms.Atoms
-        An ase.atoms.Atoms object from which a single molecule will be extracted
+        An ``ase.atoms.Atoms`` object from which a single molecule will be
+        extracted
 
     Returns
     -------
     ASEAtoms
-        An ASEAtoms objects containing the atoms of a single molecule
+        An ``ASEAtoms`` object containing the atoms of a single molecule
     """
 
     # The number of atoms in a molecule can be determined from info in CIF file

@@ -39,12 +39,12 @@ class PairDistributionFunction(Observable):
 
         """
         Get or set the independent variables, the atomic separation distance r
-        (in Ang)
+        (in ``Ang``)
 
         Returns
         -------
         dict
-            The independent_variables
+            The independent variables
         """
 
         return self._independent_variables
@@ -59,12 +59,12 @@ class PairDistributionFunction(Observable):
 
         """
         Get or set the dependent variables, the pair distribution function (in
-        arb)
+        ``arb``)
 
         Returns
         -------
         dict
-            The dependent_variables
+            The dependent variables
         """
 
         return self._dependent_variables
@@ -74,12 +74,12 @@ class PairDistributionFunction(Observable):
 
         """
         Get or set the errors on the dependent variables, the pair distribution
-        function (in arb)
+        function (in ``arb``)
 
         Returns
         -------
         dict
-            The errors on the dependent variables
+            The errors on the ``dependent_variables``
         """
 
         return self._errors
@@ -93,7 +93,7 @@ class PairDistributionFunction(Observable):
     def r(self):
 
         """
-        Get or set the value of the atomc separation distance (in Ang)
+        Get or set the value of the atomc separation distance (in ``Ang``)
         """
 
         try:
@@ -116,7 +116,7 @@ class PairDistributionFunction(Observable):
     def PDF(self):
 
         """
-        Get the value of the total pair distribution function (in barn)
+        Get the value of the total pair distribution function (in ``barn``)
         """
 
         try:
@@ -128,7 +128,7 @@ class PairDistributionFunction(Observable):
 
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
-        Trajectory
+        ``Trajectory``
 
         The total pair distribution function (``pdf.PDF``) has the form:
 
@@ -153,15 +153,15 @@ class PairDistributionFunction(Observable):
         Independent variables can either be set previously or defined within
         settings.
 
-        A number of frames can be specified, from which the pdf and its error
-        are calculated. If the number of frames is too large relative to the run
-        length, the samples will be correlated, which will result in an
+        A number of frames can be specified, from which the ``PDF`` and its
+        error are calculated. If the number of frames is too large relative to
+        the run length, the samples will be correlated, which will result in an
         underestimate of the error.
 
         Parameters
         ----------
         MD_input : Trajectory
-            An MD Trajectory
+            An MD ``Trajectory``
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
@@ -180,29 +180,30 @@ class PairDistributionFunction(Observable):
                 MDMC.common.atom_properties (i.e. if it has been isotopically
                 substituted).
             r_min : float
-                The minimum r (atomic separation) for which the PDF will be
-                calculated. If this, r_max, and r_step are passed then these
-                will create a range for the independent variable r, which will
-                overwrite any r which has previously been defined. This cannot
-                be passed if r is passed.
+                The minimum ``r`` (atomic separation) for which the PDF will be
+                calculated. If this, ``r_max``, and ``r_step`` are passed then
+                these will create a range for the independent variable ``r``,
+                which will overwrite any ``r`` which has previously been
+                defined. This cannot be passed if ``r`` is passed.
             r_max : float
-                The maximum r (atomic separation) for which the PDF will be
-                calculated. If this, r_min, and r_step are passed then these
-                will create a range for the independent variable r, which will
-                overwrite any r which has previously been defined. This cannot
-                be passed if r is passed.
+                The maximum ``r`` (atomic separation) for which the PDF will be
+                calculated. If this, ``r_min``, and ``r_step`` are passed then
+                these will create a range for the independent variable ``r``,
+                which will overwrite any ``r`` which has previously been
+                defined. This cannot be passed if ``r`` is passed.
             r_step : float
-                The step size of r (atomic separation) for which the PDF will be
-                calculated. If this, r_min, and r_max are passed then these
-                will create a range for the independent variable r, which will
-                overwrite any r which has previously been defined. This cannot
-                be passed if r is passed.
-            r : array
-                The uniform r values for which the PDF will be calculated. This
-                cannot be passed if r_min, r_max, and r_step are passed.
+                The step size of ``r`` (atomic separation) for which the PDF
+                will be calculated. If this, ``r_min``, and ``r_max`` are passed
+                then these will create a range for the independent variable
+                ``r``, which will overwrite any ``r`` which has previously been
+                defined. This cannot be passed if ``r`` is passed.
+            r : numpy.ndarray
+                The uniform ``r`` values for which the PDF will be calculated.
+                This cannot be passed if ``r_min``, ``r_max``, and ``r_step``
+                are passed.
             dimensions : array-like
-                A 3 element array-like (list, tuple) with the dimensions of the
-                Universe.
+                A 3 element `array-like` (`list`, `tuple`) with the dimensions
+                of the ``Universe``.
 
         Examples
         --------
@@ -281,32 +282,33 @@ class PairDistributionFunction(Observable):
         Parses the MD settings
 
         This includes setting:
-            - the number of evenly spaced frames for which the PDF will be
+            - the number of evenly spaced frames for which the ``PDF`` will be
               averaged
-            - the partial pairs for which PDF will be calculated
-            - the elements involved in the PDF
+            - the partial pairs for which ``PDF`` will be calculated
+            - the elements involved in the ``PDF``
             - the weights for each element
             - the volume of the universe
-            - the independent variables (r)
+            - the independent variables (``r``)
 
         Parameters
         ----------
         settings : dict
-            A dictionary of settings to be parsed
+            A `dict` of settings to be parsed
 
         Raises
         ------
         ValueError
-            If n_frames is less than 1 or greater than the number of frames in
-            the trajectory
+            If ``n_frames`` is less than 1 or greater than the number of frames
+            in the ``Trajectory``
         TypeError
-            If r is in settings as well any of r_min,. r_max, and r_step
+            If ``r`` is in settings as well any of ``r_min``, ``r_max``, and
+            ``r_step``
 
         Warnings
         --------
         UserWarning
-            If one or two of r_min, r_max, and r_step have been passed, user is
-            warned that three are required to set r.
+            If one or two of ``r_min``, ``r_max``, and ``r_step`` have been
+            passed, user is warned that three are required to set ``r``.
         """
 
         # np.max ensures that n_frames is at least 1 (relevant if
@@ -378,19 +380,19 @@ class PairDistributionFunction(Observable):
     def _calculate_histogram(self, configuration):
 
         """
-        Partitions the atomic positions into regions where they are within r_max
-        from all other atoms
+        Partitions the atomic positions into regions where they are within
+        ``r_max`` from all other atoms
         """
 
         def get_component_lengths(universe_dim):
 
             """
-            Use r values for each component that are at least as big as r_max,
-            but that are a factor of the dimensions
+            Use ``r`` values for each component that are at least as big as
+            ``r_max``, but that are a factor of the dimensions
 
-            When r > r_max, some atom pairs within each partition will have
-            separations which will not be histogrammed (as they are > r_max),
-            however this is unavoidable
+            When ``r > r_max``, some atom pairs within each partition will have
+            separations which will not be histogrammed (as they are
+            ``> r_max``), however this is unavoidable
             """
 
             r_max = np.max(self.independent_variables['r'])
@@ -464,31 +466,32 @@ class PairDistributionFunction(Observable):
 
         """
         Partitions the atomic positions into paritions of dimensions specified
-        by part_comps
+        by ``part_comps``
 
-        Atoms are grouped in partitions by element
+        ``Atom`` objects are grouped in partitions by ``Atom.element``
 
         Parameters
         ----------
-        positions : array
-            array of arrays, where each array is 3 elements specifying the
-            position of an atom
+        positions : numpy.ndarray
+            ``array`` of `arrays`, where each ``array`` is 3 elements specifying
+            the ``Atom.position``
         element_list : list
-            A list of strings with the same length as positions. Each string
-            specifies the element of the atom for the corresponding index in
-            positions.
-        part_comps : array
+            A `list` of `str` with the same length as ``positions``. Each `str`
+            specifies the ``Atom.element`` for the corresponding index in
+            ``positions``.
+        part_comps : numpy.ndarray
             A 3 element array specifying the length of each component for all
             partitions
 
         Returns
         -------
         dict
-            elem:partitions, where each elem is taken from element_list, and
-            partitions is a dictionary of index:positions, where index is a
-            tuple of 3 ints specifying the index of a partition, and positions
-            is an array of the positions of the atoms which are located within
-            the partition.
+            ``{elem:partitions}``, where each ``elem`` is taken from
+            ``element_list``, and ``partitions`` is a `dict` of
+            ``{index:positions}``, where ``index`` is a `tuple` of 3 `int`
+            specifying the index of a partition, and ``positions``
+            is an ``array`` of the positions of the atoms which are located
+            within the partition.
         """
 
         # Set up a partitions dictionary separated by element
@@ -528,17 +531,17 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        partition_components : array
-            3 element array of floats, where each float is the length of one
-            component of a partition. For example (1., 2., 3.) would mean that
-            every component was length 1. in the x direction, 2. in the y
+        partition_components : numpy.ndarray
+            3 element ``array`` of `float`, where each `float` is the length of
+            one component of a partition. For example (1., 2., 3.) would mean
+            that every component was length 1. in the x direction, 2. in the y
             direction, and 3. in the z direction.
 
         Returns
         -------
         list of tuples
-            (parition1, partition2) where partition1 and partition2 are 3
-            element arrays with the indexes of the partition. Each pair of
+            ``(parition1, partition2)`` where ``partition1`` and ``partition2``
+            are 3 element arrays with the indexes of the partition. Each pair of
             partitions are neighbours.
         """
 
@@ -569,20 +572,21 @@ class PairDistributionFunction(Observable):
     def _calculate_histogram_from_position_pairs(self, position_pairs):
 
         """
-        Returns a histogram of pair separations calculated from position_pairs
+        Returns a histogram of pair separations calculated from
+        ``position_pairs``
 
         Parameters
         ----------
-        position_pairs : nd.array
-            An array of 2 element tuples, where each element is a 3 element
-            vector specifying a position.
+        position_pairs : numpy.ndarray
+            An ``array`` of 2 element `tuples`, where each element is a 3
+            element vector specifying a position.
 
         Returns
         -------
-        nd.array
-            An histogram of length equal to the length of r in
-            independent_variables, where each count is an atomic separation
-            (between the elements in a tuple in position_pairs)
+        numpy.ndarray
+            An histogram of length equal to the length of ``r`` in
+            ``independent_variables``, where each count is an atomic separation
+            (between the elements in a `tuple` in ``position_pairs``)
         """
 
         # Use np.histogram to get empty array of correct size and bin edges
@@ -625,11 +629,11 @@ class PairDistributionFunction(Observable):
         """
         Calculates the Euclidean norm of a vector
 
-        numba.jit results in ~10x speed up over np.linalg.norm
+        ``numba.jit`` results in ~10x speed up over ``np.linalg.norm``
 
         Parameters
         ----------
-        vector : array
+        vector : numpy.ndarray
             The vector for which the Euclidean norm (Euclidean length,
             L2 distance) is calculated
         """
@@ -643,22 +647,22 @@ class PairDistributionFunction(Observable):
         Sets the weights for each element
 
         Uses any scattering lengths passed in b_coh, but defaults to values in
-        MDMC.common.atom_properties
+        ``MDMC.common.atom_properties``
 
         Parameters
         ----------
         unique_elements : list of str
-            Where each str specifies an element
+            Where each `str` specifies an element
         b_coh : dict
-            (element:b_c) where element is a str specifying an element occuring
-            in unique_elements, and b_c is the weight (coherent scattering
-            length) to be set for that element
+            ``(element:b_c)`` where ``element`` is a `str` specifying an element
+            occuring in ``unique_elements``, and ``b_c`` is the weight (coherent
+            scattering length) to be set for that element
 
         Returns
         -------
         dict
-            (element:weight) where element is a str and weight is the
-            corresponding weight
+            ``(element:weight)`` where ``element`` is a `str` and ``weight`` is
+            the corresponding weight
         """
 
         return {element:b_coh.get(element, B_COH[element]) for element
@@ -673,15 +677,15 @@ class PairDistributionFunction(Observable):
         Parameters
         ----------
         unique_elements : list of str
-            Where each str specifies an element
+            Where each `str` specifies an element
         element_list : list of str
-            A list of the elements for every atom in the trajectory
+            A `list` of the elements for every ``Atom`` in the ``Trajectory``
 
         Returns
         -------
         dict
-            (element:number) where element is a str and number is the number of
-            atoms of the that element in the element list
+            ``(element:number)`` where ``element`` is a `str` and ``number`` is
+            the number of atoms of the that element in the ``element_list``
         """
 
         return {element:element_list.count(element) for element

@@ -1,6 +1,6 @@
 .. _common-label:
 
-Common
+common
 ======
 
 .. toctree::
@@ -8,6 +8,7 @@ Common
 
   ./common/constants
   ./common/decorators
+  ./common/df_operations
   ./common/mathematics
   ./common/resolution_functions
   ./common/units

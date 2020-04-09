@@ -30,8 +30,8 @@ class MDEngine(ABC):
 
         Returns
         -------
-        Configuration
-            the atomic positions
+        ``Configuration``
+            The atomic positions
         """
 
         pass
@@ -40,15 +40,17 @@ class MDEngine(ABC):
     def setup_universe(self, universe, **settings):
 
         """
-        Creates a universe configuration and populates with structural units
+        Creates a ``Universe.configuration`` and populates with
+        ``StructuralUnit``
 
         Parameters
         ----------
         universe : Universe
-            a molecular dynamics Universe which will be setup in the engine.
+            A molecular dynamics ``Universe`` which will be setup in the
+            ``MDEngine``.
         **settings
             The majority of these are generic but some are specific to the
-            MDEngine that is being used.
+            ``MDEngine`` that is being used.
         """
 
         pass
@@ -57,16 +59,17 @@ class MDEngine(ABC):
     def setup_simulation(self, **settings):
 
         """
-        Sets the options required to perform a simulation on a setup universe.
-        Must follow a call to setup_universe().
+        Sets the options required to perform a simulation on a setup
+        ``Universe``. Must follow a call to ``setup_universe()``.
 
         Parameters
         ----------
         universe : Universe
-            a molecular dynamics Universe which will be simulated in the engine.
+            A molecular dynamics ``Universe`` which will be simulated in the
+            ``MDEngine``.
         settings**
             The majority of these are generic but some are specific to the
-            MDEngine that is being used.
+            ``MDEngine`` that is being used.
         """
 
         pass
@@ -80,7 +83,7 @@ class MDEngine(ABC):
         Parameters
         ----------
         n_steps : int
-            maximum number of steps for the energy minimization.
+            Maximum number of steps for the energy minimization.
         """
 
         pass
@@ -89,16 +92,16 @@ class MDEngine(ABC):
     def run(self, n_steps, equilibration):
 
         """
-        Runs a simulation.  Must follow a call to setup_universe() and
-        setup_simulation().
+        Runs a simulation.  Must follow a call to ``setup_universe()`` and
+        ``setup_simulation()``.
 
         Parameters
         ----------
         n_steps : int
-            number of steps for the time integrator.
+            Number of steps for the time integrator.
         equilibration : bool
-            If True, run is equilibration which does not store the trajectory.
-            Otherwise run is prodution.
+            If `True`, run is equilibration which does not store the
+            ``trajectory``. Otherwise run is prodution.
         """
 
         pass
@@ -107,12 +110,12 @@ class MDEngine(ABC):
     def convert_trajectory(self):
 
         """
-        Parses the trajectory from the MDEngine format into MDMC format
+        Parses the trajectory from the ``MDEngine`` format into MDMC format
 
         Returns
         -------
-        Trajectory
-            the trajectory from the most recent production simulation
+        ``Trajectory``
+            The ``Trajectory`` from the most recent production simulation
         """
 
         # convert_trajectory has no range function as it is assumed that the
@@ -124,7 +127,8 @@ class MDEngine(ABC):
     def update_parameters(self):
 
         """
-        Updates the MD engine force field parameters from the universe
+        Updates the ``MDEngine`` force field ``Parameter`` objects from the
+        ``Universe``
         """
 
         pass
@@ -133,14 +137,14 @@ class MDEngine(ABC):
     def save_config(self):
 
         """
-        Sets self.saved_config to the current configuration
+        Sets ``self.saved_config`` to the current configuration
         """
 
     @abstractmethod
     def reset_config(self):
 
         """
-        Resets the configuration of the simulation to that in saved_config
+        Resets the configuration of the simulation to that in ``saved_config``
         """
 
         pass

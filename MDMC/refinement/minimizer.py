@@ -22,26 +22,26 @@ class Minimizer(ABC):
     MC_norm : float
         Normalization parameter for MC which determines the accept/reject ratio
     params : list
-        A list of Parameter objects which will be fit
+        A `list` of ``Parameter`` objects which will be fit
     distribution : str, optional
-        The distribution from which Parameter changes are selected
+        The distribution from which ``Parameter`` changes are selected
 
     Attributes
     ----------
-    comm : Intracomm
+    comm : mpi4py.MPI.Intracomm
         MPI Intracomm which has all of the specified processors
     history : list
-        A list of minimization history, where each element contains the FoM, a
-        list of the Parameters and a str with whether the step was Accepted or
-        Rejected.
+        A `list` of minimization history, where each element contains the FoM, a
+        `list` of the ``Parameters`` and a `str` with whether the step was
+        Accepted or Rejected.
     FoM : float
-        The FoM from the current Minimizer step
+        The FoM from the current ``Minimizer`` step
     FoM_old : float
-        The FoM from the previous Minimizer step
+        The FoM from the previous ``Minimizer`` step
     params : list
-        A list of Parameter objects being fitted
+        A `list` of ``Parameter`` objects being fitted
     params_old_values : list
-        A list of the values of the Parameter objects from the previous
+        A `list` of the values of the ``Parameter`` objects from the previous
         minimizer step
     state_changed : bool
         If the MMC algorithm resulted in the step being Accepted or Rejected
@@ -95,7 +95,7 @@ class Minimizer(ABC):
         Returns
         -------
         float
-            Maximum Parameter value change
+            Maximum ``Parameter`` value change
         """
 
         return 0.01
@@ -110,7 +110,7 @@ class Minimizer(ABC):
         Returns
         -------
         bool
-            True if the state should be change
+            `True` if the state should be changed
         """
 
         raise NotImplementedError
@@ -119,13 +119,13 @@ class Minimizer(ABC):
     def change_parameters(self, params):
 
         """
-        Selects a new value for each parameter from a distribution centered
+        Selects a new value for each ``Parameter`` from a distribution centered
         around the current value
 
         Parameters
         ----------
         params : list
-            All Parameters that are being refined
+            All ``Parameter`` objects that are being refined
         """
 
         raise NotImplementedError
@@ -146,12 +146,12 @@ class Minimizer(ABC):
         Parameters
         ----------
         params : list
-            All parameters to validate
+            All ``Parameter`` objects to validate
 
         Raises
         ------
         ValueError
-            If any parameter has is fixed
+            If any ``Parameter`` is fixed
         """
 
         for param in params:
@@ -162,7 +162,7 @@ class Minimizer(ABC):
 class MMC(Minimizer):
 
     """
-    Minimizer employing the Metropolis-Hastings algorithm
+    ``Minimizer`` employing the Metropolis-Hastings algorithm
     """
 
     def step(self, FoM):
@@ -202,12 +202,12 @@ class MMC(Minimizer):
 
         """
         Stochastic determination of whether the state should change based on the
-        FOM
+        FoM
 
         Returns
         -------
         bool
-            True if the state should be change
+            `True` if the state should be change
         """
 
         # Only determine if state will be changed on rank 0 process
@@ -230,7 +230,7 @@ class MMC(Minimizer):
         Parameters
         ----------
         params : list
-            All Parameters that are being refined
+            All ``Parameter`` objects that are being refined
         """
 
         # Only calculate magnitude of parameter changes on rank 0 process, so
@@ -251,7 +251,7 @@ class MMC(Minimizer):
     def reset_params(self):
 
         """
-        Resets the Parameter values to the values from the previous MMC step
+        Resets the ``Parameter`` values to the values from the previous MMC step
         """
 
         for i, param in enumerate(self.params):
