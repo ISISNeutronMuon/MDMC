@@ -1,0 +1,19 @@
+version: '3.0'
+services:
+  mdmc:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - notebooks:/mdmc/notebooks
+      - "/tmp/.X11-unix:/tmp/.X11-unix"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        export DISPLAY=$DISPLAY
+        pip3 install git+https://$UNAME:$PWORD@github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
+        jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+    image: mdmc/mdmc
+volumes:
+  notebooks:
