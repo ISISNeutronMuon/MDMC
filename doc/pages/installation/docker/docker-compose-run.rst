@@ -11,3 +11,12 @@ into a browser.
 server was started, please press ctrl-c and then answer "y" to shutdown the
 Jupyter server; this will exit Jupyter gracefully and help avoid conflict when
 running this setup again.
+
+To restart the container, simply run:
+
+.. code-block:: bash
+
+  docker-compose up
+
+Any notebooks which had been previously saved will still be available, unless
+you explicitly remove the Docker volume (using :code:`docker volume rm`).
