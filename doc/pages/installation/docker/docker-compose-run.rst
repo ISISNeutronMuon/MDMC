@@ -12,7 +12,7 @@ will take 30-60 s as MDMC is downloaded.
   docker-compose up
 
 This will start a Jupyter notebook server which will generate some URLs. To
-access the server, open the final URL (it should start http://127.0.0.1:8888)
+access the server, open the URL starting with :code:`http://127.0.0.1:8888`
 into a browser.  The MDMC tutorials will also be included within the directory
 in which the Jupyter server is started.  This directory will also exist outside
 of the container (in the directory from which you ran
