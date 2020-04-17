@@ -11,9 +11,9 @@ distributions is `here <https://docs.docker.com/install/>`_. If you experience
 problems with this installation, perhaps due to your specific OS version or
 otherwise, please do not hesitate to ask us questions about this.
 
-By default, Docker is not configured to enable GUI visualisation.  To enable
-this it is possible to use the X11 system, described below.  If X11 is not
-enabled, all MDMC functionality will be available except the GUI.
+By default, Docker is not configured to enable GUI visualisation (a feature of Docker and containers).  To enable
+this use the X11 system, described below. GUI is for example needed for visualising molecule / universe
+setups with MDMC. However, such setups can also be inspected with MDMC text commands. All MDMC functionality is executable with text commands, but for some use cases GUI visualisation will provide added convenience / value.
 
 Windows
 -------
