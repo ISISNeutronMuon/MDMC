@@ -3,17 +3,28 @@ services:
   mdmc:
     build: .
     ports:
+      # Open a port for Jupyter notebook
       - "8888:8888"
     volumes:
-      - notebooks:/mdmc/notebooks
+      # Create a new directory on host for storing notebooks and use volume to
+      # make this accessible to container
+      - "./mdmc/notebooks:/mdmc/notebooks"
+      # This volume is required for X11 forwarding
       - "/tmp/.X11-unix:/tmp/.X11-unix"
     command:
+      # /bin/bash -c required as docker-compose cannot execute multiple commands
+      # export sets container DISPLAY env variable to host DISPLAY env variable
+      # git clone and pip install is faster than just pip install from git (as
+      # long as you use --depth=1 so all revisions and history are not cloned)
+      # Copy tutorials into volume directory before cd-ing there to run jupyter
+      # notebook server
       - /bin/bash
       - -c
       - |
         export DISPLAY=$DISPLAY
-        pip3 install git+https://$UNAME:$PWORD@github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
+        git clone --depth=1 https://$UNAME:$PWORD@github.com/MDMCproject/MDMCv0.2_pilot
+        pip3 install ./MDMCv0.2_pilot
+        cp -R ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
+        cd /mdmc/notebooks
         jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
     image: mdmc/mdmc
-volumes:
-  notebooks:
