@@ -24,10 +24,6 @@ To test MDMC and GUI visualisation copy and paste Python code from the tutorial
 `Molecular Visualization <../../tutorials/molecular-visualization.ipynb>`_ into
 the Jupyter notebook.
 
-To test MDMC and GUI visualisation copy and paste Python code from the tutorial
-`Molecular Visualization <../../tutorials/molecular-visualization.ipynb>`_ into
-the Jupyter notebook.
-
 **Recommended:** When finished using Jupyter, in terminal where the Jupyter
 server was started, please press ctrl-c and then answer "y" to shutdown the
 Jupyter server; this will exit Jupyter gracefully and help avoid conflict when
