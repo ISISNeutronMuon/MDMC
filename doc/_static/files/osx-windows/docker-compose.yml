@@ -2,6 +2,9 @@ version: '3.0'
 services:
   mdmc:
     build: .
+    # Allocate psuedo-tty to container, which is required for PyLammps to access
+    # LAMMPS library (.so or .dylib), which is does using STDOUT
+    tty: true
     ports:
       # Open a port for Jupyter notebook
       - "8888:8888"
@@ -19,6 +22,8 @@ services:
       # long as you use --depth=1 so all revisions and history are not cloned)
       # Copy tutorials into volume directory before cd-ing there to run jupyter
       # notebook server
+      # Jupyter trust so that tutorial notebooks are considered trusted even
+      # though they have not previously been executed on machine
       - /bin/bash
       - -c
       - |
@@ -27,5 +32,6 @@ services:
         pip3 install ./MDMCv0.2_pilot
         cp -R ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
         cd /mdmc/notebooks
+        jupyter trust /mdmc/notebooks/mdmc_tutorials/*.ipynb
         jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
     image: mdmc/mdmc
