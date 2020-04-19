@@ -1,4 +1,4 @@
-To download the MDMC container (this might take a few minutes), run:
+To download the latest MDMC container (this might take a few minutes), run:
 
 .. code-block:: bash
 
@@ -34,6 +34,10 @@ To restart the container, simply run:
 .. code-block:: bash
 
   docker-compose up
+
+It is not necessary to download the latest version of the MDMC container before
+running the :code:`up` command; however if you would like to then please precede
+it with :code:`docker-compose pull`.
 
 Any notebooks which had been previously saved will still be available, unless
 you explicitly remove the Docker volume (using :code:`docker volume rm`).
