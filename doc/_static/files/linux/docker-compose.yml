@@ -11,7 +11,7 @@ services:
     volumes:
       # Create a new directory on host for storing notebooks and use volume to
       # make this accessible to container
-      - "./mdmc/notebooks:/mdmc/notebooks"
+      - "./mdmc_sync_with_docker:/mdmc/notebooks"
       # This volume is required for X11 forwarding
       - "/tmp/.X11-unix:/tmp/.X11-unix"
     command:
