@@ -1,0 +1,37 @@
+version: '3.0'
+services:
+  mdmc:
+    build: .
+    # Allocate psuedo-tty to container, which is required for PyLammps to access
+    # LAMMPS library (.so or .dylib), which is does using STDOUT
+    tty: true
+    ports:
+      # Open a port for Jupyter notebook
+      - "8888:8888"
+    volumes:
+      # Create a new directory on host for storing notebooks and use volume to
+      # make this accessible to container
+      - "./mdmc_sync_with_docker:/mdmc/notebooks"
+      # This volume is required for X11 forwarding
+      - "/tmp/.X11-unix:/tmp/.X11-unix"
+    command:
+      # /bin/bash -c required as docker-compose cannot execute multiple commands
+      # host.docker.internal is a special DNS name for accessing host ip within
+      # container
+      # git clone and pip install is faster than just pip install from git (as
+      # long as you use --depth=1 so all revisions and history are not cloned)
+      # Copy tutorials into volume directory before cd-ing there to run jupyter
+      # notebook server
+      # Jupyter trust so that tutorial notebooks are considered trusted even
+      # though they have not previously been executed on machine
+      - /bin/bash
+      - -c
+      - |
+        export DISPLAY=host.docker.internal:0
+        git clone --depth=1 https://$UNAME:$PWORD@github.com/MDMCproject/MDMCv0.2_pilot
+        pip3 install ./MDMCv0.2_pilot
+        cp -R ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
+        cd /mdmc/notebooks
+        jupyter trust /mdmc/notebooks/mdmc_tutorials/*.ipynb
+        jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
+    image: mdmc/mdmc

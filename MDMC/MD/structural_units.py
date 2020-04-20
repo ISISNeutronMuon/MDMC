@@ -1166,6 +1166,8 @@ class Molecule(CompositeStructuralUnit):
     name : str, optional
         The name of the structure. The default is `None`.
     **settings
+        ``atoms`` (`list`)
+            A `list` of ``Atom`` which will be included in the ``Molecule``
         ``interactions`` (`list`)
             A `list` of ``Interaction`` acting on atoms within the ``Molecule``.
             The ``interactions`` provides a convenience for declaring

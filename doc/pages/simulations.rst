@@ -29,8 +29,8 @@ be accessed through :class:`~MDMC.MD.simulation.Simulation`, for example the
 :py:meth:`~MDMC.MD.simulation.Simulation.trajectory`.
 
 For in-depth examples of these please see the related tutorials, particularly
-`Building a Universe <tutorials/building-a-universe.ipynb>`__ and
-`Running a Simulation <tutorials/running-a-simulation.ipynb>`__.
+`Building a Universe <../tutorials/building-a-universe.ipynb>`_ and
+`Running a Simulation <../tutorials/running-a-simulation.ipynb>`_.
 
 As mentioned in the :ref:`introduction-label`, MDMC can be used purely to aid
 the setup of MD simulations, without performing a refinement.  It is possible
