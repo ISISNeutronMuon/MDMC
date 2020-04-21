@@ -29,11 +29,14 @@ A short description of how to install these MD engines is included below.
 
 LAMMPS
 ^^^^^^
-To install LAMMPS, please follow `these instructions <https://lammps.sandia.gov/doc/Install_linux.html>`_.
-
 THE MDMC interface to LAMMPS requires that all of the `Standard packages <https://lammps.sandia.gov/doc/Packages_standard.html>`_ are
 included, and also the `USER-MISC <https://lammps.sandia.gov/doc/Packages_details.html#pkg-user-misc>`_
 package.  If you `build LAMMPS <https://lammps.sandia.gov/doc/Build.html>`_ from
 source, please include these packages.  If you are installing LAMMPS from an
 executable, these packages **should** be included, however there is no guarantee
 that this is the case.
+
+The MDMC interface requires `LAMMPS version <https://lammps.sandia.gov/download.html>`_
+*stable_3Mar2020* or greater (more recent)
+
+To install LAMMPS, please follow `these instructions <https://lammps.sandia.gov/doc/Install_linux.html>`_.
