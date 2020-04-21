@@ -1288,8 +1288,8 @@ class BoundingBox:
 
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
-        self.min = self.max = atom_list.pop().position
-        for atom in atom_list:
+        self.min = self.max = atom_list[0].position
+        for atom in atom_list[1:]:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
 
