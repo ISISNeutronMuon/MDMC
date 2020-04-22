@@ -208,10 +208,16 @@ def test_ase_read_cif_atom_init(monkeypatch, ase_atoms, settings):
 
         return MockAtom(atom_type=atom_type, name=name)
 
+    def mock_make_atom_positions_valid(atoms):
+
+        return atoms
+
     monkeypatch.setattr(cif, 'read_cif', mock_read_cif)
     monkeypatch.setattr(cif, '_reduce_ase_unit_cell', mock_reduce_ase_unit_cell)
     monkeypatch.setattr(cif, 'convert_from_ase_atom',
                         mock_convert_from_ase_atom)
+    monkeypatch.setattr(cif, '_make_atom_positions_valid',
+                        mock_make_atom_positions_valid)
 
     settings['add_bonds'] = False
     settings['add_charges'] = False
