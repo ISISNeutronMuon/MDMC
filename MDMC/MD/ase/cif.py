@@ -13,7 +13,8 @@ from ase.io.cif import read_cif
 import numpy as np
 
 from MDMC.MD.ase.conversions import ASEAtoms, convert_from_ase_atom
-from MDMC.MD.structural_units import (Bond, BondAngle, Coulombic, DihedralAngle,
+from MDMC.MD.structural_units import (Bond, BondAngle, BoundingBox, Coulombic,
+                                      DihedralAngle,
                                       get_reduced_chemical_formula)
 from MDMC.MD.interaction_functions import Coulomb
 
@@ -149,6 +150,8 @@ def ase_read_cif(file, **settings):
                                                              cif_geom_def,
                                                              atoms_labels)
                 _create_bonded_interactions(inters_atoms, bonded_key)
+
+    _make_atom_positions_valid(atoms)
 
     return atoms
 
@@ -340,3 +343,23 @@ def _reduce_ase_unit_cell(ase_atoms):
                                            system=None)
     return ASEAtoms(formula, scaled_positions=positions, cell=ase_atoms.cell,
                     info=ase_atoms.info)
+
+
+def _make_atom_positions_valid(atoms):
+
+    """
+    Sets the positions of all atoms are positive (including 0.)
+
+    This is so that all positions are valid within ``Universe``
+
+    Parameters
+    ----------
+    atoms : list
+        A `list` of `Atom` which will have their positions set so that relative
+        distances are preserved and the smallest positions are equal to 0.
+    """
+
+    # Offset atom positions so that they are >= 0.
+    box = BoundingBox(atoms)
+    for atom in atoms:
+        atom.position -= box.min
