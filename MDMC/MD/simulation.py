@@ -16,7 +16,7 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import Coulombic, Dispersion
+from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -439,16 +439,33 @@ class Universe(AtomContainer):
         """
         Adds the atom to ``atom_types`` `dict`
 
+        ``atom_type`` is decided on the following criteria:
+
+          - If an ``Atom`` has the same name and element as an ``Atom`` already
+            in the ``Universe``, it will be assigned the same ``atom_type``.
+          - If an ``Atom`` does not have a name (e.g. ``Atom.name == None``),
+            but has the same element and the same ``Interaction`` objects as an
+            ``Atom`` already in the ``Universe``, it will be assigned the same
+            ``atom_type``.
+          - If an ``Atom`` does not fulfil either of the other criteria, it will
+            be assigned the lowest integer which is not already an ``atom_type``
+            in the ``Universe``
+
         Parameters
         ----------
         atom : Atom
             An ``Atom`` to add to the ``atom_types`` `dict`
         """
 
+
+        if atom.name:
+            inter_key = (atom.element, atom.name)
+        else:
         # Sorting is just to ensure consistent order. As interactions will have
         # different types, sort by id
-        inter_key = (atom.element, atom.name) + tuple(sorted(atom.interactions,
-                                                             key=id))
+            inter_key = (atom.element, ) + tuple(sorted(atom.interactions,
+                                                        k=id))
+
         if atom.atom_type:
             atom_type = atom.atom_type
             if atom_type not in self.atom_types:
