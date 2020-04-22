@@ -581,7 +581,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         #pylint: disable=invalid-name
         region_ID = 'universe'
         self._create_lammps_region(universe, region_ID)
-        n_elements = len(universe.element_dict)
+        n_atom_types = len(universe.atom_types)
 
         # Determine number of bond and angle types
         bonded_interaction_types = [i.name for i in set(universe.interactions)
@@ -602,7 +602,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
         max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
         max_improper_per_atom = self._max_n_interaction(atoms, 'improper')
-        self.lmp.create_box(n_elements,
+        self.lmp.create_box(n_atom_types,
                             region_ID,
                             'bond/types', n_bond_types,
                             'angle/types', n_angle_types,
