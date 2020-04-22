@@ -21,11 +21,12 @@ class MockAtom:
     A mock of the MDMC Atom class
     """
 
-    def __init__(self, atom_type=None, name=None, ID=None):
+    def __init__(self, atom_type=None, name=None, ID=None, position=None):
 
         self.atom_type = atom_type
         self.name = name
         self.ID = ID
+        self.position = position
 
 
 class MockAtoms:
@@ -219,3 +220,30 @@ def test_ase_read_cif_atom_init(monkeypatch, ase_atoms, settings):
         assert settings['atom_types'] == [atom.atom_type for atom in atoms]
     if 'names' in settings:
         assert settings['names'] == [atom.name for atom in atoms]
+
+
+@pytest.mark.parametrize('positions, expected',
+                         [(([0., 0., 0.], [1., 1., 1.], [2., 2., 2.]),
+                           ([0., 0., 0.], [1., 1., 1.], [2., 2., 2.])),
+                          (([-0.5, 2., 8.], [-0.4, -6., 10.], [4., 9., -2.]),
+                           ([0., 8., 10.], [0.1, 0., 12.], [4.5, 15., 0.])),
+                          (([-8., -9., -7.], [1., 1., 1.], [2., 2., 2.]),
+                           ([0., 0., 0.], [9., 10., 8.], [10., 11., 9.])),
+                          (([5., 4., 9.], [10., 1., 4.], [6., 5., 3.]),
+                           ([0., 3., 6.], [5., 0., 1.], [1., 4., 0.])),
+                          (([3., 4., 5.], [5., 4., 3.], [3., 5., 3.]),
+                           ([0., 0., 2.], [2., 0., 0.], [0., 1., 0.])),
+                          (([5., -2., 9.], ),
+                           ([0., 0., 0.], ))])
+def test_make_atom_positions_valid(positions, expected):
+
+    """
+    Tests that `_make_atom_positions_valid` results in the all positions of
+    the atoms being >= 0., with at least one of all x, y and z axes equalling 0,
+    and that relative distances are preserved.
+    """
+
+    atoms = [MockAtom(position=np.array(position)) for position in positions]
+    cif._make_atom_positions_valid(atoms)
+    for atom, expected_atom_position in zip(atoms, expected):
+        assert np.allclose(atom.position, np.array(expected_atom_position))
