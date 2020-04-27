@@ -4,9 +4,12 @@ Contents
 --------
 ff
 force_field_factory
-lammps_engine
+lammps_engine (requires external module lammps.py)
 """
 
 from . import facade_factory
 from . import facade
-from . import lammps_engine
+try:
+    from . import lammps_engine
+except ModuleNotFoundError:
+    pass
