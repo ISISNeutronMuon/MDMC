@@ -4,3 +4,4 @@ pandas
 scipy
 numba
 ase>=3.19
+mpi4py
