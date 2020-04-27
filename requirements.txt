@@ -1,5 +1,5 @@
 netCDF4
-NumPy
+numpy
 pandas
 scipy
 numba
