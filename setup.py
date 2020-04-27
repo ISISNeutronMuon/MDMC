@@ -7,6 +7,6 @@ setup(
     author="Thomas Farmer",
     url="https://github.com/MDMCproject",
     install_requires=["numpy", "scipy", "netCDF4", "pandas", "ase>=3.19",
-                      "numba", mpi4py],
+                      "numba", 'mpi4py'],
     include_package_data=True
 )
