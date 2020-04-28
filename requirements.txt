@@ -1,6 +1,7 @@
 netCDF4
-NumPy
+numpy
 pandas
 scipy
 numba
 ase>=3.19
+mpi4py

@@ -34,8 +34,8 @@ To use X11, either of the following can be installed:
 
 .. include:: docker/docker-compose-env-osx-windows.rst
 
-In the directory where the docker-compose.yml and the .env files are located,
-run:
+At the command line, in the directory where the docker-compose.yml and the .env
+files are located, do the following:
 
 .. include:: docker/docker-compose-run.rst
 
@@ -52,8 +52,17 @@ xQuartz Preferences -> Security select "Allow connections from network clients".
 
 .. include:: docker/docker-compose-env-osx-windows.rst
 
-Then within the xQuartz terminal, in the directory where the docker-compose.yml
-and the .env files are located, run:
+Then in a terminal, in the directory where the docker-compose.yml and the .env
+files are located, do the following:
+
+To allow the Docker container to access the local display using X11, run:
+
+.. code-block:: bash
+
+  xhost +localhost
+
+If you exit XQuartz at any point, you will need to run this command again before
+running :code:`docker-compose up` (see below).
 
 .. include:: docker/docker-compose-run.rst
 
@@ -77,7 +86,7 @@ Alternatively, there are `other methods for installing docker-compose <https://d
 
 .. include:: docker/docker-compose-env-linux.rst
 
-Then within the a terminal, in the directory where the docker-compose.yml
-and the .env files are located, run:
+Then in a terminal, in the directory where the docker-compose.yml and the .env
+files are located, do the following:
 
 .. include:: docker/docker-compose-run.rst
