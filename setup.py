@@ -2,7 +2,7 @@
 Setuptools setup script for MDMC
 
 For full functionality MDMC requires one or more molecular dynamics (MD) engines
-to be installed. These are included in 'extras_require'.
+to be installed. See 'extras_require' for the currently supported engines.
 
 While it is expected that pip will be used install MDMC, it can also be
 installed with the command::
@@ -10,8 +10,8 @@ installed with the command::
     python setup.py install .
 
 Although typically ``extras_require`` can be used to install additional optional
-dependencies, this is not the case here, as the extras are not all available on
-PyPI; therefore a requests.exceptions.HTPPError will be thrown.
+dependencies, this is not currently the case here for LAMMPS, as it is not
+available on PyPI; therefore a ``requests.exceptions.HTPPError`` will be thrown.
 """
 
 import sys
