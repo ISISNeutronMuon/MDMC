@@ -26,7 +26,14 @@ from random import randint
 from tempfile import NamedTemporaryFile
 import warnings
 
-from lammps import PyLammps
+try:
+    from lammps import PyLammps
+except ModuleNotFoundError as err:
+    raise ModuleNotFoundError('The Python interface for LAMMPS (lammps.py) is'
+                              ' not in the PYTHONPATH. See LAMMPS documentation'
+                              ' on Python to rectify this.'
+                              ).with_traceback(err.__traceback__)
+
 import numpy as np
 
 from MDMC.common import units

@@ -1,12 +1,40 @@
+"""
+Setuptools setup script for MDMC
+
+For full functionality MDMC requires one or more molecular dynamics (MD) engines
+to be installed. See 'extras_require' for the currently supported engines.
+
+While it is expected that pip will be used install MDMC, it can also be
+installed with the command::
+
+    python setup.py install .
+
+Although typically ``extras_require`` can be used to install additional optional
+dependencies, this is not currently the case here for LAMMPS, as it is not
+available on PyPI; therefore a ``requests.exceptions.HTPPError`` will be thrown.
+"""
+
+import sys
+
 from setuptools import setup, find_packages
+
+# Check for valid Python version
+if sys.version_info[:2] < (3, 0):
+    print('MDMC requires Python 3.0 or better. Python {0:d}.{1:d}'
+          ' detected'.format(*sys.version_info[:2]))
 
 setup(
     name="MDMC",
-    version="0.2pilot",
+    version="0.2",
+    desription=('A package for optimising classical molecular dynamics'
+                ' parameters by refining against experimental data.'),
     packages=find_packages(),
     author="Thomas Farmer",
-    url="https://github.com/MDMCproject",
+    author_email="support@mdmcproject.org",
+    url="https://mdmcproject.org/",
+    download_url="https://github.com/MDMCproject",
     install_requires=["numpy", "scipy", "netCDF4", "pandas", "ase>=3.19",
                       "numba", 'mpi4py'],
+    extras_require={"LAMMPS": ["lammps"]},
     include_package_data=True
 )

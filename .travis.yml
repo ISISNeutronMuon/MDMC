@@ -1,12 +1,9 @@
 sudo: required
 
-language: python
+language: minimal
 
 services:
   - docker
-
-python:
-  - "3.6"
 
 notifications:
   email: false
