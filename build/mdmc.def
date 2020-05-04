@@ -56,4 +56,10 @@ From: ubuntu:19.10
           -D PKG_VORONOI=on \
           ../cmake
     make
-    make install-python
+    # make install-python installs liblammps.so in incorrect location
+    # So install LAMMPS Python module manually
+    cd /lammps/python
+    python3 install.py -m lammps.py \
+                       -l ../build/liblammps.so \
+                       -v ../src/version.h \
+                       -d /usr/local/lib/python3.7/dist-packages/
