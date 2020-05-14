@@ -28,9 +28,7 @@ To use X11, either of the following can be installed:
 
 .. include:: docker/docker-compose-files.rst
 
-:download:`Download docker-compose configuration file <../../_static/files/osx-windows/docker-compose.yml>`
-
-:download:`Download environment file <../../_static/files/osx-windows/.env>`
+:download:`Download mdmc docker-compose zip <../../_static/files/osx-windows/mdmc.zip>`
 
 .. include:: docker/docker-compose-env-osx-windows.rst
 
@@ -46,9 +44,7 @@ xQuartz Preferences -> Security select "Allow connections from network clients".
 
 .. include:: docker/docker-compose-files.rst
 
-:download:`Download docker-compose configuration file <../../_static/files/osx-windows/docker-compose.yml>`
-
-:download:`Download environment file <../../_static/files/osx-windows/.env>`
+:download:`Download mdmc docker-compose zip <../../_static/files/osx-windows/mdmc.zip>`
 
 .. include:: docker/docker-compose-env-osx-windows.rst
 
@@ -80,9 +76,7 @@ Alternatively, there are `other methods for installing docker-compose <https://d
 
 .. include:: docker/docker-compose-files.rst
 
-:download:`Download docker-compose configuration file <../../_static/files/linux/docker-compose.yml>`
-
-:download:`Download environment file <../../_static/files/linux/.env>`
+:download:`Download mdmc docker-compose tar <../../_static/files/linux/mdmc.tar.gz>`
 
 .. include:: docker/docker-compose-env-linux.rst
 

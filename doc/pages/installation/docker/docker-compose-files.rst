@@ -1,4 +1,4 @@
 To simplify running Docker with the required ports and volumes, please download
-these docker-compose configuration (docker-compose.yml) and environment (.env)
-files.  Please locate the files wherever you wish to run MDMC.  The files must
-be in the same directory.
+the compressed file below, which contains a docker-compose configuration file
+(docker-compose.yml) and an environment file (.env).  Unzip the file wherever
+you wish to run MDMC.
