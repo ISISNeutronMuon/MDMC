@@ -14,7 +14,35 @@
 #
 import os
 import sys
+import shutil
+
 sys.path.insert(0, os.path.abspath('..'))
+
+
+# -- Custom Configuration ----------------------------------------------------
+
+# Add print formatting strings to match Sphinx formatting
+YELLOW = '\033[33m'
+BOLD = '\033[1m'
+END = '\033[0m'
+
+# Zip the docker-compose files within build and move to doc, so that they can
+# be downloaded. Includes creation of doc directories - this doesn't protect
+# against race conditions, but shouldn't be an issue here.
+OSGROUP_FORMAT = {'linux':'gztar', 'osx-windows':'zip'}
+for osgroup, compression in OSGROUP_FORMAT.items():
+    source = '../build/Docker/{}'.format(osgroup)
+    target = '_static/files/{}'.format(osgroup)
+    if not os.path.exists(target):
+        print('{0}Creating directory for docker-compose files...{1}'
+              ' {2}{3}{1}'.format(BOLD, END, YELLOW, target))
+        os.makedirs(target)
+    target = '{}/mdmc'.format(target)
+    print('{0}Creating compressed file for docker-compose files...{1}'
+          ' {2}{3}{1}'.format(BOLD, END, YELLOW, target))
+    shutil.make_archive(target,
+                        compression,
+                        source)
 
 
 # -- Project information -----------------------------------------------------
