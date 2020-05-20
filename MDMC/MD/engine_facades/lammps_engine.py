@@ -714,7 +714,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
                 if self.comm.rank == 0:
-                    lmp_atom_id = self.lmp.atoms[self.lmp.atoms.natoms - 1].id
+                    # As PyLammps has a bug preventing getting atom id from
+                    # self.lmp.atoms[index].id, use number of atoms as proxy for
+                    # new atom id (as it is sequential)
+                    lmp_atom_id = self.lmp.atoms.natoms
                 else:
                     lmp_atom_id = None
                 self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
