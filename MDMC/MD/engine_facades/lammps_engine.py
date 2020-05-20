@@ -98,7 +98,11 @@ class PyLammpsAttribute:
         # PyLammps.system only exists on rank 0 process, so bcast. Conversion
         # from System class (which is a namedtuple) to ordered dict required as
         # System cannot be pickled
-        system_state = self.comm.bcast(self.lmp.system._asdict(), root=0)
+        if self.comm.rank == 0:
+            system_state = self.lmp.system._asdict()
+        else:
+            system_state = None
+        system_state = self.comm.bcast(system_state, root=0)
         # Cast back to namedtuple to remain consist with LAMMPS system attribute
         return namedtuple('System', system_state.keys())(*system_state.values())
 
@@ -116,7 +120,12 @@ class PyLammpsAttribute:
         """
 
         # PyLammps.fixes only exists on rank 0 process, so bcast
-        return self.comm.bcast(self.lmp.fixes, root=0)
+        if self.comm.rank == 0:
+            fixes = self.lmp.fixes
+        else:
+            fixes = None
+
+        return self.comm.bcast(fixes, root=0)
 
     @property
     def fix_styles(self):
@@ -157,7 +166,11 @@ class PyLammpsAttribute:
         """
 
         # PyLammps.dumps only exists on rank 0 process, so bcast.
-        return self.comm.bcast(self.lmp.dumps, root=0)
+        if self.comm.rank == 0:
+            dumps = self.lmp.dumps
+        else:
+            dumps = None
+        return self.comm.bcast(dumps, root=0)
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
