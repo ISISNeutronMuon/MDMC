@@ -713,10 +713,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
-                lmp_atom_id = self.comm.bcast(
-                    self.lmp.atoms[self.lmp.atoms.natoms - 1].id,
-                    root=0)
-                self.atom_dict[atom] = lmp_atom_id
+                if self.comm.rank == 0:
+                    lmp_atom_id = self.lmp.atoms[self.lmp.atoms.natoms - 1].id
+                else:
+                    lmp_atom_id = None
+                self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
 
     def set_config(self, config):
 
