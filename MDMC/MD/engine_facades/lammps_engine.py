@@ -95,7 +95,12 @@ class PyLammpsAttribute:
                 Contains the properties of the simulation box.
         """
 
-        return self.lmp.system
+        # PyLammps.system only exists on rank 0 process, so bcast. Conversion
+        # from System class (which is a namedtuple) to ordered dict required as
+        # System cannot be pickled
+        system_state = self.comm.bcast(self.lmp.system._asdict(), root=0)
+        # Cast back to namedtuple to remain consist with LAMMPS system attribute
+        return namedtuple('System', system_state.keys())(*system_state.values())
 
     @property
     def fixes(self):
@@ -110,7 +115,8 @@ class PyLammpsAttribute:
             ``fix` which is applied
         """
 
-        return self.lmp.fixes
+        # PyLammps.fixes only exists on rank 0 process, so bcast
+        return self.comm.bcast(self.lmp.fixes, root=0)
 
     @property
     def fix_styles(self):
@@ -150,7 +156,8 @@ class PyLammpsAttribute:
         specified timesteps
         """
 
-        return self.lmp.dumps
+        # PyLammps.dumps only exists on rank 0 process, so bcast.
+        return self.comm.bcast(self.lmp.dumps, root=0)
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
@@ -445,20 +452,28 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         # So that the identical calculation is not performed for all processes,
         # only calculate for rank 0 process
-
-        # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
-        # or the individual atoms, so instead this saves the x, y, z, mass
-        # and charge in a NumPy array with the indexes given by the atom ID
-        # (with a -1 offset due to zero index)
-        # The atoms attribute also is not iterable
-        n_atoms = self.system_state.natoms
-        atoms = np.zeros([n_atoms, 5])
-        for i in range(n_atoms):
-            atom = self.lmp.atoms[i]
-            atoms[atom.id-1, :] = ([component for component
-                                    in atom.position]
-                                   + [atom.mass, atom.charge])
-        self._saved_config = atoms
+        if self.comm.rank == 0:
+            # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
+            # or the individual atoms, so instead this saves the x, y, z, mass
+            # and charge in a NumPy array with the indexes given by the atom ID
+            # (with a -1 offset due to zero index)
+            # The atoms attribute also is not itera`ble
+            n_atoms = self.system_state.natoms
+            atoms = np.zeros([n_atoms, 5])
+            for i in range(n_atoms):
+                atom = self.lmp.atoms[i]
+                atoms[atom.id-1, :] = ([component for component
+                                        in atom.position]
+                                       + [atom.mass, atom.charge])
+            saved_config = atoms
+        else:
+            saved_config = None
+        # Broadcast rank 0 saved config to all processes - this is not required
+        # as anything that accesses the _saved_config attribute could be set so
+        # that it only accesses the rank 0 saved config, however currently it is
+        # simpler to duplicate saved config for all processes.
+        saved_config = self.comm.bcast(saved_config, root=0)
+        self._saved_config = saved_config
 
     def reset_config(self):
 
@@ -698,7 +713,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
-                lmp_atom_id = self.lmp.atoms[self.lmp.atoms.natoms - 1].id
+                lmp_atom_id = self.comm.bcast(
+                    self.lmp.atoms[self.lmp.atoms.natoms - 1].id,
+                    root=0)
                 self.atom_dict[atom] = lmp_atom_id
 
     def set_config(self, config):
