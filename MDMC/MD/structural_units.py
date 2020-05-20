@@ -7,7 +7,7 @@ class."""
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
 from copy import deepcopy
-from functools import reduce
+from functools import lru_cache, reduce
 from itertools import count, permutations
 from math import gcd
 from types import MethodType
@@ -1247,8 +1247,18 @@ class Molecule(CompositeStructuralUnit):
             [(Bond, (H1, O)), (Bond, (H2, O))]
         """
 
-        return list(set([pair for atom in self.atom_list
-                         for pair in atom.bonded_interaction_pairs]))
+        # Cache only most recent value, as atom_list only expected to increase
+        @lru_cache(maxsize=1)
+        def get_bonded_interaction_pairs(atom_list):
+            # Preserve the order - required for consistent
+            # bonded_interaction_pairs on different ranks (if using MPI)
+            used = set()
+            return [pair for atom in atom_list for pair
+                    in atom.bonded_interaction_pairs if pair not in used
+                    and (used.add(pair) or True)]
+
+        # Cast to tuple required so that it is hashable for lru_cache
+        return get_bonded_interaction_pairs(tuple(self.atom_list))
 
     @property
     @unit_decorator_getter(unit=units.MASS)
