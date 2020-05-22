@@ -17,9 +17,17 @@ variables when they are read from ``PyLammps`` e.g.
 ``int(lmp.variables['steps'].value)``.
 
 A minor bug in LAMMPS (Dec 2018 version) means that ``nangletypes`` returned
-by ``PyLammps`` is incorrectly set to ``ndihedraltypes``."""
+by ``PyLammps`` is incorrectly set to ``ndihedraltypes``.  This was corrected in
+Mar 2020 release.
 
-from collections import defaultdict
+The PyLammps class (which is what MDMC interfaces to) only outputs on the rank 0
+process when using MPI. This means that accessing PyLammps properties should
+only be done on rank 0, and broadcast to other ranks if necessary. This is also
+true of calls to PyLammps.eval, and may also occur in other cases (anything that
+ends up using the OutputCapture class).
+"""
+
+from collections import defaultdict, namedtuple
 from copy import copy
 from itertools import chain, combinations, count, product, tee
 from random import randint
@@ -33,7 +41,7 @@ except ModuleNotFoundError as err:
                               ' not in the PYTHONPATH. See LAMMPS documentation'
                               ' on Python to rectify this.'
                               ).with_traceback(err.__traceback__)
-
+from mpi4py import MPI
 import numpy as np
 
 from MDMC.common import units
@@ -70,10 +78,16 @@ class PyLammpsAttribute:
 
     def __init__(self, lmp=None, atom_style='full'):
 
+        # Set communicator to MPI predefined intracommunicator instance which
+        # contains all processes
+        self.comm = MPI.COMM_WORLD
+
         if lmp:
             self.lmp = lmp
         else:
-            self.lmp = PyLammps()
+            # Pass communicator to PyLammps to ensure consistency with process
+            # ranks
+            self.lmp = PyLammps(comm=self.comm)
             self.lmp.units('real')
             self.lmp.atom_style(atom_style)
 
@@ -89,7 +103,16 @@ class PyLammpsAttribute:
                 Contains the properties of the simulation box.
         """
 
-        return self.lmp.system
+        # PyLammps.system only exists on rank 0 process, so bcast. Conversion
+        # from System class (which is a namedtuple) to ordered dict required as
+        # System cannot be pickled
+        if self.comm.rank == 0:
+            system_state = self.lmp.system._asdict()
+        else:
+            system_state = None
+        system_state = self.comm.bcast(system_state, root=0)
+        # Cast back to namedtuple to remain consist with LAMMPS system attribute
+        return namedtuple('System', system_state.keys())(*system_state.values())
 
     @property
     def fixes(self):
@@ -104,7 +127,13 @@ class PyLammpsAttribute:
             ``fix` which is applied
         """
 
-        return self.lmp.fixes
+        # PyLammps.fixes only exists on rank 0 process, so bcast
+        if self.comm.rank == 0:
+            fixes = self.lmp.fixes
+        else:
+            fixes = None
+
+        return self.comm.bcast(fixes, root=0)
 
     @property
     def fix_styles(self):
@@ -133,6 +162,23 @@ class PyLammpsAttribute:
         """
 
         return [fix['name'] for fix in self.fixes]
+
+    @property
+    def dumps(self):
+
+        """
+        Get the PyLammps wrapper list of dumps
+
+        Dumps are LAMMPS commands which write atom quantities to file for
+        specified timesteps
+        """
+
+        # PyLammps.dumps only exists on rank 0 process, so bcast.
+        if self.comm.rank == 0:
+            dumps = self.lmp.dumps
+        else:
+            dumps = None
+        return self.comm.bcast(dumps, root=0)
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
@@ -384,10 +430,17 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def run(self, n_steps, equilibration=False):
         if not equilibration:
             # Remove previous dumps if they exist
-            if 'traj1' in [dump['name'] for dump in self.lmp.dumps]:
+            if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
-            self.trajectory_file = NamedTemporaryFile()
+            if self.comm.rank == 0:
+                self.trajectory_file = NamedTemporaryFile()
+                f_name = self.trajectory_file.name
+            else:
+                f_name = None
+            f_name = self.comm.bcast(f_name, root=0)
+            if self.comm.rank != 0:
+                self.trajectory_file = open(f_name)
             # Custom trajectory output just saves the atom ID, type and
             # positions
             self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
@@ -418,18 +471,30 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     def save_config(self):
 
-        # It is not possible to deepcopy the LAMMPS wrapper atoms attribute, or
-        # the individual atoms, so instead this saves the x, y, z, mass and
-        # charge in a NumPy array with the indexes given by the atom ID (with a
-        # -1 offset due to zero index)
-        # The atoms attribute also is not iterable
-        n_atoms = self.system_state.natoms
-        atoms = np.zeros([n_atoms, 5])
-        for i in range(n_atoms):
-            atom = self.lmp.atoms[i]
-            atoms[atom.id-1, :] = ([component for component in atom.position]
-                                   + [atom.mass, atom.charge])
-        self._saved_config = atoms
+        # So that the identical calculation is not performed for all processes,
+        # only calculate for rank 0 process
+        if self.comm.rank == 0:
+            # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
+            # or the individual atoms, so instead this saves the x, y, z, mass
+            # and charge in a NumPy array with the indexes given by the atom ID
+            # (with a -1 offset due to zero index)
+            # The atoms attribute also is not itera`ble
+            n_atoms = self.system_state.natoms
+            atoms = np.zeros([n_atoms, 5])
+            for i in range(n_atoms):
+                atom = self.lmp.atoms[i]
+                atoms[atom.id-1, :] = ([component for component
+                                        in atom.position]
+                                       + [atom.mass, atom.charge])
+            saved_config = atoms
+        else:
+            saved_config = None
+        # Broadcast rank 0 saved config to all processes - this is not required
+        # as anything that accesses the _saved_config attribute could be set so
+        # that it only accesses the rank 0 saved config, however currently it is
+        # simpler to duplicate saved config for all processes.
+        saved_config = self.comm.bcast(saved_config, root=0)
+        self._saved_config = saved_config
 
     def reset_config(self):
 
@@ -466,8 +531,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         The MDMC ``Universe`` which has been converted to this
         ``LAMMPSUniverse``.
     atom_dict : dict
-        A `dict` with {``MDMC_atom``: ``LAMMPS_atom``}, where ``MDMC_atom`` is
-        an MDMC ``Atom`` and ``LAMMPS_atom`` is the corresponding LAMMPS
+        A `dict` with {``MDMC_atom``: ``LAMMPS_atom_id``}, where ``MDMC_atom``
+        is an MDMC ``Atom`` and ``LAMMPS_atom`` is the corresponding LAMMPS
         ``Atom``.
     atom_types : dict
         A `dict` with {``type_ID``: ``MDMC_atom_group``}, where the ``type_ID``
@@ -669,7 +734,14 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
-                self.atom_dict[atom] = self.lmp.atoms[self.lmp.atoms.natoms - 1]
+                if self.comm.rank == 0:
+                    # As PyLammps has a bug preventing getting atom id from
+                    # self.lmp.atoms[index].id, use number of atoms as proxy for
+                    # new atom id (as it is sequential)
+                    lmp_atom_id = self.lmp.atoms.natoms
+                else:
+                    lmp_atom_id = None
+                self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
 
     def set_config(self, config):
 
@@ -892,10 +964,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
             ``charge is None``)
         """
 
-        for atom, lmp_atom in self.atom_dict.items():
+        for atom, lmp_atom_id in self.atom_dict.items():
             try:
                 self.lmp.set('atom',
-                             lmp_atom.id,
+                             lmp_atom_id,
                              'charge',
                              convert_unit(atom.charge))
             except ValueError:
@@ -1000,7 +1072,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # interactions, by appending the lmp_name to 'single/'
             c_b_type = 'single/{0}'.format(lmp_name)
             for atom_tpl in b_i.atoms:
-                atom_IDs = [self.atom_dict[atom].id for atom in atom_tpl]
+                atom_IDs = [self.atom_dict[atom] for atom in atom_tpl]
                 self.lmp.create_bonds(c_b_type,
                                       ID,
                                       *atom_IDs,
