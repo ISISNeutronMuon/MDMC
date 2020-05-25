@@ -49,7 +49,8 @@ to:
 
  - Use :py:meth:`~MDMC.MD.simulation.Universe.add_force_field` to apply
    established force fields (e.g. OPLSAA) to the topology to set the interaction
-   functions and parameters (see `Applying a FieldField` <../tutorials/applying-a-forcefield.ipynb>`_`)
+   functions and parameters (see
+   `Applying a FieldField <../tutorials/applying-a-forcefield.ipynb>`_)
 
 
 .. rubric:: Related Tutorials
