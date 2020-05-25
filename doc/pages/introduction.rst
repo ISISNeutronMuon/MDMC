@@ -3,7 +3,8 @@
 Introduction
 ============
 
-MDMC is separated into two sections, the simulation and the refinement:
+MDMC broadly provides two main functions, the MD (Molecular Dynamics)
+simulation and the MC (Monte carlo) refinement of force-field parameters:
 
 Simulation
 ----------
@@ -18,11 +19,12 @@ simulation.
 
 MDMC uses external molecular dynamics packages to run the simulations.
 Currently `LAMMPS <https://lammps.sandia.gov>`_ is the only MD engine
-implemented.
+implemented. The code for MDMC is written such as to be straightforward
+extentable and we welcome requests to which other MD packages should be
+extended to.
 
-MDMC can also be used to run simulations without refinement, providing the
-power of Python scripting and a number of helper methods to simplify setting up
-simulations.
+MDMC can be used to run simulations without refinement, and MDMC comces
+with a number of helper methods aimed at simplifing setting up simulations.
 
 Refinement
 ----------
