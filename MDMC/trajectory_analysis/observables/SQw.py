@@ -304,6 +304,9 @@ class AbstractSQw(Observable):
         self._dependent_variables = {'SQw':self._calculate_SQw()}
         self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
+        # Cleanup the trajectory to reduce memory usage
+        self.trajectory = None
+
     @abstractmethod
     def _set_weights(self):
 
@@ -357,15 +360,17 @@ class AbstractSQw(Observable):
             axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
             # Increase the size of Q vectors up to the required size by padding
             # the start of the array with zeroes
-            Q_vectors = np.pad(self.Q_vectors, (axis_0-shape[0], 0), 'constant')
+            Q_vectors = np.pad(self.Q_vectors, ((0, axis_0-shape[0]),
+                                                (0, 0),
+                                                (0, 0)), 'constant')
             # Change these zeroes to nan's as this can be passed to calculate
             # rho in the _calculate_FQt_single_Q method, resulting in an array
             # of nan's for each zero element.  These arrays are then removed
             # after gathering.
-            Q_vectors[:axis_0-shape[0]] = np.float('nan')
+            Q_vectors[shape[0] - axis_0:] = np.float('nan')
         else:
             Q_vectors = self.Q_vectors
-            axis_0 = shape[0]
+            axis_0 = 0
         # Split the Q vectors into a single array of Q vectors for each
         # processor
         Q_vectors = np.split(Q_vectors, comm.size)
@@ -387,7 +392,7 @@ class AbstractSQw(Observable):
 
         # Remove the padded elements at the start of FQt which will be filled
         # with nan's
-        return FQt[axis_0 - shape[0]:]
+        return FQt[:shape[0] - axis_0]
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, Q_vector):
@@ -403,33 +408,6 @@ class AbstractSQw(Observable):
         """
 
         raise NotImplementedError
-
-    def _calculate_rho(self, Q_vector):
-
-        """
-        Calculates ``t`` dependent number density in reciprocal space for all
-        Q vectors
-
-        As rho is the sum of the contributions for all of the specified Q
-        vectors, these Q vectors should have the same Q value. Includes
-        contributions from all ``Atom`` objects in the ``Trajectory``.
-
-        Parameters
-        ----------
-        Q_vector : numpy.ndarray
-            An ``array`` of one or more Q vectors with the same Q value
-        """
-
-        @jit('float64[:,:], float64[:,:]', nopython=True)
-        def func(positions, Q_vector):
-
-            return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
-                    in range(len(positions))]
-
-        rho_all_atoms = [func(conf.positions, np.array(Q_vector)) for conf
-                         in self.trajectory]
-
-        return np.array(rho_all_atoms)
 
     def _calculate_Q_vectors(self, Q_values):
 
@@ -620,20 +598,34 @@ class SQw(AbstractSQw):
             An ``array`` with dimensions of ``self.t``
         """
 
-        rho = self._calculate_rho(Q_vector)
-
         elements = self.trajectory.element_set
+        FQt_single_Q = np.zeros(len(self.E))
         rho_element = {}
         n_atoms = 0
+
         for element in elements:
             indexes = np.where(np.array(self.trajectory.element_list)
                                == element)
-            rho_element[element] = np.array([np.sum(rho_t[indexes], axis=0)
-                                             for rho_t in rho])
+            element_configs = [config.positions[indexes] for config
+                               in self.trajectory]
+            rho_config = np.zeros((len(element_configs), len(Q_vector)),
+                                  dtype=complex)
+            for i, positions in enumerate(element_configs):
+                rho_config[i, :] = np.sum(calculate_rho(positions,
+                                                        np.array(Q_vector)),
+                                          axis=0)
+            rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
 
+            # Incoherent contribution
+            incoh_weights = self.weights[element]['incoh']
+            for atom_positions in np.swapaxes(element_configs, 0, 1):
+                rho_atom = calculate_rho(atom_positions, np.array(Q_vector))
+                FQt_single_Q_atom = correlation(rho_atom,
+                                                normalise=True)[:len(self.E)]
+                FQt_single_Q += FQt_single_Q_atom * incoh_weights**2
+
         # Calculates the coherent contribution to SQw
-        FQt_single_Q = np.zeros(len(self.E))
         for element1 in elements:
             for element2 in elements:
 
@@ -643,15 +635,6 @@ class SQw(AbstractSQw):
                                               rho_element[element2],
                                               normalise=True)[:len(self.E)]
 
-        # Calculates the incoherent contribution to SQw
-        incoh_weights = [self.weights[atom.element]['incoh'] for atom
-                         in self.trajectory.atoms]
-        for i in np.arange(n_atoms):
-            rho_atom = np.array([rho_t[i] for rho_t in rho])
-            FQt_single_Q_atom = correlation(rho_atom,
-                                            normalise=True)[:len(self.E)]
-            FQt_single_Q += FQt_single_Q_atom * incoh_weights[i]**2
-
         # Normalise to the number of orthogonal vectors
         try:
             norm = np.shape(Q_vector)[0]
@@ -659,3 +642,31 @@ class SQw(AbstractSQw):
             norm = 1.
 
         return FQt_single_Q / (n_atoms * norm)
+
+
+@jit('float64[:,:], float64[:,:]', nopython=True)
+def calculate_rho(positions, Q_vector):
+
+    """
+    Calculates ``t`` dependent number density in reciprocal space for all
+    Q vectors
+
+    As rho is the sum of the contributions for all of the specified Q
+    vectors, these Q vectors should have the same Q value.
+
+    Parameters
+    ----------
+    positions : numpy.ndarray
+        An ``array`` of atomic positions for which the reciprocal space number
+        density should be calculated
+    Q_vector : numpy.ndarray
+        An ``array`` of one or more Q vectors with the same Q value
+
+    Returns
+    -------
+    numpy.ndarray
+        The reciprocal space number density
+    """
+
+    return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
+            in range(len(positions))]
