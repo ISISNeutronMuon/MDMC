@@ -4,7 +4,7 @@ import numpy as np
 
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import correlation
-from MDMC.trajectory_analysis.observables.SQw import AbstractSQw
+from MDMC.trajectory_analysis.observables.SQw import AbstractSQw, calculate_rho
 
 
 class SQwIncoherent(AbstractSQw):
@@ -47,15 +47,18 @@ class SQwIncoherent(AbstractSQw):
         """
 
         n_atoms = len(self.trajectory.atoms)
-        rho = self._calculate_rho(Q_vector)
-
-        # Iterate over rho and autocorrelate for each atom
         FQt_single_Q = np.zeros(len(self.E))
-        for i in np.arange(n_atoms):
-            rho_atom = [rho_t[i] for rho_t in rho]
+
+        # Arrange configs so that axes are [atoms, times, positions] i.e.
+        # iterating over the first axis is iterating over each atom
+        configs = np.swapaxes([config.positions for config in self.trajectory],
+                              0,
+                              1)
+        for atom_positions, weight in zip(configs, self.weights):
+            rho_atom = calculate_rho(atom_positions, np.array(Q_vector))
             FQt_single_Q_atom = correlation(rho_atom,
                                             normalise=True)[:len(self.E)]
-            FQt_single_Q += FQt_single_Q_atom * self.weights[i]
+            FQt_single_Q += FQt_single_Q_atom * weight
 
         # Normalise to the number of orthogonal vectors
         try:

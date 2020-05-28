@@ -4,7 +4,7 @@ import numpy as np
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common.mathematics import correlation
-from MDMC.trajectory_analysis.observables.SQw import AbstractSQw
+from MDMC.trajectory_analysis.observables.SQw import AbstractSQw, calculate_rho
 
 
 class SQwCoherent(AbstractSQw):
@@ -43,16 +43,21 @@ class SQwCoherent(AbstractSQw):
             An ``array`` with dimensions of ``self.t``
         """
 
-        rho = self._calculate_rho(Q_vector)
-
         elements = self.trajectory.element_set
         rho_element = {}
         n_atoms = 0
         for element in elements:
             indexes = np.where(np.array(self.trajectory.element_list)
                                == element)
-            rho_element[element] = np.array([np.sum(rho_t[indexes], axis=0)
-                                             for rho_t in rho])
+            element_configs = [config.positions[indexes] for config
+                               in self.trajectory]
+            rho_config = np.zeros((len(element_configs), len(Q_vector)),
+                                  dtype=complex)
+            for i, positions in enumerate(element_configs):
+                rho_config[i, :] = np.sum(calculate_rho(positions,
+                                                        np.array(Q_vector)),
+                                          axis=0)
+            rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
 
         FQt_single_Q = np.zeros(len(self.E))
