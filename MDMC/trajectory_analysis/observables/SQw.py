@@ -304,6 +304,9 @@ class AbstractSQw(Observable):
         self._dependent_variables = {'SQw':self._calculate_SQw()}
         self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
+        # Cleanup the trajectory to reduce memory usage
+        self.trajectory = None
+
     @abstractmethod
     def _set_weights(self):
 
