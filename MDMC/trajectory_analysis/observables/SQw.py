@@ -357,15 +357,17 @@ class AbstractSQw(Observable):
             axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
             # Increase the size of Q vectors up to the required size by padding
             # the start of the array with zeroes
-            Q_vectors = np.pad(self.Q_vectors, (axis_0-shape[0], 0), 'constant')
+            Q_vectors = np.pad(self.Q_vectors, ((0, axis_0-shape[0]),
+                                                (0, 0),
+                                                (0, 0)), 'constant')
             # Change these zeroes to nan's as this can be passed to calculate
             # rho in the _calculate_FQt_single_Q method, resulting in an array
             # of nan's for each zero element.  These arrays are then removed
             # after gathering.
-            Q_vectors[:axis_0-shape[0]] = np.float('nan')
+            Q_vectors[shape[0] - axis_0:] = np.float('nan')
         else:
             Q_vectors = self.Q_vectors
-            axis_0 = shape[0]
+            axis_0 = 0
         # Split the Q vectors into a single array of Q vectors for each
         # processor
         Q_vectors = np.split(Q_vectors, comm.size)
@@ -387,7 +389,7 @@ class AbstractSQw(Observable):
 
         # Remove the padded elements at the start of FQt which will be filled
         # with nan's
-        return FQt[axis_0 - shape[0]:]
+        return FQt[:shape[0] - axis_0]
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, Q_vector):
