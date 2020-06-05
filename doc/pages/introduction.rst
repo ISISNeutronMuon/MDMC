@@ -4,7 +4,8 @@ Introduction
 ============
 
 MDMC broadly provides two main functions, the MD (Molecular Dynamics)
-simulation and the MC (Monte carlo) refinement of force-field parameters:
+simulation and the MC (Monte Carlo or similar) refinement of force-field
+parameters:
 
 Simulation
 ----------
