@@ -3,7 +3,9 @@
 Introduction
 ============
 
-MDMC is separated into two sections, the simulation and the refinement:
+MDMC broadly provides two main functions, the MD (Molecular Dynamics)
+simulation and the MC (Monte Carlo or similar) refinement of force-field
+parameters:
 
 Simulation
 ----------
@@ -18,19 +20,19 @@ simulation.
 
 MDMC uses external molecular dynamics packages to run the simulations.
 Currently `LAMMPS <https://lammps.sandia.gov>`_ is the only MD engine
-implemented.
+implemented. The code for MDMC is written such as to be extensible and we
+welcome requests of other MD packages to be added.
 
-MDMC can also be used to run simulations without refinement, providing the
-power of Python scripting and a number of helper methods to simplify setting up
-simulations.
+MDMC can be used to run simulations without refinement, and MDMC comces
+with a number of helper methods aimed at simplifing setting up simulations.
 
 Refinement
 ----------
 To :ref:`refine the parameters <parameter-refinement-label>` of a simulation,
 one or more experimental datasets must be provided and a minimiser must be
-selected.  Here are the descriptions of the available experimental observables,
-the minimisers, and the :class:`~MDMC.control.control.Control` class, which runs
-the refinement.
+selected.  Here are the descriptions of the available experimental
+:ref:`observables-modules-label` (the objects representing experimental datasets), the :mod:`~MDMC.refinement.minimizer`, and the
+:class:`~MDMC.control.control.Control` class, which runs the refinement.
 
 It is possible to refine all of the parameters, or to specify a subset to be
 refined, which is shown in the interactive tutorial `Selecting Fitting
