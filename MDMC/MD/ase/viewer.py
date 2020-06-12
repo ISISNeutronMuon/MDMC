@@ -6,18 +6,20 @@ launched. This viewer allows the visualization of atomic positions and bonds.
 """
 
 from functools import partial
+from io import StringIO
 
 from ase.gui.gui import GUI
 from ase.gui.i18n import _
 from ase.gui.images import Images
 from ase.gui.ui import MenuItem
 from ase.gui.view import get_cell_coordinates
+from IPython.display import HTML
 import numpy as np
 
 from MDMC.MD.ase.conversions import get_ase_atoms
 
 
-def view(atoms, cell=None):
+def view(atoms, viewer='x3d', cell=None):
 
     """
     Launches the ASE ``GUI`` for a collection of atoms
@@ -31,11 +33,50 @@ def view(atoms, cell=None):
         The default is `None`.
     """
 
+    atoms = get_ase_atoms(atoms, cell=cell)
+
+    if viewer == 'x3d':
+        return view_x3d(atoms)
+    if viewer == 'ase':
+        return view_ase(atoms)
+    raise ValueError('Unrecognised viewer. Specify either "x3d" or "ase"')
+
+
+def view_ase(atoms):
+
+    """
+    View atom using the ASE viewer
+
+    Parameters
+    ----------
+    ase_atoms : ASEAtoms
+        The ``ASEAtoms`` object to be visualized using the ASE viewer
+    """
+
     atom_images = Images()
-    atom_images.initialize([get_ase_atoms(atoms, cell=cell)])
+    atom_images.initialize([atoms])
 
     viewer = Viewer(atom_images)
     viewer.run()
+
+
+def view_x3d(atoms):
+
+    """
+    View atom using the X3D viewer, which enables inline visualization within
+    a IPython/Jupyter notebook
+
+    Parameters
+    ----------
+    ase_atoms : ASEAtoms
+        The ``ASEAtoms`` object to be visualized using the X3D viewer
+    """
+
+    output = StringIO()
+    atoms.write(output, format='x3d')
+    data = output.getvalue()
+    output.close()
+    return HTML(data)
 
 
 def get_bonds(atoms):
