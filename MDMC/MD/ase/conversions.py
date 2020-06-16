@@ -341,7 +341,7 @@ class X3D(x3d.X3D):
             specular_color))]
         lines += [(3, '</Material>')]
         lines += [(2, '</Appearance>')]
-        lines += [(2, '<Cylinder height="{0:.4f}" radius="0.01"{1}>'.format(
+        lines += [(2, '<Cylinder height="{0:.4f}" radius="0.02"{1}>'.format(
             separation,
             cylinder_subdivision))]
         lines += [(2, '</Cylinder>')]
