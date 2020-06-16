@@ -40,10 +40,28 @@ class ASEAtoms(ase.atoms.Atoms):
             raise ValueError('There must be an ID for every atom')
         self.IDs = IDs
 
+    # format (redefined builtin) is used as this is method signature in ASe base
+    # class
+    #pylint: disable=redefined-builtin
     def write(self, filename, format=None, **kwargs):
 
-        if format == 'x3d':
-            X3D(self).write(filename)
+        """
+        Override ase.atoms.Atoms.write so that writing to X3D uses custom X3D
+        class
+
+        Parameters
+        ----------
+        filename : str
+            The name of the file to which the ``ASEAtoms`` object is written
+        format : str
+            The name of the format of the file
+        **kwargs
+            keyword arguments which are passed to the object which performs the
+            writing
+        """
+
+        if format and format.upper() in ['X3D', 'X3DOM']:
+            X3D(self).write(filename, datatype=format.upper())
         else:
             super().write(filename, format, **kwargs)
 
@@ -207,50 +225,92 @@ def convert_bonds(bonds, index_conv=None):
 
 class X3D(x3d.X3D):
 
+    """
+    Class to write X3DOM html which can be read by web browers
+
+    This is used for inline IPython (Jupyter) visualisation with X3D. It
+    overrides the `write` method of the base class, in order to display bonds
+    as defined within MDMC.
+
+    Parameters
+    ----------
+    atoms : ase.atoms.Atoms
+        The ``ase.atoms.Atoms`` object to write
+    """
+
     def __init__(self, atoms):
 
         super().__init__(atoms)
+        # Minor memory usgae reduction if large number of atoms
         self.reduce_memory = len(self._atoms) > 3000
 
-    def write(self, filename, datatype=None):
-        """Writes output to either an 'X3D' or an 'X3DOM' file, based on
-        the extension. For X3D, filename should end in '.x3d'. For X3DOM,
-        filename should end in '.html'.
+    def write(self, filename, datatype='X3DOM'):
 
-        Args:
-            filename - str or file-like object, output file name or writer
-            datatype - str, output format. 'X3D' or 'X3DOM'. If `None`, format
-                will be determined from the filename"""
+        """
+        Writes output to an 'X3DOM' (html) or 'X3D' file
+
+        Parameters
+        ----------
+        filename : str or file-like
+            The file name to which the ``atoms`` are written
+        datatype : str, optional
+            The output format, which can be 'X3D' or 'X3DOM' (html). If `None`,
+            format will be determined from the `filename`
+        """
+
+        if datatype is None:
+            if filename.endswith('.x3d'):
+                datatype = 'X3D'
+            elif filename.endswith('.html'):
+                datatype = 'X3DOM'
+            else:
+                raise ValueError("filename must end in '.x3d' or '.html'.")
 
         # Write the header
         w = x3d.WriteToFile(filename, 'w')
-        w(0, '<html>')
-        w(1, '<head>')
-        w(2, '<title>ASE atomic visualization</title>')
-        w(2, '<link rel="stylesheet" type="text/css"')
-        w(2, ' href="https://www.x3dom.org/x3dom/release/x3dom.css">')
-        w(2, '</link>')
-        w(2, '<script type="text/javascript"')
-        w(2, ' src="https://www.x3dom.org/x3dom/release/x3dom.js">')
-        w(2, '</script>')
-        w(1, '</head>')
-        w(1, '<body>')
-        w(2, '<X3D width="800px" height="800px">')
-        w(3, '<Scene>')
-        w(4, '<Viewpoint centerOfRotation="{0:.2f} {1:.2f} {2:.2f}"'
-             ' position="{0:.2f} {1:.2f} {3:.2f}"></Viewpoint>'.format(
-                 *self.get_center_of_rotation(), self.get_viewpoint_z()))
+        if datatype == 'X3DOM':
+            w(0, '<html>')
+            w(1, '<head>')
+            w(2, '<title>ASE atomic visualization</title>')
+            w(2, '<link rel="stylesheet" type="text/css"')
+            w(2, ' href="https://www.x3dom.org/x3dom/release/x3dom.css">')
+            w(2, '</link>')
+            w(2, '<script type="text/javascript"')
+            w(2, ' src="https://www.x3dom.org/x3dom/release/x3dom.js">')
+            w(2, '</script>')
+            w(1, '</head>')
+            w(1, '<body>')
+            w(2, '<X3D width="800px" height="800px">')
+            scn_i = 3
+        elif datatype == 'X3D':
+            w(0, '<?xml version="1.0" encoding="UTF-8"?>')
+            w(0, '<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.2//EN" '
+              '"http://www.web3d.org/specifications/x3d-3.2.dtd">')
+            w(0, '<X3D profile="Interchange" version="3.2" '
+              'xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance" '
+              'xsd:noNamespaceSchemaLocation='
+              '"http://www.web3d.org/specifications/x3d-3.2.xsd">')
+            scn_i = 1
+
+        w(scn_i, '<Scene>')
+        w(scn_i, '<Viewpoint centerOfRotation="{0:.2f} {1:.2f} {2:.2f}"'
+                 ' position="{0:.2f} {1:.2f} {3:.2f}"></Viewpoint>'.format(
+                     *self.get_center_of_rotation(), self.get_viewpoint_z()))
+
         for atom in self._atoms:
             for indent, line in self.atom_lines(atom):
                 w(4 + indent, line)
-        for bond in self._atoms.bonds:
+        for bond in getattr(self._atoms, 'bonds', []):
             for indent, line in self.bond_lines(bond):
                 w(4 + indent, line)
 
-        w(3, '</Scene>')
-        w(2, '</X3D>')
-        w(1, '</body>')
-        w(0, '</html>')
+        if datatype == 'X3DOM':
+            w(3, '</Scene>')
+            w(2, '</X3D>')
+            w(1, '</body>')
+            w(0, '</html>')
+        elif datatype == 'X3D':
+            w(0, '</X3D>')
 
     def atom_lines(self, atom):
 
@@ -273,6 +333,7 @@ class X3D(x3d.X3D):
         diffuse_color = 'diffuseColor="{0:.3f} {1:.3f} {2:.3f}"'.format(*color)
 
         if self.reduce_memory:
+            # Decrease the resolution of the spheres
             sphere_subdivision = ' subdivision=12,12'
             specular_color = ''
         else:
@@ -287,6 +348,7 @@ class X3D(x3d.X3D):
                                                  specular_color))]
         lines += [(3, '</Material>')]
         lines += [(2, '</Appearance>')]
+        # ASE covalent radii are too large if bonds are also going to be added
         lines += [(2, '<Sphere radius="{0:.2f}"{1}>'.format(
             ase.data.covalent_radii[atom.number] / 4.,
             sphere_subdivision))]
@@ -323,14 +385,21 @@ class X3D(x3d.X3D):
         positions = [self._atoms[index].position for index in bond]
         origin = positions[0]
         sub = (positions[1] - positions[0])
+        # Separation of the two atoms defines the height of the cylinder (bond)
         separation = np.linalg.norm(sub)
+        # Move one end of the cylinder coincident with one atom
+        origin_shift = origin + np.array([0., separation / 2., 0.])
+
+        # All cylinders (bonds) are oriented along y axis by default
+        # Calculate axis-angle representation in order to set bond rotation
         cylinder = np.array([0., np.abs(separation), 0.])
         normalise = lambda x: x / np.linalg.norm(x)
         uvec1, uvec2 = normalise(cylinder), normalise(sub)
         axis = np.cross(uvec1, uvec2)
         angle = np.linalg.norm(np.arccos(np.dot(uvec1, uvec2)))
 
-        origin_shift = origin + np.array([0., separation / 2., 0.])
+        # Shift the transform center of the cylinder from the center (default)
+        # to one end, so that it is rotated around one of the atoms
         lines = [(0, '<Transform center="0 {0:.4f} 0"'
                      ' translation="{2:.4f} {3:.4f} {4:.4f}"'
                      ' rotation="{5:.4f} {6:.4f} {7:.4f} {1:.4f}">'.format(
@@ -362,7 +431,9 @@ class X3D(x3d.X3D):
             the extents of `atoms.positions`
         """
 
-        atoms = self._atoms
+        atoms = self._atoms\
+        # As ASE always has a defined cell for atoms (it is just [0., 0., 0.] if
+        # it has not been set), cannot simply test for existence
         return (atoms.cell / 2. if not np.all(atoms.cell == np.array([0.] * 3))
                 else np.mean([np.max(atoms.positions, axis=0),
                               np.min(atoms.positions, axis=0)],
@@ -380,10 +451,10 @@ class X3D(x3d.X3D):
             The z position of the viewpoint
         """
 
-        VIEWPOINT_ANGLE = 0.38
+        VIEWPOINT_ANGLE = 0.30
 
         # The viewpoint is always centered on the atoms (or the cell) in the xy
-        # plane. It has been determined that an angle of ~0.38 radians between
+        # plane. It has been determined that an angle of ~0.30 radians between
         # the atom with the greatest extent (or the cell's greatest extent) will
         # be sufficient to display this atom (and therefore all atoms).
         if np.any(self._atoms.cell != np.array([0., 0., 0.])):
