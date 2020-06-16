@@ -19,7 +19,7 @@ import numpy as np
 from MDMC.MD.ase.conversions import get_ase_atoms
 
 
-def view(atoms, viewer='x3d', cell=None):
+def view(atoms, viewer='X3DOM', cell=None):
 
     """
     Launches the ASE ``GUI`` for a collection of atoms
@@ -35,11 +35,11 @@ def view(atoms, viewer='x3d', cell=None):
 
     atoms = get_ase_atoms(atoms, cell=cell)
 
-    if viewer == 'x3d':
-        return view_x3d(atoms)
-    if viewer == 'ase':
+    if viewer == 'X3DOM':
+        return view_x3dom(atoms)
+    if viewer == 'ASE':
         return view_ase(atoms)
-    raise ValueError('Unrecognised viewer. Specify either "x3d" or "ase"')
+    raise ValueError('Unrecognised viewer. Specify either "X3DOM" or "ASE"')
 
 
 def view_ase(atoms):
@@ -60,7 +60,7 @@ def view_ase(atoms):
     viewer.run()
 
 
-def view_x3d(atoms):
+def view_x3dom(atoms):
 
     """
     View atom using the X3D viewer, which enables inline visualization within
@@ -73,7 +73,7 @@ def view_x3d(atoms):
     """
 
     output = StringIO()
-    atoms.write(output, format='x3d')
+    atoms.write(output, format='X3DOM')
     data = output.getvalue()
     output.close()
     return HTML(data)
