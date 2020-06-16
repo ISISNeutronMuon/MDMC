@@ -226,9 +226,9 @@ def convert_bonds(bonds, index_conv=None):
 class X3D(x3d.X3D):
 
     """
-    Class to write X3DOM html which can be read by web browers
+    Class to write X3D or X3DOM (html) which can be read by web browers
 
-    This is used for inline IPython (Jupyter) visualisation with X3D. It
+    This is used for inline IPython (Jupyter) visualisation with X3DOM. It
     overrides the `write` method of the base class, in order to display bonds
     as defined within MDMC.
 
