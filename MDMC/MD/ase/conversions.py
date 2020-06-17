@@ -432,9 +432,12 @@ class X3D(x3d.X3D):
         """
 
         atoms = self._atoms\
-        # As ASE always has a defined cell for atoms (it is just [0., 0., 0.] if
-        # it has not been set), cannot simply test for existence
-        return (atoms.cell / 2. if not np.all(atoms.cell == np.array([0.] * 3))
+        # As ASE always has a defined cell for atoms (it is just
+        # Cell([0., 0., 0.]) if it has not been set), cannot simply test for
+        # existence
+        # Currently only consider orthorhombic cell
+        cell = np.diagonal(atoms.cell)
+        return (cell / 2. if not np.all(cell == np.array([0.] * 3))
                 else np.mean([np.max(atoms.positions, axis=0),
                               np.min(atoms.positions, axis=0)],
                              axis=0))
