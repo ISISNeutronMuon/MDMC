@@ -271,7 +271,7 @@ class X3D(x3d.X3D):
         if datatype == 'X3DOM':
             w(0, '<html>')
             w(1, '<head>')
-            w(2, '<title>ASE atomic visualization</title>')
+            w(2, '<title>MDMC atomic visualization</title>')
             w(2, '<link rel="stylesheet" type="text/css"')
             w(2, ' href="https://www.x3dom.org/x3dom/release/x3dom.css">')
             w(2, '</link>')
@@ -331,21 +331,21 @@ class X3D(x3d.X3D):
 
         color = tuple(ase.data.colors.jmol_colors[atom.number])
         diffuse_color = 'diffuseColor="{0:.3f} {1:.3f} {2:.3f}"'.format(*color)
+        specular_color = 'specularColor="0.5 0.5 0.5"'.format(*color)
 
         if self.reduce_memory:
             # Decrease the resolution of the spheres
             sphere_subdivision = ' subdivision=12,12'
-            specular_color = ''
         else:
             sphere_subdivision = ''
-            specular_color = ' specularColor="0.5 0.5 0.5"'.format(*color)
+
 
         lines = [(0, '<Transform translation="{0:.2f} {1:.2f} {2:.2f}">'.format(
             *atom.position))]
         lines += [(1, '<Shape>')]
         lines += [(2, '<Appearance>')]
-        lines += [(3, '<Material {0}{1}>'.format(diffuse_color,
-                                                 specular_color))]
+        lines += [(3, '<Material {0} {1}>'.format(diffuse_color,
+                                                  specular_color))]
         lines += [(3, '</Material>')]
         lines += [(2, '</Appearance>')]
         # ASE covalent radii are too large if bonds are also going to be added
@@ -377,18 +377,15 @@ class X3D(x3d.X3D):
 
         if self.reduce_memory:
             cylinder_subdivision = ' subdivision=16'
-            specular_color = ''
         else:
             cylinder_subdivision = ''
-            specular_color = ' specularColor="0.5 0.5 0.5"'
 
         positions = [self._atoms[index].position for index in bond]
-        origin = positions[0]
         sub = (positions[1] - positions[0])
         # Separation of the two atoms defines the height of the cylinder (bond)
         separation = np.linalg.norm(sub)
         # Move one end of the cylinder coincident with one atom
-        origin_shift = origin + np.array([0., separation / 2., 0.])
+        origin = positions[0] + np.array([0., separation / 2., 0.])
 
         # All cylinders (bonds) are oriented along y axis by default
         # Calculate axis-angle representation in order to set bond rotation
@@ -403,11 +400,11 @@ class X3D(x3d.X3D):
         lines = [(0, '<Transform center="0 {0:.4f} 0"'
                      ' translation="{2:.4f} {3:.4f} {4:.4f}"'
                      ' rotation="{5:.4f} {6:.4f} {7:.4f} {1:.4f}">'.format(
-                         -separation / 2., angle, *origin_shift, *axis))]
+                         -separation / 2., angle, *origin, *axis))]
         lines += [(1, '<Shape>')]
         lines += [(2, '<Appearance>')]
-        lines += [(3, '<Material diffuseColor="0 0 0"{0}>'.format(
-            specular_color))]
+        lines += [(3, '<Material diffuseColor="0 0 0"'
+                      ' specularColor="0.5 0.5 0.5">')]
         lines += [(3, '</Material>')]
         lines += [(2, '</Appearance>')]
         lines += [(2, '<Cylinder height="{0:.4f}" radius="0.02"{1}>'.format(
@@ -454,14 +451,16 @@ class X3D(x3d.X3D):
             The z position of the viewpoint
         """
 
-        VIEWPOINT_ANGLE = 0.30
-
         # The viewpoint is always centered on the atoms (or the cell) in the xy
         # plane. It has been determined that an angle of ~0.30 radians between
         # the atom with the greatest extent (or the cell's greatest extent) will
         # be sufficient to display this atom (and therefore all atoms).
-        if np.any(self._atoms.cell != np.array([0., 0., 0.])):
-            extents = self._atoms.cell
+        VIEWPOINT_ANGLE = 0.30
+
+        # Currently only consider orthorhombic cell
+        cell = np.diagonal(self._atoms.cell)
+        if np.any(cell != np.array([0., 0., 0.])):
+            extents = cell
         else:
             extents = np.max(self._atoms.positions, axis=0)
 
