@@ -1,13 +1,47 @@
 """Tests conversions between equivalent MDMC and ASE objects
 """
 
+from io import StringIO
+
+import ase
 import numpy as np
 import pytest
 
-import ase
-
 from MDMC.MD.ase import conversions
 from MDMC.MD.structural_units import Atom
+
+
+X3DOMHEADER = ('<html>\n\n'
+               ' <head>\n\n'
+               '  <title>MDMC atomic visualization</title>\n\n'
+               '  <link rel="stylesheet" type="text/css"\n\n'
+               '   href="https://www.x3dom.org/x3dom/release/x3dom.css">\n\n'
+               '  </link>\n\n'
+               '  <script type="text/javascript"\n\n'
+               '   src="https://www.x3dom.org/x3dom/release/x3dom.js">\n\n'
+               '  </script>\n\n'
+               ' </head>\n\n'
+               ' <body>\n\n'
+               '  <X3D width="800px" height="800px">\n\n'
+               '   <Scene>\n\n'
+               '   <Viewpoint centerOfRotation="0.50 0.50 0.50" '
+               'position="0.50 0.50 3.29"></Viewpoint>\n\n'
+               '   </Scene>\n\n'
+               '  </X3D>\n\n'
+               ' </body>\n\n'
+               '</html>\n\n')
+
+X3DHEADER = ('<?xml version="1.0" encoding="UTF-8"?>\n\n'
+             '<!DOCTYPE X3D PUBLIC "ISO//Web3D//DTD X3D 3.2//EN" '
+             '"http://www.web3d.org/specifications/x3d-3.2.dtd">\n\n'
+             '<X3D profile="Interchange" version="3.2" '
+             'xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance" '
+             'xsd:noNamespaceSchemaLocation='
+             '"http://www.web3d.org/specifications/x3d-3.2.xsd">\n\n'
+             ' <Scene>\n\n'
+             ' <Viewpoint centerOfRotation="0.50 0.50 0.50" '
+             'position="0.50 0.50 3.29"></Viewpoint>\n\n'
+             '</X3D>\n\n')
 
 
 class MockAtom:
@@ -177,6 +211,92 @@ def test_convert_bond_index_conversion(bond_atom_IDs):
             assert ase_index == index_conv[ID]
 
 
+@pytest.mark.parametrize('datatype, header',
+                         [('X3DOM', X3DOMHEADER),
+                          ('X3D', X3DHEADER)])
+def test_x3d_write_header_footer(datatype, header):
+
+    """
+    Tests that the correct X3DOM header and footer are written
+
+    An empty ASEAtoms object is passed to X3D
+    """
+
+    x3d = conversions.X3D(conversions.get_ase_atoms([], cell=[1., 1., 1.]))
+    output = StringIO()
+    x3d.write(output, datatype=datatype)
+    assert output.getvalue() == header
+
+
+def test_x3d_atom_lines(monkeypatch):
+
+    """
+    Tests that x3d.atom_lines returns the correct x3d/html lines (with the
+    correct indentation)
+    """
+
+    mock_jmol_colors = [(1.000, 1.000, 1.000),
+                        (0.851, 1.000, 1.000)]
+
+    mock_covalent_radii = [8., 4.]
+
+    monkeypatch.setattr(ase.data.colors, 'jmol_colors', mock_jmol_colors)
+    monkeypatch.setattr(ase.data, 'covalent_radii', mock_covalent_radii)
+
+    atom = Atom('H', position=(1., 2., 3.))
+    ase_atom = conversions.convert_to_ase_atom(atom)
+    ase_atom.number = 1
+    lines = conversions.X3D([]).atom_lines(ase_atom)
+
+    expected = [(0, '<Transform translation="1.00 2.00 3.00">')]
+    expected += [(1, '<Shape>')]
+    expected += [(2, '<Appearance>')]
+    expected += [(3, '<Material diffuseColor="0.851 1.000 1.000"'
+                     ' specularColor="0.5 0.5 0.5">')]
+    expected += [(3, '</Material>')]
+    expected += [(2, '</Appearance>')]
+    expected += [(2, '<Sphere radius="1.00">')]
+    expected += [(2, '</Sphere>')]
+    expected += [(1, '</Shape>')]
+    expected += [(0, '</Transform>')]
+
+    assert len(expected) == len(lines)
+    for i, line in enumerate(lines):
+        assert line == expected[i]
+
+
+def test_x3d_bond_lines(monkeypatch):
+
+    """
+    Tests that x3d.bond_lines returns the correct x3d/html lines (with the
+    correct indentation)
+    """
+
+    atoms = [Atom('H', position=(2., 4., 6.)),
+             Atom('C', position=(6., -2., 9.))]
+    ase_atoms = conversions.get_ase_atoms(atoms)
+    bond = (0, 1)
+    lines = conversions.X3D(ase_atoms).bond_lines(bond)
+
+    expected = [(0, '<Transform center="0 -3.9051 0"'
+                    ' translation="2.0000 7.9051 6.0000"'
+                    ' rotation="0.3841 0.0000 -0.5121 2.4469">')]
+    expected += [(1, '<Shape>')]
+    expected += [(2, '<Appearance>')]
+    expected += [(3, '<Material diffuseColor="0 0 0"'
+                  ' specularColor="0.5 0.5 0.5">')]
+    expected += [(3, '</Material>')]
+    expected += [(2, '</Appearance>')]
+    expected += [(2, '<Cylinder height="7.8102" radius="0.02">')]
+    expected += [(2, '</Cylinder>')]
+    expected += [(1, '</Shape>')]
+    expected += [(0, '</Transform>')]
+
+    assert len(expected) == len(lines)
+    for i, line in enumerate(lines):
+        assert line == expected[i]
+
+
 @pytest.mark.parametrize('cell', [[10., 10., 10.],
                                   [20., 10., 5.]])
 def test_X3D_get_center_of_rotation_cell(cell):
@@ -199,11 +319,32 @@ def test_X3D_get_center_of_rotation_cell(cell):
 def test_X3D_get_center_of_rotation_no_cell(positions, center):
 
     """
-    Tests that the correct center of rotation is calculated when a no cell is
-    set
+    Tests that the correct center of rotation is calculated when no cell is set
     """
 
     atoms = [Atom('H', position=position) for position in positions]
     ase_atoms = conversions.get_ase_atoms(atoms)
     x3d = conversions.X3D(ase_atoms)
     assert np.all(x3d.get_center_of_rotation() == center)
+
+
+@pytest.mark.parametrize('cell, z',
+                         [([10., 10., 10.],
+                           32.8588),
+                          ([5., 5., 5.],
+                           32.8588 / 2.),
+                          ([10., 5., 0.],
+                           18.0714),
+                          ([5., 10., 0.],
+                           18.0714)])
+def test_X3D_get_viewpoint_z_cell(cell, z):
+
+    """
+    Tests that the correct z position for setting the viewpoint is calculated
+    from the cell
+    """
+
+    cell = np.array(cell)
+    ase_atoms = conversions.get_ase_atoms([Atom('H')], cell=cell)
+    x3d = conversions.X3D(ase_atoms)
+    assert np.allclose(x3d.get_viewpoint_z(), z)
