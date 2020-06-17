@@ -121,7 +121,7 @@ def test_convert_from_ase_atom(element, atom_type, name, set_charge):
                            range(0, 25, 1)),
                           ([7, 4, 19, 55],
                            range(0, 4, 1))])
-def test_get_ase_atoms(monkeypatch, IDs, expected):
+def test_get_ase_atoms(IDs, expected):
 
     """
     Tests that an ASEAtoms object can created from a list of atoms
@@ -175,3 +175,35 @@ def test_convert_bond_index_conversion(bond_atom_IDs):
     for ase_pair, ID_pair in zip(ase_bond_atoms, bond_atoms):
         for ase_index, ID in zip(ase_pair, ID_pair):
             assert ase_index == index_conv[ID]
+
+
+@pytest.mark.parametrize('cell', [[10., 10., 10.],
+                                  [20., 10., 5.]])
+def test_X3D_get_center_of_rotation_cell(cell):
+
+    """
+    Tests that the correct center of rotation is calculated when a cell is set
+    """
+
+    cell = np.array(cell)
+    ase_atoms = conversions.get_ase_atoms([Atom('H')], cell=cell)
+    x3d = conversions.X3D(ase_atoms)
+    assert np.all(x3d.get_center_of_rotation() == cell / 2.)
+
+
+@pytest.mark.parametrize('positions, center',
+                         [(([0., 0., 0.], [5., 5., 5.]),
+                           [2.5, 2.5, 2.5]),
+                          (([1., 2., 3.], [5., 5., 5.], [3., 4., 12.]),
+                           [3., 3.5, 7.5])])
+def test_X3D_get_center_of_rotation_no_cell(positions, center):
+
+    """
+    Tests that the correct center of rotation is calculated when a no cell is
+    set
+    """
+
+    atoms = [Atom('H', position=position) for position in positions]
+    ase_atoms = conversions.get_ase_atoms(atoms)
+    x3d = conversions.X3D(ase_atoms)
+    assert np.all(x3d.get_center_of_rotation() == center)
