@@ -281,6 +281,7 @@ class X3D(x3d.X3D):
             w(1, '</head>')
             w(1, '<body>')
             w(2, '<X3D width="800px" height="800px">')
+            # Store next level of indentation and for scene
             scn_i = 3
         elif datatype == 'X3D':
             w(0, '<?xml version="1.0" encoding="UTF-8"?>')
