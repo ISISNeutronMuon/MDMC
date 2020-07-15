@@ -63,7 +63,7 @@ def view_ase(atoms):
 def view_x3dom(atoms):
 
     """
-    View atom using the X3D viewer, which enables inline visualization within
+    View atoms using the X3D viewer, which enables inline visualization within
     a IPython/Jupyter notebook
 
     Parameters
