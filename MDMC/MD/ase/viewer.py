@@ -7,6 +7,7 @@ launched. This viewer allows the visualization of atomic positions and bonds.
 
 from functools import partial
 from io import StringIO
+import warnings
 
 from ase.gui.gui import GUI
 from ase.gui.i18n import _
@@ -19,7 +20,7 @@ import numpy as np
 from MDMC.MD.ase.conversions import get_ase_atoms
 
 
-def view(atoms, viewer='X3DOM', cell=None):
+def view(atoms, viewer='X3DOM', cell=None, **settings):
 
     """
     Launches the ASE ``GUI`` for a collection of atoms
@@ -35,18 +36,21 @@ def view(atoms, viewer='X3DOM', cell=None):
     cell : numpy.ndarray, optional
         An ``array`` of `float` specifying the dimensions of the cell to view.
         The default is `None`.
+    **settings
+        ``max_atoms`` (`int`)
+            Sets the maximum number of atoms that will be viewed
     """
 
     atoms = get_ase_atoms(atoms, cell=cell)
 
     if viewer == 'X3DOM':
-        return view_x3dom(atoms)
+        return view_x3dom(atoms, **settings)
     if viewer == 'ASE':
-        return view_ase(atoms)
+        return view_ase(atoms, **settings)
     raise ValueError('Unrecognised viewer. Specify either "X3DOM" or "ASE"')
 
 
-def view_ase(atoms):
+def view_ase(atoms, **settings):
 
     """
     View atom using the ASE viewer
@@ -55,7 +59,12 @@ def view_ase(atoms):
     ----------
     ase_atoms : ASEAtoms
         The ``ASEAtoms`` object to be visualized using the ASE viewer
+    **settings
+        ``max_atoms`` (`int`)
+            Sets the maximum number of atoms that will be viewed
     """
+
+    atoms = limit_atoms(atoms, settings.get('max_atoms', 8000))
 
     atom_images = Images()
     atom_images.initialize([atoms])
@@ -64,7 +73,7 @@ def view_ase(atoms):
     viewer.run()
 
 
-def view_x3dom(atoms):
+def view_x3dom(atoms, **settings):
 
     """
     View atoms using the X3D viewer, which enables inline visualization within
@@ -74,7 +83,12 @@ def view_x3dom(atoms):
     ----------
     ase_atoms : ASEAtoms
         The ``ASEAtoms`` object to be visualized using the X3D viewer
+    **settings
+        ``max_atoms`` (`int`)
+            Sets the maximum number of atoms that will be viewed
     """
+
+    atoms = limit_atoms(atoms, settings.get('max_atoms', 2000))
 
     output = StringIO()
     atoms.write(output, format='X3DOM')
@@ -82,6 +96,31 @@ def view_x3dom(atoms):
     output.close()
     return HTML(data)
 
+
+def limit_atoms(atoms, max_atoms):
+
+    """
+    Limits the number of atoms that are passed to a visualizer
+
+    Parameters
+    ----------
+    atoms : ASEAtoms
+        The ``ASEAtoms`` object to be visualized
+    max_atoms : int
+        The maximum number of atoms which can be passed to the visualizer
+
+    Warns
+    -----
+    warnings.warn
+        If the number of atoms is greater than `max_atoms`, the user is warned
+        that `atoms` will be capped at this size
+    """
+
+    if len(atoms) < max_atoms:
+        return atoms
+    warnings.warn('The number of atoms visualized has been capped to {}. To'
+                  ' increase this, pass a larger `max_atoms`'.format(max_atoms))
+    return atoms[:max_atoms]
 
 def get_bonds(atoms):
 
