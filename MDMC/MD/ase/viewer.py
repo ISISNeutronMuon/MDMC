@@ -28,6 +28,10 @@ def view(atoms, viewer='X3DOM', cell=None):
     ----------
     atoms : list
         A `list` of ``Atom`` (``MDMC.MD.structural_unit.Atom``) to view
+    viewer : str, optional
+        The viewer used to display the visualization. This can be 'X3DOM', which
+        allows for inline visualization in Jupyter notebooks, or 'ASE', which
+        displays in an external window. The default is 'X3DOM'.
     cell : numpy.ndarray, optional
         An ``array`` of `float` specifying the dimensions of the cell to view.
         The default is `None`.

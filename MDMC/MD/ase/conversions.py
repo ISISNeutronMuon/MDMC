@@ -5,6 +5,7 @@ Atom and Atoms objects.
 from itertools import chain
 
 import ase
+# For some reason importing ase alone is not importing ase.io.x3d, therefore:
 from ase.io import x3d
 import numpy as np
 
@@ -241,7 +242,10 @@ class X3D(x3d.X3D):
     def __init__(self, atoms):
 
         super().__init__(atoms)
-        # Minor memory usgae reduction if large number of atoms
+        # 3000 atoms was picked because at this number of atoms the view is such
+        # that a reduction in the sphere/cyinder resolution is insignificant. It
+        # is also approximately half of the total number of atoms that can be
+        # viewed on 2018 macbook pro (2.6GHz, 16GB DDR4, 4GB GDDR5)
         self.reduce_memory = len(self._atoms) > 3000
 
     def write(self, filename, datatype='X3DOM'):
