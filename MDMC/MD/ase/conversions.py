@@ -15,7 +15,7 @@ from MDMC.MD.structural_units import Atom, Bond
 class ASEAtoms(ase.atoms.Atoms):
 
     """
-    A subclass of ```ase.atoms.Atoms`` with explicit bonds defined between atoms
+    A subclass of ``ase.atoms.Atoms`` with explicit bonds defined between atoms
 
     Attributes
     ----------
@@ -41,7 +41,43 @@ class ASEAtoms(ase.atoms.Atoms):
             raise ValueError('There must be an ID for every atom')
         self.IDs = IDs
 
-    # format (redefined builtin) is used as this is method signature in ASe base
+    def __getitem__(self, i):
+
+        """
+        Extends ``ase.atoms.Atoms._getitem__`` so that ``bonds`` are dealt with
+        correctly. This means that any bond between two atoms in the subset
+        defined by `i` are assigned to the new item returned.
+
+        Parameters
+        ----------
+        i : int, list of int, slice
+            Returns an ``ase.atom.Atom`` (if `int`) or ``ASEAtoms`` (if `list`
+            or slice).
+        """
+
+        atoms = super().__getitem__(i)
+
+        # If int then only single atom so bonds are irrelevant
+        if isinstance(i, int):
+            return atoms
+
+        # Account for fact that ASE allows i to be a list of integers, as well
+        # an int or slice
+        if isinstance(i, slice):
+            atoms.IDs = self.IDs[i]
+            indexes = range(i.start or 0, i.stop, i.step or 1)
+        else:
+            atoms.IDs = [self.IDs[j] for j in i]
+            indexes = i
+
+        # Get all bonds where both atom indexes in a bond (which is a tuple of
+        # two atom indexes) are in the of the subset determined by i
+        bonds = [bond for bond in self.bonds
+                 if all(atom_index in indexes for atom_index in bond)]
+        atoms.bonds = bonds
+        return atoms
+
+    # format (redefined builtin) is used as this is method signature in ASE base
     # class
     #pylint: disable=redefined-builtin
     def write(self, filename, format=None, **kwargs):
@@ -306,9 +342,11 @@ class X3D(x3d.X3D):
         for atom in self._atoms:
             for indent, line in self.atom_lines(atom):
                 w(4 + indent, line)
-        for bond in getattr(self._atoms, 'bonds', []):
-            for indent, line in self.bond_lines(bond):
-                w(4 + indent, line)
+        bonds = getattr(self._atoms, 'bonds', [])
+        if bonds:
+            for bond in bonds:
+                for indent, line in self.bond_lines(bond):
+                    w(4 + indent, line)
 
         if datatype == 'X3DOM':
             w(3, '</Scene>')
