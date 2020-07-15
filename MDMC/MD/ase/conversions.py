@@ -421,7 +421,7 @@ class X3D(x3d.X3D):
     def get_center_of_rotation(self):
 
         """
-        Get the center of rotiation for the viewpoint
+        Get the center of rotation for the viewpoint
 
         Returns
         -------
