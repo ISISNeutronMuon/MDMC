@@ -291,6 +291,7 @@ class X3D(x3d.X3D):
               'xmlns:xsd="http://www.w3.org/2001/XMLSchema-instance" '
               'xsd:noNamespaceSchemaLocation='
               '"http://www.web3d.org/specifications/x3d-3.2.xsd">')
+            # Store next level of indentation and for scene
             scn_i = 1
 
         w(scn_i, '<Scene>')
