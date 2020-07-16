@@ -137,6 +137,8 @@ class Control:
 
             fom = self._generate_FoM()
             self.minimizer.step(fom)
+            print(self.minimizer.history.loc[[count + 1]].to_string(
+                header=False))
             self.simulation.engine.update_parameters()
             count += 1
 
@@ -156,7 +158,7 @@ class Control:
         except TypeError:
             pass
 
-        print(np.array([p.value for p in self.fit_params]))
+        self.minimizer.output_history('results.dat')
 
     def _generate_FoM(self):
 
