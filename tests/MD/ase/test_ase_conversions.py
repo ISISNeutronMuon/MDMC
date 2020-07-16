@@ -11,6 +11,11 @@ from MDMC.MD.ase import conversions
 from MDMC.MD.structural_units import Atom
 
 
+FORMULA = 'C8H4O2'
+CELL = (1., 2., 3.)
+BONDS = [(1, 2), (3, 8), (4, 5)]
+IDS = list(range(0, 14, 1))
+
 X3DOMHEADER = ('<html>\n\n'
                ' <head>\n\n'
                '  <title>MDMC atomic visualization</title>\n\n'
@@ -43,7 +48,6 @@ X3DHEADER = ('<?xml version="1.0" encoding="UTF-8"?>\n\n'
              'position="0.50 0.50 3.29"></Viewpoint>\n\n'
              '</X3D>\n\n')
 
-
 class MockAtom:
 
     def __init__(self, ID):
@@ -69,22 +73,24 @@ def bond_atom_IDs():
     return [(1, 2), (3, 4), (5, 6), (1, 6), (3, 6)]
 
 
-def test_ASEAtoms():
+@pytest.fixture
+def ase_atoms():
+
+    ase_atoms = conversions.ASEAtoms(symbols=FORMULA, cell=CELL, bonds=BONDS,
+                                     IDs=IDS)
+    return ase_atoms
+
+
+def test_ASEAtoms(ase_atoms):
 
     """
     Tests that an ASEAtoms class is equal to an ase.atoms.Atoms class
     initialized with the same parameters, but also has bonds and IDs attributes.
     """
 
-    formula = 'C8H4O2'
-    cell = (1., 2., 3.)
-    bonds = [(1, 2)]
-    IDs = list(range(0, 14, 1))
-    ase_atoms = conversions.ASEAtoms(symbols=formula, cell=cell, bonds=bonds,
-                                     IDs=IDs)
-    assert ase_atoms == ase.atoms.Atoms(symbols=formula, cell=cell)
-    assert ase_atoms.bonds == bonds
-    assert ase_atoms.IDs == IDs
+    assert ase_atoms == ase.atoms.Atoms(symbols=FORMULA, cell=CELL)
+    assert ase_atoms.bonds == BONDS
+    assert ase_atoms.IDs == IDS
 
 
 def test_ASEAtoms_error():
@@ -96,6 +102,63 @@ def test_ASEAtoms_error():
 
     with pytest.raises(ValueError):
         conversions.ASEAtoms(symbols='H5', IDs=range(0, 10, 1))
+
+
+@pytest.mark.parametrize('index, symbol',
+                         [(0, 'C'),
+                          (9, 'H'),
+                          (12, 'O')])
+def test_ASEAtoms_getitem_int(ase_atoms, index, symbol):
+
+    """
+    Tests that indexing into ASEAtoms with an int returns the correct
+    ase.atom.Atom object
+    """
+
+    ase_atom = ase_atoms[index]
+    assert isinstance(ase_atom, ase.atom.Atom)
+    assert ase_atom.symbol == symbol
+
+
+@pytest.mark.parametrize('indexes, symbols, bonds',
+                         [([0, 1, 2], 'C3', [(1, 2)]),
+                          ([1, 2, 3, 4, 8], 'C4H', [(1, 2), (3, 8)]),
+                          ([1, 2, 3, 4, 5, 8], 'C5H', [(1, 2), (3, 8), (4, 5)]),
+                          (list(range(14)), FORMULA, BONDS),
+                          ([1, 3, 5], 'C3', [])])
+def test_ASEAtoms_getitem_intlist(ase_atoms, indexes, symbols, bonds):
+
+    """
+    Tests that indexing into ASEAtoms with a list of int returns the correct
+    ASEAtoms object
+    """
+
+    indexed_ase_atoms = ase_atoms[indexes]
+    assert isinstance(indexed_ase_atoms, conversions.ASEAtoms)
+    assert all(indexed_ase_atoms.symbols == symbols)
+    assert indexed_ase_atoms.bonds == bonds
+    assert indexed_ase_atoms.IDs == indexes
+
+
+@pytest.mark.parametrize('p_slice, symbols, bonds, IDs',
+                         [((0, 3, 1), 'C3', [(1, 2)], range(3)),
+                          ((0, 14, 1), FORMULA, BONDS, IDS),
+                          ((3, 8, 1), 'C5', [(4, 5)], range(3, 8, 1)),
+                          ((3, 9, 1), 'C5H', [(3, 8), (4, 5)], range(3, 9, 1)),
+                          ((0, 14, 2), 'C4H2O', [], range(0, 14, 2)),
+                          ((None, 14, None), FORMULA, BONDS, IDS)])
+def test_ASEAtoms_getitem_slice(ase_atoms, p_slice, symbols, bonds, IDs):
+
+    """
+    Tests that indexing into ASEAtoms with a slice returns the correct ASEAtoms
+    object
+    """
+
+    sliced_ase_atoms = ase_atoms[slice(*p_slice)]
+    assert isinstance(sliced_ase_atoms, conversions.ASEAtoms)
+    assert all(sliced_ase_atoms.symbols == symbols)
+    assert sliced_ase_atoms.bonds == bonds
+    assert sliced_ase_atoms.IDs == list(IDs)
 
 
 @pytest.mark.parametrize('position, index, mass, symbol, charge',
