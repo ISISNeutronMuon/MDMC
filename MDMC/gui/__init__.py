@@ -5,10 +5,9 @@ Contents
 view
 """
 
-from MDMC.MD.ase import viewer
+from MDMC import MD
 
-
-def view(atom_container):
+def view(atom_container, viewer='X3DOM'):
 
     """
     Launches a GUI for viewing collections of ``Atom`` objects
@@ -33,4 +32,4 @@ def view(atom_container):
     except AttributeError:
         atoms = atom_container
 
-    viewer.view(atoms, cell=dimensions)
+    return MD.ase.viewer.view(atoms, viewer=viewer, cell=dimensions)
