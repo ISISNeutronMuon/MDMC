@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 
 from mpi4py import MPI
 import numpy as np
+import pandas as pd
 
 from MDMC.common.decorators import repr_decorator
 
@@ -66,7 +67,7 @@ class Minimizer(ABC):
         self.FoM = None
 
         # History of minimization
-        self.history = []
+        self._history = []
 
         params = np.array(list(params))
         self._check_parameters(params)
@@ -99,6 +100,25 @@ class Minimizer(ABC):
         """
 
         return 0.01
+
+    @property
+    def history(self):
+
+        """
+
+        """
+
+        return pd.DataFrame(self._history, columns=self.history_columns)
+
+    @property
+    @abstractmethod
+    def history_columns(self):
+
+        """
+
+        """
+
+        raise NotImplementedError
 
     @abstractmethod
     def change_state(self):
@@ -158,12 +178,22 @@ class Minimizer(ABC):
             if param.fixed == True:
                 raise ValueError('Parameter {0} is fixed'.format(param.name))
 
+    def output_history(self, filename):
+
+        self.history.to_csv(filename)
+
 
 class MMC(Minimizer):
 
     """
     ``Minimizer`` employing the Metropolis-Hastings algorithm
     """
+
+    @property
+    def history_columns(self):
+
+        return ['FoM', 'Old FoM', 'Change state'] + [p.name for p
+                                                     in self.params]
 
     def step(self, FoM):
 
@@ -173,29 +203,22 @@ class MMC(Minimizer):
 
         self.FoM = FoM
         values = np.array([p.value for p in self.params])
-        print('\n' + 'New FoM')
-        print(self.FoM)
-        print('Old FoM')
-        print(self.FoM_old)
-        print(values)
-        history = [self.FoM, values]
+        history = [self.FoM]
 
         if self.change_state():
-            print('Accepted')
             history.append('Accepted')
             self.FoM_old = self.FoM
-            self.params_old_values = np.array([param.value
-                                               for param in self.params])
+            self.params_old_values = values
             self.state_changed = True
 
         else:
-            print('Rejected')
             history.append('Rejected')
             self.FoM = self.FoM_old
             self.reset_params()
             self.state_changed = False
 
-        self.history.append(history)
+        history.extend(values)
+        self._history.append(history)
         self.change_parameters(self.params)
 
     def change_state(self):
