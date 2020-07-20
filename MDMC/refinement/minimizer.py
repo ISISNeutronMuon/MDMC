@@ -178,7 +178,7 @@ class Minimizer(ABC):
             if param.fixed == True:
                 raise ValueError('Parameter {0} is fixed'.format(param.name))
 
-    def output_history(self, filename):
+    def write_history(self, filename):
 
         self.history.to_csv(filename)
 
