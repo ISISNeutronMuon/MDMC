@@ -168,7 +168,7 @@ class Control:
         except TypeError:
             pass
 
-        self.minimizer.write_history('results.dat')
+        self.minimizer.write_history('results.csv')
 
     def _generate_FoM(self):
 
