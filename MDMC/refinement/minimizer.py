@@ -192,8 +192,7 @@ class MMC(Minimizer):
     @property
     def history_columns(self):
 
-        return ['FoM', 'Old FoM', 'Change state'] + [p.name for p
-                                                     in self.params]
+        return ['FoM', 'Change state'] + [p.name for p in self.params]
 
     def step(self, FoM):
 

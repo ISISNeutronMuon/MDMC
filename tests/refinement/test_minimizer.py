@@ -119,7 +119,7 @@ def test_mmc_history_columns(parameters, p_slice, columns):
     """
 
     mmc = minimizer.MMC(1, parameters[slice(*p_slice)])
-    assert mmc.history_columns == ['FoM', 'Old FoM', 'Change state'] + columns
+    assert mmc.history_columns == ['FoM', 'Change state'] + columns
 
 
 def mock_change_parameters(self, parameters):
