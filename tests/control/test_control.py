@@ -48,24 +48,26 @@ def test_control_refine_stdout(monkeypatch, capsys):
                         mock_update_engine_parameters)
 
     minim = MockMinimizer()
-    minim.history = pd.DataFrame({'float': [1.657, 2., 3.87345987348957345],
-                                  'str': ['str1', 'test', 'Accepted'],
-                                  'int': [10, 100, 1000]})
+    minim.history = pd.DataFrame({'float': [1.657, 2., 3.873859873, 1.324234E8,
+                                            15.347E6],
+                                  'str': ['str1', 'test', 'Accepted',
+                                          'Rejected', 'False'],
+                                  'int': [10, 100, 1000, 10000, 0.00001]})
 
     minim.history = pd.concat([minim.history]*4, ignore_index=True)
     cont = control.Control(None, [], [], reset_config=False)
     cont.minimizer = minim
     cont.refine(10)
     stdout = capsys.readouterr().out
-    assert stdout == ('Step     float        str        int\n'
-                      '   0     1.657       str1         10\n'
-                      '   1       2.0       test        100\n'
-                      '   2   3.87346   Accepted       1000\n'
-                      '   3     1.657       str1         10\n'
-                      '   4       2.0       test        100\n'
-                      '   5   3.87346   Accepted       1000\n'
-                      '   6     1.657       str1         10\n'
-                      '   7       2.0       test        100\n'
-                      '   8   3.87346   Accepted       1000\n'
-                      '   9     1.657       str1         10\n'
-                      '  10       2.0       test        100\n')
+    assert stdout == ('Step      float         str         int\n'
+                      '   0      1.657        str1          10\n'
+                      '   1          2        test         100\n'
+                      '   2      3.874    Accepted        1000\n'
+                      '   3  1.324e+08    Rejected       1e+04\n'
+                      '   4  1.535e+07       False       1e-05\n'
+                      '   5      1.657        str1          10\n'
+                      '   6          2        test         100\n'
+                      '   7      3.874    Accepted        1000\n'
+                      '   8  1.324e+08    Rejected       1e+04\n'
+                      '   9  1.535e+07       False       1e-05\n'
+                      '  10      1.657        str1          10\n')

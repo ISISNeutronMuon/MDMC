@@ -140,10 +140,11 @@ class Control:
             self.minimizer.step(fom)
             self._update_engine_parameters()
             count += 1
-            with pd.option_context('display.max_colwidth', 10,
-                                   'display.precision', 5):
+            with pd.option_context('display.max_colwidth', 11,
+                                   'display.precision', 5,
+                                   'display.float_format', '{:.4g}'.format):
                 output = self.minimizer.history.loc[[count]].to_string(
-                    col_space=10, index=False).split('\n')
+                    col_space=11, index=False).split('\n')
                 if count == 0:
                     output = 'Step' + output[0] + '\n   {}'.format(count) + output[1]
                 else:
