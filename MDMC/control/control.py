@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -137,10 +138,19 @@ class Control:
 
             fom = self._generate_FoM()
             self.minimizer.step(fom)
-            print(self.minimizer.history.loc[[count + 1]].to_string(
-                header=False))
-            self.simulation.engine.update_parameters()
+            self._update_engine_parameters()
             count += 1
+            with pd.option_context('display.max_colwidth', 10,
+                                   'display.precision', 5):
+                output = self.minimizer.history.loc[[count]].to_string(
+                    col_space=10, index=False).split('\n')
+                if count == 0:
+                    output = 'Step' + output[0] + '\n   {}'.format(count) + output[1]
+                else:
+                    # Remove the header. This is done with a split rather than
+                    # passing to_string(header=False) for formatting reasons
+                    output = '{:4d}'.format(count) + output[1]
+                print(output)
 
             if self.reset_config:
                 if self.minimizer.state_changed:
@@ -154,7 +164,7 @@ class Control:
         try:
             # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
-            self.simulation.engine.update_parameters()
+            self._update_engine_parameters()
         except TypeError:
             pass
 
@@ -192,6 +202,14 @@ class Control:
         """
 
         self.simulation.run(self.MD_steps)
+
+    def _update_engine_parameters(self):
+
+        """
+        Update the force field parameters of the MD engine
+        """
+
+        self.simulation.engine.update_parameters()
 
     def _read_observable_from_file(self, type, reader, file_name):
 
