@@ -146,7 +146,8 @@ class Control:
                 output = self.minimizer.history.loc[[count]].to_string(
                     col_space=11, index=False).split('\n')
                 if count == 0:
-                    output = 'Step' + output[0] + '\n   {}'.format(count) + output[1]
+                    output = ('Step' + output[0] + '\n   {}'.format(count)
+                              + output[1])
                 else:
                     # Remove the header. This is done with a split rather than
                     # passing to_string(header=False) for formatting reasons
@@ -161,6 +162,7 @@ class Control:
                     # Set MD engine to reset to old config
                     self.simulation.engine.reset_config()
 
+            self.minimizer.write_history('results.csv')
         # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
@@ -169,7 +171,10 @@ class Control:
         except TypeError:
             pass
 
-        self.minimizer.write_history('results.csv')
+        param_df = pd.DataFrame({p.name:p.value for p in self.minimizer.params},
+                                index=[0])
+        print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
+
 
     def _generate_FoM(self):
 
