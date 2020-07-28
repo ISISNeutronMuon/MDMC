@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 
 from mpi4py import MPI
 import numpy as np
+import pandas as pd
 
 from MDMC.common.decorators import repr_decorator
 
@@ -66,7 +67,7 @@ class Minimizer(ABC):
         self.FoM = None
 
         # History of minimization
-        self.history = []
+        self._history = []
 
         params = np.array(list(params))
         self._check_parameters(params)
@@ -99,6 +100,39 @@ class Minimizer(ABC):
         """
 
         return 0.01
+
+    @property
+    def history(self):
+
+        """
+        Get the history of the minimizer, with a single entry for each step of
+        the minimizer
+
+        Returns
+        -------
+        pd.DataFrame
+            Contains the minimizer variables for each refinement step. The
+            variables which are included is concrete implementation specific,
+            and is specified by `history_columns`.
+        """
+
+        return pd.DataFrame(self._history, columns=self.history_columns)
+
+    @property
+    @abstractmethod
+    def history_columns(self):
+
+        """
+        Get the column titles for the minimizer history
+
+        Returns
+        -------
+        list
+            A 'list' of 'str' specifying the column titles for the minimizer
+            history
+        """
+
+        raise NotImplementedError
 
     @abstractmethod
     def change_state(self):
@@ -136,6 +170,15 @@ class Minimizer(ABC):
 
     def has_converged(self):
 
+        """
+        CURRENTLY UNIMPLEMENTED i.e. this will always return False
+
+        Returns
+        -------
+        bool
+            Whether or not the minimizer has converged
+        """
+
         return False
 
     def _check_parameters(self, params):
@@ -155,8 +198,21 @@ class Minimizer(ABC):
         """
 
         for param in params:
-            if param.fixed == True:
+            if param.fixed is True:
                 raise ValueError('Parameter {0} is fixed'.format(param.name))
+
+    def write_history(self, filename):
+
+        """
+        Write the minimizer history to a csv file
+
+        Parameters
+        ----------
+        filename : str
+            The name of the output file
+        """
+
+        self.history.to_csv(filename)
 
 
 class MMC(Minimizer):
@@ -164,6 +220,11 @@ class MMC(Minimizer):
     """
     ``Minimizer`` employing the Metropolis-Hastings algorithm
     """
+
+    @property
+    def history_columns(self):
+
+        return ['FoM', 'Change state'] + [p.name for p in self.params]
 
     def step(self, FoM):
 
@@ -173,29 +234,22 @@ class MMC(Minimizer):
 
         self.FoM = FoM
         values = np.array([p.value for p in self.params])
-        print('\n' + 'New FoM')
-        print(self.FoM)
-        print('Old FoM')
-        print(self.FoM_old)
-        print(values)
-        history = [self.FoM, values]
+        history = [self.FoM]
 
         if self.change_state():
-            print('Accepted')
             history.append('Accepted')
             self.FoM_old = self.FoM
-            self.params_old_values = np.array([param.value
-                                               for param in self.params])
+            self.params_old_values = values
             self.state_changed = True
 
         else:
-            print('Rejected')
             history.append('Rejected')
             self.FoM = self.FoM_old
             self.reset_params()
             self.state_changed = False
 
-        self.history.append(history)
+        history.extend(values)
+        self._history.append(history)
         self.change_parameters(self.params)
 
     def change_state(self):

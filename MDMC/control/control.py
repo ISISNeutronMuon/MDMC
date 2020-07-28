@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -137,8 +138,21 @@ class Control:
 
             fom = self._generate_FoM()
             self.minimizer.step(fom)
-            self.simulation.engine.update_parameters()
+            self._update_engine_parameters()
             count += 1
+            with pd.option_context('display.max_colwidth', 11,
+                                   'display.precision', 5,
+                                   'display.float_format', '{:.4g}'.format):
+                output = self.minimizer.history.loc[[count]].to_string(
+                    col_space=11, index=False).split('\n')
+                if count == 0:
+                    output = ('Step' + output[0] + '\n   {}'.format(count)
+                              + output[1])
+                else:
+                    # Remove the header. This is done with a split rather than
+                    # passing to_string(header=False) for formatting reasons
+                    output = '{:4d}'.format(count) + output[1]
+                print(output)
 
             if self.reset_config:
                 if self.minimizer.state_changed:
@@ -148,15 +162,19 @@ class Control:
                     # Set MD engine to reset to old config
                     self.simulation.engine.reset_config()
 
+            self.minimizer.write_history('results.csv')
         # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
             self.minimizer.reset_params()
-            self.simulation.engine.update_parameters()
+            self._update_engine_parameters()
         except TypeError:
             pass
 
-        print(np.array([p.value for p in self.fit_params]))
+        param_df = pd.DataFrame({p.name:p.value for p in self.minimizer.params},
+                                index=[0])
+        print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
+
 
     def _generate_FoM(self):
 
@@ -190,6 +208,14 @@ class Control:
         """
 
         self.simulation.run(self.MD_steps)
+
+    def _update_engine_parameters(self):
+
+        """
+        Update the force field parameters of the MD engine
+        """
+
+        self.simulation.engine.update_parameters()
 
     def _read_observable_from_file(self, type, reader, file_name):
 
