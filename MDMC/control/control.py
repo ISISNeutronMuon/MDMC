@@ -121,7 +121,7 @@ class Control:
             'parameter' if len(self.fit_params) == 1 else 'parameters',
             exp_dataset_types)
 
-    def refine(self, n_steps):
+    def refine(self, n_steps, plot_progress=None):
 
         """
         Refines the specified potential parameters
@@ -130,6 +130,36 @@ class Control:
         ----------
         n_steps : int
             maximum number of steps for the refinement
+        plot_progress : str, list of str, optional
+            A `str` or `list` specifying one or more minimizer history variables
+            to be plotted with each step of the refinement. If `None` then no
+            plotting is peformed. If a `list` of variables is passed, each of
+            these will be plotted on a separate subplot.
+
+        Examples
+        --------
+        Perform a refinement with a maximum of 100 steps without plotting:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            control.refine(100)
+
+        Perform a refinement with a maximum of 100 steps which plots the FoM
+        after each step:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            control.refine(100, plot_progress='FoM')
+
+        Perform a refinement with a maximum of 100 steps which plots the FoM
+        after each step:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            control.refine(100)
         """
 
         count = -1
@@ -163,6 +193,9 @@ class Control:
                     self.simulation.engine.reset_config()
 
             self.minimizer.write_history('results.csv')
+            if plot_progress:
+                self.plot_history(plot_progress)
+
         # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
@@ -175,6 +208,36 @@ class Control:
                                 index=[0])
         print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
 
+    def plot_history(self, *variables, subplots=True):
+
+        """
+        Displays a graph of the value of one or more variables (within the
+        Minimizer history) against the number of refinement steps. If no
+        variables are specified, the FoM will be plotted.
+
+        The plotting backend is matplotlib. It is recommended that this plotting
+        is performed within a Jupyter notebook, with the matplotlib backend set
+        to inline. This can be done by executing the Jupyter magic command in
+        the notebook:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            %matplotlib inline
+
+        If this is not the case, a new plot window will be opened each time this
+        method is called.
+
+        Parameters
+        ----------
+        *variables
+            One or more `str` specifying variables (from the minimizer history)
+            to display on the y axis. If no variables are specified, the FoM
+            will be plotted. Each `str` must occur within the
+            ``Minimizer.history``.
+        """
+
+        self.minimizer.plot_history('step', y=list(variables))
 
     def _generate_FoM(self):
 
