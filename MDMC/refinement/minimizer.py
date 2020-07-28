@@ -105,7 +105,15 @@ class Minimizer(ABC):
     def history(self):
 
         """
+        Get the history of the minimizer, with a single entry for each step of
+        the minimizer
 
+        Returns
+        -------
+        pd.DataFrame
+            Contains the minimizer variables for each refinement step. The
+            variables which are included is concrete implementation specific,
+            and is specified by `history_columns`.
         """
 
         return pd.DataFrame(self._history, columns=self.history_columns)
@@ -115,7 +123,13 @@ class Minimizer(ABC):
     def history_columns(self):
 
         """
+        Get the column titles for the minimizer history
 
+        Returns
+        -------
+        list
+            A 'list' of 'str' specifying the column titles for the minimizer
+            history
         """
 
         raise NotImplementedError
@@ -156,6 +170,15 @@ class Minimizer(ABC):
 
     def has_converged(self):
 
+        """
+        CURRENTLY UNIMPLEMENTED i.e. this will always return False
+
+        Returns
+        -------
+        bool
+            Whether or not the minimizer has converged
+        """
+
         return False
 
     def _check_parameters(self, params):
@@ -175,10 +198,19 @@ class Minimizer(ABC):
         """
 
         for param in params:
-            if param.fixed == True:
+            if param.fixed is True:
                 raise ValueError('Parameter {0} is fixed'.format(param.name))
 
     def write_history(self, filename):
+
+        """
+        Write the minimizer history to a csv file
+
+        Parameters
+        ----------
+        filename : str
+            The name of the output file
+        """
 
         self.history.to_csv(filename)
 
