@@ -121,7 +121,7 @@ class Control:
             'parameter' if len(self.fit_params) == 1 else 'parameters',
             exp_dataset_types)
 
-    def refine(self, n_steps, plot_progress=None):
+    def refine(self, n_steps):
 
         """
         Refines the specified potential parameters
@@ -130,11 +130,6 @@ class Control:
         ----------
         n_steps : int
             maximum number of steps for the refinement
-        plot_progress : str, list of str, optional
-            A `str` or `list` specifying one or more minimizer history variables
-            to be plotted with each step of the refinement. If `None` then no
-            plotting is peformed. If a `list` of variables is passed, each of
-            these will be plotted on a separate subplot.
 
         Examples
         --------
@@ -165,36 +160,8 @@ class Control:
         count = -1
 
         while count < n_steps and not self.minimizer.has_converged():
-
-            fom = self._generate_FoM()
-            self.minimizer.step(fom)
-            self._update_engine_parameters()
+            self.step()
             count += 1
-            with pd.option_context('display.max_colwidth', 11,
-                                   'display.precision', 5,
-                                   'display.float_format', '{:.4g}'.format):
-                output = self.minimizer.history.loc[[count]].to_string(
-                    col_space=11, index=False).split('\n')
-                if count == 0:
-                    output = ('Step' + output[0] + '\n   {}'.format(count)
-                              + output[1])
-                else:
-                    # Remove the header. This is done with a split rather than
-                    # passing to_string(header=False) for formatting reasons
-                    output = '{:4d}'.format(count) + output[1]
-                print(output)
-
-            if self.reset_config:
-                if self.minimizer.state_changed:
-                    # Set MD engine to remember new config
-                    self.simulation.engine.save_config()
-                else:
-                    # Set MD engine to reset to old config
-                    self.simulation.engine.reset_config()
-
-            self.minimizer.write_history('results.csv')
-            if plot_progress:
-                self.plot_history(plot_progress)
 
         # Try/except accounts for n_steps <= -1
         try:
@@ -207,6 +174,36 @@ class Control:
         param_df = pd.DataFrame({p.name:p.value for p in self.minimizer.params},
                                 index=[0])
         print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
+
+    def step(self):
+
+        fom = self._generate_FoM()
+        self.minimizer.step(fom)
+        self._update_engine_parameters()
+        with pd.option_context('display.max_colwidth', 11,
+                               'display.precision', 5,
+                               'display.float_format', '{:.4g}'.format):
+            index = self.minimizer.history.iloc[-1].name
+            output = self.minimizer.history.loc[[index]].to_string(
+                col_space=11, index=False).split('\n')
+            if len(self.minimizer.history) == 1:
+                output = ('Step' + output[0] + '\n   {}'.format(index)
+                          + output[1])
+            else:
+                # Remove the header. This is done with a split rather than
+                # passing to_string(header=False) for formatting reasons
+                output = '{:4d}'.format(index) + output[1]
+            print(output)
+
+        if self.reset_config:
+            if self.minimizer.state_changed:
+                # Set MD engine to remember new config
+                self.simulation.engine.save_config()
+            else:
+                # Set MD engine to reset to old config
+                self.simulation.engine.reset_config()
+
+        self.minimizer.write_history('results.csv')
 
     def plot_history(self, *variables, subplots=True):
 
