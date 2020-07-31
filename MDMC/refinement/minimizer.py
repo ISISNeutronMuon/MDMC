@@ -214,31 +214,6 @@ class Minimizer(ABC):
 
         self.history.to_csv(filename)
 
-    def plot_history(self, x, y, subplots=True):
-
-        """
-        Plots history variables
-
-        The plotting backend is matplotlib.
-
-        Parameters
-        ----------
-        x : str
-            A `str` specifying a ``Minimizer.history`` column name, or `step`
-            for the number of steps. This will be used as the x axis.
-        y : str, list of str
-            A ` str` or list of `str` specifying a ``Minimizer.history`` column
-            name. Each of these columns will be plotted on the y axis.
-        subplots : bool, optional
-            Whether or not each y variable is plotted in a subplot. The default
-            is True.
-        """
-
-        if x == 'step':
-            self.history.plot(y=y, subplots=subplots)
-        else:
-            self.history.plot(x=x, y=y, subplots=subplots)
-
 
 class MMC(Minimizer):
 
