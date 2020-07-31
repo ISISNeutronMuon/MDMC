@@ -16,13 +16,20 @@ class MockParameter:
 
 class MockMinimizer:
 
+    def __init__(self, history):
+
+        df = pd.DataFrame(history)
+        self._history = (row for _, row in df.iterrows())
+        self.history = pd.DataFrame(columns=df.columns)
+
     def has_converged(self):
 
         return False
 
     def step(self, FoM):
 
-        pass
+        self.history = self.history.append(next(self._history),
+                                           ignore_index=True)
 
     def write_history(self, fn):
 
@@ -55,13 +62,10 @@ def test_control_refine_stdout(monkeypatch, capsys):
 
     # Set history and params of MockMinimizer, as these are both involved in
     # output
-    minim = MockMinimizer()
-    minim.history = pd.DataFrame({'float': [1.657, 2., 3.873859873, 1.324234E8,
-                                            15.347E6],
-                                  'str': ['str1', 'test', 'Accepted',
-                                          'Rejected', 'False'],
-                                  'int': [10, 100, 1000, 10000, 0.00001]})
-    minim.history = pd.concat([minim.history]*4, ignore_index=True)
+    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
+               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
+               'int':[10, 100, 1000, 10000, 0.00001] * 3}
+    minim = MockMinimizer(history)
     minim.params = [MockParameter('epsilon', 3.134544),
                     MockParameter('sigma', 0.339834),
                     MockParameter('A', 1),
