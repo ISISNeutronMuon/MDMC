@@ -64,7 +64,8 @@ def test_control_refine_stdout(monkeypatch, capsys):
     # output
     history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
                'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3}
+               'int':[10, 100, 1000, 10000, 0.00001] * 3,
+               'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
     minim.params = [MockParameter('epsilon', 3.134544),
                     MockParameter('sigma', 0.339834),
@@ -76,18 +77,18 @@ def test_control_refine_stdout(monkeypatch, capsys):
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Step      float         str         int\n'
-                      '   0      1.657        str1          10\n'
-                      '   1          2        test         100\n'
-                      '   2      3.874    Accepted        1000\n'
-                      '   3  1.324e+08    Rejected       1e+04\n'
-                      '   4  1.535e+07       False       1e-05\n'
-                      '   5      1.657        str1          10\n'
-                      '   6          2        test         100\n'
-                      '   7      3.874    Accepted        1000\n'
-                      '   8  1.324e+08    Rejected       1e+04\n'
-                      '   9  1.535e+07       False       1e-05\n'
-                      '  10      1.657        str1          10\n'
+    assert stdout == ('Step       float          str          int really_lo...\n'
+                      '   0       1.657         str1           10            1\n'
+                      '   1           2         test          100            1\n'
+                      '   2       3.874     Accepted         1000            1\n'
+                      '   3   1.324e+08     Rejected        1e+04            1\n'
+                      '   4   1.535e+07        False        1e-05            1\n'
+                      '   5       1.657         str1           10            1\n'
+                      '   6           2         test          100            1\n'
+                      '   7       3.874     Accepted         1000            1\n'
+                      '   8   1.324e+08     Rejected        1e+04            1\n'
+                      '   9   1.535e+07        False        1e-05            1\n'
+                      '  10       1.657         str1           10            1\n'
                       '\n'
                       'Final Parameters\n'
                       '  epsilon     sigma  A             B\n'
