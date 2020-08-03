@@ -159,6 +159,7 @@ class Control:
 
         count = -1
 
+        self._print_header()
         while count < n_steps and not self.minimizer.has_converged():
             self.step()
             count += 1
@@ -180,20 +181,7 @@ class Control:
         fom = self._generate_FoM()
         self.minimizer.step(fom)
         self._update_engine_parameters()
-        with pd.option_context('display.max_colwidth', 11,
-                               'display.precision', 5,
-                               'display.float_format', '{:.4g}'.format):
-            index = self.minimizer.history.iloc[-1].name
-            output = self.minimizer.history.loc[[index]].to_string(
-                col_space=11, index=False).split('\n')
-            if len(self.minimizer.history) == 1:
-                output = ('Step' + output[0] + '\n   {}'.format(index)
-                          + output[1])
-            else:
-                # Remove the header. This is done with a split rather than
-                # passing to_string(header=False) for formatting reasons
-                output = '{:4d}'.format(index) + output[1]
-            print(output)
+        self._print_data()
 
         if self.reset_config:
             if self.minimizer.state_changed:
@@ -205,7 +193,7 @@ class Control:
 
         self.minimizer.write_history('results.csv')
 
-    def plot_history(self, *variables, subplots=True):
+    def plot_history(self, *variables):
 
         """
         Displays a graph of the value of one or more variables (within the
@@ -235,6 +223,28 @@ class Control:
         """
 
         self.minimizer.plot_history('step', y=list(variables))
+
+    def _print_data(self):
+
+        with pd.option_context('display.max_colwidth', 12,
+                               'display.precision', 5,
+                               'display.float_format', '{:.4g}'.format):
+            n_step = self.minimizer.history.iloc[-1].name
+            output = self.minimizer.history.loc[[n_step]].to_string(
+                col_space=12, index=False, header=False).split('\n')
+            data = '{:4d}'.format(n_step) + ''.join(output)
+            print(data)
+
+    def _print_header(self):
+
+        def format_column(column):
+            column = column if len(column) < 13 else column[:9] + '...'
+            return ' ' * (12 - len(column)) + column
+
+        columns = ' '.join([format_column(col) for col
+                            in self.minimizer.history.columns])
+        header = 'Step' + columns
+        print(header)
 
     def _generate_FoM(self):
 

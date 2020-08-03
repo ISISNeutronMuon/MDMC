@@ -1,10 +1,15 @@
 """Plotting related utilities
 """
 
+from collections import deque
 from types import MethodType
 
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
+try:
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
+except ModuleNotFoundError:
+    raise ModuleNotFoundError('MDMC plotting utilities require matplotlib to be'
+                              ' installed.')
 
 from MDMC.common.df_operations import filter_dataframe
 
@@ -75,12 +80,27 @@ def plot_progress(inst, ynames):
     'epsilon' against 'Steps' will be plotted.
     """
 
+    from IPython import display
+    from ipywidgets import Output, VBox
+
     plt.rcParams.update({'font.size': 22, 'axes.linewidth': 5})
 
     orig_refine = inst.refine
     orig_step = inst.step
+    orig_print_data = inst._print_data
     # Force ynames to be list so that it can be iterated over
     inst.ynames = [ynames] if isinstance(ynames, str) else ynames
+    # inst.text_output_deque = deque(maxlen=5)
+    inst.vbox = VBox([Output()] * 5, layout={'height':'75%'})
+    display.display(inst.vbox)
+
+    # Basic validation of user input
+    if len(ynames) < 1:
+        raise ValueError('ynames must contain at least one str')
+    for yname in ynames:
+        if yname not in inst.minimizer.history:
+            raise ValueError('{0} is not a variable in the minimizer'
+                             ' history'.format(yname))
 
     def refine(self, *args):
         figure, axs = plt.subplots(len(self.ynames), 1, squeeze=False)
@@ -109,6 +129,21 @@ def plot_progress(inst, ynames):
         orig_step()
         self.plot_history()
 
+    def print_data(self):
+        text_output = Output()
+        with text_output:
+            orig_print_data()
+        inst.vbox.children = inst.vbox.children[1:] + (text_output, )
+        #
+        # if len(self.text_output_deque) == self.text_output_deque.maxlen:
+        #     outdated_text_output = self.text_output_deque.popleft()
+        #     outdated_text_output.close()
+        # text_output = Output()
+        # with text_output:
+        #     orig_print_data()
+        # display.display(text_output)
+        # self.text_output_deque.append(text_output)
+
     def plot_history(self):
         history = self.minimizer.history
         for yname, ax in zip(self.ynames, self.axes):
@@ -127,5 +162,6 @@ def plot_progress(inst, ynames):
     inst.refine = MethodType(refine, inst)
     inst.step = MethodType(step, inst)
     inst.plot_history = MethodType(plot_history, inst)
+    inst._print_data = MethodType(print_data, inst)
 
     return inst
