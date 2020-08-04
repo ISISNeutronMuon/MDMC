@@ -1,8 +1,8 @@
 """Plotting related utilities
 """
 
-from collections import deque
 from types import MethodType
+import warnings
 
 try:
     import matplotlib.pyplot as plt
@@ -12,6 +12,12 @@ except ModuleNotFoundError:
                               ' installed.')
 
 from MDMC.common.df_operations import filter_dataframe
+
+# Defaults for text and plot output sizes
+VBOX_HEIGHT = '73%'
+N_TEXT_LINES = 5
+PLOT_HEIGHT = 360
+CNVS_WIDTH = 800
 
 
 def plot_progress(inst, ynames):
@@ -25,14 +31,18 @@ def plot_progress(inst, ynames):
     instance.  See the examples section for more details.
 
     **This plotting should only be used in a Jupyter notebook and requires
-    matplotlib to interactively display the progress. The matplotlib backend
-    must be set to 'notebook' before calling `refine`. This can be done by
-    executing the following magic call within a Jupyter notebook cell:**
+    ipywidgets and matplotlib to interactively display the progress. The
+    matplotlib backend must be set to 'notebook' before calling `refine`. This
+    can be done by executing the following magic call within a Jupyter notebook
+    cell:**
 
         .. highlight:: python
         .. code-block:: python
 
             %matplotlib notebook
+
+    Applying ``plot_progress`` will also change the text output so that only the
+    more recent five steps are shown.
 
     Parameters
     ----------
@@ -80,33 +90,48 @@ def plot_progress(inst, ynames):
     'epsilon' against 'Steps' will be plotted.
     """
 
-    from IPython import display
-    from ipywidgets import Output, VBox
+    # If required modules are not installed, warn user and return unmodified
+    # instance
+    try:
+        from IPython import display
+        from ipywidgets import Output, VBox
+    except ModuleNotFoundError as err:
+        warnings.warn('plot_progress requires {}. No plots will be'
+                      ' displayed.'.format(err.name))
+        return inst
 
     plt.rcParams.update({'font.size': 22, 'axes.linewidth': 5})
 
+    # copies of the original instance methods are kept so that they can be
+    # called within the replacement methods
     orig_refine = inst.refine
     orig_step = inst.step
     orig_print_data = inst._print_data
+    orig_print_header = inst._print_header
+
+    # Add protected ynames and vbox variables to instance
     # Force ynames to be list so that it can be iterated over
-    inst.ynames = [ynames] if isinstance(ynames, str) else ynames
-    # inst.text_output_deque = deque(maxlen=5)
-    inst.vbox = VBox([Output()] * 5, layout={'height':'75%'})
-    display.display(inst.vbox)
+    inst._ynames = [ynames] if isinstance(ynames, str) else ynames
+
+    # Create a VBox for the text consisting of N empty outputs. These are then
+    # dynamically replaced by lines containing text output with each step.
+    # height layout setting is used to reduce padding between lines of text.
+    inst._vbox = VBox([Output()] * N_TEXT_LINES, layout={'height':VBOX_HEIGHT})
 
     # Basic validation of user input
-    if len(ynames) < 1:
+    if not ynames:
         raise ValueError('ynames must contain at least one str')
     for yname in ynames:
         if yname not in inst.minimizer.history:
             raise ValueError('{0} is not a variable in the minimizer'
                              ' history'.format(yname))
 
+    # Redefined refine so that figure plotting is set, and the vbox containing
+    # the text is displayed after the header
     def refine(self, *args):
-        figure, axs = plt.subplots(len(self.ynames), 1, squeeze=False)
-        # figure.tight_layout(pad=1.01)
+        figure, axs = plt.subplots(len(self._ynames), 1, squeeze=False)
         inst.figure, inst.axes = figure, axs.flatten()
-        for yname, ax in zip(self.ynames, inst.axes):
+        for yname, ax in zip(self._ynames, inst.axes):
             ax.set_ylabel(yname)
             if ax is inst.axes[-1]:
                 ax.set_xlabel('Steps')
@@ -119,34 +144,36 @@ def plot_progress(inst, ynames):
         # a loop (the bug reduces canvas._dpi_ratio to 1 which results in graphs
         # being plotted half size until the execution is completed)
         self.figure.canvas._dpi_ratio = 2
-        height = min(len(self.ynames), 4) * 400
-        self.figure.canvas.handle_resize({'width':800, 'height':height})
+        height = min(len(self._ynames), 4) * PLOT_HEIGHT
+        self.figure.canvas.handle_resize({'width':CNVS_WIDTH, 'height':height})
         self.figure.canvas.draw()
-
+        orig_print_header()
+        display.display(self._vbox)
         orig_refine(*args)
 
+    # Redefine step so that history is also ploted
     def step(self):
         orig_step()
         self.plot_history()
 
+    # Redefine print data so that output is captured and added to vbox rather
+    # than displayed. This stops Jupyter from autoscrolling after a certain
+    # number of lines of text are displayed.
     def print_data(self):
         text_output = Output()
         with text_output:
             orig_print_data()
-        inst.vbox.children = inst.vbox.children[1:] + (text_output, )
-        #
-        # if len(self.text_output_deque) == self.text_output_deque.maxlen:
-        #     outdated_text_output = self.text_output_deque.popleft()
-        #     outdated_text_output.close()
-        # text_output = Output()
-        # with text_output:
-        #     orig_print_data()
-        # display.display(text_output)
-        # self.text_output_deque.append(text_output)
+        self._vbox.children = self._vbox.children[1:] + (text_output, )
+
+    # Used to change inst._print_header to pass through as header printing is
+    # handled in substitute refine instead
+    def print_header(self):
+
+        pass
 
     def plot_history(self):
         history = self.minimizer.history
-        for yname, ax in zip(self.ynames, self.axes):
+        for yname, ax in zip(self._ynames, self.axes):
             acp_rows = filter_dataframe(['Accepted'], history,
                                         column_names=['Change state'])
             rej_rows = filter_dataframe(['Rejected'], history,
@@ -158,10 +185,11 @@ def plot_progress(inst, ynames):
                     markeredgewidth=5)
         self.figure.canvas.draw()
 
-    # Set new methods for inst
+    # Set new methods for inst (MethodType required because they are bound)
     inst.refine = MethodType(refine, inst)
     inst.step = MethodType(step, inst)
     inst.plot_history = MethodType(plot_history, inst)
     inst._print_data = MethodType(print_data, inst)
+    inst._print_header = MethodType(print_header, inst)
 
     return inst
