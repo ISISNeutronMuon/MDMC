@@ -145,7 +145,13 @@ def plot_progress(inst, ynames):
         # being plotted half size until the execution is completed)
         self.figure.canvas._dpi_ratio = 2
         height = min(len(self._ynames), 4) * PLOT_HEIGHT
-        self.figure.canvas.handle_resize({'width':CNVS_WIDTH, 'height':height})
+        # This try/except allows IPython/Jupyter console to run without error
+        # (although it does not live plot)
+        try:
+            self.figure.canvas.handle_resize({'width':CNVS_WIDTH,
+                                              'height':height})
+        except AttributeError:
+            pass
         self.figure.canvas.draw()
         orig_print_header()
         display.display(self._vbox)

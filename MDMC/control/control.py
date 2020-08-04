@@ -193,37 +193,6 @@ class Control:
 
         self.minimizer.write_history('results.csv')
 
-    def plot_history(self, *variables):
-
-        """
-        Displays a graph of the value of one or more variables (within the
-        Minimizer history) against the number of refinement steps. If no
-        variables are specified, the FoM will be plotted.
-
-        The plotting backend is matplotlib. It is recommended that this plotting
-        is performed within a Jupyter notebook, with the matplotlib backend set
-        to inline. This can be done by executing the Jupyter magic command in
-        the notebook:
-
-            .. highlight:: python
-            .. code-block:: python
-
-            %matplotlib inline
-
-        If this is not the case, a new plot window will be opened each time this
-        method is called.
-
-        Parameters
-        ----------
-        *variables
-            One or more `str` specifying variables (from the minimizer history)
-            to display on the y axis. If no variables are specified, the FoM
-            will be plotted. Each `str` must occur within the
-            ``Minimizer.history``.
-        """
-
-        self.minimizer.plot_history('step', y=list(variables))
-
     def _print_data(self):
 
         with pd.option_context('display.max_colwidth', 12,
