@@ -1,4 +1,9 @@
 """Plotting related utilities
+
+These are additional functions which can be used to plot specific MDMC data,
+e.g. dynamic plotting during a refinement.  All plotting requires matplotlib to
+be installed, and dynamic plotting requires execution to be performed within a
+Jupyter notebook in order to display correctly.
 """
 
 from types import MethodType
@@ -100,6 +105,7 @@ def plot_progress(inst, ynames):
                       ' displayed.'.format(err.name))
         return inst
 
+    # This font size and linewidth were suitable for OSX dev environment
     plt.rcParams.update({'font.size': 22, 'axes.linewidth': 5})
 
     # copies of the original instance methods are kept so that they can be
@@ -119,9 +125,9 @@ def plot_progress(inst, ynames):
     inst._vbox = VBox([Output()] * N_TEXT_LINES, layout={'height':VBOX_HEIGHT})
 
     # Basic validation of user input
-    if not ynames:
+    if not inst._ynames:
         raise ValueError('ynames must contain at least one str')
-    for yname in ynames:
+    for yname in inst._ynames:
         if yname not in inst.minimizer.history:
             raise ValueError('{0} is not a variable in the minimizer'
                              ' history'.format(yname))
@@ -157,7 +163,7 @@ def plot_progress(inst, ynames):
         display.display(self._vbox)
         orig_refine(*args)
 
-    # Redefine step so that history is also ploted
+    # Redefine step so that history is also plotted
     def step(self):
         orig_step()
         self.plot_history()

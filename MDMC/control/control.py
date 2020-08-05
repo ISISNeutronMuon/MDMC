@@ -133,23 +133,7 @@ class Control:
 
         Examples
         --------
-        Perform a refinement with a maximum of 100 steps without plotting:
-
-            .. highlight:: python
-            .. code-block:: python
-
-            control.refine(100)
-
-        Perform a refinement with a maximum of 100 steps which plots the FoM
-        after each step:
-
-            .. highlight:: python
-            .. code-block:: python
-
-            control.refine(100, plot_progress='FoM')
-
-        Perform a refinement with a maximum of 100 steps which plots the FoM
-        after each step:
+        Perform a refinement with a maximum of 100 steps:
 
             .. highlight:: python
             .. code-block:: python
