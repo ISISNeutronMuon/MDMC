@@ -10,11 +10,14 @@ This includes:
 These tests exist so that a user can test their installation of MDMC.
 """
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
+from glob import glob
+from importlib import import_module
+from os.path import basename, dirname, join
 from typing import Callable
 
 
-class InstlTestBase(ABCMeta):
+class InstlTestBase(ABC):
 
     def __init__(self):
 
@@ -28,13 +31,6 @@ class InstlTestBase(ABCMeta):
     def print_result(self):
 
         print(self.success)
-
-
-def InstlTestCore(InstlTestBase):
-
-    def run(self):
-
-        self.success = True
 
 
 class InstlTestFactory:
@@ -67,6 +63,34 @@ def run_installation_tests():
         instl_test = InstlTestFactory.create_instl_test(name)
         instl_test.run()
         instl_test.print_result()
+
+
+@InstlTestFactory.register('core')
+class InstlTestCore(InstlTestBase):
+
+    def run(self):
+
+        import MDMC
+        fs_objects = glob(join(dirname(MDMC.__file__), "*"))
+        for fso in fs_objects:
+            fso_base = basename(fso)
+            if '.py' not in fso_base[-4:] and fso_base != '__pycache__':
+                try:
+                    import_module('MDMC.' + fso_base)
+                except ImportError:
+                    self.success = False
+                    break
+                except Exception as err:
+                    raise Exception('An Exception (other than an ImportError)'
+                                    ' occured while MDMC was being imported.'
+                                    ' It appears MDMC has installed this'
+                                    ' Exception is likely to reduce'
+                                    ' functionality.') from err
+
+        # Apparent anti-pattern used because do not want to set self.success
+        # to True before the loop has completed
+        if self.success is None:
+            self.success = True
 
 # def test_core_installation() -> bool:
 #
