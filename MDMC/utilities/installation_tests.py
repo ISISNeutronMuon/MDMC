@@ -15,6 +15,7 @@ from glob import glob
 from importlib import import_module
 from os.path import basename, dirname, join
 from typing import Callable
+import warnings
 
 
 class InstlTestBase(ABC):
@@ -87,42 +88,48 @@ class InstlTestCore(InstlTestBase):
                                     ' Exception is likely to reduce'
                                     ' functionality.') from err
 
-        # Apparent anti-pattern used because do not want to set self.success
-        # to True before the loop has completed
         if self.success is None:
             self.success = True
 
-# def test_core_installation() -> bool:
-#
-#     """
-#     Tests if core MDMC submodules can be imported
-#     """
-#
-#     pass
-#
-#
-# def test_MD_engines() -> bool:
-#
-#     """
-#     Tests if each MD engine can be run by MDMC
-#     """
-#
-#     pass
-#
-#
-# def test_X11_forwarding() -> bool:
-#
-#     """
-#     Tests that X11 forwarding is working and that ASE gui can run
-#     """
-#
-#     pass
-#
-#
-# def test_dynamic_plotting() -> bool:
-#
-#     """
-#     Tests that dynamic plotting utility can be used
-#     """
-#
-#     pass
+
+@InstlTestFactory.register('LAMMPS')
+class InstlTestLAMMPS(InstlTestBase):
+
+    def run(self):
+
+        try:
+            from lammps import PyLammps
+            lmp = PyLammps()
+            lmp.close()
+            self.success = True
+        except ImportError:
+            self.success = False
+
+
+@InstlTestFactory.register('X11 forwarding')
+class InstlTestX11Forwarding(InstlTestBase):
+
+    def run(self):
+
+        try:
+            from tkinter import Tk, TclError
+        except ImportError:
+            # Add log message that tkinter must be imported to test for X11
+            # forwarding
+            self.success = False
+        try:
+            Tk()
+        except TclError:
+            # Add log message about X11 failure
+            self.success = False
+
+        if self.success is None:
+            self.success = True
+
+
+@InstlTestFactory.register('Dynamic plotting')
+class InstlTestDynamicPlotting(InstlTestBase):
+
+    def run(self):
+
+        self.success = True
