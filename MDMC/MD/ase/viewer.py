@@ -63,13 +63,18 @@ def view_ase(atoms, **settings):
         ``max_atoms`` (`int`)
             Sets the maximum number of atoms that will be viewed
     """
-
+    from tkinter import TclError
     atoms = limit_atoms(atoms, settings.get('max_atoms', 8000))
 
     atom_images = Images()
     atom_images.initialize([atoms])
 
-    viewer = Viewer(atom_images)
+    try:
+        viewer = Viewer(atom_images)
+    except TclError as err:
+        raise TclError(str(err) + '. This may be because MDMC is being run in'
+                                  ' Docker and X11 forwarding has not been'
+                                  ' enabled.') from err
     viewer.run()
 
 
