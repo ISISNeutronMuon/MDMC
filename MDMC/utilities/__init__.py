@@ -2,7 +2,6 @@
 
 Contents
 --------
+installation_tests
 tinker_converter
 """
-
-from . import tinker_converter
