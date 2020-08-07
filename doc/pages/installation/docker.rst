@@ -21,7 +21,7 @@ these viewers is explained in the
 `Molecular Visualization <../tutorials/molecular-visualization.ipynb>`__
 tutorial. Instructions on how to enable X11 forwarding are in
 :ref:`x11-forwarding-label`.  X11 forwarding occurs by default on Linux, so
-no additional steps are required.
+on that platform no additional steps are required.
 
 
 Windows
