@@ -37,6 +37,6 @@ setup(
                       "numba", 'mpi4py'],
     extras_require={"LAMMPS": ["lammps"]},
     entry_points={"console_scripts": ['MDMC = MDMC.utilities.cli:main',
-                                      'mdmc = MDMC.utilities.clin:main']},
+                                      'mdmc = MDMC.utilities.cli:main']},
     include_package_data=True
 )
