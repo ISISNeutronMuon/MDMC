@@ -20,12 +20,25 @@ from typing import Callable, Dict, Optional
 
 class InstlTestBase(ABC):
 
+    """
+    Base class for installation tests
+
+    Attributes
+    ----------
+    success : str
+        A 'str' denoting if the test has PASSED, FAILED, or is INCOMPLETE
+    """
+
     def __init__(self):
 
         self._success: Optional[bool] = None
 
     @property
     def success(self) -> str:
+
+        """
+        Get whether or not the test has PASSED, FAILED or is INCOMPLETE
+        """
 
         if self._success is True:
             return 'PASSED'
@@ -39,15 +52,46 @@ class InstlTestBase(ABC):
     @abstractmethod
     def run(self):
 
+        """
+        Runs the test and sets the value of ''self.success''
+        """
+
         raise NotImplementedError
 
 
 class InstlTestFactory:
 
+    """
+    A factory class which keeps a registry of the installation tests and creates
+    instances of them
+    """
+
     registry: Dict[str, InstlTestBase] = {}
 
     @classmethod
     def register(cls, name: str) -> Callable:
+
+        """
+        A class level decorator for registering installation test classes
+
+        The name with which the test is registered should be the parameter
+        passed to the decorator.
+
+        Parameters
+        ----------
+        name : str
+            The name with which the test is registered
+
+        Example
+        -------
+        To register the ``InstlTestCore`` class with ``InstlTestFactory``:
+
+            .. highlight:: python
+            .. code-block:: python
+
+                @InstlTestFactory.register('core')
+                class InstlTestCore(InstlTestBase):
+        """
 
         def class_wrapper(wrapped_class: InstlTestBase) -> Callable:
 
@@ -59,13 +103,23 @@ class InstlTestFactory:
     @classmethod
     def create_instl_test(cls, name: str) -> InstlTestBase:
 
+        """
+        Creates an instance of the installation test for the class which
+        corresponds to the passed ``name``
+
+        Parameters
+        ----------
+        name : str
+            The ``registry`` name of the class to be initialized
+        """
+
         return cls.registry[name]()
 
 
 def run_installation_tests():
 
     """
-    A helper function for running all installation tests
+    A helper function for running all installation tests and printing the
     """
 
     for name in InstlTestFactory.registry:
@@ -76,6 +130,10 @@ def run_installation_tests():
 
 @InstlTestFactory.register('core')
 class InstlTestCore(InstlTestBase):
+
+    """
+    Class to test if all MDMC subpackages can be imported
+    """
 
     def run(self):
 
@@ -104,6 +162,11 @@ class InstlTestCore(InstlTestBase):
 @InstlTestFactory.register('LAMMPS')
 class InstlTestLAMMPS(InstlTestBase):
 
+    """
+    Class to test if LAMMPS is installed and if the PyLammps interface can be
+    accessed
+    """
+
     def run(self):
 
         try:
@@ -117,6 +180,11 @@ class InstlTestLAMMPS(InstlTestBase):
 
 @InstlTestFactory.register('X11 forwarding')
 class InstlTestX11Forwarding(InstlTestBase):
+
+    """
+    Class to test if tkinter can access the display. This is used to determine
+    if X11 forwarding is working in Docker/Singularity containers.
+    """
 
     def run(self):
 
@@ -138,6 +206,11 @@ class InstlTestX11Forwarding(InstlTestBase):
 
 @InstlTestFactory.register('Dynamic plotting dependencies')
 class InstlTestDynamicPlottingDependencies(InstlTestBase):
+
+    """
+    Class to test if the optional dependencies required for dynamic plotting are
+    installed
+    """
 
     def run(self):
 
