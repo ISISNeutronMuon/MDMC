@@ -36,6 +36,33 @@ to separately install a supported molecular dynamics package (e.g. LAMMPS).
    installation/containerless.rst
 
 
+Installation Tests
+------------------
+
+Following installation, you can run installation tests to check that MDMC has
+installed correctly and which additional features are available (e.g. if the
+required dependencies are installed for LAMMPS to be used as the MD engine).
+These tests can either be run from within a Python environment or at the command
+line.
+
+To run the installation tests from the command line:
+
+.. code-block:: bash
+
+  MDMC test
+
+To run the installation tests from a Python environment:
+
+.. code-block:: Python
+
+  from MDMC.utilities import run_installation_tests
+  run_installation_tests()
+
+Either of these methods will print to screen whether the MDMC core has been
+correctly installed and whether the additional functionality can be used. If any
+of these tests fails, additional details will be given in the log file.
+
+
 .. rubric:: Source Code
 
 Source code is available from https://github.com/MDMCproject/MDMCv0.2_pilot and
