@@ -12,7 +12,6 @@ from itertools import count, permutations
 import logging
 from math import gcd
 from types import MethodType
-import warnings
 import weakref
 
 import numpy as np
@@ -1988,13 +1987,6 @@ class Coulombic(NonBondedInteraction):
     TypeError
         If both atom_types and atoms have been passed
 
-    Warns
-    -----
-    UserWarning
-        If a charge is set when the Atom has no Coulombic interaction,
-        resulting in the initialization of a Coulomb interaction function.
-        Warning only raised in the first instance of triggering behaviour.
-
     Examples
     --------
     Upon initializing an ``Atom`` object and adding it to a ``Universe``:
@@ -2074,9 +2066,9 @@ class Coulombic(NonBondedInteraction):
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(charge)
-            warnings.warn(UserWarning('Coulombic interaction for the Atom '
-                                      'object initialized with the Coulomb '
-                                      'interaction function.'))
+            LOGGER.warning('%s: Coulombic interaction for the Atom object'
+                           'initialized with the Coulomb interaction function.',
+                           self.__class__)
 
     def __len__(self):
 

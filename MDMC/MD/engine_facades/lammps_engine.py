@@ -30,9 +30,9 @@ ends up using the OutputCapture class).
 from collections import defaultdict, namedtuple
 from copy import copy
 from itertools import chain, combinations, count, product, tee
+import logging
 from random import randint
 from tempfile import NamedTemporaryFile
-import warnings
 
 try:
     from lammps import PyLammps
@@ -51,6 +51,9 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom, BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class PyLammpsAttribute:
@@ -2241,12 +2244,6 @@ def parse_all_nonbonded_styles(interactions):
     ValueError
         If long range ``Dispersion`` not defined in conjunction with a long
         range ``Coulombic``.
-
-    Warns
-    -----
-    warnings.warn
-        If a pair style is specified which cannot have a vdw tail correction
-        applied
     """
 
     def check_validity(pair_style, cutoffs=None):
@@ -2329,8 +2326,9 @@ def parse_all_nonbonded_styles(interactions):
                 # Warn if incompatible pair_style and pair_modification have
                 # been used
                 if indiv_cmd in excluded and 'tail yes' in mod:
-                    warnings.warn('{0} pair style cannot have a vdw tail'
-                                  'correction applied'.format(indiv_cmd))
+                    LOGGER.warning('parse_all_nonbonded_styles: %s pair style'
+                                   ' cannot have a vdw tail correction applied',
+                                   indiv_cmd)
                     mod = set(md for md in mod if md != 'tail yes')
                 combined_parsed_inters[tuple(indiv_cmd + [cutoffs])] = list(mod)
                 for key in [int1, int2]:
