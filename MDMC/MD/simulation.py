@@ -4,6 +4,7 @@
 
 from collections import defaultdict
 from itertools import count, filterfalse, product
+import logging
 
 from enum import Enum
 import numpy as np
@@ -20,11 +21,12 @@ from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
+LOGGER = logging.getLogger(__name__)
 Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
                        'rhombic_dodecahedron', 'truncated_octahedron'])
-
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                  ', '.join(ForceFieldFactory.get_force_field_names())}
+
 
 @repr_decorator('dimensions', 'kspace_solver', 'electrostatic_solver',
                 'dispersive_solver', 'constraint_algorithm', 'parameters')
@@ -99,10 +101,20 @@ class Universe(AtomContainer):
         # attributes
         if self.kspace_solver and (self.electrostatic_solver or
                                    self.dispersive_solver):
-            raise ValueError('No other solver may be passed if kspace_solver is'
-                             ' passed')
+            msg = 'No other solver may be passed if kspace_solver is passed.'
+            LOGGER.error('%s has kspace_solver and %s. %s',
+                         self.__class__,
+                         'electrostatic_solver' if self.electrostatic_solver
+                         else 'dispersive_solver',
+                         msg)
+            raise ValueError(msg)
 
         self.constraint_algorithm = settings.get('constraint_algorithm')
+
+        LOGGER.info(r'%s created: {dimensions:%s, shape:%s}',
+                    self.__class__,
+                    self.dimensions,
+                    self.shape)
 
     def __str__(self):
 
@@ -146,16 +158,31 @@ class Universe(AtomContainer):
             if self.shape == Shape.cubic:
                 self._dimensions = np.array([dimensions] * 3)
             else:
-                raise TypeError("Only dimensions of cubic Universes can be"
-                                " specified with a float")
+                msg = ('Only dimensions of cubic Universes can be specified'
+                       ' with a float.')
+                LOGGER.error('%s: {dimensions: %s, shape: %s} %s',
+                             self.__class__,
+                             dimensions,
+                             self.shape,
+                             msg)
+                raise TypeError(msg)
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
                 self._dimensions = np.array(dimensions)
             else:
-                raise ValueError("3 dimensions must be specified")
+                msg = ('3 dimensions must be specified')
+                LOGGER.error('%s: {dimensions: %s} %s',
+                             self.__class__,
+                             dimensions,
+                             msg)
+                raise ValueError(msg)
         else:
-            raise TypeError("dimensions must be a float or 3 element list of"
-                            " floats")
+            msg = ('dimensions must be a float or 3 element list of floats.')
+            LOGGER.error('%s: {dimensions: %s} %s',
+                         self.__class__,
+                         dimensions,
+                         msg)
+            raise TypeError(msg)
 
     @property
     def interactions(self):
@@ -508,9 +535,14 @@ class Universe(AtomContainer):
         if key not in self.atom_type_interactions:
             self.atom_type_interactions[key] = atom_type
         else:
-            raise TypeError('assignments cannot be made to'
-                            ' atom_type_interactions keys which already possess'
-                            ' values')
+            msg = ('assignments cannot be made to atom_type_interactions keys'
+                   'which already possess values.')
+            LOGGER.error('%s: {key: %s, atom_type_interactions: %s} %s',
+                         self.__class__,
+                         key,
+                         self.atom_type_interactions,
+                         msg)
+            raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
     def add_structural_unit(self, structural_unit, force_field=None,
@@ -588,14 +620,25 @@ class Universe(AtomContainer):
         try:
             num_density = settings['num_density']
             if settings.get('num_struc_units'):
-                raise ValueError('Cannot pass both num_density and'
-                                 ' num_struc_units to fill the universe with.')
+                msg = ('Cannot pass both num_density and num_struc_units to'
+                       ' fill the universe with.')
+                LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
+                             ' %s',
+                             self.__class__,
+                             num_density,
+                             settings.get('num_struc_units'),
+                             msg)
+                raise ValueError(msg)
         except KeyError:
             try:
                 num_struc_units = settings['num_struc_units']
             except KeyError:
-                raise ValueError('The fill method takes either num_density or'
-                                 ' num_struc_units as a parameter.')
+                msg = ('The fill method takes either num_density or'
+                       ' num_struc_units as a parameter.')
+                LOGGER.error('%s %s',
+                             self.__class__,
+                             msg)
+                raise ValueError(msg)
             num_density = num_struc_units / np.prod(self.dimensions)
 
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
@@ -660,8 +703,12 @@ class Universe(AtomContainer):
             elif isinstance(add_dispersions, bool):
                 atoms = self.atom_list
             else:
-                raise TypeError('add_dispersions must be a list of Atoms or a'
-                                ' bool')
+                msg = ('add_dispersions parameter of add_force_field method'
+                       'must be a list of Atoms or a bool.')
+                LOGGER.error('%s: {add_dispersions: %s}',
+                             self.__class__,
+                             add_dispersions)
+                raise TypeError(msg)
             dispersions = []
             # Get unique atom types and add dispersions for each of these
             atom_types = {atom.atom_type for atom in atoms}
@@ -825,10 +872,14 @@ class Universe(AtomContainer):
         # solvent_density of a Universe.
         if abs(density * 100) <= abs(tolerance):
             return
-        elif self.solvent_density != 0.:
-            raise ValueError('The universe has already been solvated. The'
-                             ' density of a previously added solvent cannot be'
-                             ' changed.')
+        if self.solvent_density != 0.:
+            msg = ('The universe has already been solvated. The density of a'
+                   ' previously added solvent cannot be changed.')
+            LOGGER.error('%s: {solvent_density: %s, density: %s}. %s',
+                         self.__class__,
+                         self.solvent_density,
+                         density, msg)
+            raise ValueError(msg)
         # Get the prelim scaling of the orig box required to achieve density
         dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
                                * 3)
