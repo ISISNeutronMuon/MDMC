@@ -10,9 +10,12 @@ from mpi4py import MPI
 
 def start_logging(logfile: str = "MDMC.log",
                   level: int = logging.INFO,
-                  ranks: Union[int, List[int]] = 0):
+                  ranks: Union[int, List[int]] = 0,
+                  capture_warnings: bool = True):
 
     """
+    Start one or more loggers to capture log information from MDMC
+
     Parameters
     ----------
     logfile : str, optional
@@ -26,13 +29,18 @@ def start_logging(logfile: str = "MDMC.log",
         base ``logfile`` string and the node name and rank. `-1` indicates all
         ranks will be logged. **It is recommended `-1` is not used for runs
         using a large number of ranks.**
+    capture_warnings : bool, optional
+        Whether or not warnings are captured by the logger (with a level of
+        WARNING) or printed to stdout.
     """
 
     rank = MPI.COMM_WORLD.rank
 
     if ranks == rank == 0:
-        _start_single_logger(logfile, level=level)
-    elif ranks:
+        logger = _start_single_logger(logfile, level=level)
+        if capture_warnings:
+            _capture_warnings(logger)
+    if ranks:
         if ranks == -1:
             ranks = range(0, MPI.COMM_WORLD.Get_size(), 1)
         elif isinstance(ranks, str):
@@ -43,13 +51,31 @@ def start_logging(logfile: str = "MDMC.log",
             add = '_{0}_{1}'.format(platform.node(), rank)
             logfile = ('{0}{1}'.format(logfile, add)).replace(
                 '.log{}'.format(add), '{}.log'.format(add))
-            _start_single_logger(logfile, level=level)
+            logger = _start_single_logger(logfile, level=level)
+            # Only capture warnings on lowest rank
+            if capture_warnings and rank == min(ranks):
+                _capture_warnings(logger)
 
 
-def _start_single_logger(logfile, level):
+def _start_single_logger(logfile: str, level: int) -> logging.Logger:
 
     logger = create_logger(logfile=logfile, level=level)
     logger.info("MDMC started logging to %s", logfile)
+
+    return logger
+
+
+def _capture_warnings(logger: logging.Logger):
+
+    # logging module only provides warnings capturing at a module level,
+    # rather as a Logger method, so warnings have to be captured by default
+    # module level logger ("py.warnings") which then has the file handler
+    # from the logger attached.
+    logging.captureWarnings(True)
+    warnings_logger = logging.getLogger("py.warnings")
+    file_handler = list(filter(lambda x: isinstance(x, logging.StreamHandler),
+                               logger.handlers))[0]
+    warnings_logger.addHandler(file_handler)
 
 
 def create_logger(name: str = "MDMC",
