@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 from functools import lru_cache
 from inspect import signature
 from itertools import chain, permutations
+import logging
 import os
 from re import escape, sub
 
@@ -21,6 +22,9 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
 from MDMC.MD.structural_units import BondedInteraction, Coulombic
 from MDMC.MD import interaction_functions
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @repr_decorator('interaction_dictionary')
@@ -367,9 +371,13 @@ class FileForceField(ForceField):
         # same regardless of the different atom groups, however this is not
         # implemented.
         if len(groups) != 1:
-            raise ValueError('The atom groups of this interaction are not'
-                             ' consistent {0}. Atom tuples should have the same'
-                             ' groups in the same order.'.format(groups))
+            msg = ('The atom groups of this interaction are not consistent {0}.'
+                   ' Atom tuples should have the same groups in the same'
+                   ' order.'.format(groups))
+            LOGGER.error('%s: %s',
+                         self.__class__,
+                         msg)
+            raise ValueError(msg)
 
         groups = groups.pop()
         bonded_type = str(type(bonded).__name__)
@@ -465,9 +473,12 @@ class FileForceField(ForceField):
                                          matching_atoms)
         if len(unique_charges) != 1:
             # If not, show the corresponding atom rows in the error message
-            raise ValueError('All atoms of the Coulombic interaction must have'
-                             ' the same OPLS charge'
-                             ' ({0})'.format(matching_atoms))
+            msg = ('All atoms of the Coulombic interaction must have the same'
+                   ' OPLS charge ({0})'.format(matching_atoms))
+            LOGGER.error('%s %s',
+                         self.__class__,
+                         msg)
+            raise ValueError(msg)
         self._set_interaction_function(coulombic,
                                        interaction_functions.Coulomb,
                                        unique_charges)
@@ -497,10 +508,15 @@ class FileForceField(ForceField):
             atom_pairs = list(atom_pairs)
             atom_pair = (atom_pairs[0][0], atom_pairs[1][0])
             if len(set(atom_pair)) != 1:
-                raise ValueError('Currently only force fields which only use'
-                                 ' like-like Dispersion terms are implemented')
-            # As only like-like, just consider first index of atom_pairs
+                msg = ('Currently only force fields which only use like-like'
+                       ' Dispersion terms are implemented')
+                LOGGER.error('%s: {atom_pair: %s}. %s',
+                             self.__class__,
+                             atom_pair,
+                             msg)
+                raise ValueError(msg)
 
+            # As only like-like, just consider first index of atom_pairs
             for atom in atom_pairs[0]:
                 self._convert_atom_type_name(atom)
             # As all atoms within atom_pairs should be the same, only consider
@@ -584,8 +600,14 @@ class FileForceField(ForceField):
             # Check if atom.name is already a name in the atoms DataFrame
             if filter_dataframe([atom.name], self.atoms,
                                 column_names=['name']).empty:
-                raise ValueError('All atom names must be an OPLS atom type or'
-                                 ' an OPLS atom name') from err
+                msg = ('All atom names must be an OPLS atom type or an OPLS'
+                       ' atom name. {0} is not an OPLS atom type of atom'
+                       ' name.'.format(atom.name))
+                LOGGER.error('%s %s',
+                             self.__class__,
+                             msg,
+                             exc_info=1)
+                raise ValueError(msg) from err
 
     @staticmethod
     def _get_parameter_names(function, file_param_names=None):
@@ -636,8 +658,11 @@ class FileForceField(ForceField):
             # ordered and use these, otherwise raise a ValueError
             if any([param_names[i] != file_param_names[i] for i
                     in range(len(param_names))]):
-                raise ValueError('The force field data file has incorrectly'
-                                 ' ordered {0} parameters'.format(param_names))
+                msg = ('The force field data file has incorrectly ordered {0}'
+                       ' parameters'.format(param_names))
+                LOGGER.error('FileForceField: %s',
+                             msg)
+                raise ValueError(msg)
             param_names = file_param_names
 
         return param_names
@@ -671,8 +696,11 @@ class FileForceField(ForceField):
         """
 
         if len(function_parameters) != len(function_parameter_names):
-            raise ValueError('All atoms of the interaction must have the same'
-                             'OPLS parameters ({0})'.format(matching_inters))
+            msg = ('All atoms of the interaction must have the same OPLS'
+                   ' parameters ({0})'.format(matching_inters))
+            LOGGER.error('FileForceField: %s',
+                         msg)
+            raise ValueError(msg)
 
     @staticmethod
     def _set_interaction_function(interaction, function_type,

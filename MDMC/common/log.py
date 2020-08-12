@@ -82,6 +82,19 @@ def create_logger(name: str = "MDMC",
                   logfile: str = "MDMC.log",
                   level: int = logging.INFO) -> logging.Logger:
 
+    """
+    Create a formatter logger which outputs to a log file
+
+    Parameters
+    ----------
+    name : str
+        The name of the logger
+    logfile : str
+        The name of the log file
+    level : int
+        The debug level of the logger
+    """
+
     logger = logging.getLogger(name=name)
     logger.setLevel(level)
 
