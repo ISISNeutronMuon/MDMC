@@ -28,30 +28,27 @@ def start_logging(logfile: str = "MDMC.log",
         using a large number of ranks.**
     """
 
-    if ranks:
+    rank = MPI.COMM_WORLD.rank
+
+    if ranks == rank == 0:
+        _start_single_logger(logfile, level=level)
+    elif ranks:
         if ranks == -1:
             ranks = range(0, MPI.COMM_WORLD.Get_size(), 1)
-        rank = MPI.COMM_WORLD.rank
+        elif isinstance(ranks, str):
+            ranks = [ranks]
         if rank in ranks:
             # Prepends rank in front of .log extension if it exists, otherwise
             # appends to logfile
             add = '_{0}_{1}'.format(platform.node(), rank)
             logfile = ('{0}{1}'.format(logfile, add)).replace(
                 '.log{}'.format(add), '{}.log'.format(add))
-            logger = create_logger(logfile=logfile, level=level)
-            logger.info("MDMC started logging to %s", logfile)
-    else:
-        _start_single_logger(logfile)
+            _start_single_logger(logfile, level=level)
 
 
-def stop_logging():
+def _start_single_logger(logfile, level):
 
-    pass
-
-
-def _start_single_logger(logfile):
-
-    logger = create_logger(logfile=logfile)
+    logger = create_logger(logfile=logfile, level=level)
     logger.info("MDMC started logging to %s", logfile)
 
 
