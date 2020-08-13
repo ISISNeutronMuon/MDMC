@@ -130,39 +130,24 @@ class Control:
         ----------
         n_steps : int
             maximum number of steps for the refinement
+
+        Examples
+        --------
+        Perform a refinement with a maximum of 100 steps:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            control.refine(100)
         """
 
         count = -1
 
+        self._print_header()
         while count < n_steps and not self.minimizer.has_converged():
-
-            fom = self._generate_FoM()
-            self.minimizer.step(fom)
-            self._update_engine_parameters()
+            self.step()
             count += 1
-            with pd.option_context('display.max_colwidth', 11,
-                                   'display.precision', 5,
-                                   'display.float_format', '{:.4g}'.format):
-                output = self.minimizer.history.loc[[count]].to_string(
-                    col_space=11, index=False).split('\n')
-                if count == 0:
-                    output = ('Step' + output[0] + '\n   {}'.format(count)
-                              + output[1])
-                else:
-                    # Remove the header. This is done with a split rather than
-                    # passing to_string(header=False) for formatting reasons
-                    output = '{:4d}'.format(count) + output[1]
-                print(output)
 
-            if self.reset_config:
-                if self.minimizer.state_changed:
-                    # Set MD engine to remember new config
-                    self.simulation.engine.save_config()
-                else:
-                    # Set MD engine to reset to old config
-                    self.simulation.engine.reset_config()
-
-            self.minimizer.write_history('results.csv')
         # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer params to those from the final FoM
@@ -175,6 +160,44 @@ class Control:
                                 index=[0])
         print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
 
+    def step(self):
+
+        fom = self._generate_FoM()
+        self.minimizer.step(fom)
+        self._update_engine_parameters()
+        self._print_data()
+
+        if self.reset_config:
+            if self.minimizer.state_changed:
+                # Set MD engine to remember new config
+                self.simulation.engine.save_config()
+            else:
+                # Set MD engine to reset to old config
+                self.simulation.engine.reset_config()
+
+        self.minimizer.write_history('results.csv')
+
+    def _print_data(self):
+
+        with pd.option_context('display.max_colwidth', 12,
+                               'display.precision', 5,
+                               'display.float_format', '{:.4g}'.format):
+            n_step = self.minimizer.history.iloc[-1].name
+            output = self.minimizer.history.loc[[n_step]].to_string(
+                col_space=12, index=False, header=False).split('\n')
+            data = '{:4d}'.format(n_step) + ''.join(output)
+            print(data)
+
+    def _print_header(self):
+
+        def format_column(column):
+            column = column if len(column) < 13 else column[:9] + '...'
+            return ' ' * (12 - len(column)) + column
+
+        columns = ' '.join([format_column(col) for col
+                            in self.minimizer.history.columns])
+        header = 'Step' + columns
+        print(header)
 
     def _generate_FoM(self):
 
