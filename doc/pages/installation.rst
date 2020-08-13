@@ -61,7 +61,11 @@ To run the installation tests from a Python environment:
 Either of these methods will print to screen whether the MDMC core has been
 correctly installed and whether the additional functionality can be used. If any
 of these tests fails, additional details will be given in the log file.
-
+Either of these methods will print to screen whether MDMC install components
+were correctly installed. If any of these tests fails, additional details will
+be given in the log file. Please note that all MDMC install components may not
+be required for your intended usage of MDMC or your operating system
+environment.
 
 .. rubric:: Source Code
 
