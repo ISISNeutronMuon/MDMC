@@ -33,3 +33,7 @@ refinement
 trajectory_analysis
     Tools related to creating trajectories and calculating observables from them
 """
+
+from .common.log import start_logging
+
+start_logging()
