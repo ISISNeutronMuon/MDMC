@@ -2,7 +2,9 @@
 
 Contents
 --------
+cli
+installation_tests
 tinker_converter
 """
 
-from . import tinker_converter
+from .installation_tests import run_installation_tests

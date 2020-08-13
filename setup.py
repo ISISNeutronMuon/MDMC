@@ -36,5 +36,7 @@ setup(
     install_requires=["numpy", "scipy", "netCDF4", "pandas", "ase>=3.19",
                       "numba", 'mpi4py'],
     extras_require={"LAMMPS": ["lammps"]},
+    entry_points={"console_scripts": ['MDMC = MDMC.utilities.cli:main',
+                                      'mdmc = MDMC.utilities.cli:main']},
     include_package_data=True
 )
