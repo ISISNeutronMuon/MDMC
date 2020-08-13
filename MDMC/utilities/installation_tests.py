@@ -126,6 +126,7 @@ def run_installation_tests():
     for name in InstlTestFactory.registry:
         instl_test = InstlTestFactory.create_instl_test(name)
         instl_test.run()
+        # Padded with spaces to ensure alignment
         print('{0: <30}   {1}'.format(name, instl_test.success))
 
 
