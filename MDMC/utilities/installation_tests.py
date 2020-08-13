@@ -120,6 +120,7 @@ def run_installation_tests():
 
     """
     A helper function for running all installation tests and printing the
+    result for each test
     """
 
     for name in InstlTestFactory.registry:
