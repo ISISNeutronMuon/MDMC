@@ -9,9 +9,9 @@ from collections import Counter, OrderedDict
 from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count, permutations
+import logging
 from math import gcd
 from types import MethodType
-import warnings
 import weakref
 
 import numpy as np
@@ -23,6 +23,9 @@ from MDMC.common.decorators import repr_decorator, unit_decorator,\
 from MDMC.common import units
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
@@ -65,6 +68,12 @@ class StructuralUnit(ABC):
         self.velocity = velocity
         self.name = name
         self.parent = self
+
+        LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
+                    self.__class__,
+                    self.ID,
+                    self.name,
+                    self.position)
 
     @property
     def position(self):
@@ -1726,6 +1735,10 @@ class NonBondedInteraction(Interaction):
             self.universe.add_nonbonded_interaction(self)
         self.cutoff = settings.get('cutoff')
         super().__init__(**settings)
+        LOGGER.info('%s created: {function:%s, atom_types:%s}',
+                    self.__class__,
+                    self.function,
+                    self.atom_types)
 
     @abstractmethod
     def __eq__(self, other):
@@ -1974,13 +1987,6 @@ class Coulombic(NonBondedInteraction):
     TypeError
         If both atom_types and atoms have been passed
 
-    Warns
-    -----
-    UserWarning
-        If a charge is set when the Atom has no Coulombic interaction,
-        resulting in the initialization of a Coulomb interaction function.
-        Warning only raised in the first instance of triggering behaviour.
-
     Examples
     --------
     Upon initializing an ``Atom`` object and adding it to a ``Universe``:
@@ -2060,9 +2066,9 @@ class Coulombic(NonBondedInteraction):
             # Initializes a Coulomb interaction function with charge and units
             # and assigns it to self.function
             self.function = Coulomb(charge)
-            warnings.warn(UserWarning('Coulombic interaction for the Atom '
-                                      'object initialized with the Coulomb '
-                                      'interaction function.'))
+            LOGGER.warning('%s: Coulombic interaction for the Atom object'
+                           'initialized with the Coulomb interaction function.',
+                           self.__class__)
 
     def __len__(self):
 
@@ -2238,6 +2244,10 @@ class BondedInteraction(Interaction):
                 self._validate_atoms(tpl, settings.get('n_atoms'))
         self.atoms = list(atom_tuples)
         super().__init__(**settings)
+        LOGGER.info('%s created: {function:%s, atom IDs:%s}',
+                    self.__class__,
+                    self.function,
+                    [tuple(map(lambda a: a.ID, tpl)) for tpl in self.atoms])
 
     def __len__(self):
 

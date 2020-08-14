@@ -30,9 +30,9 @@ ends up using the OutputCapture class).
 from collections import defaultdict, namedtuple
 from copy import copy
 from itertools import chain, combinations, count, product, tee
+import logging
 from random import randint
 from tempfile import NamedTemporaryFile
-import warnings
 
 try:
     from lammps import PyLammps
@@ -51,6 +51,9 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom, BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class PyLammpsAttribute:
@@ -90,6 +93,14 @@ class PyLammpsAttribute:
             self.lmp = PyLammps(comm=self.comm)
             self.lmp.units('real')
             self.lmp.atom_style(atom_style)
+
+        LOGGER.debug('%s: {lmp: %s, communicator: %s, atom_style: %s}. PyLammps'
+                     ' instance %s.',
+                     self.__class__,
+                     self.lmp,
+                     self.comm,
+                     atom_style,
+                     'added to class' if lmp else 'created by class')
 
     @property
     def system_state(self):
@@ -413,12 +424,26 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
+            LOGGER.debug('%s Remove %s constraint from fixes: %s',
+                         self.__class__,
+                         self.universe.constraint_algorithm,
+                         self.fixes)
             self.lmp.unfix('constrain')
 
-        self.lmp.minimize(settings.get('etol', 1.e-4),
-                          settings.get('ftol', 0.),
+        etol = settings.get('etol', 1.e-4)
+        ftol = settings.get('ftol', 0.)
+        maxeval = settings.get('maxeval', 10000)
+        LOGGER.info('%s minimize: {n_steps: %s, etol: %s, ftol: %s,'
+                    ' maxeval: %s}',
+                    self.__class__,
+                    n_steps,
+                    etol,
+                    ftol,
+                    maxeval)
+        self.lmp.minimize(etol,
+                          ftol,
                           n_steps,
-                          settings.get('maxeval', 10000))
+                          maxeval)
 
         # Reapply the constraints
         if self.universe.constraint_algorithm:
@@ -443,6 +468,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 self.trajectory_file = open(f_name)
             # Custom trajectory output just saves the atom ID, type and
             # positions
+            LOGGER.debug('%s set trajectory dump output to %s',
+                         self.__class__,
+                         self.trajectory_file)
             self.lmp.dump('traj1', 'all', 'custom', self.traj_step,
                           self.trajectory_file.name, 'id', 'type', 'x', 'y',
                           'z')
@@ -453,6 +481,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 reset_to_nve = True
                 self.thermostat = 'berendsen'
 
+        LOGGER.info('%s run: {n_steps: %s, equilibration: %s}',
+                    self.__class__,
+                    n_steps,
+                    equilibration)
         self.lmp.run(n_steps)
 
         if equilibration and reset_to_nve:
@@ -478,8 +510,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             # or the individual atoms, so instead this saves the x, y, z, mass
             # and charge in a NumPy array with the indexes given by the atom ID
             # (with a -1 offset due to zero index)
-            # The atoms attribute also is not itera`ble
+            # The atoms attribute also is not iterable
             n_atoms = self.system_state.natoms
+            LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
+                        self.__class__,
+                        n_atoms)
             atoms = np.zeros([n_atoms, 5])
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
@@ -673,7 +708,22 @@ class LAMMPSUniverse(PyLammpsAttribute):
         max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
         max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
-        max_improper_per_atom = self._max_n_interaction(atoms, 'improper')
+        max_impropers_per_atom = self._max_n_interaction(atoms, 'improper')
+        LOGGER.debug('%s create LAMMPS box: {n_atom_types: %s'
+                     ' n_bond_types: %s, n_angle_types: %s,'
+                     ' n_dihedral_types: %s, n_improper_types: %s,'
+                     ' max_bonds_per_atom: %s, max_angles_per_atom: %s,'
+                     ' max_dihedrals_per_atom: %s, max_impropers_per_atom: %s}',
+                     self.__class__,
+                     n_atom_types,
+                     n_bond_types,
+                     n_angle_types,
+                     n_dihedral_types,
+                     n_improper_types,
+                     max_bonds_per_atom,
+                     max_angles_per_atom,
+                     max_dihedrals_per_atom,
+                     max_impropers_per_atom)
         self.lmp.create_box(n_atom_types,
                             region_ID,
                             'bond/types', n_bond_types,
@@ -683,7 +733,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                             'extra/bond/per/atom', max_bonds_per_atom,
                             'extra/angle/per/atom', max_angles_per_atom,
                             'extra/dihedral/per/atom', max_dihedrals_per_atom,
-                            'extra/improper/per/atom', max_improper_per_atom
+                            'extra/improper/per/atom', max_impropers_per_atom
                            )
 
     # ID is an acronym
@@ -728,6 +778,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                      for type, atom
                                      in sorted(self.atom_types.items())]
 
+        LOGGER.info('%s Add atoms to LAMMPS',
+                    self.__class__)
         for type_ID, atom_type_group in self.atom_types.items():
             # The mass below has associated units, which causes a segfault when
             # it is passed to LAMMPS - cast to float to remove units
@@ -830,6 +882,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             implemented in the LAMMPS facade
         """
 
+        LOGGER.info('%s Add topology to LAMMPS',
+                    self.__class__)
         bonds, angles, dihedrals, disps, couls, others = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
@@ -845,6 +899,12 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         pair_styles, pair_mods, pair_coeff_cmds = self._pair_commands(universe)
         if pair_styles:
+            LOGGER.debug('%s Add nonbonded pair styles to LAMMPS: {pair_styles:'
+                         ' %s, pair_mods: %s, pair_coeff_cmds: %s}',
+                         self.__class__,
+                         pair_styles,
+                         pair_mods,
+                         pair_coeff_cmds)
             # hybrid/overlay allows multiple pair_styles for same atom_type pair
             self.lmp.pair_style('hybrid/overlay', *pair_styles)
             self._update_charges()
@@ -854,6 +914,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self._modify_nonbonded_styles(pair_mods)
 
         if bonds:
+            LOGGER.debug('%s Add bonds to LAMMPS',
+                         self.__class__)
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
             self.lmp.bond_style('hybrid',
@@ -862,6 +924,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self._create_bonded_interactions('bond', bonds)
 
         if angles:
+            LOGGER.debug('%s Add angles to LAMMPS',
+                         self.__class__)
             # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             self.lmp.angle_style('hybrid',
@@ -870,6 +934,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self._create_bonded_interactions('angle', angles)
 
         if dihedrals:
+            LOGGER.debug('%s Add dihedrals to LAMMPS',
+                         self.__class__)
             # Split dihedrals into proper and impropers
             impropers, propers = partition(dihedrals, lambda d: d.improper)
             self.impropers, self.propers = list(impropers), list(propers)
@@ -1799,6 +1865,9 @@ class Ensemble(PyLammpsAttribute):
         for name in self.fix_names:
             if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
                         'p_berendsen', 'langevin', 'rescale']:
+                LOGGER.debug('%s Remove %s fix.',
+                             self.__class__,
+                             name)
                 self.lmp.unfix(name)
 
     def apply_ensemble_fixes(self):
@@ -1811,6 +1880,11 @@ class Ensemble(PyLammpsAttribute):
         """
 
         self.remove_ensemble_fixes()
+
+        LOGGER.debug('%s apply_ensemble_fixes before fixes applied:'
+                     ' {fixes: %s}',
+                     self.__class__,
+                     self.fixes)
 
         if not self.thermostat and not self.barostat:
             self.lmp.fix('nve', 'all', 'nve')
@@ -1858,6 +1932,10 @@ class Ensemble(PyLammpsAttribute):
                     self.lmp.unfix('nve')
                 self.lmp.fix('nph', 'all', 'nph', *press_params)
 
+        LOGGER.debug('%s apply_ensemble_fixes after fixes applied:'
+                     ' {fixes: %s}',
+                     self.__class__,
+                     self.fixes)
 
 # Define the unit system used in LAMMPS
 # NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
@@ -2241,12 +2319,6 @@ def parse_all_nonbonded_styles(interactions):
     ValueError
         If long range ``Dispersion`` not defined in conjunction with a long
         range ``Coulombic``.
-
-    Warns
-    -----
-    warnings.warn
-        If a pair style is specified which cannot have a vdw tail correction
-        applied
     """
 
     def check_validity(pair_style, cutoffs=None):
@@ -2329,8 +2401,9 @@ def parse_all_nonbonded_styles(interactions):
                 # Warn if incompatible pair_style and pair_modification have
                 # been used
                 if indiv_cmd in excluded and 'tail yes' in mod:
-                    warnings.warn('{0} pair style cannot have a vdw tail'
-                                  'correction applied'.format(indiv_cmd))
+                    LOGGER.warning('parse_all_nonbonded_styles: %s pair style'
+                                   ' cannot have a vdw tail correction applied',
+                                   indiv_cmd)
                     mod = set(md for md in mod if md != 'tail yes')
                 combined_parsed_inters[tuple(indiv_cmd + [cutoffs])] = list(mod)
                 for key in [int1, int2]:

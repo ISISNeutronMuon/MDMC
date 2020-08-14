@@ -186,17 +186,6 @@ def test_charge_change_coulomb(atom):
     assert atom.charge == TEST_CHARGE_2
 
 
-def test_charge_set_warning(atom):
-
-    """
-    Tests that a warning is raised when the charge of an atom is
-    set without there being a pre-existing a Coulombic interaction.
-    """
-
-    with pytest.warns(UserWarning):
-        atom.charge = TEST_CHARGE_1
-
-
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
 def test_charge_when_none(atom):
 

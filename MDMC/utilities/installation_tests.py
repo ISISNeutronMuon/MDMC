@@ -14,8 +14,12 @@ These tests exist so that a user can test their installation of MDMC.
 from abc import ABC, abstractmethod
 from glob import glob
 from importlib import import_module
+import logging
 from os.path import basename, dirname, join
 from typing import Callable, Dict, Optional
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class InstlTestBase(ABC):
@@ -32,6 +36,7 @@ class InstlTestBase(ABC):
     def __init__(self):
 
         self._success: Optional[bool] = None
+        self.name: Optional[str] = None
 
     @property
     def success(self) -> str:
@@ -48,6 +53,16 @@ class InstlTestBase(ABC):
             return 'INCOMPLETE'
         raise ValueError('The success value of this test has been incorrectly'
                          ' set. Please run the test again.')
+
+    def log_test_passed(self):
+
+        """
+        Logs that the test passed
+        """
+
+        LOGGER.info('%s %s installation test passed',
+                    self.__class__,
+                    self.name)
 
     @abstractmethod
     def run(self):
@@ -113,7 +128,9 @@ class InstlTestFactory:
             The ``registry`` name of the class to be initialized
         """
 
-        return cls.registry[name]()
+        instl_test = cls.registry[name]()
+        instl_test.name = name
+        return instl_test
 
 
 def run_installation_tests():
@@ -127,7 +144,7 @@ def run_installation_tests():
         instl_test = InstlTestFactory.create_instl_test(name)
         instl_test.run()
         # Padded with spaces to ensure alignment
-        print('{0: <30}   {1}'.format(name, instl_test.success))
+        print('{0: <30}   {1}'.format(instl_test.name, instl_test.success))
 
 
 @InstlTestFactory.register('core')
@@ -148,17 +165,30 @@ class InstlTestCore(InstlTestBase):
                     import_module('MDMC.' + fso_base)
                 except ImportError:
                     self._success = False
+                    LOGGER.error('%s %s installation test failed because the'
+                                 ' following package/module did not import: %s',
+                                 self.__class__,
+                                 self.name,
+                                 fso_base,
+                                 exc_info=True)
                     break
                 except Exception as err:
                     self._success = False
+                    LOGGER.error('%s %s installation test failed because an'
+                                 ' exception occured (other than an'
+                                 ' ImportError) while MDMC was being imported.',
+                                 self.__class__,
+                                 self.name,
+                                 exc_info=True)
                     raise Exception('An Exception (other than an ImportError)'
                                     ' occured while MDMC was being imported.'
-                                    ' It appears MDMC has installed this'
+                                    ' It appears MDMC has installed but this'
                                     ' Exception is likely to reduce'
                                     ' functionality.') from err
 
         if self._success is None:
             self._success = True
+            self.log_test_passed()
 
 
 @InstlTestFactory.register('LAMMPS')
@@ -169,16 +199,65 @@ class InstlTestLAMMPS(InstlTestBase):
     accessed
     """
 
+    LOG_ERROR_MSG: str = ('Due to this, MDMC will not be able to run MD'
+                          ' simulations with LAMMPS as the MD engine. Other MD'
+                          ' engines may still be available.')
+
     def run(self):
 
         try:
             from lammps import PyLammps
-            lmp = PyLammps()
-            lmp.close()
-            self._success = True
         except ImportError:
             self._success = False
+            LOGGER.error('%s %s installation test failed because LAMMPS Python'
+                         ' interface could not be imported, as lammps.py is not'
+                         ' in the PYTHONPATH. Please see the LAMMPS'
+                         ' documentation for how to rectify this. %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
+        except Exception as err:
+            self._success = False
+            LOGGER.error('%s %s installation test failed because the following'
+                         ' Exception was thrown while the LAMMPS Python'
+                         ' interface was being imported: %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
+            raise Exception from err
+        try:
+            lmp = PyLammps()
+        except OSError:
+            self._success = False
+            LOGGER.error('%s %s installation test failed because a PyLammps'
+                         ' instance could not be initialized. This is because'
+                         ' lammps.py cannot find the LAMMPS library (either'
+                         ' liblammps.so or liblammps.dylib). This can be'
+                         ' rectified by ensuring that LAMMPS has been built as'
+                         ' a shared library and the LAMMPS library is in the'
+                         ' PYTHONPATH. Please see the LAMMPS documentation'
+                         ' for further information. %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
+        except Exception as err:
+            self._success = False
+            LOGGER.error('%s %s installation test failed because the following'
+                         ' Exception was thrown while a PyLammps instance was'
+                         ' being initialized. %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
+            raise Exception from err
 
+        if self._success is None:
+            self._success = True
+            self.log_test_passed()
+            lmp.close()
 
 @InstlTestFactory.register('X11 forwarding')
 class InstlTestX11Forwarding(InstlTestBase):
@@ -188,22 +267,42 @@ class InstlTestX11Forwarding(InstlTestBase):
     if X11 forwarding is working in Docker/Singularity containers.
     """
 
+    LOG_ERROR_MSG: str = ('Due to this, GUI elements requiring tkinter, such as'
+                          ' the ASE viewer, will not be available. Other viewer'
+                          ' options, such as the X3DOM viewer, can still be'
+                          ' used.')
+
     def run(self):
 
         try:
             from tkinter import Tk, TclError
         except ImportError:
-            # Add log message that tkinter must be imported to test for X11
-            # forwarding
             self._success = False
+            LOGGER.error('%s %s installation test failed because tkinter could'
+                         ' not be imported. %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
         try:
             Tk()
         except TclError:
-            # Add log message about X11 failure
+            LOGGER.error('%s %s installation test failed because tkinter.Tk'
+                         ' could not be initialized. This is probably because'
+                         ' the DISPLAY cannot be accessed, which will occur if'
+                         ' X11 forwarding has not been enabled. If MDMC is'
+                         ' being run within Docker, please see the MDMC'
+                         ' installation instructions for how to enable X11'
+                         ' forwarding. %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
             self._success = False
 
         if self._success is None:
             self._success = True
+            self.log_test_passed()
 
 
 @InstlTestFactory.register('Dynamic plotting dependencies')
@@ -214,17 +313,37 @@ class InstlTestDynamicPlottingDependencies(InstlTestBase):
     installed
     """
 
+    LOG_ERROR_MSG = ('Due to this, dynamic plotting of the refinement will not'
+                     ' be possible.')
+
     def run(self):
 
         try:
             import jupyter
             import matplotlib
             import ipywidgets
-        except ImportError:
+        except ImportError as err:
             self._success = False
+            # err.name for an ImportError is the name of the missing library
+            LOGGER.error('%s %s installation test failed because %s could not'
+                         ' be imported. Please install this library to use'
+                         ' dynamic plotting. %s',
+                         self.__class__,
+                         self.name,
+                         err.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
         except Exception as err:
             self._success = False
+            LOGGER.error('%s %s installation test failed because the following'
+                         ' Exception was thrown when the required dependencies'
+                         ' were being imported. %s',
+                         self.__class__,
+                         self.name,
+                         self.LOG_ERROR_MSG,
+                         exc_info=True)
             raise Exception from err
 
         if self._success is None:
             self._success = True
+            self.log_test_passed()
