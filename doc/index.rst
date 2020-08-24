@@ -63,6 +63,18 @@ Indices
 .. toctree::
   :maxdepth: 1
   :hidden:
+  :caption: Developer Documentation
+
+  pages/developer/overview
+  pages/developer/coding_standards
+  pages/developer/documentation
+  pages/developer/units
+  pages/developer/testing
+  pages/developer/management
+
+.. toctree::
+  :maxdepth: 1
+  :hidden:
   :caption: Modules
 
   pages/modules/common
