@@ -81,3 +81,11 @@ Imports should be grouped in the following order:
 3. local modules
 
 Each group should be sorted alphabetically and should be separated by a newline.
+
+Type Hints
+----------
+MDMC has adopted gradual typing, which means that there is an intention to
+include `type hints <https://docs.python.org/3/library/typing.html>`_ in the
+MDMC codebase. It is encouraged that any new code includes type hints for
+function/method parameters and return values, and class variables, although code
+will not be rejected if it does not include type hints. 
