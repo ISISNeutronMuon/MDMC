@@ -12,5 +12,4 @@ to MDMC.
 - `Coding Standards <./coding_standards.rst>`_
 - `Documentation Standards <./documentation.rst>`_
 - `Units <./units.rst>`_
-- `Project Management <./management.rst>`_
 - `Testing <./testing.rst>`_
