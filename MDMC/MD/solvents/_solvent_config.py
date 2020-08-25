@@ -56,11 +56,6 @@ class SolventConfig(ABC):
 
         raise NotImplementedError
 
-    @abstractmethod
-    def __str__(self):
-
-        raise NotImplementedError
-
     @property
     def description(self):
 
@@ -365,11 +360,12 @@ class SolventConfig(ABC):
             # Initialises an object from the str specifying a BondedInteraction
             # at the start of each list in bonded_interactions. The rest of each
             # list (i.e. the atom names) are left unchanged.
-            bonded_interactions = map(lambda b_i: [getattr(structural_units,
-                                                           el)(constrained=con)
-                                                   if not n else el for n, el
-                                                   in enumerate(b_i)],
-                                      self.bonded_interactions)
+            bonded_interactions = list(map(lambda b_i:
+                                           [getattr(structural_units,
+                                                    el)(constrained=con)
+                                            if not n else el
+                                            for n, el in enumerate(b_i)],
+                                           self.bonded_interactions))
 
         molecules = []
         for mol_dict in coords.values():
