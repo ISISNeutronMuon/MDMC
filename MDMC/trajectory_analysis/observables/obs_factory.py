@@ -1,10 +1,10 @@
 """Factory class for generating observables"""
 
-from importlib import import_module
-from inspect import isclass, isabstract, getmembers
+from typing import Callable, Dict, Iterable, Type, Union
 
 from MDMC.trajectory_analysis.observables.obs import \
     Observable
+
 
 class ObservableFactory:
 
@@ -14,18 +14,57 @@ class ObservableFactory:
     long as it is a subclass of ``Observable``.
     """
 
-    @staticmethod
-    def create_observable(module_name):
+    registry: Dict[str, Observable] = {}
+
+    @classmethod
+    def register(cls, names: Union[str, Iterable]) -> Callable:
 
         """
-        Creates an Observable object from a module name
+        A class level decorator for registering Observable classes
 
-        The Observable object must be the first class in the module
+        The name with which the Observable is registered should be the parameter
+        passed to the decorator.
 
         Parameters
         ----------
-        module_name : str
-            The name of the module where the ``Observable`` is the first class
+        name : str
+            The name with which the Observable is registered
+
+        Example
+        -------
+        To register the ``SQw`` class with ``ObservableFactory``:
+
+            .. highlight:: python
+            .. code-block:: python
+
+                @ObservableFactory.register('SQw')
+                class SQw(Observable):
+        """
+
+        def class_wrapper(wrapped_class: Observable) -> Callable:
+
+            if isinstance(names, str):
+                cls.registry[names] = wrapped_class
+            else:
+                for name in names:
+                    cls.registry[name] = wrapped_class
+            return wrapped_class
+
+        return class_wrapper
+
+    @classmethod
+    def create_observable(cls, name: str) -> Observable:
+
+        """
+        Creates an ``Observable`` object from a module name
+
+        The ``Observable`` object must be registered with the
+        ``ObservableFactory``
+
+        Parameters
+        ----------
+        name : str
+            The name of with which the ``Observable`` is registered
 
         Returns
         -------
@@ -33,11 +72,25 @@ class ObservableFactory:
             An ``Observable`` object
         """
 
-        module = import_module('.' + module_name, __package__)
+        return cls.get_observable(name)()
 
-        classes = getmembers(module, lambda m: (isclass(m)
-                                                and not isabstract(m)
-                                                and issubclass(m, Observable)))
-        observable = classes[0][1]()
-        observable.name = module_name
+    @classmethod
+    def get_observable(cls, name: str) -> Type[Observable]:
+
+        """
+        Gets an ``Observable`` class from a registry name
+
+        Parameters
+        ----------
+        module_name : str
+            The name of with which the ``Observable`` is registered
+
+        Returns
+        -------
+        cls
+            A subclass of ``Observable``
+        """
+
+        observable = cls.registry[name]
+        observable.name = name
         return observable
