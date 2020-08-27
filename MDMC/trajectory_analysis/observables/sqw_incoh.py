@@ -5,7 +5,7 @@ import numpy as np
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import correlation
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.observables.SQw import AbstractSQw, calculate_rho
+from MDMC.trajectory_analysis.observables.sqw import AbstractSQw, calculate_rho
 
 
 @ObservableFactory.register(('IncoherentDynamicStructureFactor',

@@ -9,7 +9,7 @@ import pytest
 from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.trajectory import Trajectory, \
     TemporalConfiguration
-from MDMC.trajectory_analysis.observables.PDF import PairDistributionFunction
+from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 
 
 ELEMENTS = {'H', 'C', 'La'}
