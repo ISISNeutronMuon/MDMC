@@ -10,7 +10,8 @@ from MDMC.trajectory_analysis.observables.SQw import AbstractSQw, calculate_rho
 
 @ObservableFactory.register(('CoherentDynamicStructureFactor',
                              'SQwCoherent',
-                             'SQwCoh'))
+                             'SQwCoh',
+                             'SQw_coh'))
 class SQwCoherent(AbstractSQw):
 
     """
