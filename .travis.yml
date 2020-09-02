@@ -33,7 +33,7 @@ matrix:
       install:
         - pip3 install --upgrade pip
         # Currently limited to pytest < 4.0
-        - pip3 install pytest==3.12.0
+        - pip3 install pytest==3.10.0
         - pip3 install .
       script:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py
