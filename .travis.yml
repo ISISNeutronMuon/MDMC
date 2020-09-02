@@ -25,11 +25,14 @@ matrix:
       python: 3.6
       os: linux
       dist: bionic
-      before_install:
-        - apt-get update && apt-get install -y libopenmpi-dev
+      addons:
+        apt:
+          packages:
+            - libopenmpi-dev
+            - openmpi-bin
       install:
         - pip3 install --upgrade pip
         - pip3 install .
       script:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py
-        - pip3 uninstall MDMC
+        - pip3 uninstall -y MDMC
