@@ -15,7 +15,7 @@ from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond, \
                                      Coulombic
 from MDMC.MD.simulation import Universe, Shape
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
-from MDMC.trajectory_analysis.observables.SQw import SQw
+from MDMC.trajectory_analysis.observables.sqw import SQw
 
 
 FLOAT = 50.0

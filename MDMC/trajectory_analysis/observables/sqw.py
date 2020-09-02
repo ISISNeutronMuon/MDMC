@@ -14,6 +14,7 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.common.resolution_functions import gaussian
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
 class AbstractSQw(Observable):
@@ -24,9 +25,9 @@ class AbstractSQw(Observable):
     """
 
     def __init__(self):
-        self._independent_variables = None
-        self._dependent_variables = None
-        self._errors = None
+        self._independent_variables = {}
+        self._dependent_variables = {}
+        self._errors = {}
 
     @property
     def data(self):
@@ -560,6 +561,7 @@ class AbstractSQw(Observable):
         return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt
 
 
+@ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
 class SQw(AbstractSQw):
 
     """

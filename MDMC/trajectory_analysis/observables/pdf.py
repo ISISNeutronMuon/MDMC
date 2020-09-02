@@ -12,8 +12,9 @@ from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
-
+@ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
 
     """

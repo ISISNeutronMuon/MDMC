@@ -13,7 +13,7 @@ import pytest
 
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
-from MDMC.trajectory_analysis.observables import SQw
+from MDMC.trajectory_analysis.observables import sqw
 
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
@@ -124,7 +124,7 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
     """
 
     SQw_total = of.ObservableFactory.create_observable('SQw')
-    monkeymodule.setitem(SQw.B_INCOH, 'O', 0.)
+    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
     SQw_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
@@ -142,7 +142,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
     """
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
-    monkeymodule.setitem(SQw.B_INCOH, 'O', 0.)
+    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
