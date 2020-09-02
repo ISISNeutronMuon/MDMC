@@ -25,6 +25,8 @@ matrix:
       python: 3.6
       os: linux
       dist: bionic
+      before_install:
+        - apt-get update && apt-get install -y libopenmpi-dev
       install:
         - pip3 install --upgrade pip
         - pip3 install .
