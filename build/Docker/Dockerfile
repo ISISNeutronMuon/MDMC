@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y \
 
 # Install any packages required for container which are not specifically for
 # running MDMC (i.e. not in requirements.txt)
+RUN pip3 install --upgrade pip
 RUN pip3 install setuptools --upgrade
 RUN pip3 install pytest==3.10.0 \
   pytest-cov \
