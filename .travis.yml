@@ -32,7 +32,8 @@ matrix:
             - openmpi-bin
       install:
         - pip3 install --upgrade pip
-        # Currently limited to pytest < 4.0
+        # Currently limited to pytest < 4.0 due to the way in which fixtures are
+        # used. This can be removed once these have been updated.
         - pip3 install pytest==3.10.0
         - pip3 install .
       script:
