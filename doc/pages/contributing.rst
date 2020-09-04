@@ -17,7 +17,8 @@ environment in which you are running MDMC e.g. Docker, HPC, your OS etc.
 
 If you would like then please assign any GitHub labels which you think are
 relevant to your issue, with the exception of those indicating priority
-(**P0** to **P5**), as **PT** will be assigned by default.
+(**P0** to **P5**), as **PT** will be assigned by default (see
+:ref:`dev_doc_management-label` for more details).
 
 If you would like to report a bug or request a feature without creating a GitHub
 issue, please send as many details as possible to MDMC support:
