@@ -1,7 +1,7 @@
 .. _dev_doc_management-label:
 
-Project Management
-==================
+MDMC Software Management
+========================
 .. note::
 
   This section is only relevant to active developers of MDMC, rather than
