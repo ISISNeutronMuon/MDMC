@@ -1,23 +1,41 @@
 sudo: required
 
-language: minimal
-
-services:
-  - docker
-
 notifications:
   email: false
-
-before_install:
-  - docker pull tfarmer/mdmc_dependencies:latest
-
-script:
-  - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-
-after_sucess:
-  - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-  - bash <(curl -s https://codecov.io/bash)
 
 branches:
   only:
     - master
+
+matrix:
+  include:
+    # tests using docker container - including tests which requires MD engines
+    - language: minimal
+      services: docker
+      before_install:
+        - docker pull tfarmer/mdmc_dependencies:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      after_sucess:
+        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        - bash <(curl -s https://codecov.io/bash)
+
+    # tests non-container environment, and tests which does not require MD engines
+    - language: python
+      python: 3.6
+      os: linux
+      dist: bionic
+      addons:
+        apt:
+          packages:
+            - libopenmpi-dev
+            - openmpi-bin
+      install:
+        - pip3 install --upgrade pip
+        # Currently limited to pytest < 4.0 due to the way in which fixtures are
+        # used. This can be removed once these have been updated.
+        - pip3 install pytest==3.10.0
+        - pip3 install .
+      script:
+        - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+        - pip3 uninstall -y MDMC

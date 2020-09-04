@@ -34,9 +34,8 @@ setup(
     url="https://mdmcproject.org/",
     download_url="https://github.com/MDMCproject",
     install_requires=["numpy", "scipy", "netCDF4", "pandas", "ase>=3.19",
-                      "numba", 'mpi4py'],
+                      "numba", 'mpi4py', 'ipython'],
     extras_require={"LAMMPS": ["lammps"]},
-    entry_points={"console_scripts": ['MDMC = MDMC.utilities.cli:main',
-                                      'mdmc = MDMC.utilities.cli:main']},
+    entry_points={"console_scripts": ['MDMC = MDMC.utilities.cli:main']},
     include_package_data=True
 )

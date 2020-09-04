@@ -9,10 +9,16 @@ MDMC is then installed using pip and Git:
 
 .. code-block:: bash
 
-  pip install git+https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
+  python3 -m pip install git+https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
 
 This will install MDMC and all Python dependencies; this does not include the
-molecular dynamics engines.
+molecular dynamics engines.  If you have experience any problems installing MDMC
+using pip, please ensure that your pip version is up-to-date. pip can be updated
+using:
+
+.. code-block:: bash
+
+  python -m pip install --upgrade pip
 
 **Note1: While MDMC is in a private repository, the above** `pip install`
 **require username and password**
