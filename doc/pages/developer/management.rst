@@ -38,8 +38,8 @@ Story points
 All issues are assigned a number of story points which attempt to quantify the
 expected development resources required for the issue. Story points are a
 relative measure and do no correspond to a specific amount of developer hours,
-as this will vary dependent on the currently active developers; however 1 story
-point will probably equate to between 0.5 and 1 developer day.
+as this will vary dependent on the currently active developers; however an
+attempt is made to equate 1 story point to ~0.5 developer days.
 
 As with priorities, story points should be specified by active developers.
 
