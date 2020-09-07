@@ -22,10 +22,15 @@ is **not** required to run MDMC, however a basic understanding will make setting
 up refinements quicker and scripts more flexible. There is a short introduction
 to Python `here <https://www.mantidproject.org/Introduction_To_Python>`_.
 
+Contributing to MDMC
+--------------------
+MDMC is open source and we welcome contributions to the project.  Please see
+:ref:`contributing-label` for more details on how to contribute.
+
 Acknowledgements
 ----------------
 Funding for the development of MDMC has been provided by the Swedish Research
-Council ...
+Council under grant 2016-06954.
 
 Indices
 -------
@@ -45,6 +50,7 @@ Indices
    pages/installation
    pages/simulations
    pages/parameter-refinement
+   pages/contributing
 
 .. toctree::
    :maxdepth: 2
@@ -59,6 +65,18 @@ Indices
    tutorials/running-a-simulation.ipynb
    tutorials/selecting-fitting-parameters.ipynb
    tutorials/running-a-refinement.ipynb
+
+.. toctree::
+  :maxdepth: 1
+  :hidden:
+  :caption: Developer Documentation
+
+  pages/developer/overview
+  pages/developer/coding_standards
+  pages/developer/documentation
+  pages/developer/units
+  pages/developer/testing
+  pages/developer/management
 
 .. toctree::
   :maxdepth: 1
