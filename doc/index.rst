@@ -63,6 +63,7 @@ Indices
    tutorials/solvating-a-universe.ipynb
    tutorials/molecular-visualization.ipynb
    tutorials/running-a-simulation.ipynb
+   tutorials/creating-an-observable.ipynb
    tutorials/selecting-fitting-parameters.ipynb
    tutorials/running-a-refinement.ipynb
 
