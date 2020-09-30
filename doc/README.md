@@ -4,11 +4,6 @@
 
 First, install [Pandoc](https://pandoc.org/installing.html) using the downloadable installer or via the [chocolatey](https://chocolatey.org/packages/pandoc) package manager. Note: The
 version of Pandoc which is available on PyPI (accessible using `pip install pandoc`) is **not** sufficient.
-Additionally, you will need to install [make](https://stackoverflow.com/questions/32127524/how-to-install-and-use-make-in-windows) either using MingW or chocolatey. The chocolatey installation command is:
-
-```
-choco install make
-```
 
 Optional: create a Python virtualenv to install the needed Python modules to avoid any version dependency problems. In a terminal run the following.
 
