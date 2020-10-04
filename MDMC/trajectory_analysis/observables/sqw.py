@@ -25,9 +25,9 @@ class AbstractSQw(Observable):
     """
 
     def __init__(self):
-        self._independent_variables = {}
-        self._dependent_variables = {}
-        self._errors = {}
+        self._independent_variables = None
+        self._dependent_variables = None
+        self._errors = None
 
     @property
     def data(self):
@@ -273,16 +273,15 @@ class AbstractSQw(Observable):
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
-            assert_allclose(self._calculate_E(len(self.E), dt),
+            assert_allclose(self.calculate_E(len(self.E), dt),
                             self.E,
                             rtol=1e-5,
                             err_msg=("Set E values and calculated E values are"
                                      " not consistent"))
         elif self.independent_variables:
-            self.independent_variables['E'] = self._calculate_E(len(self.t), dt)
+            self.independent_variables['E'] = self.calculate_E(len(self.t), dt)
         else:
-            self.independent_variables = {'E':self._calculate_E(len(self.t),
-                                                                dt)}
+            self.independent_variables = {'E':self.calculate_E(len(self.t), dt)}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])
@@ -317,7 +316,7 @@ class AbstractSQw(Observable):
 
         pass
 
-    def _calculate_E(self, nE, dt):
+    def calculate_E(self, nE, dt):
 
         """
         Calculates ``E`` from the ``Trajectory`` times
