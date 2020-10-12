@@ -3,7 +3,7 @@ name: Bug report
 about: Report an error which requires fixing
 title: ''
 labels: bug, PT
-assignees: TOFarmer
+assignees:
 
 ---
 
