@@ -5,3 +5,4 @@ scipy
 numba
 ase>=3.19
 ipython
+nbsphinx
