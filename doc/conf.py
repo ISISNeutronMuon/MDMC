@@ -17,7 +17,6 @@ import sys
 import shutil
 
 sys.path.insert(0, os.path.abspath('..'))
-autodoc_mock_imports = ["mpi4py"]
 
 # -- Custom Configuration ----------------------------------------------------
 
