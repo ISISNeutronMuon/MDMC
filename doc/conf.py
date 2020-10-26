@@ -18,6 +18,7 @@ import shutil
 
 sys.path.insert(0, os.path.abspath('..'))
 
+
 # -- Custom Configuration ----------------------------------------------------
 
 # Add print formatting strings to match Sphinx formatting
