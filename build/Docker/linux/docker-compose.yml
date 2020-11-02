@@ -29,7 +29,7 @@ services:
         export DISPLAY=$DISPLAY
         git clone --depth=1 https://$UNAME:$PWORD@github.com/MDMCproject/MDMCv0.2_pilot
         pip3 install ./MDMCv0.2_pilot
-        cp -R ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
+        cp -RT ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
         cd /mdmc/notebooks
         jupyter trust /mdmc/notebooks/mdmc_tutorials/*.ipynb
         jupyter notebook --ip 0.0.0.0 --no-browser --allow-root
