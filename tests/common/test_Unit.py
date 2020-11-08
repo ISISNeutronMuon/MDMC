@@ -1,6 +1,4 @@
-"""Tests related to the Unit class
-
-AUTHOR :    Thomas Farmer        START DATE :    18/12/2018, 16:02:17"""
+"""Tests related to the Unit class"""
 
 import numpy as np
 import pytest

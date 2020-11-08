@@ -1,7 +1,5 @@
 """Tests for classes that derive from FigureOfMeritCalculator class and test for
-ObservablePair class
-
-AUTHOR :    Thomas Farmer        START DATE :    19/10/2018, 13:43:11"""
+ObservablePair class"""
 
 import copy
 

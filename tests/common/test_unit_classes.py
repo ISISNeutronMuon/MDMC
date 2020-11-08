@@ -1,7 +1,4 @@
-"""Tests any classes that add units to the representation
-
-
-AUTHOR :    Thomas Farmer        START DATE :    18/12/2018, 11:49:19"""
+"""Tests any classes that add units to the representation"""
 
 from copy import deepcopy
 

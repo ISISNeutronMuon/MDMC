@@ -1,6 +1,4 @@
-"""Tests for setting up and running MDMC using LAMMPS
-
-AUTHOR :    Thomas Farmer        START DATE :    11/02/2019, 16:21:38"""
+"""Tests for setting up and running MDMC using LAMMPS"""
 
 from collections import Counter
 

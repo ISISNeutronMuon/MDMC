@@ -1,8 +1,7 @@
 """Tests for SQw observable
 
 Includes calculation from MD trajectory and reading from experimental data file.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 16:34:02"""
+"""
 
 import numpy as np
 import pytest

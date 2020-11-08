@@ -6,9 +6,7 @@ the SQw energy step size, dE.  If the trajectory provided has a larger t than is
 required by dE, SQw must still be calculated for dE step sizes.  These unit
 tests ensure that SQw is the same (within uncertainty) independent of the
 trajectory length, it the same energies are specified.  THIS MODULE COULD BE
-PARAMETERIZED TO TEST OTHER OBSERVABLES
-
-AUTHOR :    Thomas Farmer        START DATE :    15/11/2018, 17:11:21"""
+PARAMETERIZED TO TEST OTHER OBSERVABLES"""
 
 try:
     import cPickle as pickle

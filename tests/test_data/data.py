@@ -3,9 +3,7 @@
 Data for reader unit tests must have the same key as the reader name. Data for
 observable system tests must have the same key as the observable name. Data for
 MDMC objects must have the same key as the object name.  Descriptions of data
-are also supplied.
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-6-7 14:10:35"""
+are also supplied."""
 
 from os import path
 
