@@ -14,7 +14,13 @@ The line length in MDMC (including documentation) is 80 characters.
 snake_case
 ----------
 snake_case is used for all variables names, except when the variable contains an
-abbreviation. So a variable related to a molecular dynamics (MD) engine is
+abbreviation. So a variable related 
+
+
+
+
+
+to a molecular dynamics (MD) engine is
 MD_engine, rather than md_engine. The same applies for physical symbols, e.g. Q
 for momentum transfer and E for energy should both be upper case.
 
