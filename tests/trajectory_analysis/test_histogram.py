@@ -1,6 +1,4 @@
-"""Tests for configuration, trajectory and histogram calculation
-
-AUTHOR :    Thomas Farmer        START DATE :    2018-5-29 17:36:22"""
+"""Tests for configuration, trajectory and histogram calculation"""
 
 import pytest
 import numpy as np

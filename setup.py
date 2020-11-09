@@ -29,7 +29,7 @@ setup(
     desription=('A package for optimising classical molecular dynamics'
                 ' parameters by refining against experimental data.'),
     packages=find_packages(),
-    author="Thomas Farmer",
+    author="MDMC developers",
     author_email="support@mdmcproject.org",
     url="https://mdmcproject.org/",
     download_url="https://github.com/MDMCproject",

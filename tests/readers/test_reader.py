@@ -3,9 +3,7 @@
 Any reader can be added by including the required parameters in
 READERS_TEST_INFO and test data in MDMC.tests.test_data, and by setting the test
 data variable in MDMC.tests.test_data.data. Test data variable names must be the
-same name as the correspoding reader.
-
-AUTHOR :    Thomas Farmer        START DATE :    09/07/2018, 17:07:03"""
+same name as the correspoding reader."""
 
 import inspect
 

@@ -1,6 +1,4 @@
-"""Tests for setting up a simulation
-
- AUTHOR :    Thomas Farmer        START DATE :    2018-4-30 13:05:13"""
+"""Tests for setting up a simulation"""
 
 from collections import Counter
 from itertools import combinations, permutations

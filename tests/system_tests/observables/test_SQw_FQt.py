@@ -2,9 +2,7 @@
 MD
 
 Although SQw and FQt are two separate observables, as the calculation of SQw
-realies on the calculation of FQt they are tested together.
-
-AUTHOR :    Thomas Farmer        START DATE :    24/07/2018, 15:34:26"""
+realies on the calculation of FQt they are tested together."""
 
 from netCDF4 import Dataset
 import numpy as np

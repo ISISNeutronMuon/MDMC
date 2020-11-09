@@ -1,9 +1,7 @@
 """Tests units assigned to properties
 
 Tests properties belonging to the following classes: StructuralUnit, Atom,
-Molecule, BoundingBox, Parameter, LAMPSQW, netCDF, xml_SQw, SQw
-
-AUTHOR :    Thomas Farmer        START DATE :    17/12/2018, 13:12:24"""
+Molecule, BoundingBox, Parameter, LAMPSQW, netCDF, xml_SQw, SQw"""
 
 import numpy as np
 import pytest

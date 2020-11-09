@@ -48,8 +48,8 @@ for osgroup, compression in OSGROUP_FORMAT.items():
 # -- Project information -----------------------------------------------------
 
 project = u'MDMC'
-copyright = u'2019, Thomas Farmer'
-author = u'Thomas Farmer'
+copyright = u'2019, MDMC developers'
+author = u'MDMC developers'
 
 # The short X.Y version
 version = u''
@@ -174,7 +174,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'MDMC.tex', u'MDMC Documentation',
-     u'Thomas Farmer', 'manual'),
+     u'MDMC developers', 'manual'),
 ]
 
 
