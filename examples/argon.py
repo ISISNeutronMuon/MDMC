@@ -7,6 +7,8 @@ A copy of the data fitting against is assumed to be located in
 
 import numpy as np
 import os
+# Change the number of threads depending on the number of physical cores on your computer
+# as it was tested for LAMMPS
 os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
 
