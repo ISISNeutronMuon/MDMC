@@ -6,6 +6,8 @@ A copy of the data fitting against is assumed to be located in
 """
 
 import numpy as np
+import os
+os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
 
 from MDMC.control import Control
