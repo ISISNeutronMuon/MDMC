@@ -34,10 +34,12 @@ Ar_dispersion = Dispersion(universe,
                            vdw_tail_correction=True,
                            function=LennardJones(1.0243, 3.36))
 
-# MD Engine setup
+# MD Engine setup. time_step of 10 fs is somewhat high but for Argon OK-ish.
+# If time_step is descreased by a factor consider increasing traj_step by the
+# same factor.
 simulation = Simulation(universe,
                         engine="lammps",
-                        time_step=10.0,#10.340088,#9.40008,
+                        time_step=10.0,
                         temperature=120.,
                         traj_step=25)
 
@@ -66,8 +68,8 @@ control = Control(simulation=simulation,
                   MC_norm=1,
                   minimizer_type="MMC",
                   reset_config=False,
-                  MD_steps=60000,
-                  t_resolution=467.)
+                  MD_steps=10000,
+                  t_resolution=200.)
 
 # Hack the input data to onto a uniform grid, i.e. make E and Q uniform
 # (a better approach could be to create a new versions of the
@@ -103,4 +105,5 @@ control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
                                                             'Q':Q_uniform}
 
 # Run the refinement, i.e. refine the FF parameters against the data
-control.refine(n_steps=100)
+# n_steps = 3 is too small, but good choice to first test script 
+control.refine(n_steps=3)
