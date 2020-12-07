@@ -1,14 +1,14 @@
 """
 An example MDMC script for optimizing Lennard Jones parameters for liquid Ar.
-For info on the syntax the MDMC docs including the jupyter notebook tutorials.
+For info on syntax see the MDMC docs, including the jupyter notebook tutorials.
 A copy of the data fitting against is assumed to be located in
 ../doc/tutorials/data/Well_s_q_omega_Ar_data.xml
 """
 
 import numpy as np
 import os
-# Change the number of threads depending on the number of physical cores on your computer
-# as it was tested for LAMMPS
+# Change the number of threads depending on the number of physical cores on
+# your computer as it was tested for LAMMPS
 os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
 
@@ -28,13 +28,16 @@ Ar = Atom('Ar', charge=0.)
 n_ar_atoms = int(density * np.product(universe.dimensions))
 print(n_ar_atoms)
 universe.fill(Ar, num_struc_units=(n_ar_atoms))
+
+# Above an universe of non-interacting argon atoms was created. Below
+# specify how these atoms will interact
 Ar_dispersion = Dispersion(universe,
                            (Ar.atom_type, Ar.atom_type),
                            cutoff=8.,
                            vdw_tail_correction=True,
                            function=LennardJones(1.0243, 3.36))
 
-# MD Engine setup. time_step of 10 fs is somewhat high but for Argon OK-ish.
+# MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the
 # same factor.
 simulation = Simulation(universe,
@@ -49,7 +52,7 @@ print("Minimization Complete")
 simulation.run(n_steps=50000, equilibration=True)
 print("Equilibration Complete")
 
-# Setup refinement
+# Setup refinement of the force field parameters
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental
 # dataset
@@ -59,22 +62,19 @@ exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'weight':1.}]
 
 # Fit parameters is the set of all unique fit parameters in the universe
-# which are not fixed.
+# which are not fixed
 fit_params = set([p for p in universe.parameters if p.fixed is False])
 
+# Specify how the refinement is going to be controlled
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_params=fit_params,
-                  MC_norm=1,
-                  minimizer_type="MMC",
-                  reset_config=False,
                   MD_steps=10000,
                   t_resolution=200.)
 
-# Hack the input data to onto a uniform grid, i.e. make E and Q uniform
-# (a better approach could be to create a new versions of the
-# Well_s_q_omega_Ar_data.xml data on uniform grids, instead of doing this
-# on the fly in code below. As of the writing MDMC requires data to be on
+# Hack the input data onto a uniform grid, i.e. make E and Q uniform
+# (alternatively, create a new versions of the Well_s_q_omega_Ar_data.xml data
+# on uniform grids. As of the writing MDMC requires data to be on
 # a uniform grid)
 exp_obs = control.observable_pairs[0].exp_obs
 Q = exp_obs.Q
@@ -104,6 +104,6 @@ control.observable_pairs[0].exp_obs._errors = {'SQw':SQw_err_uniform}
 control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
                                                             'Q':Q_uniform}
 
-# Run the refinement, i.e. refine the FF parameters against the data
-# n_steps = 3 is too small, but good choice to first test script 
+# Run the refinement, i.e. refine the FF parameters against the data.
+# n_steps = 3 is too small, but a good choice to first test this script
 control.refine(n_steps=3)
