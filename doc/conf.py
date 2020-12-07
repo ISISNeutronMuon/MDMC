@@ -15,6 +15,7 @@
 import os
 import sys
 import shutil
+autodoc_mock_imports=["mpi4py"]
 
 sys.path.insert(0, os.path.abspath('..'))
 
