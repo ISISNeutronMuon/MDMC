@@ -150,23 +150,36 @@ class Control:
 
         # Try/except accounts for n_steps <= -1
         try:
-            # Reset the minimizer params to those from the final FoM
+            # Reset the minimizer params to those from the final FoM:
+            # to account for a current side effect of step()
             self.minimizer.reset_params()
             self._update_engine_parameters()
         except TypeError:
             pass
 
+        # print values of final parameters
         param_df = pd.DataFrame({p.name:p.value for p in self.minimizer.params},
                                 index=[0])
         print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
 
     def step(self):
 
+        """
+        Do a full step: generate and run MD to calulate FoM for existing
+        parameters, iterate parameters a step forward and reset MD (phasespace)
+        if previous step was rejected and reset_config = true
+        """
+
+        # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
+        # Select new parameters to consider
         self.minimizer.step(fom)
+        # Update the MD engine with new parameters
         self._update_engine_parameters()
         self._print_data()
 
+        # When reset_config=true reset the MD (phasespace) back if the
+        # previous step was rejected
         if self.reset_config:
             if self.minimizer.state_changed:
                 # Set MD engine to remember new config
@@ -202,7 +215,8 @@ class Control:
     def _generate_FoM(self):
 
         """
-        The methods required to generate a FoM
+        Run the MD for an iteration/step, calculate observable, compare with
+        observed observed and return the FoM
 
         Returns
         -------
