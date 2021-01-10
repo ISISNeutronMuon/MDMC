@@ -65,6 +65,12 @@ class Universe(AtomContainer):
     ----------
     shape : enum
         Member of the ``Shape`` enum.
+    dimensions : numpy.ndarray, list, float
+        Dimensions of the ``Universe`` in units of ``Ang``.
+    configuration : Configuration
+        Stores the content, i.e. configuration of atoms etc within the universe
+    force_field : ForceField or None
+        Force field to apply to the Universe
     kspace_solver : KSpaceSolver
         The k-space solver to be used for both electrostatic and dispersive
         interactions.
