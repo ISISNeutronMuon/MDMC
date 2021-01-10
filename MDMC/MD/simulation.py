@@ -41,14 +41,13 @@ class Universe(AtomContainer):
     dimensions : numpy.ndarray, list, float
         Dimensions of the ``Universe``, in units of ``Ang``. A `float` can be
         used for a cubic universe.
-    shape : enum
-        Member of the ``Shape`` enum.
-    force_field : ForceField
+    shape : enum, optional
+        Member of the ``Shape`` enum. Default is Shape.cubic.
+    force_field : ForceField, optional
         A force field to apply to the Universe. The force fields available are:
-        DYNAMIC_FORCE_FIELD_LIST
-    structures : list
-        Structures contained in the ``Universe``.
-
+        DYNAMIC_FORCE_FIELD_LIST. Default is None.
+    structures : list, optional
+        Structures contained in the ``Universe``. Default is None.
     **settings
         ``kspace_solver`` (`KSpaceSolver`)
             The k-space solver to be used for both electrostatic and dispersive
