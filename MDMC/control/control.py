@@ -344,26 +344,3 @@ class Control:
         """
 
         raise NotImplementedError
-    #
-    # def _calculate_trajectory_slice(self, exp_obs, traj_step):
-    #
-    #     """
-    #     Calculates the slice of the trajectory that is required for calculating
-    #     the MD observables for the same independent variables as the
-    #     experimental observables
-    #
-    #     Arugments:
-    #     exp_obs - an observable with origin='experiment'
-    #     traj_step - the integer step size of the MD trajectory captures
-    #
-    #     Returns:
-    #     A slice
-    #     """
-    #
-    #     n_steps = len(exp_obs.E)
-    #
-    #     start = 0
-    #     stop = self.MD_steps / traj_step
-    #     step = int(round((self.MD_steps - start) / n_steps))
-    #
-    #     return slice(start, stop + 1, step)
