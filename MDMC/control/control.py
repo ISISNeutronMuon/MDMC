@@ -304,8 +304,6 @@ class Control:
             calculated
         """
 
-        # slc = self._calculate_trajectory_slice(self.observable_pairs[0].exp_obs,
-        # )
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
