@@ -41,7 +41,8 @@ class Control:
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
     **settings
-        Keyword arguments.
+        ``t_resolution`` : float
+            Instrument resolution.
 
     Example
     -------
@@ -236,7 +237,7 @@ class Control:
             pair.MD_obs._dependent_variables['SQw'] /= md_norm
             pair.MD_obs._errors['SQw'] /= md_norm
 
-        return self._calculate_FoM()
+        return self.FoM_calculator.calculate()
 
     def _run_MD(self):
 
@@ -321,19 +322,6 @@ class Control:
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
-
-    def _calculate_FoM(self):
-
-        """
-        Calculates the total FoM for all ``ObservablePair`` objects
-
-        Returns
-        -------
-        `float`
-            Non-negative `float` FoM
-        """
-
-        return self.FoM_calculator.calculate()
 
     def _calculate_MD_steps(self):
 
