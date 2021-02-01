@@ -1,16 +1,21 @@
 .. _NOCONTAINER_LINUX-label:
 
-1. Install LAMMPS
+1. INSTALL LAMMPS
+------------------
 
 There are two ways of installing LAMMPS on your computer. The first one is to do it from the pre-built executables for Linux and the other one is to download the code and build it by yourself.
 
-1.1. The first ones can be obtained from the following page and installed following instructions on it: 
+1.1. Precompiled version 
+-------------------------
+The first ones can be obtained from the following page and installed following instructions on it: 
 
 .. code-block:: bash
 https://lammps.sandia.gov/doc/Install_linux.html
 
 
-1.2. For making own executables, please, download the code from the following page: https://lammps.sandia.gov/download.html
+1.2. Compile by yourself and specify libraries explicitly 
+----------------------------------------------------------
+For making own executables, please, download the code from the following page: https://lammps.sandia.gov/download.html
 In order to be able to install LAMMPS you need to have Cmake installed on your machine.
 Put the downloaded archive with the  code in the desired directory  and then uncompress the archive, by typing the following command in the terminal from that directory:
 
@@ -44,7 +49,8 @@ After the compilation you may install it by typing:
 .. code-block:: bash
 make install
 
-2. Install needed dependencies for Python3.
+2. INSTALL DEPENDENCIES FOR PYTHON3
+------------------------------------
 
 Since MDMC is a Python-based code the following dependencies need to be installed:
 pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
@@ -53,7 +59,8 @@ One of the best ways of installing Python-dependencies is to install Anaconda3 f
 .. code-block:: bash
 https://docs.anaconda.com/anaconda/install/linux/
 
-3. Installing MDMC with no container.
+3. GETTING MDMC WORK WITH NO CONTAINER
+---------------------------------------
 
 In principle, if all Python dependencies were installed one needs to do few things in order to make MDMC code work. 
 Firstly, the LAMMPS executable shall be copied in the directory anaconda3/bin. This executable is named either lmp_stable, lmp, lmp_mpi, lmp_serial.
