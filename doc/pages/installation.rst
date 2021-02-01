@@ -34,6 +34,7 @@ to separately install a supported molecular dynamics package (e.g. LAMMPS).
    installation/docker.rst
    installation/singularity.rst
    installation/containerless.rst
+   installation/NOCONTAINERLINUX.rst
 
 
 Installation Tests
