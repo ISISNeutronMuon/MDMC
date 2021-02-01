@@ -1,3 +1,5 @@
+.. _NOCONTAINER_LINUX-label:
+
 1. Install LAMMPS
 
 There are two ways of installing LAMMPS on your computer. The first one is to do it from the pre-built executables for Linux and the other one is to download the code and build it by yourself.
