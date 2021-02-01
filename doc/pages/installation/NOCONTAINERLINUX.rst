@@ -89,3 +89,11 @@ Then you are ready to download the code for MDMC from GitHub using the following
  https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
  
 When you downloaded the code you are suggested to uncompress the archive. You are not suposed to run various parts of the source code, but tutorials or own refinement procedures which will depend on MDMC code. 
+
+4. MDMC ON SUPER-COMPUTERS
+---------------------------
+
+If you an access to high-performance computing systems you may use MDMC code from your job-submission directory and run calculations using various multicore architectures. In most of cases you won't need any sudo certificate. All what you will need to know is where various libraries are placed. If you have no sudo certificate you might need to install Anaconda3 in your local submission directory and then follow the same instructions as mentioned in sections 1.2-3 (not in 1.1!). Note, that you must be sure that all compilers are in your path first, before you install Anaconda3. 
+
+
+
