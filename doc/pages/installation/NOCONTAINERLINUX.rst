@@ -15,7 +15,7 @@ The first ones can be obtained from the following page and installed following i
 
  https://lammps.sandia.gov/doc/Install_linux.html
  
-Nevertheless, the version compiled by the user is more prefered in this case, since it one can specify desired libraries for running the code in parallel, what will help to perform simulations more efficiently.
+Nevertheless, the version compiled by the user is more prefered in this case, since it one can specify desired libraries for running the code in parallel, what will help to perform simulations more efficiently. 
 
 
 1.2. Compile by yourself and specify libraries explicitly 
@@ -60,6 +60,7 @@ After the compilation you may install it by typing:
 .. code-block:: bash
 
  make install
+  
 
 2. INSTALL DEPENDENCIES FOR PYTHON3
 ------------------------------------
