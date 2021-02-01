@@ -61,7 +61,11 @@ After the compilation you may install it by typing:
 ------------------------------------
 
 Since MDMC is a Python-based code the following dependencies need to be installed:
-pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
+
+.. code-block:: bash
+
+ pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
+
 One of the best ways of installing Python-dependencies is to install Anaconda3 first. This can be done following instructions on the its page: 
 
 .. code-block:: bash
@@ -80,4 +84,4 @@ Then you are ready to download the code for MDMC from GitHub using the following
 
  https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
  
- 
+When you downloaded the code you are suggested to  
