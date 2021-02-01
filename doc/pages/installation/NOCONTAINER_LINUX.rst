@@ -84,4 +84,4 @@ Then you are ready to download the code for MDMC from GitHub using the following
 
  https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
  
-When you downloaded the code you are suggested to  
+When you downloaded the code you are suggested to uncompress the archive. You are not suposed to run various parts of the source code, but tutorials or own refinement procedures which will depend on MDMC code. 
