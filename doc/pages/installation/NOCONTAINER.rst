@@ -41,3 +41,22 @@ After the compilation you may install it by typing:
 
 .. code-block:: bash
 make install
+
+2. Install needed dependencies for Python3.
+
+Since MDMC is a Python-based code the following dependencies need to be installed:
+pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
+One of the best ways of installing Python-dependencies is to install Anaconda3 first. This can be done following instructions on the its page: 
+
+.. code-block:: bash
+https://docs.anaconda.com/anaconda/install/linux/
+
+3. Installing MDMC with no container.
+
+In principle, if all Python dependencies were installed one needs to do few things in order to make MDMC code work. 
+Firstly, the LAMMPS executable shall be copied in the directory anaconda3/bin. This executable is named either lmp_stable, lmp, lmp_mpi, lmp_serial.
+Secondly, the script lammps.py has to be copied to the same directory as well. This script can be found in the LAMMPS directory (lammps/python or whatever it is called) which you could download in step 1.2.
+Then you are ready to download the code for MDMC from GitHub using the following link:
+
+.. code-block:: bash
+
