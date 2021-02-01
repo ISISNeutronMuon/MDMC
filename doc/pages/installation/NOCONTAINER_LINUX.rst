@@ -14,6 +14,8 @@ The first ones can be obtained from the following page and installed following i
 .. code-block:: bash
 
  https://lammps.sandia.gov/doc/Install_linux.html
+ 
+Nevertheless, the version compiled by the user is more prefered in this case, since it one can specify desired libraries for running the code in parallel, what will help to perform simulations more efficiently.
 
 
 1.2. Compile by yourself and specify libraries explicitly 
@@ -37,7 +39,7 @@ Then go to the folder which was created after the decompression of the archive a
 
  mkdir build
 
-Then in you can start configuring the code with CMake by typing the following in the terminal (if you want to specify other options and environmental variables for CMake, like libraries and compilers, you might need to check the page for Cmake https://cmake.org/cmake/help/latest/manual/cmake-env-variables.7.html   ):
+Then in you can start configuring the code with CMake by typing the following in the terminal (if you want to specify other options and environmental variables for CMake, like libraries and compilers, exact locations of libraries and compilers, you might need to check the page for Cmake https://cmake.org/cmake/help/latest/manual/cmake-env-variables.7.html   ):
 
 .. code-block:: bash
 
