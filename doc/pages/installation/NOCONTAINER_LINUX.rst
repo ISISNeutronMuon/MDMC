@@ -1,5 +1,7 @@
 .. _NOCONTAINER_LINUX-label:
 
+In general there is nothing special needed to be done with MDMC code itself in order to make it work. However, for the successful code utilization users are required to put their time on installation of software and dependencies which the code is using. In this version of container-free instructions you are suggested to install the molecular dynamics (MD) engine first, then Python3 dependencies and then you are ready to use the actual code. As an MD engine LAMMPS is the recommended code at the moment.
+
 1. INSTALL LAMMPS
 ------------------
 
