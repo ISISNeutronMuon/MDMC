@@ -90,6 +90,13 @@ Then you are ready to download the code for MDMC from GitHub using the following
  
 When you downloaded the code you are suggested to uncompress the archive. You are not suposed to run various parts of the source code, but tutorials or own refinement procedures which will depend on MDMC code. 
 
+To run a tutorial file (let's say it has a name tutorial.py) you will need to run the following line in your terminal:
+
+.. code-block:: bash
+
+ python tutorial.py
+ 
+
 4. MDMC ON SUPER-COMPUTERS
 ---------------------------
 
