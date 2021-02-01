@@ -94,7 +94,7 @@ To run a tutorial file (let's say it has a name tutorial.py) you will need to ru
 
 .. code-block:: bash
 
- python tutorial.py
+ your_path_to_anaconda3/bin/python3 tutorial.py
  
 
 4. MDMC ON SUPER-COMPUTERS
