@@ -60,13 +60,13 @@ After the compilation you may install it by typing:
 2. INSTALL DEPENDENCIES FOR PYTHON3
 ------------------------------------
 
-Since MDMC is a Python-based code the following dependencies need to be installed:
+Since MDMC is a Python-based code the following dependencies are need to be installed:
 
 .. code-block:: bash
 
  pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
 
-One of the best ways of installing Python-dependencies is to install Anaconda3 first. This can be done following instructions on the its page: 
+One of the best ways of installing Python-dependencies is to install them through Anaconda3. Firstly, one has to install Anaconda3 itself. This can be done following instructions on the its page: 
 
 .. code-block:: bash
 
