@@ -102,5 +102,6 @@ To run a tutorial file (let's say it has a name tutorial.py) you will need to ru
 
 If you an access to high-performance computing systems you may use MDMC code from your job-submission directory and run calculations using various multicore architectures. In most of cases you won't need any sudo certificate. All what you will need to know is where various libraries are placed. If you have no sudo certificate you might need to install Anaconda3 in your local submission directory and then follow the same instructions as mentioned in sections 1.2-3 (not in 1.1!). Note, that you must be sure that all compilers are in your path first, before you install Anaconda3. 
 
+If on your HPC system you have a module system where compiles are loaded from modules, then before installing Anaconda3 try to save the names of modules which you loaded, because every time you will run MDMC code you will have to specify those environmental variables.
 
 
