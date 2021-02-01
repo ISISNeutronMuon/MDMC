@@ -78,3 +78,6 @@ Then you are ready to download the code for MDMC from GitHub using the following
 
 .. code-block:: bash
 
+ https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
+ 
+ 
