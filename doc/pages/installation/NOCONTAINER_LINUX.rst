@@ -31,7 +31,7 @@ cd lammps
 .. code-block:: bash
 mkdir build
 
-Then in principle you can start configuring the code with CMake by typing the following in the terminal (if you want to specify other options and environmental variables for CMake, like libraries and compilers, you might need to check the page for Cmake https://cmake.org/cmake/help/latest/manual/cmake-env-variables.7.html   ):
+Then in you can start configuring the code with CMake by typing the following in the terminal (if you want to specify other options and environmental variables for CMake, like libraries and compilers, you might need to check the page for Cmake https://cmake.org/cmake/help/latest/manual/cmake-env-variables.7.html   ):
 
 .. code-block:: bash
 cmake ../cmake
