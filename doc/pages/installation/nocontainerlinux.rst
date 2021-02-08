@@ -1,35 +1,33 @@
 .. _NOCONTAINERLINUX-label:
 
-In general there is nothing special needed to be done with MDMC code itself in order to make it work. However, for the successful code utilization users are required to put their time on installation of software and dependencies which the code is using. In this version of container-free instructions you are suggested to install the molecular dynamics (MD) engine first, then Python3 dependencies and then you are ready to use the actual code. As an MD engine LAMMPS is the recommended code at the moment.
+In general the MDMC code can be downloaded as self-contained docker image, which requires no further input from the
+user in order to make it work. However, in this document we give instructions of how to install a container-free version of MDMC and its dependencies on Linux systems. We suggest to install the molecular dynamics (MD) engine first, then the Python3 dependencies, followed by the MDMC code. The recommended MD engine to use with MDMC at the moment is LAMMPS.
 
 1. INSTALL LAMMPS
 ------------------
 
-There are two ways of installing LAMMPS on your computer. The first one is to do it from the pre-built executables for Linux and the other one is to download the code and build it by yourself.
+There are two ways of installing LAMMPS on your computer. The first one is via the pre-built executables available for a variety of Linux distributions. The alternative is to download the source code and build the executables by yourself.
 
-1.1. Precompiled version 
+1.1. Precompiled version
 -------------------------
-The first ones can be obtained from the following page and installed following instructions on it: 
+The pre-compiled versions of LAMMPS can be obtained by following the instructions on the following page:
 
 .. code-block:: bash
 
  https://lammps.sandia.gov/doc/Install_linux.html
- 
-Nevertheless, the version compiled by the user is more prefered in this case, since it one can specify desired libraries for running the code in parallel, what will help to perform simulations more efficiently. 
+
+Nevertheless, the version compiled by the user is preferred in this case, since one can explicitly specify the desired libraries that will be used for running the code in parallel, which can help to perform simulations more efficiently.
 
 
-1.2. Compile by yourself and specify libraries explicitly 
+1.2. Compile by yourself and specify libraries explicitly
 ----------------------------------------------------------
-For making own executables, please, download the code from the following page: https://lammps.sandia.gov/download.html
-In order to be able to install LAMMPS you need to have Cmake installed on your machine.
-Put the downloaded archive with the  code in the desired directory  and then uncompress the archive, by typing the following command in the terminal from that directory:
+To compile the LAMMPS executables, you need to have Cmake installed on your machine and download the source code from the following page: https://lammps.sandia.gov/download.html Put the downloaded archive with the code in the desired directory and then uncompress the archive by typing the following command in the terminal from that directory:
 
-.. code-block:: bash 
+.. code-block:: bash
 
  tar -xzvf file.tar.gz
 
-Where “file” is the name of the downloaded archive.
-Then go to the folder which was created after the decompression of the archive and make another directory build inside it. This can be done by typing the following commands in the terminal.
+Where “file” is the name of the downloaded archive. Then go to the folder which was created after the decompression of the archive and create another directory called 'build' inside it. This can be done by typing the following commands in the terminal.
 
 .. code-block:: bash
 
@@ -39,7 +37,7 @@ Then go to the folder which was created after the decompression of the archive a
 
  mkdir build
 
-Then in you can start configuring the code with CMake by typing the following in the terminal (if you want to specify other options and environmental variables for CMake, like libraries and compilers, exact locations of libraries and compilers, you might need to check the page for Cmake https://cmake.org/cmake/help/latest/manual/cmake-env-variables.7.html   ):
+Then you can configure how CMake should compile LAMMPS by typing the following in the terminal (if you want to specify other options and environmental variables for CMake, like libraries and compilers, exact locations of libraries and compilers, you might need to check the page for Cmake https://cmake.org/cmake/help/latest/manual/cmake-env-variables.7.html ):
 
 .. code-block:: bash
 
@@ -49,7 +47,7 @@ Then in you can start configuring the code with CMake by typing the following in
 
  cmake --build
 
-Then in order to make LAMMPS running in parallel you will need to compile it by giving the number of processors/cores (N) typing the following line in the terminal:
+Then in order to enable LAMMPS running in parallel you will need to compile it by giving the number of processors/cores (N) typing the following line in the terminal:
 
 .. code-block:: bash
 
@@ -60,36 +58,33 @@ After the compilation you may install it by typing:
 .. code-block:: bash
 
  make install
-  
+
 
 2. INSTALL DEPENDENCIES FOR PYTHON3
 ------------------------------------
 
-Since MDMC is a Python-based code the following dependencies are need to be installed:
+Since MDMC is a Python-based code the following dependencies are required:
 
 .. code-block:: bash
 
  pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
 
-One of the best ways of installing Python-dependencies is to install them through Anaconda3. Firstly, one has to install Anaconda3 itself. This can be done following instructions on the its page: 
+One of the best ways of installing Python-dependencies is to install them through Anaconda3. Firstly, one has to install Anaconda3 itself, which can be done by the following the instructions on the its installation page:
 
 .. code-block:: bash
 
  https://docs.anaconda.com/anaconda/install/linux/
 
-3. GETTING MDMC WORK WITH NO CONTAINER
----------------------------------------
+3. GETTING MDMC WORKING WITH NO CONTAINER
+-----------------------------------------
 
-In principle, if all Python dependencies were installed one needs to do few things in order to make MDMC code work. 
-Firstly, the LAMMPS executable shall be copied in the directory anaconda3/bin. This executable is named either lmp_stable, lmp, lmp_mpi, lmp_serial.
-Secondly, the script lammps.py has to be copied to the same directory as well. This script can be found in the LAMMPS directory (lammps/python or whatever it is called) which you could download in step 1.2.
-Then you are ready to download the code for MDMC from GitHub using the following link:
+In principle, if all Python dependencies have been installed then only a few steps are required to install and use the MDMC code. Firstly, the LAMMPS executable needs to be copied into the directory anaconda3/bin. This executable is named either lmp_stable, lmp, lmp_mpi, lmp_serial. Secondly, the script lammps.py has to be copied to the same directory as well. This script can be found in the LAMMPS directory (e.g. lammps/python) which you downloaded in step 1.2. Then you are ready to download the code for MDMC from GitHub using the following link:
 
 .. code-block:: bash
 
  https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
- 
-When you downloaded the code you are suggested to uncompress the archive. You are not suposed to run various parts of the source code, but tutorials or own refinement procedures which will depend on MDMC code. 
+
+When you downloaded the code you are suggested to uncompress the archive. You are not supposed to run various parts of the source code, but tutorials or own refinement procedures which will depend on MDMC code.
 
 To run a tutorial file (let's say it has a name tutorial.py) you will need to run the following line in your terminal:
 
@@ -101,7 +96,7 @@ To run a tutorial file (let's say it has a name tutorial.py) you will need to ru
 4. MDMC ON SUPER-COMPUTERS
 ---------------------------
 
-If you an access to high-performance computing systems you may use MDMC code from your job-submission directory and run calculations using various multicore architectures. In most of cases you won't need any sudo certificate. All what you will need to know is where various libraries are placed. If you have no sudo certificate you might need to install Anaconda3 in your local submission directory and then follow the same instructions as mentioned in sections 1.2-3 (not in 1.1!). Note, that you must be sure that all compilers are in your path first, before you install Anaconda3. 
+If you have access to high-performance computing systems you may use MDMC code from your job-submission directory and run calculations using various multi-core architectures. In most cases you won't need any sudo certificate. All you need to know is where various libraries are placed. If you have no sudo certificate you might need to install Anaconda3 in your local submission directory and then follow the same instructions as mentioned in sections 1.2-3 (not in 1.1!). Note, that you must be sure that all compilers are in your path first, before you install Anaconda3.
 
 If on your HPC system you have a module system where compiles are loaded from modules, then before installing Anaconda3 try to save the names of modules which you loaded, because every time you will run MDMC code you will have to specify those environmental variables.
 
