@@ -121,9 +121,24 @@ If on your HPC system you have a module system where compiles are loaded from mo
 4. ADDITIONAL NOTES
 -------------------
 4.1 Installation instructions for Ubuntu 18
-------------------------------
+-------------------------------------------
 An example of the instructions to install MDMC on Ubuntu 18 can be found in https://github.com/MDMCproject/MDMCv0.2_pilot/blob/master/build/Docker/Dockerfile .
 
 4.2 Installation instructions for CentOS 7
 ------------------------------------------
 The following commands will install MDMC and all its dependencies, including LAMPPS, on a CentOS 7 environment.
+
+.. code-block:: bash
+
+ #install LAMMPS, git and other required header files
+ sudo yum install -y lammps-openmpi git python3-devel openmpi openmpi-devel llvm9.0 llvm9.0-devel
+ #install mpi4py explicitly with a work-around for CentOS 7
+ env MPICC=/usr/lib64/openmpi/bin/mpicc python3 -m pip install --no-cache-dir mpi4py
+ #download MDMC source code
+ git clone https://github.com/MDMCproject/MDMCv0.2_pilot.git
+ #install required Python packages
+ cd MDMCv0.2_pilot/
+ python3 -m pip install --upgrade pip
+ python3 -m pip install -r requirements.txt
+ #install MDMC module
+ python3 -m pip install .
