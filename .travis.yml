@@ -34,6 +34,7 @@ matrix:
             - openmpi-bin
       install:
         - pip3 install --upgrade pip
+        - pip3 install -r requirements.txt
         # Currently limited to pytest < 4.0 due to the way in which fixtures are
         # used. This can be removed once these have been updated.
         - pip3 install pytest==3.10.0
