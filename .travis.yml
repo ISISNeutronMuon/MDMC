@@ -22,7 +22,7 @@ matrix:
         - bash <(curl -s https://codecov.io/bash)
 
     # tests non-container environment, and tests which does not require MD engines
-    - name: "Python 3.6, non-container and not inc MD tests"
+    - name: "Non-container and not inc MD tests"
       language: python
       python: 3.6
       os: linux
