@@ -10,7 +10,8 @@ branches:
 matrix:
   include:
     # tests using docker container - including tests which requires MD engines
-    - language: minimal
+    - name: "Docker and including MD tests"
+      language: minimal
       services: docker
       before_install:
         - docker pull tfarmer/mdmc_dependencies:latest
@@ -21,7 +22,8 @@ matrix:
         - bash <(curl -s https://codecov.io/bash)
 
     # tests non-container environment, and tests which does not require MD engines
-    - language: python
+    - name: "Python 3.6, non-container and not inc MD tests"
+      language: python
       python: 3.6
       os: linux
       dist: bionic
