@@ -76,6 +76,8 @@ class Configuration(AtomCollection):
     ----------
     element_set : set
         `set` of the elements in the ``Configuration``
+    universe : Universe or None
+    data : *structural_units
     """
 
     def __init__(self, *structural_units, **settings):

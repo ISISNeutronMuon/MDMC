@@ -441,7 +441,6 @@ def repr_decorator(attribute, *attributes):
     #pylint: disable=missing-docstring
     def decorator(cls):
         def __repr__(self):
-            # import pdb;pdb.set_trace()
             attrs = (attribute,) + attributes
             # Using getattr rather than __dict__ avoids problems with __slots__
             # and properties
