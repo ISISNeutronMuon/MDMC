@@ -41,7 +41,8 @@ class Control:
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
     **settings
-        Keyword arguments.
+        ``t_resolution`` : float
+            Instrument resolution.
 
     Example
     -------
@@ -150,23 +151,36 @@ class Control:
 
         # Try/except accounts for n_steps <= -1
         try:
-            # Reset the minimizer params to those from the final FoM
+            # Reset the minimizer params to those from the final FoM:
+            # to account for a current side effect of step()
             self.minimizer.reset_params()
             self._update_engine_parameters()
         except TypeError:
             pass
 
+        # print values of final parameters
         param_df = pd.DataFrame({p.name:p.value for p in self.minimizer.params},
                                 index=[0])
         print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
 
     def step(self):
 
+        """
+        Do a full step: generate and run MD to calulate FoM for existing
+        parameters, iterate parameters a step forward and reset MD (phasespace)
+        if previous step was rejected and reset_config = true
+        """
+
+        # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
+        # Select new parameters to consider
         self.minimizer.step(fom)
+        # Update the MD engine with new parameters
         self._update_engine_parameters()
         self._print_data()
 
+        # When reset_config=true reset the MD (phasespace) back if the
+        # previous step was rejected
         if self.reset_config:
             if self.minimizer.state_changed:
                 # Set MD engine to remember new config
@@ -202,7 +216,8 @@ class Control:
     def _generate_FoM(self):
 
         """
-        The methods required to generate a FoM
+        Run the MD for an iteration/step, calculate observable, compare with
+        observed observed and return the FoM
 
         Returns
         -------
@@ -222,7 +237,7 @@ class Control:
             pair.MD_obs._dependent_variables['SQw'] /= md_norm
             pair.MD_obs._errors['SQw'] /= md_norm
 
-        return self._calculate_FoM()
+        return self.FoM_calculator.calculate()
 
     def _run_MD(self):
 
@@ -304,24 +319,9 @@ class Control:
             calculated
         """
 
-        # slc = self._calculate_trajectory_slice(self.observable_pairs[0].exp_obs,
-        # )
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
             pair.MD_obs.calculate_from_MD(trj, **self.settings)
-
-    def _calculate_FoM(self):
-
-        """
-        Calculates the total FoM for all ``ObservablePair`` objects
-
-        Returns
-        -------
-        `float`
-            Non-negative `float` FoM
-        """
-
-        return self.FoM_calculator.calculate()
 
     def _calculate_MD_steps(self):
 
@@ -344,26 +344,3 @@ class Control:
         """
 
         raise NotImplementedError
-    #
-    # def _calculate_trajectory_slice(self, exp_obs, traj_step):
-    #
-    #     """
-    #     Calculates the slice of the trajectory that is required for calculating
-    #     the MD observables for the same independent variables as the
-    #     experimental observables
-    #
-    #     Arugments:
-    #     exp_obs - an observable with origin='experiment'
-    #     traj_step - the integer step size of the MD trajectory captures
-    #
-    #     Returns:
-    #     A slice
-    #     """
-    #
-    #     n_steps = len(exp_obs.E)
-    #
-    #     start = 0
-    #     stop = self.MD_steps / traj_step
-    #     step = int(round((self.MD_steps - start) / n_steps))
-    #
-    #     return slice(start, stop + 1, step)

@@ -713,6 +713,7 @@ class Atom(StructuralUnit):
                  charge=None, **settings):
 
         self.universe = None
+        #the syntax for optional keyword arguments is: kwargs.get(str, default_value)
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
