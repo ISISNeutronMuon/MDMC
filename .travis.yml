@@ -44,3 +44,20 @@ matrix:
       script:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
         - pip3 uninstall -y MDMC
+
+    # build documentation
+    - name: "Documentation"
+      language: python
+      python: 3.6
+      os: linux
+      dist: bionic
+      addons:
+        apt:
+          packages:
+            - pandoc
+      install:
+        - pip3 install --upgrade pip
+        - pip3 install -r requirements.txt
+      script:
+        - cd doc
+        - make html
