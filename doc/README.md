@@ -1,5 +1,10 @@
 # Instructions to build the documentation using Sphinx
+The instructions below is for the more challenging case of building the doc
+where the python code in the notebook are also executed, i.e. with
+`nbsphinx_execute = 'always'` in `conf.py`.
 
+In time the below documentation will become obsolete with building of doc
+fully expressed via the CI.
 ## Windows instructions
 
 First, install [Pandoc](https://pandoc.org/installing.html) using the
