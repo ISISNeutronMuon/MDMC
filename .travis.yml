@@ -70,3 +70,17 @@ matrix:
         - docker pull centos:7
       script:
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) centos:7 yum -y install make && make -C $(pwd)/doc html
+
+      # testing on Windows
+    - name: "Python 3.8.0 on Windows"
+      os: windows
+      language: shell   # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.8.0
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      install:
+        - pip3 install --upgrade pip
+        - pip3 install .
+      script:
+        - pip3 uninstall -y MDMC
