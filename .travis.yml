@@ -57,7 +57,7 @@ matrix:
             - pandoc
       install:
         - pip3 install --upgrade pip
-        - pip3 install -r requirements.txt
+        - pip3 install sphinx nbsphinx sphinx_rtd_theme
       script:
         - cd doc
         - make html
