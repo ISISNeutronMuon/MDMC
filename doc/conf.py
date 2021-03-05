@@ -17,7 +17,7 @@ import sys
 import shutil
 autodoc_mock_imports=["mpi4py"]
 nbsphinx_execute = 'always'
-
+nbsphinx_kernel_name = 'python3'
 sys.path.insert(0, os.path.abspath('..'))
 
 
