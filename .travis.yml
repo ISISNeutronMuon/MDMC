@@ -62,15 +62,6 @@ matrix:
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         - bash <(curl -s https://codecov.io/bash)
 
-    # testing on yum based linux
-    - name: "Documentation - CentOS"
-      language: minimal
-      services: docker
-      before_install:
-        - docker pull centos:7
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) centos:7 yum -y install make python3 python3-pip && python3 -m pip install sphinx nbsphinx sphinx_rtd_theme && make -C $(pwd)/doc html
-
       # testing on Windows
     - name: "Python 3.8.0 on Windows"
       os: windows
