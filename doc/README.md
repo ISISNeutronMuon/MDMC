@@ -1,6 +1,6 @@
 # Instructions to build the documentation using Sphinx
-The instructions below is for the more challenging case of building the doc
-where the python code in the notebook are also executed, i.e. with
+The instructions below are for the more challenging case of building the doc
+where the python code in the notebook is also executed, i.e. with
 `nbsphinx_execute = 'always'` in `conf.py`.
 
 In time the below documentation will become obsolete with building of doc
