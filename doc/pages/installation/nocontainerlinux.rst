@@ -61,8 +61,10 @@ After the compilation you may install it by typing:
 
 2. INSTALLING MDMC FROM SOURCE
 ------------------------------
-2.1 Downloading MDMC SOURCE CODE
---------------------------------
+2.1 Using pip
+-------------
+2.1.1 Downloading MDMC SOURCE CODE
+----------------------------------
 MDMC based on Python3 and available on GitHub, which allows the source code to be downloaded as
 
 .. code-block:: bash
@@ -75,8 +77,8 @@ Alternatively, you can download a ZIP archive containing the source using
 
  wget https://github.com/MDMCproject/MDMCv0.2_pilot/archive/master.zip
 
-2.2 Installing Python dependencies
-----------------------------------
+2.1. Installing Python dependencies
+-----------------------------------
 We supply a requirements.txt file that can be used to install all required Python dependencies via
 
 .. code-block:: bash
@@ -95,8 +97,8 @@ An alternative way of installing the Python dependencies is to install them thro
 
  https://docs.anaconda.com/anaconda/install/linux/
 
-2.3 Installing MDMC package
----------------------------
+2.1.3 Installing MDMC package
+-----------------------------
 
 To install MDMC and add it to the list of Python modules you can simply run the following command from the root directory of the MDMC source code:
 
@@ -109,6 +111,37 @@ Once this is done, you should see MDMC appear on the list of installed modules w
 .. code-block:: bash
 
  pip3 list installed
+
+2.1 Using anaconda3
+-------------------
+Since MDMC is a Python-based code the following dependencies are need to be installed:
+
+.. code-block:: bash
+
+ pip, numpy, scipy, netCDF4, pandas, ase>=3.19, numba, mpi4py, ipython.
+
+One of the best ways of installing Python-dependencies is to install them through Anaconda3. Firstly, one has to install Anaconda3 itself. This can be done following instructions on the its page:
+
+.. code-block:: bash
+
+ https://docs.anaconda.com/anaconda/install/linux/
+
+In principle, if all Python dependencies were installed one needs to do few things in order to make MDMC code work.
+Firstly, the LAMMPS executable shall be copied in the directory anaconda3/bin. This executable is named either lmp_stable, lmp, lmp_mpi, lmp_serial.
+Secondly, the script lammps.py has to be copied to the same directory as well. This script can be found in the LAMMPS directory (lammps/python or whatever it is called) which you could download in step 1.2.
+Then you are ready to download the code for MDMC from GitHub using the following link:
+
+.. code-block:: bash
+
+ https://github.com/MDMCproject/MDMCv0.2_pilot#egg=MDMC
+
+When you downloaded the code you are suggested to uncompress the archive. You are not suposed to run various parts of the source code, but tutorials or own refinement procedures which will depend on MDMC code.
+To run a tutorial file (let's say it has a name tutorial.py) you will need to run the following line in your terminal:
+
+.. code-block:: bash
+
+ your_path_to_anaconda3/bin/python3 tutorial.py
+
 
 3. MDMC ON SUPER-COMPUTERS
 ---------------------------
