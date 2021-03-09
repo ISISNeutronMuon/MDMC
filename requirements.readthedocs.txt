@@ -1,9 +1,0 @@
-netCDF4
-numpy
-pandas
-scipy
-numba
-ase>=3.19
-ipython
-ipykernel
-nbsphinx
