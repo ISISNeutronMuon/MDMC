@@ -9,19 +9,9 @@ branches:
 
 matrix:
   include:
-    # tests using docker container - including tests which requires MD engines
-    - language: minimal
-      services: docker
-      before_install:
-        - docker pull tfarmer/mdmc_dependencies:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-      after_sucess:
-        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        - bash <(curl -s https://codecov.io/bash)
-
     # tests non-container environment, and tests which does not require MD engines
-    - language: python
+    - name: "Non-container and not inc MD tests"
+      language: python
       python: 3.6
       os: linux
       dist: bionic
@@ -32,10 +22,56 @@ matrix:
             - openmpi-bin
       install:
         - pip3 install --upgrade pip
+        - pip3 install -r requirements.txt
+        - pip3 install .
         # Currently limited to pytest < 4.0 due to the way in which fixtures are
         # used. This can be removed once these have been updated.
         - pip3 install pytest==3.10.0
-        - pip3 install .
+        # ase version 3.21.1 breaks test but e.g. 3.20.1 is fine
+        - pip3 install ase==3.20.1
       script:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+        - pip3 uninstall -y MDMC
+
+    # build documentation - ubuntu
+    - name: "Documentation"
+      language: python
+      python: 3.6
+      os: linux
+      dist: bionic
+      addons:
+        apt:
+          packages:
+            - pandoc
+      install:
+        - pip3 install --upgrade pip
+        - pip3 install sphinx nbsphinx sphinx_rtd_theme
+      script:
+        - cd doc
+        - make html
+
+    # tests using docker container - including tests which requires MD engines
+    - name: "Docker and including MD tests"
+      language: minimal
+      services: docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      after_sucess:
+        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        - bash <(curl -s https://codecov.io/bash)
+
+      # testing on Windows
+    - name: "Python 3.8.0 on Windows"
+      os: windows
+      language: shell   # 'language: python' is an error on Travis CI Windows
+      before_install:
+        - choco install python --version 3.8.0
+        - python -m pip install --upgrade pip
+      env: PATH=/c/Python38:/c/Python38/Scripts:$PATH
+      install:
+        - pip3 install --upgrade pip
+        - pip3 install .
+      script:
         - pip3 uninstall -y MDMC
