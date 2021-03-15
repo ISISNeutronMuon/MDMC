@@ -43,10 +43,13 @@ matrix:
         apt:
           packages:
             - pandoc
+            - libopenmpi-dev
+            - openmpi-bin
       install:
         - pip3 install --upgrade pip
         - pip3 install sphinx nbsphinx sphinx_rtd_theme
         - pip3 install -r requirements.txt
+        - pip3 install .
       script:
         - cd doc
         - make html
