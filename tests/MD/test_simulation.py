@@ -913,6 +913,13 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
     assert len(universe.atom_list) == len(universe2.atom_list)
     assert len(universe.atom_list) == len(universe3.atom_list)
 
+    for u in [universe, universe2, universe3]:
+        for atom in u.atom_list:
+            if atom.element == 'H':
+                assert atom.atom_type == 1
+            elif atom.element == 'O':
+                assert atom.atom_type == 2
+
 
 @pytest.mark.parametrize("num_density, num_struc_units", ([None, None],
                                                           [3.14, 100]))
