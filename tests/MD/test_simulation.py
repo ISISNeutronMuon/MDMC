@@ -892,21 +892,26 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
 
 
 @pytest.mark.parametrize('num_density', [3.14, 0.6, 1.0])
-def test_universe_fill_num_density_num_struc_same_result(universe, num_density,
-                                                         water_molecule):
+def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     """
-    Tests that specifying either num_density or the equivalent absolute
-    number of StructuralUnits to fill the universe with results in no
-    difference in the actual number densityx achieved.
+    Tests that specifying either num_density, the equivalent absolute number of
+    StructuralUnits or manually calling add_structural_unit fills the universe
+    with results in no difference in the actual number density achieved (other
+    than rounding down to a cube number, which both fill methods will do).
     """
 
     num_strucs = num_density * np.prod(universe.dimensions)
+    num_strucs_rounded = int(np.cbrt(num_strucs)) ** 3
     universe2 = sim.Universe(universe.dimensions)
+    universe3 = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
     universe2.fill(water_molecule, num_struc_units=num_strucs)
+    for i in range(num_strucs_rounded):
+        universe3.add_structural_unit(water_molecule)
 
     assert len(universe.atom_list) == len(universe2.atom_list)
+    assert len(universe.atom_list) == len(universe3.atom_list)
 
 
 @pytest.mark.parametrize("num_density, num_struc_units", ([None, None],
