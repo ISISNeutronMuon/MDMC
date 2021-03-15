@@ -597,6 +597,10 @@ class Universe(AtomContainer):
                   IS SPECIFIED DEPENDING ON HOW CLOSE CUBE ROOT OF N_MOLECULES
                   IS TO AN `int`.
 
+        .. note:: CURRENT IMPLEMENTATION SHOULD NOT BE USED WITH NON-CUBIC
+                  UNIVERSES AS THE DENSITY MAY OR MAY NOT BE ISOTROPIC
+                  DEPENDING ON THE DIMENSIONS AND NUMBER OF UNITS.
+
         Parameters
         ----------
         structural_unit : StructuralUnit
