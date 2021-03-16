@@ -34,28 +34,34 @@ matrix:
         - pip3 uninstall -y MDMC
 
     # build documentation - ubuntu
+    # - name: "Documentation"
+    #   language: python
+    #   python: 3.6
+    #   os: linux
+    #   dist: bionic
+    #   addons:
+    #     apt:
+    #       packages:
+    #         - pandoc
+    #         - libopenmpi-dev
+    #         - openmpi-bin
+    #   install:
+    #     - pip3 install --upgrade pip
+    #     - pip3 install sphinx nbsphinx sphinx_rtd_theme
+    #     - pip3 install -r requirements.txt
+    #     - pip3 install .
+    #   script:
+    #     - cd doc
+    #     - make html
+
+    # build documentation using docker container to access LAMMPS
     - name: "Documentation"
-      language: python
-      python: 3.6
-      os: linux
-      dist: bionic
-      addons:
-        apt:
-          packages:
-            - pandoc
-            - libopenmpi-dev
-            - openmpi-bin
-      install:
-        - pip3 install --upgrade pip
-        - pip3 install sphinx nbsphinx sphinx_rtd_theme
-        - pip3 install -r requirements.txt
-        - pip3 install .
-        - jupyter kernelspec list
-        - ipython3 kernel install --user
+      language: minimal
+      services: docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
       script:
-        - jupyter kernelspec list
-        - cd doc
-        - make html
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest cd doc && make html
 
     # tests using docker container - including tests which requires MD engines
     - name: "Docker and including MD tests"
