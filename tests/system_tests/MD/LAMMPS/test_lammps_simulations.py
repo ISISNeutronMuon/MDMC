@@ -17,7 +17,7 @@ from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
 # STDEV_FAC is the number of standard deviations within which the calculated
 # property must lie for it to be considered equivalent to the expected value
 # i.e. it is the tolerance of the assertion on the property
-STDEV_FAC = 3.
+STDEV_FAC = 4.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
