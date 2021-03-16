@@ -51,6 +51,7 @@ matrix:
         - pip3 install -r requirements.txt
         - pip3 install .
       script:
+        - jupyter kernelspec list
         - cd doc
         - make html
 
