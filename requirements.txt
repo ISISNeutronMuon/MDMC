@@ -6,3 +6,4 @@ numba
 ase>=3.19
 mpi4py
 ipython
+ipykernel
