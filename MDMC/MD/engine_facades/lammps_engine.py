@@ -490,7 +490,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         if equilibration and reset_to_nve:
             self.thermostat = None
 
-    def convert_trajectory(self):
+    def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
         Converts between a LAMMPS trajectory dump and an MDMC ``Trajectory``
 
@@ -498,6 +498,21 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         ``positions``. The ``xyz`` ``positions`` must be consecutive and in that
         order. The same is true of the ``xyz`` components of the ``velocity``, if
         they are provided.
+
+        Parameters
+        ----------
+        start : int
+            The index of the first trajectory, inclusive.
+        stop : int
+            The index of the last trajectory, exclusive.
+        step : int
+            The step size between trajectories.
+        **settings
+            ``scaled_positions`` (`bool`)
+                If the ``trajectory_file`` has scaled ``positions``
+            ``atom_IDs`` (`list`)
+                LAMMPS ``ID`` of the atoms which should be included. If not passed
+                then all atoms are included in the converted trajectory.
 
         Returns
         -------
@@ -554,12 +569,18 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                 in line[i_vel:i_vel+3]]
             return atom
 
-        pos_string = 'x'
+
+        # Change expected position string if scaled positions are used
+        pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
+
+        # ID is an acronym
+        #pylint: disable=invalid-name
+        atom_IDs = settings.get('atom_IDs')
+
         configs = []
-        start = 0
         frame_n = start
         # Use count to create range so that stop can be undefined
-        frame_indexes = count(start, 1)
+        frame_indexes = count(start, step)
         # next_frame_n next attribute is assigned dynamically
         next_frame_n = next(frame_indexes) #pylint: disable=no-member
         with open(self.trajectory_file.name, 'r') as file_handler:
@@ -635,7 +656,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
                         atoms = []
                         for line in lines:
-                            atoms.append(create_atom(line))
+                            # Checks if only specific atom_IDs are required, and if
+                            # so, only creates atoms which have those IDs
+                            if not atom_IDs or line[i_id] in atom_IDs:
+                                atoms.append(create_atom(line))
 
                         # Multiply the number of timesteps by dt to calculate the
                         # elapsed time
@@ -646,6 +670,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         #pylint: disable=no-member
                         next_frame_n = next(frame_indexes)
                     frame_n += 1
+                    if stop is not None and frame_n >= stop:
+                        break
 
                 line = file_handler.readline()
         return Trajectory(*configs)
