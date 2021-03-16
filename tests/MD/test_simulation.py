@@ -895,25 +895,22 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
 def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     """
-    Tests that specifying either num_density, the equivalent absolute number of
-    StructuralUnits or manually calling add_structural_unit fills the universe
-    with results in no difference in the actual number density achieved (other
-    than rounding down to a cube number, which both fill methods will do).
+    Tests that specifying either num_density or manually calling
+    add_structural_unit fills the universe and results in no difference in the
+    actual number density achieved (other than rounding down to a cube number
+    as fill does) or the types of atoms.
     """
 
     num_strucs = num_density * np.prod(universe.dimensions)
     num_strucs_rounded = int(np.cbrt(num_strucs)) ** 3
-    universe2 = sim.Universe(universe.dimensions)
-    universe3 = sim.Universe(universe.dimensions)
+    universe_manual = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
-    universe2.fill(water_molecule, num_struc_units=num_strucs)
     for i in range(num_strucs_rounded):
-        universe3.add_structural_unit(water_molecule)
+        universe_manual.add_structural_unit(water_molecule)
 
-    assert len(universe.atom_list) == len(universe2.atom_list)
-    assert len(universe.atom_list) == len(universe3.atom_list)
+    assert len(universe.atom_list) == len(universe_manual.atom_list)
 
-    for u in [universe, universe2, universe3]:
+    for u in [universe, universe_manual]:
         for atom in u.atom_list:
             if atom.element == 'H':
                 assert atom.atom_type == 1
