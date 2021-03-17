@@ -61,7 +61,7 @@ matrix:
       before_install:
         - docker pull mdmc/mdmc:latest
       script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest cd doc && make html
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest pip3 install sphinx nbsphinx sphinx_rtd_theme && make -C $(pwd)/doc html
 
     # tests using docker container - including tests which requires MD engines
     - name: "Docker and including MD tests"
