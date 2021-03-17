@@ -6,6 +6,7 @@ from mpi4py import MPI
 from numba import jit
 import numpy as np
 from numpy.testing import assert_allclose
+from typing import Callable
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_COH, B_INCOH
@@ -203,25 +204,26 @@ class AbstractSQw(Observable):
         self._t = value
 
     @property
-    def t_res(self):
+    def e_res(self):
 
         """
-        Get or set the time resolution used to calculate the dynamic structure
-        factor, S(Q, w), from the intermediate scattering function, F(Q, t)
+        Get or set the energy resolution (FWHM) used to calculate the dynamic
+        structure factor, S(Q, w), from the intermediate scattering function,
+        F(Q, t)
 
         Returns
         -------
         float
-            The time resolution
+            The energy resolution (FWHM) in ``meV``
         """
 
-        return self._t_res
+        return self._e_res
 
-    @t_res.setter
-    @unit_decorator(unit=units.TIME)
-    def t_res(self, value):
+    @e_res.setter
+    @unit_decorator(unit=units.ENERGY_TRANSFER)
+    def e_res(self, value):
 
-        self._t_res = value
+        self._e_res = value
 
     def calculate_from_MD(self, MD_input, **settings):
 
@@ -259,7 +261,9 @@ class AbstractSQw(Observable):
                 raise AttributeError('Either trajectory requires a dimensions'
                                      ' attribute or dimensions must be passed'
                                      ' when calling calculate_from_MD')
-        self.t_res = settings['t_resolution']
+
+        # Convert the user friendly ueV into preferred system unit of meV
+        self.e_res = settings['energy_resolution'] / 1000
         self._set_weights()
 
         # Create independent_variables dictionary if it doesn't exist
@@ -334,7 +338,7 @@ class AbstractSQw(Observable):
             An ``array`` of `float` specifying the energy in units of ``meV``
         """
 
-        return h_bar * 1e15 * np.pi * np.arange(nE) / (nE * dt / 1000)
+        return h_bar * 1e18 * np.pi * np.arange(nE) / (nE * dt)
 
     def calculate_FQt(self):
 
@@ -504,14 +508,13 @@ class AbstractSQw(Observable):
             The S(Q, w) calculated from F(Q, t)
         """
 
-        FQt_res = self._apply_instrument_resolution(self.FQt,
-                                                    sigma=self.t_res)
+        FQt_res = self._apply_instrument_resolution(self.FQt)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
         FQt_mirror = np.append(FQt_res, FQt_res[:,-2:0:-1], axis=1)
 
-        # Normalisation requires factor of dt
+        # Normalisation requires factor of dt (in ps, so convert from fs)
         # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
         dt = (self.t[1] - self.t[0]) / 1000.
 
@@ -522,7 +525,8 @@ class AbstractSQw(Observable):
         return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.E)])
                 / len(FQt_mirror))
 
-    def _apply_instrument_resolution(self, FQt, function=gaussian, **params):
+    def _apply_instrument_resolution(self, FQt: np.ndarray,
+            function: Callable[..., np.ndarray]=gaussian) -> np.ndarray:
 
         """
         Applies the specified resolution function to the S(Q,w) data
@@ -541,9 +545,6 @@ class AbstractSQw(Observable):
             The F(Q, t) to which the resolution function is applied
         function : function, optional
             The resolution function to apply. The default is gaussian.
-        **params
-            ``sigma`` (`float`)
-                The sigma of the gaussian distribution.
 
         Returns
         -------
@@ -551,10 +552,12 @@ class AbstractSQw(Observable):
             An ``array`` of the same dimensions as ``FQt``
         """
 
-        # Functions other than Gaussians must be FFT before multiplication
+        # Functions other than Gaussians must be FFT (from the energy/frequency
+        # domain to time domain) before multiplication. Convert the FWHM energy
+        # (in meV) into sigma_t (in fs) as we don't need to FFT.
+        sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
         N_Q = np.shape(FQt)[0]
-        window = function(self.t[:len(self.E)] / 1000., params['sigma'],
-                          norm=False)
+        window = function(self.t[:len(self.E)], sigma_t, norm=False)
 
         # Broadcast the window so that it is applied for all Q values
         return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt

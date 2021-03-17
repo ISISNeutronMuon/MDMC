@@ -41,8 +41,8 @@ class Control:
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
     **settings
-        ``t_resolution`` : float
-            Instrument resolution.
+        ``energy_resolution`` : float
+            Instrument energy resolution as the FWHM in ``ueV``.
 
     Example
     -------
