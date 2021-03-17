@@ -17,7 +17,8 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle
+from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle, \
+    StructuralUnit
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -583,7 +584,8 @@ class Universe(AtomContainer):
             self.add_force_field(force_field, *structural_unit.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
-    def fill(self, structural_unit, force_field=None, **settings):
+    def fill(self, structural_unit: StructuralUnit, force_field: str=None,
+             num_density: float=None, num_struc_units: int=None):
 
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
@@ -609,14 +611,13 @@ class Universe(AtomContainer):
             Applies a ``ForceField`` to the ``Universe``. The available
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
-        **settings
-            ``num_density`` (`float`)
-                Non-negative `float` specifying the number density of the
-                ``StructuralUnit``, in units of ``StructuralUnit / Ang ^ -3``
-            ``num_struc_units`` (`int`)
-                Non-negative `int` specifying the number of passed
-                ``StructuralUnit`` objects that the universe should be filled
-                with, regardless of ``Universe.dimensions``.
+        num_density: float
+            Non-negative `float` specifying the number density of the
+            ``StructuralUnit``, in units of ``StructuralUnit / Ang ^ -3``
+        num_struc_units: int
+            Non-negative `int` specifying the number of passed
+            ``StructuralUnit`` objects that the universe should be filled
+            with, regardless of ``Universe.dimensions``.
 
         Raises
         ------
@@ -626,29 +627,25 @@ class Universe(AtomContainer):
             If neither ``num_density`` or ``num_struc_units`` are passed
         """
 
-        try:
-            num_density = settings['num_density']
-            if settings.get('num_struc_units'):
-                msg = ('Cannot pass both num_density and num_struc_units to'
-                       ' fill the universe with.')
-                LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
-                             ' %s',
-                             self.__class__,
-                             num_density,
-                             settings.get('num_struc_units'),
-                             msg)
-                raise ValueError(msg)
-        except KeyError:
-            try:
-                num_struc_units = settings['num_struc_units']
-            except KeyError:
-                msg = ('The fill method takes either num_density or'
-                       ' num_struc_units as a parameter.')
-                LOGGER.error('%s %s',
-                             self.__class__,
-                             msg)
-                raise ValueError(msg)
+        if num_density is None and num_struc_units is not None:
             num_density = num_struc_units / np.prod(self.dimensions)
+        elif num_density is not None and num_struc_units is not None:
+            msg = ('Cannot pass both num_density and num_struc_units to'
+                    ' fill the universe with.')
+            LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
+                            ' %s',
+                            self.__class__,
+                            num_density,
+                            num_struc_units,
+                            msg)
+            raise ValueError(msg)
+        elif num_density is None and num_struc_units is None:
+            msg = ('The fill method takes either num_density or'
+                    ' num_struc_units as a parameter.')
+            LOGGER.error('%s %s',
+                            self.__class__,
+                            msg)
+            raise ValueError(msg)
 
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
