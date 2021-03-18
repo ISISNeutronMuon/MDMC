@@ -401,20 +401,20 @@ class TemporalConfiguration(Configuration):
 class Trajectory(AtomCollection):
 
     """
-    A ``Trajectory`` is a collection of ``TimedConfigurations``
+    A ``Trajectory`` is a collection of ``TemporalConfigurations``
 
     Parameters
     ----------
     *configurations
-        Zero or more ``TimedConfigurations``
+        Zero or more ``TemporalConfigurations``
 
     Attributes
     ----------
     configurations : list
-        A `list` of ``TimedConfigurations``
+        A `list` of ``TemporalConfigurations``
     """
 
-    def __init__(self, *configurations):
+    def __init__(self, *configurations: TemporalConfiguration):
 
         self.universe = configurations[0].universe
         self.data = configurations
@@ -429,7 +429,7 @@ class Trajectory(AtomCollection):
         -------
         numpy.ndarray
             An ordered ``array`` of ``frames``, ``times`` (in ``fs``) and
-            ``TimedConfigurations``
+            ``TemporalConfigurations``
         """
 
         return self._data
