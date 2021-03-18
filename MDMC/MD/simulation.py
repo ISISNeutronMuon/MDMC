@@ -132,6 +132,20 @@ class Universe(AtomContainer):
                     len(self.nonbonded_interactions),
                     self.dimensions))
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            for k, v in self.__dict__.items():
+                try:
+                    iter(v)
+                    if any(v != getattr(other, k)):
+                        return False
+                except TypeError:
+                    if v != getattr(other, k):
+                        return False
+            return True
+        return False
+
+
     # Unit decorator on getter due to operations in setter
     @property
     @unit_decorator_getter(unit=units.LENGTH)

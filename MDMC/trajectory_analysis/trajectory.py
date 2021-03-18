@@ -92,6 +92,23 @@ class Configuration(AtomCollection):
         self.data = structural_units
         self.element_set = set(self.element_list)
 
+    def __eq__(self, other):
+        if isinstance(other, self.__class__):
+            for k, v in self.__dict__.items():
+                if k == '_universe':
+                    # As Configurations can have Universes as an attribute, and
+                    # vice versa, skip comparison to prevent infinite recursion
+                    continue
+                try:
+                    iter(v)
+                    if any(v != getattr(other, k)):
+                        return False
+                except TypeError:
+                    if v != getattr(other, k):
+                        return False
+            return True
+        return False
+
     @property
     def atom_list(self):
 
@@ -416,7 +433,14 @@ class Trajectory(AtomCollection):
 
     def __init__(self, *configurations):
 
-        self.universe = configurations[0].universe
+        universe = configurations[0].universe
+        for configuration in configurations[1:]:
+            if configuration.universe != universe:
+                raise ValueError('The universes of all TemporalConfigurations'
+                                 'are not equivalent:\n{0}\n{1}'
+                                 ''.format(universe, configuration.universe))
+
+        self.universe = universe
         self.data = configurations
 
     @property
