@@ -7,13 +7,14 @@ import pandas as pd
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
+from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_params', 'settings')
+                'reset_config', 'fit_params', 'rescale_factor', 'settings')
 class Control:
 
     """
@@ -40,6 +41,9 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
+    rescale_factor: float, optional
+        Rescales calculated data by a static factor before calculating the FoM.
+        Default is `1.`
     **settings
         ``t_resolution`` : float
             Instrument resolution.
@@ -81,9 +85,10 @@ class Control:
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
-    def __init__(self, simulation, exp_datasets, fit_params, MC_norm=1.,
-                 minimizer_type='MMC', FoM_type='standard',
-                 reset_config=True, **settings):
+    def __init__(self, simulation: Simulation, exp_datasets: list[dict],
+                 fit_params: Parameters, MC_norm:float=1.,
+                 minimizer_type: str='MMC', FoM_type: str='standard',
+                 reset_config: bool=True, rescale_factor: float=1., **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -93,6 +98,7 @@ class Control:
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
                                                              self.fit_params)
         self.reset_config = reset_config
+        self.rescale_factor = rescale_factor
         self.settings = settings
 
         # Create experimental observables from datasets and placeholders for
@@ -234,8 +240,9 @@ class Control:
             md_norm = np.max(pair.MD_obs._dependent_variables['SQw'])
             pair.exp_obs._dependent_variables['SQw'] /= exp_norm
             pair.exp_obs._errors['SQw'] /= exp_norm
-            pair.MD_obs._dependent_variables['SQw'] /= md_norm
-            pair.MD_obs._errors['SQw'] /= md_norm
+            pair.MD_obs._dependent_variables['SQw'] *= (self.rescale_factor
+                                                        / md_norm)
+            pair.MD_obs._errors['SQw'] *= (self.rescale_factor / md_norm)
 
         return self.FoM_calculator.calculate()
 
