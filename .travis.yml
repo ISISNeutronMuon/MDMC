@@ -36,7 +36,9 @@ matrix:
     # build documentation using docker container to access LAMMPS
     - name: "Documentation"
       language: minimal
-      services: docker
+      services:
+        - docker
+        - xvfb
       before_install:
         - docker pull mdmc/mdmc:latest
       script:
