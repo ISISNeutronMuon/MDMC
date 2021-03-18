@@ -1213,6 +1213,7 @@ class Rattle(ConstraintAlgorithm):
         super().__init__(accuracy, max_iterations)
 
 
+@repr_decorator('universe', 'engine', 'settings')
 class Simulation:
 
     """
@@ -1224,8 +1225,8 @@ class Simulation:
     ----------
     universe : Universe
         The ``Universe`` on which the simulation is performed.
-    engine : str
-        The ``MDEngine`` used for the simulation.
+    engine : str, optional
+        The ``MDEngine`` used for the simulation. Default is ``'mmtk'``.
     **settings
         ``temperature`` (`float`)
             Simulation temperature in ``K``.
@@ -1258,7 +1259,7 @@ class Simulation:
     """
 
     # TODO: Potentially separate out universe and simulation setup
-    def __init__(self, universe, engine="mmtk", **settings):
+    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
 
         self.universe = universe
         self.settings = settings
