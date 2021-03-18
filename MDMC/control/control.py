@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
+from typing import List
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -85,7 +86,7 @@ class Control:
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
-    def __init__(self, simulation: Simulation, exp_datasets: list[dict],
+    def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_params: Parameters, MC_norm:float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
                  reset_config: bool=True, rescale_factor: float=1., **settings):
