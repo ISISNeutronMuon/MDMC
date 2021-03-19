@@ -87,7 +87,7 @@ class Control:
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
-                 fit_params: Parameters, MC_norm:float=1.,
+                 fit_params: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
                  reset_config: bool=True, rescale_factor: float=1., **settings):
 
