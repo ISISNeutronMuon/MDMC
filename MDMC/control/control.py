@@ -30,7 +30,9 @@ class Control:
         Each `dict` is an experimental dataset, containing the file name
         (``file_name``), the type of observable (``type``), the reader required
         for the file (``reader``), and the weighting of the dataset in the
-        Figure of Merit calculation(``weighting``).
+        Figure of Merit calculation(``weighting``). Optionally, can also
+        contain ``rescale_factor`` which will be applied to the experimental
+        data when comparing it to the calculated observable. Default is `1.`.
     fit_params : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -42,9 +44,6 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
-    rescale_factor: float, optional
-        Rescales calculated data by a static factor before calculating the FoM.
-        Default is `1.`
     **settings
         ``t_resolution`` : float
             Instrument resolution.
@@ -56,7 +55,8 @@ class Control:
         [{'file_name':data.LAMP_SQW_FILE,
           'type':'SQw',
           'reader':'LAMPSQw',
-          'weight':1.},
+          'weight':1.,
+          'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
@@ -110,9 +110,11 @@ class Control:
                                                              dset['reader'],
                                                              dset['file_name'])
             MD_observable = self._create_empty_observable(exp_observable)
+            rescale_factor = dset.get('rescale_factor', 1.)
             observable_pair = FoM.ObservablePair(exp_observable,
                                                  MD_observable,
-                                                 dset['weight'])
+                                                 dset['weight'],
+                                                 rescale_factor=rescale_factor)
             self.observable_pairs.append(observable_pair)
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
@@ -241,9 +243,8 @@ class Control:
             md_norm = np.max(pair.MD_obs._dependent_variables['SQw'])
             pair.exp_obs._dependent_variables['SQw'] /= exp_norm
             pair.exp_obs._errors['SQw'] /= exp_norm
-            pair.MD_obs._dependent_variables['SQw'] *= (self.rescale_factor
-                                                        / md_norm)
-            pair.MD_obs._errors['SQw'] *= (self.rescale_factor / md_norm)
+            pair.MD_obs._dependent_variables['SQw'] /= md_norm
+            pair.MD_obs._errors['SQw'] /= md_norm
 
         return self.FoM_calculator.calculate()
 
