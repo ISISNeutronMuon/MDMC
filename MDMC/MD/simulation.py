@@ -1276,15 +1276,27 @@ class Simulation:
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps: int, **settings):
 
         """
-        Minimizes the MD simulation energy
+        Minimizes the total potential energy of the simulated system by
+        modifying the positions of the constituent atoms until one of the
+        stopping criteria is met.
 
         Parameters
         ----------
         n_steps : int
             Maximum number of steps to run the minimization
+        **settings
+            ``etol`` (`float`)
+                If the energy change between iterations is less than ``etol``,
+                minimization is stopped. Default depends on engine used.
+            ``ftol`` (`float`)
+                If the magnitude of the global force is less than ``ftol``,
+                minimization is stopped. Default depends on engine used.
+            ``maxeval`` (`int`)
+                Maximum number of force evaluations to perform. Default depends
+                on engine used.
         """
 
         self.engine.minimize(n_steps, **settings)
@@ -1292,7 +1304,11 @@ class Simulation:
     def run(self, n_steps, equilibration=False):
 
         """
-        Runs the MD simulation
+        Runs the MD simulation for the specified number of steps. Trajectories
+        for the simulation are only saved when ``equilibration`` is `False`.
+        Additionally running equilibration for an NVE system (neither barostat
+        nor thermostat set) will temporarily apply a Berendsen thermostat (it
+        is removed from the simulation after the run is completed).
 
         Parameters
         ----------
