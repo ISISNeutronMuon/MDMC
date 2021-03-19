@@ -270,7 +270,7 @@ def test_OP_weight_validation(SQw_from_exp, SQw_from_MD, observable_pair):
             observable_pair.weight = weight
 
 
-def test_diference_calculation(SQw_dict):
+def test_difference_calculation(SQw_dict):
 
     """
     Tests the ObservablePair difference calculation is correct
@@ -285,6 +285,10 @@ def test_diference_calculation(SQw_dict):
 
     pair.exp_obs._dependent_variables['dep'] = 4 * SQw_dict['dep']
     assert np.all(pair.calculate_difference() == 2 * SQw_dict['dep'])
+
+    rescaled_pair = fom.ObservablePair(from_exp, from_MD, weight=1.,
+                                       rescale_factor=0.75)
+    assert np.all(rescaled_pair.calculate_difference() == SQw_dict['dep'])
 
 
 def test_error_calculation(SQw_dict):
