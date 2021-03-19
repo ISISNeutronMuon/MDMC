@@ -15,7 +15,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_params', 'rescale_factor', 'settings')
+                'reset_config', 'fit_params', 'settings')
 class Control:
 
     """
@@ -89,7 +89,7 @@ class Control:
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_params: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
-                 reset_config: bool=True, rescale_factor: float=1., **settings):
+                 reset_config: bool=True, **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -99,7 +99,6 @@ class Control:
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
                                                              self.fit_params)
         self.reset_config = reset_config
-        self.rescale_factor = rescale_factor
         self.settings = settings
 
         # Create experimental observables from datasets and placeholders for
