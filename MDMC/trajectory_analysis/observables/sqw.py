@@ -553,8 +553,10 @@ class AbstractSQw(Observable):
         """
 
         # Functions other than Gaussians must be FFT (from the energy/frequency
-        # domain to time domain) before multiplication. Convert the FWHM energy
-        # (in meV) into sigma_t (in fs) as we don't need to FFT.
+        # domain to time domain) before multiplication. We convert the FWHM
+        # energy resolution (in meV) into sigma_t (in fs) using the inverse
+        # relationship between the width of a Gaussian and its Fourier
+        # transform rather than explicitly transforming it.
         sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
         N_Q = np.shape(FQt)[0]
         window = function(self.t[:len(self.E)], sigma_t, norm=False)

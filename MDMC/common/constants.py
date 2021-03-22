@@ -2,5 +2,5 @@
 
 from numpy import pi
 
-h = 4.135667e-15 # eV s
+h = 4.135667696e-15 # eV s
 h_bar = h / (2 * pi) # eV s

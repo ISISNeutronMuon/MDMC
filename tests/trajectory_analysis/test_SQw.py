@@ -24,7 +24,7 @@ def SQw_from_MD(trajectory, universe):
     SQw = of.ObservableFactory.create_observable('SQw')
     dimensions = universe.dimensions
     n_Q = 10
-    energy_resolution = 50.
+    energy_resolution = 49.99998257
     Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
     SQw.calculate_from_MD(trajectory,
                           Q_values=Q_values,
