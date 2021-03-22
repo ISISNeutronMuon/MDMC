@@ -18,7 +18,7 @@ from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
-T_RESOLUTION = 30.999425
+E_RESOLUTION = 49.99998257
 
 # Absolute tolerance is included to account for rounding differences in nMOLDYN
 # and MDMC
@@ -126,7 +126,7 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
     SQw_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                t_resolution=T_RESOLUTION)
+                                energy_resolution=E_RESOLUTION)
     return SQw_total
 
 @pytest.fixture(scope="module")
@@ -144,7 +144,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                t_resolution=T_RESOLUTION)
+                                energy_resolution=E_RESOLUTION)
     return SQw_incoh
 
 @pytest.fixture(scope="module")
@@ -161,7 +161,7 @@ def SQw_coh_obs(trajectory, Q_vectors):
     SQw_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,
                               dimensions=DIMENSIONS,
-                              t_resolution=T_RESOLUTION)
+                              energy_resolution=E_RESOLUTION)
     return SQw_coh
 
 
