@@ -41,7 +41,7 @@ matrix:
       before_install:
         - docker pull mdmc/mdmc:latest
       script:
-        - travis_wait 60 docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme . && make -d -C $(pwd)/doc html"
+        - travis_wait 120 docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme . && make -d -C $(pwd)/doc html"
 
     # tests using docker container - including tests which requires MD engines
     - name: "Docker and including MD tests"
