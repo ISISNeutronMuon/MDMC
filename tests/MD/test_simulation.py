@@ -113,6 +113,7 @@ def test_create_universe(universe):
 
     universe_equal = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
     universe_unequal = sim.Universe((9., 9., 9.), UNIVERSE_SHAPE)
+    assert universe == universe
     assert universe == universe_equal
     assert universe != universe_unequal
 

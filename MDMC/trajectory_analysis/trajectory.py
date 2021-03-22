@@ -93,6 +93,8 @@ class Configuration(AtomCollection):
         self.element_set = set(self.element_list)
 
     def __eq__(self, other):
+        if id(other) == id(self):
+            return True
         if isinstance(other, self.__class__):
             for k, v in self.__dict__.items():
                 if k == '_universe':
@@ -423,7 +425,7 @@ class Trajectory(AtomCollection):
     Parameters
     ----------
     *configurations
-        Zero or more ``TimedConfigurations``
+        One or more ``TimedConfigurations``
 
     Attributes
     ----------
@@ -431,16 +433,21 @@ class Trajectory(AtomCollection):
         A `list` of ``TimedConfigurations``
     """
 
-    def __init__(self, *configurations):
+    def __init__(self, *configurations: TemporalConfiguration):
 
-        universe = configurations[0].universe
+        # Check that each configuration has the same universe
+        try:
+            universe = configurations[0].universe
+        except IndexError as error:
+            raise ValueError('At least one ``TemporalConfiguration`` must be'
+                             'provided') from error
+
         for configuration in configurations[1:]:
             if configuration.universe != universe:
                 raise ValueError('The universes of all TemporalConfigurations'
                                  'are not equivalent:\n{0}\n{1}'
                                  ''.format(universe, configuration.universe))
 
-        self.universe = universe
         self.data = configurations
 
     @property
@@ -585,7 +592,7 @@ class Trajectory(AtomCollection):
     def configurations(self):
 
         """
-        Get the ``Configuration`` ovjects of the ``Trajectory``
+        Get the ``Configuration`` objects of the ``Trajectory``
 
         Returns
         -------
@@ -594,6 +601,22 @@ class Trajectory(AtomCollection):
         """
 
         return self.data['configuration']
+
+    @property
+    def universe(self):
+
+        """
+        Get the ``Universe`` of the first ``Configuration`` object (the
+        ``Universe`` is assumed to be the same for all ``Configuration``s).
+
+        Returns
+        -------
+        Universe
+            The ``Universe`` for the ``Trajectory``
+        """
+
+        return self.configurations[0].universe
+
 
     @property
     def positions(self):

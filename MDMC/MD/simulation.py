@@ -133,6 +133,8 @@ class Universe(AtomContainer):
                     self.dimensions))
 
     def __eq__(self, other):
+        if id(other) == id(self):
+            return True
         if isinstance(other, self.__class__):
             for k, v in self.__dict__.items():
                 try:
