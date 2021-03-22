@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
+from MDMC.trajectory_analysis.observables.obs import Observable
 
 
 @repr_decorator('value', 'obs_pairs')
@@ -129,13 +130,17 @@ class ObservablePair:
         An ``Observable`` with ``Observable.origin == 'MD'``
     weight : float
         The relative weight of this pair on a total FoM
+    rescale_factor: float, optional
+        Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
+        on the same scale as ``MD_obs``.
     """
 
-    def __init__(self, exp_obs, MD_obs, weight):
+    def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float, rescale_factor: float=1.):
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
         self.weight = weight
+        self.rescale_factor = rescale_factor
 
     @property
     def exp_obs(self):
@@ -370,11 +375,13 @@ class ObservablePair:
         -------
         numpy.ndarray
             An array with the same dimensions as the ``dependent_variables`` of
-            the ``exp_obs`` and ``MD_obs``. The array contains the absolute
-            difference between the ``dependent_variables``.
+            the ``exp_obs`` and ``MD_obs``. The array contains the difference
+            between the ``dependent_variables`` taking the ``rescale_factor``
+            into account.
         """
 
         diff = (np.array(*self.exp_obs.dependent_variables.values())
+                * self.rescale_factor
                 - np.array(*self.MD_obs.dependent_variables.values()))
 
         return diff
