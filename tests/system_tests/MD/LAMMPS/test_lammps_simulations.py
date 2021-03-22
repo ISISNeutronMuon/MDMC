@@ -242,6 +242,27 @@ def parameterize_decorator(func):
     return wrapper
 
 
+def test_simulation_stdout(universe, capsys):
+    sim = Simulation(universe, engine='lammps', time_step=1.,
+               temperature=TEMPERATURE, pressure=101325., thermostat='nose',
+               barostat='nose', p_damp=100, traj_step=10)
+    sim.minimize(0)
+    sim.run(0, equilibration=True)
+    sim.run(0)
+    stdout = capsys.readouterr().out
+    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
+                      'LAMMPS output is captured by PyLammps wrapper\n'
+                      'Simulation created with lammps engine and settings:\n'
+                      ' time_step  temperature  pressure thermostat barostat  p_damp  traj_step\n'
+                      '       1.0        300.0  101325.0       nose     nose     100         10\n'
+                      'Starting minimization for 0 steps\n'
+                      'Minimization complete\n'
+                      'Starting equilibration for 0 steps\n'
+                      'Equilibration complete\n'
+                      'Starting simulation for 0 steps\n'
+                      'Simulation complete\n')
+
+
 @parameterize_decorator
 def test_number_atoms(ensemble, expected, request):
 

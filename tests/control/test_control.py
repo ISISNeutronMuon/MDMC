@@ -77,7 +77,10 @@ def test_control_refine_stdout(monkeypatch, capsys):
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Step       float          str          int really_lo...\n'
+    assert stdout == ('Control created with:\n'
+                      'Minimizer  MC norm  FoM type  Number of observables  Number of parameters\n'
+                      '      MMC      1.0  standard                      0                     0\n'
+                      'Step       float          str          int really_lo...\n'
                       '   0       1.657         str1           10            1\n'
                       '   1           2         test          100            1\n'
                       '   2       3.874     Accepted         1000            1\n'

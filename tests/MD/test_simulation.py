@@ -112,6 +112,17 @@ def test_create_universe(universe):
     npt.assert_array_equal(UNIVERSE_DIMENSIONS, universe.dimensions)
 
 
+def test_universe_stdout(capsys):
+    # Capture stdout using pytest fixure
+    univ = sim.Universe(SPCE_DIMENSIONS)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    stdout = capsys.readouterr().out
+    assert stdout == ('Universe created with:\n'
+                      '            Dimensions  Shape Force field  Number of atoms\n'
+                      ' [18.62, 18.62, 18.62]  cubic        None                0\n'
+                      'Force field created by solvent SPCE\n')
+
+
 def test_create_atom(atom):
 
     npt.assert_array_equal((0., 0., 0.), atom.position)

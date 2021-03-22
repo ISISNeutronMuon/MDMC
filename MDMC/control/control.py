@@ -113,6 +113,16 @@ class Control:
         # Use specified MD_steps if supplied, else calculate
         self.MD_steps = settings.get('MD_steps')
 
+        setup_frame = pd.DataFrame({'Minimizer': minimizer_type,
+                                    'MC norm': MC_norm,
+                                    'FoM type': FoM_type,
+                                    'Number of observables':
+                                        len(self.observable_pairs),
+                                    'Number of parameters':
+                                        len(self.fit_params)},
+                                    index=[0])
+        print('Control created with:\n{}'.format(setup_frame.to_string(index=False)))
+
     def __str__(self):
 
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]

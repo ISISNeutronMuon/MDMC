@@ -44,9 +44,7 @@ simulation = Simulation(universe,
 
 # Energy Minimization and equilibration
 simulation.minimize(n_steps=5000)
-print("Minimization Complete")
 simulation.run(n_steps=25000, equilibration=True)
-print("Equilibration Complete")
 
 # Setup refinement
 
