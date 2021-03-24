@@ -33,6 +33,10 @@ class Control:
         Figure of Merit calculation(``weighting``). Optionally, can also
         contain ``rescale_factor`` which will be applied to the experimental
         data when comparing it to the calculated observable. Default is `1.`.
+        Alternatively, can optionally specify ``norm_to_one`` which will
+        rescale  the data so that it has a max value of 1. Default is `False`.
+        If both ``rescale_factor`` and ``norm_to_one`` are provided then a
+        warning is printed and ``rescale_factor`` takes precedence.
     fit_params : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -109,7 +113,20 @@ class Control:
                                                              dset['reader'],
                                                              dset['file_name'])
             MD_observable = self._create_empty_observable(exp_observable)
-            rescale_factor = dset.get('rescale_factor', 1.)
+
+            norm_to_one = dset.get('norm_to_one', False)
+            try:
+                rescale_factor = dset['rescale_factor']
+                if norm_to_one:
+                    print('Both `rescale_factor` and `norm_to_one` set for file'
+                          ' {0}; `rescale_factor` of {1} applied'
+                          ''.format(dset['file_name'], rescale_factor))
+            except KeyError:
+                if norm_to_one:
+                    rescale_factor = 1. / np.max(*exp_observable.dependent_variables.values())
+                else:
+                    rescale_factor = 1.
+
             observable_pair = FoM.ObservablePair(exp_observable,
                                                  MD_observable,
                                                  dset['weight'],
@@ -235,15 +252,6 @@ class Control:
 
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
-
-        # TODO: Remove arbitrary normalization
-        for pair in self.observable_pairs:
-            exp_norm = np.max(pair.exp_obs._dependent_variables['SQw'])
-            md_norm = np.max(pair.MD_obs._dependent_variables['SQw'])
-            pair.exp_obs._dependent_variables['SQw'] /= exp_norm
-            pair.exp_obs._errors['SQw'] /= exp_norm
-            pair.MD_obs._dependent_variables['SQw'] /= md_norm
-            pair.MD_obs._errors['SQw'] /= md_norm
 
         return self.FoM_calculator.calculate()
 

@@ -313,6 +313,11 @@ def test_error_calculation(SQw_dict):
     assert np.all(pair.calculate_errors() ==
                   (ERR_NEG ** 2 + ERR_NEG ** 2) ** 0.5)
 
+    rescaled_pair = fom.ObservablePair(from_exp, from_MD, weight=1.,
+                                       rescale_factor=0.75)
+    assert (np.all(rescaled_pair.calculate_errors()
+            == ((ERR_NEG * 0.75) ** 2 + ERR_NEG ** 2) ** 0.5))
+
 
 def test_FOM_calculation(pairs):
 

@@ -399,7 +399,8 @@ class ObservablePair:
             the ``errors`` in quadrature.
         """
 
-        errors = (np.array(*self.exp_obs.errors.values()) ** 2
+        errors = ((np.array(*self.exp_obs.errors.values())
+                   * self.rescale_factor) ** 2
                   + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
 
         return errors
