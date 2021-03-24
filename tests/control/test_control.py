@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from typing import List
 
 from MDMC.control import control
 from tests.test_data import data
@@ -48,6 +49,38 @@ def mock_generate_FoM(self):
 def mock_update_engine_parameters(self):
 
     pass
+
+
+@pytest.fixture(scope="module")
+def exp_datasets() -> callable:
+    """
+    Returns
+    -------
+    callable
+        A function which accepts optionally accepts ``rescale_factor`` and
+        ``norm_to_one`` of types `float` and `bool` that default to `None`, and
+        returns a `list` of `dict` that represent experimental data.
+    """
+
+    def _exp_datasets(rescale_factor: float=None,
+                      norm_to_one: bool=None) -> List[dict]:
+
+        datasets = []
+        for k, v in data.READER_DATA.items():
+            # 'XML_SQw' is the reader Class, but we want the module 'xml_SQw'
+            if k == 'XML_SQw':
+                k = 'xml_SQw'
+
+            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.}
+            if rescale_factor:
+                dataset['rescale_factor'] = rescale_factor
+            if norm_to_one:
+                dataset['norm_to_one'] = norm_to_one
+            datasets.append(dataset)
+
+        return datasets
+
+    return _exp_datasets
 
 
 def test_control_refine_stdout(monkeypatch, capsys):
@@ -97,66 +130,46 @@ def test_control_refine_stdout(monkeypatch, capsys):
                       ' 3.134544  0.339834  1  3.474323e+10\n')
 
 
-def test_control_no_scaling():
+def test_control_no_scaling(exp_datasets):
     """
     Test that by default a rescale factor of `1.` is used.
     """
-    exp_datasets = []
-    for k, v in data.READER_DATA.items():
-        exp_datasets.append({'type': 'SQw', 'reader': k, 'file_name': v,
-                             'weight': 1.})
-
-    ctrl = control.Control(None, exp_datasets, [], reset_config=False)
+    ctrl = control.Control(None, exp_datasets(), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
 
 
-def test_control_rescale_factor():
+def test_control_rescale_factor(exp_datasets):
     """
     Test that a manually specified ``rescale_factor`` is applied to the
     ``observable_pair``.
     """
-    exp_datasets = []
-    for k, v in data.READER_DATA.items():
-        exp_datasets.append({'type': 'SQw', 'reader': k, 'file_name': v,
-                             'weight': 1., 'rescale_factor': 0.5})
-
-    ctrl = control.Control(None, exp_datasets, [], reset_config=False)
+    ctrl = control.Control(None, exp_datasets(rescale_factor=0.5), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
 
 
-def test_control_norm_to_one():
+def test_control_norm_to_one(exp_datasets):
     """
     Test that ``norm_to_one`` correctly sets the ``rescale_factor`` based
     on the max value of the dependent variable.
     """
-    exp_datasets = []
-    for k, v in data.READER_DATA.items():
-        exp_datasets.append({'type': 'SQw', 'reader': k, 'file_name': v,
-                             'weight': 1., 'norm_to_one': True})
-
-    ctrl = control.Control(None, exp_datasets, [], reset_config=False)
+    ctrl = control.Control(None, exp_datasets(norm_to_one=True), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert (pair.rescale_factor
                 == 1. / np.max(*pair.exp_obs.dependent_variables.values()))
 
 
-def test_control_scaling_warning(capsys):
+def test_control_scaling_warning(exp_datasets, capsys):
     """
     Test that when both ``rescale_factor`` and ``norm_to_one`` specified then
     the former is used and a warning is printed to explain this.
     """
-    exp_datasets = []
-    for k, v in data.READER_DATA.items():
-        exp_datasets.append({'type': 'SQw', 'reader': k, 'file_name': v,
-                             'weight': 1., 'rescale_factor': 0.5,
-                             'norm_to_one': True})
-
-    ctrl = control.Control(None, exp_datasets, [], reset_config=False)
+    datasets = exp_datasets(rescale_factor=0.5, norm_to_one=True)
+    ctrl = control.Control(None, datasets, [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
@@ -166,5 +179,5 @@ def test_control_scaling_warning(capsys):
                       '{0}; `rescale_factor` of 0.5 applied\n'
                       'Both `rescale_factor` and `norm_to_one` set for file '
                       '{1}; `rescale_factor` of 0.5 applied\n'
-                      ''.format(exp_datasets[0]['file_name'],
-                                exp_datasets[1]['file_name']))
+                      ''.format(datasets[0]['file_name'],
+                                datasets[1]['file_name']))
