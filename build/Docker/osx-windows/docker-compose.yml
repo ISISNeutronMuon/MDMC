@@ -14,6 +14,10 @@ services:
       - "./mdmc_sync_with_docker:/mdmc/notebooks"
       # This volume is required for X11 forwarding
       - "/tmp/.X11-unix:/tmp/.X11-unix"
+      # Copy the .env file and utility script to read special characters in
+      # user credentials
+      - "./.env:/mdmc/.env"
+      - "./read_credentials.py:/mdmc/read_credentials.py"
     command:
       # /bin/bash -c required as docker-compose cannot execute multiple commands
       # host.docker.internal is a special DNS name for accessing host ip within
@@ -28,7 +32,7 @@ services:
       - -c
       - |
         export DISPLAY=host.docker.internal:0
-        git clone --depth=1 https://$UNAME:$PWORD@github.com/MDMCproject/MDMCv0.2_pilot
+        git clone --depth=1 https://$$(python3 "/mdmc/read_credentials.py")@github.com/MDMCproject/MDMCv0.2_pilot
         pip3 install ./MDMCv0.2_pilot
         cp -RT ./MDMCv0.2_pilot/doc/tutorials /mdmc/notebooks/mdmc_tutorials
         cd /mdmc/notebooks
