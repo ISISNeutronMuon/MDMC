@@ -78,19 +78,26 @@ class FigureOfMeritCalculator(ABC):
 class StandardFoMCalculator(FigureOfMeritCalculator):
 
     r"""
-    Calculates the error normalised square difference:
+    Calculates the weighted sum of the Figure of Merits for a number of datasets:
+    .. math::
+
+        FoM_total = \sum_{i} FoM_{i}
+
+    Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
+    a sum of the error normalised square difference between data points for a single ``ObservablePair``:
 
     .. math::
 
-        FoM = \sum_{i} w_{i} \frac{F_{i}^{exp} - F_{i}^{sim}}{\sigma_{i}^{exp}}
+        FoM_{i} = w_{i} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
 
-    where the sum is over the total number of experimental datasets,
-    :math:`w_{i}` is an importance weighting assigned to each dataset,
-    :math:`F_{i}` is a 1-D or 2-D array of the experimental ``Observable``
+    where the sum is over the data points in the ``ObservablePair`` corresponding to the :math:`i`-th datasets, and
+    :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset.
+    :math:`D_{j}` are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
     (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
-    :math:`\sigma_{i}^{exp}` is a 1-D or 2-D array of the errors on the
-    experimental ``Observable``. The subtraction and divison over the arrays are
-    element-wise.
+    :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
+    datapoint. Note that the subtraction and division over the arrays are element-wise. Note also that if the
+    the experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
+    specified in the ``ObservablePair`` to scale the experimental data points by a simple linear scaling.
     """
 
     def calculate_single_FoM(self, obs_pair):
