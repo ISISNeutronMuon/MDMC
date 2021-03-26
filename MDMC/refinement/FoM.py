@@ -110,7 +110,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
             The FoM for the obs_pair
         """
 
-        return obs_pair.weight * (np.sum(obs_pair.calculate_difference()
+        return obs_pair.weight * np.sum((obs_pair.calculate_difference()
                                          / obs_pair.calculate_errors()) ** 2)
 
 
