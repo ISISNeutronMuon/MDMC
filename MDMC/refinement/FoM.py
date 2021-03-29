@@ -415,5 +415,5 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                                        / np.sum(MD_values * exp_values
                                                 / exp_errors ** 2))
 
-        return obs_pair.weight * (np.sum(obs_pair.calculate_difference()
+        return obs_pair.weight * np.sum((obs_pair.calculate_difference()
                                          / obs_pair.calculate_errors()) ** 2)
