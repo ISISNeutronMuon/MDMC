@@ -8,113 +8,7 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
-@repr_decorator('value', 'obs_pairs')
-class FigureOfMeritCalculator(ABC):
-
-    """
-    Abstract class that defines methods common to all figure of merit
-    calculators
-
-    Parameters
-    ----------
-    obs_pairs : list
-        A `list` of ``ObservablePairs``
-
-    Attributes
-    ----------
-    obs_pairs : list
-        A `list` of ``ObservablePairs``
-    value : float
-        The Figure of Merit for all ``obs_pairs``
-    """
-
-    def __init__(self, obs_pairs):
-
-        self.obs_pairs = list(obs_pairs)
-        self.value = None
-
-    def calculate(self):
-
-        """
-        Calculates the FoM value by calculating the FoM for every
-        ``ObservablePair``
-
-        Returns
-        -------
-        float
-            A non-negative `float` Figure of Merit
-
-        Raises
-        ------
-        AssertionError
-            If calculated value of Figure of Merit is negative
-        """
-
-        self.value = np.sum([self.calculate_single_FoM(obs_pair)
-                             for obs_pair in self.obs_pairs])
-        assert self.value >= 0.
-        return self.value
-
-    @abstractmethod
-    def calculate_single_FoM(self, obs_pair):
-
-        """
-        Performs the FoM calculation specific to each FoM
-
-        Parameters
-        ----------
-        obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
-
-        Returns
-        -------
-        float
-            The FoM for the ``obs_pair``
-        """
-
-        raise NotImplementedError
-
-
-class StandardFoMCalculator(FigureOfMeritCalculator):
-
-    r"""
-    Calculates the error normalised square difference:
-
-    .. math::
-
-        FoM = \sum_{i} w_{i} \frac{F_{i}^{exp} - F_{i}^{sim}}{\sigma_{i}^{exp}}
-
-    where the sum is over the total number of experimental datasets,
-    :math:`w_{i}` is an importance weighting assigned to each dataset,
-    :math:`F_{i}` is a 1-D or 2-D array of the experimental ``Observable``
-    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
-    :math:`\sigma_{i}^{exp}` is a 1-D or 2-D array of the errors on the
-    experimental ``Observable``. The subtraction and divison over the arrays are
-    element-wise.
-    """
-
-    def calculate_single_FoM(self, obs_pair):
-
-        """
-        Performs the error normalised square difference for an
-        ``ObservablePair``
-
-        Parameters
-        ----------
-        obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
-
-        Returns
-        -------
-        float
-            The FoM for the obs_pair
-        """
-
-        return obs_pair.weight * (np.sum(obs_pair.calculate_difference()
-                                         / obs_pair.calculate_errors()) ** 2)
-
-
-@repr_decorator('weight', 'exp_obs', 'MD_obs')
+@repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale')
 class ObservablePair:
 
     """
@@ -132,15 +26,20 @@ class ObservablePair:
         The relative weight of this pair on a total FoM
     rescale_factor: float, optional
         Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
-        on the same scale as ``MD_obs``.
+        on the same scale as ``MD_obs``. Default is `1.`.
+    auto_scale: bool, optional
+        If `True`, ``exp_obs`` is scaled automatically to minimise the FoM for
+        each step of the refinement. Default is `False`.
     """
 
-    def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float, rescale_factor: float=1.):
+    def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float,
+                 rescale_factor: float=1., auto_scale: bool=False):
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
         self.weight = weight
         self.rescale_factor = rescale_factor
+        self.auto_scale = auto_scale
 
     @property
     def exp_obs(self):
@@ -404,3 +303,117 @@ class ObservablePair:
                   + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
 
         return errors
+
+
+@repr_decorator('value', 'obs_pairs')
+class FigureOfMeritCalculator(ABC):
+
+    """
+    Abstract class that defines methods common to all figure of merit
+    calculators
+
+    Parameters
+    ----------
+    obs_pairs : list
+        A `list` of ``ObservablePairs``
+
+    Attributes
+    ----------
+    obs_pairs : list
+        A `list` of ``ObservablePairs``
+    value : float
+        The Figure of Merit for all ``obs_pairs``
+    """
+
+    def __init__(self, obs_pairs):
+
+        self.obs_pairs = list(obs_pairs)
+        self.value = None
+
+    def calculate(self):
+
+        """
+        Calculates the FoM value by calculating the FoM for every
+        ``ObservablePair``
+
+        Returns
+        -------
+        float
+            A non-negative `float` Figure of Merit
+
+        Raises
+        ------
+        AssertionError
+            If calculated value of Figure of Merit is negative
+        """
+
+        self.value = np.sum([self.calculate_single_FoM(obs_pair)
+                             for obs_pair in self.obs_pairs])
+        assert self.value >= 0.
+        return self.value
+
+    @abstractmethod
+    def calculate_single_FoM(self, obs_pair):
+
+        """
+        Performs the FoM calculation specific to each FoM
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the ``obs_pair``
+        """
+
+        raise NotImplementedError
+
+
+class StandardFoMCalculator(FigureOfMeritCalculator):
+
+    r"""
+    Calculates the error normalised square difference:
+
+    .. math::
+
+        FoM = \sum_{i} w_{i} \frac{F_{i}^{exp} - F_{i}^{sim}}{\sigma_{i}^{exp}}
+
+    where the sum is over the total number of experimental datasets,
+    :math:`w_{i}` is an importance weighting assigned to each dataset,
+    :math:`F_{i}` is a 1-D or 2-D array of the experimental ``Observable``
+    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
+    :math:`\sigma_{i}^{exp}` is a 1-D or 2-D array of the errors on the
+    experimental ``Observable``. The subtraction and divison over the arrays are
+    element-wise.
+    """
+
+    def calculate_single_FoM(self, obs_pair: ObservablePair):
+
+        """
+        Performs the error normalised square difference for an
+        ``ObservablePair``
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the obs_pair
+        """
+
+        if obs_pair.auto_scale:
+            exp_errors = np.array(*obs_pair.exp_obs.errors.values())
+            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+            MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
+            obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2)
+                                       / np.sum(MD_values * exp_values
+                                                / exp_errors ** 2))
+
+        return obs_pair.weight * (np.sum(obs_pair.calculate_difference()
+                                         / obs_pair.calculate_errors()) ** 2)

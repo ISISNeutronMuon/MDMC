@@ -33,10 +33,10 @@ class Control:
         Figure of Merit calculation(``weighting``). Optionally, can also
         contain ``rescale_factor`` which will be applied to the experimental
         data when comparing it to the calculated observable. Default is `1.`.
-        Alternatively, can optionally specify ``norm_to_one`` which will
-        rescale  the data so that it has a max value of 1. Default is `False`.
-        If both ``rescale_factor`` and ``norm_to_one`` are provided then a
-        warning is printed and ``rescale_factor`` takes precedence.
+        Alternatively, can optionally specify ``auto_scale`` which will set the
+        ``rescale_factor`` automatically to minimise the FoM. Default is
+        `False`. If both ``rescale_factor`` and ``auto_scale`` are provided
+        then a warning is printed and ``auto_scale`` takes precedence.
     fit_params : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -64,7 +64,8 @@ class Control:
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
-          'weight':0.5}]
+          'weight':0.5,
+          'auto_scale':True}]
 
     Attributes
     ----------
@@ -114,23 +115,21 @@ class Control:
                                                              dset['file_name'])
             MD_observable = self._create_empty_observable(exp_observable)
 
-            norm_to_one = dset.get('norm_to_one', False)
-            try:
-                rescale_factor = dset['rescale_factor']
-                if norm_to_one:
-                    print('Both `rescale_factor` and `norm_to_one` set for file'
-                          ' {0}; `rescale_factor` of {1} applied'
-                          ''.format(dset['file_name'], rescale_factor))
-            except KeyError:
-                if norm_to_one:
-                    rescale_factor = 1. / np.max(*exp_observable.dependent_variables.values())
-                else:
-                    rescale_factor = 1.
+            auto_scale = dset.get('auto_scale', False)
+            rescale_factor = dset.get('rescale_factor')
+            if auto_scale and rescale_factor:
+                print('Both `rescale_factor` and `auto_scale` set for file {};'
+                      ' scaling will be automated to minimise FoM'
+                      ''.format(dset['file_name']))
+                rescale_factor = 1.
+            elif not rescale_factor:
+                rescale_factor = 1.
 
             observable_pair = FoM.ObservablePair(exp_observable,
                                                  MD_observable,
                                                  dset['weight'],
-                                                 rescale_factor=rescale_factor)
+                                                 rescale_factor=rescale_factor,
+                                                 auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)

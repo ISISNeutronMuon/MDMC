@@ -58,12 +58,12 @@ def exp_datasets() -> callable:
     -------
     callable
         A function which accepts optionally accepts ``rescale_factor`` and
-        ``norm_to_one`` of types `float` and `bool` that default to `None`, and
+        ``auto_scale`` of types `float` and `bool` that default to `None`, and
         returns a `list` of `dict` that represent experimental data.
     """
 
     def _exp_datasets(rescale_factor: float=None,
-                      norm_to_one: bool=None) -> List[dict]:
+                      auto_scale: bool=None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
@@ -74,8 +74,8 @@ def exp_datasets() -> callable:
             dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.}
             if rescale_factor:
                 dataset['rescale_factor'] = rescale_factor
-            if norm_to_one:
-                dataset['norm_to_one'] = norm_to_one
+            if auto_scale:
+                dataset['auto_scale'] = auto_scale
             datasets.append(dataset)
 
         return datasets
@@ -138,6 +138,7 @@ def test_control_no_scaling(exp_datasets):
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
+        assert not pair.auto_scale
 
 
 def test_control_rescale_factor(exp_datasets):
@@ -149,35 +150,36 @@ def test_control_rescale_factor(exp_datasets):
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
+        assert not pair.auto_scale
 
 
-def test_control_norm_to_one(exp_datasets):
+def test_control_auto_scale(exp_datasets):
     """
-    Test that ``norm_to_one`` correctly sets the ``rescale_factor`` based
-    on the max value of the dependent variable.
+    Test that ``auto_scale`` is applied.
     """
-    ctrl = control.Control(None, exp_datasets(norm_to_one=True), [], reset_config=False)
+    ctrl = control.Control(None, exp_datasets(auto_scale=True), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        assert (pair.rescale_factor
-                == 1. / np.max(*pair.exp_obs.dependent_variables.values()))
+        assert pair.rescale_factor == 1.
+        assert pair.auto_scale
 
 
 def test_control_scaling_warning(exp_datasets, capsys):
     """
-    Test that when both ``rescale_factor`` and ``norm_to_one`` specified then
-    the former is used and a warning is printed to explain this.
+    Test that when both ``rescale_factor`` and ``auto_scale`` specified then
+    the latter is used and a warning is printed to explain this.
     """
-    datasets = exp_datasets(rescale_factor=0.5, norm_to_one=True)
+    datasets = exp_datasets(rescale_factor=0.5, auto_scale=True)
     ctrl = control.Control(None, datasets, [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        assert pair.rescale_factor == 0.5
+        assert pair.rescale_factor == 1.
+        assert pair.auto_scale
 
     stdout = capsys.readouterr().out
-    assert stdout == ('Both `rescale_factor` and `norm_to_one` set for file '
-                      '{0}; `rescale_factor` of 0.5 applied\n'
-                      'Both `rescale_factor` and `norm_to_one` set for file '
-                      '{1}; `rescale_factor` of 0.5 applied\n'
+    assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
+                      '{0}; scaling will be automated to minimise FoM\n'
+                      'Both `rescale_factor` and `auto_scale` set for file '
+                      '{1}; scaling will be automated to minimise FoM\n'
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
