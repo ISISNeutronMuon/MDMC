@@ -113,15 +113,19 @@ class Control:
         # Use specified MD_steps if supplied, else calculate
         self.MD_steps = settings.get('MD_steps')
 
-        setup_frame = pd.DataFrame({'Minimizer': minimizer_type,
-                                    'MC norm': MC_norm,
-                                    'FoM type': FoM_type,
-                                    'Number of observables':
-                                        len(self.observable_pairs),
-                                    'Number of parameters':
-                                        len(self.fit_params)},
-                                    index=[0])
-        print('Control created with:\n{}'.format(setup_frame.to_string(index=False)))
+        setup_frame = pd.DataFrame([[minimizer_type],
+                                    [MC_norm],
+                                    [FoM_type],
+                                    [len(self.observable_pairs)],
+                                    [len(self.fit_params)]],
+                                    index=['  Minimizer',
+                                           '  MC norm',
+                                           '  FoM type',
+                                           '  Number of observables',
+                                           '  Number of parameters'])
+
+        print('Control created with:\n{}\n'
+              ''.format(setup_frame.to_string(index=True, header=False)))
 
     def __str__(self):
 
@@ -255,7 +259,7 @@ class Control:
         Run a molecular dynamics simulation
         """
 
-        self.simulation.run(self.MD_steps)
+        self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self):
 

@@ -118,8 +118,11 @@ def test_universe_stdout(capsys):
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     stdout = capsys.readouterr().out
     assert stdout == ('Universe created with:\n'
-                      '            Dimensions  Shape Force field  Number of atoms\n'
-                      ' [18.62, 18.62, 18.62]  cubic        None                0\n'
+                      '  Dimensions       [18.62, 18.62, 18.62]\n'
+                      '  Shape                            cubic\n'
+                      '  Force field                       None\n'
+                      '  Number of atoms                      0\n'
+                      '\n'
                       'Force field created by solvent SPCE\n')
 
 

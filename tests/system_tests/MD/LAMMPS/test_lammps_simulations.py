@@ -249,12 +249,19 @@ def test_simulation_stdout(universe, capsys):
     sim.minimize(0)
     sim.run(0, equilibration=True)
     sim.run(0)
+    sim.run(0, verbose=False)
     stdout = capsys.readouterr().out
     assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
                       'LAMMPS output is captured by PyLammps wrapper\n'
                       'Simulation created with lammps engine and settings:\n'
-                      ' time_step  temperature  pressure thermostat barostat  p_damp  traj_step\n'
-                      '       1.0        300.0  101325.0       nose     nose     100         10\n'
+                      '  time_step         1\n'
+                      '  temperature     300\n'
+                      '  pressure     101325\n'
+                      '  thermostat     nose\n'
+                      '  barostat       nose\n'
+                      '  p_damp          100\n'
+                      '  traj_step        10\n'
+                      '\n'
                       'Starting minimization for 0 steps\n'
                       'Minimization complete\n'
                       'Starting equilibration for 0 steps\n'
