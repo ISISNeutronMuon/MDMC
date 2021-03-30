@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  basic_tests:
+    name: Non-container and not inc MD tests
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: apt-get
+      run: sudo apt-get install -y libopenmpi-dev openmpi-bin
+    - name: pip install
+      run: |
+        pip3 install --upgrade pip
+        pip3 install -r requirements.txt
+        pip3 install .
+        pip3 install pytest==3.10.0
+        pip3 install ase==3.20.1
+
+    - name: Run tests
+      run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
+
+
+  engine_tests:
+    name: Docker and including MD tests
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Docker pull
+      run: docker pull mdmc/mdmc:latest
+    - name: Run tests
+      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+    - name: Copy coverage
+      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  windows:
+    name: Python 3.8.0 on Windows
+    runs-on: windows-latest
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Install
+      run: |
+        pip3 install --upgrade pip
+        pip3 install .
+
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
+
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: apt-get
+      run: sudo apt-get install -y pandoc
+    - name: pip install
+      run: |
+        pip3 install --upgrade pip
+        pip3 install sphinx nbsphinx sphinx_rtd_theme
+    
+    - name: Build documentation
+      run: make -C doc html
+

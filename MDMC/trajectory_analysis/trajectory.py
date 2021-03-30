@@ -92,6 +92,25 @@ class Configuration(AtomCollection):
         self.data = structural_units
         self.element_set = set(self.element_list)
 
+    def __eq__(self, other):
+        if id(other) == id(self):
+            return True
+        if isinstance(other, self.__class__):
+            for k, v in self.__dict__.items():
+                if k == '_universe':
+                    # As Configurations can have Universes as an attribute, and
+                    # vice versa, skip comparison to prevent infinite recursion
+                    continue
+                try:
+                    iter(v)
+                    if any(v != getattr(other, k)):
+                        return False
+                except TypeError:
+                    if v != getattr(other, k):
+                        return False
+            return True
+        return False
+
     @property
     def atom_list(self):
 
@@ -406,7 +425,7 @@ class Trajectory(AtomCollection):
     Parameters
     ----------
     *configurations
-        Zero or more ``TemporalConfigurations``
+        One or more ``TemporalConfigurations``
 
     Attributes
     ----------
@@ -416,7 +435,19 @@ class Trajectory(AtomCollection):
 
     def __init__(self, *configurations: TemporalConfiguration):
 
-        self.universe = configurations[0].universe
+        # Check that each configuration has the same universe
+        try:
+            universe = configurations[0].universe
+        except IndexError as error:
+            raise ValueError('At least one ``TemporalConfiguration`` must be'
+                             'provided') from error
+
+        for configuration in configurations[1:]:
+            if configuration.universe != universe:
+                raise ValueError('The universes of all TemporalConfigurations'
+                                 'are not equivalent:\n{0}\n{1}'
+                                 ''.format(universe, configuration.universe))
+
         self.data = configurations
 
     @property
@@ -561,7 +592,7 @@ class Trajectory(AtomCollection):
     def configurations(self):
 
         """
-        Get the ``Configuration`` ovjects of the ``Trajectory``
+        Get the ``Configuration`` objects of the ``Trajectory``
 
         Returns
         -------
@@ -570,6 +601,22 @@ class Trajectory(AtomCollection):
         """
 
         return self.data['configuration']
+
+    @property
+    def universe(self):
+
+        """
+        Get the ``Universe`` of the first ``Configuration`` object (the
+        ``Universe`` is assumed to be the same for all ``Configuration``s).
+
+        Returns
+        -------
+        Universe
+            The ``Universe`` for the ``Trajectory``
+        """
+
+        return self.configurations[0].universe
+
 
     @property
     def positions(self):

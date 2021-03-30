@@ -24,12 +24,12 @@ def SQw_from_MD(trajectory, universe):
     SQw = of.ObservableFactory.create_observable('SQw')
     dimensions = universe.dimensions
     n_Q = 10
-    t_resolution = 30.999425
+    energy_resolution = 49.99998257
     Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
     SQw.calculate_from_MD(trajectory,
                           Q_values=Q_values,
                           dimensions=dimensions,
-                          t_resolution=t_resolution)
+                          energy_resolution=energy_resolution)
     return SQw
 
 # TODO: Test for consistency by comparing S(Q,w) where w = 0 with S(Q)

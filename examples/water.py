@@ -66,7 +66,7 @@ control = Control(simulation=simulation,
                   MC_norm=1,
                   minimizer_type="MMC",
                   MD_steps=208000,
-                  t_resolution=114.)
+                  energy_resolution=13.6)
 
 # Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
 # a non-uniform E step.
