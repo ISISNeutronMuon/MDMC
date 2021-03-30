@@ -82,7 +82,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     .. math::
 
-        FoM_total = \sum_{i} FoM_{i}
+        FoM_{total} = \sum_{i} FoM_{i}
 
     Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
     a sum of the error normalised square difference between data points for a single ``ObservablePair``:
