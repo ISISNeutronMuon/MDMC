@@ -79,6 +79,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     r"""
     Calculates the weighted sum of the Figure of Merits for a number of datasets:
+
     .. math::
 
         FoM_total = \sum_{i} FoM_{i}
@@ -90,12 +91,12 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
         FoM_{i} = w_{i} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
 
-    where the sum is over the data points in the ``ObservablePair`` corresponding to the :math:`i`-th datasets, and
+    where the sum is over the data points in the ``ObservablePair`` corresponding to the :math:`i`-th dataset, and
     :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset.
     :math:`D_{j}` are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
     (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
     :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
-    datapoint. Note that the subtraction and division over the arrays are element-wise. Note also that if the
+    data point. Note that the subtraction and division over the arrays are element-wise. Note also that if the
     the experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
     specified in the ``ObservablePair`` to scale the experimental data points by a simple linear scaling.
     """
