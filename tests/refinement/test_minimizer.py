@@ -10,6 +10,8 @@ import pytest
 from MDMC.refinement import minimizer
 
 
+pytestmark = pytest.mark.mpi
+
 class MockParameter:
 
     """
@@ -215,6 +217,23 @@ def test_mmc_step_rejected(monkeypatch, parameters):
     assert np.all(mmc.params_old_values == np.arange(len(parameters)))
     assert [p.value for p in mmc.params] == expected_values
     assert mmc._history == [[FoM, 'Rejected'] + original_values]
+
+
+def test_mmc_change_parameters(parameters):
+
+    """
+    Tests that the parameters change by the expected amount when given a mocked
+    distribution which always returns 1.
+    """
+
+    def mock_distribution(low: float, high: float, size: int):
+        return np.ones(size)
+
+    expected_values = [2 * p.value for p in parameters]
+    mmc = minimizer.MMC(1, parameters)
+    mmc.distribution = mock_distribution
+    mmc.change_parameters(mmc.params)
+    assert [p.value for p in mmc.params] == expected_values
 
 
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm',

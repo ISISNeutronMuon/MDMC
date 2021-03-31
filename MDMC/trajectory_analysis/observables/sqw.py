@@ -362,16 +362,27 @@ class AbstractSQw(Observable):
             # Determine the smallest integer larger than the number of Q vectors
             # that is exactly divisible by the number of processors
             axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
+
             # Increase the size of Q vectors up to the required size by padding
-            # the start of the array with zeroes
-            Q_vectors = np.pad(self.Q_vectors, ((0, axis_0-shape[0]),
-                                                (0, 0),
-                                                (0, 0)), 'constant')
-            # Change these zeroes to nan's as this can be passed to calculate
+            # the end of the array with NaNs. This can be passed to calculate
             # rho in the _calculate_FQt_single_Q method, resulting in an array
-            # of nan's for each zero element.  These arrays are then removed
+            # of NaN's for each zero element.  These arrays are then removed
             # after gathering.
-            Q_vectors[shape[0] - axis_0:] = np.float('nan')
+            if len(shape) == 3:
+                Q_vectors = np.pad(self.Q_vectors,
+                                   ((0, axis_0 - shape[0]), (0, 0), (0, 0)),
+                                   'constant',
+                                   constant_values=(np.float('nan')))
+            else:
+                # If we do not have a well defined shape (i.e. not every Q
+                # value has the same number of points in reciprocal space) then
+                # we need to manually pad Q_vectors using lists, as numpy
+                # arrays would need to have the same shape to be appended.
+                padding = np.array([np.full(3, np.float('nan'))])
+                padding_list = [padding for _ in range(axis_0 - shape[0])]
+                Q_vectors_list = list(self.Q_vectors)
+                Q_vectors_list.extend(padding_list)
+                Q_vectors = np.array(Q_vectors_list)
         else:
             Q_vectors = self.Q_vectors
             axis_0 = 0
@@ -394,8 +405,8 @@ class AbstractSQw(Observable):
         FQt_shape = np.shape(FQt)
         FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
-        # Remove the padded elements at the start of FQt which will be filled
-        # with nan's
+        # Remove the padded elements at the end of FQt which will be filled
+        # with NaN's
         return FQt[:shape[0] - axis_0]
 
     @abstractmethod
