@@ -84,9 +84,7 @@ jobs:
       # --cov-append option for the actual tests. Using --allow-run-as-root as
       # we are running inside a docker container, so root only affects the
       # container. Usually running with this flag is *strongly* discouraged.
-      run: |
-        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
-        docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
