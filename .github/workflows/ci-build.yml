@@ -77,12 +77,15 @@ jobs:
     - name: Docker pull
       run: docker pull mdmc/mdmc:latest
     - name: Run tests
-      # Using --allow-run-as-root as we are running inside a docker container,
-      # so root only affects the container. Usually running with this flag is
-      # *strongly* discouraged.
-      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml --cov-append
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+      # To avoid issues with both processes accessing the coverage report
+      # simultaneously, first create the coverage file without mpi using a fake
+      # PyTest mark so we don't actually run any tests, and then use the
+      # --cov-append option. Using --allow-run-as-root as we are running inside
+      # a docker container, so root only affects the container. Usually running
+      # with this flag is *strongly* discouraged.
+      run: |
+        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s -m NONE $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml
+        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml --cov-append
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
