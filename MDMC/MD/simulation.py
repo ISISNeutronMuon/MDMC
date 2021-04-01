@@ -1347,7 +1347,7 @@ class Simulation:
         self.engine.minimize(n_steps, **settings)
         print('Minimization complete')
 
-    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=True):
+    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
 
         """
         Runs the MD simulation for the specified number of steps. Trajectories
