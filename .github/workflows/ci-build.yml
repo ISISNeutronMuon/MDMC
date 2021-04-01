@@ -49,10 +49,13 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
 
+    - name: apt-get
+      run: sudo apt-get install -y libopenmpi-dev openmpi-bin
+
     - name: Docker pull
       run: docker pull mdmc/mdmc:latest
     - name: Run tests
-      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      run: mpirun -np 2 docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
 
