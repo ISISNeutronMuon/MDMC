@@ -77,23 +77,15 @@ jobs:
     - name: Docker pull
       run: docker pull mdmc/mdmc:latest
 
-    - name: Generate coverage template
+    - name: Run tests
       # To avoid issues with both processes accessing the coverage report
       # simultaneously, first create the coverage file without mpi using a fake
-      # PyTest mark so we don't actually run any tests (and suppressing the
-      # exit code associated with this). Then use the --cov-append option for
-      # the actual tests.
+      # PyTest mark so we don't actually run any tests. Then use the
+      # --cov-append option for the actual tests. Using --allow-run-as-root as
+      # we are running inside a docker container, so root only affects the
+      # container. Usually running with this flag is *strongly* discouraged.
       run: |
-        sh -c 'docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; ret=$?; [ $ret = 5 ] && exit 0 || exit $ret'
-        docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        docker cp $(docker ps -lq):/home/.coverage .coverage
-
-    - name: Run tests
-      # Using --allow-run-as-root as we are running inside a docker container,
-      # so root only affects the container. Usually running with this flag is
-      # *strongly* discouraged.
-      run: |
-        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append
+        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
         docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
 
     - name: Upload code coverage report
