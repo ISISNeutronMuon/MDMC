@@ -85,8 +85,8 @@ jobs:
       # so root only affects the container. Usually running with this flag is
       # *strongly* discouraged.
       run: |
-        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest sh -c 'python3 -m pytest -s -m NONE $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml; ret=$?; [ $ret = 5 ] && exit 0 || exit $ret'
-        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml --cov-append
+        sh -c 'docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; ret=$?; [ $ret = 5 ] && exit 0 || exit $ret'
+        docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
