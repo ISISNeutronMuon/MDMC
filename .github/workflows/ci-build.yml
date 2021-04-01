@@ -80,7 +80,7 @@ jobs:
       # Using --allow-run-as-root as we are running inside a docker container,
       # so root only affects the container. Usually running with this flag is
       # *strongly* discouraged.
-      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml
+      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest mpirun --allow-run-as-root -np 2 python3 -m pytest -s -m mpi $(pwd)/tests --cov=$(pwd)/MDMC --cov-report xml --cov-append
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
 
