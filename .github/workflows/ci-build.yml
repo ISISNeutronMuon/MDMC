@@ -88,21 +88,12 @@ jobs:
     name: Documentation
     runs-on: ubuntu-18.04
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.6'
-        architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
 
-    - name: apt-get
-      run: sudo apt-get install -y pandoc
-    - name: pip install
-      run: |
-        pip3 install --upgrade pip
-        pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 .
+    - name: Docker pull
+      run: docker pull mdmc/mdmc:latest
     
     - name: Build documentation
-      run: make -C doc html
+      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
