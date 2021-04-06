@@ -83,7 +83,7 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
-def test_control_refine_stdout(monkeypatch, capsys):
+def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -107,7 +107,7 @@ def test_control_refine_stdout(monkeypatch, capsys):
                     MockParameter('A', 1),
                     MockParameter('B', 34743.233E6)]
 
-    cont = control.Control(None, [], [], reset_config=False)
+    cont = control.Control(None, exp_datasets(), [], reset_config=False)
     cont.minimizer = minim
     cont.refine(10)
     # Capture stdout using pytest fixure
@@ -128,6 +128,59 @@ def test_control_refine_stdout(monkeypatch, capsys):
                       'Final Parameters\n'
                       '  epsilon     sigma  A             B\n'
                       ' 3.134544  0.339834  1  3.474323e+10\n')
+
+
+def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
+
+    """
+    Tests that the stdout from Control.refine is in the expected format. Test
+    considers float, str, int all of variable lengths.
+    """
+
+    # monkeypatch Control methods
+    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(control.Control, "_update_engine_parameters",
+                        mock_update_engine_parameters)
+
+    # Set history and params of MockMinimizer, as these are both involved in
+    # output
+    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
+               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
+               'int':[10, 100, 1000, 10000, 0.00001] * 3,
+               'really_long_title':[1, 1, 1, 1, 1] * 3}
+    minim = MockMinimizer(history)
+    minim.params = [MockParameter('epsilon', 3.134544),
+                    MockParameter('sigma', 0.339834),
+                    MockParameter('A', 1),
+                    MockParameter('B', 34743.233E6)]
+
+    datasets = exp_datasets(auto_scale=True)
+    cont = control.Control(None, datasets, [], reset_config=False)
+    cont.minimizer = minim
+    cont.refine(10)
+    # Capture stdout using pytest fixure
+    stdout = capsys.readouterr().out
+    assert stdout == ('Step       float          str          int really_lo...\n'
+                      '   0       1.657         str1           10            1\n'
+                      '   1           2         test          100            1\n'
+                      '   2       3.874     Accepted         1000            1\n'
+                      '   3   1.324e+08     Rejected        1e+04            1\n'
+                      '   4   1.535e+07        False        1e-05            1\n'
+                      '   5       1.657         str1           10            1\n'
+                      '   6           2         test          100            1\n'
+                      '   7       3.874     Accepted         1000            1\n'
+                      '   8   1.324e+08     Rejected        1e+04            1\n'
+                      '   9   1.535e+07        False        1e-05            1\n'
+                      '  10       1.657         str1           10            1\n'
+                      '\n'
+                      'Final Parameters\n'
+                      '  epsilon     sigma  A             B\n'
+                      ' 3.134544  0.339834  1  3.474323e+10\n'
+                      '\n'
+                      'Automatic Scale Factors\n'
+                      '  {0}             1.0\n'
+                      '  {1}  1.0\n'
+                      ''.format(datasets[0]['file_name'], datasets[1]['file_name']))
 
 
 def test_control_no_scaling(exp_datasets):
