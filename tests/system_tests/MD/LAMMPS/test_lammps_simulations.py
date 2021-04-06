@@ -13,6 +13,7 @@ from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, Molecule
 
+pytestmark = pytest.mark.mpi
 
 # STDEV_FAC is the number of standard deviations within which the calculated
 # property must lie for it to be considered equivalent to the expected value

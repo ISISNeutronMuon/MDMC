@@ -16,6 +16,8 @@ from MDMC.trajectory_analysis.observables import sqw
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
+pytestmark = pytest.mark.mpi
+
 # Values are equivalent to those used by nMOLDYN to generate the test data
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
 E_RESOLUTION = 49.99998257
