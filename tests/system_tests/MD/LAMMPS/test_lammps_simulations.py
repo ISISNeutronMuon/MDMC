@@ -248,8 +248,9 @@ def test_simulation_stdout(universe, capsys):
                barostat='nose', p_damp=100, traj_step=10)
     sim.minimize(0)
     sim.run(0, equilibration=True)
+    sim.run(0, equilibration=True, verbose=True)
     sim.run(0)
-    sim.run(0, verbose=False)
+    sim.run(0, verbose=True)
     stdout = capsys.readouterr().out
     assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
                       'LAMMPS output is captured by PyLammps wrapper\n'
