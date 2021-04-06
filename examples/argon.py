@@ -70,7 +70,7 @@ control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_params=fit_params,
                   MD_steps=10000,
-                  t_resolution=200.)
+                  energy_resolution=8.)
 
 # Hack the input data onto a uniform grid, i.e. make E and Q uniform
 # (alternatively, create a new versions of the Well_s_q_omega_Ar_data.xml data

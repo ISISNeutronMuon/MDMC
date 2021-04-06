@@ -111,6 +111,12 @@ def test_create_universe(universe):
     assert UNIVERSE_SHAPE == universe.shape
     npt.assert_array_equal(UNIVERSE_DIMENSIONS, universe.dimensions)
 
+    universe_equal = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
+    universe_unequal = sim.Universe((9., 9., 9.), UNIVERSE_SHAPE)
+    assert universe == universe
+    assert universe == universe_equal
+    assert universe != universe_unequal
+
 
 def test_create_atom(atom):
 
@@ -892,21 +898,30 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
 
 
 @pytest.mark.parametrize('num_density', [3.14, 0.6, 1.0])
-def test_universe_fill_num_density_num_struc_same_result(universe, num_density,
-                                                         water_molecule):
+def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     """
-    Tests that specifying either num_density or the equivalent absolute
-    number of StructuralUnits to fill the universe with results in no
-    difference in the actual number densityx achieved.
+    Tests that specifying either num_density or manually calling
+    add_structural_unit fills the universe and results in no difference in the
+    actual number density achieved (other than rounding down to a cube number
+    as fill does) or the types of atoms.
     """
 
     num_strucs = num_density * np.prod(universe.dimensions)
-    universe2 = sim.Universe(universe.dimensions)
+    num_strucs_rounded = int(np.cbrt(num_strucs)) ** 3
+    universe_manual = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
-    universe2.fill(water_molecule, num_struc_units=num_strucs)
+    for i in range(num_strucs_rounded):
+        universe_manual.add_structural_unit(water_molecule)
 
-    assert len(universe.atom_list) == len(universe2.atom_list)
+    assert len(universe.atom_list) == len(universe_manual.atom_list)
+
+    for u in [universe, universe_manual]:
+        for atom in u.atom_list:
+            if atom.element == 'H':
+                assert atom.atom_type == 1
+            elif atom.element == 'O':
+                assert atom.atom_type == 2
 
 
 @pytest.mark.parametrize("num_density, num_struc_units", ([None, None],

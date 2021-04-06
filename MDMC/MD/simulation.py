@@ -17,7 +17,8 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle
+from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle, \
+    StructuralUnit
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -130,6 +131,22 @@ class Universe(AtomContainer):
                     len(self.bonded_interactions),
                     len(self.nonbonded_interactions),
                     self.dimensions))
+
+    def __eq__(self, other):
+        if id(other) == id(self):
+            return True
+        if isinstance(other, self.__class__):
+            for k, v in self.__dict__.items():
+                try:
+                    iter(v)
+                    if any(v != getattr(other, k)):
+                        return False
+                except TypeError:
+                    if v != getattr(other, k):
+                        return False
+            return True
+        return False
+
 
     # Unit decorator on getter due to operations in setter
     @property
@@ -583,7 +600,8 @@ class Universe(AtomContainer):
             self.add_force_field(force_field, *structural_unit.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
-    def fill(self, structural_unit, force_field=None, **settings):
+    def fill(self, structural_unit: StructuralUnit, force_field: str=None,
+             num_density: float=None, num_struc_units: int=None):
 
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
@@ -597,6 +615,10 @@ class Universe(AtomContainer):
                   IS SPECIFIED DEPENDING ON HOW CLOSE CUBE ROOT OF N_MOLECULES
                   IS TO AN `int`.
 
+        .. note:: CURRENT IMPLEMENTATION SHOULD NOT BE USED WITH NON-CUBIC
+                  UNIVERSES AS THE DENSITY MAY OR MAY NOT BE ISOTROPIC
+                  DEPENDING ON THE DIMENSIONS AND NUMBER OF UNITS.
+
         Parameters
         ----------
         structural_unit : StructuralUnit
@@ -605,14 +627,13 @@ class Universe(AtomContainer):
             Applies a ``ForceField`` to the ``Universe``. The available
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
-        **settings
-            ``num_density`` (`float`)
-                Non-negative `float` specifying the number density of the
-                ``StructuralUnit``, in units of ``StructuralUnit / Ang ^ -3``
-            ``num_struc_units`` (`int`)
-                Non-negative `int` specifying the number of passed
-                ``StructuralUnit`` objects that the universe should be filled
-                with, regardless of ``Universe.dimensions``.
+        num_density: float
+            Non-negative `float` specifying the number density of the
+            ``StructuralUnit``, in units of ``StructuralUnit / Ang ^ -3``
+        num_struc_units: int
+            Non-negative `int` specifying the number of passed
+            ``StructuralUnit`` objects that the universe should be filled
+            with, regardless of ``Universe.dimensions``.
 
         Raises
         ------
@@ -622,29 +643,25 @@ class Universe(AtomContainer):
             If neither ``num_density`` or ``num_struc_units`` are passed
         """
 
-        try:
-            num_density = settings['num_density']
-            if settings.get('num_struc_units'):
-                msg = ('Cannot pass both num_density and num_struc_units to'
-                       ' fill the universe with.')
-                LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
-                             ' %s',
-                             self.__class__,
-                             num_density,
-                             settings.get('num_struc_units'),
-                             msg)
-                raise ValueError(msg)
-        except KeyError:
-            try:
-                num_struc_units = settings['num_struc_units']
-            except KeyError:
-                msg = ('The fill method takes either num_density or'
-                       ' num_struc_units as a parameter.')
-                LOGGER.error('%s %s',
-                             self.__class__,
-                             msg)
-                raise ValueError(msg)
+        if num_density is None and num_struc_units is not None:
             num_density = num_struc_units / np.prod(self.dimensions)
+        elif num_density is not None and num_struc_units is not None:
+            msg = ('Cannot pass both num_density and num_struc_units to'
+                    ' fill the universe with.')
+            LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
+                            ' %s',
+                            self.__class__,
+                            num_density,
+                            num_struc_units,
+                            msg)
+            raise ValueError(msg)
+        elif num_density is None and num_struc_units is None:
+            msg = ('The fill method takes either num_density or'
+                    ' num_struc_units as a parameter.')
+            LOGGER.error('%s %s',
+                            self.__class__,
+                            msg)
+            raise ValueError(msg)
 
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
@@ -1212,6 +1229,7 @@ class Rattle(ConstraintAlgorithm):
         super().__init__(accuracy, max_iterations)
 
 
+@repr_decorator('universe', 'engine', 'settings')
 class Simulation:
 
     """
@@ -1223,8 +1241,8 @@ class Simulation:
     ----------
     universe : Universe
         The ``Universe`` on which the simulation is performed.
-    engine : str
-        The ``MDEngine`` used for the simulation.
+    engine : str, optional
+        The ``MDEngine`` used for the simulation. Default is ``'mmtk'``.
     **settings
         ``temperature`` (`float`)
             Simulation temperature in ``K``.
@@ -1257,7 +1275,7 @@ class Simulation:
     """
 
     # TODO: Potentially separate out universe and simulation setup
-    def __init__(self, universe, engine="mmtk", **settings):
+    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
 
         self.universe = universe
         self.settings = settings
@@ -1275,15 +1293,27 @@ class Simulation:
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps: int, **settings):
 
         """
-        Minimizes the MD simulation energy
+        Minimizes the total potential energy of the simulated system by
+        modifying the positions of the constituent atoms until one of the
+        stopping criteria is met.
 
         Parameters
         ----------
         n_steps : int
             Maximum number of steps to run the minimization
+        **settings
+            ``etol`` (`float`)
+                If the energy change between iterations is less than ``etol``,
+                minimization is stopped. Default depends on engine used.
+            ``ftol`` (`float`)
+                If the magnitude of the global force is less than ``ftol``,
+                minimization is stopped. Default depends on engine used.
+            ``maxeval`` (`int`)
+                Maximum number of force evaluations to perform. Default depends
+                on engine used.
         """
 
         self.engine.minimize(n_steps, **settings)
@@ -1291,7 +1321,11 @@ class Simulation:
     def run(self, n_steps, equilibration=False):
 
         """
-        Runs the MD simulation
+        Runs the MD simulation for the specified number of steps. Trajectories
+        for the simulation are only saved when ``equilibration`` is `False`.
+        Additionally running equilibration for an NVE system (neither barostat
+        nor thermostat set) will temporarily apply a Berendsen thermostat (it
+        is removed from the simulation after the run is completed).
 
         Parameters
         ----------

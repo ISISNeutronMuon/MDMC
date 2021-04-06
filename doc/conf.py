@@ -47,14 +47,14 @@ for osgroup, compression in OSGROUP_FORMAT.items():
 
 # -- Project information -----------------------------------------------------
 
-project = u'MDMC'
-copyright = u'2019, MDMC developers'
-author = u'MDMC developers'
+project = 'MDMC'
+copyright = '2019, MDMC developers'
+author = 'MDMC developers'
 
 # The short X.Y version
-version = u''
+version = ''
 # The full version, including alpha/beta/rc tags
-release = u'0.2'
+release = '0.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -100,7 +100,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = [u'_build', 'Thumbs.db', '.DS_Store',
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store',
                     'pages/installation/docker']
 
 # The name of the Pygments (syntax highlighting) style to use.
@@ -173,8 +173,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'MDMC.tex', u'MDMC Documentation',
-     u'MDMC developers', 'manual'),
+    (master_doc, 'MDMC.tex', 'MDMC Documentation',
+     'MDMC developers', 'manual'),
 ]
 
 
@@ -183,7 +183,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mdmc', u'MDMC Documentation',
+    (master_doc, 'mdmc', 'MDMC Documentation',
      [author], 1)
 ]
 
@@ -194,7 +194,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'MDMC', u'MDMC Documentation',
+    (master_doc, 'MDMC', 'MDMC Documentation',
      author, 'MDMC', 'One line description of project.',
      'Miscellaneous'),
 ]

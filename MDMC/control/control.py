@@ -4,9 +4,11 @@ from copy import deepcopy
 
 import numpy as np
 import pandas as pd
+from typing import List
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
+from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
@@ -28,7 +30,9 @@ class Control:
         Each `dict` is an experimental dataset, containing the file name
         (``file_name``), the type of observable (``type``), the reader required
         for the file (``reader``), and the weighting of the dataset in the
-        Figure of Merit calculation(``weighting``).
+        Figure of Merit calculation(``weighting``). Optionally, can also
+        contain ``rescale_factor`` which will be applied to the experimental
+        data when comparing it to the calculated observable. Default is `1.`.
     fit_params : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -41,8 +45,8 @@ class Control:
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
     **settings
-        ``t_resolution`` : float
-            Instrument resolution.
+        ``energy_resolution`` : float
+            Instrument energy resolution as the FWHM in ``ueV``.
 
     Example
     -------
@@ -51,7 +55,8 @@ class Control:
         [{'file_name':data.LAMP_SQW_FILE,
           'type':'SQw',
           'reader':'LAMPSQw',
-          'weight':1.},
+          'weight':1.,
+          'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
@@ -81,9 +86,10 @@ class Control:
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
-    def __init__(self, simulation, exp_datasets, fit_params, MC_norm=1.,
-                 minimizer_type='MMC', FoM_type='standard',
-                 reset_config=True, **settings):
+    def __init__(self, simulation: Simulation, exp_datasets: List[dict],
+                 fit_params: Parameters, MC_norm: float=1.,
+                 minimizer_type: str='MMC', FoM_type: str='standard',
+                 reset_config: bool=True, **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -103,9 +109,11 @@ class Control:
                                                              dset['reader'],
                                                              dset['file_name'])
             MD_observable = self._create_empty_observable(exp_observable)
+            rescale_factor = dset.get('rescale_factor', 1.)
             observable_pair = FoM.ObservablePair(exp_observable,
                                                  MD_observable,
-                                                 dset['weight'])
+                                                 dset['weight'],
+                                                 rescale_factor=rescale_factor)
             self.observable_pairs.append(observable_pair)
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)

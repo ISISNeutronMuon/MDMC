@@ -107,10 +107,25 @@ class MDEngine(ABC):
         pass
 
     @abstractmethod
-    def convert_trajectory(self):
+    def convert_trajectory(self, start=0, stop=None, step=1, **settings):
 
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
+
+        Parameters
+        ----------
+        start : int
+            The index of the first trajectory, inclusive.
+        stop : int
+            The index of the last trajectory, exclusive.
+        step : int
+            The step size between trajectories.
+        **settings
+            ``scaled_positions`` (`bool`)
+                If the ``trajectory_file`` has scaled ``positions``
+            ``atom_IDs`` (`list`)
+                LAMMPS ``ID`` of the atoms which should be included. If not passed
+                then all atoms are included in the converted trajectory.
 
         Returns
         -------
