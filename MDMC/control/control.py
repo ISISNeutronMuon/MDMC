@@ -121,6 +121,20 @@ class Control:
         # Use specified MD_steps if supplied, else calculate
         self.MD_steps = settings.get('MD_steps')
 
+        setup_frame = pd.DataFrame([[minimizer_type],
+                                    [MC_norm],
+                                    [FoM_type],
+                                    [len(self.observable_pairs)],
+                                    [len(self.fit_params)]],
+                                    index=['  Minimizer',
+                                           '  MC norm',
+                                           '  FoM type',
+                                           '  Number of observables',
+                                           '  Number of parameters'])
+
+        print('Control created with:\n{}\n'
+              ''.format(setup_frame.to_string(index=True, header=False)))
+
     def __str__(self):
 
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
@@ -253,7 +267,7 @@ class Control:
         Run a molecular dynamics simulation
         """
 
-        self.simulation.run(self.MD_steps)
+        self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self):
 
