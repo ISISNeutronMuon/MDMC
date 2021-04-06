@@ -28,8 +28,10 @@ class ObservablePair:
         Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
         on the same scale as ``MD_obs``. Default is `1.`.
     auto_scale: bool, optional
-        If `True`, ``exp_obs`` is scaled automatically to minimise the FoM for
-        each step of the refinement. Default is `False`.
+        If `True`, ``rescale_factor`` is set automatically to minimise the FoM
+        for each step of the refinement, overriding a user specified value if
+        set. Note that this proccess is purely statistical and does not account
+        for physical effects that might impact the scaling. Default is `False`.
     """
 
     def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float,
@@ -295,7 +297,8 @@ class ObservablePair:
         numpy.ndarray
             An array with the same dimensions as the ``errors`` of the
             ``exp_obs`` and ``MD_obs``. The array contains the combination of
-            the ``errors`` in quadrature.
+            the ``errors`` in quadrature, taking the ``rescale_factor`` into
+            account.
         """
 
         errors = ((np.array(*self.exp_obs.errors.values())
@@ -394,15 +397,18 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
     (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
     :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
     data point. Note that the subtraction and division over the arrays are element-wise. Note also that if the
-    the experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
-    specified in the ``ObservablePair`` to scale the experimental data points by a simple linear scaling.
+    experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
+    specified (or automatically determined) by the ``ObservablePair`` to scale the experimental data points and
+    errors by a simple linear scaling.
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
 
         """
         Performs the error normalised square difference for an
-        ``ObservablePair``
+        ``ObservablePair``. If ``obs_pair.auto_scale`` is `True`, then this
+        will also set ``obs_pair.rescale`` to the value which minimizes the
+        FoM.
 
         Parameters
         ----------

@@ -187,6 +187,20 @@ class Control:
                                 index=[0])
         print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
 
+        # If automatically scaling data print the scale factor for each dataset
+        scaling_keys = []
+        scaling_values = []
+        for i, observable_pair in enumerate(self.observable_pairs):
+            if observable_pair.auto_scale:
+                dset = self.exp_datasets[i]
+                scaling_keys.append('  {}'.format(dset['file_name']))
+                scaling_values.append([observable_pair.rescale_factor])
+
+        if len(scaling_keys) > 0 and len(scaling_values) > 0:
+            scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
+            print('\nAutomatic Scale Factors\n{}'
+                  ''.format(scaling_df.to_string(index=True, header=False)))
+
     def step(self):
 
         """
