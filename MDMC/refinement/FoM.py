@@ -408,7 +408,15 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
         Performs the error normalised square difference for an
         ``ObservablePair``. If ``obs_pair.auto_scale`` is `True`, then this
         will also set ``obs_pair.rescale`` to the value which minimizes the
-        FoM.
+        FoM. If we label ``rescale_factor``:math:`=\lambda` then the minimum of the FoM is obtained as:
+
+        .. math::
+
+            FoM_{i}(\lambda) = w_{i} \sum_{j} (\frac{\lambda*D_{j}^{exp} - D_{j}^{sim}}{\lambda*\sigma_{j}^{exp}})^2
+            \left. \frac{dFoM_{i}(d\lambda)}\right|_{\lambda=\lambda_{min}}=0
+            \lambda_{min}=\frac{A}{B}
+            A=\sum{(\frac{D_{j}^{sim}}{\sigma_{j}^{exp}})^2
+            B=\sum{\frac{D_{j}^{exp}*D_{j}^{sim}}{\sigma_{j}^{exp}^2}
 
         Parameters
         ----------
