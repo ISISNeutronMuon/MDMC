@@ -8,6 +8,7 @@ import logging
 
 from enum import Enum
 import numpy as np
+import pandas as pd
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     mod_docstring, repr_decorator
@@ -121,6 +122,18 @@ class Universe(AtomContainer):
                     self.__class__,
                     self.dimensions,
                     self.shape)
+
+        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
+                                    [self.shape.name],
+                                    [force_field],
+                                    [len(self.configuration.atom_list)]],
+                                    index=['  Dimensions',
+                                           '  Shape',
+                                           '  Force field',
+                                           '  Number of atoms'])
+
+        print('Universe created with:\n{}\n'
+              ''.format(setup_frame.to_string(index=True, header=False)))
 
     def __str__(self):
 
@@ -998,6 +1011,9 @@ class Universe(AtomContainer):
             if solvent_config.constrained:
                 self.constraint_algorithm = settings.get('constraint_algorithm',
                                                          Shake(1e-4, 100))
+
+            print('Force field created by solvent {}'.format(solvent))
+
         except ImportError:
             pass
 
@@ -1282,6 +1298,17 @@ class Simulation:
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self._setup()
 
+        setup_msg = 'Simulation created with {} engine'.format(engine)
+        if self.settings:
+            setup_values = [[value] for value in self.settings.values()]
+            setup_keys = ['  {}'.format(key) for key in self.settings]
+            setup_frame = pd.DataFrame(setup_values, index=setup_keys)
+            setup_msg += (' and settings:\n{}\n'
+                          ''.format(setup_frame.to_string(index=True,
+                                                          header=False)))
+
+        print(setup_msg)
+
     def _setup(self):
 
         """
@@ -1316,9 +1343,11 @@ class Simulation:
                 on engine used.
         """
 
+        print('Starting minimization for {} steps'.format(n_steps))
         self.engine.minimize(n_steps, **settings)
+        print('Minimization complete')
 
-    def run(self, n_steps, equilibration=False):
+    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
 
         """
         Runs the MD simulation for the specified number of steps. Trajectories
@@ -1334,9 +1363,23 @@ class Simulation:
         equilibration : bool, optional
             If the run is for equilibration (`True`) or production (`False`).
             Default is `False`.
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+            Default is `False`.
         """
 
+        if equilibration:
+            process = 'equilibration'
+        else:
+            process = 'simulation'
+
+        if verbose:
+            print('Starting {0} for {1} steps'.format(process, n_steps))
+
         self.engine.run(n_steps, equilibration)
+
+        if verbose:
+            print('{0} complete'.format(process.capitalize()))
 
     @property
     def trajectory(self):

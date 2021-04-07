@@ -112,7 +112,14 @@ def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Step       float          str          int really_lo...\n'
+    assert stdout == ('Control created with:\n'
+                      '  Minimizer                   MMC\n'
+                      '  MC norm                       1\n'
+                      '  FoM type               standard\n'
+                      '  Number of observables         2\n'
+                      '  Number of parameters          0\n'
+                      '\n'
+                      'Step       float          str          int really_lo...\n'
                       '   0       1.657         str1           10            1\n'
                       '   1           2         test          100            1\n'
                       '   2       3.874     Accepted         1000            1\n'
@@ -160,7 +167,14 @@ def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Step       float          str          int really_lo...\n'
+    assert stdout == ('Control created with:\n'
+                      '  Minimizer                   MMC\n'
+                      '  MC norm                       1\n'
+                      '  FoM type               standard\n'
+                      '  Number of observables         2\n'
+                      '  Number of parameters          0\n'
+                      '\n'
+                      'Step       float          str          int really_lo...\n'
                       '   0       1.657         str1           10            1\n'
                       '   1           2         test          100            1\n'
                       '   2       3.874     Accepted         1000            1\n'
@@ -234,5 +248,12 @@ def test_control_scaling_warning(exp_datasets, capsys):
                       '{0}; scaling will be automated to minimise FoM\n'
                       'Both `rescale_factor` and `auto_scale` set for file '
                       '{1}; scaling will be automated to minimise FoM\n'
+                      'Control created with:\n'
+                      '  Minimizer                   MMC\n'
+                      '  MC norm                       1\n'
+                      '  FoM type               standard\n'
+                      '  Number of observables         2\n'
+                      '  Number of parameters          0\n'
+                      '\n'
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))

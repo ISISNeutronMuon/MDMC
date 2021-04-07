@@ -22,6 +22,8 @@ from MDMC.common.constants import h_bar
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.system_tests.observables.data_manager import trajectory
 
+pytestmark = pytest.mark.mpi
+
 
 @pytest.fixture(scope="module")
 def independent_variables(trajectory):

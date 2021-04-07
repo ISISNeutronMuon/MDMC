@@ -13,6 +13,7 @@ from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
 from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
     Dispersion, Molecule
 
+pytestmark = pytest.mark.mpi
 
 # STDEV_FAC is the number of standard deviations within which the calculated
 # property must lie for it to be considered equivalent to the expected value
@@ -240,6 +241,35 @@ def parameterize_decorator(func):
         func(ensemble, expected, request)
 
     return wrapper
+
+
+def test_simulation_stdout(universe, capsys):
+    sim = Simulation(universe, engine='lammps', time_step=1.,
+               temperature=TEMPERATURE, pressure=101325., thermostat='nose',
+               barostat='nose', p_damp=100, traj_step=10)
+    sim.minimize(0)
+    sim.run(0, equilibration=True)
+    sim.run(0, equilibration=True, verbose=True)
+    sim.run(0)
+    sim.run(0, verbose=True)
+    stdout = capsys.readouterr().out
+    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
+                      'LAMMPS output is captured by PyLammps wrapper\n'
+                      'Simulation created with lammps engine and settings:\n'
+                      '  time_step         1\n'
+                      '  temperature     300\n'
+                      '  pressure     101325\n'
+                      '  thermostat     nose\n'
+                      '  barostat       nose\n'
+                      '  p_damp          100\n'
+                      '  traj_step        10\n'
+                      '\n'
+                      'Starting minimization for 0 steps\n'
+                      'Minimization complete\n'
+                      'Starting equilibration for 0 steps\n'
+                      'Equilibration complete\n'
+                      'Starting simulation for 0 steps\n'
+                      'Simulation complete\n')
 
 
 @parameterize_decorator
