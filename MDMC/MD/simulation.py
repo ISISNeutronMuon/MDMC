@@ -724,7 +724,7 @@ class Universe(AtomContainer):
                 atoms in the ``Universe``. If a list of ``Atom`` objects is
                 provided, the ``Dispersion`` will be added to these instead. Any
                 added ``Dispersion`` interactions (and any previously defined)
-                will then be parameteretrized by the ``ForceField``. The
+                will then be parametrized by the ``ForceField``. The
                 ``Dispersion`` interactions added will only be like-like. By
                 default, no ``Dispersion`` interactions are added.
         """

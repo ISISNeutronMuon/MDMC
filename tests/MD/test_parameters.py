@@ -92,7 +92,7 @@ def parameters():
                        in range(10)])
 
 
-@pytest.mark.parameteretrize('value, unit', [(VALUE, UNIT),
+@pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
                                          (UnitFloat(VALUE, UNIT), None)])
 def test_parameter_value_init(value, unit):
 
@@ -160,7 +160,7 @@ def test_fixed_parameter_change_warning(parameter):
     assert parameter.value == VALUE
 
 
-@pytest.mark.parameteretrize('constraints, value', [((0., 2.), 2.),
+@pytest.mark.parametrize('constraints, value', [((0., 2.), 2.),
                                                 ((0., 2.), 0.),
                                                 ((1., 5.), 2.),
                                                 ((-1., 2.), -0.5)])
@@ -178,7 +178,7 @@ def test_value_setting_within_constraints(constraints, value, parameter):
     assert parameter.value == value
 
 
-@pytest.mark.parameteretrize('constraints, value', [((1., 2.), 0.),
+@pytest.mark.parametrize('constraints, value', [((1., 2.), 0.),
                                                 ((1., 5.), 6.),
                                                 ((-1., 2.), -1.5)])
 def test_value_setting_outside_constraints(constraints, value, parameter):
@@ -222,7 +222,7 @@ def test_interaction_setting_function_name(parameter_inter):
                                                                    (1., 'arb')))
 
 
-@pytest.mark.parameteretrize('expression, expected', [('*2.', VALUE * 2.),
+@pytest.mark.parametrize('expression, expected', [('*2.', VALUE * 2.),
                                                   ('/2.', VALUE / 2.),
                                                   ('+2.', VALUE + 2.),
                                                   ('-2.', VALUE - 2.)])
@@ -236,7 +236,7 @@ def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
     assert scaled_parameter.value == expected
 
 
-@pytest.mark.parameteretrize('pred, attr, val', [(lambda p: p.fixed is True,
+@pytest.mark.parametrize('pred, attr, val', [(lambda p: p.fixed is True,
                                               'fixed',
                                               True),
                                              ((lambda p: p.constraints
@@ -263,7 +263,7 @@ def test_filter_parameters(pred, attr, val):
     assert parameters.filter(pred) == parameters[1::2]
 
 
-@pytest.mark.parameteretrize('name, number', [('charge', 3),
+@pytest.mark.parametrize('name, number', [('charge', 3),
                                           ('epsilon', 2),
                                           ('sigma', 0)])
 def test_filter_parameters_name(name, number):
@@ -282,7 +282,7 @@ def test_filter_parameters_name(name, number):
     assert [parameter.name for parameter in filtered] == [name] * number
 
 
-@pytest.mark.parameteretrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
+@pytest.mark.parametrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
                                                          ('>=', 0., [0, None]),
                                                          ('>', 5., [6, None]),
                                                          ('<', 2., [0, 2]),
@@ -296,7 +296,7 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
     Tests that the filtering parameters by value results in the correct
     parameters being returned
 
-    Tests all supported comparison operators. First parameteretrization tests case
+    Tests all supported comparison operators. First parametrization tests case
     where no parameters are returned, second parameterization tests case where
     all parameters are returned.
     """
@@ -305,7 +305,7 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
             == parameters[slice(*expected_slice)])
 
 
-@pytest.mark.parameteretrize('int_name, expected_slice', [('Dispersion',
+@pytest.mark.parametrize('int_name, expected_slice', [('Dispersion',
                                                        [0, None, 2]),
                                                       ('Coulombic',
                                                        [1, None, 2]),
@@ -331,7 +331,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
             == parameters[slice(*expected_slice)])
 
 
-@pytest.mark.parameteretrize('function_name, expected_slice', [('Coulomb',
+@pytest.mark.parametrize('function_name, expected_slice', [('Coulomb',
                                                             [0, None, 2]),
                                                            ('LennardJones',
                                                             [1, None, 2]),
@@ -358,7 +358,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")
-@pytest.mark.parameteretrize('attr, val, expected_slice', [('mass', 1.,
+@pytest.mark.parametrize('attr, val, expected_slice', [('mass', 1.,
                                                         [0, None]),
                                                        ('mass', 4.,
                                                         [0, None, 2]),
@@ -403,7 +403,7 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
             == parameters.filter_atom_attribute(attr, val * 2))
 
 
-@pytest.mark.parameteretrize('struct_name, expected_slice', [('H', [0, None, 3]),
+@pytest.mark.parametrize('struct_name, expected_slice', [('H', [0, None, 3]),
                                                          ('C', [0, None, 2]),
                                                          ('H2', [0, None, 3])])
 def test_filter_parameters_structure(struct_name, expected_slice, parameters):

@@ -204,7 +204,7 @@ def test_interaction_function_set_parameters_inters(interaction_func, coulombic)
             assert isinstance(inter, Coulombic)
 
 
-@pytest.mark.parameteretrize("obj, values, names",
+@pytest.mark.parametrize("obj, values, names",
                          [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
                           (coulomb(), [COULOMB_CHARGE], ['charge']),
@@ -228,7 +228,7 @@ def test_interaction_function_subclass_parameters(obj, values, names):
         assert parameter.name == names[idx]
 
 
-@pytest.mark.parameteretrize("inter_func_fixture, parameters",
+@pytest.mark.parametrize("inter_func_fixture, parameters",
                          [('buckingham', ['A', 'B', 'C']),
                           ('coulomb', ['charge']),
                           ('harmonic', ['equilibrium_state',
@@ -254,7 +254,7 @@ def test_interaction_function_attributes(inter_func_fixture, parameters, request
         assert getattr(inter_func, parameter).name == parameter
 
 
-@pytest.mark.parameteretrize("inter_func_fixture, units",
+@pytest.mark.parametrize("inter_func_fixture, units",
                          [('buckingham', {'A':BUCK_A_UNIT,
                                           'B':BUCK_B_UNIT,
                                           'C':BUCK_C_UNIT}),
@@ -275,7 +275,7 @@ def test_interaction_function_units(inter_func_fixture, units, request):
         assert getattr(inter_func, parameter_name).unit != Unit('DOES_NOT_EXIST')
 
 
-@pytest.mark.parameteretrize("inter_type, units",
+@pytest.mark.parametrize("inter_type, units",
                          [('bond', [HARMPOT_EQUIL_STATE_BOND_UNIT,
                                     HARMPOT_POT_STREN_BOND_UNIT]),
                           ('BoNd', [HARMPOT_EQUIL_STATE_BOND_UNIT,
@@ -323,7 +323,7 @@ def test_harmonic_potential_no_inter_type():
         HarmonicPotential(6.0, 7.0, inter_tye='bond')
 
 
-@pytest.mark.parameteretrize("parameters",
+@pytest.mark.parametrize("parameters",
                          [(3., 1, 2.),
                           (5., 1, -30., 7., 3, 45.),
                           (5., np.int64(1), -30., 7., 3, 45.),
@@ -338,7 +338,7 @@ def test_periodic_init(parameters):
 
     Tests that parameters are assigned the correct names, values and units
 
-    The third and fourth parameteretrizations test that numpy integers can also be
+    The third and fourth parametrizations test that numpy integers can also be
     used for specifying the n parameters
     """
 
@@ -358,7 +358,7 @@ def test_periodic_init(parameters):
             assert getattr(period, 'd{0}'.format(order)).unit == D_UNIT
 
 
-@pytest.mark.parameteretrize("parameters",
+@pytest.mark.parametrize("parameters",
                          [(1., ),
                           (3., 1),
                           (2., 9, 7., 4.),
@@ -381,7 +381,7 @@ def test_periodic_invalid_num_parameters(parameters):
         Periodic(*parameters)
 
 
-@pytest.mark.parameteretrize("parameters",
+@pytest.mark.parametrize("parameters",
                          [(3., 1.2, 2.),
                           (5., 1, -30., 7., 3., 45.),
                           (9., 3, -40., 20., 4, -45., 60., 7.2, 9.),
@@ -397,7 +397,7 @@ def test_periodic_init_types(parameters):
     with pytest.raises(TypeError):
         Periodic(*parameters)
 
-@pytest.mark.parameteretrize("parameters",
+@pytest.mark.parametrize("parameters",
                          [(3., -1, 2.),
                           (5., 1, -30., 7., -3, 45.),
                           (9., 3, -40., 20., 4, -45., 60., -7, 9.),
