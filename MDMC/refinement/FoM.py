@@ -30,7 +30,7 @@ class ObservablePair:
     auto_scale: bool, optional
         If `True`, ``rescale_factor`` is set automatically to minimise the FoM
         for each step of the refinement, overriding a user specified value if
-        set. Note that this proccess is purely statistical and does not account
+        set. Note that this process is purely statistical and does not account
         for physical effects that might impact the scaling. Default is `False`.
     """
 
