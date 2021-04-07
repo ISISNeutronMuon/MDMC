@@ -57,7 +57,7 @@ def exp_datasets() -> callable:
     Returns
     -------
     callable
-        A function which accepts optionally accepts ``rescale_factor`` and
+        A function which optionally accepts ``rescale_factor`` and
         ``auto_scale`` of types `float` and `bool` that default to `None`, and
         returns a `list` of `dict` that represent experimental data.
     """
