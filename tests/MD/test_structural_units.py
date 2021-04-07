@@ -289,7 +289,7 @@ def test_init_coulombic_atoms_no_universe(atom_list):
 
     coul = Coulombic(atoms=atom_list, charge=TEST_CHARGE_1)
     assert all(coul.atoms) == all(atom_list)
-    assert coul.params[0].value == TEST_CHARGE_1
+    assert coul.parameters[0].value == TEST_CHARGE_1
 
 
 def test_init_coulombic_atoms_added_to_universe(atom_list, universe):
@@ -332,7 +332,7 @@ def test_init_coulombic_atom_types_universe(atom_types_universe):
                      charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
     assert all(coul.atom_types) == all(atom_types_universe[0])
-    assert coul.params[0].value == TEST_CHARGE_1
+    assert coul.parameters[0].value == TEST_CHARGE_1
 
 
 def test_init_coulombic_error_atom_types_no_universe():

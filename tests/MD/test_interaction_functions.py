@@ -147,37 +147,37 @@ def periodic():
     return Periodic(K1, N1, D1, K2, N2, D2, K3, N3, D3, K4, N4, D4)
 
 
-def test_interaction_function_get_params(interaction_func):
+def test_interaction_function_get_parameters(interaction_func):
 
     """
     Tests that the correct parameters are returned when retrieving them from
     an already-initialized InteractionFunction object.
     """
 
-    for param in interaction_func.params:
-        assert param.value == VAL_DICT[param.name]
+    for parameter in interaction_func.parameters:
+        assert parameter.value == VAL_DICT[parameter.name]
 
 
-def test_interaction_function_set_params(interaction_func, parameters):
+def test_interaction_function_set_parameters(interaction_func, parameters):
 
     """
     Tests that the parameters of an InteractionFunction can be set.
     """
 
-    interaction_func.params = parameters
-    for intfunc_param, param in zip(interaction_func.params, parameters):
-        assert intfunc_param.value == param.value
+    interaction_func.parameters = parameters
+    for intfunc_parameter, parameter in zip(interaction_func.parameters, parameters):
+        assert intfunc_parameter.value == parameter.value
 
 
-def test_interaction_function_params_values(interaction_func):
+def test_interaction_function_parameters_values(interaction_func):
 
     """
     Tests that retrieval of the values of the parameters set during
     initialization of an InteractionFunction object returns the correct values.
     """
 
-    assert all(interaction_func.params_values
-               == [param.value for param in interaction_func.params])
+    assert all(interaction_func.parameters_values
+               == [parameter.value for parameter in interaction_func.parameters])
 
 
 def test_interaction_function_name(interaction_func):
@@ -191,20 +191,20 @@ def test_interaction_function_name(interaction_func):
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")
-def test_interaction_function_set_params_inters(interaction_func, coulombic):
+def test_interaction_function_set_parameters_inters(interaction_func, coulombic):
 
     """
     Tests that the parent interaction for all Parameters of the
     InteractionFunction object can be set to a Coulombic Interaction object.
     """
 
-    interaction_func.set_params_interactions(coulombic)
-    for param in interaction_func.params:
-        for inter in param.interactions:
+    interaction_func.set_parameters_interactions(coulombic)
+    for parameter in interaction_func.parameters:
+        for inter in parameter.interactions:
             assert isinstance(inter, Coulombic)
 
 
-@pytest.mark.parametrize("obj, values, names",
+@pytest.mark.parameteretrize("obj, values, names",
                          [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
                           (coulomb(), [COULOMB_CHARGE], ['charge']),
@@ -216,19 +216,19 @@ def test_interaction_function_set_params_inters(interaction_func, coulombic):
                            [K1, K2, K3, K4, D1, D2, D3, D4, N1, N2, N3, N4],
                            ['K1', 'K2', 'K3', 'K4', 'd1', 'd2', 'd3', 'd4',
                             'n1', 'n2', 'n3', 'n4'])])
-def test_interaction_function_subclass_params(obj, values, names):
+def test_interaction_function_subclass_parameters(obj, values, names):
 
     """
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
 
-    for idx, param in enumerate(obj.params):
-        assert param.value == values[idx]
-        assert param.name == names[idx]
+    for idx, parameter in enumerate(obj.parameters):
+        assert parameter.value == values[idx]
+        assert parameter.name == names[idx]
 
 
-@pytest.mark.parametrize("inter_func_fixture, params",
+@pytest.mark.parameteretrize("inter_func_fixture, parameters",
                          [('buckingham', ['A', 'B', 'C']),
                           ('coulomb', ['charge']),
                           ('harmonic', ['equilibrium_state',
@@ -236,7 +236,7 @@ def test_interaction_function_subclass_params(obj, values, names):
                           ('lennardjones', ['epsilon', 'sigma']),
                           ('periodic', ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
                                         'K3', 'n3', 'd3', 'K4', 'n4', 'd4'])])
-def test_interaction_function_attributes(inter_func_fixture, params, request):
+def test_interaction_function_attributes(inter_func_fixture, parameters, request):
 
     """
     Tests that initializing a subclass of InteractionFunction creates an
@@ -247,14 +247,14 @@ def test_interaction_function_attributes(inter_func_fixture, params, request):
     """
 
     inter_func = request.getfixturevalue(inter_func_fixture)
-    for param in params:
+    for parameter in parameters:
         # Test both for existence of attribute and that the Parameter has the
         # correct name
-        assert hasattr(inter_func, param)
-        assert getattr(inter_func, param).name == param
+        assert hasattr(inter_func, parameter)
+        assert getattr(inter_func, parameter).name == parameter
 
 
-@pytest.mark.parametrize("inter_func_fixture, units",
+@pytest.mark.parameteretrize("inter_func_fixture, units",
                          [('buckingham', {'A':BUCK_A_UNIT,
                                           'B':BUCK_B_UNIT,
                                           'C':BUCK_C_UNIT}),
@@ -269,13 +269,13 @@ def test_interaction_function_units(inter_func_fixture, units, request):
     """
 
     inter_func = request.getfixturevalue(inter_func_fixture)
-    for param_name, unit in units.items():
-        assert getattr(inter_func, param_name).unit == unit
+    for parameter_name, unit in units.items():
+        assert getattr(inter_func, parameter_name).unit == unit
         # Test an incorrect unit
-        assert getattr(inter_func, param_name).unit != Unit('DOES_NOT_EXIST')
+        assert getattr(inter_func, parameter_name).unit != Unit('DOES_NOT_EXIST')
 
 
-@pytest.mark.parametrize("inter_type, units",
+@pytest.mark.parameteretrize("inter_type, units",
                          [('bond', [HARMPOT_EQUIL_STATE_BOND_UNIT,
                                     HARMPOT_POT_STREN_BOND_UNIT]),
                           ('BoNd', [HARMPOT_EQUIL_STATE_BOND_UNIT,
@@ -323,14 +323,14 @@ def test_harmonic_potential_no_inter_type():
         HarmonicPotential(6.0, 7.0, inter_tye='bond')
 
 
-@pytest.mark.parametrize("params",
+@pytest.mark.parameteretrize("parameters",
                          [(3., 1, 2.),
                           (5., 1, -30., 7., 3, 45.),
                           (5., np.int64(1), -30., 7., 3, 45.),
                           (5., 1, -30., 7., np.int32(3), 45.),
                           (9., 3, -40., 20., 4, -45., 60., 1, 9.),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 9.9)])
-def test_periodic_init(params):
+def test_periodic_init(parameters):
 
     """
     Tests that initializing a Periodic InteractionFunction of different orders
@@ -338,27 +338,27 @@ def test_periodic_init(params):
 
     Tests that parameters are assigned the correct names, values and units
 
-    The third and fourth parametrizations test that numpy integers can also be
+    The third and fourth parameteretrizations test that numpy integers can also be
     used for specifying the n parameters
     """
 
-    period = Periodic(*params)
-    for index, param in enumerate(params, start=1):
+    period = Periodic(*parameters)
+    for index, parameter in enumerate(parameters, start=1):
         order = ceil(index / 3.)
         mod3_index = (order * 3)
         if mod3_index == 1:
-            assert getattr(period, 'K{0}'.format(order)).value == param
+            assert getattr(period, 'K{0}'.format(order)).value == parameter
             assert getattr(period, 'K{0}'.format(order)).unit == K_UNIT
         elif mod3_index == 2:
-            assert getattr(period, 'n{0}'.format(order)).value == param
+            assert getattr(period, 'n{0}'.format(order)).value == parameter
             # n is unitless
             assert getattr(period, 'n{0}'.format(order)).unit is None
         elif mod3_index == 13:
-            assert getattr(period, 'd{0}'.format(order)).value == param
+            assert getattr(period, 'd{0}'.format(order)).value == parameter
             assert getattr(period, 'd{0}'.format(order)).unit == D_UNIT
 
 
-@pytest.mark.parametrize("params",
+@pytest.mark.parameteretrize("parameters",
                          [(1., ),
                           (3., 1),
                           (2., 9, 7., 4.),
@@ -368,7 +368,7 @@ def test_periodic_init(params):
                           (4., 2, 10., 1., 1, -60., 2., 2, 90., 10.),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 19., 10.)])
-def test_periodic_invalid_num_parameters(params):
+def test_periodic_invalid_num_parameters(parameters):
 
     """
     Tests that initializing a Periodic InteractionFunction with the incorrect
@@ -378,16 +378,16 @@ def test_periodic_invalid_num_parameters(params):
     """
 
     with pytest.raises(TypeError):
-        Periodic(*params)
+        Periodic(*parameters)
 
 
-@pytest.mark.parametrize("params",
+@pytest.mark.parameteretrize("parameters",
                          [(3., 1.2, 2.),
                           (5., 1, -30., 7., 3., 45.),
                           (9., 3, -40., 20., 4, -45., 60., 7.2, 9.),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1.6, 9.9),
                           (5., 1., 0.5, 7., 3., 8., 9., 0., 7., 4., 1., 9.9)])
-def test_periodic_init_types(params):
+def test_periodic_init_types(parameters):
 
     """
     Tests that initializing a Periodic InteractiongFunction with an n value (of
@@ -395,15 +395,15 @@ def test_periodic_init_types(params):
     """
 
     with pytest.raises(TypeError):
-        Periodic(*params)
+        Periodic(*parameters)
 
-@pytest.mark.parametrize("params",
+@pytest.mark.parameteretrize("parameters",
                          [(3., -1, 2.),
                           (5., 1, -30., 7., -3, 45.),
                           (9., 3, -40., 20., 4, -45., 60., -7, 9.),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., -1, 9.9),
                           (5., -1, 0.5, 7., -3, 8., 9., -10, 7., 4., -1, 9.9)])
-def test_periodic_init_values(params):
+def test_periodic_init_values(parameters):
 
     """
     Tests that initializing a Periodic InteractiongFunction with an n value (of
@@ -411,4 +411,4 @@ def test_periodic_init_values(params):
     """
 
     with pytest.raises(ValueError):
-        Periodic(*params)
+        Periodic(*parameters)

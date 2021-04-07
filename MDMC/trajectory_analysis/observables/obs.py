@@ -145,7 +145,7 @@ class Observable(ABC):
         self._errors = self.reader.errors
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input, **params):
+    def calculate_from_MD(self, MD_input, **parameters):
 
         """
         Calculates the obseravable using input from an MD simulation
@@ -154,7 +154,7 @@ class Observable(ABC):
         ----------
         MD_input : Object
             Some input from an MD simulation, commonly a ``Trajectory``
-        **params
+        **parameters
             Additional parameters required for calculation specific
             ``Observable`` objects
         """

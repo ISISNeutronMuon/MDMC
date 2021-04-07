@@ -21,7 +21,7 @@ from MDMC.common import units
 from MDMC.MD.parameters import Parameter, Parameters
 
 
-@repr_decorator('params')
+@repr_decorator('parameters')
 class InteractionFunction:
 
     """
@@ -40,23 +40,23 @@ class InteractionFunction:
 
         # locals which are excluded from Parameter creation
         excluded = ['self', 'settings', '__class__']
-        params = Parameters()
+        parameters = Parameters()
         for name, value in val_dict.items():
             if name not in excluded:
-                param = Parameter(value, name)
-                params.append(param)
+                parameter = Parameter(value, name)
+                parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
-                setattr(self, param.name, param)
-        self.params = params
+                setattr(self, parameter.name, parameter)
+        self.parameters = parameters
 
     def __str__(self):
 
-        params = ' '.join([p.name + ': ' + str(p.value) + ','
-                           for p in self.params]).strip(',')
-        return '{0} {1}'.format(self.__class__.__name__, params)
+        parameters = ' '.join([p.name + ': ' + str(p.value) + ','
+                           for p in self.parameters]).strip(',')
+        return '{0} {1}'.format(self.__class__.__name__, parameters)
 
     @property
-    def params(self):
+    def parameters(self):
 
         """
         Get or set the ``array`` of ``Parameter`` objects
@@ -70,15 +70,15 @@ class InteractionFunction:
             A NumPy ``array`` of ``Parameter``
         """
 
-        return self._params
+        return self._parameters
 
-    @params.setter
-    def params(self, value):
+    @parameters.setter
+    def parameters(self, value):
 
-        self._params = np.array(sorted(value, key=lambda p: p.name))
+        self._parameters = np.array(sorted(value, key=lambda p: p.name))
 
     @property
-    def params_values(self):
+    def parameters_values(self):
 
         """
         Get the values for all ``Parameters`` objects
@@ -89,7 +89,7 @@ class InteractionFunction:
             A NumPy ``array`` of values for all ``Parameter``
         """
 
-        return np.array([p.value for p in self.params])
+        return np.array([p.value for p in self.parameters])
 
     @property
     def name(self):
@@ -105,7 +105,7 @@ class InteractionFunction:
 
         return self.__class__.__name__
 
-    def set_params_interactions(self, interaction):
+    def set_parameters_interactions(self, interaction):
 
         """
         Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
@@ -117,12 +117,12 @@ class InteractionFunction:
             ``Parameters``
         """
 
-        for param in self.params:
+        for parameter in self.parameters:
 
-            param.interactions = interaction
+            parameter.interactions = interaction
 
 
-def inter_func_decorator(*param_units):
+def inter_func_decorator(*parameter_units):
 
     """
     Decorates a method to add units to all non-keyword arguments
@@ -132,11 +132,11 @@ def inter_func_decorator(*param_units):
 
     Parameters
     ----------
-    *param_units
+    *parameter_units
         one or more `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
         which is applied to the corresponding value passed to the decorated
         method. If one of the values is unitless, pass `None` at the
-        corresponding index in ``param_units``.
+        corresponding index in ``parameter_units``.
 
     Examples
     --------
@@ -180,11 +180,11 @@ def inter_func_decorator(*param_units):
         @functools.wraps(func)
         def wrapper(self, *values, **settings):
             # Use zip to associate each value in *values with the corresponding
-            # unit in *param_units. unit_creator return a UnitFloat or
+            # unit in *parameter_units. unit_creator return a UnitFloat or
             # UnitNDArray with this unit, or returns the original value if the
             # unit is None.
             return func(self, *[unit_creator(value, unit) for value, unit in
-                                zip(values, param_units)], **settings)
+                                zip(values, parameter_units)], **settings)
         return wrapper
     return decorator
 
@@ -400,7 +400,7 @@ class Periodic(InteractionFunction):
         a non-negative `int`.
     d1 : float
         The d parameter (angle) of the first order term, in units of ``deg``
-    *params
+    *parameters
         K, n, and d parameters for higher order terms. These must be ordered K2,
         n2, d2, K3, n3, d3, K4, n4, d4 etc. The types and units of these
         parameters are the same as the corresponding first order parameters
@@ -430,29 +430,29 @@ class Periodic(InteractionFunction):
                                function=periodic)
     """
 
-    def __init__(self, K1, n1, d1, *params):
+    def __init__(self, K1, n1, d1, *parameters):
 
         # Check that total number of parameters is divisible by 3
         # Check that all n values are non-negative ints
         val_dict = {}
-        all_params = [iter((K1, n1, d1) + params)] * 3
+        all_parameters = [iter((K1, n1, d1) + parameters)] * 3
         # Assign attributes K$, n$, d$, where $ is the order (e.g. K1, n1, d1
         # for the first order etc.)
-        for order, order_params in enumerate(zip_longest(*all_params), start=1):
-            # If *params is not divisible by three, one or two indexes of
-            # order_params will be None
-            if None in order_params:
-                raise TypeError('*params must contain a K, n, and d value for'
+        for order, order_parameters in enumerate(zip_longest(*all_parameters), start=1):
+            # If *parameters is not divisible by three, one or two indexes of
+            # order_parameters will be None
+            if None in order_parameters:
+                raise TypeError('*parameters must contain a K, n, and d value for'
                                 ' each order >2 (i.e. it should contain a'
                                 ' number of values exactly divisible by 3)')
-            if not isinstance(order_params[1], (int, np.integer)):
+            if not isinstance(order_parameters[1], (int, np.integer)):
                 raise TypeError('All n values must be of type int')
-            if order_params[1] < 0.:
+            if order_parameters[1] < 0.:
                 raise ValueError('All n values must be non-negative ints')
-            val_dict['K{0}'.format(order)] = (units.UnitFloat(order_params[0],
+            val_dict['K{0}'.format(order)] = (units.UnitFloat(order_parameters[0],
                                                               units.ENERGY))
-            val_dict['n{0}'.format(order)] = order_params[1]
-            val_dict['d{0}'.format(order)] = (units.UnitFloat(order_params[2],
+            val_dict['n{0}'.format(order)] = order_parameters[1]
+            val_dict['d{0}'.format(order)] = (units.UnitFloat(order_parameters[2],
                                                               units.ANGLE))
 
         super().__init__(val_dict)

@@ -889,12 +889,12 @@ class Atom(StructuralUnit):
                         raise ValueError('Atom should not have more than one'
                                          ' Coulombic interaction')
                     # Check that a charge parameter exists.
-                    charge_params = 0
-                    for param in interaction.params:
-                        if param.name == 'charge':
-                            charge_params += 1
-                            value = param.value
-                    if charge_params == 0:
+                    charge_parameters = 0
+                    for parameter in interaction.parameters:
+                        if parameter.name == 'charge':
+                            charge_parameters += 1
+                            value = parameter.value
+                    if charge_parameters == 0:
                         raise ValueError('Coulombic interaction does not have a'
                                          ' parameter "charge".')
             return value
@@ -909,9 +909,9 @@ class Atom(StructuralUnit):
             if isinstance(inter, Coulombic):
                 if value is not None:
                     try:
-                        for param in inter.params:
-                            if param.name == 'charge':
-                                param.value = value
+                        for parameter in inter.parameters:
+                            if parameter.name == 'charge':
+                                parameter.value = value
                                 return
                         raise ValueError('Coulombic interaction does not have'
                                          ' a parameter "charge".')
@@ -1585,7 +1585,7 @@ class Interaction(ABC):
         raise NotImplementedError
 
     @property
-    def params(self):
+    def parameters(self):
 
         """
         Get the ``Parameter`` objects belonging to the ``InteractionFunction``
@@ -1597,7 +1597,7 @@ class Interaction(ABC):
             A `list` of the ``Parameter``
         """
 
-        return self.function.params
+        return self.function.parameters
 
     @property
     def function(self):

@@ -2072,29 +2072,29 @@ class Ensemble(PyLammpsAttribute):
                 temp = convert_unit(self.temperature)
                 if self.thermostat != 'rescale':
                     t_damp = convert_unit(self.t_damp)
-                    thermo_params = [temp, temp, t_damp]
+                    thermo_parameters = [temp, temp, t_damp]
             if self.barostat:
                 press = convert_unit(self.pressure)
                 p_damp = convert_unit(self.p_damp)
-                press_params = ['iso', press, press, p_damp]
+                press_parameters = ['iso', press, press, p_damp]
 
             # Apply thermostat
             if self.thermostat == 'nose':
                 if self.barostat == 'nose':
                     self.lmp.fix('npt', 'all', 'npt', 'temp',
-                                 *thermo_params + press_params)
+                                 *thermo_parameters + press_parameters)
                 else:
-                    self.lmp.fix('nvt', 'all', 'nvt', 'temp', *thermo_params)
+                    self.lmp.fix('nvt', 'all', 'nvt', 'temp', *thermo_parameters)
             elif self.thermostat == 'berendsen':
                 # berendsen does not do time integration so also requires nve
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
-                             *thermo_params)
+                             *thermo_parameters)
             elif self.thermostat == 'langevin':
                 # langevin does not do time integration so also requires nve
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('langevin', 'all', 'langevin',
-                             *thermo_params + [randint(0, 9999)])
+                             *thermo_parameters + [randint(0, 9999)])
             elif self.thermostat == 'rescale':
                 # temp/rescale does not do time integration so also requires nve
                 t_window = convert_unit(self.t_window)
@@ -2105,11 +2105,11 @@ class Ensemble(PyLammpsAttribute):
             # Apply barostat
             if self.barostat == 'berendsen':
                 self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
-                             *press_params)
+                             *press_parameters)
             elif self.barostat == 'nose' and self.thermostat != 'nose':
                 if 'nve' in self.fix_names:
                     self.lmp.unfix('nve')
-                self.lmp.fix('nph', 'all', 'nph', *press_params)
+                self.lmp.fix('nph', 'all', 'nph', *press_parameters)
 
         LOGGER.debug('%s apply_ensemble_fixes after fixes applied:'
                      ' {fixes: %s}',
@@ -2619,7 +2619,7 @@ def parse_bonded_coefficients(interaction):
     """
 
     parameters = {p.name:convert_unit(p.value)
-                  for p in interaction.params}
+                  for p in interaction.parameters}
     style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
@@ -2627,7 +2627,7 @@ def parse_bonded_coefficients(interaction):
                               parameters['equilibrium_state']]
     elif style == 'fourier':
         # There are three parameters (K, n and d) for each order of the equation
-        fourier_order = int(len(interaction.params) / 3)
+        fourier_order = int(len(interaction.parameters) / 3)
         # LAMMPS requires parameters to be ordered K1, n1, d1, K2, n2, d2 etc
         # So the letter sequence is:
         ord_let = ('K', 'n', 'd')
@@ -2710,28 +2710,28 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         if 'buck' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'Buckingham':
-                    params = {p.name:convert_unit(p.value)
-                              for p in inter.params}
-            ordered_params = [params['A'],
-                              params['B'] ** -1,
-                              params['C']]
+                    parameters = {p.name:convert_unit(p.value)
+                              for p in inter.parameters}
+            ordered_parameters = [parameters['A'],
+                              parameters['B'] ** -1,
+                              parameters['C']]
             try:
-                assert ordered_params[1] > 0
+                assert ordered_parameters[1] > 0
             except AssertionError:
                 raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B)'
                                  ' must be greater than 0')
             coeff_cmd = (pair_style + ' '
-                         + ' '.join(str(p) for p in ordered_params) + ' '
+                         + ' '.join(str(p) for p in ordered_parameters) + ' '
                          + cutoffs)
         elif 'lj' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'LennardJones':
-                    params = {p.name:convert_unit(p.value)
-                              for p in inter.params}
-            ordered_params = [params['epsilon'],
-                              params['sigma']]
+                    parameters = {p.name:convert_unit(p.value)
+                              for p in inter.parameters}
+            ordered_parameters = [parameters['epsilon'],
+                              parameters['sigma']]
             coeff_cmd = (pair_style + ' '
-                         + ' '.join(str(p) for p in ordered_params) + ' '
+                         + ' '.join(str(p) for p in ordered_parameters) + ' '
                          + cutoffs)
         elif pair_style in coul_styles:
             coeff_cmd = pair_style

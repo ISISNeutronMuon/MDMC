@@ -12,7 +12,7 @@ from MDMC.common.decorators import repr_decorator
 
 
 @repr_decorator('comm', 'FoM', 'FoM_old', 'MC_norm', 'distribution',
-                'state_changed', 'params', 'params_old_values')
+                'state_changed', 'parameters', 'parameters_old_values')
 class Minimizer(ABC):
 
     """
@@ -22,7 +22,7 @@ class Minimizer(ABC):
     ----------
     MC_norm : float
         Normalization parameter for MC which determines the accept/reject ratio
-    params : list
+    parameters : list
         A `list` of ``Parameter`` objects which will be fit
     distribution : str, optional
         The distribution from which ``Parameter`` changes are selected
@@ -39,9 +39,9 @@ class Minimizer(ABC):
         The FoM from the current ``Minimizer`` step
     FoM_old : float
         The FoM from the previous ``Minimizer`` step
-    params : list
+    parameters : list
         A `list` of ``Parameter`` objects being fitted
-    params_old_values : list
+    parameters_old_values : list
         A `list` of the values of the ``Parameter`` objects from the previous
         minimizer step
     state_changed : bool
@@ -50,7 +50,7 @@ class Minimizer(ABC):
 
     DISTRIBUTION = {'uniform':np.random.uniform}
 
-    def __init__(self, MC_norm, params, distribution='uniform'):
+    def __init__(self, MC_norm, parameters, distribution='uniform'):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
@@ -69,10 +69,10 @@ class Minimizer(ABC):
         # History of minimization
         self._history = []
 
-        params = np.array(list(params))
-        self._check_parameters(params)
-        self.params_old_values = None
-        self.params = params
+        parameters = np.array(list(parameters))
+        self._check_parameters(parameters)
+        self.parameters_old_values = None
+        self.parameters = parameters
         self.MC_norm = MC_norm
 
         # Records if most recent step changed the state
@@ -88,7 +88,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @property
-    def max_param_change(self):
+    def max_parameter_change(self):
 
         """
         Maximum factor by which a Parameter can change
@@ -150,7 +150,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def change_parameters(self, params):
+    def change_parameters(self, parameters):
 
         """
         Selects a new value for each ``Parameter`` from a distribution centered
@@ -158,13 +158,13 @@ class Minimizer(ABC):
 
         Parameters
         ----------
-        params : list
+        parameters : list
             All ``Parameter`` objects that are being refined
         """
 
         raise NotImplementedError
 
-    def _calc_max_param_change(self):
+    def _calc_max_parameter_change(self):
 
         raise NotImplementedError
 
@@ -181,14 +181,14 @@ class Minimizer(ABC):
 
         return False
 
-    def _check_parameters(self, params):
+    def _check_parameters(self, parameters):
 
         """
         Checks the validity of the parameters on input
 
         Parameters
         ----------
-        params : list
+        parameters : list
             All ``Parameter`` objects to validate
 
         Raises
@@ -197,9 +197,9 @@ class Minimizer(ABC):
             If any ``Parameter`` is fixed
         """
 
-        for param in params:
-            if param.fixed is True:
-                raise ValueError('Parameter {0} is fixed'.format(param.name))
+        for parameter in parameters:
+            if parameter.fixed is True:
+                raise ValueError('Parameter {0} is fixed'.format(parameter.name))
 
     def write_history(self, filename):
 
@@ -224,7 +224,7 @@ class MMC(Minimizer):
     @property
     def history_columns(self):
 
-        return ['FoM', 'Change state'] + [p.name for p in self.params]
+        return ['FoM', 'Change state'] + [p.name for p in self.parameters]
 
     def step(self, FoM):
 
@@ -233,24 +233,24 @@ class MMC(Minimizer):
         """
 
         self.FoM = FoM
-        values = np.array([p.value for p in self.params])
+        values = np.array([p.value for p in self.parameters])
         history = [self.FoM]
 
         if self.change_state():
             history.append('Accepted')
             self.FoM_old = self.FoM
-            self.params_old_values = values
+            self.parameters_old_values = values
             self.state_changed = True
 
         else:
             history.append('Rejected')
             self.FoM = self.FoM_old
-            self.reset_params()
+            self.reset_parameters()
             self.state_changed = False
 
         history.extend(values)
         self._history.append(history)
-        self.change_parameters(self.params)
+        self.change_parameters(self.parameters)
 
     def change_state(self):
 
@@ -275,7 +275,7 @@ class MMC(Minimizer):
 
         return change_state
 
-    def change_parameters(self, params):
+    def change_parameters(self, parameters):
 
         """
         Selects a new value for each parameter from a distribution centered
@@ -283,7 +283,7 @@ class MMC(Minimizer):
 
         Parameters
         ----------
-        params : list
+        parameters : list
             All ``Parameter`` objects that are being refined
         """
 
@@ -291,22 +291,22 @@ class MMC(Minimizer):
         # that each process ends up with same parameters
         if self.comm.rank == 0:
             # Faster to generate all random numbers at once
-            changes = self.distribution(-self.max_param_change,
-                                        self.max_param_change,
-                                        len(params))
+            changes = self.distribution(-self.max_parameter_change,
+                                        self.max_parameter_change,
+                                        len(parameters))
         else:
             changes = None
         # Broadcast parameters changes to all processes
         changes = self.comm.bcast(changes, root=0)
         # Change parameters by same amount on all processes
-        for i, param in enumerate(params):
-            param.value += param.value * changes[i]
+        for i, parameter in enumerate(parameters):
+            parameter.value += parameter.value * changes[i]
 
-    def reset_params(self):
+    def reset_parameters(self):
 
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """
 
-        for i, param in enumerate(self.params):
-            param.value = self.params_old_values[i]
+        for i, parameter in enumerate(self.parameters):
+            parameter.value = self.parameters_old_values[i]

@@ -22,19 +22,19 @@ class SPC(WaterModel):
     @property
     def interaction_dictionary(self):
 
-        # Charge Params
+        # Charge Parameters
         q_O = -0.82         # e
         q_H = abs(q_O/2)    # e
 
-        # LJ Params
+        # LJ Parameters
         sigma = 3.166      # Ang
         epsilon = 0.6502   # kJ mol^-1
 
-        # Bond Params
+        # Bond Parameters
         r_OH = 1.000       # Ang
         f_OH = 4637.       # kJ mol^-1 Ang^-2
 
-        # Bond Angle Params
+        # Bond Angle Parameters
         a_HOH = 109.47     # deg
         f_HOH = 383.       # kJ mol^-1 rad^-2
 

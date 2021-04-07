@@ -122,8 +122,8 @@ def parse_prm(dataframe):
     bonds.potential_strength = convert_units(bonds.potential_strength)
     angles.potential_strength = convert_units(angles.potential_strength)
     impropers.K1 = convert_units(impropers.K1)
-    for k_param in ['K1', 'K2', 'K3']:
-        propers[k_param] = convert_units(propers[k_param])
+    for k_parameter in ['K1', 'K2', 'K3']:
+        propers[k_parameter] = convert_units(propers[k_parameter])
 
     return atoms, disps, bonds, angles, impropers, propers
 
