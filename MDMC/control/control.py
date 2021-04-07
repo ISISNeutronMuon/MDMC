@@ -33,6 +33,10 @@ class Control:
         Figure of Merit calculation(``weighting``). Optionally, can also
         contain ``rescale_factor`` which will be applied to the experimental
         data when comparing it to the calculated observable. Default is `1.`.
+        Alternatively, can optionally specify ``auto_scale`` which will set the
+        ``rescale_factor`` automatically to minimise the FoM. Default is
+        `False`. If both ``rescale_factor`` and ``auto_scale`` are provided
+        then a warning is printed and ``auto_scale`` takes precedence.
     fit_parameters : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -60,7 +64,8 @@ class Control:
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
-          'weight':0.5}]
+          'weight':0.5,
+          'auto_scale':True}]
 
     Attributes
     ----------
@@ -109,11 +114,22 @@ class Control:
                                                              dset['reader'],
                                                              dset['file_name'])
             MD_observable = self._create_empty_observable(exp_observable)
-            rescale_factor = dset.get('rescale_factor', 1.)
+
+            auto_scale = dset.get('auto_scale', False)
+            rescale_factor = dset.get('rescale_factor')
+            if auto_scale and rescale_factor:
+                print('Both `rescale_factor` and `auto_scale` set for file {};'
+                      ' scaling will be automated to minimise FoM'
+                      ''.format(dset['file_name']))
+                rescale_factor = 1.
+            elif not rescale_factor:
+                rescale_factor = 1.
+
             observable_pair = FoM.ObservablePair(exp_observable,
                                                  MD_observable,
                                                  dset['weight'],
-                                                 rescale_factor=rescale_factor)
+                                                 rescale_factor=rescale_factor,
+                                                 auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
@@ -186,6 +202,20 @@ class Control:
         print('\nFinal Parameters\n{}'
               ''.format(parameter_df.to_string(index=False)))
 
+        # If automatically scaling data print the scale factor for each dataset
+        scaling_keys = []
+        scaling_values = []
+        for i, observable_pair in enumerate(self.observable_pairs):
+            if observable_pair.auto_scale:
+                dset = self.exp_datasets[i]
+                scaling_keys.append('  {}'.format(dset['file_name']))
+                scaling_values.append([observable_pair.rescale_factor])
+
+        if len(scaling_keys) > 0 and len(scaling_values) > 0:
+            scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
+            print('\nAutomatic Scale Factors\n{}'
+                  ''.format(scaling_df.to_string(index=True, header=False)))
+
     def step(self):
 
         """
@@ -250,15 +280,6 @@ class Control:
 
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
-
-        # TODO: Remove arbitrary normalization
-        for pair in self.observable_pairs:
-            exp_norm = np.max(pair.exp_obs._dependent_variables['SQw'])
-            md_norm = np.max(pair.MD_obs._dependent_variables['SQw'])
-            pair.exp_obs._dependent_variables['SQw'] /= exp_norm
-            pair.exp_obs._errors['SQw'] /= exp_norm
-            pair.MD_obs._dependent_variables['SQw'] /= md_norm
-            pair.MD_obs._errors['SQw'] /= md_norm
 
         return self.FoM_calculator.calculate()
 

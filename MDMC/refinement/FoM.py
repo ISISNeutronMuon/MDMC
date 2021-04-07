@@ -8,121 +8,7 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
-@repr_decorator('value', 'obs_pairs')
-class FigureOfMeritCalculator(ABC):
-
-    """
-    Abstract class that defines methods common to all figure of merit
-    calculators
-
-    Parameters
-    ----------
-    obs_pairs : list
-        A `list` of ``ObservablePairs``
-
-    Attributes
-    ----------
-    obs_pairs : list
-        A `list` of ``ObservablePairs``
-    value : float
-        The Figure of Merit for all ``obs_pairs``
-    """
-
-    def __init__(self, obs_pairs):
-
-        self.obs_pairs = list(obs_pairs)
-        self.value = None
-
-    def calculate(self):
-
-        """
-        Calculates the FoM value by calculating the FoM for every
-        ``ObservablePair``
-
-        Returns
-        -------
-        float
-            A non-negative `float` Figure of Merit
-
-        Raises
-        ------
-        AssertionError
-            If calculated value of Figure of Merit is negative
-        """
-
-        self.value = np.sum([self.calculate_single_FoM(obs_pair)
-                             for obs_pair in self.obs_pairs])
-        assert self.value >= 0.
-        return self.value
-
-    @abstractmethod
-    def calculate_single_FoM(self, obs_pair):
-
-        """
-        Performs the FoM calculation specific to each FoM
-
-        Parameters
-        ----------
-        obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
-
-        Returns
-        -------
-        float
-            The FoM for the ``obs_pair``
-        """
-
-        raise NotImplementedError
-
-
-class StandardFoMCalculator(FigureOfMeritCalculator):
-
-    r"""
-    Calculates the weighted sum of the Figure of Merits for a number of datasets:
-
-    .. math::
-
-        FoM_{total} = \sum_{i} FoM_{i}
-
-    Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
-    a sum of the error normalised square difference between data points for a single ``ObservablePair``:
-
-    .. math::
-
-        FoM_{i} = w_{i} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
-
-    where the sum is over the data points in the ``ObservablePair`` corresponding to the :math:`i`-th dataset, and
-    :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset.
-    :math:`D_{j}` are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
-    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
-    :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
-    data point. Note that the subtraction and division over the arrays are element-wise. Note also that if the
-    the experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
-    specified in the ``ObservablePair`` to scale the experimental data points by a simple linear scaling.
-    """
-
-    def calculate_single_FoM(self, obs_pair):
-
-        """
-        Performs the error normalised square difference for an
-        ``ObservablePair``
-
-        Parameters
-        ----------
-        obs_pair : ObservablePair
-            An ``ObservablePair`` for which the FoM is calculated
-
-        Returns
-        -------
-        float
-            The FoM for the obs_pair
-        """
-
-        return obs_pair.weight * np.sum((obs_pair.calculate_difference()
-                                         / obs_pair.calculate_errors()) ** 2)
-
-
-@repr_decorator('weight', 'exp_obs', 'MD_obs')
+@repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale')
 class ObservablePair:
 
     """
@@ -140,15 +26,22 @@ class ObservablePair:
         The relative weight of this pair on a total FoM
     rescale_factor: float, optional
         Factor applied to ``exp_obs`` when calculating the FoM to ensure it is
-        on the same scale as ``MD_obs``.
+        on the same scale as ``MD_obs``. Default is `1.`.
+    auto_scale: bool, optional
+        If `True`, ``rescale_factor`` is set automatically to minimise the FoM
+        for each step of the refinement, overriding a user specified value if
+        set. Note that this process is purely statistical and does not account
+        for physical effects that might impact the scaling. Default is `False`.
     """
 
-    def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float, rescale_factor: float=1.):
+    def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float,
+                 rescale_factor: float=1., auto_scale: bool=False):
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
         self.weight = weight
         self.rescale_factor = rescale_factor
+        self.auto_scale = auto_scale
 
     @property
     def exp_obs(self):
@@ -404,10 +297,152 @@ class ObservablePair:
         numpy.ndarray
             An array with the same dimensions as the ``errors`` of the
             ``exp_obs`` and ``MD_obs``. The array contains the combination of
-            the ``errors`` in quadrature.
+            the ``errors`` in quadrature, taking the ``rescale_factor`` into
+            account.
         """
 
-        errors = (np.array(*self.exp_obs.errors.values()) ** 2
+        errors = ((np.array(*self.exp_obs.errors.values())
+                   * self.rescale_factor) ** 2
                   + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
 
         return errors
+
+
+@repr_decorator('value', 'obs_pairs')
+class FigureOfMeritCalculator(ABC):
+
+    """
+    Abstract class that defines methods common to all figure of merit
+    calculators
+
+    Parameters
+    ----------
+    obs_pairs : list
+        A `list` of ``ObservablePairs``
+
+    Attributes
+    ----------
+    obs_pairs : list
+        A `list` of ``ObservablePairs``
+    value : float
+        The Figure of Merit for all ``obs_pairs``
+    """
+
+    def __init__(self, obs_pairs):
+
+        self.obs_pairs = list(obs_pairs)
+        self.value = None
+
+    def calculate(self):
+
+        """
+        Calculates the FoM value by calculating the FoM for every
+        ``ObservablePair``
+
+        Returns
+        -------
+        float
+            A non-negative `float` Figure of Merit
+
+        Raises
+        ------
+        AssertionError
+            If calculated value of Figure of Merit is negative
+        """
+
+        self.value = np.sum([self.calculate_single_FoM(obs_pair)
+                             for obs_pair in self.obs_pairs])
+        assert self.value >= 0.
+        return self.value
+
+    @abstractmethod
+    def calculate_single_FoM(self, obs_pair):
+
+        """
+        Performs the FoM calculation specific to each FoM
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the ``obs_pair``
+        """
+
+        raise NotImplementedError
+
+
+class StandardFoMCalculator(FigureOfMeritCalculator):
+
+    r"""
+    Calculates the weighted sum of the Figure of Merits for a number of datasets:
+
+    .. math::
+
+        FoM_{total} = \sum_{i} FoM_{i}
+
+    Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
+    a sum of the error normalised square difference between data points for a single ``ObservablePair``:
+
+    .. math::
+
+        FoM_{i} = w_{i} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
+
+    where the sum is over the data points in the ``ObservablePair`` corresponding to the :math:`i`-th dataset, and
+    :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset.
+    :math:`D_{j}` are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
+    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
+    :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
+    data point. Note that the subtraction and division over the arrays are element-wise. Note also that if the
+    experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
+    specified (or automatically determined) by the ``ObservablePair`` to scale the experimental data points and
+    errors by a simple linear scaling.
+    """
+
+    def calculate_single_FoM(self, obs_pair: ObservablePair):
+
+        r"""
+        Performs the error normalised square difference for an
+        ``ObservablePair``. If ``obs_pair.auto_scale`` is `True`, then this
+        will also set ``obs_pair.rescale`` to the value which minimizes the
+        FoM. If we label ``rescale_factor``:math:`=\lambda` then the minimum of the FoM is obtained as:
+
+        .. math::
+
+
+            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \left(\frac{\lambda*D_{j}^{exp} - D_{j}^{sim}}{\lambda*\sigma_{j}^{exp}}\right)^2 \\\\
+            \left. \frac{dFoM_{i}}{d\lambda}\right|_{\lambda=\lambda_{min}} &=& 0 \\\\
+            \lambda_{min} &=& \frac{A}{B} \\\\
+
+        where we have:
+
+        .. math::
+
+            A &=& \sum\left(\frac{D_{j}^{sim}}{\sigma_{j}^{exp}}\right)^2 \\\\
+            B &=& \sum \frac{D_{j}^{exp}*D_{j}^{sim}}{(\sigma_{j}^{exp})^2}
+
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the obs_pair
+        """
+
+        if obs_pair.auto_scale:
+            exp_errors = np.array(*obs_pair.exp_obs.errors.values())
+            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+            MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
+            obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2)
+                                       / np.sum(MD_values * exp_values
+                                                / exp_errors ** 2))
+
+        return obs_pair.weight * np.sum((obs_pair.calculate_difference()
+                                         / obs_pair.calculate_errors()) ** 2)
