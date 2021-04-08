@@ -98,7 +98,7 @@ def test_opls_water_model_masses(water_universe, model):
                           ('TIP4F', 3.27000, 0.41840),
                           ('TIP5P', 3.12000, 0.66944),
                           ('SPC', 3.16557, 0.65019)])
-def test_opls_water_model_lj_params(water_universe, model, sigma, epsilon):
+def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
 
     """
     Tests that water models using OPLS force field have correct LJ
@@ -131,8 +131,8 @@ def test_opls_water_model_lj_params(water_universe, model, sigma, epsilon):
                           ('TIP4F', 0.9572, 2510.4),
                           ('TIP5P', 0.9572, 2510.4),
                           ('SPC', 1.0000, 2510.4)])
-def test_opls_water_model_bond_params(water_universe, model, eq_state,
-                                      pot_strength):
+def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
+                                          pot_strength):
 
     """
     Tests that water models using OPLS force field have correct HO bond
@@ -158,8 +158,8 @@ def test_opls_water_model_bond_params(water_universe, model, eq_state,
                           ('TIP4F', 109.50, 313.8),
                           ('TIP5P', 104.52, 313.8),
                           ('SPC', 109.47, 313.8)])
-def test_opls_water_model_bond_angle_params(water_universe, model, eq_state,
-                                            pot_strength):
+def test_opls_water_model_bond_angle_parameters(water_universe, model,
+                                                eq_state, pot_strength):
 
     """
     Tests that water models using OPLS force field have correct HOH bond angles
@@ -405,7 +405,7 @@ def _validate_interaction_parameters(interaction, expected_parameters):
         The interaction for which the parameters are validated
     expected_parameters : list
         A list of the expected parameter values, in the same order as that
-        output by interaction.params
+        output by interaction.parameters
 
     Raises
     ------
@@ -413,7 +413,7 @@ def _validate_interaction_parameters(interaction, expected_parameters):
         If the interaction parameters are not equal to the expected_parameters
     """
 
-    for actual, expected in zip(interaction.params, expected_parameters):
+    for actual, expected in zip(interaction.parameters, expected_parameters):
         assert actual.value == expected
 
 

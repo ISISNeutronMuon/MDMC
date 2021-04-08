@@ -17,7 +17,7 @@ class MDEngine(ABC):
                 ' FoM_calculator: {FoM_calculator},\n'
                 ' minimizer: {minimizer},\n'
                 ' reset_config: {reset_config},\n'
-                ' fit_params: {fit_params},\n'
+                ' fit_parameters: {fit_parameters},\n'
                 ' settings: {settings}}}>').format(self.__class__.__name__,
                                                    **self.__dict__)
 

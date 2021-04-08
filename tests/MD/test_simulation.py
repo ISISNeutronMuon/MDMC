@@ -345,20 +345,20 @@ def test_spce_water_molecule(universe, water_molecule):
 
     # A list of dictionaries with each dictionary containing a Parameter type
     # and the correspoding Parameter value
-    params = []
+    parameters = []
     for function in functions:
-        {p.name:p.value for p in function.params}
+        {p.name:p.value for p in function.parameters}
 
     # Test interaction parameters
-    SPCEparams = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
-                  {'sigma':3.166, 'epsilon':0.6502},
-                  {'equilibrium_state':1.000, 'potential_strength':4637.},
-                  {'equilibrium_state':1.000, 'potential_strength':4637.},
-                  {'equilibrium_state':109.47, 'potential_strength':383.}]
-    for param in params:
-        assert param in SPCEparams
+    SPCEparameters = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
+                      {'sigma':3.166, 'epsilon':0.6502},
+                      {'equilibrium_state':1.000, 'potential_strength':4637.},
+                      {'equilibrium_state':1.000, 'potential_strength':4637.},
+                      {'equilibrium_state':109.47, 'potential_strength':383.}]
+    for parameter in parameters:
+        assert parameter in SPCEparameters
         # Remove the instance so that multiple identical instances are tested
-        SPCEparams.remove(param)
+        SPCEparameters.remove(parameter)
 
 
 @pytest.mark.parametrize('structural_unit', ['atom', 'water_molecule'])
@@ -888,8 +888,8 @@ def test_universe_fill_orientations(universe):
     assert len(univ1.molecule_list) == len(univ2.molecule_list)
 
 
-@pytest.mark.parametrize('param', ['num_density', 'num_struc_units'])
-def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
+@pytest.mark.parametrize('parameter', ['num_density', 'num_struc_units'])
+def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
 
     """
     Tests that filling the universe with a StructuralUnit results in
@@ -899,7 +899,7 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, param):
     num_struc_units is passed as the parameter.
     """
 
-    if param == 'num_density':
+    if parameter == 'num_density':
         universe.fill(water_molecule, num_density=3.14)
     else:
         universe.fill(water_molecule, num_struc_units=567)
@@ -1120,17 +1120,18 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
             assert all(atom.position != pos)
 
 
-@pytest.mark.parametrize("solvent, params", [('SPCE',
-                                              (('equilibrium_state', 1.),
-                                               ('potential_strength', 383.),
-                                               ('equilibrium_state', 109.47),
-                                               ('potential_strength', 4637.),
-                                               ('charge', 0.4238),
-                                               ('charge', -0.8476),
-                                               ('epsilon', 0.6502),
-                                               ('sigma', 3.166))
-                                             )])
-def test_solvate_parameter_setting(solvated_universe, solvent, params):
+@pytest.mark.parametrize("solvent, parameters", [('SPCE',
+                                                 (('equilibrium_state', 1.),
+                                                  ('potential_strength', 383.),
+                                                  ('equilibrium_state',
+                                                   109.47),
+                                                  ('potential_strength',
+                                                   4637.),
+                                                  ('charge', 0.4238),
+                                                  ('charge', -0.8476),
+                                                  ('epsilon', 0.6502),
+                                                  ('sigma', 3.166)))])
+def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
 
     """
     Tests that the parameters of the solvent molcules are set correctly when
@@ -1138,7 +1139,7 @@ def test_solvate_parameter_setting(solvated_universe, solvent, params):
     """
 
     test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
-                       for parameter in params]
+                       for parameter in parameters]
     uni_parameters = list(solvated_universe.parameters)
 
     # Check lists are same length, then remove all Parameters that have a

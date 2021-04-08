@@ -58,12 +58,12 @@ def test_minimizer_init(parameters):
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
     minim = minimizer.Minimizer(1, parameters)
-    assert np.all(minim.params == np.array(parameters))
+    assert np.all(minim.parameters == np.array(parameters))
 
 
 @patch.multiple('MDMC.refinement.minimizer.Minimizer', __abstractmethods__=set()
                )
-def test_minimizer_init_invalid_params(parameters):
+def test_minimizer_init_invalid_parameters(parameters):
 
     """
     Test initializing ``Minimizer`` with fixed parameters, which should raise a
@@ -169,9 +169,9 @@ def test_mmc_step_accepted(monkeypatch, parameters):
     mmc.step(FoM)
 
     assert mmc.FoM_old == FoM
-    assert np.all(mmc.params_old_values == np.array(original_values))
+    assert np.all(mmc.parameters_old_values == np.array(original_values))
     assert mmc.state_changed is True
-    assert [p.value for p in mmc.params] == changed_values
+    assert [p.value for p in mmc.parameters] == changed_values
     assert mmc._history == [[FoM, 'Accepted'] + original_values]
 
 
@@ -199,10 +199,10 @@ def test_mmc_step_rejected(monkeypatch, parameters):
     # possesses.  As these are not set when MMC is initialised, set these
     # manually to something arbitrary.
     mmc = minimizer.MMC(1, parameters)
-    mmc.params_old_values = np.arange(len(parameters))
+    mmc.parameters_old_values = np.arange(len(parameters))
     original_FoM = mmc.FoM_old
     original_values = [p.value for p in parameters]
-    expected_values = list(mmc.params_old_values * 2)
+    expected_values = list(mmc.parameters_old_values * 2)
 
     # Monkeypatch both the state change and the parameter change
     monkeypatch.setattr(minimizer.MMC, 'change_state', mock_change_state)
@@ -214,8 +214,8 @@ def test_mmc_step_rejected(monkeypatch, parameters):
 
     assert mmc.FoM == original_FoM
     assert mmc.state_changed is False
-    assert np.all(mmc.params_old_values == np.arange(len(parameters)))
-    assert [p.value for p in mmc.params] == expected_values
+    assert np.all(mmc.parameters_old_values == np.arange(len(parameters)))
+    assert [p.value for p in mmc.parameters] == expected_values
     assert mmc._history == [[FoM, 'Rejected'] + original_values]
 
 
@@ -232,8 +232,8 @@ def test_mmc_change_parameters(parameters):
     expected_values = [2 * p.value for p in parameters]
     mmc = minimizer.MMC(1, parameters)
     mmc.distribution = mock_distribution
-    mmc.change_parameters(mmc.params)
-    assert [p.value for p in mmc.params] == expected_values
+    mmc.change_parameters(mmc.parameters)
+    assert [p.value for p in mmc.parameters] == expected_values
 
 
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm',

@@ -15,7 +15,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_params', 'settings')
+                'reset_config', 'fit_parameters', 'settings')
 class Control:
 
     """
@@ -37,7 +37,7 @@ class Control:
         ``rescale_factor`` automatically to minimise the FoM. Default is
         `False`. If both ``rescale_factor`` and ``auto_scale`` are provided
         then a warning is printed and ``auto_scale`` takes precedence.
-    fit_params : Parameters, list of Parameter
+    fit_parameters : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
         Determines the accept/reject ratio of the MC. Default is 1.
@@ -73,7 +73,7 @@ class Control:
         The ``Simulation`` on which is used to perform the refinement
     exp_datasets : `list of dicts`
         One `dict` per experimental dataset used for the refinement
-    fit_params : Parameters
+    fit_parameters : Parameters
         All ``Parameter`` objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
@@ -92,17 +92,17 @@ class Control:
     FOM_DICT = {"standard":FoM.StandardFoMCalculator}
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
-                 fit_params: Parameters, MC_norm: float=1.,
+                 fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
                  reset_config: bool=True, **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
-        self.fit_params = Parameters(fit_params)
+        self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
-                                                             self.fit_params)
+                                                             self.fit_parameters)
         self.reset_config = reset_config
         self.settings = settings
 
@@ -141,7 +141,7 @@ class Control:
                                     [MC_norm],
                                     [FoM_type],
                                     [len(self.observable_pairs)],
-                                    [len(self.fit_params)]],
+                                    [len(self.fit_parameters)]],
                                     index=['  Minimizer',
                                            '  MC norm',
                                            '  FoM type',
@@ -156,8 +156,8 @@ class Control:
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
         return "{0} refining {1} {2} using {3} data types".format(
             self.__class__.__name__,
-            len(self.fit_params),
-            'parameter' if len(self.fit_params) == 1 else 'parameters',
+            len(self.fit_parameters),
+            'parameter' if len(self.fit_parameters) == 1 else 'parameters',
             exp_dataset_types)
 
     def refine(self, n_steps):
@@ -189,17 +189,18 @@ class Control:
 
         # Try/except accounts for n_steps <= -1
         try:
-            # Reset the minimizer params to those from the final FoM:
+            # Reset the minimizer parameters to those from the final FoM:
             # to account for a current side effect of step()
-            self.minimizer.reset_params()
+            self.minimizer.reset_parameters()
             self._update_engine_parameters()
         except TypeError:
             pass
 
         # print values of final parameters
-        param_df = pd.DataFrame({p.name:p.value for p in self.minimizer.params},
-                                index=[0])
-        print('\nFinal Parameters\n{}'.format(param_df.to_string(index=False)))
+        parameter_df = pd.DataFrame({p.name:p.value for p in self.minimizer.parameters},
+                                    index=[0])
+        print('\nFinal Parameters\n{}'
+              ''.format(parameter_df.to_string(index=False)))
 
         # If automatically scaling data print the scale factor for each dataset
         scaling_keys = []

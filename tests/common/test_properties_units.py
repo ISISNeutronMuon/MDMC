@@ -115,23 +115,23 @@ def test_Parameter_units():
     # Values passed to Parameter must have units
     UNIT = units.ENERGY / units.ANGLE**2
     CONSTRAINTS = [FLOAT-1, FLOAT+1]
-    param1 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test')
-    param2 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test',
+    parameter1 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test')
+    parameter2 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test',
                        constraints=CONSTRAINTS)
 
-    def check_Parameter_properties(param, value, constraints):
+    def check_Parameter_properties(parameter, value, constraints):
         try:
-            check_property(param.value, value, UNIT, units.UnitFloat)
-            check_property(param.constraints, constraints, UNIT,
+            check_property(parameter.value, value, UNIT, units.UnitFloat)
+            check_property(parameter.constraints, constraints, UNIT,
                            units.unit_array)
         except AssertionError:
             raise AssertionError(ERROR_MESSAGE.format('Parameter'))
 
-    check_Parameter_properties(param1, FLOAT, None)
-    check_Parameter_properties(param2, FLOAT, CONSTRAINTS)
+    check_Parameter_properties(parameter1, FLOAT, None)
+    check_Parameter_properties(parameter2, FLOAT, CONSTRAINTS)
 
-    param1.constraints = CONSTRAINTS
-    check_Parameter_properties(param1, FLOAT, CONSTRAINTS)
+    parameter1.constraints = CONSTRAINTS
+    check_Parameter_properties(parameter1, FLOAT, CONSTRAINTS)
 
 
 Q_UNIT = units.LENGTH ** -1

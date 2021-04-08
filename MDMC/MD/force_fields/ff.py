@@ -87,7 +87,7 @@ class ForceField(ABC):
         try:
             interaction.function = self.interaction_dictionary[
                 (type(interaction), elements)]
-            interaction.function.set_params_interactions(interaction)
+            interaction.function.set_parameters_interactions(interaction)
         except KeyError:
             raise KeyError("This force field does not have defined interactions"
                            " for these element types")
@@ -610,7 +610,7 @@ class FileForceField(ForceField):
                 raise ValueError(msg) from err
 
     @staticmethod
-    def _get_parameter_names(function, file_param_names=None):
+    def _get_parameter_names(function, file_parameter_names=None):
 
         """
         Gets the names of the parameters of function, excluding ``self`` and
@@ -623,7 +623,7 @@ class FileForceField(ForceField):
         ----------
         function : callable
             Any callable (e.g. function, method)
-        file_param_names : list
+        file_parameter_names : list
             `list` of `str` with the parameter names from the file
 
         Returns
@@ -640,7 +640,7 @@ class FileForceField(ForceField):
 
         # VAR_POSITIONAL is the Python Parameter kind which is used for *args
         var_positional = False
-        param_names = []
+        parameter_names = []
         for function_parameters in signature(function).parameters.values():
             # Test that the kind of parameter is a VAR_POSITIONAL
             if function_parameters.kind == function_parameters.VAR_POSITIONAL:
@@ -648,7 +648,7 @@ class FileForceField(ForceField):
             else:
                 name = function_parameters.name
                 if name not in ['self', 'settings']:
-                    param_names.append(name)
+                    parameter_names.append(name)
 
         if var_positional:
             # If there is *args in the function signature, we cannot determine
@@ -656,16 +656,16 @@ class FileForceField(ForceField):
             # signature agree with the order of the parameter names in the file.
             # If this is the case, assume file parameter names are correctly
             # ordered and use these, otherwise raise a ValueError
-            if any([param_names[i] != file_param_names[i] for i
-                    in range(len(param_names))]):
+            if any([parameter_names[i] != file_parameter_names[i] for i
+                    in range(len(parameter_names))]):
                 msg = ('The force field data file has incorrectly ordered {0}'
-                       ' parameters'.format(param_names))
+                       ' parameters'.format(parameter_names))
                 LOGGER.error('FileForceField: %s',
                              msg)
                 raise ValueError(msg)
-            param_names = file_param_names
+            parameter_names = file_parameter_names
 
-        return param_names
+        return parameter_names
 
     @staticmethod
     def _check_nonbonded_parameters(function_parameters,
@@ -728,7 +728,7 @@ class FileForceField(ForceField):
         function_settings = function_settings if function_settings else {}
         interaction.function = function_type(*function_parameters,
                                              **function_settings)
-        interaction.function.set_params_interactions(interaction)
+        interaction.function.set_parameters_interactions(interaction)
 
     @staticmethod
     def _parse_header(header, dtype):
@@ -753,8 +753,8 @@ class FileForceField(ForceField):
         """
 
         # Strip newline formatting
-        return [(name.strip('\n').lower(), dtype(param.strip('\n')))
-                for name, param in [s.split('=') for s in header.split(' ')]]
+        return [(name.strip('\n').lower(), dtype(parameter.strip('\n')))
+                for name, parameter in [s.split('=') for s in header.split(' ')]]
 
     @staticmethod
     def _set_col_type(column):

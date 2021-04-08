@@ -38,7 +38,7 @@ class MockMinimizer:
 
         pass
 
-    def reset_params(self):
+    def reset_parameters(self):
 
         pass
 
@@ -95,17 +95,17 @@ def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
     monkeypatch.setattr(control.Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
 
-    # Set history and params of MockMinimizer, as these are both involved in
+    # Set history and parameters of MockMinimizer, as these are both involved in
     # output
     history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
                'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
                'int':[10, 100, 1000, 10000, 0.00001] * 3,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
-    minim.params = [MockParameter('epsilon', 3.134544),
-                    MockParameter('sigma', 0.339834),
-                    MockParameter('A', 1),
-                    MockParameter('B', 34743.233E6)]
+    minim.parameters = [MockParameter('epsilon', 3.134544),
+                        MockParameter('sigma', 0.339834),
+                        MockParameter('A', 1),
+                        MockParameter('B', 34743.233E6)]
 
     cont = control.Control(None, exp_datasets(), [], reset_config=False)
     cont.minimizer = minim
@@ -149,14 +149,14 @@ def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
     monkeypatch.setattr(control.Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
 
-    # Set history and params of MockMinimizer, as these are both involved in
+    # Set history and parameters of MockMinimizer, as these are both involved in
     # output
     history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
                'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
                'int':[10, 100, 1000, 10000, 0.00001] * 3,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
-    minim.params = [MockParameter('epsilon', 3.134544),
+    minim.parameters = [MockParameter('epsilon', 3.134544),
                     MockParameter('sigma', 0.339834),
                     MockParameter('A', 1),
                     MockParameter('B', 34743.233E6)]

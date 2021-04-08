@@ -230,8 +230,8 @@ class Parameter:
         >>> Parameter.set_tie(p1, "* 2")
         """
 
-        self._tie_param = weakref.ref(parameter)
-        self._tie = ast.parse('self._tie_param().value' + expr, mode='eval')
+        self._tie_parameter = weakref.ref(parameter)
+        self._tie = ast.parse('self._tie_parameter().value' + expr, mode='eval')
 
     def __str__(self):
 

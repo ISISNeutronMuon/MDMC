@@ -59,10 +59,10 @@ for p in universe.parameters:
     if p.name != 'epsilon':
         p.fixed = True
 
-fit_params = set([p for p in universe.parameters if p.fixed is False])
+fit_parameters = set([p for p in universe.parameters if p.fixed is False])
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
-                  fit_params=fit_params,
+                  fit_parameters=fit_parameters,
                   MC_norm=1,
                   minimizer_type="MMC",
                   MD_steps=208000,

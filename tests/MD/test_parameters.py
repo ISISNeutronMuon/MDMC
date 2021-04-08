@@ -65,7 +65,7 @@ def coulombic(coulomb):
     return Coulombic(atom_types=[1], universe=Universe(1.0), function=coulomb)
 
 @pytest.fixture
-def param_inter(parameter, coulombic):
+def parameter_inter(parameter, coulombic):
 
     """
     Returns
@@ -101,10 +101,10 @@ def test_parameter_value_init(value, unit):
     the value, or by passing a value and a unit
     """
 
-    param = (Parameter(value, NAME, unit=unit) if unit
+    parameter = (Parameter(value, NAME, unit=unit) if unit
              else Parameter(value, NAME))
-    assert param.value == VALUE
-    assert param.unit == UNIT
+    assert parameter.value == VALUE
+    assert parameter.unit == UNIT
 
 
 def test_tied_parameters(parameter, scaled_parameter):
@@ -196,7 +196,7 @@ def test_value_setting_outside_constraints(constraints, value, parameter):
     assert parameter.value == VALUE
 
 
-def test_interaction_setting_name(param_inter, coulomb):
+def test_interaction_setting_name(parameter_inter, coulomb):
 
     """
     Tests that an error is raised when setting an interaction with a different
@@ -204,11 +204,11 @@ def test_interaction_setting_name(param_inter, coulomb):
     """
 
     with pytest.raises(ValueError):
-        param_inter.interactions = Dispersion(Universe(1.0), [1, 1],
+        parameter_inter.interactions = Dispersion(Universe(1.0), [1, 1],
                                               function=coulomb)
 
 
-def test_interaction_setting_function_name(param_inter):
+def test_interaction_setting_function_name(parameter_inter):
 
     """
     Tests that an error is raised when setting an interaction with an
@@ -217,7 +217,7 @@ def test_interaction_setting_function_name(param_inter):
     """
 
     with pytest.raises(ValueError):
-        param_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
+        parameter_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
                                              function=LennardJones((1., 'arb'),
                                                                    (1., 'arb')))
 
@@ -253,14 +253,14 @@ def test_filter_parameters(pred, attr, val):
     functions
     """
 
-    params = Parameters()
+    parameters = Parameters()
     for index in range(10):
-        param = Parameter(VALUE * index, NAME, unit=UNIT)
+        parameter = Parameter(VALUE * index, NAME, unit=UNIT)
         if index % 2:
-            setattr(param, attr, val)
-        params.append(param)
+            setattr(parameter, attr, val)
+        parameters.append(parameter)
 
-    assert params.filter(pred) == params[1::2]
+    assert parameters.filter(pred) == parameters[1::2]
 
 
 @pytest.mark.parametrize('name, number', [('charge', 3),
@@ -273,13 +273,13 @@ def test_filter_parameters_name(name, number):
     parameters which have the correct name
     """
 
-    params = Parameters([Parameter(VALUE * index, 'charge', unit=UNIT)
+    parameters = Parameters([Parameter(VALUE * index, 'charge', unit=UNIT)
                          if index < 3
                          else Parameter(VALUE * index, 'epsilon', unit=UNIT)
                          for index in range(5)])
 
-    filtered = params.filter_name(name)
-    assert [param.name for param in filtered] == [name] * number
+    filtered = parameters.filter_name(name)
+    assert [parameter.name for parameter in filtered] == [name] * number
 
 
 @pytest.mark.parametrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
@@ -319,11 +319,11 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
     parameters being returned
     """
 
-    for index, param in enumerate(parameters):
+    for index, parameter in enumerate(parameters):
         if index % 2:
-            param.interactions = coulombic
+            parameter.interactions = coulombic
         else:
-            param.interactions = Dispersion(Universe(1.0), [1, 1],
+            parameter.interactions = Dispersion(Universe(1.0), [1, 1],
                                             function=LennardJones((1., 'arb'),
                                                                   (1., 'arb')))
 
@@ -345,12 +345,12 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
     correct number of parameters which have the correct interaction function
     """
 
-    for index, param in enumerate(parameters):
+    for index, parameter in enumerate(parameters):
         if index % 2:
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
             function = coulomb
-        param.interactions = Dispersion(Universe(1.0), [1, 1],
+        parameter.interactions = Dispersion(Universe(1.0), [1, 1],
                                         function=function)
 
     assert (parameters.filter_function(function_name)
@@ -385,7 +385,7 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
               for props in [(1., 0.5),
                             (4., -1.0)]]
 
-    for index, param in enumerate(parameters):
+    for index, parameter in enumerate(parameters):
         # Set parameters with different interactions
         # So all parameters will have a Bond with Atoms with masses of 1. and 2.
         # and charges of 0.5 and 1.0, while only parameters with even indexes
@@ -393,7 +393,7 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
         # -1.0 and -2.0
         for inter_index, inter in enumerate(inters):
             if not index % (inter_index + 1):
-                param.interactions = inter
+                parameter.interactions = inter
 
     # Test that filter returns expected atoms for both val and val * 2, as any
     # parameter of an atom with val must also be a parameter of an atom with
@@ -420,11 +420,11 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
     H2_bond = Bond(H2.atom_list[0], H2.atom_list[1])
     C_bond = Bond(Atom('C'), Atom('C'))
 
-    for index, param in enumerate(parameters):
+    for index, parameter in enumerate(parameters):
         if not index % 3:
-            param.interactions = H2_bond
+            parameter.interactions = H2_bond
         if not index % 2:
-            param.interactions = C_bond
+            parameter.interactions = C_bond
 
     assert (parameters.filter_structure(struct_name)
             == parameters[slice(*expected_slice)])
