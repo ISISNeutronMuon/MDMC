@@ -15,7 +15,7 @@
 import os
 import sys
 import shutil
-nbsphinx_execute = 'never'
+nbsphinx_execute = 'always'
 sys.path.insert(0, os.path.abspath('..'))
 
 

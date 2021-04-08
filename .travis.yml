@@ -33,22 +33,15 @@ matrix:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
         - pip3 uninstall -y MDMC
 
-    # build documentation - ubuntu
+    # build documentation using docker container to access LAMMPS
     - name: "Documentation"
-      language: python
-      python: 3.6
-      os: linux
-      dist: bionic
-      addons:
-        apt:
-          packages:
-            - pandoc
-      install:
-        - pip3 install --upgrade pip
-        - pip3 install sphinx nbsphinx sphinx_rtd_theme
+      language: minimal
+      services:
+        - docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
       script:
-        - cd doc
-        - make html
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
     # tests using docker container - including tests which requires MD engines
     - name: "Docker and including MD tests"
