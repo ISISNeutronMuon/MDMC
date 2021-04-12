@@ -95,6 +95,37 @@ class AbstractSQw(Observable):
         return self._errors
 
     @property
+    def minimum_frames(self):
+
+        """
+        The minimum number of ``Trajectory`` frames needed to calculate the
+        ``dependent_variables`` is the same as the number of energy steps
+
+        Returns
+        -------
+        int
+            The minimum number of frames
+        """
+
+        return len(self.E)
+
+    @property
+    def maximum_frames(self):
+
+        """
+        The maximum number of ``Trajectory`` frames that can be used to
+        calculate the ``dependent_variables`` is the same as the number
+        of energy steps
+
+        Returns
+        -------
+        int
+            The maximum number of frames
+        """
+
+        return len(self.E)
+
+    @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
 

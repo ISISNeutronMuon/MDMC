@@ -7,6 +7,7 @@ import pytest
 from typing import List
 
 from MDMC.control import control
+from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
 
@@ -52,6 +53,23 @@ def mock_update_engine_parameters(self):
 
 
 @pytest.fixture(scope="module")
+def simulation() -> callable:
+    """
+    Returns
+    -------
+    callable
+        Function which optionally accepts ``traj_step`` of type `int`, defaults
+        to `1`. Returns a basic ``Simulation`` for testing.
+    """
+    uni = Universe(10.)
+
+    def _simulation(traj_step: int=1) -> Simulation:
+        return Simulation(uni, engine='lammps', traj_step=traj_step)
+    
+    return _simulation
+
+
+@pytest.fixture(scope="module")
 def exp_datasets() -> callable:
     """
     Returns
@@ -83,7 +101,7 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
-def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
+def test_control_refine_stdout(simulation, exp_datasets, monkeypatch, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -107,12 +125,17 @@ def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
                         MockParameter('A', 1),
                         MockParameter('B', 34743.233E6)]
 
-    cont = control.Control(None, exp_datasets(), [], reset_config=False)
+    cont = control.Control(simulation(), exp_datasets(), [], reset_config=False)
     cont.minimizer = minim
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Control created with:\n'
+    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
+                      'LAMMPS output is captured by PyLammps wrapper\n'
+                      'Simulation created with lammps engine and settings:\n'
+                      '  traj_step  1\n'
+                      '\n'
+                      'Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
@@ -137,7 +160,7 @@ def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
                       ' 3.134544  0.339834  1  3.474323e+10\n')
 
 
-def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
+def test_control_refine_stdout_auto_scale(simulation, exp_datasets, monkeypatch, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -162,12 +185,17 @@ def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
                     MockParameter('B', 34743.233E6)]
 
     datasets = exp_datasets(auto_scale=True)
-    cont = control.Control(None, datasets, [], reset_config=False)
+    cont = control.Control(simulation(), datasets, [], reset_config=False)
     cont.minimizer = minim
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Control created with:\n'
+    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
+                      'LAMMPS output is captured by PyLammps wrapper\n'
+                      'Simulation created with lammps engine and settings:\n'
+                      '  traj_step  1\n'
+                      '\n'
+                      'Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
@@ -197,54 +225,59 @@ def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
                       ''.format(datasets[0]['file_name'], datasets[1]['file_name']))
 
 
-def test_control_no_scaling(exp_datasets):
+def test_control_no_scaling(simulation, exp_datasets):
     """
     Test that by default a rescale factor of `1.` is used.
     """
-    ctrl = control.Control(None, exp_datasets(), [], reset_config=False)
+    ctrl = control.Control(simulation(), exp_datasets(), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert not pair.auto_scale
 
 
-def test_control_rescale_factor(exp_datasets):
+def test_control_rescale_factor(simulation, exp_datasets):
     """
     Test that a manually specified ``rescale_factor`` is applied to the
     ``observable_pair``.
     """
-    ctrl = control.Control(None, exp_datasets(rescale_factor=0.5), [], reset_config=False)
+    ctrl = control.Control(simulation(), exp_datasets(rescale_factor=0.5), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
         assert not pair.auto_scale
 
 
-def test_control_auto_scale(exp_datasets):
+def test_control_auto_scale(simulation, exp_datasets):
     """
     Test that ``auto_scale`` is applied.
     """
-    ctrl = control.Control(None, exp_datasets(auto_scale=True), [], reset_config=False)
+    ctrl = control.Control(simulation(), exp_datasets(auto_scale=True), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert pair.auto_scale
 
 
-def test_control_scaling_warning(exp_datasets, capsys):
+def test_control_scaling_warning(simulation, exp_datasets, capsys):
     """
     Test that when both ``rescale_factor`` and ``auto_scale`` specified then
     the latter is used and a warning is printed to explain this.
     """
     datasets = exp_datasets(rescale_factor=0.5, auto_scale=True)
-    ctrl = control.Control(None, datasets, [], reset_config=False)
+    ctrl = control.Control(simulation(), datasets, [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert pair.auto_scale
 
     stdout = capsys.readouterr().out
-    assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
+    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
+                      'LAMMPS output is captured by PyLammps wrapper\n'
+                      'Simulation created with lammps engine and settings:\n'
+                      '  traj_step  1\n'
+                      '\n'
+                      'Both `rescale_factor` and `auto_scale` set for file '
                       '{0}; scaling will be automated to minimise FoM\n'
                       'Both `rescale_factor` and `auto_scale` set for file '
                       '{1}; scaling will be automated to minimise FoM\n'
@@ -257,3 +290,36 @@ def test_control_scaling_warning(exp_datasets, capsys):
                       '\n'
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
+
+
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_no_MD_steps(simulation, exp_datasets, traj_step):
+    """
+    Test that ``MD_steps`` defaults to the minimum required if not specified.
+    """
+
+    ctrl = control.Control(simulation(traj_step), exp_datasets(), [],
+                           reset_config=False)
+    assert ctrl.MD_steps == 373 * traj_step
+
+
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step):
+    """
+    Test that ``MD_steps`` is accepted when greater than the minimum required.
+    """
+
+    ctrl = control.Control(simulation(traj_step), exp_datasets(), [],
+                           reset_config=False, MD_steps=9325)
+    assert ctrl.MD_steps == 9325
+
+
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_MD_steps_rejected(simulation, exp_datasets, traj_step):
+    """
+    Test that ``MD_steps`` is rejected when greater than the minimum required.
+    """
+
+    with pytest.raises(ValueError):
+        control.Control(simulation(traj_step), exp_datasets(), [],
+                        reset_config=False, MD_steps=372)

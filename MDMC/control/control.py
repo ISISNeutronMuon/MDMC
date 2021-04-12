@@ -15,7 +15,7 @@ from MDMC.trajectory_analysis.observables.obs_factory \
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_parameters', 'settings')
+                'reset_config', 'fit_parameters', 'MD_steps', 'settings')
 class Control:
 
     """
@@ -48,6 +48,10 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
+    MD_steps : int, optional
+        Number of molecular dynamics steps for each step of the refinement.
+        When not provided, the minimum number of steps needed for successful
+        calculation of the observables is used. Default is `None`.
     **settings
         ``energy_resolution`` : float
             Instrument energy resolution as the FWHM in ``ueV``.
@@ -94,7 +98,7 @@ class Control:
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
-                 reset_config: bool=True, **settings):
+                 reset_config: bool=True, MD_steps: int=None, **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -109,6 +113,7 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
+        minimum_MD_steps = 0
         for dset in exp_datasets:
             exp_observable = self._read_observable_from_file(dset['type'],
                                                              dset['reader'],
@@ -131,11 +136,23 @@ class Control:
                                                  rescale_factor=rescale_factor,
                                                  auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            minimum_MD_steps = max(minimum_MD_steps,
+                                   self._calculate_MD_steps(observable_pair))
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
         # Use specified MD_steps if supplied, else calculate
-        self.MD_steps = settings.get('MD_steps')
+        if MD_steps:
+            try:
+                assert MD_steps >= minimum_MD_steps
+                self.MD_steps = MD_steps
+            except AssertionError as error:
+                raise ValueError('Experimental datasets provided require a '
+                                 'minimum MD_steps value of {} in order to '
+                                 'calculate observables'.format(minimum_MD_steps)
+                                 ) from error
+        else:
+            self.MD_steps = minimum_MD_steps
 
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
@@ -365,26 +382,33 @@ class Control:
 
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
-            pair.MD_obs.calculate_from_MD(trj, **self.settings)
+            maximum_frames = pair.MD_obs.maximum_frames
+            if maximum_frames:
+                pair.MD_obs.calculate_from_MD(trj[:maximum_frames],
+                                              **self.settings)
+            else:
+                pair.MD_obs.calculate_from_MD(trj, **self.settings)
 
-    def _calculate_MD_steps(self):
+    def _calculate_MD_steps(self, observable_pair: FoM.ObservablePair):
 
         """
         Calculates the minimum number of steps required for the MD engine in
         order to calculate MD ``Observables`` objects with the same independent
         variables as the experimental ``Observable`` objects.
 
-        THIS METHOD IS NOT IMPLEMENTED
+        Parameters
+        ----------
+        observable_pair : ObservablePair
+            ``ObservablesPair`` for which the required number of ``MD_steps``
+            is calculated
 
         Returns
         -------
         `int`
-            Number of molecular dynamics steps
-
-        Raises
-        ------
-        NotImplementedError
-            THIS METHOD IS NOT IMPLEMENTED
+            Number of ``MD_steps``
         """
 
-        raise NotImplementedError
+        traj_step = self.simulation.settings.get('traj_step')
+        minimum_frames = observable_pair.exp_obs.minimum_frames
+
+        return traj_step * minimum_frames
