@@ -117,7 +117,7 @@ class Control:
                                                              dset['reader'],
                                                              dset['file_name'])
             if not self._is_data_uniform(exp_observable):
-                exp_observable = _make_data_uniform(exp_observable)
+                exp_observable = self._make_data_uniform(exp_observable)
 
             MD_observable = self._create_empty_observable(exp_observable)
 
