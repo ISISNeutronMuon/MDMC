@@ -259,10 +259,69 @@ def test_control_scaling_warning(exp_datasets, capsys):
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
 
-def test_control_is_data_uniform(exp_datasets):
-    expected = [False, False]
-    observed = []
-    for dset in exp_datasets:
-        exp_observable = control.Control._read_observable_from_file(dset['type'], dset['reader'], dset['file_name'])
-        observed.append(control.Control._is_data_uniform(exp_observable))
-    assert observed == expected
+def mock_nonuniform_observable() -> SQw:
+    """
+    A mock ``SQw`` ``Observable`` for testing purposes.
+
+    Returns
+    -------
+    ``SQw``
+        A mocked ``SQw`` object.
+    """
+    observable = SQw()
+    observable._origin='experiment'
+    E_array = np.array([0., 0.24, 0.5, 0.75, 1.0])
+    Q_array = np.array([1., 2., 2.9, 4.])
+    SQw_array = np.array([[E+Q for Q in Q_array] for E in E_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    observable.independent_variables = {'E': E_array, 'Q': Q_array}
+    observable._dependent_variables = {'SQw': SQw_array}
+    observable._errors = {'SQw': SQw_err_array}
+    return observable
+
+def mock_uniform_observable() -> SQw:
+    """
+    A mock ``SQw`` ``Observable`` for testing purposes.
+
+    Returns
+    -------
+    ``SQw``
+        A mocked ``SQw`` object.
+    """
+    observable = SQw()
+    observable._origin = 'experiment'
+    E_array = np.array([0., 0.25, 0.5, 0.75, 1.0])
+    Q_array = np.array([1., 2., 3., 4.])
+    SQw_array = np.array([[E+Q for Q in Q_array] for E in E_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    observable.independent_variables = {'E': E_array, 'Q': Q_array}
+    observable._dependent_variables = {'SQw': SQw_array}
+    observable._errors = {'SQw': SQw_err_array}
+    return observable
+
+def test_control_is_data_uniform_false():
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
+    """
+    expected = False
+    observed = control.Control._is_data_uniform(mock_nonuniform_observable)
+    assert expected == observed
+
+def test_control_is_data_uniform_true():
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
+    """
+    expected = True
+    observed = control.Control._is_data_uniform()
+    assert expected == observed
+
+def test_control_make_data_uniform():
+    expected_E = mock_uniform_observable().E
+    expected_Q = mock_uniform_observable().Q
+    expected_SQw = mock_uniform_observable().SQw
+    expected_SQw_err = mock_uniform_observable().SQw_err
+    observed = control.Control._make_data_uniform(mock_nonuniform_observable())
+    assert expected_E == observed.E
+    assert expected_Q == observed.Q
+    assert expected_SQw == observed.SQW
+    assert expected_SQw_err == observed.SQw_err
