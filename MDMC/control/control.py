@@ -5,6 +5,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 from typing import List
+from scipy.interpolate import interp2d
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -12,6 +13,8 @@ from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
+from MDMC.trajectory_analysis.observables.sqw import \
+    SQw
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -113,6 +116,9 @@ class Control:
             exp_observable = self._read_observable_from_file(dset['type'],
                                                              dset['reader'],
                                                              dset['file_name'])
+            if not _is_data_uniform(exp_observable):
+                exp_observable = _make_data_uniform(exp_observable)
+
             MD_observable = self._create_empty_observable(exp_observable)
 
             auto_scale = dset.get('auto_scale', False)
@@ -388,3 +394,62 @@ class Control:
         """
 
         raise NotImplementedError
+
+    def _is_data_uniform(self, observable: SQw) -> bool:
+        """
+        Checks if the values of an independent variable of an Observable are uniformly spaced and start at zero.
+        Currently only implemented for energy ('E') as the independent variable of an ``SQw`` ``Observable``.
+
+        Parameters
+        ----------
+        observable : SQw
+            ``Observable`` for which to check if the independent variable is uniform. Currently limited to ``SQw``.
+
+        Returns
+        -------
+        `bool`
+            A boolean: `True` if the data is uniform, `False` if not.
+        """
+        data = observable.independent_variables['E']
+        uniform_data = np.linspace(min(data), max(data), num=len(data))
+        return np.allclose(data, uniform_data, rtol=1e-5)
+
+    def _make_data_uniform(self, observable: SQw) -> SQw:
+        """
+        Takes an ``Observable`` and returns an Observable with its values of the variables interpolated onto a
+        uniform grid. Currently limited to ``SQw`` ``Observables``.
+
+        Parameters
+        ----------
+        observable : SQw
+            An ``Observable`` for which to interpolate the values of its variables. Currently limited to ``SQw``
+            ``Observables``.
+
+        Returns
+        -------
+        ``SQw``
+        """
+        E_data = observable.independent_variables['E']
+        Q_data = observable.independent_variables['Q']
+        SQw_data = observable.SQw
+        SQw_err_data = observable.SQw_err
+        # create interpolation functions
+        SQw_interpol = interp2d(Q_data, E_data, SQw_data)
+        SQw_err_zero = SQw_err_data
+        SQw_err_zero[SQw_err_data == np.float('inf')] = 0
+        SQw_err_interpol = interp2d(Q, E, SQw_err_zero)
+        # create uniform data grids
+        E_uniform = np.linspace(min(E_data), max(E_data), num=len(E_data))
+        Q_uniform = np.linspace(min(Q_data), max(Q_data), num=len(Q_data))
+        # interpolate SQw
+        SQw_uniform = np.transpose(SQw_interpol(Q_uniform, E_uniform))
+        SQw_err_uniform = np.transpose(SQw_err_interpol(Q_uniform, E_uniform))
+        SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
+        # create ``Observable`` with the now uniform data
+        uniform_observable = observable
+        uniform_observable.independent_variables = {'E': E_uniform, 'Q': Q_uniform}
+        uniform_observable._dependent_variables = {'SQw': SQw_uniform}
+        uniform_observable._errors = {'SQw': SQw_err_uniform}
+        return uniform_observable
+
+
