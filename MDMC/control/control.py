@@ -434,10 +434,10 @@ class Control:
         SQw_data = observable.SQw
         SQw_err_data = observable.SQw_err
         # create interpolation functions
-        SQw_interpol = interp2d(Q_data, E_data, SQw_data)
+        SQw_interpol = interp2d(E_data, Q_data, SQw_data)
         SQw_err_zero = SQw_err_data
         SQw_err_zero[SQw_err_data == np.float('inf')] = 0
-        SQw_err_interpol = interp2d(Q, E, SQw_err_zero)
+        SQw_err_interpol = interp2d(E_data, Q_data, SQw_err_zero)
         # create uniform data grids
         E_uniform = np.linspace(min(E_data), max(E_data), num=len(E_data))
         Q_uniform = np.linspace(min(Q_data), max(Q_data), num=len(Q_data))

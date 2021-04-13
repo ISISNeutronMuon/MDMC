@@ -304,7 +304,7 @@ def test_control_is_data_uniform_false():
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
     """
     expected = False
-    observed = control.Control._is_data_uniform(mock_nonuniform_observable)
+    observed = control.Control()._is_data_uniform(mock_nonuniform_observable)
     assert expected == observed
 
 def test_control_is_data_uniform_true():
@@ -312,7 +312,7 @@ def test_control_is_data_uniform_true():
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
     """
     expected = True
-    observed = control.Control._is_data_uniform()
+    observed = control.Control()._is_data_uniform()
     assert expected == observed
 
 def test_control_make_data_uniform():
@@ -320,7 +320,7 @@ def test_control_make_data_uniform():
     expected_Q = mock_uniform_observable().Q
     expected_SQw = mock_uniform_observable().SQw
     expected_SQw_err = mock_uniform_observable().SQw_err
-    observed = control.Control._make_data_uniform(mock_nonuniform_observable())
+    observed = control.Control()._make_data_uniform(mock_nonuniform_observable())
     assert expected_E == observed.E
     assert expected_Q == observed.Q
     assert expected_SQw == observed.SQW
