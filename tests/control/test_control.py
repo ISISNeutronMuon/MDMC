@@ -7,6 +7,7 @@ import pytest
 from typing import List
 
 from MDMC.control import control
+from MDMC.trajectory_analysis.observables.sqw import SQw
 from tests.test_data import data
 
 
@@ -257,3 +258,11 @@ def test_control_scaling_warning(exp_datasets, capsys):
                       '\n'
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
+
+def test_control_is_data_uniform(exp_datasets):
+    expected = ['False', 'False']
+    observed = []
+    for dset in exp_datasets:
+        exp_observable = control.Control._read_observable_from_file(dset['type'], dset['reader'], dset['file_name'])
+        observed.append(control.Control._is_data_uniform(exp_observable))
+    assert observed == expected
