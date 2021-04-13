@@ -11,6 +11,18 @@ from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
 
+class MockSimulation(Simulation):
+
+    """
+    Mock the ``Simulation`` so that we do not setup the MD engine so we can run
+    the tests without having an MD engine installed.
+    """
+
+    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
+        self.universe = universe
+        self.settings = settings
+
+
 class MockParameter:
 
     def __init__(self, name, value):
@@ -59,12 +71,13 @@ def simulation() -> callable:
     -------
     callable
         Function which optionally accepts ``traj_step`` of type `int`, defaults
-        to `1`. Returns a basic ``Simulation`` for testing.
+        to `1`. Returns a ``MockedSimulation`` for testing.
     """
+
     uni = Universe(10.)
 
-    def _simulation(traj_step: int=1) -> Simulation:
-        return Simulation(uni, engine='lammps', traj_step=traj_step)
+    def _simulation(traj_step: int=1) -> MockSimulation:
+        return MockSimulation(uni, traj_step=traj_step)
     
     return _simulation
 
@@ -130,12 +143,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch, capsys):
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
-                      'LAMMPS output is captured by PyLammps wrapper\n'
-                      'Simulation created with lammps engine and settings:\n'
-                      '  traj_step  1\n'
-                      '\n'
-                      'Control created with:\n'
+    assert stdout == ('Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
@@ -190,12 +198,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets, monkeypatch,
     cont.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
-                      'LAMMPS output is captured by PyLammps wrapper\n'
-                      'Simulation created with lammps engine and settings:\n'
-                      '  traj_step  1\n'
-                      '\n'
-                      'Control created with:\n'
+    assert stdout == ('Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
@@ -272,12 +275,7 @@ def test_control_scaling_warning(simulation, exp_datasets, capsys):
         assert pair.auto_scale
 
     stdout = capsys.readouterr().out
-    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
-                      'LAMMPS output is captured by PyLammps wrapper\n'
-                      'Simulation created with lammps engine and settings:\n'
-                      '  traj_step  1\n'
-                      '\n'
-                      'Both `rescale_factor` and `auto_scale` set for file '
+    assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
                       '{0}; scaling will be automated to minimise FoM\n'
                       'Both `rescale_factor` and `auto_scale` set for file '
                       '{1}; scaling will be automated to minimise FoM\n'
