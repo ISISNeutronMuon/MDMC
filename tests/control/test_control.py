@@ -261,7 +261,7 @@ def test_control_scaling_warning(exp_datasets, capsys):
 
 def mock_nonuniform_observable() -> SQw:
     """
-    A mock ``SQw`` ``Observable`` for testing purposes.
+    A mock ``SQw`` ``Observable`` for testing purposes with a non-uniform grid of Q and E points.
 
     Returns
     -------
@@ -281,7 +281,7 @@ def mock_nonuniform_observable() -> SQw:
 
 def mock_uniform_observable() -> SQw:
     """
-    A mock ``SQw`` ``Observable`` for testing purposes.
+    A mock ``SQw`` ``Observable`` for testing purposes with a uniform grid of Q and E points.
 
     Returns
     -------
@@ -292,7 +292,7 @@ def mock_uniform_observable() -> SQw:
     observable._origin = 'experiment'
     E_array = np.array([0., 0.25, 0.5, 0.75, 1.0])
     Q_array = np.array([1., 2., 3., 4.])
-    SQw_array = np.array([[E+Q for Q in Q_array] for E in E_array])
+    SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
     SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
     observable._dependent_variables = {'SQw': SQw_array}
@@ -304,7 +304,9 @@ def test_control_is_data_uniform_false():
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
     """
     expected = False
-    observed = control.Control()._is_data_uniform(mock_nonuniform_observable)
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._is_data_uniform(mock_nonuniform_observable())
     assert expected == observed
 
 def test_control_is_data_uniform_true():
@@ -312,7 +314,9 @@ def test_control_is_data_uniform_true():
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
     """
     expected = True
-    observed = control.Control()._is_data_uniform()
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._is_data_uniform(mock_uniform_observable())
     assert expected == observed
 
 def test_control_make_data_uniform():
@@ -320,8 +324,10 @@ def test_control_make_data_uniform():
     expected_Q = mock_uniform_observable().Q
     expected_SQw = mock_uniform_observable().SQw
     expected_SQw_err = mock_uniform_observable().SQw_err
-    observed = control.Control()._make_data_uniform(mock_nonuniform_observable())
-    assert expected_E == observed.E
-    assert expected_Q == observed.Q
-    assert expected_SQw == observed.SQW
-    assert expected_SQw_err == observed.SQw_err
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._make_data_uniform(mock_nonuniform_observable())
+    assert np.allclose(expected_E, observed.E, atol=1e-5)
+    assert np.allclose(expected_Q, observed.Q, atol=1e-5)
+    assert np.allclose(expected_SQw, observed.SQw, atol=1e-5)
+    assert np.allclose(expected_SQw_err, observed.SQw_err, atol=1e-5)
