@@ -270,4 +270,4 @@ class LAMPSQw(ObservableReader):
             for k in range(dimensions[0]):
                 var[k] = get_row_data(dimensions[1])
 
-        return var
+        return np.transpose(var)
