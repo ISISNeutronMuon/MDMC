@@ -451,5 +451,3 @@ class Control:
         uniform_observable._dependent_variables = {'SQw': SQw_uniform}
         uniform_observable._errors = {'SQw': SQw_err_uniform}
         return uniform_observable
-
-
