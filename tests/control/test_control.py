@@ -301,7 +301,7 @@ def mock_uniform_observable() -> SQw:
 
 def test_control_is_data_uniform_false():
     """
-    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observable.
     """
     expected = False
     # create Control object without instantiating it to test one of its methods
