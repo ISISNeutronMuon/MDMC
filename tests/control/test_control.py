@@ -320,14 +320,11 @@ def test_control_is_data_uniform_true():
     assert expected == observed
 
 def test_control_make_data_uniform():
-    expected_E = mock_uniform_observable().E
-    expected_Q = mock_uniform_observable().Q
-    expected_SQw = mock_uniform_observable().SQw
-    expected_SQw_err = mock_uniform_observable().SQw_err
+    expected = mock_uniform_observable()
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
     observed = cont._make_data_uniform(mock_nonuniform_observable())
-    assert np.allclose(expected_E, observed.E, atol=1e-5)
-    assert np.allclose(expected_Q, observed.Q, atol=1e-5)
-    assert np.allclose(expected_SQw, observed.SQw, atol=1e-5)
-    assert np.allclose(expected_SQw_err, observed.SQw_err, atol=1e-5)
+    assert np.allclose(expected.E, observed.E, atol=1e-5)
+    assert np.allclose(expected.Q, observed.Q, atol=1e-5)
+    assert np.allclose(expected.SQw, observed.SQw, atol=1e-5)
+    assert np.allclose(expected.SQw_err, observed.SQw_err, atol=1e-5)
