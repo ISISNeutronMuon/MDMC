@@ -441,7 +441,7 @@ class Control:
         # create uniform data grids; start from zero energy due to current restrictions in the ``SQw`` class
         E_uniform = np.linspace(0, max(E_data), num=len(E_data))
         Q_uniform = np.linspace(min(Q_data), max(Q_data), num=len(Q_data))
-        # interpolate SQw
+        # interpolate SQw. Note that the transpose is required due to the way the interp2d function returns the array
         SQw_uniform = np.transpose(SQw_interpol(Q_uniform, E_uniform))
         SQw_err_uniform = np.transpose(SQw_err_interpol(Q_uniform, E_uniform))
         SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
