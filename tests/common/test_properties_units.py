@@ -11,7 +11,7 @@ from MDMC.common import units
 from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond, \
                                      Coulombic
-from MDMC.MD.simulation import Universe, Shape
+from MDMC.MD.simulation import Universe
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.observables.sqw import SQw
 
@@ -31,7 +31,7 @@ def atom():
 @pytest.fixture
 def universe():
 
-    return Universe(dimensions=LIST, shape=Shape.orthorhombic)
+    return Universe(dimensions=LIST)
 
 
 @pytest.fixture
