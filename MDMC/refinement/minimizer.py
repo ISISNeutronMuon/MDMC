@@ -12,7 +12,8 @@ from MDMC.common.decorators import repr_decorator
 
 
 @repr_decorator('comm', 'FoM', 'FoM_old', 'MC_norm', 'distribution',
-                'state_changed', 'parameters', 'parameters_old_values')
+                'state_changed', 'parameters', 'parameters_old_values',
+                'max_parameter_change')
 class Minimizer(ABC):
 
     """
@@ -46,11 +47,15 @@ class Minimizer(ABC):
         minimizer step
     state_changed : bool
         If the MMC algorithm resulted in the step being Accepted or Rejected
+    max_parameter_change : float, optional
+        Maximum factor by which a Parameter can change each step of the
+        simulation. Defaults to `0.01`
     """
 
     DISTRIBUTION = {'uniform':np.random.uniform}
 
-    def __init__(self, MC_norm, parameters, distribution='uniform'):
+    def __init__(self, MC_norm, parameters, distribution='uniform',
+                 max_parameter_change: float=0.01):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
@@ -74,6 +79,7 @@ class Minimizer(ABC):
         self.parameters_old_values = None
         self.parameters = parameters
         self.MC_norm = MC_norm
+        self.max_parameter_change = max_parameter_change
 
         # Records if most recent step changed the state
         self.state_changed = None
@@ -86,20 +92,6 @@ class Minimizer(ABC):
         """
 
         raise NotImplementedError
-
-    @property
-    def max_parameter_change(self):
-
-        """
-        Maximum factor by which a Parameter can change
-
-        Returns
-        -------
-        float
-            Maximum ``Parameter`` value change
-        """
-
-        return 0.01
 
     @property
     def history(self):
