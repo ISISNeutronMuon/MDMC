@@ -417,7 +417,7 @@ class Control:
     def _make_data_uniform(self, observable: SQw) -> SQw:
         """
         Takes an ``Observable`` and returns an Observable with its values of the variables interpolated onto a
-        uniform grid. Currently limited to ``SQw`` ``Observables``.
+        uniform grid.
 
         Parameters
         ----------
