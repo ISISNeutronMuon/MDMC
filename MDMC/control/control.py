@@ -429,18 +429,18 @@ class Control:
         -------
         ``SQw``
         """
-        E_data = observable.independent_variables['E']
-        Q_data = observable.independent_variables['Q']
+        E = observable.independent_variables['E']
+        Q = observable.independent_variables['Q']
         SQw_data = observable.SQw
         SQw_err_data = observable.SQw_err
         # create interpolation functions
-        SQw_interpol = interp2d(Q_data, E_data, SQw_data)
+        SQw_interpol = interp2d(Q, E, SQw_data)
         SQw_err_zero = SQw_err_data
         SQw_err_zero[SQw_err_data == np.float('inf')] = 0
-        SQw_err_interpol = interp2d(Q_data, E_data, SQw_err_zero)
+        SQw_err_interpol = interp2d(Q, E, SQw_err_zero)
         # create uniform data grids; start from zero energy due to current restrictions in the ``SQw`` class
-        E_uniform = np.linspace(0, max(E_data), num=len(E_data))
-        Q_uniform = np.linspace(min(Q_data), max(Q_data), num=len(Q_data))
+        E_uniform = np.linspace(0, max(E), num=len(E))
+        Q_uniform = np.linspace(min(Q), max(Q), num=len(Q))
         # interpolate SQw. Note that the transpose is required due to the way the interp2d function returns the array
         SQw_uniform = np.transpose(SQw_interpol(Q_uniform, E_uniform))
         SQw_err_uniform = np.transpose(SQw_err_interpol(Q_uniform, E_uniform))
