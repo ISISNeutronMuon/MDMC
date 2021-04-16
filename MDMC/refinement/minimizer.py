@@ -49,7 +49,7 @@ class Minimizer(ABC):
         If the MMC algorithm resulted in the step being Accepted or Rejected
     max_parameter_change : float, optional
         Maximum factor by which a Parameter can change each step of the
-        simulation. Defaults to `0.01`
+        refinement. Defaults to `0.01`
     """
 
     DISTRIBUTION = {'uniform':np.random.uniform}
