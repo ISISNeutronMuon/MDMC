@@ -269,5 +269,6 @@ class LAMPSQw(ObservableReader):
         else:
             for k in range(dimensions[0]):
                 var[k] = get_row_data(dimensions[1])
-
+        # return the transpose of var such that np.shape() of the returned array = (np.size(E),np.size(Q)),
+        # consistent with the output of the xml_SQw reader
         return np.transpose(var)
