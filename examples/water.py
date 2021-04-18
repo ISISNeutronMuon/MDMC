@@ -67,13 +67,8 @@ control = Control(simulation=simulation,
                   MD_steps=208000,
                   energy_resolution=13.6)
 
-# Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
-# a non-uniform E step.
-# To account for this, a limited E is used and undefined errors are set to zero
-# for the purposes of interpolation.
-# This should really be performed before the data is read into control - the
-# final step is a reflection of this as the MD observable is changed to match
-# the new independent variables of the experimental observable
+# Bertil Halle water data is non-symmetric. Consider only a subset of the
+# data in this example.
 # So that the MD simulation size can be minimized, the Q min is increased and
 # the Q resolution is reduced.
 exp_obs = control.observable_pairs[0].exp_obs
