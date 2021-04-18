@@ -3,7 +3,6 @@ An example MDMC script for optimizing spce parameters for water at 263 K
 """
 
 import numpy as np
-from scipy.interpolate import interp2d
 
 from MDMC.control import Control
 from MDMC.MD import *
