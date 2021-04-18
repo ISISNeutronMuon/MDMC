@@ -70,14 +70,10 @@ control = Control(simulation=simulation,
                   MD_steps=10000,
                   energy_resolution=8.)
 
-# Hack the input data onto a uniform grid, i.e. make E and Q uniform
-# (alternatively, create a new versions of the Well_s_q_omega_Ar_data.xml data
-# on uniform grids. As of the writing MDMC requires data to be on
-# a uniform grid)
+# Well's Argon file seems to have incorrectly labelled f as w, so correct
+# for this by multiplying E by 2pi
 exp_obs = control.observable_pairs[0].exp_obs
 Q = exp_obs.Q
-# Well's Argon file seem to have incorrectly labelled f as w, so correct for
-# this by multiplying E by 2pi
 E = exp_obs.E * 2 * np.pi
 # copy the updated E values, and Q values back to the control.observable
 control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
