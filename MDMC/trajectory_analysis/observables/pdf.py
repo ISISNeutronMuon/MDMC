@@ -91,6 +91,35 @@ class PairDistributionFunction(Observable):
         self._errors = value
 
     @property
+    def minimum_frames(self):
+
+        """
+        The minimum number of ``Trajectory`` frames needed to calculate the
+        ``dependent_variables`` is 1
+
+        Returns
+        -------
+        int
+            The minimum number of frames
+        """
+
+        return 1
+
+    @property
+    def maximum_frames(self):
+
+        """
+        There is no hard limit on the number of frames that can be used, so
+        return None
+
+        Returns
+        -------
+        None
+        """
+
+        return None
+
+    @property
     def r(self):
 
         """
