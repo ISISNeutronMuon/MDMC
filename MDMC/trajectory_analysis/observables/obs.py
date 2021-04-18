@@ -123,6 +123,38 @@ class Observable(ABC):
 
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def minimum_frames(self):
+
+        """
+        The minimum number of ``Trajectory`` frames needed to calculate the
+        ``dependent_variables``
+
+        Returns
+        -------
+        int
+            The minimum number of frames
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def maximum_frames(self):
+
+        """
+        The maximum number of ``Trajectory`` frames that can be used to
+        calculate the ``dependent_variables``
+
+        Returns
+        -------
+        int
+            The maximum number of frames
+        """
+
+        raise NotImplementedError
+
     def read_from_file(self, reader, file_name):
 
         """
