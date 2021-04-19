@@ -5,6 +5,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 from typing import List
+from scipy.interpolate import interp2d
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -12,11 +13,13 @@ from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
+from MDMC.trajectory_analysis.observables.sqw import \
+    SQw
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_parameters', 'settings',
-                'max_parameter_change')
+                'reset_config', 'fit_parameters', 'MD_steps',
+                'max_parameter_change', 'settings')
 class Control:
 
     """
@@ -52,6 +55,10 @@ class Control:
     max_parameter_change : float, optional
         Maximum factor by which a Parameter can change each step of the
         refinement. Defaults to `0.01`
+    MD_steps : int, optional
+        Number of molecular dynamics steps for each step of the refinement.
+        When not provided, the minimum number of steps needed for successful
+        calculation of the observables is used. Default is `None`.
     **settings
         ``energy_resolution`` : float
             Instrument energy resolution as the FWHM in ``ueV``.
@@ -98,8 +105,8 @@ class Control:
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
-                 reset_config: bool=True, max_parameter_change: float=0.01,
-                 **settings):
+                 reset_config: bool=True, MD_steps: int=None,
+                 max_parameter_change: float=0.01, **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -115,10 +122,14 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
+        minimum_MD_steps = 0
         for dset in exp_datasets:
             exp_observable = self._read_observable_from_file(dset['type'],
                                                              dset['reader'],
                                                              dset['file_name'])
+            if not self._is_data_uniform(exp_observable):
+                exp_observable = self._make_data_uniform(exp_observable)
+
             MD_observable = self._create_empty_observable(exp_observable)
 
             auto_scale = dset.get('auto_scale', False)
@@ -137,11 +148,23 @@ class Control:
                                                  rescale_factor=rescale_factor,
                                                  auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            minimum_MD_steps = max(minimum_MD_steps,
+                                   self._calculate_MD_steps(observable_pair))
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
         # Use specified MD_steps if supplied, else calculate
-        self.MD_steps = settings.get('MD_steps')
+        if MD_steps:
+            try:
+                assert MD_steps >= minimum_MD_steps
+                self.MD_steps = MD_steps
+            except AssertionError as error:
+                raise ValueError('Experimental datasets provided require a '
+                                 'minimum MD_steps value of {} in order to '
+                                 'calculate observables'.format(minimum_MD_steps)
+                                 ) from error
+        else:
+            self.MD_steps = minimum_MD_steps
 
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
@@ -371,26 +394,90 @@ class Control:
 
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
-            pair.MD_obs.calculate_from_MD(trj, **self.settings)
+            maximum_frames = pair.MD_obs.maximum_frames
+            if maximum_frames:
+                pair.MD_obs.calculate_from_MD(trj[:maximum_frames],
+                                              **self.settings)
+            else:
+                pair.MD_obs.calculate_from_MD(trj, **self.settings)
 
-    def _calculate_MD_steps(self):
+    def _calculate_MD_steps(self, observable_pair: FoM.ObservablePair):
 
         """
         Calculates the minimum number of steps required for the MD engine in
         order to calculate MD ``Observables`` objects with the same independent
         variables as the experimental ``Observable`` objects.
 
-        THIS METHOD IS NOT IMPLEMENTED
+        Parameters
+        ----------
+        observable_pair : ObservablePair
+            ``ObservablesPair`` for which the required number of ``MD_steps``
+            is calculated
 
         Returns
         -------
         `int`
-            Number of molecular dynamics steps
-
-        Raises
-        ------
-        NotImplementedError
-            THIS METHOD IS NOT IMPLEMENTED
+            Number of ``MD_steps``
         """
+        traj_step = self.simulation.settings.get('traj_step')
+        minimum_frames = observable_pair.exp_obs.minimum_frames
 
-        raise NotImplementedError
+        return traj_step * minimum_frames
+
+    def _is_data_uniform(self, observable: SQw) -> bool:
+        """
+        Checks if the values of an independent variable of an Observable are uniformly spaced and start at zero.
+        Currently only implemented for energy ('E') as the independent variable of an ``SQw`` ``Observable``.
+
+        Parameters
+        ----------
+        observable : SQw
+            ``Observable`` for which to check if the independent variable is uniform. Currently limited to ``SQw``.
+
+        Returns
+        -------
+        `bool`
+            A boolean: `True` if the data is uniform, `False` if not.
+        """
+        data = observable.independent_variables['E']
+        uniform_data = np.linspace(min(data), max(data), num=len(data))
+        return np.allclose(data, uniform_data, rtol=1e-5)
+
+    def _make_data_uniform(self, observable: SQw) -> SQw:
+        """
+        Takes an ``Observable`` and returns an Observable with its values of the variables interpolated onto a
+        uniform grid.
+
+        Parameters
+        ----------
+        observable : SQw
+            An ``Observable`` for which to interpolate the values of its variables. Currently limited to ``SQw``
+            ``Observables``.
+
+        Returns
+        -------
+        ``SQw``
+        """
+        E = observable.independent_variables['E']
+        Q = observable.independent_variables['Q']
+        SQw_data = observable.SQw
+        SQw_err_data = observable.SQw_err
+        # create interpolation functions
+        SQw_interpol = interp2d(Q, E, SQw_data)
+        SQw_err_zero = SQw_err_data
+        SQw_err_zero[SQw_err_data == np.float('inf')] = 0
+        SQw_err_interpol = interp2d(Q, E, SQw_err_zero)
+        # start from zero energy due to current restrictions in the ``SQw`` class
+        E_uniform = np.linspace(0, max(E), num=len(E))
+        Q_uniform = np.linspace(min(Q), max(Q), num=len(Q))
+        # interpolate SQw. Note that the transpose is required due to the way the interp2d function returns the array
+        SQw_uniform = np.transpose(SQw_interpol(Q_uniform, E_uniform))
+        SQw_err_uniform = np.transpose(SQw_err_interpol(Q_uniform, E_uniform))
+        SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
+        # create ``Observable`` with the now uniform data
+        uniform_observable = observable
+        uniform_observable.independent_variables = {'E': E_uniform, 'Q': Q_uniform}
+        uniform_observable._dependent_variables = {'SQw': SQw_uniform}
+        uniform_observable._errors = {'SQw': SQw_err_uniform}
+        return uniform_observable
+

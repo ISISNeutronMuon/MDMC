@@ -3,7 +3,6 @@ An example MDMC script for optimizing spce parameters for water at 263 K
 """
 
 import numpy as np
-from scipy.interpolate import interp2d
 
 from MDMC.control import Control
 from MDMC.MD import *
@@ -68,13 +67,8 @@ control = Control(simulation=simulation,
                   MD_steps=208000,
                   energy_resolution=13.6)
 
-# Bertil Halle water data is non-symmetric, and has a non-rectangular grid with
-# a non-uniform E step.
-# To account for this, a limited E is used and undefined errors are set to zero
-# for the purposes of interpolation.
-# This should really be performed before the data is read into control - the
-# final step is a reflection of this as the MD observable is changed to match
-# the new independent variables of the experimental observable
+# Bertil Halle water data is non-symmetric. Consider only a subset of the
+# data in this example.
 # So that the MD simulation size can be minimized, the Q min is increased and
 # the Q resolution is reduced.
 exp_obs = control.observable_pairs[0].exp_obs
@@ -82,26 +76,9 @@ Q_slice = slice(6, len(exp_obs.Q), 2)
 Q = exp_obs.Q[Q_slice]
 E_range = (exp_obs.E >=0)
 E = exp_obs.E[E_range]
-SQw = np.array([Sw[E_range] for Sw in exp_obs.SQw[Q_slice]])
-SQw_err = np.array([Sw_err[E_range] for Sw_err
-                    in exp_obs.SQw_err[Q_slice]])
-SQw_fun = interp2d(E, Q, SQw)
-SQw_err_zero = SQw_err
-SQw_err_zero[SQw_err == np.float('inf')] = 0
-SQw_err_fun = interp2d(E, Q, SQw_err_zero)
-# Use the largest step size from the E data for the uniform step size
-E_step = max([E[i] - E[i-1] for i in np.arange(len(E) - 1) + 1])
-# Currently forced to start from E = 0. due to limitations of SQw calculation
-E_uniform = np.arange(0., E[-1] - E[0], E_step )
-SQw_uniform = SQw_fun(E_uniform, Q)
-SQw_err_uniform = SQw_err_fun(E_uniform, Q)
-SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
-control.observable_pairs[0].exp_obs.independent_variables = {'E':E_uniform,
-                                                             'Q':Q}
-control.observable_pairs[0].exp_obs._dependent_variables = {'SQw':SQw_uniform}
-control.observable_pairs[0].exp_obs._errors = {'SQw':SQw_err_uniform}
-control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
-                                                            'Q':Q}
+# copy the updated E values, and Q values back to the control.observable
+control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
+control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
 
 # Run refinement
 control.refine(n_steps=0)

@@ -70,37 +70,14 @@ control = Control(simulation=simulation,
                   MD_steps=10000,
                   energy_resolution=8.)
 
-# Hack the input data onto a uniform grid, i.e. make E and Q uniform
-# (alternatively, create a new versions of the Well_s_q_omega_Ar_data.xml data
-# on uniform grids. As of the writing MDMC requires data to be on
-# a uniform grid)
+# Well's Argon file seems to have incorrectly labelled f as w, so correct
+# for this by multiplying E by 2pi
 exp_obs = control.observable_pairs[0].exp_obs
 Q = exp_obs.Q
-# Well's Argon file seem to have incorrectly labelled f as w, so correct for
-# this by multiplying E by 2pi
 E = exp_obs.E * 2 * np.pi
-SQw = exp_obs.SQw
-SQw_err = exp_obs.SQw_err
-SQw_fun = interp2d(Q, E, SQw)
-SQw_err_zero = SQw_err
-SQw_err_zero[SQw_err == np.float('inf')] = 0
-SQw_err_fun = interp2d(Q, E, SQw_err_zero)
-# Use the largest step size from the E data for the uniform step size
-E_step = max([E[i] - E[i-1] for i in np.arange(len(E) - 1) + 1]) / 2
-Q_step = min([Q[i] - Q[i-1] for i in np.arange(len(Q) - 1) + 1])
-# Currently forced to start from E = 0.0 due to limitations of SQw calculation
-E_uniform = np.arange(E[0], E[-1], E_step)
-Q_uniform = np.arange(Q[0], Q[-1], Q_step)
-SQw_uniform = np.transpose(SQw_fun(Q_uniform, E_uniform))
-SQw_err_uniform = np.transpose(SQw_err_fun(Q_uniform, E_uniform))
-SQw_err_uniform[SQw_err_uniform == 0.] = np.float('inf')
-# copy the hacked the E, Q and SQw value back to the control.observable
-control.observable_pairs[0].exp_obs.independent_variables = {'E':E_uniform,
-                                                             'Q':Q_uniform}
-control.observable_pairs[0].exp_obs._dependent_variables = {'SQw':SQw_uniform}
-control.observable_pairs[0].exp_obs._errors = {'SQw':SQw_err_uniform}
-control.observable_pairs[0].MD_obs.independent_variables = {'E':E_uniform,
-                                                            'Q':Q_uniform}
+# copy the updated E values, and Q values back to the control.observable
+control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
+control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
