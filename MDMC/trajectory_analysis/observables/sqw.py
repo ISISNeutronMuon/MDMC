@@ -340,6 +340,27 @@ class AbstractSQw(Observable):
 
         return h_bar * 1e18 * np.pi * np.arange(nE) / (nE * dt)
 
+    def calculate_dt(self):
+
+        """
+        Calculates ``dt`` from the ``Trajectory`` times
+
+        Parameters
+        ----------
+        nE : int
+            The number of ``E`` values to be calculated
+        dt : float
+            The step size of the time in ``fs``
+
+        Returns
+        -------
+        numpy.ndarray
+            An ``array`` of `float` specifying the energy in units of ``meV``
+        """
+
+        nE = len(self.E)
+        return h_bar * 1e18 * np.pi * (nE - 1) / (nE * self.E[-1])
+
     def calculate_FQt(self):
 
         """

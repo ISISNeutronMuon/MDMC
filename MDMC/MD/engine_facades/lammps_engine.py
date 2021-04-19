@@ -405,7 +405,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe = LAMMPSUniverse(self.universe, self.lmp, **settings)
         self._saved_config = None
 
-    def setup_simulation(self, **settings):
+    def setup_simulation(self, traj_step: int, **settings):
 
         """
         Sets simulation parameters in LAMMPS, such as the thermodynamic
@@ -417,8 +417,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Passed to ``LAMMPSSimulation``
         """
 
-        self.lmp_simulation = LAMMPSSimulation(self.universe, self.lmp,
-                                               **settings)
+        self.lmp_simulation = LAMMPSSimulation(self.universe, self.traj_step,
+                                               self.lmp, **settings)
 
     def minimize(self, n_steps, **settings):
 
@@ -1419,14 +1419,14 @@ class LAMMPSSimulation(PyLammpsAttribute):
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
 
-    def __init__(self, universe, lmp=None, **settings):
+    def __init__(self, universe, traj_step: int, lmp=None, **settings):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
         self.ensemble = Ensemble(self.lmp, **settings)
         self.temperature = settings.get('temperature')
         self.time_step = settings.get('time_step', 1.0)
-        self.traj_step = settings['traj_step']
+        self.traj_step = traj_step
 
         self.skin = settings.get('skin', 2.0)
         self.neighbor_steps = settings.get('neighbor_steps', 1)

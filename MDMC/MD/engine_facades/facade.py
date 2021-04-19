@@ -56,7 +56,7 @@ class MDEngine(ABC):
         pass
 
     @abstractmethod
-    def setup_simulation(self, **settings):
+    def setup_simulation(self, traj_step:int, **settings):
 
         """
         Sets the options required to perform a simulation on a setup

@@ -3,15 +3,18 @@
 from copy import deepcopy
 
 import numpy as np
+from numpy.testing import assert_allclose
 import pandas as pd
 from typing import List
 
+from MDMC.common.constants import h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
+from MDMC.trajectory_analysis.observables.obs import Observable
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -114,6 +117,7 @@ class Control:
                                                              dset['reader'],
                                                              dset['file_name'])
             MD_observable = self._create_empty_observable(exp_observable)
+            self._validate_energy(MD_observable)
 
             auto_scale = dset.get('auto_scale', False)
             rescale_factor = dset.get('rescale_factor')
@@ -388,3 +392,40 @@ class Control:
         """
 
         raise NotImplementedError
+
+
+    def _validate_energy(self, obs: Observable):
+
+        """
+        Calculates the energy spacing of the ``Simulation`` and asserts that it
+        is the same as that of the experiment. If not, it includes the time
+        seperation required in the error. If the ``obs`` does not have the
+        relevant attributes, we pass.
+
+        Parameters
+        ----------
+        obs : Observable
+            ``Observable`` to validate
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+        """
+
+        dt = self.simulation.traj_step * self.simulation.time_step
+        try:
+            energy = obs.E
+            assert_allclose(obs.calculate_E(len(energy), dt),
+                            energy,
+                            rtol=1e-5,
+                            err_msg=("Experimental E values are not consistent"
+                                     " with the `Simulation`. For the "
+                                     "experimental data provided, the product "
+                                     "of `time_step` and `traj_step` must be "
+                                     "{}".format(obs.calculate_dt())))
+        except AttributeError:
+            pass
