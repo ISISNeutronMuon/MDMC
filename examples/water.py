@@ -1,5 +1,7 @@
 """
 An example MDMC script for optimizing spce parameters for water at 263 K
+
+Water data provided by Bertil Halle. Ref: J. Chem. Phys. 134, 144508 (2011)
 """
 
 import numpy as np
