@@ -15,7 +15,6 @@ import MDMC.MD.structural_units as su
 
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
-UNIVERSE_SHAPE = sim.Shape.cubic
 
 H1_POSITION = (0., 0., 0.)
 H2_POSITION = (0.151390, 0., 0.)
@@ -35,7 +34,7 @@ SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
 @pytest.fixture
 def universe():
 
-    return sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
+    return sim.Universe(UNIVERSE_DIMENSIONS)
 
 @pytest.fixture
 def atom():
@@ -59,7 +58,7 @@ def water_molecule(atom):
 @pytest.fixture
 def water_SPCE_universe(water_molecule):
 
-    water_universe = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
+    water_universe = sim.Universe(UNIVERSE_DIMENSIONS)
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
@@ -108,11 +107,10 @@ def solvated_universe():
 
 def test_create_universe(universe):
 
-    assert UNIVERSE_SHAPE == universe.shape
     npt.assert_array_equal(UNIVERSE_DIMENSIONS, universe.dimensions)
 
-    universe_equal = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
-    universe_unequal = sim.Universe((9., 9., 9.), UNIVERSE_SHAPE)
+    universe_equal = sim.Universe(UNIVERSE_DIMENSIONS)
+    universe_unequal = sim.Universe((9., 9., 9.))
     assert universe == universe
     assert universe == universe_equal
     assert universe != universe_unequal
@@ -125,7 +123,6 @@ def test_universe_stdout(capsys):
     stdout = capsys.readouterr().out
     assert stdout == ('Universe created with:\n'
                       '  Dimensions       [18.62, 18.62, 18.62]\n'
-                      '  Shape                            cubic\n'
                       '  Force field                       None\n'
                       '  Number of atoms                      0\n'
                       '\n'
@@ -832,7 +829,7 @@ def test_universe_multiple_solvers(kspace_solver):
     passed when initializing a Universe
     """
 
-    uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
+    uni = sim.Universe(UNIVERSE_DIMENSIONS,
                        electrostatic_solver=kspace_solver,
                        dispersive_solver=kspace_solver)
     assert uni.electrostatic_solver == kspace_solver
@@ -848,13 +845,13 @@ def test_universe_multiple_solvers_error(kspace_solver):
     """
 
     with pytest.raises(ValueError):
-        uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
+        uni = sim.Universe(UNIVERSE_DIMENSIONS,
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver)
-        uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
+        uni = sim.Universe(UNIVERSE_DIMENSIONS,
                            kspace_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
-        uni = sim.Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE,
+        uni = sim.Universe(UNIVERSE_DIMENSIONS,
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver,
                            dispersive_solver=kspace_solver)
