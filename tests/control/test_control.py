@@ -7,6 +7,7 @@ import pytest
 from typing import List
 
 from MDMC.control import control
+from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
@@ -289,6 +290,78 @@ def test_control_scaling_warning(simulation, exp_datasets, capsys):
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
 
+def mock_nonuniform_observable() -> SQw:
+    """
+    A mock ``SQw`` ``Observable`` for testing purposes with a non-uniform grid of Q and E points.
+
+    Returns
+    -------
+    ``SQw``
+        A mocked ``SQw`` object.
+    """
+    observable = SQw()
+    observable._origin='experiment'
+    E_array = np.array([0., 0.24, 0.5, 0.75, 1.0])
+    Q_array = np.array([1., 2., 2.9, 4.])
+    SQw_array = np.array([[E+Q for Q in Q_array] for E in E_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    observable.independent_variables = {'E': E_array, 'Q': Q_array}
+    observable._dependent_variables = {'SQw': SQw_array}
+    observable._errors = {'SQw': SQw_err_array}
+    return observable
+
+def mock_uniform_observable() -> SQw:
+    """
+    A mock ``SQw`` ``Observable`` for testing purposes with a uniform grid of Q and E points.
+
+    Returns
+    -------
+    ``SQw``
+        A mocked ``SQw`` object.
+    """
+    observable = SQw()
+    observable._origin = 'experiment'
+    E_array = np.array([0., 0.25, 0.5, 0.75, 1.0])
+    Q_array = np.array([1., 2., 3., 4.])
+    SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    observable.independent_variables = {'E': E_array, 'Q': Q_array}
+    observable._dependent_variables = {'SQw': SQw_array}
+    observable._errors = {'SQw': SQw_err_array}
+    return observable
+
+def test_control_is_data_uniform_false():
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observable.
+    """
+    expected = False
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._is_data_uniform(mock_nonuniform_observable())
+    assert expected == observed
+
+def test_control_is_data_uniform_true():
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
+    """
+    expected = True
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._is_data_uniform(mock_uniform_observable())
+    assert expected == observed
+
+def test_control_make_data_uniform():
+    """
+    Tests that the Control._make_data_uniform() method correctly makes the mocked non-uniform observable uniform.
+    """
+    expected = mock_uniform_observable()
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._make_data_uniform(mock_nonuniform_observable())
+    assert np.allclose(expected.E, observed.E, atol=1e-5)
+    assert np.allclose(expected.Q, observed.Q, atol=1e-5)
+    assert np.allclose(expected.SQw, observed.SQw, atol=1e-5)
+    assert np.allclose(expected.SQw_err, observed.SQw_err, atol=1e-5)
 
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
 def test_control_no_MD_steps(simulation, exp_datasets, traj_step):
