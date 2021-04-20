@@ -192,3 +192,23 @@ class Observable(ABC):
         """
 
         raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def dependent_variables_shape(self):
+        """
+        The shape of the dependent variables with respect to the independent variables, explicitly if
+        np.shape(dependent_variable1)=(np.size(independent_variable1), np.size(independent_variable2), ...)
+        then the relevant entry in the returned dict should be:
+        {'dependent_variable1': [independent_variable1, independent_variable2, ...]}
+
+        The purpose of this method is to ensure that all ``Observable``s of a particular type are created with
+         'dependent_variables' that are consistent regardless of how they were created (e.g. by different ``Reader``s).
+
+        Return
+        ------
+        dict
+            The np.shape of the dependent variables
+        """
+
+        raise NotImplementedError

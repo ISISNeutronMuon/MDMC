@@ -606,6 +606,21 @@ class AbstractSQw(Observable):
         # Broadcast the window so that it is applied for all Q values
         return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt
 
+    @property
+    def dependent_variables_shape(self):
+        """
+        The shape of the 'SQw' dependent variable in terms of 'Q' and 'E':
+        np.shape(self.SQw)=(np.size(self.E), np.size(self.Q))
+
+        The purpose of this method is to ensure consistency between different readers/methods which create ``SQw``
+        objects.
+
+        Return
+        ------
+        dict
+            The shape of the SQw dependent variable
+        """
+        return {'SQw': ['E', 'Q']}
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
 class SQw(AbstractSQw):

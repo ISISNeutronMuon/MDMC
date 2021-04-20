@@ -720,3 +720,16 @@ class PairDistributionFunction(Observable):
 
         return {element:element_list.count(element) for element
                 in unique_elements}
+
+    @property
+    def dependent_variables_shape(self):
+        """
+        The shape of the 'PDF' dependent variable in terms of 'r'':
+        np.shape(self.PDF)=(np.size(self.r))
+
+        Return
+        ------
+        dict
+            The shape of the PDF dependent variable
+        """
+        return {'PDF': ['r']}
