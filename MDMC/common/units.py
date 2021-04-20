@@ -49,9 +49,11 @@ class Unit(str):
     ----------
     string : str
         The unit, which can contain ``/`` to specify divisors and ``^`` to
-        specify powers. It should not contain `int` which are not used to
-        specifying powers (e.g. ``1 / Ang``).  It cannot not contain negative
-        powers (e.g. ``Ang ^ -1``).
+        specify powers. It can contain `int` which are used to specify order of
+        magnitude (e.g. ``10^6 Pa``).  It can also contain negative powers, but
+        there must not be a space between the negative sign and the number
+        (e.g. ``Ang ^ -1`` NOT ``Ang ^ - 1``). Brackets and parentheses are not
+        supported, and any of the characters ``[]()`` will be ignored.
     components : defaultdict(list), optional
         Sets the ``components`` attribute (see Attributes).  Default is `None`.
 
@@ -71,7 +73,7 @@ class Unit(str):
 
     >>> velocity_unit = Unit('m / s')
 
-    Units raised to a positive power can be set with ``^``::
+    Units raised to a power can be set with ``^``::
 
     >>> volume_unit = Unit('Ang ^ 3')
 
@@ -79,9 +81,21 @@ class Unit(str):
 
     >>> force_unit = Unit('kg m / s ^ 2')
 
-    To set an inverse unit, the power operation must be applied to a ``Unit``::
+    To set an inverse unit, the power operation can be applied to a ``Unit``::
 
     >>> frequency = Unit('s') ** -1
+
+    Or set with ``^`` within the string::
+
+    >>> frequency = Unit('s ^ -1')
+
+    Or with ``/`` within the string::
+
+    >>> frequency = Unit('1 / s')
+
+    Orders of magnitude can also be included::
+
+    >>> pressure = Unit('10 ^ 6 Pa')
 
     Attributes
     ----------
@@ -93,6 +107,10 @@ class Unit(str):
         ``numerator`` and this is the ``Unit`` string. If it a combined ``Unit``
         (created by either ``__mul__``, ``__div__`` or ``__pow__``) then the
         ``Unit`` objects which combined to form it make up the ``components``.
+    conversion_factor : float
+        The factor by which to multiply a value in order to express it in
+        system units. For example ``Unit('ps').conversion_factor`` is
+        ``1000.`` as the system units are femtoseconds.
     """
 
     def __new__(cls, string, components=None):
@@ -101,6 +119,12 @@ class Unit(str):
             return None
         if isinstance(string, Unit):
             return string
+
+        # Remove square brackets and parentheses as these are not supported
+        unsupported_chars = ['[', ']', '(', ')']
+        for char in unsupported_chars:
+            string = string.replace(char, '')
+
         unit = super().__new__(cls, string)
         if not components:
             components = defaultdict(list)
@@ -203,6 +227,47 @@ class Unit(str):
                 and self.components['numerator'] == [self]):
             return True
         return False
+
+    @property
+    def conversion_factor(self):
+
+        """
+        Calculates the factor by which a value with this ``Unit`` should be
+        multiplied in order to express it in system units. This takes into
+        account any orders of magnitude and compound units. The
+        ``conversion_factor`` for a ``Unit`` composed only of system units is
+        therefore always 1.
+
+        Returns
+        -------
+        `float`
+            The conversion factor to system units for the relevant property.
+        """
+
+        factor = 1.
+        factors_dict = create_units(CODATA_VERSION)
+        components = self.components
+        numerator = components['numerator']
+        denominator = components['denominator']
+
+        try:
+            for unit in numerator:
+                try:
+                    factor *= int(str(unit))
+                except ValueError:
+                    factor *= factors_dict[str(unit)]
+
+            for unit in denominator:
+                try:
+                    factor /= int(str(unit))
+                except ValueError:
+                    factor /= factors_dict[str(unit)]
+
+        except KeyError as error:
+            raise KeyError('Unknown unit {} provided, cannot convert to system'
+                           ' units'.format(str(unit))) from error
+
+        return factor
 
     def _calculate_components(self, other, op):
 
@@ -340,14 +405,15 @@ class Unit(str):
 
             Returns
             -------
-            `list`
-                Contains all ``base`` ``Unit``
+            `tuple` of `list`
+                Contains all ``base`` ``Unit``s that have postive powers and
+                negative powers respectively
 
             Example
             -------
-            Parse ``Ang ^ 2 mol kJ^2``::
+            Parse ``Ang ^ 2 mol kJ^-2``::
                 >>> parse_powers('Ang ^ 2 mol kJ^2')
-                [Unit('Ang'), Unit('Ang'), Unit('mol)', Unit('kJ'), Unit('kJ')]
+                [Unit('Ang'), Unit('Ang'), Unit('mol)'], [Unit('kJ'), Unit('kJ')]
             """
 
             if '^' in string:
@@ -358,30 +424,42 @@ class Unit(str):
             # Strip out spaces
             strip = list(filter(lambda x: x != '', splt_space))
             parsed = [Unit(strip[0])]
-            # For all elements apart from the first, determine it element is a
-            # digit. If so, append n-1 copies of the previous unit, where n is
-            # the integer value of the element. If not, append a Unit object
+            inverse_parsed = []
+            # For all elements apart from the first, determine it element is an
+            # int. If so, and it is positive, append n-1 copies of the previous
+            # unit, where n is the integer value of the element. If it is
+            # negative, remove the previous element from the numerator and
+            # instead add n copies to the denominator. If n is zero, simply
+            # remove the element. If not an int, append a Unit object
             # initialized from the element (which should be a string specifying)
             # a unit
             for i in range(1, len(strip)):
                 element = strip[i]
-                if element.isdigit():
-                    for _ in range(int(element) - 1):
-                        parsed.append(Unit(strip[i-1]))
-                else:
+                try:
+                    exponent = int(element)
+                    if exponent > 0:
+                        for _ in range(exponent - 1):
+                            parsed.append(parsed[-1])
+                    else:
+                        base = parsed.pop()
+                        for _ in range(- exponent):
+                            inverse_parsed.append(base)
+                except ValueError:
                     parsed.append(Unit(element))
-            return parsed
+            return parsed, inverse_parsed
 
         # Start by splitting the compound unit into a numerator and denominator
         if '/' in unit_string:
             num_string, denom_string = unit_string.split('/')
-            denom = parse_powers(denom_string)
+            denom, inverse_denom = parse_powers(denom_string)
         else:
             num_string = unit_string
-            denom = []
-        num = parse_powers(num_string)
+            denom, inverse_denom = [], []
+        num, inverse_num = parse_powers(num_string)
 
-        return num, denom
+        # Combine the numerator with elements from the denominator that had
+        # negative powers, and vice versa 
+        return num + inverse_denom, denom + inverse_num
 
 # Define the unit system used in MDMC
 SYSTEM = {
@@ -428,12 +506,16 @@ def create_units(codata_version):
     units['cm'] = units['Ang'] * 1e8
     # 1 nm = 1e1 Ang
     units['nm'] = units['Ang'] * 1e1
+    # 1 AA = 1 Ang
+    units['AA'] = units['Ang']
 
     # Area
     # 1 barn = 1e-28 m^2 = 1e-8 Ang^2
     units['barn'] = units['Ang'] * units['Ang'] * 1e8
 
     # Time
+    # 1 s = 1e15 fs
+    units['s'] = units['fs'] * 1e15
     # 1 ns = 1e6 fs
     units['ns'] = units['fs'] * 1e6
     # 1 ns = 1e3 fs
