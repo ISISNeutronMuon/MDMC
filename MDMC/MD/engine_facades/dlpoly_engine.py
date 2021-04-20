@@ -9,24 +9,17 @@ Notes
 
 """
 
-from collections import defaultdict, namedtuple
 from copy import copy
-from itertools import chain, combinations, count, product, tee
+from itertools import tee
 import logging
-from random import randint
-from tempfile import NamedTemporaryFile
 
-import dlpoly
+#import dlpoly
 from mpi4py import MPI
-import numpy as np
 
 from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    repr_decorator
+from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structural_units import Atom, BondedInteraction
-from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
-    Trajectory
+from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 LOGGER = logging.getLogger(__name__)
