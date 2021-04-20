@@ -94,6 +94,25 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @property
+    def max_parameter_change(self):
+
+        """
+        Maximum factor by which a Parameter can change
+
+        Returns
+        -------
+        float
+            Maximum ``Parameter`` value change
+        """
+
+        return self._max_parameter_change
+
+    @max_parameter_change.setter
+    def max_parameter_change(self, value):
+
+        self._max_parameter_change = value
+
+    @property
     def history(self):
 
         """
