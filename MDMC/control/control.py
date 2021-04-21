@@ -13,7 +13,6 @@ from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer, FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
-from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 # Define the current limitations on data structure for each ``type`` of ``Observable``. The dictionary keys are
@@ -447,13 +446,13 @@ class Control:
         for var_key, var_data in observable.independent_variables.items():
             uniform_data = np.linspace(min(var_data), max(var_data), num=len(var_data))
             is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-            uniformity_dict[var_key] = [is_uniform, min(var_data) == 0]
+            uniformity_dict[var_key] = [is_uniform, var_data[0] == 0]
         return uniformity_dict
 
     def _make_data_uniform(self, observable: Observable, uniformity_check: dict = None) -> Observable:
         """
         Takes an ``Observable`` and returns an Observable with its values of the variables interpolated onto a
-        uniform grid. Currently limited to ``Observables`` with 2D ``dependent_variables`` (i.e. SQW).
+        uniform grid. Currently limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
         Optionally takes a dictionary ('uniformity_check`) as input that specifies if the
         ``independent_variables`` of the ``Observable`` are currently uniform or start at zero; this dictionary gets
         compared to the current limitations of MDMC to determine which variables need to be made uniform and/or made to
@@ -463,7 +462,7 @@ class Control:
         ----------
         observable : Observable
             An ``Observable`` for which the independent variables need to be made uniform / to start at zero. Currently
-            limited to ``SQw`` ``Observables``.
+            limited to ``Observables`` for which the ``dependent_variables`` are two-dimensional.
         uniformity_check : dict
             A dictionary of the format {'variable': [bool, bool]}, where the two booleans specify if the
             independent 'variable' is uniform and starts at zero, respectively.
@@ -503,8 +502,8 @@ class Control:
             # determine the correct order of independent variables used in the interpolation
             var_shape = observable.dependent_variables_shape
             # note: if x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]; then np.shape(z)=(np.size(y), np.size(x)),
-            # so because observable.dependent_variables_shape gives the order of np.shape(depedent_variable) the
-            # order of the x (Q) and y (E) data is the following:
+            # so because observable.dependent_variables_shape gives the order of np.shape(dependent_variable) the
+            # order of the x and y data is the following:
             x_data = observable.independent_variables[var_shape[var_key][1]]
             y_data = observable.independent_variables[var_shape[var_key][0]]
             data_interpol = interp2d(x_data, y_data, data)
