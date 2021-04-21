@@ -611,6 +611,7 @@ class AbstractSQw(Observable):
         """
         The shape of the 'SQw' dependent variable in terms of 'Q' and 'E':
         np.shape(self.SQw)=(np.size(self.E), np.size(self.Q))
+        note: if x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]; then np.shape(z)=(np.size(y), np.size(x))
 
         The purpose of this method is to ensure consistency between different readers/methods which create ``SQw``
         objects.

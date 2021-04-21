@@ -428,8 +428,8 @@ class Control:
 
     def _is_data_uniform(self, observable: Observable) -> dict:
         """
-        Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and (if
-        required) checks if they start at zero.
+        Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
+        they start at zero.
 
         Parameters
         ----------
@@ -444,10 +444,10 @@ class Control:
             zero.
         """
         uniformity_dict = {}
-        for key, value in observable.independent_variables:
-            uniform_data = np.linspace(min(value), max(value), num=len(value))
-            is_uniform = np.allclose(value, uniform_data, rtol=1e-5)
-            uniformity_dict[key] = [is_uniform, min(value) == 0]
+        for var_key, var_data in observable.independent_variables.items():
+            uniform_data = np.linspace(min(var_data), max(var_data), num=len(var_data))
+            is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
+            uniformity_dict[var_key] = [is_uniform, min(var_data) == 0]
         return uniformity_dict
 
     def _make_data_uniform(self, observable: Observable, uniformity_check: dict = None) -> Observable:
@@ -455,33 +455,38 @@ class Control:
         Takes an ``Observable`` and returns an Observable with its values of the variables interpolated onto a
         uniform grid. Currently limited to ``Observables`` with 2D ``dependent_variables`` (i.e. SQW).
         Optionally takes a dictionary ('uniformity_check`) as input that specifies if the
-        ``independent_variables`` are uniform or start at zero; this dictionary gets compared to the current
-        limitations of MDMC to determine which variables need to be made uniform/to start at zero.
+        ``independent_variables`` of the ``Observable`` are currently uniform or start at zero; this dictionary gets
+        compared to the current limitations of MDMC to determine which variables need to be made uniform and/or made to
+        start at zero.
 
         Parameters
         ----------
         observable : Observable
-            An ``Observable`` for which to interpolate the values of its variables. Currently limited to ``SQw``
-            ``Observables``.
+            An ``Observable`` for which the independent variables need to be made uniform / to start at zero. Currently
+            limited to ``SQw`` ``Observables``.
         uniformity_check : dict
             A dictionary of the format {'variable': [bool, bool]}, where the two booleans specify if the
-            independent variable is uniform and starts at zero, respectively.
+            independent 'variable' is uniform and starts at zero, respectively.
 
         Returns
         -------
-        ``SQw``
+        ``Observable``
+            Returns a copy of the passed ``Observable`` with the independent variables put onto uniform grid (for the
+            variables where that is necessary) and the dependent variables interpolated onto the same grid
         """
         observable = observable
+        # determine which independent variables are uniform/start at zero if not know
         if uniformity_check is None:
             uniformity_check = self._is_data_uniform(observable)
         observable_name = observable.name
-        # initialise a helper dictionary to hold the data points for the uniform independent_variables
+        # initialise a helper dictionary to hold the data points for the uniform independent variables
         indep_var_uniform = {}
-        # loop through all independent_variables and make them uniform if needed
-        for var_key, var_uniformity in uniformity_check:
-            # check if the independent_variable has requirements on uniformity or starting at zero and if these are
+        # loop through all independent variables and make them uniform if needed
+        for var_key, var_uniformity in uniformity_check.items():
+            # check if the independent variable has requirements on uniformity or starting at zero and if these are
             # satisfied already
-            if var_key in Uniformity_requirements[observable_name] and var_uniformity != Uniformity_requirements[observable_name]
+            if var_key in Uniformity_requirements[observable_name] and \
+                    var_uniformity != Uniformity_requirements[observable_name]:
                 data = observable.independent_variables[var_key]
                 if Uniformity_requirements[observable_name][var_key][1]:
                     minimum = 0
@@ -494,22 +499,24 @@ class Control:
                 indep_var_uniform[var_key] = observable.independent_variables[var_key]
 
         # loop through the dependent variables and interpolate them
-        for var_key, data in observable.dependent_variables:
+        for var_key, data in observable.dependent_variables.items():
             # determine the correct order of independent variables used in the interpolation
             var_shape = observable.dependent_variables_shape
-            # note that we are using the (potentially) non-uniform data points for the interpolation function
-            E_data = observable.independent_variables[var_shape[0]]
-            Q_data = observable.independent_variables[var_shape[1]]
-            data_interpol = interp2d(Q_data, E_data, data)
-            Q_uniform = indep_var_uniform[var_shape[0]]
-            E_uniform = indep_var_uniform[var_shape[1]]
-            uniform_data = np.transpose(data_interpol(Q_uniform, E_uniform))
+            # note: if x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]]; then np.shape(z)=(np.size(y), np.size(x)),
+            # so because observable.dependent_variables_shape gives the order of np.shape(depedent_variable) the
+            # order of the x (Q) and y (E) data is the following:
+            x_data = observable.independent_variables[var_shape[var_key][1]]
+            y_data = observable.independent_variables[var_shape[var_key][0]]
+            data_interpol = interp2d(x_data, y_data, data)
+            x_uniform = indep_var_uniform[var_shape[var_key][1]]
+            y_uniform = indep_var_uniform[var_shape[var_key][0]]
+            uniform_data = data_interpol(x_uniform, y_uniform)
             observable._dependent_variables[var_key] = uniform_data
             # repeat the interpolation for the errors
             err_data = observable.errors[var_key]
             err_data[err_data == np.float('inf')] = 0
-            err_interpol = interp2d(Q_data, E_data, err_data)
-            err_uniform = np.transpose(err_interpol(Q_uniform, E_uniform))
+            err_interpol = interp2d(x_data, y_data, err_data)
+            err_uniform = err_interpol(x_uniform, y_uniform)
             observable._errors[var_key] = err_uniform
         # finally, set the independent variables of the ``Observable`` to the uniform ones
         observable.independent_variables = indep_var_uniform
