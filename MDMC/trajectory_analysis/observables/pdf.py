@@ -736,15 +736,15 @@ class PairDistributionFunction(Observable):
 
     @property
     def uniformity_requirements(self):
-    """
-    # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
-    # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
+        """
+        # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
+        # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
 
-    Return
-    ------
-    dict
-        Dictionary of uniformity restrictions for 'r' represented as booleans
-    """
+        Return
+        ------
+        dict
+            Dictionary of uniformity restrictions for 'r' represented as booleans
+        """
 
         return {'r': [True, False]}
 

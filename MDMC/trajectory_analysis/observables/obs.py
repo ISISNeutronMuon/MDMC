@@ -220,18 +220,18 @@ class Observable(ABC):
     @property
     @abstractmethod
     def uniformity_requirements(self):
-    """
-    # Represents the current limitations on the ``independent_variables`` of the ``Observable``. It captures if the
-    # ``independent_variables`` are required to be uniform or to start at zero. The keys of the returned dictionary
-    # should be the variables that have such a restriction, with the associated dictionary values being a list of
-    # booleans to specify if the variable needs to be uniform or start at zero (in that order).
-    # Variables without any requirements do not need to be included, but can be included.
-    # If there are no uniformity requirements it is okay to return 'None'.
+        """
+        # Represents the current limitations on the ``independent_variables`` of the ``Observable``. It captures if the
+        # ``independent_variables`` are required to be uniform or to start at zero. The keys of the returned dictionary
+        # should be the variables that have such a restriction, with the associated dictionary values being a list of
+        # booleans to specify if the variable needs to be uniform or start at zero (in that order).
+        # Variables without any requirements do not need to be included, but can be included.
+        # If there are no uniformity requirements it is okay to return 'None'.
 
-    Return
-    ------
-    dict
-        Dictionary of independent variables with their uniformity restrictions represented as booleans
-    """
+        Return
+        ------
+        dict
+            Dictionary of independent variables with their uniformity restrictions represented as booleans
+        """
 
         raise NotImplementedError
