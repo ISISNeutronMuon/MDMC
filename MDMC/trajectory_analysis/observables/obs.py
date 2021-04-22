@@ -195,9 +195,9 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def dependent_variables_shape(self):
+    def dependent_variables_structure(self):
         """
-        The shape of the dependent variables with respect to the independent variables, explicitly if
+        The structure of the dependent variables with respect to the independent variables, explicitly if
         np.shape(dependent_variable1)=(np.size(independent_variable1), np.size(independent_variable2), ...)
         then the relevant entry in the returned dict should be:
         {'dependent_variable1': [independent_variable1, independent_variable2, ...]}
@@ -210,5 +210,24 @@ class Observable(ABC):
         dict
             The np.shape of the dependent variables
         """
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def uniformity_requirements(self):
+    """
+    # Represents the current limitations on the ``independent_variables`` of the ``Observable``. It captures if the
+    # ``independent_variables`` are required to be uniform or to start at zero. The keys of the returned dictionary
+    # should be the variables that have such a restriction, with the associated dictionary values being a list of
+    # booleans to specify if the variable needs to be uniform or start at zero (in that order).
+    # Variables without any requirements do not need to be included, but can be included.
+    # If there are no uniformity requirements it is okay to return 'None'.
+
+    Return
+    ------
+    dict
+        Dictionary of independent variables with their uniformity restrictions represented as booleans
+    """
 
         raise NotImplementedError

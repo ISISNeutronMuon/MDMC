@@ -607,7 +607,7 @@ class AbstractSQw(Observable):
         return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt
 
     @property
-    def dependent_variables_shape(self):
+    def dependent_variables_structure(self):
         """
         The shape of the 'SQw' dependent variable in terms of 'Q' and 'E':
         np.shape(self.SQw)=(np.size(self.E), np.size(self.Q))
@@ -621,7 +621,23 @@ class AbstractSQw(Observable):
         dict
             The shape of the SQw dependent variable
         """
-        return {'SQw': ['E', 'Q']}
+        return {'SQw': ['Q', 'E']}
+
+    @property
+    def uniformity_requirements(self):
+        """
+        # Captures the current limitations on the energy 'E' and reciprocal lattice points 'Q' within
+        # the dynamic structure factor ``Observables``. 'E' must be uniform and start at zero, whereas
+        # 'Q' must be uniform but does not need to start at zero.
+
+        Return
+        ------
+        dict
+            Dictionary of uniformity restrictions for 'E' and 'Q' represented as booleans
+        """
+
+        return {'E': [True, True], 'Q': [True, False]}
+
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
 class SQw(AbstractSQw):

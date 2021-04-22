@@ -15,12 +15,6 @@ from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 
-# Define the current limitations on data structure for each ``type`` of ``Observable``. The dictionary keys are
-# ``Observable`` types for which some of the independent variables have restrictions on them being uniform
-# (the first boolean in the list for each variable) or starting from zero (second boolean in the list)
-# The booleans are 'True' if there is a restrictions, e.g. for ``SQw`` ``Observables`` the energy 'E' needs to
-# be uniform and start at zero, whereas reciprocal points 'Q' only need to be uniform.
-Uniformity_requirements = {'SQw': {'E': [True, True], 'Q': [True, False]}, 'PDF': {'r': [True, False]}}
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps', 'settings')

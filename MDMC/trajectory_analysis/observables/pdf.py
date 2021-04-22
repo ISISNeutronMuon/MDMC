@@ -722,7 +722,7 @@ class PairDistributionFunction(Observable):
                 in unique_elements}
 
     @property
-    def dependent_variables_shape(self):
+    def dependent_variables_structure(self):
         """
         The shape of the 'PDF' dependent variable in terms of 'r'':
         np.shape(self.PDF)=(np.size(self.r))
@@ -733,3 +733,18 @@ class PairDistributionFunction(Observable):
             The shape of the PDF dependent variable
         """
         return {'PDF': ['r']}
+
+    @property
+    def uniformity_requirements(self):
+    """
+    # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
+    # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
+
+    Return
+    ------
+    dict
+        Dictionary of uniformity restrictions for 'r' represented as booleans
+    """
+
+        return {'r': [True, False]}
+
