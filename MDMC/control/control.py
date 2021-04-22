@@ -532,9 +532,10 @@ class Control:
             # interp2d(x, y, z)
             # where for example:
             # x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]];
-            # Note that in this case: np.shape(z)=(np.size(y), np.size(x)),
-            # Therefore because observable.dependent_variables_shape gives the order of np.shape(dependent_variable)
-            # the order of the x and y data arrays needs to be reversed:
+            # Note that indexing of numpy arrays is done from outer-most to inner-most index, i.e.
+            # z[0, 1] would give the array element corresponding to y[0] and x[1].
+            # Because observable.dependent_variables_structure gives the order of the indexing (or equivalently the
+            # np.shape) of the dependent_variables the order of the x and y data arrays needs to be reversed:
             x_data = observable.independent_variables[var_shape[var_key][1]]
             y_data = observable.independent_variables[var_shape[var_key][0]]
             data_interpol = interp2d(x_data, y_data, data)

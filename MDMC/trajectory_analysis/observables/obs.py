@@ -197,10 +197,14 @@ class Observable(ABC):
     @abstractmethod
     def dependent_variables_structure(self):
         """
-        The structure of the dependent variables with respect to the independent variables, explicitly if
-        np.shape(dependent_variable1)=(np.size(independent_variable1), np.size(independent_variable2), ...)
-        then the relevant entry in the returned dict should be:
+        The structure of the dependent variables with respect to the independent variables. Specifically,
+        the order in which the dependent variables are indexed with regards to the independent variables.
+        Example: if
+        dep_var1[indep_var1_index, indep_var2_index, ...] = data point for values of the independent_variables with
+        the stated indices then the relevant entry in the returned dict should be:
         {'dependent_variable1': [independent_variable1, independent_variable2, ...]}
+        Note that this would also correspond to numpy.shape of the dependent variable being:
+        np.shape(dependent_variable1)=(np.size(independent_variable1), np.size(independent_variable2), ...)
 
         The purpose of this method is to ensure that all ``Observable``s of a particular type are created with
          'dependent_variables' that are consistent regardless of how they were created (e.g. by different ``Reader``s).
