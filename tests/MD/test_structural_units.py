@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
-from MDMC.MD.simulation import Shape, Universe
+from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import (Atom, BoundingBox, Coulombic, Molecule,
                                       get_reduced_chemical_formula)
 
@@ -20,7 +20,6 @@ POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
 TEST_CHARGE_1 = 3.14
 TEST_CHARGE_2 = -2.71
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
-UNIVERSE_SHAPE = Shape.cubic
 
 
 @pytest.fixture
@@ -39,7 +38,7 @@ def universe():
     Initializes an empty universe object.
     """
 
-    return Universe(UNIVERSE_DIMENSIONS, UNIVERSE_SHAPE)
+    return Universe(UNIVERSE_DIMENSIONS)
 
 @pytest.fixture
 def atom_list():

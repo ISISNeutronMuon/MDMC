@@ -7,7 +7,21 @@ import pytest
 from typing import List
 
 from MDMC.control import control
+from MDMC.trajectory_analysis.observables.sqw import SQw
+from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
+
+
+class MockSimulation(Simulation):
+
+    """
+    Mock the ``Simulation`` so that we do not setup the MD engine so we can run
+    the tests without having an MD engine installed.
+    """
+
+    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
+        self.universe = universe
+        self.settings = settings
 
 
 class MockParameter:
@@ -52,6 +66,24 @@ def mock_update_engine_parameters(self):
 
 
 @pytest.fixture(scope="module")
+def simulation() -> callable:
+    """
+    Returns
+    -------
+    callable
+        Function which optionally accepts ``traj_step`` of type `int`, defaults
+        to `1`. Returns a ``MockedSimulation`` for testing.
+    """
+
+    uni = Universe(10.)
+
+    def _simulation(traj_step: int=1) -> MockSimulation:
+        return MockSimulation(uni, traj_step=traj_step)
+    
+    return _simulation
+
+
+@pytest.fixture(scope="module")
 def exp_datasets() -> callable:
     """
     Returns
@@ -83,7 +115,7 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
-def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
+def test_control_refine_stdout(simulation, exp_datasets, monkeypatch, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -107,7 +139,7 @@ def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
                         MockParameter('A', 1),
                         MockParameter('B', 34743.233E6)]
 
-    cont = control.Control(None, exp_datasets(), [], reset_config=False)
+    cont = control.Control(simulation(), exp_datasets(), [], reset_config=False)
     cont.minimizer = minim
     cont.refine(10)
     # Capture stdout using pytest fixure
@@ -137,7 +169,7 @@ def test_control_refine_stdout(exp_datasets, monkeypatch, capsys):
                       ' 3.134544  0.339834  1  3.474323e+10\n')
 
 
-def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
+def test_control_refine_stdout_auto_scale(simulation, exp_datasets, monkeypatch, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -162,7 +194,7 @@ def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
                     MockParameter('B', 34743.233E6)]
 
     datasets = exp_datasets(auto_scale=True)
-    cont = control.Control(None, datasets, [], reset_config=False)
+    cont = control.Control(simulation(), datasets, [], reset_config=False)
     cont.minimizer = minim
     cont.refine(10)
     # Capture stdout using pytest fixure
@@ -197,47 +229,47 @@ def test_control_refine_stdout_auto_scale(exp_datasets, monkeypatch, capsys):
                       ''.format(datasets[0]['file_name'], datasets[1]['file_name']))
 
 
-def test_control_no_scaling(exp_datasets):
+def test_control_no_scaling(simulation, exp_datasets):
     """
     Test that by default a rescale factor of `1.` is used.
     """
-    ctrl = control.Control(None, exp_datasets(), [], reset_config=False)
+    ctrl = control.Control(simulation(), exp_datasets(), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert not pair.auto_scale
 
 
-def test_control_rescale_factor(exp_datasets):
+def test_control_rescale_factor(simulation, exp_datasets):
     """
     Test that a manually specified ``rescale_factor`` is applied to the
     ``observable_pair``.
     """
-    ctrl = control.Control(None, exp_datasets(rescale_factor=0.5), [], reset_config=False)
+    ctrl = control.Control(simulation(), exp_datasets(rescale_factor=0.5), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
         assert not pair.auto_scale
 
 
-def test_control_auto_scale(exp_datasets):
+def test_control_auto_scale(simulation, exp_datasets):
     """
     Test that ``auto_scale`` is applied.
     """
-    ctrl = control.Control(None, exp_datasets(auto_scale=True), [], reset_config=False)
+    ctrl = control.Control(simulation(), exp_datasets(auto_scale=True), [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert pair.auto_scale
 
 
-def test_control_scaling_warning(exp_datasets, capsys):
+def test_control_scaling_warning(simulation, exp_datasets, capsys):
     """
     Test that when both ``rescale_factor`` and ``auto_scale`` specified then
     the latter is used and a warning is printed to explain this.
     """
     datasets = exp_datasets(rescale_factor=0.5, auto_scale=True)
-    ctrl = control.Control(None, datasets, [], reset_config=False)
+    ctrl = control.Control(simulation(), datasets, [], reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
@@ -257,3 +289,123 @@ def test_control_scaling_warning(exp_datasets, capsys):
                       '\n'
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
+
+
+def test_control_max_parameter_change():
+
+    """
+    Test that ``max_parameter_change`` is passed to the ``Minimizer``.
+    """
+
+    ctrl_default = control.Control(None, [], [], reset_config=False)
+    assert ctrl_default.minimizer.max_parameter_change == 0.01
+
+    ctrl = control.Control(None, [], [], reset_config=False,
+                           max_parameter_change=0.02)
+    assert ctrl.minimizer.max_parameter_change == 0.02
+
+
+def mock_nonuniform_observable() -> SQw:
+    """
+    A mock ``SQw`` ``Observable`` for testing purposes with a non-uniform grid of Q and E points.
+
+    Returns
+    -------
+    ``SQw``
+        A mocked ``SQw`` object.
+    """
+    observable = SQw()
+    observable._origin='experiment'
+    E_array = np.array([0., 0.24, 0.5, 0.75, 1.0])
+    Q_array = np.array([1., 2., 2.9, 4.])
+    SQw_array = np.array([[E+Q for Q in Q_array] for E in E_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    observable.independent_variables = {'E': E_array, 'Q': Q_array}
+    observable._dependent_variables = {'SQw': SQw_array}
+    observable._errors = {'SQw': SQw_err_array}
+    return observable
+
+def mock_uniform_observable() -> SQw:
+    """
+    A mock ``SQw`` ``Observable`` for testing purposes with a uniform grid of Q and E points.
+
+    Returns
+    -------
+    ``SQw``
+        A mocked ``SQw`` object.
+    """
+    observable = SQw()
+    observable._origin = 'experiment'
+    E_array = np.array([0., 0.25, 0.5, 0.75, 1.0])
+    Q_array = np.array([1., 2., 3., 4.])
+    SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    observable.independent_variables = {'E': E_array, 'Q': Q_array}
+    observable._dependent_variables = {'SQw': SQw_array}
+    observable._errors = {'SQw': SQw_err_array}
+    return observable
+
+def test_control_is_data_uniform_false():
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observable.
+    """
+    expected = False
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._is_data_uniform(mock_nonuniform_observable())
+    assert expected == observed
+
+def test_control_is_data_uniform_true():
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
+    """
+    expected = True
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._is_data_uniform(mock_uniform_observable())
+    assert expected == observed
+
+def test_control_make_data_uniform():
+    """
+    Tests that the Control._make_data_uniform() method correctly makes the mocked non-uniform observable uniform.
+    """
+    expected = mock_uniform_observable()
+    # create Control object without instantiating it to test one of its methods
+    cont = control.Control.__new__(control.Control)
+    observed = cont._make_data_uniform(mock_nonuniform_observable())
+    assert np.allclose(expected.E, observed.E, atol=1e-5)
+    assert np.allclose(expected.Q, observed.Q, atol=1e-5)
+    assert np.allclose(expected.SQw, observed.SQw, atol=1e-5)
+    assert np.allclose(expected.SQw_err, observed.SQw_err, atol=1e-5)
+
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_no_MD_steps(simulation, exp_datasets, traj_step):
+    """
+    Test that ``MD_steps`` defaults to the minimum required if not specified.
+    """
+
+    ctrl = control.Control(simulation(traj_step), exp_datasets(), [],
+                           reset_config=False)
+    assert ctrl.MD_steps == 373 * traj_step
+
+
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step):
+    """
+    Test that ``MD_steps`` is accepted when greater than the minimum required.
+    """
+
+    ctrl = control.Control(simulation(traj_step), exp_datasets(), [],
+                           reset_config=False, MD_steps=9325)
+    assert ctrl.MD_steps == 9325
+
+
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_MD_steps_rejected(simulation, exp_datasets, traj_step):
+    """
+    Test that ``MD_steps`` is rejected when greater than the minimum required.
+    """
+
+    with pytest.raises(ValueError):
+        control.Control(simulation(traj_step), exp_datasets(), [],
+                        reset_config=False, MD_steps=372)

@@ -111,3 +111,55 @@ def test_determine_components(input, base, numerator, denominator):
     assert t_unit.base == base
     assert t_unit.components['numerator'] == numerator
     assert t_unit.components['denominator'] == denominator
+
+
+@pytest.mark.parametrize("string, numerator, denominator",
+                         [('Ang ^ -3', [], ['Ang', 'Ang', 'Ang']),
+                          ('Ang^-3', [], ['Ang', 'Ang', 'Ang']),
+                          ('Ang^ -3', [], ['Ang', 'Ang', 'Ang']),
+                          ('Ang ^-3', [], ['Ang', 'Ang', 'Ang']),
+                          ('Ang^-1 / mol^-1', ['mol'], ['Ang']),
+                          ('e^-2 K J^-2', ['K'], ['e', 'e', 'J', 'J']),
+                          ('e^-2 K / J^-2', ['K', 'J', 'J'], ['e', 'e'])])
+def test_negative_powers(string, numerator, denominator):
+
+    """
+    Tests that the numerator and denominator components of a Unit are correctly
+    determined upon passing a string that contains negative powers
+    """
+
+    t_unit = Unit(string)
+    assert t_unit.components['numerator'] == numerator
+    assert t_unit.components['denominator'] == denominator
+
+
+@pytest.mark.parametrize("string, numerator, denominator",
+                         [('(Ang)', ['Ang'], []),
+                          ('[Ang]', ['Ang'], [])])
+def test_unsupported_characters(string, numerator, denominator):
+
+    """
+    Tests that the numerator and denominator components of a Unit are correctly
+    determined upon passing a string that contains unsupported characters
+    """
+
+    t_unit = Unit(string)
+    assert t_unit.components['numerator'] == numerator
+    assert t_unit.components['denominator'] == denominator
+
+
+@pytest.mark.parametrize("string, conversion_factor",
+                         [('Ang', 1.),
+                          ('nm', 10.),
+                          ('1 / nm', 0.1),
+                          ('10^3 nm', 10000.),
+                          ('10^3 nm / 10^-3 cm', 0.1)])
+def test_conversion_factor(string, conversion_factor):
+
+    """
+    Tests that the ``conversion_factor`` of a Unit is correctly determined upon
+    passing a string
+    """
+
+    t_unit = Unit(string)
+    assert t_unit.conversion_factor == conversion_factor

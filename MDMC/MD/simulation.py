@@ -24,8 +24,6 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 
 
 LOGGER = logging.getLogger(__name__)
-Shape = Enum('Shape', ['cubic', 'orthorhombic', 'infinite',
-                       'rhombic_dodecahedron', 'truncated_octahedron'])
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                  ', '.join(ForceFieldFactory.get_force_field_names())}
 
@@ -43,8 +41,6 @@ class Universe(AtomContainer):
     dimensions : numpy.ndarray, list, float
         Dimensions of the ``Universe``, in units of ``Ang``. A `float` can be
         used for a cubic universe.
-    shape : enum, optional
-        Member of the ``Shape`` enum. Default is Shape.cubic.
     force_field : ForceField, optional
         A force field to apply to the Universe. The force fields available are:
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
@@ -65,8 +61,6 @@ class Universe(AtomContainer):
 
     Attributes
     ----------
-    shape : enum
-        Member of the ``Shape`` enum.
     dimensions : numpy.ndarray, list, float
         Dimensions of the ``Universe`` in units of ``Ang``.
     configuration : Configuration
@@ -85,10 +79,9 @@ class Universe(AtomContainer):
         ``BondedInteractions``.
     """
 
-    def __init__(self, dimensions, shape=Shape.cubic, force_field=None,
-                 structures=None, **settings):
+    def __init__(self, dimensions, force_field=None, structures=None,
+                 **settings):
 
-        self.shape = shape
         self.dimensions = dimensions
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
@@ -118,17 +111,14 @@ class Universe(AtomContainer):
 
         self.constraint_algorithm = settings.get('constraint_algorithm')
 
-        LOGGER.info(r'%s created: {dimensions:%s, shape:%s}',
+        LOGGER.info(r'%s created: {dimensions:%s}',
                     self.__class__,
-                    self.dimensions,
-                    self.shape)
+                    self.dimensions)
 
         setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
-                                    [self.shape.name],
                                     [force_field],
                                     [len(self.configuration.atom_list)]],
                                     index=['  Dimensions',
-                                           '  Shape',
                                            '  Force field',
                                            '  Number of atoms'])
 
@@ -137,13 +127,12 @@ class Universe(AtomContainer):
 
     def __str__(self):
 
-        return ('{0} Universe with {1} atoms, {2} bonded interactions,'
-                ' {3} nonbonded interactions, and dimensions of {4}'.format(
-                    str(self.shape).split('.')[1],
-                    len(self.atom_list),
-                    len(self.bonded_interactions),
-                    len(self.nonbonded_interactions),
-                    self.dimensions))
+        return ('Universe with {0} atoms, {1} bonded interactions, {2} '
+                'nonbonded interactions, and dimensions of {3}'
+                ''.format(len(self.atom_list),
+                          len(self.bonded_interactions),
+                          len(self.nonbonded_interactions),
+                          self.dimensions))
 
     def __eq__(self, other):
         if id(other) == id(self):
@@ -190,17 +179,7 @@ class Universe(AtomContainer):
     def dimensions(self, dimensions):
 
         if isinstance(dimensions, float):
-            if self.shape == Shape.cubic:
-                self._dimensions = np.array([dimensions] * 3)
-            else:
-                msg = ('Only dimensions of cubic Universes can be specified'
-                       ' with a float.')
-                LOGGER.error('%s: {dimensions: %s, shape: %s} %s',
-                             self.__class__,
-                             dimensions,
-                             self.shape,
-                             msg)
-                raise TypeError(msg)
+            self._dimensions = np.array([dimensions] * 3)
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
                 self._dimensions = np.array(dimensions)

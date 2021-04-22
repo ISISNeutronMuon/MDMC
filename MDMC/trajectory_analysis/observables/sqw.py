@@ -95,6 +95,37 @@ class AbstractSQw(Observable):
         return self._errors
 
     @property
+    def minimum_frames(self):
+
+        """
+        The minimum number of ``Trajectory`` frames needed to calculate the
+        ``dependent_variables`` is the same as the number of energy steps
+
+        Returns
+        -------
+        int
+            The minimum number of frames
+        """
+
+        return len(self.E)
+
+    @property
+    def maximum_frames(self):
+
+        """
+        The maximum number of ``Trajectory`` frames that can be used to
+        calculate the ``dependent_variables`` is the same as the number
+        of energy steps
+
+        Returns
+        -------
+        int
+            The maximum number of frames
+        """
+
+        return len(self.E)
+
+    @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
 
@@ -133,7 +164,7 @@ class AbstractSQw(Observable):
         return None
 
     @property
-    @unit_decorator_getter(unit=units.ANGLE / units.Unit('ps'))
+    @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self):
 
         """
@@ -142,7 +173,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         array
-            1D array of angular frequency `float` in units of ``r``ad ps^-1``
+            1D array of angular frequency `float` in units of ``1 / ps``
         """
 
         return self.E / (h_bar * 1e15)

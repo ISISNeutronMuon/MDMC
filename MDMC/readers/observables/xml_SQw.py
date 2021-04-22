@@ -29,8 +29,12 @@ class XML_SQw(ObservableReader):
         self._tree = ET.parse(self.file)
         self._root = self._tree.getroot()
         self._root_dict = self.dict_from_element(self._root)
+
         n_Q = int(self._root_dict['n-q-points'])
         n_w = int(self._root_dict['n-omega-points'])
+
+        Q_unit = units.Unit(self._root_dict['q-unit'])
+        w_unit = units.Unit(self._root_dict['omega-unit'])
 
         # Local variable Q is used for setting self.Q after all children of
         # self._root have been parsed. This is required because a set cannot be
@@ -57,9 +61,15 @@ class XML_SQw(ObservableReader):
                     self.SQw.append(float(SQw))
                     self.SQw_err.append(float(child_dict['error']))
 
+        # Account for unit conversion after creating the variables
         self.Q = np.sort(np.array(list(Q)))
+        self.Q *= Q_unit.conversion_factor / self.Q.unit.conversion_factor
+
         self.w = np.sort(np.array(list(w)))
+        self.w *= w_unit.conversion_factor / self.w.unit.conversion_factor
+
         self.E = self.w * 1e15 * h_bar
+
         self.SQw = np.reshape(np.array(self.SQw), [n_w, n_Q])
         self.SQw_err = np.reshape(np.array(self.SQw_err), [n_w, n_Q])
 
@@ -104,6 +114,27 @@ class XML_SQw(ObservableReader):
         """
 
         return {"SQw":self.SQw_err}
+
+    @property
+    def w(self):
+
+        """
+        Get or set the energy transfer expressed in angular frequency, w, in
+        ``1 / ps``
+
+        Returns
+        -------
+        array
+            Energy transfer as angular frequency, w, in ``1 / ps``
+        """
+
+        return self._w
+
+    @w.setter
+    @unit_decorator(unit=units.Unit('ps') ** -1)
+    def w(self, value):
+
+        self._w = value
 
     @property
     def E(self):
