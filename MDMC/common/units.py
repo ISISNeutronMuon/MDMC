@@ -425,7 +425,7 @@ class Unit(str):
             strip = list(filter(lambda x: x != '', splt_space))
             parsed = [Unit(strip[0])]
             inverse_parsed = []
-            # For all elements apart from the first, determine it element is an
+            # For all elements apart from the first, determine if element is an
             # int. If so, and it is positive, append n-1 copies of the previous
             # unit, where n is the integer value of the element. If it is
             # negative, remove the previous element from the numerator and
@@ -518,7 +518,7 @@ def create_units(codata_version):
     units['s'] = units['fs'] * 1e15
     # 1 ns = 1e6 fs
     units['ns'] = units['fs'] * 1e6
-    # 1 ns = 1e3 fs
+    # 1 ps = 1e3 fs
     units['ps'] = units['fs'] * 1e3
 
     # Mass
