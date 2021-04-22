@@ -610,8 +610,7 @@ class AbstractSQw(Observable):
     def dependent_variables_structure(self):
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
-        Explicitly: we have that
-        self.SQw[Q_index, E_index] = data point for given indices of self.Q and self.E
+        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for given indices of self.Q and self.E
         It also means that:
         np.shape(self.SQw)=(np.size(self.E), np.size(self.Q))
 
