@@ -494,17 +494,17 @@ class Control:
         # check which independent_variables are currently uniform or start at zero
         uniformity_state = self._is_data_uniform(observable)
         # initialise helper list for independent_variables that need to be made uniform
-        vars_to_be_changed = []
+        indep_vars_to_be_changed = []
         # loop through requirements
-        for var_key, var_required in uniformity_required:
+        for var_key, var_required in uniformity_required.items():
             var_state = uniformity_state[var_key]
             # if there is a requirement and it is not satisfied (for either uniformity or zero-start) add the
             # variable to the list of variables that need to be changed
             if (var_required[0] and not var_state[0]) or (var_required[1] and not var_state[1]):
-                vars_to_be_changed.append(var_key)
+                indep_vars_to_be_changed.append(var_key)
 
         # if all uniformity requirements are already satisfied simply return the original observable
-        if not vars_to_be_changed:
+        if not indep_vars_to_be_changed:
             return observable
 
         # initialise a helper dictionary to hold the data points for the uniform independent variables
@@ -512,9 +512,9 @@ class Control:
         # loop through all independent variables
         for var_key, var_uniformity in uniformity_state.items():
             # check if the independent variable needs to be made uniform
-            if var_key in vars_to_be_changed:
+            if var_key in indep_vars_to_be_changed:
                 data = observable.independent_variables[var_key]
-                if Uniformity_requirements[observable_name][var_key][1]:
+                if uniformity_required[var_key][1]:
                     minimum = 0
                 else:
                     minimum = min(data)
@@ -526,21 +526,24 @@ class Control:
 
         # loop through the dependent variables and interpolate them
         for var_key, data in observable.dependent_variables.items():
-            # determine the correct order of independent variables used in the interpolation
+            # get the indexing order of independent variables within the dependent variable
             var_shape = observable.dependent_variables_structure
+            # determine the dimension of the dependent variable
+            var_dimension = data.ndim
+            if var_dimension != 2:
+                raise NotImplementedError('Only 2D data can currently be made uniform')
             # note: the interp2d interpolation function requires input of the form
             # interp2d(x, y, z)
             # where for example:
             # x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]];
             # Note that indexing of numpy arrays is done from outer-most to inner-most index, i.e.
             # z[0, 1] would give the array element corresponding to y[0] and x[1].
-            # Because observable.dependent_variables_structure gives the order of the indexing (or equivalently the
-            # np.shape) of the dependent_variables the order of the x and y data arrays needs to be reversed:
-            x_data = observable.independent_variables[var_shape[var_key][1]]
-            y_data = observable.independent_variables[var_shape[var_key][0]]
+            x_data = observable.independent_variables[var_shape[var_key][0]]
+            y_data = observable.independent_variables[var_shape[var_key][1]]
             data_interpol = interp2d(x_data, y_data, data)
-            x_uniform = indep_var_uniform[var_shape[var_key][1]]
-            y_uniform = indep_var_uniform[var_shape[var_key][0]]
+            # get the independent_variables that satisfy the uniformity requirements as created earlier
+            x_uniform = indep_var_uniform[var_shape[var_key][0]]
+            y_uniform = indep_var_uniform[var_shape[var_key][1]]
             uniform_data = data_interpol(x_uniform, y_uniform)
             observable._dependent_variables[var_key] = uniform_data
             # repeat the interpolation for the errors
