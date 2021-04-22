@@ -42,9 +42,9 @@ Ar_dispersion = Dispersion(universe,
 # same factor.
 simulation = Simulation(universe,
                         engine="lammps",
-                        time_step=10.0,
+                        time_step=10.18893,
                         temperature=120.,
-                        traj_step=25)
+                        traj_step=15)
 
 # Energy Minimization and equilibration
 simulation.minimize(n_steps=5000)
@@ -67,17 +67,8 @@ fit_parameters = set([p for p in universe.parameters if p.fixed is False])
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
-                  MD_steps=10000,
+                  MD_steps=555,
                   energy_resolution=8.)
-
-# Well's Argon file seems to have incorrectly labelled f as w, so correct
-# for this by multiplying E by 2pi
-exp_obs = control.observable_pairs[0].exp_obs
-Q = exp_obs.Q
-E = exp_obs.E * 2 * np.pi
-# copy the updated E values, and Q values back to the control.observable
-control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
-control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script

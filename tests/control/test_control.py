@@ -290,6 +290,21 @@ def test_control_scaling_warning(simulation, exp_datasets, capsys):
                       ''.format(datasets[0]['file_name'],
                                 datasets[1]['file_name']))
 
+
+def test_control_max_parameter_change():
+
+    """
+    Test that ``max_parameter_change`` is passed to the ``Minimizer``.
+    """
+
+    ctrl_default = control.Control(None, [], [], reset_config=False)
+    assert ctrl_default.minimizer.max_parameter_change == 0.01
+
+    ctrl = control.Control(None, [], [], reset_config=False,
+                           max_parameter_change=0.02)
+    assert ctrl.minimizer.max_parameter_change == 0.02
+
+
 def mock_nonuniform_observable() -> SQw:
     """
     A mock ``SQw`` ``Observable`` for testing purposes with a non-uniform grid of Q and E points.

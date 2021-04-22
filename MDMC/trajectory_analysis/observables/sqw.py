@@ -164,7 +164,7 @@ class AbstractSQw(Observable):
         return None
 
     @property
-    @unit_decorator_getter(unit=units.ANGLE / units.Unit('ps'))
+    @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self):
 
         """
@@ -173,7 +173,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         array
-            1D array of angular frequency `float` in units of ``r``ad ps^-1``
+            1D array of angular frequency `float` in units of ``1 / ps``
         """
 
         return self.E / (h_bar * 1e15)

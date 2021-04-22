@@ -17,7 +17,8 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
-                'reset_config', 'fit_parameters', 'MD_steps', 'settings')
+                'reset_config', 'fit_parameters', 'MD_steps',
+                'max_parameter_change', 'settings')
 class Control:
 
     """
@@ -50,6 +51,9 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
+    max_parameter_change : float, optional
+        Maximum factor by which a Parameter can change each step of the
+        refinement. Defaults to `0.01`
     MD_steps : int, optional
         Number of molecular dynamics steps for each step of the refinement.
         When not provided, the minimum number of steps needed for successful
@@ -100,7 +104,8 @@ class Control:
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
-                 reset_config: bool=True, MD_steps: int=None, **settings):
+                 reset_config: bool=True, MD_steps: int=None,
+                 max_parameter_change: float=0.01, **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -108,7 +113,8 @@ class Control:
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
-                                                             self.fit_parameters)
+                                                             self.fit_parameters,
+                                                             max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
         self.settings = settings
 
