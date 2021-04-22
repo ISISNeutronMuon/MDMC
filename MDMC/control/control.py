@@ -497,15 +497,15 @@ class Control:
         if uniformity_required is None:
             return observable
 
-        # check which independent_variables are currently uniform or start at zero
+        # determine for all independent_variables if they are currently uniform or start at zero
         uniformity_state = self._is_data_uniform(observable)
-        # initialise helper list for independent_variables that need to be made uniform
+        # initialise helper list for the independent_variables that need to be made uniform
         indep_vars_to_be_changed = []
         # loop through requirements
         for var_key, var_required in uniformity_required.items():
             var_state = uniformity_state[var_key]
-            # if there is a requirement and it is not satisfied (for either uniformity or zero-start) add the
-            # variable to the list of variables that need to be changed
+            # if the variable has a requirement AND it is not satisfied (for either uniformity OR zero-start)
+            # then add it to the list of variables that need to be changed
             if (var_required[0] and not var_state[0]) or (var_required[1] and not var_state[1]):
                 indep_vars_to_be_changed.append(var_key)
 
@@ -513,10 +513,10 @@ class Control:
         if not indep_vars_to_be_changed:
             return observable
 
-        # initialise a helper dictionary to hold the data points for the uniform independent variables
+        # initialise a helper dictionary to hold the new independent variables
         indep_var_uniform = {}
         # loop through all independent variables
-        for var_key, var_uniformity in uniformity_state.items():
+        for var_key in uniformity_state:
             # check if the independent variable needs to be made uniform
             if var_key in indep_vars_to_be_changed:
                 data = observable.independent_variables[var_key]
@@ -530,26 +530,28 @@ class Control:
             else:
                 indep_var_uniform[var_key] = observable.independent_variables[var_key]
 
+        # get the indexing order of independent variables within the dependent variables
+        var_indexing = observable.dependent_variables_structure
+
         # loop through the dependent variables and interpolate them
         for var_key, data in observable.dependent_variables.items():
-            # get the indexing order of independent variables within the dependent variable
-            var_shape = observable.dependent_variables_structure
             # determine the dimension of the dependent variable
             var_dimension = data.ndim
             if var_dimension != 2:
                 raise NotImplementedError('Only 2D data can currently be made uniform')
             # note: the interp2d interpolation function requires input of the form
             # interp2d(x, y, z)
-            # where for example:
-            # x = [0,1,2];  y = [0,3]; z = [[1,2,3], [4,5,6]];
-            # Note that indexing of numpy arrays is done from outer-most to inner-most index, i.e.
-            # z[0, 1] would give the array element corresponding to y[0] and x[1].
-            x_data = observable.independent_variables[var_shape[var_key][0]]
-            y_data = observable.independent_variables[var_shape[var_key][1]]
+            # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
+            # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]; then np.shape(z)=(2,3)
+            # Because Observable.dependent_variables_structure gives the order in which the independent variables
+            # are represented in the np.shape of the data, we have to reverse the order of the x and y arrays
+            # for interp2d:
+            x_data = observable.independent_variables[var_indexing[var_key][1]]
+            y_data = observable.independent_variables[var_indexing[var_key][0]]
             data_interpol = interp2d(x_data, y_data, data)
             # get the independent_variables that satisfy the uniformity requirements as created earlier
-            x_uniform = indep_var_uniform[var_shape[var_key][0]]
-            y_uniform = indep_var_uniform[var_shape[var_key][1]]
+            x_uniform = indep_var_uniform[var_indexing[var_key][1]]
+            y_uniform = indep_var_uniform[var_indexing[var_key][0]]
             uniform_data = data_interpol(x_uniform, y_uniform)
             observable._dependent_variables[var_key] = uniform_data
             # repeat the interpolation for the errors
