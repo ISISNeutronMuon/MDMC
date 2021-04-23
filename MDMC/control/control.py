@@ -8,7 +8,6 @@ import pandas as pd
 from typing import List
 from scipy.interpolate import interp2d
 
-from MDMC.common.constants import h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -423,7 +422,7 @@ class Control:
         `int`
             Number of ``MD_steps``
         """
-        traj_step = self.simulation.settings.get('traj_step')
+        traj_step = self.simulation.traj_step
         minimum_frames = observable_pair.exp_obs.minimum_frames
 
         return traj_step * minimum_frames
@@ -488,10 +487,10 @@ class Control:
     def _validate_energy(self, obs: Observable):
 
         """
-        Calculates the energy spacing of the ``Simulation`` and asserts that it
-        is the same as that of the experiment. If not, it includes the time
-        seperation required in the error. If the ``obs`` does not have the
-        relevant attributes, we pass.
+        Calculates the energy spacing of the ``Simulation`` from the user set
+        parameters and asserts that it is the same as that of the experiment.
+        If not, it includes the time seperation required in the error. If the
+        ``obs`` does not have the relevant attributes, we pass.
 
         Parameters
         ----------
@@ -517,6 +516,9 @@ class Control:
                                      " with the `Simulation`. For the "
                                      "experimental data provided, the product "
                                      "of `time_step` and `traj_step` must be "
-                                     "{}".format(obs.calculate_dt())))
+                                     "{0}, but it was {1}"
+                                     "".format(obs.calculate_dt(), dt)))
         except AttributeError:
+            # If we don't have one of the required attributes such as `E` then
+            # pass
             pass
