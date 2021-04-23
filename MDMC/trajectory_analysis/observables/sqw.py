@@ -385,7 +385,7 @@ class AbstractSQw(Observable):
             An ``array`` of `float` specifying the energy in units of ``meV``
         """
 
-        return h * 1e18 * np.fft.fftfreq(int(2 * nE), dt)[:nE]
+        return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
     def calculate_dt(self):
 

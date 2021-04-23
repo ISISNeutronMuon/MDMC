@@ -55,7 +55,10 @@ def time_ref(incoh_file):
 
 @pytest.fixture(scope="module")
 def w_ref(incoh_file):
-    return np.array(incoh_file.variables['angular_frequency'][:])[:-1]
+    # nMOLDYN test file has 50 points in time and frequency, however we can
+    # only generate 49 energy points from 50 frames so rescale the array
+    w_raw = np.array(incoh_file.variables['angular_frequency'][:])
+    return w_raw[:-1] * len(w_raw) / (len(w_raw) - 1)
 
 @pytest.fixture(scope="module")
 def FQt_incoh_ref(incoh_file):

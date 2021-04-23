@@ -261,7 +261,6 @@ def test_simulation_stdout(universe, capsys):
                       '  thermostat     nose\n'
                       '  barostat       nose\n'
                       '  p_damp          100\n'
-                      '  traj_step        10\n'
                       '\n'
                       'Starting minimization for 0 steps\n'
                       'Minimization complete\n'
