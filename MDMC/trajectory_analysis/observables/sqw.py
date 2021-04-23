@@ -358,7 +358,7 @@ class AbstractSQw(Observable):
 
         pass
 
-    def calculate_E(self, nE, dt):
+    def calculate_E(self, nE: int, dt: float):
 
         r"""
         Calculates an array of ``nE`` uniformly spaced energy values from the
@@ -385,7 +385,7 @@ class AbstractSQw(Observable):
             An ``array`` of `float` specifying the energy in units of ``meV``
         """
 
-        return h * 1e18 * np.fft.fftfreq(2 * nE, dt)[:nE]
+        return h * 1e18 * np.fft.fftfreq(int(2 * nE), dt)[:nE]
 
     def calculate_dt(self):
 

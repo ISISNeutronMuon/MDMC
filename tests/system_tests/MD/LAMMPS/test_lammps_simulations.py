@@ -256,7 +256,6 @@ def test_simulation_stdout(universe, capsys):
     assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
                       'LAMMPS output is captured by PyLammps wrapper\n'
                       'Simulation created with lammps engine and settings:\n'
-                      '  time_step         1\n'
                       '  temperature     300\n'
                       '  pressure     101325\n'
                       '  thermostat     nose\n'
