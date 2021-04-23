@@ -559,6 +559,7 @@ class Control:
             err_data[err_data == np.float('inf')] = 0
             err_interpol = interp2d(x_data, y_data, err_data)
             err_uniform = err_interpol(x_uniform, y_uniform)
+            err_uniform[err_uniform == 0.] = np.float('inf')
             observable._errors[var_key] = err_uniform
         # finally, set the independent variables of the ``Observable`` to the uniform ones
         observable.independent_variables = indep_var_uniform
