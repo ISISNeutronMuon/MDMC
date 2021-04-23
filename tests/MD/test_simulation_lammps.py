@@ -298,8 +298,10 @@ def populated_lammps_simulation(universe, lammps_universe):
     simulation.
     """
 
-    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, lammps_universe.lmp,
-                                                 traj_step=10, time_step=1.)
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe,
+                                                 traj_step=10,
+                                                 time_step=1.,
+                                                 lmp=lammps_universe.lmp)
     return lammps_simulation
 
 @pytest.fixture
@@ -1307,9 +1309,10 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
     NVE and run for 0 steps. Test if the 0 step temperature is as expected.
     """
 
-    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, lammps_universe.lmp,
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe,
                                                  temperature=temperature,
-                                                 traj_step=10)
+                                                 traj_step=10,
+                                                 lmp=lammps_universe.lmp)
 
     lammps_simulation.lmp.run(0)
     assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature

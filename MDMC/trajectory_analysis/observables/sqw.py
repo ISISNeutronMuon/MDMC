@@ -321,9 +321,9 @@ class AbstractSQw(Observable):
                                      "{0}, but it was {1}"
                                      "".format(self.calculate_dt(), dt)))
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(self.t), dt)
+            self.independent_variables['E'] = self.calculate_E(len(self.t) - 1, dt)
         else:
-            self.independent_variables = {'E':self.calculate_E(len(self.t), dt)}
+            self.independent_variables = {'E':self.calculate_E(len(self.t) - 1, dt)}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])
