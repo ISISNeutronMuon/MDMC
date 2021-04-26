@@ -319,24 +319,74 @@ def test_error_calculation(SQw_dict):
             == ((ERR_NEG * 0.75) ** 2 + ERR_NEG ** 2) ** 0.5))
 
 
-def test_FOM_calculation(pairs):
+def test_FoM_calculation(pairs):
 
     """
     Tests that the FoM calculation is valid for a pair of observables i.e. it is
     a non-negative float
     """
 
-    pass
+    calculator = fom.StandardFoMCalculator(pairs)
+    assert calculator.calculate() >= 0
 
 
-def test_multiple_FOM_calculation(pairs):
+def test_multiple_FoM_calculation(pairs):
 
     """
     Tests that the FoM calculation is valid for for multiple pairs of
     observables
     """
 
-    pass
+    pairs += pairs
+    calculator = fom.StandardFoMCalculator(pairs)
+    assert calculator.calculate() >= 0
+
+
+def test_FoM_calculation_dataset_size(pairs):
+
+    """
+    Tests that the FoM calculation normalises for the size of the dataset
+    """
+
+    # Create datasets with twice the number of entries
+    pairs_large = pairs
+    for pair in pairs_large:
+        dependent_array = pair.exp_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep': np.append(dependent_array, dependent_array)}
+        pair.MD_obs._dependent_variables = {'dep': np.append(dependent_array, dependent_array)}
+
+        error_array = pair.exp_obs._errors['err']
+        pair.exp_obs._errors = {'err': np.append(error_array, error_array)}
+        pair.MD_obs._errors = {'err': np.append(error_array, error_array)}
+
+    calculator = fom.StandardFoMCalculator(pairs)
+    calculator_large = fom.StandardFoMCalculator(pairs_large)
+    assert calculator.calculate() == calculator_large.calculate()
+
+
+@pytest.mark.parametrize('weight', [0.1, 1., 10.])
+def test_weighted_FoM_calculation(pairs, weight):
+
+    """
+    Tests that the FoM calculation takes weighting into account
+    """
+
+    # Create datasets with infinite errors (which will give FoM of zero) and a
+    # varying weight
+    pairs_inf_error = pairs
+    for pair in pairs_inf_error:
+        pair.weight = weight
+        error_shape = np.shape(pair.exp_obs._errors['err'])
+        error_array = np.full(error_shape, np.float('inf'))
+        pair.exp_obs._errors = {'err': error_array}
+
+    calculator = fom.StandardFoMCalculator(pairs)
+    calculator_weighted = fom.StandardFoMCalculator(pairs + pairs_inf_error)
+
+    normal_FoM = calculator.calculate()
+    weighted_FoM = calculator_weighted.calculate()
+
+    assert weighted_FoM == normal_FoM / (1. + weight)
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
