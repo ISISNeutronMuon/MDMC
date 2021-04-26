@@ -424,31 +424,7 @@ class Control:
 
         return traj_step * minimum_frames
 
-    def _is_data_uniform(self, observable: Observable) -> dict:
-        """
-        Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
-        they start at zero.
-
-        Parameters
-        ----------
-        observable : Observable
-            The ``Observable`` for which to check the independent variables.
-
-        Returns
-        -------
-        `dict`
-            A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
-            are a list of two booleans: the first if the points are uniformly spaced and the second if they start at
-            zero.
-        """
-        uniformity_dict = {}
-        for var_key, var_data in observable.independent_variables.items():
-            uniform_data = np.linspace(min(var_data), max(var_data), num=len(var_data))
-            is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-            uniformity_dict[var_key] = [is_uniform, var_data[0] == 0]
-        return uniformity_dict
-
-    def _is_data_uniform(self, observable: Observable) -> dict:
+    def _is_data_uniform(self, observable: Observable) -> dict[str, list]:
         """
         Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
         they start at zero.
