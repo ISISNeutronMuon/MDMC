@@ -349,7 +349,7 @@ def test_control_is_data_uniform_false():
     """
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observable.
     """
-    expected = {'E': [False, True], 'Q': [False, False]}
+    expected = {'E': {'uniform': False, 'zeroed': True}, 'Q': {'uniform': False, 'zeroed': False}}
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
     observed = cont._is_data_uniform(mock_nonuniform_observable())
@@ -359,7 +359,7 @@ def test_control_is_data_uniform_true():
     """
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
     """
-    expected = {'E': [True, True], 'Q': [True, False]}
+    expected = {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
     observed = cont._is_data_uniform(mock_uniform_observable())

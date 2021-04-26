@@ -7,6 +7,7 @@ from numba import jit
 import numpy as np
 from numpy.testing import assert_allclose
 from typing import Callable
+from typing import Dict
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_COH, B_INCOH
@@ -607,7 +608,7 @@ class AbstractSQw(Observable):
         return np.broadcast_to(window, (N_Q, ) + np.shape(window)) * FQt
 
     @property
-    def dependent_variables_structure(self):
+    def dependent_variables_structure(self) -> Dict[str, list]:
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
         Explicitly: we have that self.SQw[Q_index, E_index] is the data point for given indices of self.Q and self.E
@@ -619,13 +620,13 @@ class AbstractSQw(Observable):
 
         Return
         ------
-        dict
+        Dict[str, list]
             The shape of the SQw dependent variable
         """
         return {'SQw': ['Q', 'E']}
 
     @property
-    def uniformity_requirements(self):
+    def uniformity_requirements(self) -> dict:
         """
         # Captures the current limitations on the energy 'E' and reciprocal lattice points 'Q' within
         # the dynamic structure factor ``Observables``. 'E' must be uniform and start at zero, whereas
@@ -637,7 +638,7 @@ class AbstractSQw(Observable):
             Dictionary of uniformity restrictions for 'E' and 'Q' represented as booleans
         """
 
-        return {'E': [True, True], 'Q': [True, False]}
+        return {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))

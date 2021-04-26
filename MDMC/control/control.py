@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from typing import List
 from scipy.interpolate import interp2d
+from typing import Dict
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -424,7 +425,7 @@ class Control:
 
         return traj_step * minimum_frames
 
-    def _is_data_uniform(self, observable: Observable) -> dict[str, list]:
+    def _is_data_uniform(self, observable: Observable) -> Dict[str, list]:
         """
         Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
         they start at zero.
@@ -436,7 +437,7 @@ class Control:
 
         Returns
         -------
-        `dict[str, list]`
+        `Dict[str, list]`
             A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
             are a list of two booleans: the first if the points are uniformly spaced and the second if they start at
             zero.
@@ -445,7 +446,7 @@ class Control:
         for var_key, var_data in observable.independent_variables.items():
             uniform_data = np.linspace(min(var_data), max(var_data), num=len(var_data))
             is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-            uniformity_dict[var_key] = [is_uniform, var_data[0] == 0]
+            uniformity_dict[var_key] = {'uniform': is_uniform, 'zeroed': var_data[0] == 0}
         return uniformity_dict
 
     def _make_data_uniform(self, observable: Observable, uniformity_check: dict = None) -> Observable:
@@ -482,7 +483,8 @@ class Control:
             var_state = uniformity_state[var_key]
             # if the variable has a requirement AND it is not satisfied (for either uniformity OR zero-start)
             # then add it to the list of variables that need to be changed
-            if (var_required[0] and not var_state[0]) or (var_required[1] and not var_state[1]):
+            if (var_required['uniform'] and not var_state['uniform']) or \
+                    (var_required['zeroed'] and not var_state['zeroed']):
                 indep_vars_to_be_changed.append(var_key)
 
         # if all uniformity requirements are already satisfied simply return the original observable
@@ -496,7 +498,7 @@ class Control:
             # check if the independent variable needs to be made uniform
             if var_key in indep_vars_to_be_changed:
                 data = observable.independent_variables[var_key]
-                if uniformity_required[var_key][1]:
+                if uniformity_required[var_key]['zeroed']:
                     minimum = 0
                 else:
                     minimum = min(data)
