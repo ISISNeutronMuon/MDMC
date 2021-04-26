@@ -436,7 +436,7 @@ class Control:
 
         Returns
         -------
-        `dict`
+        `dict[str, list]`
             A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
             are a list of two booleans: the first if the points are uniformly spaced and the second if they start at
             zero.
