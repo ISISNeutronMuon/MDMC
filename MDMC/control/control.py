@@ -439,8 +439,7 @@ class Control:
         -------
         `Dict[str, list]`
             A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
-            are a list of two booleans: the first if the points are uniformly spaced and the second if they start at
-            zero.
+            are a dictionary with booleans if the variables are 'uniform' or 'zeroed'.
         """
         uniformity_dict = {}
         for var_key, var_data in observable.independent_variables.items():

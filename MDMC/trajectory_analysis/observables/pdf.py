@@ -744,7 +744,7 @@ class PairDistributionFunction(Observable):
         Return
         ------
         dict
-            Dictionary of uniformity restrictions for 'r' represented as booleans
+            Dictionary of uniformity restrictions for 'r'.
         """
 
         return {'r': {'uniform': True, 'zeroed': False}}

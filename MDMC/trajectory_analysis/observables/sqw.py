@@ -635,7 +635,7 @@ class AbstractSQw(Observable):
         Return
         ------
         dict
-            Dictionary of uniformity restrictions for 'E' and 'Q' represented as booleans
+            Dictionary of uniformity restrictions for 'E' and 'Q'.
         """
 
         return {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
