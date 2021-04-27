@@ -378,7 +378,7 @@ def mock_nonuniform_observable() -> SQw:
     observable._origin='experiment'
     E_array = np.array([0., 0.24, 0.5, 0.75, 1.0])
     Q_array = np.array([1., 2., 2.9, 4.])
-    SQw_array = np.array([[E+Q for Q in Q_array] for E in E_array])
+    SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
     SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
     observable._dependent_variables = {'SQw': SQw_array}
@@ -409,7 +409,7 @@ def test_control_is_data_uniform_false():
     """
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observable.
     """
-    expected = False
+    expected = {'E': {'uniform': False, 'zeroed': True}, 'Q': {'uniform': False, 'zeroed': False}}
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
     observed = cont._is_data_uniform(mock_nonuniform_observable())
@@ -419,7 +419,7 @@ def test_control_is_data_uniform_true():
     """
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
     """
-    expected = True
+    expected = {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
     observed = cont._is_data_uniform(mock_uniform_observable())

@@ -7,6 +7,7 @@ import warnings
 
 from numba import jit
 import numpy as np
+from typing import Dict
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
@@ -720,3 +721,31 @@ class PairDistributionFunction(Observable):
 
         return {element:element_list.count(element) for element
                 in unique_elements}
+
+    @property
+    def dependent_variables_structure(self) -> Dict[str, list]:
+        """
+        The shape of the 'PDF' dependent variable in terms of 'r'':
+        np.shape(self.PDF)=(np.size(self.r))
+
+        Return
+        ------
+        dict
+            The shape of the PDF dependent variable
+        """
+        return {'PDF': ['r']}
+
+    @property
+    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+        """
+        # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
+        # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
+
+        Return
+        ------
+        Dict[str, Dict[str, bool]]
+            Dictionary of uniformity restrictions for 'r'.
+        """
+
+        return {'r': {'uniform': True, 'zeroed': False}}
+
