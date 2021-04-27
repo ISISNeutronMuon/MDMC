@@ -27,56 +27,50 @@ class SQwCoherent(AbstractSQw):
         self.weights = {element:B_COH[element] for element
                         in self.trajectory.element_set}
 
-    def _calculate_FQt_single_Q(self, Q_vector):
+    def _calculate_FQt_single_Q(self, single_Q_vectors):
+        # Inherit docstring of abstract method
 
-        """
-        Calculates the F(Q, t) for a single Q value
-
-        The length of the correlations is bounded by the length of the energies
-        rather the times, as this allows energies to be calculated from
-        trajectories with longer timescales than is required by the energy
-        resolution.
-
-        Parameters
-        ----------
-        Q_vector : numpy.ndarray
-            An ``array`` of one or more Q vectors with the same Q value
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with dimensions of ``self.t``
-        """
-
+        n_t = self.maximum_frames
         elements = self.trajectory.element_set
+        FQt_single_Q = np.zeros(n_t)
         rho_element = {}
         n_atoms = 0
+
         for element in elements:
+            # Get the positions of all atoms (the configuration) of each
+            # element over time such that ``element_configs`` has time as its
+            # first dimension and each atom of ``element`` as its second
             indexes = np.where(np.array(self.trajectory.element_list)
                                == element)
             element_configs = [config.positions[indexes] for config
                                in self.trajectory]
-            rho_config = np.zeros((len(element_configs), len(Q_vector)),
+
+            rho_config = np.zeros((len(element_configs),
+                                   len(single_Q_vectors)),
                                   dtype=complex)
             for i, positions in enumerate(element_configs):
-                rho_config[i, :] = np.sum(calculate_rho(positions,
-                                                        np.array(Q_vector)),
-                                          axis=0)
+                # For each time frame ``i`` calculate the Fourier transformed
+                # number density and sum over all positions but preserve the
+                # second dimension, our array of Q vectors
+                rho_unsummed = calculate_rho(positions,
+                                             np.array(single_Q_vectors))
+                rho_config[i, :] = np.sum(rho_unsummed, axis=0)
+
             rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
 
-        FQt_single_Q = np.zeros(len(self.E))
         for element1 in elements:
             for element2 in elements:
+                # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1] \
                                 * self.weights[element2] \
                                 * correlation(rho_element[element1],
                                               rho_element[element2],
-                                              normalise=True)[:len(self.E)]
+                                              normalise=True)[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:
-            norm = np.shape(Q_vector)[0]
+            norm = np.shape(single_Q_vectors)[0]
         except IndexError:
             norm = 1.
 

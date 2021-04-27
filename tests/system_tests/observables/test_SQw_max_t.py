@@ -18,7 +18,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-from MDMC.common.constants import h_bar
+from MDMC.common.constants import h
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.system_tests.observables.data_manager import trajectory
 
@@ -38,9 +38,9 @@ def independent_variables(trajectory):
     """
 
     # Use half the trajectory steps to calculate the Energies
-    n = len(trajectory.times) / 2
+    n = int(len(trajectory.times) / 2 - 1)
     dt = trajectory.times[1] - trajectory.times[0]
-    E = h_bar * 1e18 * np.pi * np.arange(n) / (n * dt)
+    E = h * 1e18 * np.fft.fftfreq(2 * n, dt)[:n]
     Q = np.arange(1.6, 21, 1.6)
 
     return {'E':E, 'Q':Q}

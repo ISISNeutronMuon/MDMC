@@ -30,29 +30,12 @@ class SQwIncoherent(AbstractSQw):
         self.weights = [element_weights[atom.element] for atom
                         in self.trajectory.atoms]
 
-    def _calculate_FQt_single_Q(self, Q_vector):
+    def _calculate_FQt_single_Q(self, single_Q_vectors):
+        # Inherit docstring of abstract method
 
-        """
-        Calculates the F(Q, t) for a single Q value
-
-        The length of the correlations is bounded by the length of the energies
-        rather the times, as this allows energies to be calculated from
-        trajectories with longer timescales than is required by the energy
-        resolution.
-
-        Parameters
-        ----------
-        Q_vector : numpy.ndarray
-            An ``array`` of one or more Q vectors with the same Q value
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with dimensions of ``self.t``
-        """
-
+        n_t = self.maximum_frames
         n_atoms = len(self.trajectory.atoms)
-        FQt_single_Q = np.zeros(len(self.E))
+        FQt_single_Q = np.zeros(n_t)
 
         # Arrange configs so that axes are [atoms, times, positions] i.e.
         # iterating over the first axis is iterating over each atom
@@ -60,14 +43,17 @@ class SQwIncoherent(AbstractSQw):
                               0,
                               1)
         for atom_positions, weight in zip(configs, self.weights):
-            rho_atom = calculate_rho(atom_positions, np.array(Q_vector))
+            rho_atom = calculate_rho(atom_positions,
+                                     np.array(single_Q_vectors))
+
+            # A sum over the Q vectors is performed within ``correlation``.
             FQt_single_Q_atom = correlation(rho_atom,
-                                            normalise=True)[:len(self.E)]
+                                            normalise=True)[:n_t]
             FQt_single_Q += FQt_single_Q_atom * weight
 
         # Normalise to the number of orthogonal vectors
         try:
-            norm = np.shape(Q_vector)[0]
+            norm = np.shape(single_Q_vectors)[0]
         except IndexError:
             norm = 1.
 

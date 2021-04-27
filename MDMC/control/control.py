@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 import numpy as np
+from numpy.testing import assert_allclose
 import pandas as pd
 from typing import List
 from scipy.interpolate import interp2d
@@ -132,6 +133,7 @@ class Control:
                 exp_observable = self._make_data_uniform(exp_observable)
 
             MD_observable = self._create_empty_observable(exp_observable)
+            self._validate_energy(MD_observable)
 
             auto_scale = dset.get('auto_scale', False)
             rescale_factor = dset.get('rescale_factor')
@@ -420,7 +422,7 @@ class Control:
         `int`
             Number of ``MD_steps``
         """
-        traj_step = self.simulation.settings.get('traj_step')
+        traj_step = self.simulation.traj_step
         minimum_frames = observable_pair.exp_obs.minimum_frames
 
         return traj_step * minimum_frames
@@ -542,3 +544,41 @@ class Control:
         observable.independent_variables = indep_var_uniform
         return observable
 
+    def _validate_energy(self, obs: Observable):
+
+        """
+        Calculates the energy spacing of the ``Simulation`` from the user set
+        parameters and asserts that it is the same as that of the experiment.
+        If not, it includes the time separation required in the error. If the
+        ``obs`` does not have the relevant attributes, we pass.
+
+        Parameters
+        ----------
+        obs : Observable
+            ``Observable`` to validate
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+        """
+
+        dt = self.simulation.traj_step * self.simulation.time_step
+        try:
+            energy = obs.E
+            assert_allclose(obs.calculate_E(len(energy), dt),
+                            energy,
+                            rtol=1e-5,
+                            err_msg=("Experimental E values are not consistent"
+                                     " with the `Simulation`. For the "
+                                     "experimental data provided, the product "
+                                     "of `time_step` and `traj_step` must be "
+                                     "{0}, but it was {1}"
+                                     "".format(obs.calculate_dt(), dt)))
+        except AttributeError:
+            # If we don't have one of the required attributes such as `E` then
+            # pass
+            pass

@@ -56,7 +56,7 @@ class MDEngine(ABC):
         pass
 
     @abstractmethod
-    def setup_simulation(self, **settings):
+    def setup_simulation(self, traj_step: int, time_step: float, **settings):
 
         """
         Sets the options required to perform a simulation on a setup
@@ -67,6 +67,11 @@ class MDEngine(ABC):
         universe : Universe
             A molecular dynamics ``Universe`` which will be simulated in the
             ``MDEngine``.
+        traj_step : int
+            How many steps the simulation should take between dumping each
+            ``Trajectory`` frame
+        time_step : float
+            Simulation timestep in ``fs``
         settings**
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.

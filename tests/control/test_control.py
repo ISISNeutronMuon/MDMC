@@ -4,12 +4,22 @@
 import numpy as np
 import pandas as pd
 import pytest
+import re
 from typing import List
 
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
+
+
+# The requirements for dt and nE is different for each experimental dataset,
+# and we need this information before initialising Control so store these as a
+# global variable
+DATASET_INFO = {'263K05Awat_LAMP': {'dt': 1055.8303421611213,
+                                    'nE': 373},
+                'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564,
+                                               'nE': 37}}
 
 
 class MockSimulation(Simulation):
@@ -19,9 +29,12 @@ class MockSimulation(Simulation):
     the tests without having an MD engine installed.
     """
 
-    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
+    def __init__(self, universe: Universe, traj_step: int,
+                 time_step: float = 1., engine: str = "mmtk", **settings):
         self.universe = universe
         self.settings = settings
+        self.traj_step = traj_step
+        self.time_step = time_step
 
 
 class MockParameter:
@@ -77,9 +90,11 @@ def simulation() -> callable:
 
     uni = Universe(10.)
 
-    def _simulation(traj_step: int=1) -> MockSimulation:
-        return MockSimulation(uni, traj_step=traj_step)
-    
+    def _simulation(traj_step: int = 1,
+                    time_step: float = 1.) -> MockSimulation:
+
+        return MockSimulation(uni, traj_step=traj_step, time_step=time_step)
+
     return _simulation
 
 
@@ -91,17 +106,26 @@ def exp_datasets() -> callable:
     callable
         A function which optionally accepts ``rescale_factor`` and
         ``auto_scale`` of types `float` and `bool` that default to `None`, and
-        returns a `list` of `dict` that represent experimental data.
+        returns a `list` of `dict` that represent experimental data. Also
+        accepts ``file_name`` as a `str` which will only return datasets with
+        that file, or all datasets if not specified.
     """
 
-    def _exp_datasets(rescale_factor: float=None,
-                      auto_scale: bool=None) -> List[dict]:
+    def _exp_datasets(rescale_factor: float = None,
+                      auto_scale: bool = None,
+                      file_name: str = None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
             # 'XML_SQw' is the reader Class, but we want the module 'xml_SQw'
             if k == 'XML_SQw':
                 k = 'xml_SQw'
+
+            if (file_name is not None
+                    and not re.search('{}$'.format(file_name), v)):
+                # If we have a file_name but it does not match the dataset,
+                # continue
+                continue
 
             dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.}
             if rescale_factor:
@@ -115,7 +139,10 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
-def test_control_refine_stdout(simulation, exp_datasets, monkeypatch, capsys):
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
+                               file_name, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -139,16 +166,21 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch, capsys):
                         MockParameter('A', 1),
                         MockParameter('B', 34743.233E6)]
 
-    cont = control.Control(simulation(), exp_datasets(), [], reset_config=False)
-    cont.minimizer = minim
-    cont.refine(10)
+    datasets = exp_datasets(file_name=file_name)
+    dt = DATASET_INFO[file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
+
+    ctrl.minimizer = minim
+    ctrl.refine(10)
+
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
     assert stdout == ('Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
-                      '  Number of observables         2\n'
+                      '  Number of observables         1\n'
                       '  Number of parameters          0\n'
                       '\n'
                       'Step       float          str          int really_lo...\n'
@@ -169,7 +201,10 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch, capsys):
                       ' 3.134544  0.339834  1  3.474323e+10\n')
 
 
-def test_control_refine_stdout_auto_scale(simulation, exp_datasets, monkeypatch, capsys):
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
+                                          monkeypatch, file_name, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -189,21 +224,24 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets, monkeypatch,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
     minim.parameters = [MockParameter('epsilon', 3.134544),
-                    MockParameter('sigma', 0.339834),
-                    MockParameter('A', 1),
-                    MockParameter('B', 34743.233E6)]
+                        MockParameter('sigma', 0.339834),
+                        MockParameter('A', 1),
+                        MockParameter('B', 34743.233E6)]
 
-    datasets = exp_datasets(auto_scale=True)
-    cont = control.Control(simulation(), datasets, [], reset_config=False)
-    cont.minimizer = minim
-    cont.refine(10)
+    datasets = exp_datasets(auto_scale=True, file_name=file_name)
+    dt = DATASET_INFO[file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
+
+    ctrl.minimizer = minim
+    ctrl.refine(10)
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
     assert stdout == ('Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
-                      '  Number of observables         2\n'
+                      '  Number of observables         1\n'
                       '  Number of parameters          0\n'
                       '\n'
                       'Step       float          str          int really_lo...\n'
@@ -224,52 +262,77 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets, monkeypatch,
                       ' 3.134544  0.339834  1  3.474323e+10\n'
                       '\n'
                       'Automatic Scale Factors\n'
-                      '  {0}             1.0\n'
-                      '  {1}  1.0\n'
-                      ''.format(datasets[0]['file_name'], datasets[1]['file_name']))
+                      '  {}  1.0\n'
+                      ''.format(datasets[0]['file_name']))
 
 
-def test_control_no_scaling(simulation, exp_datasets):
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_no_scaling(simulation, exp_datasets, file_name):
     """
     Test that by default a rescale factor of `1.` is used.
     """
-    ctrl = control.Control(simulation(), exp_datasets(), [], reset_config=False)
+
+    datasets = exp_datasets(file_name=file_name)
+    dt = DATASET_INFO[file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert not pair.auto_scale
 
 
-def test_control_rescale_factor(simulation, exp_datasets):
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_rescale_factor(simulation, exp_datasets, file_name):
     """
     Test that a manually specified ``rescale_factor`` is applied to the
     ``observable_pair``.
     """
-    ctrl = control.Control(simulation(), exp_datasets(rescale_factor=0.5), [], reset_config=False)
+
+    datasets = exp_datasets(rescale_factor=0.5, file_name=file_name)
+    dt = DATASET_INFO[file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
         assert not pair.auto_scale
 
 
-def test_control_auto_scale(simulation, exp_datasets):
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_auto_scale(simulation, exp_datasets, file_name):
     """
     Test that ``auto_scale`` is applied.
     """
-    ctrl = control.Control(simulation(), exp_datasets(auto_scale=True), [], reset_config=False)
+
+    datasets = exp_datasets(auto_scale=True, file_name=file_name)
+    dt = DATASET_INFO[file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
         assert pair.auto_scale
 
 
-def test_control_scaling_warning(simulation, exp_datasets, capsys):
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_scaling_warning(simulation, exp_datasets, file_name,
+                                 capsys):
     """
     Test that when both ``rescale_factor`` and ``auto_scale`` specified then
     the latter is used and a warning is printed to explain this.
     """
-    datasets = exp_datasets(rescale_factor=0.5, auto_scale=True)
-    ctrl = control.Control(simulation(), datasets, [], reset_config=False)
+
+    datasets = exp_datasets(rescale_factor=0.5,
+                            auto_scale=True,
+                            file_name=file_name)
+    dt = DATASET_INFO[file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
@@ -277,18 +340,15 @@ def test_control_scaling_warning(simulation, exp_datasets, capsys):
 
     stdout = capsys.readouterr().out
     assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
-                      '{0}; scaling will be automated to minimise FoM\n'
-                      'Both `rescale_factor` and `auto_scale` set for file '
-                      '{1}; scaling will be automated to minimise FoM\n'
+                      '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
                       '  Minimizer                   MMC\n'
                       '  MC norm                       1\n'
                       '  FoM type               standard\n'
-                      '  Number of observables         2\n'
+                      '  Number of observables         1\n'
                       '  Number of parameters          0\n'
                       '\n'
-                      ''.format(datasets[0]['file_name'],
-                                datasets[1]['file_name']))
+                      ''.format(datasets[0]['file_name']))
 
 
 def test_control_max_parameter_change():
@@ -378,34 +438,78 @@ def test_control_make_data_uniform():
     assert np.allclose(expected.SQw, observed.SQw, atol=1e-5)
     assert np.allclose(expected.SQw_err, observed.SQw_err, atol=1e-5)
 
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_no_MD_steps(simulation, exp_datasets, traj_step):
+def test_control_no_MD_steps(simulation, exp_datasets, traj_step, file_name):
     """
     Test that ``MD_steps`` defaults to the minimum required if not specified.
     """
 
-    ctrl = control.Control(simulation(traj_step), exp_datasets(), [],
+    dt = DATASET_INFO[file_name]['dt']
+    nE = DATASET_INFO[file_name]['nE']
+    time_step = dt / traj_step
+    ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
+                           exp_datasets(file_name=file_name),
+                           [],
                            reset_config=False)
-    assert ctrl.MD_steps == 373 * traj_step
+    assert ctrl.MD_steps == (nE + 1) * traj_step
 
 
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step):
+def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step,
+                                   file_name):
     """
     Test that ``MD_steps`` is accepted when greater than the minimum required.
     """
 
-    ctrl = control.Control(simulation(traj_step), exp_datasets(), [],
-                           reset_config=False, MD_steps=9325)
-    assert ctrl.MD_steps == 9325
+    user_MD_steps = 9350
+    dt = DATASET_INFO[file_name]['dt']
+    time_step = dt / traj_step
+    ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
+                           exp_datasets(file_name=file_name),
+                           [],
+                           reset_config=False,
+                           MD_steps=user_MD_steps)
+
+    assert ctrl.MD_steps == user_MD_steps
 
 
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_MD_steps_rejected(simulation, exp_datasets, traj_step):
+def test_control_MD_steps_rejected(simulation, exp_datasets, traj_step,
+                                   file_name):
     """
     Test that ``MD_steps`` is rejected when greater than the minimum required.
     """
 
+    dt = DATASET_INFO[file_name]['dt']
+    time_step = dt / traj_step
     with pytest.raises(ValueError):
-        control.Control(simulation(traj_step), exp_datasets(), [],
-                        reset_config=False, MD_steps=372)
+        control.Control(simulation(traj_step=traj_step, time_step=time_step),
+                        exp_datasets(file_name=file_name),
+                        [],
+                        reset_config=False,
+                        MD_steps=1)
+
+
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+@pytest.mark.parametrize('traj_step', [1, 5, 25])
+def test_control_validate_energy(simulation, exp_datasets, traj_step,
+                                 file_name):
+    """
+    Test that an ``AssertionError`` is raised when we provide an incorrect time
+    seperation.
+    """
+
+    dt = DATASET_INFO[file_name]['dt']
+    time_step = 2 * dt / traj_step
+    with pytest.raises(AssertionError):
+        control.Control(simulation(traj_step=traj_step, time_step=time_step),
+                        exp_datasets(file_name=file_name),
+                        [],
+                        reset_config=False)
