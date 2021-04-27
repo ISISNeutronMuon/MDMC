@@ -155,7 +155,9 @@ class Control:
                                                  MD_observable,
                                                  dset['weight'],
                                                  rescale_factor=rescale_factor,
-                                                 auto_scale=auto_scale)
+                                                 auto_scale=auto_scale,
+                                                 use_FFT=dset.get('use_FFT',
+                                                                  True))
             self.observable_pairs.append(observable_pair)
             minimum_MD_steps = max(minimum_MD_steps,
                                    self._calculate_MD_steps(observable_pair))
