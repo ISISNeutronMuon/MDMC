@@ -67,6 +67,11 @@ class MDEngine(ABC):
         universe : Universe
             A molecular dynamics ``Universe`` which will be simulated in the
             ``MDEngine``.
+        traj_step : int
+            How many steps the simulation should take between dumping each
+            ``Trajectory`` frame
+        time_step : float
+            Simulation timestep in ``fs``
         settings**
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.

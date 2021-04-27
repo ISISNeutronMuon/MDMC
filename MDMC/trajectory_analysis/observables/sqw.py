@@ -362,7 +362,7 @@ class AbstractSQw(Observable):
 
         r"""
         Calculates an array of ``nE`` uniformly spaced energy values from the
-        time seperation of the ``Trajectory`` frames, ``dt``. The frequencies
+        time separation of the ``Trajectory`` frames, ``dt``. The frequencies
         are determined by the Fast Fourier Transform, as implemented by numpy,
         for ``2 * nE`` points in time which we then crop to only include ``nE``
         positive frequencies. As we are dealing with frequency rather than
@@ -390,9 +390,9 @@ class AbstractSQw(Observable):
     def calculate_dt(self):
 
         r"""
-        Calculates the time seperation of frames required by the experimental
+        Calculates the time separation of frames required by the experimental
         dataset, assuming uniform spacing. Note that this may be different from
-        the time seperation that the user has given as an input, as it only
+        the time separation that the user has given as an input, as it only
         depends on the current values for ``self.E``. The relationship between
         time and energy comes from the numpy implementation of the FFT for
         ``2 * nE`` points where:
@@ -404,7 +404,7 @@ class AbstractSQw(Observable):
         Returns
         -------
         float
-            The time seperation required by the current values of ``self.E``
+            The time separation required by the current values of ``self.E``
         """
 
         nE = len(self.E)

@@ -489,7 +489,7 @@ class Control:
         """
         Calculates the energy spacing of the ``Simulation`` from the user set
         parameters and asserts that it is the same as that of the experiment.
-        If not, it includes the time seperation required in the error. If the
+        If not, it includes the time separation required in the error. If the
         ``obs`` does not have the relevant attributes, we pass.
 
         Parameters

@@ -1239,7 +1239,7 @@ class Simulation:
     traj_step : int
         How many steps the simulation should take between dumping each
         ``Trajectory`` frame. Along with ``time_step`` determines the time
-        seperation of calculated variables such as energy.
+        separation of calculated variables such as energy.
     time_step : float, optional
         Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
@@ -1268,7 +1268,7 @@ class Simulation:
     traj_step : int
         How many steps the simulation should take between dumping each
         ``Trajectory`` frame. Along with ``time_step`` determines the time
-        seperation of calculated variables such as energy.
+        separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
         library.
