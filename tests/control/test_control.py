@@ -447,7 +447,7 @@ def mock_uniform_PDF() -> PairDistributionFunction:
                           {'obs': mock_uniform_PDF(), 'exp': {'r': {'uniform': True, 'zeroed': False}}}])
 def test_control_is_data_uniform(mock_observable):
     """
-    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observables.
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked observables.
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
@@ -460,7 +460,7 @@ def test_control_is_data_uniform(mock_observable):
                           {'obs': mock_nonuniform_PDF(), 'exp': mock_uniform_PDF()}])
 def test_control_make_data_uniform(mock_observable):
     """
-    Tests that the Control._make_data_uniform() method correctly makes the mocked non-uniform observable uniform.
+    Tests that the Control._make_data_uniform() method correctly makes the mocked non-uniform observables uniform.
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
