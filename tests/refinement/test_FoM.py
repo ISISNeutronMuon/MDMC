@@ -386,7 +386,7 @@ def test_weighted_FoM_calculation(pairs, weight):
     normal_FoM = calculator.calculate()
     weighted_FoM = calculator_weighted.calculate()
 
-    assert weighted_FoM == normal_FoM / (1. + weight)
+    assert weighted_FoM == normal_FoM / (pairs[0].weight + weight)
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
