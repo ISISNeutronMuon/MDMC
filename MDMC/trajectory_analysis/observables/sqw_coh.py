@@ -28,66 +28,7 @@ class SQwCoherent(AbstractSQw):
                         in self.trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors):
-
-        r"""
-        Calculates the F(Q, t) from an array of vectors corresponding to a
-        single value of Q.
-
-        The length of the correlations is bounded by the length of the
-        ``self.E + 1`` rather than ``self.t``, as this allows energies to be
-        calculated from trajectories with longer timescales than is required by
-        the energy resolution.
-
-        We start by calculating the Fourier transformed number densities for
-        the atoms :math:`j` of element :math:`\alpha`:
-
-        .. math::
-
-            \rho_{\alpha, m_Q}(n_t, p) = \sum_{j \in \alpha} e^{-i \vec{q_{p}} \cdot \vec{r_j}}
-
-        Where :math:`n_t` indexes time and :math:`p` indexes momentum vector.
-        F(Q,t) is calculated from the correlation :math:`C` between these
-        number densities, where we make use of the correlation theorem of
-        discrete periodic functions to speed up calculation using the FFT
-        [see E.O. Brigham, The Fast Fourier Transform, 1974]:
-
-        .. math::
-
-            C_{\alpha,\beta,m_Q}(n_t, p) = \Re \Big[\frac{1}{N_E - |n_t|} \mathcal{F}_t^{-1} \big[ \tilde{\rho'}^*_{\alpha, m_Q}(n_E, p) \tilde{\rho'}_{\beta, m_Q}(n_E, p) \big] \Big]
-
-        Where we denote the Fourier transform of :math:`\rho` as:
-
-        .. math::
-
-            \tilde{\rho'}_{\alpha, m_Q}(n_E, p) = \mathcal{F}_t \big[ \rho'_{\alpha, m_Q}(n_t, p) \big]
-
-        Where :math:`\rho'` denotes that :math:`\rho` has been padded with
-        zeros in the time domain to give it twice its orginal length.
-
-        For the coherent contribution, we calculate:
-
-        .. math::
-
-            F_{m_Q}^{coh}(n_t) = \sum_{\alpha} \sum_{\beta} B^{coh}_\alpha B^{coh}_\beta \sum_p C_{\alpha,\beta, m_Q}(n_t, p)
-
-        The ideal (not accounting for instrument resolution) scattering
-        function is normalised by both the number of atoms that contributed and
-        the number of Q vectors used for the single value of Q:
-
-        .. math::
-
-            F_{m_Q}^{ideal}(n_t) = \frac{ F_{m_Q}^{coh}(n_t) }{N_{atoms} N_p}
-
-        Parameters
-        ----------
-        single_Q_vectors : numpy.ndarray
-            An array of Q vectors with approximately the same magnitude
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with length ``len(self.E) + 1``
-        """
+        # Inherit docstring of abstract method
 
         n_t = self.maximum_frames
         elements = self.trajectory.element_set
