@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pandas as pd
 from typing import List
-from scipy.interpolate import interp2d
+from scipy.interpolate import interp1d, interp2d
 from typing import Dict
 
 from MDMC.common.decorators import repr_decorator
@@ -516,29 +516,44 @@ class Control:
         for var_key, data in observable.dependent_variables.items():
             # determine the dimension of the dependent variable
             var_dimension = data.ndim
-            if var_dimension != 2:
-                raise NotImplementedError('Only 2D data can currently be made uniform')
-            # note: the interp2d interpolation function requires input of the form
-            # interp2d(x, y, z)
-            # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
-            # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]; then np.shape(z)=(2,3)
-            # Because Observable.dependent_variables_structure gives the order in which the independent variables
-            # are represented in the np.shape of the data, we have to reverse the order of the x and y arrays
-            # for interp2d:
-            x_data = observable.independent_variables[var_indexing[var_key][1]]
-            y_data = observable.independent_variables[var_indexing[var_key][0]]
-            data_interpol = interp2d(x_data, y_data, data)
-            # get the independent_variables that satisfy the uniformity requirements as created earlier
-            x_uniform = indep_var_uniform[var_indexing[var_key][1]]
-            y_uniform = indep_var_uniform[var_indexing[var_key][0]]
-            uniform_data = data_interpol(x_uniform, y_uniform)
+            # interpolation for 1D
+            if var_dimension == 1:
+                x_data = observable.independent_variables[var_indexing[var_key][0]]
+                data_interpol = interp1d(x_data, data)
+                x_uniform = indep_var_uniform[var_indexing[var_key][0]]
+                uniform_data = data_interpol(x_uniform)
+                # repeat the interpolation for the errors
+                err_data = observable.errors[var_key]
+                err_data[err_data == np.float('inf')] = 0
+                err_interpol = interp1d(x_data, err_data)
+                err_uniform = err_interpol(x_uniform)
+                err_uniform[err_uniform == 0.] = np.float('inf')
+            # interpolation for 2D
+            elif var_dimension == 2:
+                # note: the interp2d interpolation function requires input of the form
+                # interp2d(x, y, z)
+                # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
+                # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
+                # Because Observable.dependent_variables_structure gives the order in which the independent variables
+                # are represented in the np.shape of the data, we have to reverse the order of the x and y arrays
+                # for interp2d:
+                x_data = observable.independent_variables[var_indexing[var_key][1]]
+                y_data = observable.independent_variables[var_indexing[var_key][0]]
+                data_interpol = interp2d(x_data, y_data, data)
+                # get the independent_variables that satisfy the uniformity requirements as created earlier
+                x_uniform = indep_var_uniform[var_indexing[var_key][1]]
+                y_uniform = indep_var_uniform[var_indexing[var_key][0]]
+                uniform_data = data_interpol(x_uniform, y_uniform)
+                # repeat the interpolation for the errors
+                err_data = observable.errors[var_key]
+                err_data[err_data == np.float('inf')] = 0
+                err_interpol = interp2d(x_data, y_data, err_data)
+                err_uniform = err_interpol(x_uniform, y_uniform)
+                err_uniform[err_uniform == 0.] = np.float('inf')
+            else:
+                raise NotImplementedError('Only 1D and 2D data can currently be made uniform')
+            # save the uniform data and errors back into the Observable
             observable._dependent_variables[var_key] = uniform_data
-            # repeat the interpolation for the errors
-            err_data = observable.errors[var_key]
-            err_data[err_data == np.float('inf')] = 0
-            err_interpol = interp2d(x_data, y_data, err_data)
-            err_uniform = err_interpol(x_uniform, y_uniform)
-            err_uniform[err_uniform == 0.] = np.float('inf')
             observable._errors[var_key] = err_uniform
         # finally, set the independent variables of the ``Observable`` to the uniform ones
         observable.independent_variables = indep_var_uniform
