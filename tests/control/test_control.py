@@ -9,6 +9,7 @@ from typing import List
 
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
+from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
@@ -365,7 +366,7 @@ def test_control_max_parameter_change():
     assert ctrl.minimizer.max_parameter_change == 0.02
 
 
-def mock_nonuniform_observable() -> SQw:
+def mock_nonuniform_SQw() -> SQw:
     """
     A mock ``SQw`` ``Observable`` for testing purposes with a non-uniform grid of Q and E points.
 
@@ -385,7 +386,7 @@ def mock_nonuniform_observable() -> SQw:
     observable._errors = {'SQw': SQw_err_array}
     return observable
 
-def mock_uniform_observable() -> SQw:
+def mock_uniform_SQw() -> SQw:
     """
     A mock ``SQw`` ``Observable`` for testing purposes with a uniform grid of Q and E points.
 
@@ -405,38 +406,72 @@ def mock_uniform_observable() -> SQw:
     observable._errors = {'SQw': SQw_err_array}
     return observable
 
-def test_control_is_data_uniform_false():
+def mock_nonuniform_PDF() -> PairDistributionFunction:
     """
-    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observable.
+    A mock ``PairDistributionFunction`` ``Observable`` for testing purposes with a non-uniform grid of r points.
+
+    Returns
+    -------
+    ``PairDistributionFunction``
+        A mocked ``PairDistributionFunction`` object.
     """
-    expected = {'E': {'uniform': False, 'zeroed': True}, 'Q': {'uniform': False, 'zeroed': False}}
+    observable = PairDistributionFunction()
+    r_array = np.array([1., 1.9, 3.1, 4.])
+    observable.independent_variables = {'r': r_array}
+    observable._dependent_variables = {'PDF': r_array*2}
+    observable._errors = {'PDF': r_array/10}
+    return observable
+
+def mock_uniform_PDF() -> PairDistributionFunction:
+    """
+    A mock ``PairDistributionFunction`` ``Observable`` for testing purposes with a uniform grid of r points.
+
+    Returns
+    -------
+    ``PairDistributionFunction``
+        A mocked ``PairDistributionFunction`` object.
+    """
+    observable = PairDistributionFunction()
+    r_array = np.array([1., 2., 3., 4.])
+    observable.independent_variables = {'r': r_array}
+    observable._dependent_variables = {'PDF': r_array*2}
+    observable._errors = {'PDF': r_array/10}
+    return observable
+
+@pytest.mark.parametrize('mock_observable',
+                         [{'obs': mock_nonuniform_SQw(), 'exp': {'E': {'uniform': False, 'zeroed': True},
+                                                                 'Q': {'uniform': False, 'zeroed': False}}},
+                         {'obs': mock_uniform_SQw(), 'exp': {'E': {'uniform': True, 'zeroed': True},
+                                                             'Q': {'uniform': True, 'zeroed': False}}},
+                          {'obs': mock_nonuniform_PDF(), 'exp': {'r': {'uniform': False, 'zeroed': False}}},
+                          {'obs': mock_uniform_PDF(), 'exp': {'r': {'uniform': True, 'zeroed': False}}}])
+def test_control_is_data_uniform(mock_observable):
+    """
+    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked non-uniform observables.
+    """
+    expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
-    observed = cont._is_data_uniform(mock_nonuniform_observable())
+    observed = cont._is_data_uniform(mock_observable['obs'])
     assert expected == observed
 
-def test_control_is_data_uniform_true():
-    """
-    Tests that the Control._is_data_uniform method returns the correct boolean for the mocked uniform observable.
-    """
-    expected = {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
-    # create Control object without instantiating it to test one of its methods
-    cont = control.Control.__new__(control.Control)
-    observed = cont._is_data_uniform(mock_uniform_observable())
-    assert expected == observed
-
-def test_control_make_data_uniform():
+@pytest.mark.parametrize('mock_observable',
+                         [{'obs': mock_nonuniform_SQw(), 'exp': mock_uniform_SQw()},
+                          {'obs': mock_nonuniform_PDF(), 'exp': mock_uniform_PDF()}])
+def test_control_make_data_uniform(mock_observable):
     """
     Tests that the Control._make_data_uniform() method correctly makes the mocked non-uniform observable uniform.
     """
-    expected = mock_uniform_observable()
+    expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
-    observed = cont._make_data_uniform(mock_nonuniform_observable())
-    assert np.allclose(expected.E, observed.E, atol=1e-5)
-    assert np.allclose(expected.Q, observed.Q, atol=1e-5)
-    assert np.allclose(expected.SQw, observed.SQw, atol=1e-5)
-    assert np.allclose(expected.SQw_err, observed.SQw_err, atol=1e-5)
+    observed = cont._make_data_uniform(mock_observable['obs'])
+    for var_key in observed.independent_variables:
+        assert np.allclose(expected.independent_variables[var_key], observed.independent_variables[var_key], atol=1e-5)
+    for var_key in observed.dependent_variables:
+        assert np.allclose(expected.dependent_variables[var_key], observed.dependent_variables[var_key], atol=1e-5)
+    for var_key in observed.errors:
+        assert np.allclose(expected.errors[var_key], observed.errors[var_key], atol=1e-5)
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
