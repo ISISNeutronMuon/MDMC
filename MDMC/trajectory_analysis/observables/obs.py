@@ -2,6 +2,7 @@
 from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
+from typing import Dict
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
@@ -219,7 +220,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def uniformity_requirements(self):
+    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
         # Represents the current limitations on the ``independent_variables`` of the ``Observable``. It captures if the
         # ``independent_variables`` are required to be uniform or to start at zero. The keys of the returned dictionary
@@ -230,7 +231,7 @@ class Observable(ABC):
 
         Return
         ------
-        dict
+        Dict[str, Dict[str, bool]]
             Dictionary of independent variables with their uniformity restrictions represented as booleans
         """
 

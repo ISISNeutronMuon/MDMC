@@ -437,7 +437,7 @@ class Control:
 
         Returns
         -------
-        `Dict[str, list]`
+        `Dict[str, Dict[str, bool]]`
             A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
             are a dictionary with booleans if the variables are 'uniform' or 'zeroed'.
         """

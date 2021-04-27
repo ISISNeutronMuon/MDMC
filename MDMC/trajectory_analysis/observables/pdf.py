@@ -736,14 +736,14 @@ class PairDistributionFunction(Observable):
         return {'PDF': ['r']}
 
     @property
-    def uniformity_requirements(self) -> dict:
+    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
         # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
         # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
 
         Return
         ------
-        dict
+        Dict[str, Dict[str, bool]]
             Dictionary of uniformity restrictions for 'r'.
         """
 

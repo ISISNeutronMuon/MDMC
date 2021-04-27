@@ -626,7 +626,7 @@ class AbstractSQw(Observable):
         return {'SQw': ['Q', 'E']}
 
     @property
-    def uniformity_requirements(self) -> dict:
+    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
         # Captures the current limitations on the energy 'E' and reciprocal lattice points 'Q' within
         # the dynamic structure factor ``Observables``. 'E' must be uniform and start at zero, whereas
@@ -634,7 +634,7 @@ class AbstractSQw(Observable):
 
         Return
         ------
-        dict
+        Dict[str, Dict[str, bool]]
             Dictionary of uniformity restrictions for 'E' and 'Q'.
         """
 
