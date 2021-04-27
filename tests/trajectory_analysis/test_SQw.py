@@ -4,6 +4,7 @@ Includes calculation from MD trajectory and reading from experimental data file.
 """
 
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 import MDMC.trajectory_analysis.observables.obs_factory as of
@@ -56,16 +57,30 @@ def test_from_data(SQw_from_data):
     assert 'SQw' in SQw_from_data.dependent_variables
     assert 'SQw' in SQw_from_data.errors
 
-    assert np.all(SQw_from_data.independent_variables['Q']) == \
-        np.all(np.arange(0, 3.55, 0.05))
+    # Cannot use assert_allclose as our UnitNDArray fails comparison with a
+    # normal numpy array
+    for i, Q in enumerate(SQw_from_data.independent_variables['Q']):
+        assert np.isclose(Q, i * 0.05)
 
 
 def test_from_MD(SQw_from_MD):
 
     """
     Test the following:
-
-
+    - ``origin`` is 'MD'
+    - reader is LAMPSQw
+    - Q and E are the independent variables
+    - SQw is the dependent variable
+    - SQw is the variable on which there is an error
+    - Q ranges from 0 to 3.5 in 0.05 increments
     """
 
-    pass
+    assert SQw_from_MD.origin == 'MD'
+    assert 'Q' in SQw_from_MD.independent_variables and \
+        'E' in SQw_from_MD.independent_variables
+    assert 'SQw' in SQw_from_MD.dependent_variables
+    assert 'SQw' in SQw_from_MD.errors
+
+    # Recreate the momentum values we create in SQw_from_MD to assert against
+    assert_allclose(SQw_from_MD.independent_variables['Q'],
+                    2 * np.pi * np.arange(0.1, 1.1, 0.1))

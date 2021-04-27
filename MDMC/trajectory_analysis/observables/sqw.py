@@ -278,6 +278,9 @@ class AbstractSQw(Observable):
             ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
                 A 3 element `tuple` or ``array`` of `float` specifying the
                 dimensions of the ``Universe`` in units of ``Ang``
+            ``use_FFT`` (`bool`)
+                Whether to use the FFT to calculate S(Q,w), which requires
+                uniform spacing in both energy and time variables.
         """
 
         self._origin = 'MD'
@@ -336,6 +339,8 @@ class AbstractSQw(Observable):
 
         self.FQt = self.calculate_FQt()
 
+        # Default to using the FFT as it was previous behaviour
+        self.use_FFT = settings.get('use_FFT', True)
         self._dependent_variables = {'SQw':self._calculate_SQw()}
         self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
 
@@ -560,12 +565,23 @@ class AbstractSQw(Observable):
         # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
         dt = (self.t[1] - self.t[0]) / 1000.
 
-        # FFT and reduce the temporal dimension back to that of F(Q,t), with the
-        # factor of 0.5 accounting for the fft over the reflected F(Q,t)
+        if self.use_FFT:
+            # FFT and reduce the temporal dimension back to that of F(Q,t)
+            SQw_cropped = np.fft.fft(FQt_mirror)[:, :len(self.E)]
+        else:
+            SQw_cropped = np.zeros((len(FQt_mirror), len(self.E)))
+            for i, energy in enumerate(self.E):
+                # Create 1D array of exponential factors. Dotting with F(Q,t)
+                # sums over the time/energy dimension as required for a
+                # discrete Fourier transform
+                exp = np.exp(-1e-18j * energy * self.t / h_bar)
+                exp_mirror = np.append(exp, exp[-2:0:-1])
+                SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
+
+        # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
-        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.E)])
-                / len(FQt_mirror))
+        return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
     def _apply_instrument_resolution(self, FQt: np.ndarray,
             function: Callable[..., np.ndarray]=gaussian) -> np.ndarray:
