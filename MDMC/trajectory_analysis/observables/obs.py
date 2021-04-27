@@ -2,6 +2,7 @@
 from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
+from typing import Dict
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
@@ -189,6 +190,49 @@ class Observable(ABC):
         **parameters
             Additional parameters required for calculation specific
             ``Observable`` objects
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def dependent_variables_structure(self):
+        """
+        The structure of the dependent variables with respect to the independent variables. Specifically,
+        the order in which the dependent variables are indexed with regards to the independent variables.
+        Example: if
+        dep_var1[indep_var1_index, indep_var2_index, ...] = data point for values of the independent_variables with
+        the stated indices then the relevant entry in the returned dict should be:
+        {'dependent_variable1': [independent_variable1, independent_variable2, ...]}
+        Note that this would also correspond to numpy.shape of the dependent variable being:
+        np.shape(dependent_variable1)=(np.size(independent_variable1), np.size(independent_variable2), ...)
+
+        The purpose of this method is to ensure that all ``Observable``s of a particular type are created with
+         'dependent_variables' that are consistent regardless of how they were created (e.g. by different ``Reader``s).
+
+        Return
+        ------
+        dict
+            The np.shape of the dependent variables
+        """
+
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+        """
+        # Represents the current limitations on the ``independent_variables`` of the ``Observable``. It captures if the
+        # ``independent_variables`` are required to be uniform or to start at zero. The keys of the returned dictionary
+        # should be the variables that have such a restriction, with the associated values being a dictionary
+        # with booleans if the variables are 'uniform' or 'zeroed'.
+        # Variables without any requirements do not need to be included, but can be included.
+        # If there are no uniformity requirements it is okay to return 'None'.
+
+        Return
+        ------
+        Dict[str, Dict[str, bool]]
+            Dictionary of independent variables with their uniformity restrictions represented as booleans
         """
 
         raise NotImplementedError

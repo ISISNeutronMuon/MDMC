@@ -67,7 +67,7 @@ fit_parameters = set([p for p in universe.parameters if p.fixed is False])
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
-                  MD_steps=555,
+                  MD_steps=570,
                   energy_resolution=8.)
 
 # Run the refinement, i.e. refine the FF parameters against the data.

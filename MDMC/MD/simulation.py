@@ -1236,13 +1236,17 @@ class Simulation:
     ----------
     universe : Universe
         The ``Universe`` on which the simulation is performed.
+    traj_step : int
+        How many steps the simulation should take between dumping each
+        ``Trajectory`` frame. Along with ``time_step`` determines the time
+        separation of calculated variables such as energy.
+    time_step : float, optional
+        Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
         The ``MDEngine`` used for the simulation. Default is ``'mmtk'``.
     **settings
         ``temperature`` (`float`)
             Simulation temperature in ``K``.
-        ``time_step``  (`float`)
-            Simulation timestep in ``fs``.
         ``integrator`` (`str`)
             Simulation time integrator.
         ``lj_options`` (`dict`)
@@ -1261,6 +1265,10 @@ class Simulation:
     ----------
     universe : Universe
         The ``Universe`` on which the simulation is performed.
+    traj_step : int
+        How many steps the simulation should take between dumping each
+        ``Trajectory`` frame. Along with ``time_step`` determines the time
+        separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
         library.
@@ -1270,9 +1278,12 @@ class Simulation:
     """
 
     # TODO: Potentially separate out universe and simulation setup
-    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
+    def __init__(self, universe: Universe, traj_step: int,
+                 time_step: float = 1., engine: str = "mmtk", **settings):
 
         self.universe = universe
+        self.traj_step = traj_step
+        self.time_step = time_step
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self._setup()
@@ -1297,7 +1308,9 @@ class Simulation:
         """
 
         self.engine.setup_universe(self.universe, **self.settings)
-        self.engine.setup_simulation(**self.settings)
+        self.engine.setup_simulation(traj_step=self.traj_step,
+                                     time_step=self.time_step,
+                                     **self.settings)
 
     def minimize(self, n_steps: int, **settings):
 

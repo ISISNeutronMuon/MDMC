@@ -58,7 +58,10 @@ def time_ref(incoh_file):
 
 @pytest.fixture(scope="module")
 def w_ref(incoh_file):
-    return np.array(incoh_file.variables['angular_frequency'][:])
+    # nMOLDYN test file has 50 points in time and frequency, however we can
+    # only generate 49 energy points from 50 frames so crop and rescale array
+    w_raw = np.array(incoh_file.variables['angular_frequency'][:])
+    return w_raw[:-1] * len(w_raw) / (len(w_raw) - 1)
 
 @pytest.fixture(scope="module")
 def FQt_incoh_ref(incoh_file):
@@ -66,7 +69,9 @@ def FQt_incoh_ref(incoh_file):
 
 @pytest.fixture(scope="module")
 def SQw_incoh_ref(incoh_file):
-    return np.array(incoh_file.variables['Sqw-total'][:])
+    # nMOLDYN test file has 50 points in time and frequency, however we can
+    # only generate 49 energy points from 50 frames so crop the array in energy
+    return np.array(incoh_file.variables['Sqw-total'][:])[:, :-1]
 
 @pytest.fixture(scope="module")
 def FQt_coh_HH_ref(coh_file):
@@ -101,10 +106,12 @@ def SQw_coh_OO_ref(coh_file):
 
 @pytest.fixture(scope="module")
 def SQw_coh_ref(SQw_coh_HH_ref, SQw_coh_HO_ref, SQw_coh_OO_ref):
+    # nMOLDYN test file has 50 points in time and frequency, however we can
+    # only generate 49 energy points from 50 frames so crop the array in energy
     SQw_coh_ref = (SQw_coh_HH_ref * ap.B_COH['H']**2 * N_H
                    + SQw_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
                    + SQw_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
-    return SQw_coh_ref
+    return SQw_coh_ref[:, :-1]
 
 @pytest.fixture(scope='module')
 def monkeymodule():

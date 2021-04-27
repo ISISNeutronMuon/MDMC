@@ -358,8 +358,11 @@ class FigureOfMeritCalculator(ABC):
             If calculated value of Figure of Merit is negative
         """
 
-        self.value = np.sum([self.calculate_single_FoM(obs_pair)
-                             for obs_pair in self.obs_pairs])
+        total_weight = np.sum([obs_pair.weight for obs_pair in self.obs_pairs])
+        value_unreduced = np.sum([self.calculate_single_FoM(obs_pair)
+                                  for obs_pair in self.obs_pairs])
+        self.value = value_unreduced / total_weight
+
         assert self.value >= 0.
         return self.value
 
@@ -390,19 +393,20 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     .. math::
 
-        FoM_{total} = \sum_{i} FoM_{i}
+        FoM_{total} = \frac{\sum_{i} FoM_{i}}{\sum_{i} w_{i}}
 
     Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
-    a sum of the error normalised square difference between data points for a single ``ObservablePair``:
+    a sum of the square difference between data points for a single ``ObservablePair``, normalised
+    by the errors and the number of data points:
 
     .. math::
 
-        FoM_{i} = w_{i} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
+        FoM_{i} = \frac{w_{i}}{N_{i}} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
 
-    where the sum is over the data points in the ``ObservablePair`` corresponding to the :math:`i`-th dataset, and
-    :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset.
-    :math:`D_{j}` are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
-    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
+    where the sum is over the :math:`N_{i}` data points in the ``ObservablePair`` corresponding to
+    the :math:`i`-th dataset, and :math:`w_{i}` is an importance weighting assigned to the
+    :math:`i`-th dataset. :math:`D_{j}` are the individual data points in the 1-D or 2-D array of
+    the experimental ``Observable`` (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
     :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
     data point. Note that the subtraction and division over the arrays are element-wise. Note also that if the
     experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
@@ -452,5 +456,7 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                                        / np.sum(MD_values * exp_values
                                                 / exp_errors ** 2))
 
-        return obs_pair.weight * np.sum((obs_pair.calculate_difference()
-                                         / obs_pair.calculate_errors()) ** 2)
+        n_datapoints = np.size(*obs_pair.exp_obs.dependent_variables.values())
+        value_unreduced = np.sum((obs_pair.calculate_difference()
+                                  / obs_pair.calculate_errors()) ** 2)
+        return obs_pair.weight * value_unreduced / n_datapoints
