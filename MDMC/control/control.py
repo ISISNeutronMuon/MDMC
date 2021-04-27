@@ -31,16 +31,25 @@ class Control:
         Performs a simulation for a given set of potential ``Parameter``
         objects.
     exp_datasets : list of dicts
-        Each `dict` is an experimental dataset, containing the file name
-        (``file_name``), the type of observable (``type``), the reader required
-        for the file (``reader``), and the weighting of the dataset in the
-        Figure of Merit calculation(``weighting``). Optionally, can also
-        contain ``rescale_factor`` which will be applied to the experimental
-        data when comparing it to the calculated observable. Default is `1.`.
-        Alternatively, can optionally specify ``auto_scale`` which will set the
-        ``rescale_factor`` automatically to minimise the FoM. Default is
-        `False`. If both ``rescale_factor`` and ``auto_scale`` are provided
-        then a warning is printed and ``auto_scale`` takes precedence.
+        Each `dict` represents an experimental dataset, containing the
+        following keys:
+          - ``file_name`` (`str`) the file name
+          - ``type`` (`str`) the type of observable
+          - ``reader`` (`str`) the reader required for the file
+          - ``weighting`` (`float`) the weighting of the dataset to be used in
+            the Figure of Merit calculation
+          - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
+            the experimental data when calculating the FoM to ensure it is on
+            the same scale as the calculated observable
+          - ``auto_scale`` (`bool`, optional, defaults to `False`) set the
+            ``rescale_factor`` automatically to minimise the FoM, if both
+            ``rescale_factor`` and ``auto_scale`` are provided then a warning
+            is printed and ``auto_scale`` takes precedence
+          - ``use_FFT`` (`bool`, optional, defaults to `True`) whether to use
+            Fast Fourier Transforms in the calculation of dependent variables.
+            FFT speeds up calculation but places restrictions on spacing in the
+            independent variable domain(s). This option may not be supported
+            for all ``Observable``s
     fit_parameters : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -397,9 +406,12 @@ class Control:
             maximum_frames = pair.MD_obs.maximum_frames
             if maximum_frames:
                 pair.MD_obs.calculate_from_MD(trj[:maximum_frames],
+                                              use_FFT=pair.use_FFT,
                                               **self.settings)
             else:
-                pair.MD_obs.calculate_from_MD(trj, **self.settings)
+                pair.MD_obs.calculate_from_MD(trj,
+                                              use_FFT=pair.use_FFT,
+                                              **self.settings)
 
     def _calculate_MD_steps(self, observable_pair: FoM.ObservablePair):
 

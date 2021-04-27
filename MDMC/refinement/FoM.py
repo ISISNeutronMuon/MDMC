@@ -8,7 +8,8 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
-@repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale')
+@repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale',
+                'use_FFT')
 class ObservablePair:
 
     """
@@ -32,16 +33,23 @@ class ObservablePair:
         for each step of the refinement, overriding a user specified value if
         set. Note that this process is purely statistical and does not account
         for physical effects that might impact the scaling. Default is `False`.
+    use_FFT: bool, optional
+        If `True`, then when calculating dependent variables from MD Fast
+        Fourier Transforms will be used. FFT speeds up calculation, but place
+        restrictions on spacing in the independent variable domain(s). This
+        option may not be supported for all ``Observable``s. Default is `True`.
     """
 
     def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float,
-                 rescale_factor: float=1., auto_scale: bool=False):
+                 rescale_factor: float = 1., auto_scale: bool = False,
+                 use_FFT: bool = True):
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
         self.weight = weight
         self.rescale_factor = rescale_factor
         self.auto_scale = auto_scale
+        self.use_FFT = use_FFT
 
     @property
     def exp_obs(self):
