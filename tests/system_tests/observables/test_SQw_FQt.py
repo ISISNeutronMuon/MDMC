@@ -144,12 +144,12 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
         """
 
         SQw_total = of.ObservableFactory.create_observable('SQw')
+        SQw_total.use_FFT = use_FFT
         monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
         SQw_total.calculate_from_MD(trajectory,
                                     Q_vectors=Q_vectors,
                                     dimensions=DIMENSIONS,
-                                    energy_resolution=E_RESOLUTION,
-                                    use_FFT=use_FFT)
+                                    energy_resolution=E_RESOLUTION)
         return SQw_total
 
     return _SQw_obs
@@ -175,6 +175,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
         """
 
         SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
+        SQw_incoh.use_FFT = use_FFT
         monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
         SQw_incoh.calculate_from_MD(trajectory,
                                     Q_vectors=Q_vectors,
@@ -205,6 +206,7 @@ def SQw_coh_obs(trajectory, Q_vectors):
         """
 
         SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
+        SQw_coh.use_FFT = use_FFT
         SQw_coh.calculate_from_MD(trajectory,
                                   Q_vectors=Q_vectors,
                                   dimensions=DIMENSIONS,

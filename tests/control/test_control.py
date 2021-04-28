@@ -13,13 +13,16 @@ from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
 
-# The requirements for dt and nE is different for each experimental dataset,
-# and we need this information before initialising Control so store these as a
-# global variable
-DATASET_INFO = {'263K05Awat_LAMP': {'dt': 1055.8303421611213,
-                                    'nE': 373},
-                'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564,
-                                               'nE': 37}}
+# The requirements for dt and n_frames is different for each experimental
+# dataset, and depends on whether we are using FFT. We need this information
+# before initialising Control so store these as a global variable
+DATASET_INFO = {
+    'use_FFT': {
+        '263K05Awat_LAMP': {'dt': 1055.8303421611213, 'n_frames': 374},
+        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 38}},
+    'no_FFT': {
+        '263K05Awat_LAMP': {'dt': 208.08701470659403, 'n_frames': 2042},
+        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 104}}}
 
 
 class MockSimulation(Simulation):
@@ -113,6 +116,7 @@ def exp_datasets() -> callable:
 
     def _exp_datasets(rescale_factor: float = None,
                       auto_scale: bool = None,
+                      use_FFT: bool = None,
                       file_name: str = None) -> List[dict]:
 
         datasets = []
@@ -130,8 +134,10 @@ def exp_datasets() -> callable:
             dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.}
             if rescale_factor:
                 dataset['rescale_factor'] = rescale_factor
-            if auto_scale:
+            if auto_scale is not None:
                 dataset['auto_scale'] = auto_scale
+            if use_FFT is not None:
+                dataset['use_FFT'] = use_FFT
             datasets.append(dataset)
 
         return datasets
@@ -167,7 +173,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                         MockParameter('B', 34743.233E6)]
 
     datasets = exp_datasets(file_name=file_name)
-    dt = DATASET_INFO[file_name]['dt']
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
@@ -229,7 +235,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                         MockParameter('B', 34743.233E6)]
 
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
-    dt = DATASET_INFO[file_name]['dt']
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
@@ -274,7 +280,7 @@ def test_control_no_scaling(simulation, exp_datasets, file_name):
     """
 
     datasets = exp_datasets(file_name=file_name)
-    dt = DATASET_INFO[file_name]['dt']
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
@@ -292,7 +298,7 @@ def test_control_rescale_factor(simulation, exp_datasets, file_name):
     """
 
     datasets = exp_datasets(rescale_factor=0.5, file_name=file_name)
-    dt = DATASET_INFO[file_name]['dt']
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
@@ -309,7 +315,7 @@ def test_control_auto_scale(simulation, exp_datasets, file_name):
     """
 
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
-    dt = DATASET_INFO[file_name]['dt']
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
@@ -330,7 +336,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
     datasets = exp_datasets(rescale_factor=0.5,
                             auto_scale=True,
                             file_name=file_name)
-    dt = DATASET_INFO[file_name]['dt']
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
                            reset_config=False)
 
@@ -349,6 +355,40 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                       '  Number of parameters          0\n'
                       '\n'
                       ''.format(datasets[0]['file_name']))
+
+
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_use_FFT_default(simulation, exp_datasets, file_name):
+    """
+    Test that ``use_FFT`` defaults to True.
+    """
+
+    datasets = exp_datasets(file_name=file_name)
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
+
+    for pair in ctrl.observable_pairs:
+        assert pair.exp_obs.use_FFT
+        assert pair.MD_obs.use_FFT
+
+
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+def test_control_use_FFT(simulation, exp_datasets, file_name):
+    """
+    Test that ``use_FFT`` is applied when specified.
+    """
+
+    datasets = exp_datasets(use_FFT=False, file_name=file_name)
+    dt = DATASET_INFO['no_FFT'][file_name]['dt']
+    ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           reset_config=False)
+
+    for pair in ctrl.observable_pairs:
+        assert not pair.exp_obs.use_FFT
+        assert not pair.MD_obs.use_FFT
 
 
 def test_control_max_parameter_change():
@@ -441,35 +481,46 @@ def test_control_make_data_uniform():
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_no_MD_steps(simulation, exp_datasets, traj_step, file_name):
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
+                             file_name):
     """
     Test that ``MD_steps`` defaults to the minimum required if not specified.
     """
 
-    dt = DATASET_INFO[file_name]['dt']
-    nE = DATASET_INFO[file_name]['nE']
+    if use_FFT:
+        key = 'use_FFT'
+    else:
+        key = 'no_FFT'
+    dt = DATASET_INFO[key][file_name]['dt']
+    n_frames = DATASET_INFO[key][file_name]['n_frames']
     time_step = dt / traj_step
     ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
-                           exp_datasets(file_name=file_name),
+                           exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [],
                            reset_config=False)
-    assert ctrl.MD_steps == (nE + 1) * traj_step
+    assert ctrl.MD_steps == n_frames * traj_step
 
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step,
-                                   file_name):
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
+                                   traj_step, file_name):
     """
     Test that ``MD_steps`` is accepted when greater than the minimum required.
     """
 
-    user_MD_steps = 9350
-    dt = DATASET_INFO[file_name]['dt']
+    user_MD_steps = 51050
+    if use_FFT:
+        key = 'use_FFT'
+    else:
+        key = 'no_FFT'
+    dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
     ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
-                           exp_datasets(file_name=file_name),
+                           exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [],
                            reset_config=False,
                            MD_steps=user_MD_steps)
@@ -480,17 +531,22 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step,
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_MD_steps_rejected(simulation, exp_datasets, traj_step,
-                                   file_name):
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
+                                   traj_step, file_name):
     """
     Test that ``MD_steps`` is rejected when greater than the minimum required.
     """
 
-    dt = DATASET_INFO[file_name]['dt']
+    if use_FFT:
+        key = 'use_FFT'
+    else:
+        key = 'no_FFT'
+    dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
     with pytest.raises(ValueError):
         control.Control(simulation(traj_step=traj_step, time_step=time_step),
-                        exp_datasets(file_name=file_name),
+                        exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
                         reset_config=False,
                         MD_steps=1)
@@ -499,17 +555,22 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, traj_step,
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 @pytest.mark.parametrize('traj_step', [1, 5, 25])
-def test_control_validate_energy(simulation, exp_datasets, traj_step,
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                                  file_name):
     """
     Test that an ``AssertionError`` is raised when we provide an incorrect time
     seperation.
     """
 
-    dt = DATASET_INFO[file_name]['dt']
+    if use_FFT:
+        key = 'use_FFT'
+    else:
+        key = 'no_FFT'
+    dt = DATASET_INFO[key][file_name]['dt']
     time_step = 2 * dt / traj_step
     with pytest.raises(AssertionError):
         control.Control(simulation(traj_step=traj_step, time_step=time_step),
-                        exp_datasets(file_name=file_name),
+                        exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
                         reset_config=False)

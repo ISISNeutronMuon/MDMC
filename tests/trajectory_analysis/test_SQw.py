@@ -34,6 +34,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
 
     def _SQw_from_MD(use_FFT: bool = True) -> SQw:
         _SQw = of.ObservableFactory.create_observable('SQw')
+        _SQw.use_FFT = use_FFT
         dimensions = universe.dimensions
         n_Q = 10
         energy_resolution = 49.99998257
@@ -41,8 +42,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
         _SQw.calculate_from_MD(trajectory,
                                Q_values=Q_values,
                                dimensions=dimensions,
-                               energy_resolution=energy_resolution,
-                               use_FFT=use_FFT)
+                               energy_resolution=energy_resolution)
         return _SQw
 
     return _SQw_from_MD
@@ -104,4 +104,4 @@ def test_from_MD(SQw_from_MD):
                     2 * np.pi * np.arange(0.1, 1.1, 0.1))
 
     # Assert there is no difference between FFT and non-FFT calculation
-    assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw)
+    assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5)

@@ -103,12 +103,15 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     assert np.all(stdev_full < 2 * np.max(stdev))
 
     # Assert there is no difference between FFT and non-FFT calculation
+    SQw_full.use_FFT = False
+    SQw_1.use_FFT = False
+    SQw_2.use_FFT = False
     SQw_full.calculate_from_MD(trajectory, energy_resolution=E_RES,
-                               dimensions=DIMENSIONS, use_FFT=False)
+                               dimensions=DIMENSIONS)
     SQw_1.calculate_from_MD(trajectory[:n], energy_resolution=E_RES,
-                            dimensions=DIMENSIONS, use_FFT=False)
+                            dimensions=DIMENSIONS)
     SQw_2.calculate_from_MD(trajectory[n:], energy_resolution=E_RES,
-                            dimensions=DIMENSIONS, use_FFT=False)
+                            dimensions=DIMENSIONS)
 
     assert_allclose(SQw_full_array, SQw_full.SQw)
     assert_allclose(SQw_1_array, SQw_1.SQw)

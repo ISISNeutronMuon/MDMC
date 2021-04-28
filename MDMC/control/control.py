@@ -134,14 +134,18 @@ class Control:
         self.observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
+            use_FFT = dset.get('use_FFT', True)
             exp_observable = self._read_observable_from_file(dset['type'],
                                                              dset['reader'],
                                                              dset['file_name'])
+            exp_observable.use_FFT = use_FFT
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
 
             MD_observable = self._create_empty_observable(exp_observable)
+            MD_observable.use_FFT = use_FFT
+
             self._validate_energy(MD_observable)
 
             auto_scale = dset.get('auto_scale', False)
@@ -158,9 +162,7 @@ class Control:
                                                  MD_observable,
                                                  dset['weight'],
                                                  rescale_factor=rescale_factor,
-                                                 auto_scale=auto_scale,
-                                                 use_FFT=dset.get('use_FFT',
-                                                                  True))
+                                                 auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
             minimum_MD_steps = max(minimum_MD_steps,
                                    self._calculate_MD_steps(observable_pair))
@@ -408,15 +410,12 @@ class Control:
 
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
-            maximum_frames = pair.MD_obs.maximum_frames
+            maximum_frames = pair.MD_obs.maximum_frames()
             if maximum_frames:
                 pair.MD_obs.calculate_from_MD(trj[:maximum_frames],
-                                              use_FFT=pair.use_FFT,
                                               **self.settings)
             else:
-                pair.MD_obs.calculate_from_MD(trj,
-                                              use_FFT=pair.use_FFT,
-                                              **self.settings)
+                pair.MD_obs.calculate_from_MD(trj, **self.settings)
 
     def _calculate_MD_steps(self, observable_pair: FoM.ObservablePair):
 
@@ -436,12 +435,14 @@ class Control:
         `int`
             Number of ``MD_steps``
         """
+        time_step = self.simulation.time_step
         traj_step = self.simulation.traj_step
-        minimum_frames = observable_pair.exp_obs.minimum_frames
+        dt = time_step * traj_step
+        minimum_frames = observable_pair.exp_obs.minimum_frames(dt)
 
         return traj_step * minimum_frames
 
-    def _is_data_uniform(self, observable: Observable) -> Dict[str, list]:
+    def _is_data_uniform(self, observable: Observable) -> Dict[str, Dict[str, bool]]:
         """
         Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
         they start at zero.
@@ -464,7 +465,7 @@ class Control:
             uniformity_dict[var_key] = {'uniform': is_uniform, 'zeroed': var_data[0] == 0}
         return uniformity_dict
 
-    def _make_data_uniform(self, observable: Observable, uniformity_check: dict = None) -> Observable:
+    def _make_data_uniform(self, observable: Observable) -> Observable:
         """
         Takes an ``Observable``, checks the requirements for its ``independent_variables`` to be uniform or start at
         zero, creates uniform grids for the variables that do not satisfy their requirement, interpolates the
@@ -483,7 +484,6 @@ class Control:
             Returns a copy of the passed ``Observable`` with the independent variables put onto uniform grid (for the
             variables where that is necessary) and the dependent variables interpolated onto the same grid
         """
-        observable = observable
         # get the uniformity requirements from the Observable
         uniformity_required = observable.uniformity_requirements
         if uniformity_required is None:
@@ -561,10 +561,8 @@ class Control:
     def _validate_energy(self, obs: Observable):
 
         """
-        Calculates the energy spacing of the ``Simulation`` from the user set
-        parameters and asserts that it is the same as that of the experiment.
-        If not, it includes the time separation required in the error. If the
-        ``obs`` does not have the relevant attributes, we pass.
+        Try and validate the energy of the ``Observable`` provided, and pass if
+        it does not have a ``validate_energy`` function itself
 
         Parameters
         ----------
@@ -582,17 +580,6 @@ class Control:
 
         dt = self.simulation.traj_step * self.simulation.time_step
         try:
-            energy = obs.E
-            assert_allclose(obs.calculate_E(len(energy), dt),
-                            energy,
-                            rtol=1e-5,
-                            err_msg=("Experimental E values are not consistent"
-                                     " with the `Simulation`. For the "
-                                     "experimental data provided, the product "
-                                     "of `time_step` and `traj_step` must be "
-                                     "{0}, but it was {1}"
-                                     "".format(obs.calculate_dt(), dt)))
+            obs.validate_energy(dt)
         except AttributeError:
-            # If we don't have one of the required attributes such as `E` then
-            # pass
             pass
