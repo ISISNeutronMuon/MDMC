@@ -116,6 +116,7 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     SQw_1.calculate_from_MD(trajectory[:n], energy_resolution=E_RES,
                             dimensions=DIMENSIONS)
     SQw_2.calculate_from_MD(trajectory[n:], energy_resolution=E_RES,
+                            dimensions=DIMENSIONS)
 
     # Assert there is no difference between FFT and non-FFT calculation for
     # the short trajectories, as in both cases all frames are utilised
