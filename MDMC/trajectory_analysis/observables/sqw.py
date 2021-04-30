@@ -343,7 +343,9 @@ class AbstractSQw(Observable):
                    " than the frame seperation. The product of `time_step`"
                    " and `traj_step` must be less than {0}, but it was {1}"
                    "".format(dt_required, dt))
-            assert dt <= dt_required, msg
+            # Allow for rounding errors by using isclose
+            isclose = np.isclose(dt, dt_required, rtol=1e-5)
+            assert isclose or dt <= dt_required, msg
 
     def calculate_from_MD(self, MD_input, **settings):
 
@@ -752,21 +754,25 @@ class AbstractSQw(Observable):
             The S(Q, w) calculated from F(Q, t)
         """
 
+        nE = len(self.E)
+        if self.use_FFT:
+            # Ensure that if we recorded a longer trajectory than required by
+            # the FFT, we crop it to match the energy points. This should
+            # already be the case, but if the energy values and trajectories
+            # are manually provided it may not be.
+            self.FQt = self.FQt[:, :nE + 1]
+
         FQt_res = self._apply_instrument_resolution(self.FQt)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
         FQt_mirror = np.append(FQt_res, FQt_res[:, -2:0:-1], axis=1)
 
-        # Normalisation requires factor of dt (in ps, so convert from fs)
-        # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
-        dt = (self.t[1] - self.t[0]) / 1000.
-
         if self.use_FFT:
             # FFT and reduce the energy dimension to positive energies
-            SQw_cropped = np.fft.fft(FQt_mirror)[:, :len(self.E)]
+            SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
         else:
-            SQw_cropped = np.zeros((len(FQt_mirror), len(self.E)))
+            SQw_cropped = np.zeros((len(FQt_mirror), nE))
             for i, energy in enumerate(self.E):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
                 # sums over the time/energy dimension as required for a
@@ -775,6 +781,9 @@ class AbstractSQw(Observable):
                 exp_mirror = np.append(exp, exp[-2:0:-1])
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
+        # Normalisation requires factor of dt (in ps, so convert from fs)
+        # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
+        dt = (self.t[1] - self.t[0]) / 1000.
         # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
@@ -813,11 +822,11 @@ class AbstractSQw(Observable):
         # relationship between the width of a Gaussian and its Fourier
         # transform rather than explicitly transforming it.
         sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
-        N_Q = np.shape(FQt)[0]
-        window = function(self.t, sigma_t, norm=False)
+        N_Q, N_T = np.shape(FQt)
+        window = function(self.t[:N_T], sigma_t, norm=False)
 
         # Broadcast the window so that it is applied for all Q values
-        return np.broadcast_to(window, (N_Q, len(self.t))) * FQt
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:
