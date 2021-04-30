@@ -382,8 +382,8 @@ def mock_nonuniform_SQw() -> SQw:
     SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
     SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
-    observable._dependent_variables = {'SQw': SQw_array}
-    observable._errors = {'SQw': SQw_err_array}
+    observable._dependent_variables = {'SQw': [SQw_array]}
+    observable._errors = {'SQw': [SQw_err_array]}
     return observable
 
 def mock_uniform_SQw() -> SQw:
@@ -402,8 +402,8 @@ def mock_uniform_SQw() -> SQw:
     SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
     SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
-    observable._dependent_variables = {'SQw': SQw_array}
-    observable._errors = {'SQw': SQw_err_array}
+    observable._dependent_variables = {'SQw': [SQw_array]}
+    observable._errors = {'SQw': [SQw_err_array]}
     return observable
 
 def mock_nonuniform_PDF() -> PairDistributionFunction:
@@ -418,8 +418,8 @@ def mock_nonuniform_PDF() -> PairDistributionFunction:
     observable = PairDistributionFunction()
     r_array = np.array([1., 1.9, 3.1, 4.])
     observable.independent_variables = {'r': r_array}
-    observable._dependent_variables = {'PDF': r_array*2}
-    observable._errors = {'PDF': r_array/10}
+    observable._dependent_variables = {'PDF': [r_array*2]}
+    observable._errors = {'PDF': [r_array/10]}
     return observable
 
 def mock_uniform_PDF() -> PairDistributionFunction:
@@ -434,8 +434,8 @@ def mock_uniform_PDF() -> PairDistributionFunction:
     observable = PairDistributionFunction()
     r_array = np.array([1., 2., 3., 4.])
     observable.independent_variables = {'r': r_array}
-    observable._dependent_variables = {'PDF': r_array*2}
-    observable._errors = {'PDF': r_array/10}
+    observable._dependent_variables = {'PDF': [r_array*2]}
+    observable._errors = {'PDF': [r_array/10]}
     return observable
 
 @pytest.mark.parametrize('mock_observable',
@@ -497,11 +497,14 @@ def test_control_no_MD_steps(simulation, exp_datasets, traj_step, file_name):
 def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step,
                                    file_name):
     """
-    Test that ``MD_steps`` is accepted when greater than the minimum required.
+    Test that ``MD_steps`` is accepted when greater than the minimum required,
+    and rounded down to an integer number of ``nE * traj_steps``.
     """
 
     user_MD_steps = 9350
     dt = DATASET_INFO[file_name]['dt']
+    nE = DATASET_INFO[file_name]['nE']
+    max_steps = (nE + 1) * traj_step
     time_step = dt / traj_step
     ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
                            exp_datasets(file_name=file_name),
@@ -509,7 +512,7 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, traj_step,
                            reset_config=False,
                            MD_steps=user_MD_steps)
 
-    assert ctrl.MD_steps == user_MD_steps
+    assert ctrl.MD_steps == max_steps * (user_MD_steps // max_steps)
 
 
 @pytest.mark.parametrize('file_name',

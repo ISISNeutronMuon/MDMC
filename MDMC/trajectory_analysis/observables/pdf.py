@@ -191,8 +191,8 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            An MD ``Trajectory``
+        MD_input : list of Trajectory
+            A `list` of MD ``Trajectory``
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
@@ -269,7 +269,7 @@ class PairDistributionFunction(Observable):
         """
 
         self.origin = 'MD'
-        self._parse_calc_MD_settings(MD_input, settings)
+        self._parse_calc_MD_settings(MD_input[0], settings)
 
         for trajectory in self.trajectory:
             self._calculate_histogram(trajectory.configurations[0])
@@ -284,7 +284,7 @@ class PairDistributionFunction(Observable):
         # Partial independent prefactor (e.g. anything element independent)
         prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
                                             * self.r_step)
-        self._dependent_variables['PDF'] = np.zeros(np.shape(self.r))
+        self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
         concentration_norm = np.sum(list(self.numbers.values())) ** 2
         for partial_string, partial in self.partial_pdfs.items():
             numbers = np.multiply(*[self.numbers[elem] for elem
@@ -304,8 +304,8 @@ class PairDistributionFunction(Observable):
                 fac = 1.
             else:
                 fac = 2.
-            self._dependent_variables['PDF'] += ((partial - 1) * fac * weights
-                                                 * concentration)
+            self._dependent_variables['PDF'][0] += ((partial - 1) * fac
+                                                    * weights * concentration)
 
     def _parse_calc_MD_settings(self, trajectory, settings):
 

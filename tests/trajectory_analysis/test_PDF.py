@@ -415,7 +415,7 @@ def test_low_r_limit(PDF, weights, numbers, expected):
     PDF._dependent_variables = {}
     PDF._sum_partial_pairs()
     # Very small tolerance to account for FP differences
-    assert np.isclose(PDF.PDF[0], expected, atol=1e-20, rtol=1e-12)
+    assert np.isclose(PDF.PDF[0, 0], expected, atol=1e-20, rtol=1e-12)
 
 
 def get_expected_partition_pairs(x, y, z):

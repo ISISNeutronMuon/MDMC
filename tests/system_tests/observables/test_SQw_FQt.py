@@ -132,7 +132,7 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
 
     SQw_total = of.ObservableFactory.create_observable('SQw')
     monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
-    SQw_total.calculate_from_MD(trajectory,
+    SQw_total.calculate_from_MD([trajectory],
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
                                 energy_resolution=E_RESOLUTION)
@@ -150,7 +150,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
     monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
-    SQw_incoh.calculate_from_MD(trajectory,
+    SQw_incoh.calculate_from_MD([trajectory],
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
                                 energy_resolution=E_RESOLUTION)
@@ -167,7 +167,7 @@ def SQw_coh_obs(trajectory, Q_vectors):
     """
 
     SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
-    SQw_coh.calculate_from_MD(trajectory,
+    SQw_coh.calculate_from_MD([trajectory],
                               Q_vectors=Q_vectors,
                               dimensions=DIMENSIONS,
                               energy_resolution=E_RESOLUTION)
@@ -244,12 +244,12 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
     section, so this factor is included.
     """
 
-    assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
+    assert np.all(np.shape(SQw_incoh_obs.SQw[0]) == np.shape(SQw_incoh_ref))
     # SQw is normalised to B_FACTOR / N_Q_VALUES.  The first term is due to
     # nMOLDYN not including the incoherent weighting, and the second term is
     # because MDMC normalises the FFT so that there is the same power in SQw as
     # in FQt
-    assert_allclose(SQw_incoh_obs.SQw / (B_FACTOR / N_Q_VALUES),
+    assert_allclose(SQw_incoh_obs.SQw[0] / (B_FACTOR / N_Q_VALUES),
                     SQw_incoh_ref, atol=ATOL)
 
 
@@ -260,8 +260,8 @@ def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
     nMOLDYN
     """
 
-    assert np.all(np.shape(SQw_coh_obs.SQw) == np.shape(SQw_coh_ref))
-    assert_allclose(SQw_coh_obs.SQw * N_Q_VALUES, SQw_coh_ref, atol=ATOL)
+    assert np.all(np.shape(SQw_coh_obs.SQw[0]) == np.shape(SQw_coh_ref))
+    assert_allclose(SQw_coh_obs.SQw[0] * N_Q_VALUES, SQw_coh_ref, atol=ATOL)
 
 
 def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
@@ -272,6 +272,6 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
     nMOLDYN
     """
 
-    assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
+    assert np.all(np.shape(SQw_obs.SQw[0]) == np.shape(SQw_incoh_ref))
     SQw_ref = (SQw_incoh_ref * B_FACTOR + SQw_coh_ref) / N_Q_VALUES
-    assert_allclose(SQw_obs.SQw, SQw_ref, atol=ATOL)
+    assert_allclose(SQw_obs.SQw[0], SQw_ref, atol=ATOL)
