@@ -43,7 +43,7 @@ def PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-    pdf.calculate_from_MD(trajectory, n_frames=5, r=r,
+    pdf.calculate_from_MD([trajectory], n_frames=5, r=r,
                           dimensions=[39.4221067]*3)
     return pdf
 
