@@ -92,7 +92,11 @@ class Universe(AtomContainer):
         self._solvent_density = 0.
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
-        self.force_fields = force_field
+        if force_field:
+            self._force_fields = ForceFieldFactory.create_force_field(
+                force_field)
+        else:
+            self._force_fields = None
 
         self.kspace_solver = settings.get('kspace_solver')
         self.electrostatic_solver = settings.get('electrostatic_solver')
@@ -406,15 +410,6 @@ class Universe(AtomContainer):
 
         return self._force_fields
 
-    @force_fields.setter
-    def force_fields(self, force_field):
-
-        if force_field:
-            self._force_fields = ForceFieldFactory.create_force_field(
-                force_field)
-        else:
-            self._force_fields = None
-
     @property
     def atom_types(self):
 
@@ -708,7 +703,7 @@ class Universe(AtomContainer):
                 default, no ``Dispersion`` interactions are added.
         """
 
-        self.force_fields = force_field
+        self._force_fields = ForceFieldFactory.create_force_field(force_field)
         add_dispersions = settings.get('add_dispersions', False)
 
         if add_dispersions:
