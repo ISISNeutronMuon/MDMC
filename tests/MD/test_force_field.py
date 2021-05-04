@@ -481,3 +481,73 @@ def test_specific_force_fields_names():
     force_field_names = ForceFieldFactory.get_force_field_names()
     for name in ['SPC', 'SPCE', 'OPLSAA']:
         assert name in force_field_names
+
+
+def test_name_element_error():
+
+    """
+    Test that atoms with mismatched names and elements raise and error
+    """
+
+    uni = Universe(10.)
+    # name=1 corresponds to a F atom in OPLSAA
+    H1 = Atom('H', name=1)
+    H2 = Atom('H', name=1)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    Bond((H1, H2))
+    with pytest.raises(KeyError):
+        uni.add_force_field('OPLSAA')
+
+
+def test_undefined_bond_error():
+
+    """
+    Test that atoms without a defined bond raise an error
+    """
+
+    uni = Universe(10.)
+    # There is no OPLSAA bond between two "7" atoms
+    H1 = Atom('H', name=7)
+    H2 = Atom('H', name=7)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    Bond((H1, H2))
+    with pytest.raises(ValueError):
+        uni.add_force_field('OPLSAA')
+
+
+def test_coulombic_error():
+
+    """
+    Test that a coulombic interaction applied to an ``atom_type`` that is
+    missing from the universe raises an error
+    """
+
+    uni = Universe(10.)
+    H1 = Atom('H', name=7)
+    H2 = Atom('H', name=7)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    # We only have atom_type of 1
+    Coulombic(uni, atom_types=[2])
+    with pytest.raises(ValueError):
+        uni.add_force_field('OPLSAA')
+
+
+def test_dispersion_error():
+
+    """
+    Test that a dispersion interaction applied to an ``atom_type`` that is
+    missing from the universe raises an error
+    """
+
+    uni = Universe(10.)
+    H1 = Atom('H', name=7)
+    H2 = Atom('H', name=7)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    # We only have atom_type of 1
+    Dispersion(uni, atom_types=[2])
+    with pytest.raises(ValueError):
+        uni.add_force_field('OPLSAA')
