@@ -486,7 +486,7 @@ def test_specific_force_fields_names():
 def test_name_element_error():
 
     """
-    Test that atoms with mismatched names and elements raise and error
+    Test that atoms with mismatched names and elements raise an error
     """
 
     uni = Universe(10.)
