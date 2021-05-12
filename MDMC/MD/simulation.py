@@ -121,10 +121,10 @@ class Universe(AtomContainer):
 
         setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
                                     [force_field],
-                                    [len(self.configuration.atom_list)]],
-                                    index=['  Dimensions',
-                                           '  Force field',
-                                           '  Number of atoms'])
+                                    [self.n_atoms]],
+                                   index=['  Dimensions',
+                                          '  Force field',
+                                          '  Number of atoms'])
 
         print('Universe created with:\n{}\n'
               ''.format(setup_frame.to_string(index=True, header=False)))
@@ -133,9 +133,9 @@ class Universe(AtomContainer):
 
         return ('Universe with {0} atoms, {1} bonded interactions, {2} '
                 'nonbonded interactions, and dimensions of {3}'
-                ''.format(len(self.atom_list),
-                          len(self.bonded_interactions),
-                          len(self.nonbonded_interactions),
+                ''.format(self.n_atoms,
+                          self.n_bonded,
+                          self.n_nonbonded,
                           self.dimensions))
 
     def __eq__(self, other):
@@ -270,6 +270,48 @@ class Universe(AtomContainer):
         return list(self._bonded_interaction_pairs)
 
     @property
+    def n_bonded(self) -> int:
+
+        """
+        Get the number of bonded interactions in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of bonded interactions in the ``Universe``
+        """
+
+        return len(self.bonded_interactions)
+
+    @property
+    def n_nonbonded(self) -> int:
+
+        """
+        Get the number of nonbonded interactions in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of nonbonded interactions in the ``Universe``
+        """
+
+        return len(self.nonbonded_interactions)
+
+    @property
+    def n_interactions(self) -> int:
+
+        """
+        Get the number of interactions in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of interactions in the ``Universe``
+        """
+
+        return self.n_bonded + self.n_nonbonded
+
+    @property
     def parameters(self):
 
         """
@@ -349,6 +391,20 @@ class Universe(AtomContainer):
         return self.configuration.atom_list
 
     @property
+    def n_atoms(self) -> int:
+
+        """
+        Get the number of atoms in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of atoms in the ``Universe``
+        """
+
+        return len(self.atom_list)
+
+    @property
     def molecule_list(self):
 
         """
@@ -361,6 +417,20 @@ class Universe(AtomContainer):
         """
 
         return self.configuration.molecule_list
+
+    @property
+    def n_molecules(self) -> int:
+
+        """
+        Get the number of molecules in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of molecules in the ``Universe``
+        """
+
+        return len(self.molecule_list)
 
     @property
     def structure_list(self):
