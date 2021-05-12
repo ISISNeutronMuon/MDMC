@@ -25,6 +25,9 @@ from tests.system_tests.observables.data_manager import trajectory
 pytestmark = pytest.mark.mpi
 
 
+ATOL = 1e-7
+
+
 @pytest.fixture(scope="module")
 def independent_variables(trajectory):
 
@@ -37,14 +40,16 @@ def independent_variables(trajectory):
     Dictionary of independent variables required for SQw, SQw_coh, and SQw_incoh
     """
 
-    # Use half the trajectory steps to calculate the Energies
+    # Use half the trajectory steps to calculate the Energies, taking into
+    # account the fact we get n energy points from n + 1 frames
     n = int(len(trajectory.times) / 2 - 1)
     dt = trajectory.times[1] - trajectory.times[0]
+    # h is in units of eV s whereas system units are meV fs, so apply a
+    # factor of 1e3 * 1e15 to convert it
     E = h * 1e18 * np.fft.fftfreq(2 * n, dt)[:n]
     Q = np.arange(1.6, 21, 1.6)
 
     return {'E':E, 'Q':Q}
-
 
 @pytest.fixture(params=['SQw', 'SQw_coh', 'SQw_incoh'])
 def SQw_type(request):
@@ -80,6 +85,34 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
         SQw.independent_variables = independent_variables
 
     n = len(trajectory.times) // 2
+    SQw_full.calculate_from_MD(trajectory,
+                               energy_resolution=E_RES,
+                               dimensions=DIMENSIONS)
+    SQw_1.calculate_from_MD(trajectory[:n],
+                            energy_resolution=E_RES,
+                            dimensions=DIMENSIONS)
+    SQw_2.calculate_from_MD(trajectory[n:],
+                            energy_resolution=E_RES,
+                            dimensions=DIMENSIONS)
+    SQw_full_array = SQw_full.SQw
+    SQw_1_array = SQw_1.SQw
+    SQw_2_array = SQw_2.SQw
+
+    # Calculate the total standard deviation for the two half runs and test that
+    # the total run is within a factor of 3
+    SQw_1_2_mean = np.mean([SQw_1_array, SQw_2_array], axis=0)
+    stdev = np.std([SQw_1_array, SQw_2_array], axis=0)
+    stdev_total = np.sum(stdev)
+    stdev_full = np.std([SQw_1_2_mean, SQw_full_array], axis=0)
+    assert np.sum(stdev_full) < 3 * stdev_total
+
+    # Test that the stdev for each Q,w value for the total run is within a
+    # factor of 2 of the maximum standard deviation of any point
+    assert np.all(stdev_full < 2 * np.max(stdev))
+
+    SQw_full.use_FFT = False
+    SQw_1.use_FFT = False
+    SQw_2.use_FFT = False
     SQw_full.calculate_from_MD(trajectory, energy_resolution=E_RES,
                                dimensions=DIMENSIONS)
     SQw_1.calculate_from_MD(trajectory[:n], energy_resolution=E_RES,
@@ -87,14 +120,15 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     SQw_2.calculate_from_MD(trajectory[n:], energy_resolution=E_RES,
                             dimensions=DIMENSIONS)
 
-    # Calculate the total standard deviation for the two half runs and test that
-    # the total run is within a factor of 3
-    SQw_1_2_mean = np.mean([SQw_1.SQw, SQw_2.SQw], axis=0)
-    stdev = np.std([SQw_1.SQw, SQw_2.SQw], axis=0)
-    stdev_total = np.sum(stdev)
-    stdev_full = np.std([SQw_1_2_mean, SQw_full.SQw], axis=0)
-    assert np.sum(stdev_full) < 3 * stdev_total
+    # Assert there is no difference between FFT and non-FFT calculation for
+    # the short trajectories, as in both cases all frames are utilised
+    assert_allclose(SQw_1_array, SQw_1.SQw, atol=ATOL)
+    assert_allclose(SQw_2_array, SQw_2.SQw, atol=ATOL)
 
-    # Test that the stdev for each Q,w value for the total run is within a
-    # factor of 2 of the maximum standard deviation of any point
-    assert np.all(stdev_full < 2 * np.max(stdev))
+    # For the full trajectory, the FFT method will only utilise the first n
+    # frames. The non-FFT method uses all the frames, and so we cannot assert
+    # that the two are "allclose" in general. Instead, apply the same criteria
+    # of being within a number of standard deviations as we did before
+    stdev_full_no_FFT = np.std([SQw_1_2_mean, SQw_full.SQw], axis=0)
+    assert np.sum(stdev_full_no_FFT) < 3 * stdev_total
+    assert np.all(stdev_full_no_FFT < 2 * np.max(stdev))

@@ -35,7 +35,7 @@ class ObservablePair:
     """
 
     def __init__(self, exp_obs: Observable, MD_obs: Observable, weight: float,
-                 rescale_factor: float=1., auto_scale: bool=False):
+                 rescale_factor: float = 1., auto_scale: bool = False):
 
         self.exp_obs = exp_obs
         self.MD_obs = MD_obs
