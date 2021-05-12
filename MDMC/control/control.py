@@ -437,15 +437,18 @@ class Control:
         """
         time_step = self.simulation.time_step
         traj_step = self.simulation.traj_step
+        # Calculate the time separation between trajectory frames, dt
         dt = time_step * traj_step
+        # Calculate the minimum number of trajectory frames needed for the
+        # calculation of the dependent_variables of observable_pair
         minimum_frames = observable_pair.exp_obs.minimum_frames(dt)
 
         return traj_step * minimum_frames
 
     def _is_data_uniform(self, observable: Observable) -> Dict[str, Dict[str, bool]]:
         """
-        Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
-        they start at zero.
+        Checks if the values for each independent variable of an ``Observable`` are uniformly
+        spaced and if they start at zero. This information is returned in a single dictionary.
 
         Parameters
         ----------
@@ -455,8 +458,16 @@ class Control:
         Returns
         -------
         `Dict[str, Dict[str, bool]]`
-            A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
-            are a dictionary with booleans if the variables are 'uniform' or 'zeroed'.
+            An outer dictionary where the independent variables of the ``Observable`` are the keys,
+            and the values are another dictionary corresponding to that variable. This inner
+            dictionary has the same format for all variables, with the two keys 'uniform' and
+            'zeroed'. The values for these keys are booleans that state whether the data fulfils
+            the corresponding requirement.
+
+        Examples
+        --------
+        >>> control._is_data_uniform(self, observable)
+        {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
         """
         uniformity_dict = {}
         for var_key, var_data in observable.independent_variables.items():
@@ -578,6 +589,8 @@ class Control:
         AssertionError
         """
 
+        # Calculate the time separation between trajectory frames, dt, imposed
+        # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
         try:
             obs.validate_energy(dt)

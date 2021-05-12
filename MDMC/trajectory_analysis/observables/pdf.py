@@ -100,7 +100,7 @@ class PairDistributionFunction(Observable):
         Parameters
         ----------
         dt : float, optional
-            The time seperation of frames in ``fs``, default is `None`, not
+            The time separation of frames in ``fs``, default is `None`, not
             used
 
         Returns

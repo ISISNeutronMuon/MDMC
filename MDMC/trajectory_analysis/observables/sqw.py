@@ -104,10 +104,10 @@ class AbstractSQw(Observable):
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` depends on ``self.use_FFT``.
 
-        If `True`, it is the number of energy steps + 1, in order to allow for
+        If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
         a reflection in time which only counts the end points once.
 
-        Otherwise, there is not a hard minimum on number of frames. However, to
+        If `self.use_FFT == False`, there is not a hard minimum on number of frames. However, to
         distinguish our smallest differences in energy :math:`F(Q,t)` needs to
         cover at least a time period :math:`T_{min}` such that:
 
@@ -125,7 +125,7 @@ class AbstractSQw(Observable):
         Parameters
         ----------
         dt : float, optional
-            The time seperation of frames in ``fs``, default is `None`
+            The time separation of frames in ``fs``, default is `None`
 
         Returns
         -------
@@ -137,14 +137,17 @@ class AbstractSQw(Observable):
         if self.use_FFT:
             return nE + 1
 
-        # Either take the smallest absolute energy, or the smallest seperation
+        # Either take the smallest absolute energy, or the smallest separation
         # of energies we wish to discriminate between
-        limiting_energy = np.min(np.abs(self.E[self.E != 0]))
-        for i in range(1, nE):
-            energy_step = self.E[i] - self.E[i-1]
-            limiting_energy = min(limiting_energy, energy_step)
+        minimum_abs_energy = np.min(np.abs(self.E[self.E != 0]))
+        minimum_energy_separation = np.min(np.diff(np.sort(self.E)))
+        limiting_energy = min(minimum_abs_energy, minimum_energy_separation)
 
+        # h is in units of eV s whereas system units are meV fs, so apply a
+        # factor of 1e3 * 1e15 to convert it
         required_time = h * 1e18 / limiting_energy
+        # We need an integer number of frames, so round up using np.ceil to
+        # ensure we exceed the minimum number of frames needed
         return int(np.ceil(required_time / (2 * dt) + 1))
 
     def maximum_frames(self):
@@ -304,14 +307,14 @@ class AbstractSQw(Observable):
     def validate_energy(self, dt):
 
         """
-        Asserts that the user set frame seperation ``dt`` leads to energy
-        seperation that matches same that of the experiment. If not, it
+        Asserts that the user set frame separation ``dt`` leads to energy
+        separation that matches that of the experiment. If not, it
         includes the time separation required in the error.
 
         Parameters
         ----------
         dt : float
-            Frame seperation in ``fs``
+            Frame separation in ``fs``
 
         Returns
         -------
@@ -338,11 +341,13 @@ class AbstractSQw(Observable):
         else:
             # When not using FFT, there is not a hard requirement to match
             # the energies, instead impose a requirement that our frame
-            # seperation is small enough to capture the highest frequencies
-            msg = ("Maximum experimental E value has a time period smaller"
-                   " than the frame seperation. The product of `time_step`"
-                   " and `traj_step` must be less than {0}, but it was {1}"
-                   "".format(dt_required, dt))
+            # separation is small enough to capture the highest frequencies
+            msg = ("In order to capture the maximum experimental energy "
+                   "(frequency) value, the frame separation must be at least "
+                   "as small as the time period for oscillations at that "
+                   "frequency. The frame separation is given by the product of"
+                   " `time_step` and `traj_step` and must be less than {0}, "
+                   "but it was {1}".format(dt_required, dt))
             # Allow for rounding errors by using isclose
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
@@ -465,6 +470,8 @@ class AbstractSQw(Observable):
             An ``array`` of `float` specifying the energy in units of ``meV``
         """
 
+        # h is in units of eV s whereas system units are meV fs, so apply a
+        # factor of 1e3 * 1e15 to convert it
         return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
     def calculate_dt(self):
@@ -487,6 +494,8 @@ class AbstractSQw(Observable):
             The time separation required by the current values of ``self.E``
         """
 
+        # h is in units of eV s whereas system units are meV fs, so apply a
+        # factor of 1e3 * 1e15 to convert it
         nE = len(self.E)
         return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
 
@@ -777,7 +786,9 @@ class AbstractSQw(Observable):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
                 # sums over the time/energy dimension as required for a
                 # discrete Fourier transform
-                exp = np.exp(-1e-18j * energy * self.t / h_bar)
+                # h_bar is in units of eV s whereas system units are meV fs, so
+                # apply a factor of 1e3 * 1e15 to convert it
+                exp = np.exp(-1j * energy * self.t / (h_bar * 1e18))
                 exp_mirror = np.append(exp, exp[-2:0:-1])
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
@@ -820,7 +831,8 @@ class AbstractSQw(Observable):
         # domain to time domain) before multiplication. We convert the FWHM
         # energy resolution (in meV) into sigma_t (in fs) using the inverse
         # relationship between the width of a Gaussian and its Fourier
-        # transform rather than explicitly transforming it.
+        # transform rather than explicitly transforming it, applying a factor
+        # of 1e18 to convert from h_bar's units of eV s into system units
         sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
         N_Q, N_T = np.shape(FQt)
         window = function(self.t[:N_T], sigma_t, norm=False)

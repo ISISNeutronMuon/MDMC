@@ -44,6 +44,8 @@ def independent_variables(trajectory):
     # account the fact we get n energy points from n + 1 frames
     n = int(len(trajectory.times) / 2 - 1)
     dt = trajectory.times[1] - trajectory.times[0]
+    # h is in units of eV s whereas system units are meV fs, so apply a
+    # factor of 1e3 * 1e15 to convert it
     E = h * 1e18 * np.fft.fftfreq(2 * n, dt)[:n]
     Q = np.arange(1.6, 21, 1.6)
 

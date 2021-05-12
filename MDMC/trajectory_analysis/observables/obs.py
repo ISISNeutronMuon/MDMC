@@ -134,7 +134,7 @@ class Observable(ABC):
         Parameters
         ----------
         dt : float, optional
-            The time seperation of frames in ``fs``, default is `None`
+            The time separation of frames in ``fs``, default is `None`
 
         Returns
         -------

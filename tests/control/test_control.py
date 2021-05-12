@@ -560,7 +560,7 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                                  file_name):
     """
     Test that an ``AssertionError`` is raised when we provide an incorrect time
-    seperation.
+    separation.
     """
 
     if use_FFT:
