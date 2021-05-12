@@ -2300,35 +2300,45 @@ def convert_unit(value, unit=None, to_lammps=True):
             return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
+        # SYSTEM represents the LAMMPS units, units.SYSTEM the MDMC units
         l_sys = copy(SYSTEM)
+
+        # Apply conversion_factor of MDMC units. This accounts for cases where
+        # we are not in system units (e.g. radians not degrees) numerically
+        value *= unit.conversion_factor
+
         # For angular potential strength LAMMPS requires the units in rad,
-        # rather than degrees (which is uses otherwise). Therefore if the unit
+        # rather than degrees (which is used otherwise). Therefore if the unit
         # is in MDMC angular potential strength units (energy / angle^2), the
-        # ANGLE entry in SYSTEM is replaced by radians.
+        # ANGLE entry in l_sys is replaced by radians.
         if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
             l_sys['ANGLE'] = units.Unit('rad')
+        elif unit == units.SYSTEM['ENERGY'] / units.Unit('rad') ** 2:
+            l_sys['ANGLE'] = units.Unit('rad')
+            # If we were already using rads, the above conversion_factor will
+            # have applied numerical conversion, so change the units to degrees
+            # as well
+            unit = units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2
 
         expanded_unit = expand_components(unit, units.SYSTEM)
-        system_inv = {unit:property for property, unit in units.SYSTEM.items()}
-        # Apply inversion to all components
-        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
-                                                        for comp in comp_list],
-                                     expanded_unit)
+        # For each MDMC system unit, determine its property
+        # (e.g. {'kJ / mol': 'ENERGY', ...})
+        unit_properties = {unit:property for property, unit in units.SYSTEM.items()}
+        # For each MDMC unit, determine the LAMMPS system unit that corresponds
+        # to that property (e.g. 'kJ / mol' -> 'ENERGY' -> 'kcal / mol')
+        l_unit_nums, l_unit_denoms = map(lambda unit_comps: [l_sys[unit_properties[comp]]
+                                                             for comp in unit_comps],
+                                         expanded_unit)
 
-        conv_nums, conv_denoms = [], []
-        for component in unit_nums:
-            conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
-                expand_components(component, l_sys)
-        for component in unit_denoms:
-            conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
-                expand_components(component, l_sys)
+        # For each LAMMPS unit component, divide by the conversion_factor to go
+        # from MDMC system units to LAMMPS system units
+        for component in l_unit_nums:
+            value /= component.conversion_factor
+        for component in l_unit_denoms:
+            value *= component.conversion_factor
+
     else:
-        conv_denoms, conv_nums = expand_components(unit, SYSTEM)
-
-    for component in conv_nums:
-        value /= getattr(units, component)
-    for component in conv_denoms:
-        value *= getattr(units, component)
+        value *= unit.conversion_factor
 
     return value
 
