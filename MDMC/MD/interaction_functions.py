@@ -199,6 +199,10 @@ class Buckingham(InteractionFunction):
 
         {\Phi _{12}(r)=A\exp \left(-Br\right)-{\frac {C}{r^{6}}}}
 
+    The first and second terms represent a repulsion and attraction
+    respectively, and so all parameters :math:`A`, :math:`B` and :math:`C`
+    should be positive in order to be physically valid.
+
     Parameters
     ----------
     A : float

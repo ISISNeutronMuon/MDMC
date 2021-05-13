@@ -124,13 +124,17 @@ class Observable(ABC):
 
         raise NotImplementedError
 
-    @property
     @abstractmethod
-    def minimum_frames(self):
+    def minimum_frames(self, dt: float = None):
 
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables``
+
+        Parameters
+        ----------
+        dt : float, optional
+            The time separation of frames in ``fs``, default is `None`
 
         Returns
         -------
@@ -140,7 +144,6 @@ class Observable(ABC):
 
         raise NotImplementedError
 
-    @property
     @abstractmethod
     def maximum_frames(self):
 
@@ -155,6 +158,25 @@ class Observable(ABC):
         """
 
         raise NotImplementedError
+
+    @property
+    def use_FFT(self):
+
+        """
+        Get or set whether to use FFT when calculating from MD
+
+        Returns
+        -------
+        bool
+            Whether to use FFT
+        """
+
+        return self._use_FFT
+
+    @use_FFT.setter
+    def use_FFT(self, use_FFT):
+
+        self._use_FFT = use_FFT
 
     def read_from_file(self, reader, file_name):
 

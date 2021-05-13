@@ -31,6 +31,8 @@ class AbstractSQw(Observable):
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
+        # Use FFT by default
+        self._use_FFT = True
 
     @property
     def data(self):
@@ -96,13 +98,34 @@ class AbstractSQw(Observable):
 
         return self._errors
 
-    @property
-    def minimum_frames(self):
+    def minimum_frames(self, dt: float = None):
 
-        """
+        r"""
         The minimum number of ``Trajectory`` frames needed to calculate the
-        ``dependent_variables`` is the number of energy steps + 1, in order to
-        allow for a reflection in time which only counts the end points once.
+        ``dependent_variables`` depends on ``self.use_FFT``.
+
+        If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
+        a reflection in time which only counts the end points once.
+
+        If `self.use_FFT == False`, there is not a hard minimum on number of frames. However, to
+        distinguish our smallest differences in energy :math:`F(Q,t)` needs to
+        cover at least a time period :math:`T_{min}` such that:
+
+        .. math::
+
+            T_{min} \sim \frac{h}{\Delta E_{min}}
+
+        Due to the aforementioned reflection in the time domain, to cover a
+        period of :math:`T_{min}` we only need :math:`N` frames:
+
+        .. math::
+
+            N = \frac{T_{min}}{2 \Delta t} + 1 = \frac{h}{2 \Delta t \Delta E_{min}} + 1
+
+        Parameters
+        ----------
+        dt : float, optional
+            The time separation of frames in ``fs``, default is `None`
 
         Returns
         -------
@@ -110,16 +133,34 @@ class AbstractSQw(Observable):
             The minimum number of frames
         """
 
-        return len(self.E) + 1
+        nE = len(self.E)
+        if self.use_FFT:
+            return nE + 1
 
-    @property
+        # Either take the smallest absolute energy, or the smallest separation
+        # of energies we wish to discriminate between
+        minimum_abs_energy = np.min(np.abs(self.E[self.E != 0]))
+        minimum_energy_separation = np.min(np.diff(np.sort(self.E)))
+        limiting_energy = min(minimum_abs_energy, minimum_energy_separation)
+
+        # h is in units of eV s whereas system units are meV fs, so apply a
+        # factor of 1e3 * 1e15 to convert it
+        required_time = h * 1e18 / limiting_energy
+        # We need an integer number of frames, so round up using np.ceil to
+        # ensure we exceed the minimum number of frames needed
+        return int(np.ceil(required_time / (2 * dt) + 1))
+
     def maximum_frames(self):
 
         """
         The maximum number of ``Trajectory`` frames that can be used to
-        calculate the ``dependent_variables`` is the number of energy steps
-        + 1, in order to allow for a reflection in time which only counts the
-        end points once.
+        calculate the ``dependent_variables`` depends on ``self.use_FFT``.
+
+        If `True`, it is the number of energy steps + 1, in order to allow for
+        a reflection in time which only counts the end points once.
+
+        Otherwise, there is no limit and all frames will contribute to the
+        calculation.
 
         Returns
         -------
@@ -127,7 +168,10 @@ class AbstractSQw(Observable):
             The maximum number of frames
         """
 
-        return len(self.E) + 1
+        if self.use_FFT:
+            return len(self.E) + 1
+
+        return None
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
@@ -261,6 +305,54 @@ class AbstractSQw(Observable):
 
         self._e_res = value
 
+    def validate_energy(self, dt):
+
+        """
+        Asserts that the user set frame separation ``dt`` leads to energy
+        separation that matches that of the experiment. If not, it
+        includes the time separation required in the error.
+
+        Parameters
+        ----------
+        dt : float
+            Frame separation in ``fs``
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+        """
+
+        dt_required = self.calculate_dt()
+        if self.use_FFT:
+            # When using FFT, require all experimental/simulated energies
+            # to match
+            energy = self.E
+            msg = ("Experimental E values are not consistent with the "
+                   "`Simulation`. For the experimental data provided, the "
+                   "product of `time_step` and `traj_step` must be {0}, "
+                   "but it was {1}".format(dt_required, dt))
+            assert_allclose(self.calculate_E(len(energy), dt),
+                            energy,
+                            rtol=1e-5,
+                            err_msg=msg)
+        else:
+            # When not using FFT, there is not a hard requirement to match
+            # the energies, instead impose a requirement that our frame
+            # separation is small enough to capture the highest frequencies
+            msg = ("In order to capture the maximum experimental energy "
+                   "(frequency) value, the frame separation must be at least "
+                   "as small as the time period for oscillations at that "
+                   "frequency. The frame separation is given by the product of"
+                   " `time_step` and `traj_step` and must be less than {0}, "
+                   "but it was {1}".format(dt_required, dt))
+            # Allow for rounding errors by using isclose
+            isclose = np.isclose(dt, dt_required, rtol=1e-5)
+            assert isclose or dt <= dt_required, msg
+
     def calculate_from_MD(self, MD_input, **settings):
 
         """
@@ -316,15 +408,7 @@ class AbstractSQw(Observable):
             # Test that, if there is an existing E, it is consistent with E
             # calculated from trajectory times
             if self.E is not None:
-                assert_allclose(self.calculate_E(len(self.E), dt),
-                                self.E,
-                                rtol=1e-5,
-                                err_msg=("Experimental E values are not consistent"
-                                         " with the `Simulation`. For the "
-                                         "experimental data provided, the product "
-                                         "of `time_step` and `traj_step` must be "
-                                         "{0}, but it was {1}"
-                                         "".format(self.calculate_dt(), dt)))
+                self.validate_energy(dt)
             elif self.independent_variables:
                 self.independent_variables['E'] = self.calculate_E(len(self.t) - 1, dt)
             else:
@@ -393,6 +477,8 @@ class AbstractSQw(Observable):
             An ``array`` of `float` specifying the energy in units of ``meV``
         """
 
+        # h is in units of eV s whereas system units are meV fs, so apply a
+        # factor of 1e3 * 1e15 to convert it
         return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
     def calculate_dt(self):
@@ -415,8 +501,10 @@ class AbstractSQw(Observable):
             The time separation required by the current values of ``self.E``
         """
 
+        # h is in units of eV s whereas system units are meV fs, so apply a
+        # factor of 1e3 * 1e15 to convert it
         nE = len(self.E)
-        return h * 1e18 * (nE - 1) / (2 * nE * (self.E[-1] - self.E[0]))
+        return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
 
     def calculate_FQt(self):
 
@@ -682,22 +770,42 @@ class AbstractSQw(Observable):
             The S(Q, w) calculated from F(Q, t)
         """
 
+        nE = len(self.E)
+        if self.use_FFT:
+            # Ensure that if we recorded a longer trajectory than required by
+            # the FFT, we crop it to match the energy points. This should
+            # already be the case, but if the energy values and trajectories
+            # are manually provided it may not be.
+            self.FQt = self.FQt[:, :nE + 1]
+
         FQt_res = self._apply_instrument_resolution(self.FQt)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
         FQt_mirror = np.append(FQt_res, FQt_res[:, -2:0:-1], axis=1)
 
+        if self.use_FFT:
+            # FFT and reduce the energy dimension to positive energies
+            SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
+        else:
+            SQw_cropped = np.zeros((len(FQt_mirror), nE))
+            for i, energy in enumerate(self.E):
+                # Create 1D array of exponential factors. Dotting with F(Q,t)
+                # sums over the time/energy dimension as required for a
+                # discrete Fourier transform
+                # h_bar is in units of eV s whereas system units are meV fs, so
+                # apply a factor of 1e3 * 1e15 to convert it
+                exp = np.exp(-1j * energy * self.t / (h_bar * 1e18))
+                exp_mirror = np.append(exp, exp[-2:0:-1])
+                SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
+
         # Normalisation requires factor of dt (in ps, so convert from fs)
         # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
         dt = (self.t[1] - self.t[0]) / 1000.
-
-        # FFT and reduce the energy dimension to positive energies, with the
-        # factor of 0.5 accounting for the fft over the reflected F(Q,t)
+        # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
-        return (0.5 * dt * np.real(np.fft.fft(FQt_mirror)[:, :len(self.E)])
-                / len(FQt_mirror))
+        return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
     def _apply_instrument_resolution(self, FQt: np.ndarray,
             function: Callable[..., np.ndarray]=gaussian) -> np.ndarray:
@@ -730,13 +838,14 @@ class AbstractSQw(Observable):
         # domain to time domain) before multiplication. We convert the FWHM
         # energy resolution (in meV) into sigma_t (in fs) using the inverse
         # relationship between the width of a Gaussian and its Fourier
-        # transform rather than explicitly transforming it.
+        # transform rather than explicitly transforming it, applying a factor
+        # of 1e18 to convert from h_bar's units of eV s into system units
         sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
-        N_Q = np.shape(FQt)[0]
-        window = function(self.t[:self.maximum_frames], sigma_t, norm=False)
+        N_Q, N_T = np.shape(FQt)
+        window = function(self.t[:N_T], sigma_t, norm=False)
 
         # Broadcast the window so that it is applied for all Q values
-        return np.broadcast_to(window, (N_Q, self.maximum_frames)) * FQt
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:
@@ -759,9 +868,11 @@ class AbstractSQw(Observable):
     @property
     def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
-        # Captures the current limitations on the energy 'E' and reciprocal lattice points 'Q' within
-        # the dynamic structure factor ``Observables``. 'E' must be uniform and start at zero, whereas
-        # 'Q' must be uniform but does not need to start at zero.
+        Captures the current limitations on the energy 'E' and reciprocal
+        lattice points 'Q' within the dynamic structure factor ``Observables``.
+        If using FFT, then 'E' must be uniform and start at zero, otherwise it
+        has no restrictions. 'Q' must be uniform but does not need to start at
+        zero.
 
         Return
         ------
@@ -769,7 +880,12 @@ class AbstractSQw(Observable):
             Dictionary of uniformity restrictions for 'E' and 'Q'.
         """
 
-        return {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
+        if self.use_FFT:
+            e_requirements = {'uniform': True, 'zeroed': True}
+        else:
+            e_requirements = {'uniform': False, 'zeroed': False}
+
+        return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
@@ -793,7 +909,7 @@ class SQw(AbstractSQw):
     def _calculate_FQt_single_Q(self, single_Q_vectors):
         # Inherit docstring of abstract method
 
-        n_t = self.maximum_frames
+        n_t = len(self.t)
         elements = self.trajectory.element_set
         FQt_single_Q = np.zeros(n_t)
         rho_element = {}

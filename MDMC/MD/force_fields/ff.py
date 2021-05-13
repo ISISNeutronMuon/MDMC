@@ -335,7 +335,6 @@ class FileForceField(ForceField):
             An ``Interaction`` to be parameterized
         """
 
-        # Add parametrize coulombic
         if isinstance(interaction, BondedInteraction):
             self._parametrize_bonded(interaction)
         elif isinstance(interaction, Coulombic):
@@ -359,8 +358,16 @@ class FileForceField(ForceField):
             tuple_groups = []
             for atom in atom_tuple:
                 self._convert_atom_type_name(atom)
-                tuple_groups.append(self.atom_name_group[(atom.name,
-                                                          atom.element)])
+                # Raise an error if the name/element combination can't be found
+                try:
+                    tuple_groups.append(self.atom_name_group[(atom.name,
+                                                              atom.element)])
+                except KeyError as error:
+                    msg = ('Unable to find atom of element "{0}" recorded with'
+                           ' the name "{1}" in the specified force field file.'
+                           ''.format(atom.element, atom.name))
+                    raise KeyError(msg) from error
+
             groups.add(tuple(tuple_groups))
 
         # Ensure that the groups of all atom tuples is consistent (i.e. each
@@ -421,8 +428,16 @@ class FileForceField(ForceField):
         if len(matches) > 1:
             matching_group = matches.loc[[(matches.filter(regex='atom_group?')
                                            == 0).sum(axis='columns').idxmin()]]
-        else:
+        elif len(matches) == 1:
             matching_group = matches
+        else:
+            # If there are no matches in the file, then raise an error
+            msg = 'Unable to find bond information for specified atoms: '
+            for i, atom_type in enumerate(groups):
+                msg += ('atom_group{0} - {1} ({2}), '
+                        ''.format(i, atom_type,
+                                  self.atom_type_name[atom_type]))
+            raise ValueError(msg[:-2])
 
         # Get the parameter names for the InteractionFunction. This means that
         # the columns in the bonded DataFrame do not need to be ordered,
@@ -454,6 +469,13 @@ class FileForceField(ForceField):
         coulombic : Coulombic
             The ``Coulombic`` to be parametrized
         """
+
+        # Check we have atoms to apply interaction to
+        if len(coulombic.atoms) == 0:
+            msg = ('Unable to find any atoms of types {} in the Universe to '
+                   'apply the Coulombic interaction to'
+                   ''.format(coulombic.atom_types))
+            raise ValueError(msg)
 
         # Different atom names could be defined within the same coulombic
         # Both atom name and element are required to uniquely identify the atom
@@ -504,9 +526,24 @@ class FileForceField(ForceField):
 
         matching_disps = []
         for atom_pairs in dispersion.atoms:
-            # Checks that atom_pairs are like-like
+            # Checks that atom_pairs are like-like and that we have atoms to
+            # apply interaction to
             atom_pairs = list(atom_pairs)
-            atom_pair = (atom_pairs[0][0], atom_pairs[1][0])
+            atom_pair = []
+            for i, atom_type_pair in enumerate(atom_pairs):
+                if len(atom_type_pair) == 0:
+                    existing_types = []
+                    for (key, value) in dispersion.universe.atom_types.items():
+                        if len(value) > 0:
+                            existing_types.append(key)
+                    msg = ('No atoms of type "{0}" found, the Universe '
+                           'contains only the types {1}'
+                           ''.format(dispersion.atom_types[0][i],
+                                     existing_types))
+                    raise ValueError(msg)
+
+                atom_pair.append(atom_type_pair[0])
+
             if len(set(atom_pair)) != 1:
                 msg = ('Currently only force fields which only use like-like'
                        ' Dispersion terms are implemented')

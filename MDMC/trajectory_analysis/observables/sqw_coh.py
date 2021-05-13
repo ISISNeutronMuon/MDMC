@@ -30,7 +30,7 @@ class SQwCoherent(AbstractSQw):
     def _calculate_FQt_single_Q(self, single_Q_vectors):
         # Inherit docstring of abstract method
 
-        n_t = self.maximum_frames
+        n_t = len(self.t)
         elements = self.trajectory.element_set
         FQt_single_Q = np.zeros(n_t)
         rho_element = {}

@@ -32,16 +32,25 @@ class Control:
         Performs a simulation for a given set of potential ``Parameter``
         objects.
     exp_datasets : list of dicts
-        Each `dict` is an experimental dataset, containing the file name
-        (``file_name``), the type of observable (``type``), the reader required
-        for the file (``reader``), and the weighting of the dataset in the
-        Figure of Merit calculation(``weighting``). Optionally, can also
-        contain ``rescale_factor`` which will be applied to the experimental
-        data when comparing it to the calculated observable. Default is `1.`.
-        Alternatively, can optionally specify ``auto_scale`` which will set the
-        ``rescale_factor`` automatically to minimise the FoM. Default is
-        `False`. If both ``rescale_factor`` and ``auto_scale`` are provided
-        then a warning is printed and ``auto_scale`` takes precedence.
+        Each `dict` represents an experimental dataset, containing the
+        following keys:
+          - ``file_name`` (`str`) the file name
+          - ``type`` (`str`) the type of observable
+          - ``reader`` (`str`) the reader required for the file
+          - ``weighting`` (`float`) the weighting of the dataset to be used in
+            the Figure of Merit calculation
+          - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
+            the experimental data when calculating the FoM to ensure it is on
+            the same scale as the calculated observable
+          - ``auto_scale`` (`bool`, optional, defaults to `False`) set the
+            ``rescale_factor`` automatically to minimise the FoM, if both
+            ``rescale_factor`` and ``auto_scale`` are provided then a warning
+            is printed and ``auto_scale`` takes precedence
+          - ``use_FFT`` (`bool`, optional, defaults to `True`) whether to use
+            Fast Fourier Transforms in the calculation of dependent variables.
+            FFT speeds up calculation but places restrictions on spacing in the
+            independent variable domain(s). This option may not be supported
+            for all ``Observable``s
     fit_parameters : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
@@ -127,14 +136,18 @@ class Control:
         self.observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
+            use_FFT = dset.get('use_FFT', True)
             exp_observable = self._read_observable_from_file(dset['type'],
                                                              dset['reader'],
                                                              dset['file_name'])
+            exp_observable.use_FFT = use_FFT
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
 
             MD_observable = self._create_empty_observable(exp_observable)
+            MD_observable.use_FFT = use_FFT
+
             self._validate_energy(MD_observable)
 
             auto_scale = dset.get('auto_scale', False)
@@ -406,7 +419,7 @@ class Control:
 
         trj = simulation.engine.convert_trajectory()
         for pair in observable_pairs:
-            maximum_frames = pair.MD_obs.maximum_frames
+            maximum_frames = pair.MD_obs.maximum_frames()
             if maximum_frames:
                 # If there is a limit on the number of frames the observable
                 # can use in calculations, split the trajectory into as many
@@ -438,8 +451,13 @@ class Control:
         `int`
             Number of ``MD_steps``
         """
+        time_step = self.simulation.time_step
         traj_step = self.simulation.traj_step
-        minimum_frames = observable_pair.exp_obs.minimum_frames
+        # Calculate the time separation between trajectory frames, dt
+        dt = time_step * traj_step
+        # Calculate the minimum number of trajectory frames needed for the
+        # calculation of the dependent_variables of observable_pair
+        minimum_frames = observable_pair.exp_obs.minimum_frames(dt)
 
         return traj_step * minimum_frames
 
@@ -474,7 +492,7 @@ class Control:
             Maximum number of ``MD_steps`` needed
         """
         traj_step = self.simulation.traj_step
-        maximum_frames = observable_pair.exp_obs.maximum_frames
+        maximum_frames = observable_pair.exp_obs.maximum_frames()
 
         if maximum_frames is None:
             maximum_steps = traj_step
@@ -483,10 +501,10 @@ class Control:
 
         return maximum_steps * (MD_steps // (maximum_steps))
 
-    def _is_data_uniform(self, observable: Observable) -> Dict[str, list]:
+    def _is_data_uniform(self, observable: Observable) -> Dict[str, Dict[str, bool]]:
         """
-        Checks if the values of the independent variables of an ``Observable`` are uniformly spaced and checks if
-        they start at zero.
+        Checks if the values for each independent variable of an ``Observable`` are uniformly
+        spaced and if they start at zero. This information is returned in a single dictionary.
 
         Parameters
         ----------
@@ -496,8 +514,16 @@ class Control:
         Returns
         -------
         `Dict[str, Dict[str, bool]]`
-            A dictionary with the keys the same as the independent variables of the ``Observable`` and the values
-            are a dictionary with booleans if the variables are 'uniform' or 'zeroed'.
+            An outer dictionary where the independent variables of the ``Observable`` are the keys,
+            and the values are another dictionary corresponding to that variable. This inner
+            dictionary has the same format for all variables, with the two keys 'uniform' and
+            'zeroed'. The values for these keys are booleans that state whether the data fulfils
+            the corresponding requirement.
+
+        Examples
+        --------
+        >>> control._is_data_uniform(self, observable)
+        {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
         """
         uniformity_dict = {}
         for var_key, var_data in observable.independent_variables.items():
@@ -506,7 +532,7 @@ class Control:
             uniformity_dict[var_key] = {'uniform': is_uniform, 'zeroed': var_data[0] == 0}
         return uniformity_dict
 
-    def _make_data_uniform(self, observable: Observable, uniformity_check: dict = None) -> Observable:
+    def _make_data_uniform(self, observable: Observable) -> Observable:
         """
         Takes an ``Observable``, checks the requirements for its ``independent_variables`` to be uniform or start at
         zero, creates uniform grids for the variables that do not satisfy their requirement, interpolates the
@@ -525,7 +551,6 @@ class Control:
             Returns a copy of the passed ``Observable`` with the independent variables put onto uniform grid (for the
             variables where that is necessary) and the dependent variables interpolated onto the same grid
         """
-        observable = observable
         # get the uniformity requirements from the Observable
         uniformity_required = observable.uniformity_requirements
         if uniformity_required is None:
@@ -628,10 +653,8 @@ class Control:
     def _validate_energy(self, obs: Observable):
 
         """
-        Calculates the energy spacing of the ``Simulation`` from the user set
-        parameters and asserts that it is the same as that of the experiment.
-        If not, it includes the time separation required in the error. If the
-        ``obs`` does not have the relevant attributes, we pass.
+        Try and validate the energy of the ``Observable`` provided, and pass if
+        it does not have a ``validate_energy`` function itself
 
         Parameters
         ----------
@@ -647,19 +670,10 @@ class Control:
         AssertionError
         """
 
+        # Calculate the time separation between trajectory frames, dt, imposed
+        # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
         try:
-            energy = obs.E
-            assert_allclose(obs.calculate_E(len(energy), dt),
-                            energy,
-                            rtol=1e-5,
-                            err_msg=("Experimental E values are not consistent"
-                                     " with the `Simulation`. For the "
-                                     "experimental data provided, the product "
-                                     "of `time_step` and `traj_step` must be "
-                                     "{0}, but it was {1}"
-                                     "".format(obs.calculate_dt(), dt)))
+            obs.validate_energy(dt)
         except AttributeError:
-            # If we don't have one of the required attributes such as `E` then
-            # pass
             pass

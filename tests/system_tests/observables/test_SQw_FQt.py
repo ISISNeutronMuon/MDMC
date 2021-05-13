@@ -12,6 +12,9 @@ import pytest
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables import sqw
+from MDMC.trajectory_analysis.observables.sqw_coh import SQwCoherent
+from MDMC.trajectory_analysis.observables.sqw_incoh import SQwIncoherent
+
 
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
@@ -125,12 +128,27 @@ def monkeymodule():
 
 @pytest.fixture(scope="module")
 def SQw_obs(monkeymodule, trajectory, Q_vectors):
-
     """
     Setup the container for Q, time, w, total FQt and total SQt
     """
 
     SQw_total = of.ObservableFactory.create_observable('SQw')
+    SQw_total.use_FFT = True
+    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
+    SQw_total.calculate_from_MD([trajectory],
+                                Q_vectors=Q_vectors,
+                                dimensions=DIMENSIONS,
+                                energy_resolution=E_RESOLUTION)
+    return SQw_total
+
+@pytest.fixture(scope="module")
+def SQw_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
+    """
+    Setup the container for Q, time, w, total FQt and total SQt
+    """
+
+    SQw_total = of.ObservableFactory.create_observable('SQw')
+    SQw_total.use_FFT = False
     monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
     SQw_total.calculate_from_MD([trajectory],
                                 Q_vectors=Q_vectors,
@@ -149,6 +167,26 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
     """
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh.use_FFT = True
+    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
+    SQw_incoh.calculate_from_MD([trajectory],
+                                Q_vectors=Q_vectors,
+                                dimensions=DIMENSIONS,
+                                energy_resolution=E_RESOLUTION)
+    return SQw_incoh
+
+@pytest.fixture(scope="module")
+def SQw_incoh_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
+
+    """
+    Setup the container for Q, time, w, incoherent FQt and incoherent SQt
+
+    Only FQt and SQt are used for testing, as Q, time and w are calculated
+    using the same base class as SQw_obs
+    """
+
+    SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
+    SQw_incoh.use_FFT = False
     monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
     SQw_incoh.calculate_from_MD([trajectory],
                                 Q_vectors=Q_vectors,
@@ -167,6 +205,25 @@ def SQw_coh_obs(trajectory, Q_vectors):
     """
 
     SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh.use_FFT = True
+    SQw_coh.calculate_from_MD([trajectory],
+                              Q_vectors=Q_vectors,
+                              dimensions=DIMENSIONS,
+                              energy_resolution=E_RESOLUTION)
+    return SQw_coh
+
+@pytest.fixture(scope="module")
+def SQw_coh_obs_no_FFT(trajectory, Q_vectors):
+
+    """
+    Setup the container for Q, time, w, coherent FQt and coherent SQt
+
+    Only FQt and SQt are used for testing, as Q, time and w are calculated
+    using the same base class as SQw_obs
+    """
+
+    SQw_coh = of.ObservableFactory.create_observable('SQw_coh')
+    SQw_coh.use_FFT = False
     SQw_coh.calculate_from_MD([trajectory],
                               Q_vectors=Q_vectors,
                               dimensions=DIMENSIONS,
@@ -234,7 +291,7 @@ def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
     assert_allclose(SQw_obs.FQt, FQt_ref, atol=ATOL)
 
 
-def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
+def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs, SQw_incoh_obs_no_FFT):
 
     """
     Validate the calculation of the dynamic incoherent structure factor against
@@ -252,8 +309,11 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs):
     assert_allclose(SQw_incoh_obs.SQw[0] / (B_FACTOR / N_Q_VALUES),
                     SQw_incoh_ref, atol=ATOL)
 
+    # Assert there is no difference between FFT and non-FFT calculation
+    assert_allclose(SQw_incoh_obs.SQw[0], SQw_incoh_obs_no_FFT.SQw[0], atol=ATOL)
 
-def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
+
+def test_SQw_coh(SQw_coh_ref, SQw_coh_obs, SQw_coh_obs_no_FFT):
 
     """
     Validate the calculation of the dynamic coherent structure factor against
@@ -263,8 +323,11 @@ def test_SQw_coh(SQw_coh_ref, SQw_coh_obs):
     assert np.all(np.shape(SQw_coh_obs.SQw[0]) == np.shape(SQw_coh_ref))
     assert_allclose(SQw_coh_obs.SQw[0] * N_Q_VALUES, SQw_coh_ref, atol=ATOL)
 
+    # Assert there is no difference between FFT and non-FFT calculation
+    assert_allclose(SQw_coh_obs.SQw[0], SQw_coh_obs_no_FFT.SQw[0], atol=ATOL)
 
-def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
+
+def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs, SQw_obs_no_FFT):
 
     """
     Validate the calculation of the dynamic total structure factor against the
@@ -275,3 +338,6 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs):
     assert np.all(np.shape(SQw_obs.SQw[0]) == np.shape(SQw_incoh_ref))
     SQw_ref = (SQw_incoh_ref * B_FACTOR + SQw_coh_ref) / N_Q_VALUES
     assert_allclose(SQw_obs.SQw[0], SQw_ref, atol=ATOL)
+
+    # Assert there is no difference between FFT and non-FFT calculation
+    assert_allclose(SQw_obs.SQw[0], SQw_obs_no_FFT.SQw[0], atol=ATOL)
