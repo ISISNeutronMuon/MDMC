@@ -204,9 +204,10 @@ class Minimizer(ABC):
 
         # select the history of accepted state changes
         accepted_history = (self.history['Change state'] == 'Accepted')
-        if len(accepted_history) > min_steps:
+        accepted_history = self.history[accepted_history]
+        if len(accepted_history) >= min_steps:
             # drop 'Change state' column to select only parameters; turn to np.array for easy slicing
-            param_history = np.array(self.history[accepted_history].drop('Change state', axis=1))
+            param_history = np.array(accepted_history.drop('Change state', axis=1))
             converged = np.allclose(param_history[-1], param_history[-2], rtol=conv_tol)
         else:
             converged = False
