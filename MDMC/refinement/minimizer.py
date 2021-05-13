@@ -179,18 +179,39 @@ class Minimizer(ABC):
 
         raise NotImplementedError
 
-    def has_converged(self):
+    def has_converged(self, conv_tol: float=1e-3, min_steps: int=2) -> bool:
 
         """
-        CURRENTLY UNIMPLEMENTED i.e. this will always return False
+        Checks if the refinement process has converged on a stable solution. Specifically, it checks if
+        the Figure of Merit and the parameters being refined have all changed less than the relative conversion
+        tolerance (`conv_tol`) between the last two accepted refinement steps. It also allows specifying a minimum
+        number of refinement steps (`min_steps`) that must have been accepted before checking for convergence.
+
+        Parameters
+        ----------
+        conv_tol : float, optional
+            The relative tolerance of the convergence check. Defaults to `1e-3`
+        min_steps : int, optional
+            The number of refinement steps with an accepted state change after which convergence is checked. If the
+            number of accepted state changes is less than this number then the refinement is deemed as not converged.
+            Defaults to `2`.
 
         Returns
         -------
         bool
-            Whether or not the minimizer has converged
+            Whether or not the minimizer has converged.
         """
 
-        return False
+        # select the history of accepted state changes
+        accepted_history = (self.history['Change state'] == 'Accepted')
+        if len(accepted_history) > min_steps:
+            # drop 'Change state' column to select only parameters; turn to np.array for easy slicing
+            param_history = np.array(self.history[accepted_history].drop('Change state', axis=1))
+            converged = np.allclose(param_history[-1], param_history[-2], rtol=conv_tol)
+        else:
+            converged = False
+
+        return converged
 
     def _check_parameters(self, parameters):
 
