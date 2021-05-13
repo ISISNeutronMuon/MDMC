@@ -300,6 +300,9 @@ def test_mmc_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
     ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]], None, True),
     ([[2,'Accepted',3],[2,'Rejected',3],[2,'Accepted',3]], None, True)])
 def test_minimizer_has_converged(mock_history, min_steps, expected):
+    """
+    Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
+    """
     parameter = [MockParameter(name='A', value=None)]
     mmc = minimizer.MMC(MC_norm=1, parameters=parameter)
     mmc._history = mock_history
