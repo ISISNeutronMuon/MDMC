@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from MDMC.refinement import minimizer
@@ -288,3 +289,24 @@ def test_mmc_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
     mmc.FoM = FoM
     monkeypatch.setattr(np.random, 'random', mock_random)
     assert mmc.change_state() == change
+
+@pytest.mark.parametrize('mock_history, min_steps, expected',
+    [([[3,'Accepted',4],[2,'Accepted',3],[1,'Accepted',2]], None, False),
+    ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',2]], None, False),
+    ([[3,'Accepted',4],[2,'Rejected',3],[2,'Accepted',3]], None, False),
+    ([[3,'Accepted',4],[2,'Accepted',3],[1,'Accepted',3]], None, False),
+    ([[2,'Accepted',4],[2,'Rejected',4],[2,'Rejected',4]], None, False),
+    ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]],4, False),
+    ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]], None, True),
+    ([[2,'Accepted',3],[2,'Rejected',3],[2,'Accepted',3]], None, True)])
+def test_minimizer_has_converged(mock_history, min_steps, expected):
+    """
+    Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
+    """
+    parameter = [MockParameter(name='A', value=None)]
+    mmc = minimizer.MMC(MC_norm=1, parameters=parameter)
+    mmc._history = mock_history
+    if min_steps:
+        assert mmc.has_converged(min_steps=min_steps) == expected
+    else:
+        assert mmc.has_converged() == expected
