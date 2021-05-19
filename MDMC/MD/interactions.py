@@ -6,14 +6,17 @@ import weakref
 from abc import ABC, abstractmethod
 from itertools import permutations
 from types import MethodType
+import logging
 
 import numpy as np
 
-from MDMC.MD.structural_units import LOGGER, Atom
+from MDMC.MD.structural_units import Atom
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 
+
+LOGGER = logging.getLogger(__name__)
 
 @repr_decorator('function')
 class Interaction(ABC):
