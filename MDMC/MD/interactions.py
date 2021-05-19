@@ -6,7 +6,6 @@ from types import MethodType
 import numpy as np
 
 from MDMC.MD import LOGGER, Atom, Coulomb
-from MDMC.MD.structural_units import _add_atom_types, _add_atoms
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 
@@ -1126,3 +1125,43 @@ class DihedralAngle(BondedInteraction):
         # Proper dihedrals are equivalent if they are reversed (as with Bond and
         # BondAngle)
         return super()._get_equivalent_structures(structs)
+
+
+def _add_atom_types(self, *atom_types):
+
+    """
+    Function for dynamically creating an ``add_atom_types`` method in
+    ``Coulombic``
+
+    Parameters
+    ----------
+    atom_types : list
+        One or more `int` specifying ``atom_types`` that exist in ``universe``
+        of the ``Coulombic``
+    """
+
+    self._atom_types.append(*atom_types)
+
+
+def _add_atoms(self, *atoms):
+
+    """
+    Function for dynamically creating an ``add_atoms`` method in ``Coulombic``
+
+    Adds ``*atoms`` to ``Coulombic`` and adds ``Coulombic`` to
+    ``atoms.nonbonded_interactions``
+
+    Parameters
+    ----------
+    atoms : list
+        list of ``Atom``
+    """
+
+    for atom in atoms:
+        # Add atom to interaction
+        self._atoms.append(atom)
+        # Add interaction to atom
+        atom.add_interaction(self, from_interaction=True)
+        # Add atom_type to interaction.atom_types
+        if atom.atom_type and atom.atom_type not in self.atom_types:
+            self._atom_types.append(atom.atom_type)
