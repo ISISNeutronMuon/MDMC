@@ -1,3 +1,7 @@
+"""Module in which all interactions between structural units are defined.
+
+ ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
+
 import weakref
 from abc import ABC, abstractmethod
 from itertools import permutations
@@ -5,7 +9,8 @@ from types import MethodType
 
 import numpy as np
 
-from MDMC.MD import LOGGER, Atom, Coulomb
+from MDMC.MD.structural_units import LOGGER, Atom\
+from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 

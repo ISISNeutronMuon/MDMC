@@ -1,7 +1,7 @@
 """Module in which all structural units are defined.
 
 ``Atom`` is the fundamental structural unit in terms of which all others must be
-defined.  All shared behaviour is included within the ``StructuralUnit`` base
+defined.  Composite structural units are included within the ``StructuralUnit`` base
 class."""
 
 from abc import ABC, abstractmethod
