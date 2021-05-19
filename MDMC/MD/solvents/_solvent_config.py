@@ -7,11 +7,10 @@ from copy import deepcopy
 
 import numpy as np
 
-import MDMC.MD.interactions
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
 from MDMC.common import units
-from MDMC.MD import structural_units
+from MDMC.MD import structural_units, interactions
 
 
 @repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
@@ -380,9 +379,7 @@ class SolventConfig(ABC):
                 # Different __init__ for Coulombic than other
                 # NonBondedInteractions
                 if nb_i[0] == 'Coulombic':
-                    dummy = MDMC.MD.interactions.Coulombic(universe=universe,
-                                                           atom_types=nb_i[1])
+                    dummy = interactions.Coulombic(universe=universe, atom_types=nb_i[1])
                 else:
-                    dummy = getattr(structural_units, nb_i[0])(universe,
-                                                               *nb_i[1:])
+                    dummy = getattr(structural_units, nb_i[0])(universe, *nb_i[1:])
         return molecules

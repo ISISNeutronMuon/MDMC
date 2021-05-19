@@ -7,7 +7,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-import MDMC.MD.interactions
+from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Parameter
 import MDMC.MD.simulation as sim
@@ -48,11 +48,11 @@ def water_molecule(atom):
     H1 = atom
     H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
     O = su.Atom('O', position=O_POSITION, mass=O_MASS)
-    H_coulombic = MDMC.MD.interactions.Coulombic(atoms=[H1, H2])
-    O_coulombic = MDMC.MD.interactions.Coulombic(atoms=O)
+    H_coulombic = interactions.Coulombic(atoms=[H1, H2])
+    O_coulombic = interactions.Coulombic(atoms=O)
     water_molecule = su.Molecule(position=WATER_POSITION, atoms=[H1, H2, O],
-                                 interactions=[MDMC.MD.interactions.Bond((H1, O), (H2, O)),
-                                               MDMC.MD.interactions.BondAngle(H1, O, H2)],
+                                 interactions=[interactions.Bond((H1, O), (H2, O)),
+                                               interactions.BondAngle(H1, O, H2)],
                                  name='water')
     return water_molecule
 
@@ -64,7 +64,7 @@ def water_SPCE_universe(water_molecule):
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
                        if atom.element == 'O')
-    O_dispersion = MDMC.MD.interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
+    O_dispersion = interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
     return water_universe
 
 @pytest.fixture
@@ -223,7 +223,7 @@ def test_structure_parent():
 
     atoms = [atom, cpy_atom]
     molecule = su.Molecule(position=WATER_POSITION, atoms=atoms,
-                           interactions=[MDMC.MD.interactions.Bond(*atoms)],
+                           interactions=[interactions.Bond(*atoms)],
                            name='water')
     for atom in atoms:
         assert atom.parent is molecule
@@ -278,13 +278,13 @@ def test_add_atom(universe, atom):
     Tests that atom interactions are added to Universe.interactions
     """
 
-    atom_coulombic = MDMC.MD.interactions.Coulombic(atoms=atom)
+    atom_coulombic = interactions.Coulombic(atoms=atom)
     assert len(universe.atom_types) == 0
     universe.add_structural_unit(atom)
     assert atom.atom_list == universe.atom_list
     assert atom.atom_type == 1
     assert atom in universe.atom_types[1]
-    assert MDMC.MD.interactions.Coulombic == type(universe.interactions.pop())
+    assert interactions.Coulombic == type(universe.interactions.pop())
 
 
 def test_add_molecule(universe, water_molecule):
@@ -313,7 +313,7 @@ def test_add_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
                        if atom.element == 'O')
-    O_dispersion = MDMC.MD.interactions.Dispersion(universe, (O_atom_type, O_atom_type))
+    O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
     for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
@@ -327,7 +327,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
                        if atom.element == 'O')
-    O_dispersion = MDMC.MD.interactions.Dispersion(universe, (O_atom_type, O_atom_type))
+    O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
@@ -526,9 +526,9 @@ def test_molecule_subunit_positions(water_molecule):
         assert all(atom.position == water_molecule.position + rel_pos[atom])
 
 
-@pytest.mark.parametrize("Int, n_atoms", [(MDMC.MD.interactions.Bond, [2]),
-                                          (MDMC.MD.interactions.BondAngle, [3]),
-                                          (MDMC.MD.interactions.DihedralAngle, [4])])
+@pytest.mark.parametrize("Int, n_atoms", [(interactions.Bond, [2]),
+                                          (interactions.BondAngle, [3]),
+                                          (interactions.DihedralAngle, [4])])
 def test_bonded_interactions(Int, n_atoms, atom):
 
     """
@@ -569,9 +569,9 @@ def test_bonded_interactions(Int, n_atoms, atom):
             invalid_bond = Int(*atoms)
 
 
-@pytest.mark.parametrize("interaction, n_atoms", [(MDMC.MD.interactions.Bond, 4),
-                                                  (MDMC.MD.interactions.BondAngle, 6),
-                                                  (MDMC.MD.interactions.DihedralAngle, 8)])
+@pytest.mark.parametrize("interaction, n_atoms", [(interactions.Bond, 4),
+                                                  (interactions.BondAngle, 6),
+                                                  (interactions.DihedralAngle, 8)])
 def test_bonded_interactions_duplicate_tuples(interaction, n_atoms):
 
     """
@@ -612,12 +612,12 @@ def test_improper_dihedral_duplicate_tuples():
     # Test a valid Dihedral.__init__(improper=True) (i.e. no equivalent
     # permutations) doesn't raise an error
     subset = tuple(atoms[:4])
-    MDMC.MD.interactions.DihedralAngle(subset, tuple(atoms[4:]), improper=True)
+    interactions.DihedralAngle(subset, tuple(atoms[4:]), improper=True)
 
     for permutation in permutations(subset[1:]):
         duplicates = (subset[0], ) + tuple(permutation)
         with pytest.raises(ValueError):
-            MDMC.MD.interactions.DihedralAngle(subset, duplicates, improper=True)
+            interactions.DihedralAngle(subset, duplicates, improper=True)
 
 
 def test_universe_atom_types(water_molecule, universe):
@@ -629,7 +629,7 @@ def test_universe_atom_types(water_molecule, universe):
 
     C = su.Atom('C', mass=12.0107, atom_type=2)
     assert C.atom_type == 2
-    C_coulombic = MDMC.MD.interactions.Coulombic(atoms=C)
+    C_coulombic = interactions.Coulombic(atoms=C)
     H1, H2, O = water_molecule.atom_list
 
     assert len(universe.atom_types) == 0
@@ -678,14 +678,14 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     # Add more atoms with interactions to universe so that there are sufficient
     # atom_types for all parameterizations
     He = su.Atom('He', mass=2.)
-    He_coulombic = MDMC.MD.interactions.Coulombic(atoms=He)
+    He_coulombic = interactions.Coulombic(atoms=He)
     C = su.Atom('C', mass=12.)
-    C_coulombic = MDMC.MD.interactions.Coulombic(atoms=C)
+    C_coulombic = interactions.Coulombic(atoms=C)
 
     for atom in [He, C]:
         water_SPCE_universe.add_structural_unit(atom)
 
-    disp = MDMC.MD.interactions.Dispersion(water_SPCE_universe, *atom_types_init)
+    disp = interactions.Dispersion(water_SPCE_universe, *atom_types_init)
     assert disp.atom_types == atom_types_expected
 
 
@@ -705,7 +705,7 @@ def test_init_dispersion_atom_type_error(atom_types_init, error,
     """
 
     with pytest.raises(error):
-        MDMC.MD.interactions.Dispersion(water_SPCE_universe, atom_types_init)
+        interactions.Dispersion(water_SPCE_universe, atom_types_init)
 
 
 def test_dispersion_cutoff(water_SPCE_universe):
@@ -715,9 +715,9 @@ def test_dispersion_cutoff(water_SPCE_universe):
     specifying a cutoff results in a cutoff attribute set to None
     """
 
-    cutoff_disp = MDMC.MD.interactions.Dispersion(water_SPCE_universe, (1, 1), cutoff=5.0)
+    cutoff_disp = interactions.Dispersion(water_SPCE_universe, (1, 1), cutoff=5.0)
     assert cutoff_disp.cutoff == 5.0
-    infinite_disp = MDMC.MD.interactions.Dispersion(water_SPCE_universe, (1, 1))
+    infinite_disp = interactions.Dispersion(water_SPCE_universe, (1, 1))
     assert infinite_disp.cutoff is None
 
 
@@ -784,8 +784,8 @@ def test_coulombic_add_atoms():
     pass
 
 
-@pytest.mark.parametrize("bonded_interaction, n_atoms", [(MDMC.MD.interactions.Bond, 2),
-                                                         (MDMC.MD.interactions.BondAngle, 3)])
+@pytest.mark.parametrize("bonded_interaction, n_atoms", [(interactions.Bond, 2),
+                                                         (interactions.BondAngle, 3)])
 def test_bonded_constraint_set_True(bonded_interaction, n_atoms, atom):
 
     """
@@ -797,8 +797,8 @@ def test_bonded_constraint_set_True(bonded_interaction, n_atoms, atom):
     assert b_i.constrained
 
 
-@pytest.mark.parametrize("bonded_interaction, n_atoms", [(MDMC.MD.interactions.Bond, 2),
-                                                         (MDMC.MD.interactions.BondAngle, 3)])
+@pytest.mark.parametrize("bonded_interaction, n_atoms", [(interactions.Bond, 2),
+                                                         (interactions.BondAngle, 3)])
 def test_bonded_constraint_set_False(bonded_interaction, n_atoms, atom):
 
     """
@@ -810,8 +810,8 @@ def test_bonded_constraint_set_False(bonded_interaction, n_atoms, atom):
     assert b_i.constrained is False
 
 
-@pytest.mark.parametrize("bonded_interaction, n_atoms", [(MDMC.MD.interactions.Bond, 2),
-                                                         (MDMC.MD.interactions.BondAngle, 3)])
+@pytest.mark.parametrize("bonded_interaction, n_atoms", [(interactions.Bond, 2),
+                                                         (interactions.BondAngle, 3)])
 def test_bonded_constraint_unset(bonded_interaction, n_atoms, atom):
 
     """
@@ -1278,7 +1278,7 @@ def get_dispersions(inters):
     list
         A list of all Dispersion interactions
     """
-    return list(filter(lambda x: isinstance(x, MDMC.MD.interactions.Dispersion), inters))
+    return list(filter(lambda x: isinstance(x, interactions.Dispersion), inters))
 
 
 def test_add_force_field_dispersions_bool(universe):

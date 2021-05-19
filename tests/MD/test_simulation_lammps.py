@@ -13,8 +13,7 @@ from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
 from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
                                 Ewald, PPPM, KSpaceSolver)
 from MDMC.MD.structural_units import (Atom)
-from MDMC.MD.interactions import Bond, BondAngle
-from MDMC.MD import Dispersion, Coulombic, DihedralAngle
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 

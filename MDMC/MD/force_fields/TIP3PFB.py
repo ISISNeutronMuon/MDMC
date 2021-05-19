@@ -23,8 +23,7 @@ from MDMC.common.units import UnitFloat
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
                                            LennardJones)
-from MDMC.MD.interactions import Bond, BondAngle
-from MDMC.MD import Dispersion, Coulombic
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
 
 class TIP3PFB(WaterModel):
