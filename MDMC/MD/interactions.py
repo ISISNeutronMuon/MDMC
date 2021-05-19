@@ -9,7 +9,7 @@ from types import MethodType
 
 import numpy as np
 
-from MDMC.MD.structural_units import LOGGER, Atom\
+from MDMC.MD.structural_units import LOGGER, Atom
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
