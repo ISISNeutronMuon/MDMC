@@ -10,6 +10,7 @@ import logging
 
 import numpy as np
 
+#need to break the import loop between structural_units and interactions that can occur
 import MDMC.MD.structural_unit as su
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
