@@ -7,6 +7,7 @@ from copy import deepcopy
 
 import numpy as np
 
+import MDMC.MD.interactions
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
 from MDMC.common import units
@@ -379,8 +380,8 @@ class SolventConfig(ABC):
                 # Different __init__ for Coulombic than other
                 # NonBondedInteractions
                 if nb_i[0] == 'Coulombic':
-                    dummy = structural_units.Coulombic(universe=universe,
-                                                       atom_types=nb_i[1])
+                    dummy = MDMC.MD.interactions.Coulombic(universe=universe,
+                                                           atom_types=nb_i[1])
                 else:
                     dummy = getattr(structural_units, nb_i[0])(universe,
                                                                *nb_i[1:])

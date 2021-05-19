@@ -18,8 +18,8 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle, \
-    StructuralUnit
+from MDMC.MD.structural_units import StructuralUnit
+from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 

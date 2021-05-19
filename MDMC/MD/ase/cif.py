@@ -13,9 +13,8 @@ from ase.io.cif import read_cif
 import numpy as np
 
 from MDMC.MD.ase.conversions import ASEAtoms, convert_from_ase_atom
-from MDMC.MD.structural_units import (Bond, BondAngle, BoundingBox, Coulombic,
-                                      DihedralAngle,
-                                      get_reduced_chemical_formula)
+from MDMC.MD.structural_units import (BoundingBox, get_reduced_chemical_formula)
+from MDMC.MD.interactions import Coulombic, Bond, BondAngle, DihedralAngle
 from MDMC.MD.interaction_functions import Coulomb
 
 

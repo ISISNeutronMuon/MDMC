@@ -13,7 +13,8 @@ os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
 
 from MDMC.control import Control
-from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
+from MDMC.MD import Atom, LennardJones, Simulation, Universe
+from MDMC.MD.interactions import Dispersion
 
 # Build universe with density 0.0176 atoms per AA^-3
 density = 0.0176
