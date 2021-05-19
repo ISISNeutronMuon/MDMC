@@ -17,8 +17,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.MD import Coulombic
-from MDMC.MD.interactions import BondedInteraction
+from MDMC.MD.interactions import BondedInteraction, Coulombic
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
 from MDMC.common import units
