@@ -10,6 +10,7 @@ interaction_functions
 solvents
 simulation
 structural_units
+interactions
 """
 
 from importlib import import_module
@@ -23,6 +24,7 @@ from . import solvents
 from .interaction_functions import *
 from .simulation import *
 from .structural_units import *
+from .interactions import *
 
 # Get the class of each force field
 for _, name, _ in iter_modules(force_fields.__path__,
