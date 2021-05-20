@@ -426,7 +426,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                   or k == '_nonbonded_interactions'):
                 pass
             elif k == '_structure_list':
-                # Seperate structures into atoms and composites
+                # Separate structures into atoms and composites
                 atoms, composites = [], []
                 for s in self._structure_list:
                     (atoms if isinstance(s, Atom) else composites).append(s)

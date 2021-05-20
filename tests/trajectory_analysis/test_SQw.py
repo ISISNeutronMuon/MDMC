@@ -7,6 +7,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
+from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables.sqw import SQw
 
@@ -105,3 +106,30 @@ def test_from_MD(SQw_from_MD):
 
     # Assert there is no difference between FFT and non-FFT calculation
     assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5)
+
+
+def test_apply_resolution_function(SQw_from_data):
+
+    """
+    Test we apply a general resolution function in the time domain to FQt correctly. Also include
+    variation in momentum for the resolution function which should be normalised when applied to
+    FQt.
+    """
+
+    t_vector = np.linspace(0, 100, 10)
+
+    FQt_shape = (len(SQw_from_data.Q), 10)
+    mock_FQt = np.ones(FQt_shape)
+
+    t_behaviour = np.linspace(1, len(t_vector) + 1, len(t_vector), endpoint=False)
+    expected_FQt = np.broadcast_to(t_behaviour, FQt_shape)
+
+    def mock_resolution_function(y_data, x_data):
+        x_behaviour = np.linspace(1, len(x_data) + 1, len(x_data), endpoint=False)
+        y_behaviour = np.linspace(1, len(y_data) + 1, len(y_data), endpoint=False)
+        return np.outer(x_behaviour, y_behaviour)
+
+    SQw_from_data.t = t_vector
+    SQw_from_data.resolution_functions['SQw'] = mock_resolution_function
+
+    assert_allclose(SQw_from_data._apply_instrument_resolution(mock_FQt), expected_FQt, atol=1e-15)

@@ -9,6 +9,7 @@ from typing import List
 from scipy.interpolate import interp1d, interp2d
 from typing import Dict
 
+from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -39,6 +40,10 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
+          - ``resolution_file`` (`str`, optional, defaults to `None`) a file in
+            the same format as ``file_name`` containing results of a vanadium
+            sample which is used to determine instrument energy resolution for
+            this dataset (overriding the ``energy_resolution`` setting)
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -81,6 +86,7 @@ class Control:
           'type':'SQw',
           'reader':'LAMPSQw',
           'weight':1.,
+          'resolution_file':data.LAMP_SQW_VAN_FILE
           'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
@@ -181,6 +187,14 @@ class Control:
                                  ) from error
         else:
             self.MD_steps = minimum_MD_steps
+
+        for i, dset in enumerate(exp_datasets):
+            if dset.get('resolution_file'):
+                resolution_functions = self._read_resolution_from_file(dset['type'],
+                                                                       dset['reader'],
+                                                                       dset['resolution_file'])
+                self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
+                self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
 
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
@@ -344,7 +358,7 @@ class Control:
 
         self.simulation.engine.update_parameters()
 
-    def _read_observable_from_file(self, type, reader, file_name):
+    def _read_observable_from_file(self, type: str, reader: str, file_name: str):
 
         """
         Creates an Observable of the specified type and reads in data from file
@@ -367,6 +381,119 @@ class Control:
         observable = ObservableFactory.create_observable(type)
         observable.read_from_file(reader=reader, file_name=file_name)
         return observable
+
+    def _read_resolution_from_file(self, data_type: str, reader: str, file_name: str):
+
+        """
+        Reads resolution data for the specified ``data_type`` from file and creates interpolates it
+        to give a dictionary of general resolution functions in the time domain for each dependent
+        variable.
+
+        Note that if this resolution function is used on data outside its original range, then it
+        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
+        time/energy domain (which should be the final dimension of the data) to ensure a symmetric
+        output.
+
+        Parameters
+        ----------
+        data_type : str
+            The ``type`` of the ``Observable``.
+        reader : str
+            The ``type`` of the ``Reader``.
+        file_name : str
+            The absolute or relative path of the resolution file name.
+
+        Returns
+        -------
+        dict
+            A dictionary with keys for each dependent variable, where the
+            values are resolution functions for that variable.
+        """
+
+        resolution_obs = self._read_observable_from_file(data_type,
+                                                         reader,
+                                                         file_name)
+
+        resolution_functions = {}
+        for key, dep_var in resolution_obs.dependent_variables.items():
+            dep_var_structure = resolution_obs.dependent_variables_structure[key]
+            indep_vars = []
+            for indep_key in dep_var_structure:
+                indep_vars.append(resolution_obs.independent_variables[indep_key])
+
+            # Remove any entries with infinite error from the innermost
+            # independent variable, and the corresponding values from the
+            # dependent variable
+            error = resolution_obs.errors[key]
+            masking = np.where(np.any(error == np.float('inf'), axis=-1))
+            dep_var_cropped = np.delete(dep_var, masking, axis=0)
+            indep_vars[0] = np.delete(indep_vars[0], masking)
+
+            # Enforce symmetry in the final dimension of the data:
+            indep_vars[-1] = np.append(indep_vars[-1], - indep_vars[-1])
+            dep_var_cropped = np.append(dep_var_cropped, dep_var_cropped, axis=-1)
+
+            # Sort the data so the width of each bin can be calculated
+            sorted_indices = np.argsort(indep_vars[-1])
+            indep_vars[-1] = indep_vars[-1][sorted_indices]
+            widths = (np.sort(indep_vars[-1])[2:] - np.sort(indep_vars[-1])[:-2]) / 2
+
+            # Perform a (slow) discrete Fourier transform now, with all available data, rather
+            # than with potentially coarse time sampling during the SQw calculation
+            # Create time array with the spacing of FQt, and a min/max value of the Nyquist limit
+            # h is in units of eV s whereas system units are meV fs, so
+            # apply a factor of 1e3 * 1e15 to convert it
+            max_energy_separation = np.amax(np.diff(np.sort(indep_vars[-1])))
+            t_max = h  * 1e18 / (2 * max_energy_separation)
+            dt = self.simulation.time_step * self.simulation.traj_step
+            N_T = int(t_max / dt)
+            t_array = np.linspace(- dt * N_T, dt * N_T, N_T)
+
+            if len(indep_vars) == 1:
+                dep_var_cropped = dep_var_cropped[sorted_indices[1:-1]]
+                dep_var_ft = np.zeros(N_T, dtype='complex')
+                for i, t_i in enumerate(t_array):
+                    exp = np.exp(1j * t_i * indep_vars[-1] / (h_bar * 1e18))
+                    dep_var_ft[i] = np.dot(dep_var_cropped, exp)
+
+                # interp1d does not return complex numbers, so define a new function that combines
+                # the real and imaginary parts
+                def data_interpol(t):
+                    real = interp1d(t_array, np.real(dep_var_ft))
+                    imag = interp1d(t_array, np.imag(dep_var_ft))
+
+                    return real(t) + 1j * imag(t)
+
+            elif len(indep_vars) == 2:
+                dep_var_cropped = dep_var_cropped[:, sorted_indices[1:-1]]
+                dep_var_ft = np.zeros((len(dep_var_cropped), N_T), dtype='complex')
+                for i, t_i in enumerate(t_array):
+                    exp = np.exp(1j * t_i * indep_vars[-1][1:-1] / (h_bar * 1e18)) * widths
+                    dep_var_ft[:, i] = np.dot(dep_var_cropped, exp)
+
+                # note: the interp2d interpolation function requires input of the form
+                # interp2d(x, y, z)
+                # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
+                # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
+                # Because Observable.dependent_variables_structure gives the order in which the
+                # independent variables are represented in the np.shape of the data, we have to
+                # reverse the order of the x and y arrays for interp2d.
+                # interp2d does not return complex numbers, so define a new function that combines
+                # the real and imaginary parts
+                def data_interpol(t, indep_var):
+                    real = interp2d(t_array, indep_vars[0], np.real(dep_var_ft))
+                    imag = interp2d(t_array, indep_vars[0], np.imag(dep_var_ft))
+
+                    return real(t, indep_var) + 1j * imag(t, indep_var)
+
+            else:
+                msg = ('Only 1D and 2D data can currently be read from'
+                       ' `resolution_file`s')
+                raise NotImplementedError(msg)
+
+            resolution_functions[key] = data_interpol
+
+        return resolution_functions
 
     def _create_empty_observable(self, exp_observable):
 
@@ -391,6 +518,7 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
+        observable.resolution_functions = exp_observable.resolution_functions
         return observable
 
     def _calculate_observables(self, simulation, observable_pairs):

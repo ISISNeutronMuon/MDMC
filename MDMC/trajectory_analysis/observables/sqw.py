@@ -33,6 +33,7 @@ class AbstractSQw(Observable):
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
+        self._resolution_functions = {}
 
     @property
     def data(self):
@@ -781,15 +782,16 @@ class AbstractSQw(Observable):
             # FFT and reduce the energy dimension to positive energies
             SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
         else:
-            SQw_cropped = np.zeros((len(FQt_mirror), nE))
+            SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
             for i, energy in enumerate(self.E):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
                 # sums over the time/energy dimension as required for a
                 # discrete Fourier transform
                 # h_bar is in units of eV s whereas system units are meV fs, so
                 # apply a factor of 1e3 * 1e15 to convert it
-                exp = np.exp(-1j * energy * self.t / (h_bar * 1e18))
-                exp_mirror = np.append(exp, exp[-2:0:-1])
+                exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
+                exp_neg = np.exp(1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
+                exp_mirror = np.append(exp, exp_neg)
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
         # Normalisation requires factor of dt (in ps, so convert from fs)
@@ -801,18 +803,15 @@ class AbstractSQw(Observable):
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
     def _apply_instrument_resolution(self, FQt: np.ndarray,
-            function: Callable[..., np.ndarray]=gaussian) -> np.ndarray:
+            function: Callable[..., np.ndarray] = gaussian) -> np.ndarray:
 
         """
-        Applies the specified resolution function to the S(Q,w) data
+        If a general ``self.resolution_functions['SQw']`` is defined, we use that to apply
+        resolution to the data. Otherwise, the ``function`` passed is applied to the S(Q,w) data.
 
         As the S(Q,w) data is calculated from the time domain Fourier transform,
         F(Q,t), the resolution function can be applied multiplicatively, rather
-        than by convolution.  Assumes that the temporal resolution has no Q
-        dependence.
-
-        .. note:: Currently SQw is hard coded to only apply Gaussian resolution
-                  functions
+        than by convolution by first converting it to the time domain.
 
         Parameters
         ----------
@@ -827,18 +826,48 @@ class AbstractSQw(Observable):
             An ``array`` of the same dimensions as ``FQt``
         """
 
-        # Functions other than Gaussians must be FFT (from the energy/frequency
-        # domain to time domain) before multiplication. We convert the FWHM
-        # energy resolution (in meV) into sigma_t (in fs) using the inverse
-        # relationship between the width of a Gaussian and its Fourier
-        # transform rather than explicitly transforming it, applying a factor
-        # of 1e18 to convert from h_bar's units of eV s into system units
-        sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
         N_Q, N_T = np.shape(FQt)
-        window = function(self.t[:N_T], sigma_t, norm=False)
+        resolution_function = self.resolution_functions.get('SQw')
+        if resolution_function is not None:
+            window = self._calculate_resolution_window(resolution_function)
+        else:
+            # If we do not have a resolution function for SQw, use a Gaussian instead. We convert
+            # the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
+            # relationship between the width of a Gaussian and its Fourier
+            # transform rather than explicitly transforming it, applying a factor
+            # of 1e18 to convert from h / h_bar's units of eV s into system units
+            sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
+            window = function(self.t[:N_T], sigma_t, norm=False)
 
         # Broadcast the window so that it is applied for all Q values
         return np.broadcast_to(window, (N_Q, N_T)) * FQt
+
+    def _calculate_resolution_window(self, resolution_function: Callable) -> np.ndarray:
+        """
+        Calculate the resolution window in time from a general resolution function in the time
+        domain. Normalise this window so that the sum over energy for each Q
+        value is the same (this enforces that the static structure factor is constant for all Q).
+
+        Parameters
+        ----------
+        resolution_function : Callable
+            The resolution from which to calculate the window
+        N_T : int
+            The number of points in time for FQt
+
+        Returns
+        -------
+        numpy.ndarray
+            An ``array`` with the shape ``(len(self.Q), N_T)``
+        """
+
+        # By definition, the value of the resolution function in the time domain at t=0 is the
+        # integral over all elements in the energy domain (with a factor for normalisation).
+        # Setting this to one for all Q enforces that the static structure factor (the integral of
+        # S(Q,w) over all w) is the same for all Q values in the resolution sample.
+        window = resolution_function(self.t, self.Q)
+        norm = resolution_function([0], self.Q)
+        return window / norm
 
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:
