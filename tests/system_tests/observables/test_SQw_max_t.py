@@ -81,7 +81,7 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     SQw_observable.independent_variables = independent_variables
     n = len(trajectory.times) // 2
 
-    SQw_observable.calculate_from_MD([trajectory],
+    SQw_observable.calculate_from_MD(trajectory,
                                      energy_resolution=E_RES,
                                      dimensions=DIMENSIONS)
     SQw_full_array = SQw_observable.SQw[0]
@@ -107,17 +107,17 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     # Test without FFT
     SQw_observable.use_FFT = False
 
-    SQw_observable.calculate_from_MD([trajectory],
+    SQw_observable.calculate_from_MD(trajectory,
                                      energy_resolution=E_RES,
                                      dimensions=DIMENSIONS)
     SQw_full_array_no_FFT = SQw_observable.SQw[0]
 
-    SQw_observable.calculate_from_MD([trajectory[:n]],
+    SQw_observable.calculate_from_MD(trajectory[:n],
                                      energy_resolution=E_RES,
                                      dimensions=DIMENSIONS)
     SQw_1_array_no_FFT = SQw_observable.SQw[0]
 
-    SQw_observable.calculate_from_MD([trajectory[n:]],
+    SQw_observable.calculate_from_MD(trajectory[n:],
                                      energy_resolution=E_RES,
                                      dimensions=DIMENSIONS)
     SQw_2_array_no_FFT = SQw_observable.SQw[0]

@@ -121,7 +121,7 @@ class ObservablePair:
     def n_averages(self) -> Dict[str, int]:
 
         """
-        The number of seperate, complete dependent variable calculations we
+        The number of separate, complete dependent variable calculations we
         have been able to perform for the ``Observable``
 
         Returns

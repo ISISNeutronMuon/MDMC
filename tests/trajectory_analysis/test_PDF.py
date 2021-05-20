@@ -68,6 +68,22 @@ def trajectory(universe):
     return trj
 
 
+def test_trajectory_list(PDF_setup, trajectory):
+
+    """
+    Assert that passing the MD_input as a ``Trajectory`` or ``list`` of ``Trajectory``s results in
+    the same behaviour.
+    """
+
+    PDF_setup.calculate_from_MD(trajectory)
+    PDF_trajectory = PDF_setup.trajectory
+
+    PDF_setup.calculate_from_MD([trajectory])
+    PDF_trajectory_list_input = PDF_setup.trajectory
+
+    assert len(PDF_trajectory) == len(PDF_trajectory_list_input)
+
+
 @pytest.mark.parametrize('n_frames',
                          [None, 1, 10, 30, 100])
 def test_set_n_frames(PDF_setup, trajectory, n_frames):

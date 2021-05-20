@@ -6,8 +6,7 @@ from mpi4py import MPI
 from numba import jit
 import numpy as np
 from numpy.testing import assert_allclose
-from typing import Callable
-from typing import Dict
+from typing import Callable, Dict, List, Union
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_COH, B_INCOH
@@ -17,6 +16,7 @@ from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.common.resolution_functions import gaussian
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 class AbstractSQw(Observable):
@@ -353,7 +353,8 @@ class AbstractSQw(Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input, **settings):
+    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
+                          **settings):
 
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
@@ -365,8 +366,8 @@ class AbstractSQw(Observable):
 
         Parameters
         ----------
-        MD_input : list of Trajectory
-            A `list` of MD ``Trajectory`` from which the S(Q, w) will be calculated
+        MD_input : Trajectory or list of Trajectory
+            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -380,55 +381,80 @@ class AbstractSQw(Observable):
         self._origin = 'MD'
         SQw_list = []
         errors_list = []
+
+        # Convert the user friendly ueV into preferred system unit of meV
+        self.e_res = settings['energy_resolution'] / 1000
+
+        # Create independent_variables dictionary if it doesn't exist
+        if not hasattr(self, 'independent_variables'):
+            self.independent_variables = {}
+
+        if isinstance(MD_input, Trajectory):
+            MD_input = [MD_input]
+
+        # Extract information that should be constant from the first Trajectory
+        self.t = MD_input[0].times - MD_input[0].times[0]
+        dt = self.t[1] - self.t[0]
+
+        try:
+            self.universe_dimensions = MD_input[0].dimensions
+        except AttributeError:
+            try:
+                self.universe_dimensions = np.array(settings['dimensions'])
+            except KeyError:
+                raise AttributeError('Either trajectory requires a dimensions'
+                                     ' attribute or dimensions must be passed'
+                                     ' when calling calculate_from_MD')
+
+        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
+                                 * UNIT_VECTOR)
+
+        # Test that, if there is an existing E, it is consistent with E
+        # calculated from trajectory times
+        if self.E is not None:
+            self.validate_energy(dt)
+        elif self.independent_variables:
+            self.independent_variables['E'] = self.calculate_E(len(self.t) - 1, dt)
+        else:
+            self.independent_variables = {'E':self.calculate_E(len(self.t) - 1, dt)}
+        # Overwrite independent variable 'Q' if it already exists
+        try:
+            self.independent_variables['Q'] = np.array(settings['Q_values'])
+        except KeyError:
+            pass
+
+        self.isotropic = settings.get('isotropic', True)
+        if not self.isotropic:
+            self.direction = np.array(settings.get('direction', [1, 0, 0]))
+
+        self.n_Q_vectors = settings.get('n_Q_vectors', 50)
+        if not hasattr(self, 'Q_vectors'):
+            try:
+                self.Q_vectors = np.array(settings['Q_vectors'])
+            except KeyError:
+                self.Q_vectors = self._calculate_Q_vectors(self.Q)
+
+        # Perform calculations for each Trajectory
         for trajectory in MD_input:
             self.trajectory = trajectory
-            self.t = self.trajectory.times - self.trajectory.times[0]
-            try:
-                self.universe_dimensions = self.trajectory.dimensions
-            except AttributeError:
-                try:
-                    self.universe_dimensions = np.array(settings['dimensions'])
-                except KeyError:
-                    raise AttributeError('Either trajectory requires a dimensions'
-                                         ' attribute or dimensions must be passed'
-                                         ' when calling calculate_from_MD')
-
-            # Convert the user friendly ueV into preferred system unit of meV
-            self.e_res = settings['energy_resolution'] / 1000
             self._set_weights()
 
-            # Create independent_variables dictionary if it doesn't exist
-            if not hasattr(self, 'independent_variables'):
-                self.independent_variables = {}
-
-            self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
-                                     * UNIT_VECTOR)
-
-            dt = self.t[1] - self.t[0]
-            # Test that, if there is an existing E, it is consistent with E
-            # calculated from trajectory times
-            if self.E is not None:
-                self.validate_energy(dt)
-            elif self.independent_variables:
-                self.independent_variables['E'] = self.calculate_E(len(self.t) - 1, dt)
-            else:
-                self.independent_variables = {'E':self.calculate_E(len(self.t) - 1, dt)}
-            # Overwrite independent variable 'Q' if it already exists
+            # Assert that the times and dimensions are consistent with original trajectory
             try:
-                self.independent_variables['Q'] = np.array(settings['Q_values'])
-            except KeyError:
+                assert_allclose(self.trajectory.times - self.trajectory.times[0], self.t)
+            except AssertionError as error:
+                msg = ('The `times` of the current `Trajectory` were not '
+                       'consistent with the first `Trajectory` passed')
+                raise AssertionError(msg) from AssertionError
+            try:
+                assert_allclose(self.universe_dimensions, self.trajectory.dimensions)
+            except AttributeError:
+                # May not have dimensions set, in which case pass
                 pass
-
-            self.isotropic = settings.get('isotropic', True)
-            if not self.isotropic:
-                self.direction = np.array(settings.get('direction', [1, 0, 0]))
-
-            self.n_Q_vectors = settings.get('n_Q_vectors', 50)
-            if not hasattr(self, 'Q_vectors'):
-                try:
-                    self.Q_vectors = np.array(settings['Q_vectors'])
-                except KeyError:
-                    self.Q_vectors = self._calculate_Q_vectors(self.Q)
+            except AssertionError as error:
+                msg = ('The `dimensions` of the current `Trajectory` were not '
+                       'consistent with the first `Trajectory` passed')
+                raise AssertionError(msg) from AssertionError
 
             self.FQt = self.calculate_FQt()
 

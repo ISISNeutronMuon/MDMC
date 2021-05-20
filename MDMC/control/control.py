@@ -167,8 +167,9 @@ class Control:
                                                  auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
-            new_min = self._calculate_minimum_MD_steps(observable_pair)
-            minimum_MD_steps = max(minimum_MD_steps, new_min)
+            # Take the largest minimum number of MD_steps needed by any dataset
+            min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
+            minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
@@ -180,8 +181,8 @@ class Control:
                 # our observable pairs
                 maximum_MD_steps = minimum_MD_steps
                 for pair in self.observable_pairs:
-                    new_max = self._calculate_maximum_MD_steps(MD_steps, pair)
-                    maximum_MD_steps = max(maximum_MD_steps, new_max)
+                    max_MD_steps_pair = self._calculate_maximum_MD_steps(MD_steps, pair)
+                    maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
                 self.MD_steps = maximum_MD_steps
             except AssertionError as error:
                 raise ValueError('Experimental datasets provided require a '
@@ -470,12 +471,12 @@ class Control:
         below the ``MD_steps`` specified by the user. Any additional steps
         beyond this would not contribute to the calculation.
 
-        If ``maximum_frames`` is None, then all frames can be used so we just
-        return the largest multiple of ``traj_steps``.
+        If ``observable_pair.exp_obs.maximum_frames()`` is None, then all frames can be used so we
+        just return the largest multiple of ``traj_steps``.
 
         Otherwise, we calculate the largest multiple of
-        ``traj_step * maximum_frames``, as we can then calculate the dependent
-        variable multiple times by taking subsets of the total trajectory.
+        ``traj_step * observable_pair.exp_obs.maximum_frames()``, as we can then calculate the
+        dependent variable multiple times by taking subsets of the total trajectory.
 
         Parameters
         ----------
@@ -600,7 +601,7 @@ class Control:
                 assert len(data_list) == 1
                 data = data_list[0]
             except AssertionError as error:
-                msg = ('Expected experimental dataset to only one dependent '
+                msg = ('Expected experimental dataset to only have one dependent '
                        'variable entry for {0}, but found {1} instead'
                        ''.format(var_key, len(data_list)))
                 raise AssertionError(msg) from error

@@ -7,13 +7,14 @@ import warnings
 
 from numba import jit
 import numpy as np
-from typing import Dict
+from typing import Dict, List, Union
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.trajectory import Trajectory
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -159,7 +160,8 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input, **settings):
+    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
+                          **settings):
 
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
@@ -195,8 +197,8 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : list of Trajectory
-            A `list` of MD ``Trajectory``
+        MD_input : Trajectory or list of Trajectory
+            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
@@ -273,6 +275,10 @@ class PairDistributionFunction(Observable):
         """
 
         self.origin = 'MD'
+
+        if isinstance(MD_input, Trajectory):
+            MD_input = [MD_input]
+
         self._parse_calc_MD_settings(MD_input[0], settings)
 
         for trajectory in self.trajectory:
