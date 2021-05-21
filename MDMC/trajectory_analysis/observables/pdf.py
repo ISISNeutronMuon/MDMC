@@ -7,13 +7,14 @@ import warnings
 
 from numba import jit
 import numpy as np
-from typing import Dict
+from typing import Dict, List, Union
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.trajectory import Trajectory
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -159,7 +160,8 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input, **settings):
+    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
+                          **settings):
 
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
@@ -195,8 +197,8 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            An MD ``Trajectory``
+        MD_input : Trajectory or list of Trajectory
+            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
@@ -273,7 +275,11 @@ class PairDistributionFunction(Observable):
         """
 
         self.origin = 'MD'
-        self._parse_calc_MD_settings(MD_input, settings)
+
+        if isinstance(MD_input, Trajectory):
+            MD_input = [MD_input]
+
+        self._parse_calc_MD_settings(MD_input[0], settings)
 
         for trajectory in self.trajectory:
             self._calculate_histogram(trajectory.configurations[0])
@@ -288,7 +294,7 @@ class PairDistributionFunction(Observable):
         # Partial independent prefactor (e.g. anything element independent)
         prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
                                             * self.r_step)
-        self._dependent_variables['PDF'] = np.zeros(np.shape(self.r))
+        self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
         concentration_norm = np.sum(list(self.numbers.values())) ** 2
         for partial_string, partial in self.partial_pdfs.items():
             numbers = np.multiply(*[self.numbers[elem] for elem
@@ -308,8 +314,8 @@ class PairDistributionFunction(Observable):
                 fac = 1.
             else:
                 fac = 2.
-            self._dependent_variables['PDF'] += ((partial - 1) * fac * weights
-                                                 * concentration)
+            self._dependent_variables['PDF'][0] += ((partial - 1) * fac
+                                                    * weights * concentration)
 
     def _parse_calc_MD_settings(self, trajectory, settings):
 

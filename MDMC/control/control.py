@@ -68,7 +68,9 @@ class Control:
     MD_steps : int, optional
         Number of molecular dynamics steps for each step of the refinement.
         When not provided, the minimum number of steps needed for successful
-        calculation of the observables is used. Default is `None`.
+        calculation of the observables is used. If provided, the actual number
+        of steps may be reduced to prevent running MD that won't be used when
+        calculting dependent variables. Default is `None`.
     **settings
         ``energy_resolution`` : float
             Instrument energy resolution as the FWHM in ``ueV``.
@@ -164,8 +166,10 @@ class Control:
                                                  rescale_factor=rescale_factor,
                                                  auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
-            minimum_MD_steps = max(minimum_MD_steps,
-                                   self._calculate_MD_steps(observable_pair))
+
+            # Take the largest minimum number of MD_steps needed by any dataset
+            min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
+            minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
         self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
 
@@ -173,7 +177,13 @@ class Control:
         if MD_steps:
             try:
                 assert MD_steps >= minimum_MD_steps
-                self.MD_steps = MD_steps
+                # Set self.MD_steps to be the largest number required by any of
+                # our observable pairs
+                maximum_MD_steps = minimum_MD_steps
+                for pair in self.observable_pairs:
+                    max_MD_steps_pair = self._calculate_maximum_MD_steps(MD_steps, pair)
+                    maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
+                self.MD_steps = maximum_MD_steps
             except AssertionError as error:
                 raise ValueError('Experimental datasets provided require a '
                                  'minimum MD_steps value of {} in order to '
@@ -412,12 +422,19 @@ class Control:
         for pair in observable_pairs:
             maximum_frames = pair.MD_obs.maximum_frames()
             if maximum_frames:
-                pair.MD_obs.calculate_from_MD(trj[:maximum_frames],
-                                              **self.settings)
+                # If there is a limit on the number of frames the observable
+                # can use in calculations, split the trajectory into as many
+                # subsets of this length as we can
+                sub_trj = []
+                n_averages = len(trj) // maximum_frames
+                for i in range(n_averages):
+                    sub_trj.append(trj[i * maximum_frames : (i + 1) * maximum_frames])
+                pair.MD_obs.calculate_from_MD(sub_trj, **self.settings)
             else:
-                pair.MD_obs.calculate_from_MD(trj, **self.settings)
+                # Otherwise, provide the whole trajectory
+                pair.MD_obs.calculate_from_MD([trj], **self.settings)
 
-    def _calculate_MD_steps(self, observable_pair: FoM.ObservablePair):
+    def _calculate_minimum_MD_steps(self, observable_pair: FoM.ObservablePair):
 
         """
         Calculates the minimum number of steps required for the MD engine in
@@ -444,6 +461,46 @@ class Control:
         minimum_frames = observable_pair.exp_obs.minimum_frames(dt)
 
         return traj_step * minimum_frames
+
+    def _calculate_maximum_MD_steps(self, MD_steps: int,
+                                    observable_pair: FoM.ObservablePair):
+
+        """
+        Calculates the maximum number of steps that ``observable_pair`` will be
+        able to use when calculating dependent variables whilst still being
+        below the ``MD_steps`` specified by the user. Any additional steps
+        beyond this would not contribute to the calculation.
+
+        If ``observable_pair.exp_obs.maximum_frames()`` is None, then all frames can be used so we
+        just return the largest multiple of ``traj_steps``.
+
+        Otherwise, we calculate the largest multiple of
+        ``traj_step * observable_pair.exp_obs.maximum_frames()``, as we can then calculate the
+        dependent variable multiple times by taking subsets of the total trajectory.
+
+        Parameters
+        ----------
+        MD_steps : int
+            The hard upper limit on the number of steps to run, as specified by
+            the user
+        observable_pair : ObservablePair
+            ``ObservablesPair`` for which the required number of ``MD_steps``
+            is calculated
+
+        Returns
+        -------
+        int
+            Maximum number of ``MD_steps`` needed
+        """
+        traj_step = self.simulation.traj_step
+        maximum_frames = observable_pair.exp_obs.maximum_frames()
+
+        if maximum_frames is None:
+            maximum_steps = traj_step
+        else:
+            maximum_steps = traj_step * maximum_frames
+
+        return maximum_steps * (MD_steps // (maximum_steps))
 
     def _is_data_uniform(self, observable: Observable) -> Dict[str, Dict[str, bool]]:
         """
@@ -538,7 +595,17 @@ class Control:
         var_indexing = observable.dependent_variables_structure
 
         # loop through the dependent variables and interpolate them
-        for var_key, data in observable.dependent_variables.items():
+        for var_key, data_list in observable.dependent_variables.items():
+            # Experimental Observables should only have 1 element in data_list
+            try:
+                assert len(data_list) == 1
+                data = data_list[0]
+            except AssertionError as error:
+                msg = ('Expected experimental dataset to only have one dependent '
+                       'variable entry for {0}, but found {1} instead'
+                       ''.format(var_key, len(data_list)))
+                raise AssertionError(msg) from error
+
             # determine the dimension of the dependent variable
             var_dimension = data.ndim
             # interpolation for 1D
@@ -548,7 +615,7 @@ class Control:
                 x_uniform = indep_var_uniform[var_indexing[var_key][0]]
                 uniform_data = data_interpol(x_uniform)
                 # repeat the interpolation for the errors
-                err_data = observable.errors[var_key]
+                err_data = observable.errors[var_key][0]
                 err_data[err_data == np.float('inf')] = 0
                 err_interpol = interp1d(x_data, err_data)
                 err_uniform = err_interpol(x_uniform)
@@ -570,7 +637,7 @@ class Control:
                 y_uniform = indep_var_uniform[var_indexing[var_key][0]]
                 uniform_data = data_interpol(x_uniform, y_uniform)
                 # repeat the interpolation for the errors
-                err_data = observable.errors[var_key]
+                err_data = observable.errors[var_key][0]
                 err_data[err_data == np.float('inf')] = 0
                 err_interpol = interp2d(x_data, y_data, err_data)
                 err_uniform = err_interpol(x_uniform, y_uniform)
@@ -578,8 +645,8 @@ class Control:
             else:
                 raise NotImplementedError('Only 1D and 2D data can currently be made uniform')
             # save the uniform data and errors back into the Observable
-            observable._dependent_variables[var_key] = uniform_data
-            observable._errors[var_key] = err_uniform
+            observable._dependent_variables[var_key] = [uniform_data]
+            observable._errors[var_key] = [err_uniform]
         # finally, set the independent variables of the ``Observable`` to the uniform ones
         observable.independent_variables = indep_var_uniform
         return observable

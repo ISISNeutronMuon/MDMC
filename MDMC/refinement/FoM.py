@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+from typing import Dict
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -115,6 +116,26 @@ class ObservablePair:
             raise TypeError('weight must be a float')
         self.validate_weight(weight)
         self._weight = weight
+
+    @property
+    def n_averages(self) -> Dict[str, int]:
+
+        """
+        The number of separate, complete dependent variable calculations we
+        have been able to perform for the ``Observable``
+
+        Returns
+        -------
+        dict
+            Each key represents a dependent variable, and the value is the
+            number of times we have calculated it
+        """
+
+        n_averages = {}
+        for key, value in self.MD_obs.dependent_variables.items():
+            n_averages[key] = len(value)
+
+        return n_averages
 
     def validate_obs(self, obs, origin):
 
@@ -451,4 +472,5 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
         n_datapoints = np.size(*obs_pair.exp_obs.dependent_variables.values())
         value_unreduced = np.sum((obs_pair.calculate_difference()
                                   / obs_pair.calculate_errors()) ** 2)
-        return obs_pair.weight * value_unreduced / n_datapoints
+        return (obs_pair.weight * value_unreduced
+                / (n_datapoints * np.sum(*obs_pair.n_averages.values())))

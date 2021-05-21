@@ -6,8 +6,7 @@ from mpi4py import MPI
 from numba import jit
 import numpy as np
 from numpy.testing import assert_allclose
-from typing import Callable
-from typing import Dict
+from typing import Callable, Dict, List, Union
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_COH, B_INCOH
@@ -17,6 +16,7 @@ from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.common.resolution_functions import gaussian
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 class AbstractSQw(Observable):
@@ -235,8 +235,8 @@ class AbstractSQw(Observable):
 
         Returns
         -------
-        array
-            2D array of S(Q, w) `float` with arbitrary units
+        list of numpy.ndarray
+            `list` of 2D arrays of S(Q, w) `float` with arbitrary units
         """
 
         try:
@@ -253,7 +253,8 @@ class AbstractSQw(Observable):
 
         Returns
         -------
-            2D array of S(Q, w) error `float` with arbitrary units
+        list of numpy.ndarray
+            `list` of 2D array of S(Q, w) error `float` with arbitrary units
         """
 
         try:
@@ -352,7 +353,8 @@ class AbstractSQw(Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input, **settings):
+    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
+                          **settings):
 
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
@@ -364,8 +366,8 @@ class AbstractSQw(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            An MD ``Trajectory`` from which the S(Q, w) will be calculated
+        MD_input : Trajectory or list of Trajectory
+            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -377,10 +379,25 @@ class AbstractSQw(Observable):
         """
 
         self._origin = 'MD'
-        self.trajectory = MD_input
-        self.t = self.trajectory.times - self.trajectory.times[0]
+        SQw_list = []
+        errors_list = []
+
+        # Convert the user friendly ueV into preferred system unit of meV
+        self.e_res = settings['energy_resolution'] / 1000
+
+        # Create independent_variables dictionary if it doesn't exist
+        if not hasattr(self, 'independent_variables'):
+            self.independent_variables = {}
+
+        if isinstance(MD_input, Trajectory):
+            MD_input = [MD_input]
+
+        # Extract information that should be constant from the first Trajectory
+        self.t = MD_input[0].times - MD_input[0].times[0]
+        dt = self.t[1] - self.t[0]
+
         try:
-            self.universe_dimensions = self.trajectory.dimensions
+            self.universe_dimensions = MD_input[0].dimensions
         except AttributeError:
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
@@ -389,18 +406,9 @@ class AbstractSQw(Observable):
                                      ' attribute or dimensions must be passed'
                                      ' when calling calculate_from_MD')
 
-        # Convert the user friendly ueV into preferred system unit of meV
-        self.e_res = settings['energy_resolution'] / 1000
-        self._set_weights()
-
-        # Create independent_variables dictionary if it doesn't exist
-        if not hasattr(self, 'independent_variables'):
-            self.independent_variables = {}
-
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
                                  * UNIT_VECTOR)
 
-        dt = self.t[1] - self.t[0]
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
@@ -426,13 +434,38 @@ class AbstractSQw(Observable):
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        self.FQt = self.calculate_FQt()
+        # Perform calculations for each Trajectory
+        for trajectory in MD_input:
+            self.trajectory = trajectory
+            self._set_weights()
 
-        self._dependent_variables = {'SQw':self._calculate_SQw()}
-        self._errors = {'SQw':np.zeros(np.shape(self.SQw))}
+            # Assert that the times and dimensions are consistent with original trajectory
+            try:
+                assert_allclose(self.trajectory.times - self.trajectory.times[0], self.t)
+            except AssertionError as error:
+                msg = ('The `times` of the current `Trajectory` were not '
+                       'consistent with the first `Trajectory` passed')
+                raise AssertionError(msg) from AssertionError
+            try:
+                assert_allclose(self.universe_dimensions, self.trajectory.dimensions)
+            except AttributeError:
+                # May not have dimensions set, in which case pass
+                pass
+            except AssertionError as error:
+                msg = ('The `dimensions` of the current `Trajectory` were not '
+                       'consistent with the first `Trajectory` passed')
+                raise AssertionError(msg) from AssertionError
 
-        # Cleanup the trajectory to reduce memory usage
-        self.trajectory = None
+            self.FQt = self.calculate_FQt()
+
+            SQw_list.append(self._calculate_SQw())
+            errors_list.append(np.zeros(np.shape(SQw_list[-1])))
+
+            # Cleanup the trajectory to reduce memory usage
+            self.trajectory = None
+
+        self._dependent_variables = {'SQw': SQw_list}
+        self._errors = {'SQw': errors_list}
 
     @abstractmethod
     def _set_weights(self):
