@@ -16,14 +16,18 @@ pytestmark = pytest.mark.mpi
 class MockParameter:
 
     """
-    A fixed Parameter which only ``name``, ``value`` and ``fixed`` attributes
+    A fixed Parameter which only ``name``, ``value`` and optionally ``fixed``, ``tied`` and
+    ``constraints`` attributes
     """
 
-    def __init__(self, name, value):
+    def __init__(self, name, value, fixed: bool = False, tied: bool = False,
+                 constraints: tuple = None):
 
         self.name = name
         self.value = value
-        self.fixed = False
+        self.fixed = fixed
+        self.tied = tied
+        self.constraints = constraints
 
 
 @pytest.fixture
@@ -237,6 +241,28 @@ def test_mmc_change_parameters(parameters):
     assert [p.value for p in mmc.parameters] == expected_values
 
 
+def test_mmc_change_constrained_parameter():
+
+    """
+    Tests that constrained parameters do not exceed their max/min values.
+    """
+
+    def mock_distribution(low: float, high: float, size: int):
+        # For non-constrained parameters, this would result in the first being doubled and the
+        # second set to 0
+        return np.array([1., -1.])
+
+    parameters = [MockParameter('constraints', 1., constraints=(0.5, 1.5)),
+                  MockParameter('constraints', 1., constraints=(0.5, 1.5))]
+
+    # Expect values to be set to the upper/lower limit
+    expected_values = [1.5, 0.5]
+    mmc = minimizer.MMC(1, parameters)
+    mmc.distribution = mock_distribution
+    mmc.change_parameters(mmc.parameters)
+    assert [p.value for p in mmc.parameters] == expected_values
+
+
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm',
                          [(10., 20., 1.),
                           (10., 20., 0.0001),
@@ -310,3 +336,25 @@ def test_minimizer_has_converged(mock_history, min_steps, expected):
         assert mmc.has_converged(min_steps=min_steps) == expected
     else:
         assert mmc.has_converged() == expected
+
+
+def test_mmc_fixed_parameter():
+
+    """
+    Test that a ``ValueError`` is raised when passing a fixed ``Parameter``
+    """
+
+    parameters = [MockParameter('fixed', 1., fixed=True)]
+    with pytest.raises(ValueError):
+        mmc = minimizer.MMC(1, parameters)
+
+
+def test_mmc_tied_parameter():
+
+    """
+    Test that a ``ValueError`` is raised when passing a tied ``Parameter``
+    """
+
+    parameters = [MockParameter('fixed', 1., tied=True)]
+    with pytest.raises(ValueError):
+        mmc = minimizer.MMC(1, parameters)

@@ -60,7 +60,7 @@ for p in universe.parameters:
     if p.name != 'epsilon':
         p.fixed = True
 
-fit_parameters = set([p for p in universe.parameters if p.fixed is False])
+fit_parameters = universe.parameters
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,

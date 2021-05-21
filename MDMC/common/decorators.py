@@ -123,9 +123,12 @@ def unit_decorator_getter(unit):
 
         def wrapper(self):
             # If decorator doesn't have a unit passed to it, use the unit of the
-            # object to which the method belongs.
+            # object to which the method belongs (`self`). If `self.unit` is also `None`, simply
+            # call the getter without any unit attached.
             if unit is None:
-                return unit_creator(self, self.unit)
+                if self.unit:
+                    return unit_creator(self, self.unit)
+                return func(self)
             return unit_creator(self, unit)
         return wrapper
     return decorator

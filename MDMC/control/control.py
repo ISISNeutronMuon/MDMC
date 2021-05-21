@@ -57,10 +57,12 @@ class Control:
         account any physical aspects of scaling the data, such as the presence or absence of
         background events from peaks outside its range.
     fit_parameters : Parameters, list of Parameter
-        All parameters which will be refined.
+        All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
+        ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
+        Those with ``constraints`` set are still passed.
     MC_norm : float, optional
         Determines the accept/reject ratio of the MC. Default is 1.
-    minimizier_type : str, optional
+    minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'MMC'.
     FoM_type : str, optional
         The type of ``FigureOfMeritCalculator``. Default is ``standard``.
@@ -127,6 +129,10 @@ class Control:
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
+
+        # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
+        fit_parameters = set([p for p in fit_parameters if (not (p.fixed or p.tied)
+                                                            and p.value != 0)])
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.

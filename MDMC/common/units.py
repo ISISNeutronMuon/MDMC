@@ -791,7 +791,7 @@ def unit_array(obj, unit, dtype=None):
         return None
 
     if not isinstance(unit, str):
-        raise TypeError('unit must be a string')
+        raise TypeError('unit must be a string, but was {}'.format(unit))
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):
