@@ -51,6 +51,11 @@ class Control:
             FFT speeds up calculation but places restrictions on spacing in the
             independent variable domain(s). This option may not be supported
             for all ``Observable``s
+        Note that the default (and preferred) behaviour of the scaling settings requires that the
+        dataset provided has been properly scaled and normalised for the refinement process.
+        Arbitrary or automatic rescaling should be undertaken with care, as it does not take into
+        account any physical aspects of scaling the data, such as the presence or absence of
+        background events from peaks outside its range.
     fit_parameters : Parameters, list of Parameter
         All parameters which will be refined.
     MC_norm : float, optional
