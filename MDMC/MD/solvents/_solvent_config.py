@@ -361,7 +361,7 @@ class SolventConfig(ABC):
             # at the start of each list in bonded_interactions. The rest of each
             # list (i.e. the atom names) are left unchanged.
             bonded_interactions = list(map(lambda b_i:
-                                           [getattr(structural_units,
+                                           [getattr(interactions,
                                                     el)(constrained=con)
                                             if not n else el
                                             for n, el in enumerate(b_i)],
