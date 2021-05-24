@@ -381,5 +381,5 @@ class SolventConfig(ABC):
                 if nb_i[0] == 'Coulombic':
                     dummy = interactions.Coulombic(universe=universe, atom_types=nb_i[1])
                 else:
-                    dummy = getattr(structural_units, nb_i[0])(universe, *nb_i[1:])
+                    dummy = getattr(interactions, nb_i[0])(universe, *nb_i[1:])
         return molecules
