@@ -10,8 +10,7 @@ import logging
 
 import numpy as np
 
-#need to break the import loop between structural_units and interactions that can occur
-import MDMC.MD.structural_units as su
+from MDMC.MD.utils.common import is_atom
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
@@ -576,7 +575,7 @@ class Coulombic(NonBondedInteraction):
                 raise TypeError('Coulombic takes either atom_types or atoms '
                                 'as parameters')
             # Account for init argument atoms=atom rather than atoms=[atom]
-            if isinstance(atoms, su.Atom):
+            if is_atom(atoms):
                 atoms = [atoms]
             self._atoms = []
             self._atom_types = []
@@ -720,7 +719,7 @@ class BondedInteraction(Interaction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        if atom_tuples and isinstance(atom_tuples[0], su.Atom):
+        if atom_tuples and is_atom(atom_tuples[0]):
             atom_tuples = (atom_tuples, )
         if settings.get('n_atoms'):
             # This ensures that BondedInteractions can also be __init__ with 0
@@ -805,7 +804,7 @@ class BondedInteraction(Interaction):
         # try/except accounts for single atom passed rather than (atom,) tuple
         # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
         except TypeError:
-            if len(atom_tuples) == 1 and isinstance(atom_tuples[0], su.Atom):
+            if len(atom_tuples) == 1 and is_atom(atom_tuples[0]):
                 atom_tuples = [(atom_tuples[0],)]
             else:
                 raise TypeError('atom_tuples must be [(atom, ...), ...]')
