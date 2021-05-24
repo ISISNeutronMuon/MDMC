@@ -439,7 +439,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
                     # Add atom's bonded interactions to memo so that these are
                     # not copied
                     for inter in atom.interactions:
-                        if issubclass(type(inter), interacts.BondedInteraction):
+                        if issubclass(type(inter), BondedInteraction):
                             memo[id(inter)] = inter
                     new_atom = deepcopy(atom, memo)
                     struct_map[atom] = new_atom
@@ -758,7 +758,7 @@ class Atom(StructuralUnit):
                 # to the atom_types.
                 atom._nonbonded_interactions = []
                 for inter in self.nonbonded_interactions:
-                    if isinstance(inter, interacts.Coulombic):
+                    if isinstance(inter, Coulombic):
                         # try/except account for Coulombic interactions
                         # initialized with atom_types
                         try:
@@ -882,7 +882,7 @@ class Atom(StructuralUnit):
             num_coul = 0
             value = None
             for interaction in self.interactions:
-                if isinstance(interaction, interacts.Coulombic):
+                if isinstance(interaction, Coulombic):
                     # Check that only one Coulombic interaction exists.
                     num_coul += 1
                     if num_coul > 1:
@@ -906,7 +906,7 @@ class Atom(StructuralUnit):
     def charge(self, value):
 
         for inter in self.interactions:
-            if isinstance(inter, interacts.Coulombic):
+            if isinstance(inter, Coulombic):
                 if value is not None:
                     try:
                         for parameter in inter.parameters:
@@ -926,7 +926,7 @@ class Atom(StructuralUnit):
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
         if value is not None:
-            interacts.Coulombic(atoms=self, charge=value, cutoff=10.)
+            Coulombic(atoms=self, charge=value, cutoff=10.)
 
     @property
     def mass(self):
@@ -975,7 +975,7 @@ class Atom(StructuralUnit):
 
         # Update atom_types in Coulombic interactions
         for inter in self.nonbonded_interactions:
-            if isinstance(inter, interacts.Coulombic) and value not in inter.atom_types:
+            if isinstance(inter, Coulombic) and value not in inter.atom_types:
                 inter._atom_types.append(value)
 
     @property
@@ -1088,7 +1088,7 @@ class Atom(StructuralUnit):
             Default is `False`.
         """
 
-        if issubclass(type(interaction), interacts.BondedInteraction):
+        if issubclass(type(interaction), BondedInteraction):
             # The tuple most recently added to interaction.atoms should always
             # contain self
             if from_interaction:
