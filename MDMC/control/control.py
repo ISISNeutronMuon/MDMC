@@ -9,6 +9,7 @@ from typing import List
 from scipy.interpolate import interp1d, interp2d
 from typing import Dict
 
+from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -39,6 +40,10 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
+          - ``resolution_file`` (`str`, optional, defaults to `None`) a file in
+            the same format as ``file_name`` containing results of a vanadium
+            sample which is used to determine instrument energy resolution for
+            this dataset (overriding the ``energy_resolution`` setting)
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -88,6 +93,7 @@ class Control:
           'type':'SQw',
           'reader':'LAMPSQw',
           'weight':1.,
+          'resolution_file':data.LAMP_SQW_VAN_FILE
           'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
@@ -196,6 +202,14 @@ class Control:
                                  ) from error
         else:
             self.MD_steps = minimum_MD_steps
+
+        for i, dset in enumerate(exp_datasets):
+            if dset.get('resolution_file'):
+                resolution_functions = self._read_resolution_from_file(dset['type'],
+                                                                       dset['reader'],
+                                                                       dset['resolution_file'])
+                self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
+                self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
 
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
@@ -359,7 +373,8 @@ class Control:
 
         self.simulation.engine.update_parameters()
 
-    def _read_observable_from_file(self, type, reader, file_name):
+    def _read_observable_from_file(self, type: str, reader: str, file_name: str,
+                                   resolution_file_name: str = None):
 
         """
         Creates an Observable of the specified type and reads in data from file
@@ -382,6 +397,43 @@ class Control:
         observable = ObservableFactory.create_observable(type)
         observable.read_from_file(reader=reader, file_name=file_name)
         return observable
+
+    def _read_resolution_from_file(self, data_type: str, reader: str, file_name: str):
+
+        """
+        Reads resolution data for the specified ``data_type`` from file and interpolates it
+        to give a dictionary of general resolution functions in the time domain for each dependent
+        variable.
+
+        Note that if this resolution function is used on data outside its original range, then it
+        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
+        time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
+        appropriate for the data in question, this function should not be used.
+
+        This may not be supported for all ``Observable`` types.
+
+        Parameters
+        ----------
+        data_type : str
+            The ``type`` of the ``Observable``.
+        reader : str
+            The ``type`` of the ``Reader``.
+        file_name : str
+            The absolute or relative path of the resolution file name.
+
+        Returns
+        -------
+        dict
+            A dictionary with keys for each dependent variable, where the
+            values are resolution functions for that variable.
+        """
+
+        resolution_obs = self._read_observable_from_file(data_type,
+                                                         reader,
+                                                         file_name)
+
+        dt = self.simulation.time_step * self.simulation.traj_step
+        return resolution_obs.calculate_resolution_functions(dt)
 
     def _create_empty_observable(self, exp_observable):
 
@@ -406,6 +458,7 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
+        observable.resolution_functions = exp_observable.resolution_functions
         return observable
 
     def _calculate_observables(self, simulation, observable_pairs):
