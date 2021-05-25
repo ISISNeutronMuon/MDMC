@@ -118,16 +118,24 @@ def test_apply_resolution_function(SQw_from_data):
 
     t_vector = np.linspace(0, 100, 10)
 
+    # Create a mock array of FQt values
     FQt_shape = (len(SQw_from_data.Q), 10)
     mock_FQt = np.ones(FQt_shape)
 
-    t_behaviour = np.linspace(1, len(t_vector) + 1, len(t_vector), endpoint=False)
-    expected_FQt = np.broadcast_to(t_behaviour, FQt_shape)
-
     def mock_resolution_function(y_data, x_data):
-        x_behaviour = np.linspace(1, len(x_data) + 1, len(x_data), endpoint=False)
-        y_behaviour = np.linspace(1, len(y_data) + 1, len(y_data), endpoint=False)
-        return np.outer(x_behaviour, y_behaviour)
+        """
+        Define a mock resolution function which linearly increases in both the x and y directions
+        """
+        x_variation = np.linspace(1, len(x_data) + 1, len(x_data), endpoint=False)
+        y_variation = np.linspace(1, len(y_data) + 1, len(y_data), endpoint=False)
+        return np.outer(x_variation, y_variation)
+
+    # As we defined mock_FQt to be an array of ones, after applying the resolution function we
+    # expect the variation in the time domain to be the same as that of the resolution function.
+    # However, because the resolution function is normalised to 1 at t=0 for each Q value, we do
+    # not expect any variation in that dimension and so broadcast across it.
+    t_variation = np.linspace(1, len(t_vector) + 1, len(t_vector), endpoint=False)
+    expected_FQt = np.broadcast_to(t_variation, FQt_shape)
 
     SQw_from_data.t = t_vector
     SQw_from_data.resolution_functions['SQw'] = mock_resolution_function

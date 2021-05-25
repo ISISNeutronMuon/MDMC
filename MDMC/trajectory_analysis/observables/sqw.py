@@ -6,6 +6,7 @@ from mpi4py import MPI
 from numba import jit
 import numpy as np
 from numpy.testing import assert_allclose
+from scipy.interpolate import interp2d
 from typing import Callable
 from typing import Dict
 
@@ -841,6 +842,87 @@ class AbstractSQw(Observable):
 
         # Broadcast the window so that it is applied for all Q values
         return np.broadcast_to(window, (N_Q, N_T)) * FQt
+
+    def calculate_resolution_functions(self, dt):
+        """
+        Generates a resolution function in momentum and time that can be used in the calculation of
+        SQw. Note that this uses the ``SQw`` values of the ``Observable`` it is called from, and so
+        should only be called for an observable which has been created from relevant resolution
+        data, i.e. a vanadium sample.
+
+        Note that if this resolution function is used on data outside its original range, then it
+        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
+        time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
+        appropriate for the data in question, this function should not be used.
+
+
+        Parameters
+        ----------
+        dt : float
+            The time spacing to use when performing the inverse Fourier transform in units of `fs`.
+            Ideally this should be the same as the frame seperation expected when applying this
+            function.
+
+        Returns
+        -------
+        dict
+            A dictionary with the key 'SQw' corresponding to function which accepts arrays of time
+            and momentum (respectively) and returns a 2D array of values for the instrument
+            resolution.
+        """
+
+        # Remove any momentum values with infinite error, and the corresponding values from SQw
+        error = self.SQw_err
+        masking = np.where(np.any(error == np.float('inf'), axis=-1))
+        SQw_cropped = np.delete(self.SQw, masking, axis=0)
+        Q_cropped = np.delete(self.Q, masking)
+
+        # Enforce symmetry in the energy/time domain of the data. Note that if the original data
+        # included both positive and negative values, we will end up with more densely spaced
+        # values after this reflection.
+        E_reflected = np.append(self.E, -1 * self.E)
+        SQw_reflected = np.append(SQw_cropped, SQw_cropped, axis=-1)
+
+        # Sort the data so the width of each bin can be calculated using argsort so we can apply
+        # the same re-ordering to SQw. Because we cannot calculate the width of the first or last
+        # value, these are discarded from the energy and SQw arrays.
+        sorted_indices = np.argsort(E_reflected)
+        E_sorted = E_reflected[sorted_indices]
+        widths = (E_sorted[2:] - E_sorted[:-2]) / 2
+        E_sorted = E_sorted[1:-1]
+        SQw_sorted = SQw_reflected[:, sorted_indices[1:-1]]
+
+        # Perform a (slow) inverse discrete Fourier transform now, with all available data, rather
+        # than with potentially coarse time sampling during the SQw calculation
+        # Create time array with the spacing dt, and a min/max value of the Nyquist limit.
+        # h is in units of eV s whereas system units are meV fs, so
+        # apply a factor of 1e3 * 1e15 to convert it
+        max_energy_separation = np.amax(np.diff(E_sorted))
+        t_max = h  * 1e18 / (2 * max_energy_separation)
+        N_T = int(t_max / dt)
+        t_array = np.linspace(- dt * N_T, dt * N_T, N_T)
+        SQw_ift = np.zeros((len(SQw_sorted), N_T), dtype='complex')
+
+        # In general we do not have equal energy spacing, multiply the exponential factor by this
+        # before transposing and dotting to sum over the energy domain
+        exp = np.exp(1j * np.outer(t_array, E_sorted) / (h_bar * 1e18)) * widths
+        SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
+
+        # note: the interp2d interpolation function requires input of the form
+        # interp2d(x, y, z)
+        # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
+        # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
+        # Because Observable.dependent_variables_structure gives the order in which the
+        # independent variables are represented in the np.shape of the data, we have to
+        # reverse the order of the x and y arrays for interp2d.
+        # interp2d does not return complex numbers, so define a new function that combines
+        # the real and imaginary parts
+        def data_interpol(t, Q):
+            real = interp2d(t_array, Q_cropped, np.real(SQw_ift))
+            imag = interp2d(t_array, Q_cropped, np.imag(SQw_ift))
+            return real(t, Q) + 1j * imag(t, Q)
+
+        return {'SQw': data_interpol}
 
     def _calculate_resolution_window(self, resolution_function: Callable) -> np.ndarray:
         """
