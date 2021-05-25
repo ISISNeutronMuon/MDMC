@@ -1394,7 +1394,7 @@ def parse_structural_unit_IDs(structural_units):
     Raises
     ------
     KeyError
-        If one of the ``int`` in ``structural_units`` does not correspong to an existing
+        If one of the ``int`` in ``structural_units`` does not correspond to an existing
         ``StructuralUnit.ID``.
     """
 
