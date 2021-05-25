@@ -349,7 +349,8 @@ class HarmonicPotential(InteractionFunction):
             elif settings['interaction_type'].lower() in ('angle', 'bondangle',
                                                           'improper'):
                 eq_unit = units.ANGLE
-                pot_unit = units.ENERGY / units.ANGLE ** 2
+                # Use radians rather than system angle units (degrees)
+                pot_unit = units.ENERGY / units.Unit('rad') ** 2
             else:
                 raise ValueError('The interaction_type must be "bond", "angle",'
                                  ' or "improper"')

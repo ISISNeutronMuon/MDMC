@@ -301,16 +301,16 @@ def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs, SQw_incoh_obs_no_FFT):
     section, so this factor is included.
     """
 
-    assert np.all(np.shape(SQw_incoh_obs.SQw) == np.shape(SQw_incoh_ref))
+    assert np.all(np.shape(SQw_incoh_obs.SQw[0]) == np.shape(SQw_incoh_ref))
     # SQw is normalised to B_FACTOR / N_Q_VALUES.  The first term is due to
     # nMOLDYN not including the incoherent weighting, and the second term is
     # because MDMC normalises the FFT so that there is the same power in SQw as
     # in FQt
-    assert_allclose(SQw_incoh_obs.SQw / (B_FACTOR / N_Q_VALUES),
+    assert_allclose(SQw_incoh_obs.SQw[0] / (B_FACTOR / N_Q_VALUES),
                     SQw_incoh_ref, atol=ATOL)
 
     # Assert there is no difference between FFT and non-FFT calculation
-    assert_allclose(SQw_incoh_obs.SQw, SQw_incoh_obs_no_FFT.SQw, atol=ATOL)
+    assert_allclose(SQw_incoh_obs.SQw[0], SQw_incoh_obs_no_FFT.SQw[0], atol=ATOL)
 
 
 def test_SQw_coh(SQw_coh_ref, SQw_coh_obs, SQw_coh_obs_no_FFT):
@@ -320,11 +320,11 @@ def test_SQw_coh(SQw_coh_ref, SQw_coh_obs, SQw_coh_obs_no_FFT):
     nMOLDYN
     """
 
-    assert np.all(np.shape(SQw_coh_obs.SQw) == np.shape(SQw_coh_ref))
-    assert_allclose(SQw_coh_obs.SQw * N_Q_VALUES, SQw_coh_ref, atol=ATOL)
+    assert np.all(np.shape(SQw_coh_obs.SQw[0]) == np.shape(SQw_coh_ref))
+    assert_allclose(SQw_coh_obs.SQw[0] * N_Q_VALUES, SQw_coh_ref, atol=ATOL)
 
     # Assert there is no difference between FFT and non-FFT calculation
-    assert_allclose(SQw_coh_obs.SQw, SQw_coh_obs_no_FFT.SQw, atol=ATOL)
+    assert_allclose(SQw_coh_obs.SQw[0], SQw_coh_obs_no_FFT.SQw[0], atol=ATOL)
 
 
 def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs, SQw_obs_no_FFT):
@@ -335,9 +335,9 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs, SQw_obs_no_FFT):
     nMOLDYN
     """
 
-    assert np.all(np.shape(SQw_obs.SQw) == np.shape(SQw_incoh_ref))
+    assert np.all(np.shape(SQw_obs.SQw[0]) == np.shape(SQw_incoh_ref))
     SQw_ref = (SQw_incoh_ref * B_FACTOR + SQw_coh_ref) / N_Q_VALUES
-    assert_allclose(SQw_obs.SQw, SQw_ref, atol=ATOL)
+    assert_allclose(SQw_obs.SQw[0], SQw_ref, atol=ATOL)
 
     # Assert there is no difference between FFT and non-FFT calculation
-    assert_allclose(SQw_obs.SQw, SQw_obs_no_FFT.SQw, atol=ATOL)
+    assert_allclose(SQw_obs.SQw[0], SQw_obs_no_FFT.SQw[0], atol=ATOL)

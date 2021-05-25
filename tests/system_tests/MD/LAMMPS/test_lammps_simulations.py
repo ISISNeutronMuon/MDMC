@@ -206,7 +206,7 @@ def NVE_unconstrained(universe):
                 if interaction.name == 'Bond':
                     parameter.value = 4410.7728 / 2
                 elif interaction.name == 'BondAngle':
-                    parameter.value = 0.04836800684250899
+                    parameter.value = 158.7828
     # Remove constraint algorithm from universe
     universe.constraint_algorithm = None
 

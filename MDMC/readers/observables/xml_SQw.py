@@ -103,7 +103,7 @@ class XML_SQw(ObservableReader):
             The dependent variables, SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw}
+        return {"SQw": [self.SQw]}
 
     @property
     def errors(self):
@@ -117,7 +117,7 @@ class XML_SQw(ObservableReader):
             The error on SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw_err}
+        return {"SQw": [self.SQw_err]}
 
     @property
     def w(self):

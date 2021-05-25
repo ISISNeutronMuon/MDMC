@@ -10,11 +10,27 @@ import pytest
 from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables.sqw import SQw
+import MDMC.trajectory_analysis.trajectory as trj
 
 from tests.test_data import data
 from tests.trajectory_analysis.test_histogram import trajectory
 from tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
     atom, universe
+
+@pytest.fixture
+def altered_trajectory(water_SPCE_universe):
+
+    """
+    A list of identical configurations with different times is produced. This
+    is passed to Trajectory.
+    """
+
+    configurations = []
+    times = np.arange(0., 10., 1.)
+    for time in times:
+        configurations.append(trj.TemporalConfiguration(
+            time, *water_SPCE_universe.configuration.atom_list))
+    return trj.Trajectory(*configurations)
 
 @pytest.fixture
 def SQw_from_data():
@@ -29,18 +45,24 @@ def SQw_from_MD(trajectory, universe) -> callable:
     Returns
     -------
     callable
-        A function which optionally accepts ``use_FFT`` (defaults to `True`)
-        and returns an ``SQw`` ``Observable``.
+        A function which optionally accepts ``use_FFT`` (defaults to `True`) and ``use_traj_list``
+        (defaults to `False`). Returns an ``SQw`` ``Observable``.
     """
 
-    def _SQw_from_MD(use_FFT: bool = True) -> SQw:
+    def _SQw_from_MD(use_FFT: bool = True, use_traj_list: bool = False) -> SQw:
         _SQw = of.ObservableFactory.create_observable('SQw')
         _SQw.use_FFT = use_FFT
         dimensions = universe.dimensions
         n_Q = 10
         energy_resolution = 49.99998257
         Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
-        _SQw.calculate_from_MD(trajectory,
+
+        if use_traj_list:
+            MD_input = [trajectory]
+        else:
+            MD_input = trajectory
+
+        _SQw.calculate_from_MD(MD_input,
                                Q_values=Q_values,
                                dimensions=dimensions,
                                energy_resolution=energy_resolution)
@@ -89,10 +111,11 @@ def test_from_MD(SQw_from_MD):
     - SQw is the variable on which there is an error
     - Q ranges from 0 to 3.5 in 0.05 increments
     - SQw is the same whether FFT is used or not
+    - SQw handles either a single, or ``list`` of, ``Trajectory`` objects
     """
 
     SQw_FFT = SQw_from_MD()
-    SQw_no_FFT = SQw_from_MD(use_FFT=False)
+    SQw_no_FFT = SQw_from_MD(use_FFT=False, use_traj_list=True)
 
     assert SQw_FFT.origin == 'MD'
     assert 'Q' in SQw_FFT.independent_variables and \
@@ -141,3 +164,16 @@ def test_apply_resolution_function(SQw_from_data):
     SQw_from_data.resolution_functions['SQw'] = mock_resolution_function
 
     assert_allclose(SQw_from_data._apply_instrument_resolution(mock_FQt), expected_FQt, atol=1e-15)
+
+
+def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
+
+    """
+    Test that an ``AssertionError`` is raised when a list of trajectories that have different times
+    are given to ``calculate_from_MD()``
+    """
+
+    MD_input = [trajectory, altered_trajectory]
+    SQw_obj = SQw_from_MD()
+    with pytest.raises(AssertionError):
+        SQw_obj.calculate_from_MD(MD_input, energy_resolution=1.)

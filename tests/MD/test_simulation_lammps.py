@@ -742,7 +742,7 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
                            'HarmonicPotential',
                            (90., 1.),
                            {'interaction_type':'angle'},
-                           ['harmonic', 784.6095482819655, 90.]),
+                           ['harmonic', 0.2390057361376673, 90.]),
                           ('DihedralAngle',
                            'Periodic',
                            (1., 2, 30.),
@@ -757,7 +757,7 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
                            'HarmonicPotential',
                            (110., 15.),
                            {'improper':True, 'interaction_type':'improper'},
-                           ['harmonic', 11769.143224229483, 110.]),
+                           ['harmonic', 3.585086042065009, 110.]),
                           ('DihedralAngle',
                            'Periodic',
                            (5.5, 3, 0.),
@@ -1709,15 +1709,18 @@ def test_convert_mdmc_compound_units(mdmc_unit, lmp_value):
     assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 
-def test_convert_mdmc_angular_potential_strength():
+@pytest.mark.parametrize("unit_str, conversion_factor",
+                         [('rad', 1.), ('deg', 180 / np.pi)])
+def test_convert_mdmc_angular_potential_strength(unit_str, conversion_factor):
 
     """
     Tests converting into LAMMPS angular potential strength units for harmonic
-    bond angles, which uses radians as the unit of angle, rather than degrees
+    bond angles (which uses radians as the unit of angle rather than degrees)
+    for MDMC units of both radians and degrees
     """
 
-    mdmc_unit = units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2
-    lmp_value = (180. / np.pi) ** 2 / 4.184
+    mdmc_unit = units.SYSTEM['ENERGY'] / units.Unit(unit_str) ** 2
+    lmp_value = (conversion_factor) ** 2 / 4.184
     assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 @pytest.mark.parametrize('lmp_unit, mdmc_value',
