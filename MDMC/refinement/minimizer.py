@@ -342,16 +342,15 @@ class MMC(Minimizer):
         changes = self.comm.bcast(changes, root=0)
         # Change parameters by same amount on all processes
         for i, parameter in enumerate(parameters):
+            new_value = parameter.value * (1 + changes[i])
             # If the parameter is constrained, then clip changes that would be out of range
             if parameter.constraints is not None:
-                if parameter.value * (1 + changes[i]) < parameter.constraints[0]:
-                    parameter.value = parameter.constraints[0]
-                    continue
-                if parameter.value * (1 + changes[i]) > parameter.constraints[1]:
-                    parameter.value = parameter.constraints[1]
-                    continue
+                if new_value < parameter.constraints[0]:
+                    new_value = parameter.constraints[0]
+                elif new_value > parameter.constraints[1]:
+                    new_value = parameter.constraints[1]
 
-            parameter.value += parameter.value * changes[i]
+            parameter.value = new_value
 
     def reset_parameters(self):
 
