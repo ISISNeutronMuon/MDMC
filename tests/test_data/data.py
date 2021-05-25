@@ -25,10 +25,14 @@ _OBJECT_PATH = '/MDMC_objects'
 READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
                'XML_SQw':'/Well_s_q_omega_Ar_data.xml'}
 
+RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
+
 # Add paths to data values
 for key in READER_DATA:
     READER_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + READER_DATA[key]
 
+for key in RESOLUTION_DATA:
+    RESOLUTION_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + RESOLUTION_DATA[key]
 
 # Calculated observable data
 #

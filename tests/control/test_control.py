@@ -119,7 +119,8 @@ def exp_datasets() -> callable:
     def _exp_datasets(rescale_factor: float = None,
                       auto_scale: bool = None,
                       use_FFT: bool = None,
-                      file_name: str = None) -> List[dict]:
+                      file_name: str = None,
+                      resolution_file: str = None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
@@ -140,6 +141,12 @@ def exp_datasets() -> callable:
                 dataset['auto_scale'] = auto_scale
             if use_FFT is not None:
                 dataset['use_FFT'] = use_FFT
+
+            for resolution_v in data.RESOLUTION_DATA.values():
+                if (resolution_file is not None
+                        and re.search('{}$'.format(resolution_file), resolution_v)):
+                    dataset['resolution_file'] = resolution_v
+
             datasets.append(dataset)
 
         return datasets
@@ -640,3 +647,25 @@ def test_control_fit_parameters(simulation):
 
     assert len(ctrl.fit_parameters) == 1
     assert ctrl.fit_parameters[0].name == 'constraints'
+
+
+def test_control_resolution_function(simulation, exp_datasets):
+    """
+    Test that when a resolution file is provided, a resolution function is added to both the
+    experimental and MD observables.
+    """
+
+    file_name = '263K05Awat_LAMP'
+    resolution_file = '262p7K0A5van_LAMP'
+
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
+    traj_step = 1
+    time_step = dt / traj_step
+
+    ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
+                           exp_datasets(file_name=file_name, resolution_file=resolution_file),
+                           [],
+                           reset_config=False)
+
+    assert ctrl.observable_pairs[0].exp_obs.resolution_functions['SQw'] is not None
+    assert ctrl.observable_pairs[0].MD_obs.resolution_functions['SQw'] is not None
