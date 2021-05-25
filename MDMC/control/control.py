@@ -83,6 +83,12 @@ class Control:
         calculation of the observables is used. If provided, the actual number
         of steps may be reduced to prevent running MD that won't be used when
         calculting dependent variables. Default is `None`.
+    equilibration_steps : int, optional
+        Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
+        refinement step. When changes to the ``Parameters`` are small, this equilibration can be
+        much shorter than the equilibration needed before starting the refinement process, but in
+        general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
+        is 0.
     **settings
         ``energy_resolution`` : float
             Instrument energy resolution as the FWHM in ``ueV``.
@@ -131,6 +137,7 @@ class Control:
                  fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_type: str='standard',
                  reset_config: bool=True, MD_steps: int=None,
+                 equilibration_steps: int = 0,
                  max_parameter_change: float=0.01, **settings):
 
         self.simulation = simulation
@@ -146,6 +153,7 @@ class Control:
                                                              self.fit_parameters,
                                                              max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
+        self.equilibration_steps = equilibration_steps
         self.settings = settings
 
         # Create experimental observables from datasets and placeholders for
@@ -264,6 +272,9 @@ class Control:
 
         self._print_header()
         while count < n_steps and not self.minimizer.has_converged():
+            if count >= 0 and self.equilibration_steps > 0:
+                self.equilibrate()
+
             self.step()
             count += 1
 
@@ -296,10 +307,19 @@ class Control:
             print('\nAutomatic Scale Factors\n{}'
                   ''.format(scaling_df.to_string(index=True, header=False)))
 
+    def equilibrate(self):
+
+        """
+        Run molecular dynamics to equilibrate the ``Universe``.
+        """
+
+        self.simulation.run(self.equilibration_steps, equilibration=True,
+                            verbose=False)
+
     def step(self):
 
         """
-        Do a full step: generate and run MD to calulate FoM for existing
+        Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
         """
