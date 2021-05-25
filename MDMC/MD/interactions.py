@@ -10,7 +10,7 @@ import logging
 
 import numpy as np
 
-from MDMC.MD.utils.common import is_atom
+from MDMC.utilities.structural_units import is_atom
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
