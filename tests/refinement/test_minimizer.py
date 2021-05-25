@@ -8,22 +8,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from MDMC.MD.parameters import Parameter
 from MDMC.refinement import minimizer
 
 
 pytestmark = pytest.mark.mpi
-
-class MockParameter:
-
-    """
-    A fixed Parameter which only ``name``, ``value`` and ``fixed`` attributes
-    """
-
-    def __init__(self, name, value):
-
-        self.name = name
-        self.value = value
-        self.fixed = False
 
 
 @pytest.fixture
@@ -33,19 +22,19 @@ def parameters():
     Returns
     -------
     list
-        A `list` of ``MockParameter`` objects with a variety of `name` and
+        A `list` of ``Parameter`` objects with a variety of `name` and
         `value` attributes
     """
 
-    return([MockParameter('charge', 1.),
-            MockParameter('charge', .5),
-            MockParameter('sigma', 3.3),
-            MockParameter('epsilon', .2),
-            MockParameter('potential_strength', 1234.),
-            MockParameter('equilibrium_state', 1.2),
-            MockParameter('A', 1.),
-            MockParameter('B', 2.),
-            MockParameter('C', 3.)])
+    return([Parameter(name='charge', value=1.),
+            Parameter(name='charge', value=.5),
+            Parameter(name='sigma', value=3.3),
+            Parameter(name='epsilon', value=.2),
+            Parameter(name='potential_strength', value=1234.),
+            Parameter(name='equilibrium_state', value=1.2),
+            Parameter(name='A', value=1.),
+            Parameter(name='B', value=2.),
+            Parameter(name='C', value=3.)])
 
 
 @patch.multiple('MDMC.refinement.minimizer.Minimizer', __abstractmethods__=set()
@@ -73,7 +62,7 @@ def test_minimizer_init_invalid_parameters(parameters):
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
-    fixed_parameter = MockParameter('charge', 1.)
+    fixed_parameter = Parameter(name='charge', value=1.)
     fixed_parameter.fixed = True
 
     with pytest.raises(ValueError):
@@ -237,6 +226,28 @@ def test_mmc_change_parameters(parameters):
     assert [p.value for p in mmc.parameters] == expected_values
 
 
+def test_mmc_change_constrained_parameter():
+
+    """
+    Tests that constrained parameters do not exceed their max/min values.
+    """
+
+    def mock_distribution(low: float, high: float, size: int):
+        # For non-constrained parameters, this would result in the first being doubled and the
+        # second set to 0
+        return np.array([1., -1.])
+
+    parameters = [Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
+                  Parameter(name='constraints', value=1., constraints=(0.5, 1.5))]
+
+    # Expect values to be set to the upper/lower limit
+    expected_values = [1.5, 0.5]
+    mmc = minimizer.MMC(1, parameters)
+    mmc.distribution = mock_distribution
+    mmc.change_parameters(mmc.parameters)
+    assert [p.value for p in mmc.parameters] == expected_values
+
+
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm',
                          [(10., 20., 1.),
                           (10., 20., 0.0001),
@@ -303,10 +314,35 @@ def test_minimizer_has_converged(mock_history, min_steps, expected):
     """
     Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
     """
-    parameter = [MockParameter(name='A', value=None)]
+    parameter = [Parameter(name='A', value=None)]
     mmc = minimizer.MMC(MC_norm=1, parameters=parameter)
     mmc._history = mock_history
     if min_steps:
         assert mmc.has_converged(min_steps=min_steps) == expected
     else:
         assert mmc.has_converged() == expected
+
+
+def test_mmc_fixed_parameter():
+
+    """
+    Test that a ``ValueError`` is raised when passing a fixed ``Parameter``
+    """
+
+    parameters = [Parameter(name='fixed', value=1., fixed=True)]
+    with pytest.raises(ValueError):
+        mmc = minimizer.MMC(1, parameters)
+
+
+def test_mmc_tied_parameter():
+
+    """
+    Test that a ``ValueError`` is raised when passing a tied ``Parameter``
+    """
+
+    target_parameter = Parameter(name='target', value=1.,)
+    tied_parameter = Parameter(name='tied', value=1.,)
+    tied_parameter.set_tie(target_parameter, ' * 2')
+    parameters = [tied_parameter]
+    with pytest.raises(ValueError):
+        mmc = minimizer.MMC(1, parameters)

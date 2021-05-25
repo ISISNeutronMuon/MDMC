@@ -10,6 +10,7 @@ from typing import List
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
+from MDMC.MD.parameters import Parameter
 from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
@@ -622,6 +623,30 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                         exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
                         reset_config=False)
+
+
+def test_control_fit_parameters(simulation):
+    """
+    Test that unsuitable fit_parameters are removed from the Control object:
+      - Parameters with a value of 0
+      - Parameters that are fixed
+      - Parameters that are tied
+    As these cannot be refined
+    """
+
+    tie_target = Parameter(-1., 'tie_target')
+    tied_param = Parameter(2., 'tied')
+    tied_param.set_tie(tie_target, '')
+    fit_parameters = [Parameter(0., 'zero'),
+                      Parameter(1., 'fixed', fixed=True),
+                      tied_param,
+                      Parameter(3., 'constraints', constraints=(2.9, 3.1))]
+
+    ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
+                           reset_config=False)
+
+    assert len(ctrl.fit_parameters) == 1
+    assert ctrl.fit_parameters[0].name == 'constraints'
 
 
 def test_control_resolution_function(simulation, exp_datasets):

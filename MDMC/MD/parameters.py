@@ -236,7 +236,7 @@ class Parameter:
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
-                     'Constrained ' if self.constraints else '')
+                     'Constrained ' if self.constraints is not None else '')
         function = self.functions_name + ' ' if self.functions_name else ''
         return '{0}{_value} {1}{name}'.format(condition, function,
                                               **self.__dict__)
