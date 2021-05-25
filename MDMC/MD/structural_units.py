@@ -60,10 +60,12 @@ class StructuralUnit(ABC):
     # ID exists to facilitate a 1 to 1 association with structural units within
     # MD engines.  It may not be required or may only be required for atoms.
     _ID_generator = count(start=1, step=1)
+    _ID_dict = {}
 
     def __init__(self, position, velocity, name):
 
         self.ID = self._generate_ID()
+        self._ID_dict[self.ID] = self
         self.position = position
         self.velocity = velocity
         self.name = name
@@ -407,7 +409,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
-        Interactions for ``Atom`` objecys may be reordered with respect to
+        Interactions for ``Atom`` objects may be reordered with respect to
         initial atoms
 
         Arguments
@@ -748,6 +750,7 @@ class Atom(StructuralUnit):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(atom, k, self._generate_ID())
+                self._ID_dict[atom.ID] = atom
             elif k == '_bonded_interaction_pairs':
                 self.copy_interactions(atom, memo)
             elif k == '_nonbonded_interactions':
@@ -1140,7 +1143,7 @@ class Atom(StructuralUnit):
 class _Group(CompositeStructuralUnit):
 
     """
-    Two or more `Atom` objecys that form a subset of a ``Molecule``
+    Two or more `Atom` objects that form a subset of a ``Molecule``
 
     THIS CLASS HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
 
@@ -1177,7 +1180,8 @@ class Molecule(CompositeStructuralUnit):
         The name of the structure. The default is `None`.
     **settings
         ``atoms`` (`list`)
-            A `list` of ``Atom`` which will be included in the ``Molecule``
+            A `list` of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``) which will be
+            included in the ``Molecule``
         ``interactions`` (`list`)
             A `list` of ``Interaction`` acting on atoms within the ``Molecule``.
             The ``interactions`` provides a convenience for declaring
@@ -1189,7 +1193,8 @@ class Molecule(CompositeStructuralUnit):
     def __init__(self, position=None, velocity=(0, 0, 0), name=None,
                  **settings):
 
-        self._structure_list = settings['atoms']
+        parsed_atoms = parse_structural_unit_IDs(settings['atoms'])
+        self._structure_list = parsed_atoms
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
@@ -1300,16 +1305,17 @@ class BoundingBox:
     Parameters
     ----------
     atom_list : list
-        ``Atom`` objects for which the minimum and maximum extents are
-        determined
+        ``Atom`` objects (or ``int`` corresponding to an ``Atom.ID``) for which the minimum and
+        maximum extents are determined
     """
 
     def __init__(self, atom_list):
 
+        parsed_atoms = parse_structural_unit_IDs(atom_list)
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
-        self.min = self.max = atom_list[0].position
-        for atom in atom_list[1:]:
+        self.min = self.max = parsed_atoms[0].position
+        for atom in parsed_atoms[1:]:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
 
@@ -1369,6 +1375,43 @@ class BoundingBox:
         return abs(np.prod(self.max - self.min))
 
 
+def parse_structural_unit_IDs(structural_units):
+    """
+    Converts all ``int`` elements in ``atoms`` into ``StructuralUnit`` objects with that ``int`` as
+    their ``ID``. Any elements that are not ``int`` (i.e. any that are already a
+    ``StructuralUnit``) are not affected.
+
+    Parameters
+    ----------
+    structural_units : list
+        A `list` of ``StructuralUnit`` or ``int`` corresponding to an ``StructuralUnit.ID``
+
+    Returns
+    -------
+    list
+        ``StructuralUnit`` objects
+
+    Raises
+    ------
+    KeyError
+        If one of the ``int`` in ``structural_units`` does not correspond to an existing
+        ``StructuralUnit.ID``.
+    """
+
+    parsed_units = []
+    for unit in structural_units:
+        if isinstance(unit, int):
+            try:
+                parsed_unit = StructuralUnit._ID_dict[unit]
+            except KeyError as error:
+                msg = 'No atom found with ID {}'.format(unit)
+                raise KeyError(msg) from error
+        else:
+            parsed_unit = unit
+        parsed_units.append(parsed_unit)
+
+    return parsed_units
+
 def filter_atoms(atoms, predicate):
 
     """
@@ -1377,7 +1420,7 @@ def filter_atoms(atoms, predicate):
     Parameters
     ----------
     atoms : list
-        A `list` of ``Atom``
+        A `list` of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
     predicate : function
         A function that returns a `bool`
 
@@ -1387,7 +1430,8 @@ def filter_atoms(atoms, predicate):
         ``Atom`` objects in ``atoms`` which meet the condition of ``predicate``
     """
 
-    return list(filter(predicate, atoms))
+    parsed_atoms = parse_structural_unit_IDs(atoms)
+    return list(filter(predicate, parsed_atoms))
 
 
 def filter_atoms_element(atoms, element):
@@ -1398,7 +1442,7 @@ def filter_atoms_element(atoms, element):
     Parameters
     ----------
     atoms : list
-        A ``list`` of ``Atom``
+        A ``list`` of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
     element : str
         The atomic element label
 
@@ -1408,7 +1452,8 @@ def filter_atoms_element(atoms, element):
         ``Atom`` objects of a specific element
     """
 
-    return list(filter(lambda a: a.element == element, atoms))
+    parsed_atoms = parse_structural_unit_IDs(atoms)
+    return list(filter(lambda a: a.element == element, parsed_atoms))
 
 
 def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
@@ -1967,9 +2012,9 @@ class Coulombic(NonBondedInteraction):
             ``interaction_functions`` that are set, i.e. it makes ``function``
             parameter redundant
         ``atoms`` (`list`)
-            ``Atom`` objects to which the ``Coulombic`` applies. If specifying
-            the ``atoms``, ``universe`` does not need to be passed as a
-            parameter.
+            ``Atom`` objects (or ``int`` corresponding to an ``Atom.ID``) to which the
+            ``Coulombic`` applies. If specifying the ``atoms``, ``universe`` does not need to be
+            passed as a parameter.
 
 
 
@@ -2052,11 +2097,12 @@ class Coulombic(NonBondedInteraction):
                 raise TypeError('Coulombic takes either atom_types or atoms '
                                 'as parameters')
             # Account for init argument atoms=atom rather than atoms=[atom]
-            if isinstance(atoms, Atom):
+            if isinstance(atoms, (Atom, int)):
                 atoms = [atoms]
+            parsed_atoms = parse_structural_unit_IDs(atoms)
             self._atoms = []
             self._atom_types = []
-            self.add_atoms(*atoms)
+            self.add_atoms(*parsed_atoms)
 
             # Assumes all atoms are in the same universe (or None)
             universe = self.atoms[0].universe
@@ -2175,10 +2221,12 @@ def _add_atoms(self, *atoms):
     Parameters
     ----------
     atoms : list
-        list of ``Atom``
+        list of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
     """
 
-    for atom in atoms:
+    parsed_atoms = parse_structural_unit_IDs(atoms)
+
+    for atom in parsed_atoms:
         # Add atom to interaction
         self._atoms.append(atom)
         # Add interaction to atom
@@ -2197,9 +2245,9 @@ class BondedInteraction(Interaction):
     Parameters
     ----------
     atom_tuples : list
-        A `list` of `tuple`. Each `tuple` contains ``Atom`` objects which are
-        bonded together. For three or more ``Atom`` objects, the order of the
-        ``Atom`` objecys within each `tuple` is important.
+        A `list` of `tuple`. Each `tuple` contains ``Atom`` objects (or ``int`` corresponding to an
+        ``Atom.ID``) which are bonded together. For three or more ``Atom`` objects, the order of
+        the ``Atom`` objects within each `tuple` is important.
     **settings
         ``n_atoms`` (`int`)
             The number of atoms to which this ``BondedInteraction`` applies, for
@@ -2236,14 +2284,20 @@ class BondedInteraction(Interaction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        if atom_tuples and isinstance(atom_tuples[0], Atom):
+        if atom_tuples and isinstance(atom_tuples[0], (Atom, int)):
             atom_tuples = (atom_tuples, )
+
+        parsed_atom_tuples = []
+        for atom_tuple in atom_tuples:
+            parsed_atom_tuple = tuple(parse_structural_unit_IDs(atom_tuple))
+            parsed_atom_tuples.append(parsed_atom_tuple)
+
         if settings.get('n_atoms'):
             # This ensures that BondedInteractions can also be __init__ with 0
             # atoms
-            for tpl in atom_tuples:
+            for tpl in parsed_atom_tuples:
                 self._validate_atoms(tpl, settings.get('n_atoms'))
-        self.atoms = list(atom_tuples)
+        self.atoms = list(parsed_atom_tuples)
         super().__init__(**settings)
         LOGGER.info('%s created: {function:%s, atom IDs:%s}',
                     self.__class__,

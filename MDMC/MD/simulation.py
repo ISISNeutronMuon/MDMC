@@ -19,7 +19,7 @@ from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle, \
-    StructuralUnit
+    parse_structural_unit_IDs, StructuralUnit
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -45,7 +45,8 @@ class Universe(AtomContainer):
         A force field to apply to the Universe. The force fields available are:
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
     structures : list, optional
-        Structures contained in the ``Universe``. Default is None.
+        Either ``StructuralUnit`` objects contained in the ``Universe`` or their ``ID`` (`int`).
+        Default is None.
     **settings
         ``kspace_solver`` (`KSpaceSolver`)
             The k-space solver to be used for both electrostatic and dispersive
@@ -86,7 +87,8 @@ class Universe(AtomContainer):
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:
-            self.configuration = Configuration(structures)
+            parsed_structures = parse_structural_unit_IDs(structures)
+            self.configuration = Configuration(parsed_structures)
         else:
             self.configuration = Configuration(universe=self)
         self._solvent_density = 0.
@@ -633,8 +635,8 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit
-            The StructuralUnit to be added to the ``Universe``
+        structural_unit : StructuralUnit or int
+            The ``StructuralUnit`` (or its ``ID`` as an `int`) to be added to the ``Universe``
         force_field : str, optional
             The force field to be applied to the structural_unit. The available
             ``ForceField`` are:
@@ -644,17 +646,19 @@ class Universe(AtomContainer):
             added
         """
 
+        parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
+
         if center:
-            structural_unit.position = self.dimensions / 2.
-        structural_unit.universe = self
-        self.configuration.add_structural_unit(structural_unit)
-        for atom in structural_unit.atom_list:
+            parsed_unit.position = self.dimensions / 2.
+        parsed_unit.universe = self
+        self.configuration.add_structural_unit(parsed_unit)
+        for atom in parsed_unit.atom_list:
             self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
             self.add_nonbonded_interaction(*atom.nonbonded_interactions)
             self._update_atom_types(atom)
 
         if force_field:
-            self.add_force_field(force_field, *structural_unit.interactions)
+            self.add_force_field(force_field, *parsed_unit.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
     def fill(self, structural_unit: StructuralUnit, force_field: str=None,
@@ -678,8 +682,8 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit
-            The ``StructuralUnit`` with which to fill the ``Universe``
+        structural_unit : StructuralUnit or int
+            The ``StructuralUnit`` (or its ``ID`` as an `int`) with which to fill the ``Universe``
         force_field : str
             Applies a ``ForceField`` to the ``Universe``. The available
             ``ForceField`` are:
@@ -723,12 +727,14 @@ class Universe(AtomContainer):
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
+        parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
+
         positions = []
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
-        bounds = structural_unit.bounding_box
-        mn = np.array((0., 0., 0.)) - (bounds.min - structural_unit.position)
-        mx = self.dimensions - (bounds.min - structural_unit.position)
+        bounds = parsed_unit.bounding_box
+        mn = np.array((0., 0., 0.)) - (bounds.min - parsed_unit.position)
+        mx = self.dimensions - (bounds.min - parsed_unit.position)
         for i in range(len(self.dimensions)):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
                                          endpoint=False))
@@ -739,10 +745,10 @@ class Universe(AtomContainer):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structural_unit(structural_unit, force_field)
-                structural_unit.position = position
+                self.add_structural_unit(parsed_unit, force_field)
+                parsed_unit.position = position
             else:
-                new_unit = structural_unit.copy(position)
+                new_unit = parsed_unit.copy(position)
                 self.add_structural_unit(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
