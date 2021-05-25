@@ -907,7 +907,7 @@ class AbstractSQw(Observable):
         # Remove any momentum values with infinite error, and the corresponding values from SQw
         error = self.SQw_err
         masking = np.where(np.any(error == np.float('inf'), axis=-1))
-        SQw_cropped = np.delete(self.SQw, masking, axis=0)
+        SQw_cropped = np.delete(self.SQw[0], masking, axis=0)
         Q_cropped = np.delete(self.Q, masking)
 
         # Enforce symmetry in the energy/time domain of the data. Note that if the original data
