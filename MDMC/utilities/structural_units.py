@@ -41,6 +41,7 @@ def parse_structural_unit_IDs(structural_units):
     for unit in structural_units:
         if isinstance(unit, int):
             try:
+                from MDMC.MD.structural_units import StructuralUnit
                 parsed_unit = StructuralUnit._ID_dict[unit]
             except KeyError as error:
                 msg = 'No atom found with ID {}'.format(unit)
