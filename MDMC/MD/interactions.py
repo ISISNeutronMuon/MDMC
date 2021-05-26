@@ -720,7 +720,7 @@ class BondedInteraction(Interaction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        if atom_tuples and isinstance(atom_tuples[0], (Atom, int)):
+        if atom_tuples and (is_atom(atom_tuples[0]) or isinstance(atom_tuples[0], int)):
             atom_tuples = (atom_tuples, )
 
         parsed_atom_tuples = []
