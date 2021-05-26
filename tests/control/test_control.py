@@ -10,6 +10,7 @@ from typing import List
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
+from MDMC.MD.parameters import Parameter
 from MDMC.MD.simulation import Simulation, Universe
 from tests.test_data import data
 
@@ -118,7 +119,8 @@ def exp_datasets() -> callable:
     def _exp_datasets(rescale_factor: float = None,
                       auto_scale: bool = None,
                       use_FFT: bool = None,
-                      file_name: str = None) -> List[dict]:
+                      file_name: str = None,
+                      resolution_file: str = None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
@@ -139,6 +141,12 @@ def exp_datasets() -> callable:
                 dataset['auto_scale'] = auto_scale
             if use_FFT is not None:
                 dataset['use_FFT'] = use_FFT
+
+            for resolution_v in data.RESOLUTION_DATA.values():
+                if (resolution_file is not None
+                        and re.search('{}$'.format(resolution_file), resolution_v)):
+                    dataset['resolution_file'] = resolution_v
+
             datasets.append(dataset)
 
         return datasets
@@ -422,8 +430,8 @@ def mock_nonuniform_SQw() -> SQw:
     SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
     SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
-    observable._dependent_variables = {'SQw': SQw_array}
-    observable._errors = {'SQw': SQw_err_array}
+    observable._dependent_variables = {'SQw': [SQw_array]}
+    observable._errors = {'SQw': [SQw_err_array]}
     return observable
 
 def mock_uniform_SQw() -> SQw:
@@ -442,8 +450,8 @@ def mock_uniform_SQw() -> SQw:
     SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
     SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
-    observable._dependent_variables = {'SQw': SQw_array}
-    observable._errors = {'SQw': SQw_err_array}
+    observable._dependent_variables = {'SQw': [SQw_array]}
+    observable._errors = {'SQw': [SQw_err_array]}
     return observable
 
 def mock_nonuniform_PDF() -> PairDistributionFunction:
@@ -458,8 +466,8 @@ def mock_nonuniform_PDF() -> PairDistributionFunction:
     observable = PairDistributionFunction()
     r_array = np.array([1., 1.9, 3.1, 4.])
     observable.independent_variables = {'r': r_array}
-    observable._dependent_variables = {'PDF': r_array*2}
-    observable._errors = {'PDF': r_array/10}
+    observable._dependent_variables = {'PDF': [r_array*2]}
+    observable._errors = {'PDF': [r_array/10]}
     return observable
 
 def mock_uniform_PDF() -> PairDistributionFunction:
@@ -474,8 +482,8 @@ def mock_uniform_PDF() -> PairDistributionFunction:
     observable = PairDistributionFunction()
     r_array = np.array([1., 2., 3., 4.])
     observable.independent_variables = {'r': r_array}
-    observable._dependent_variables = {'PDF': r_array*2}
-    observable._errors = {'PDF': r_array/10}
+    observable._dependent_variables = {'PDF': [r_array*2]}
+    observable._errors = {'PDF': [r_array/10]}
     return observable
 
 @pytest.mark.parametrize('mock_observable',
@@ -544,14 +552,20 @@ def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
 def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
                                    traj_step, file_name):
     """
-    Test that ``MD_steps`` is accepted when greater than the minimum required.
+    Test that ``MD_steps`` is accepted when greater than the minimum required,
+    and rounded down to an integer number of ``nE * traj_steps`` if there is a
+    maximum number of frames (i.e. when ``use_FFT == True`).
     """
 
     user_MD_steps = 51050
     if use_FFT:
         key = 'use_FFT'
+        max_steps = traj_step * DATASET_INFO[key][file_name]['n_frames']
+        expected_steps = max_steps * (user_MD_steps // max_steps)
     else:
         key = 'no_FFT'
+        expected_steps = user_MD_steps
+
     dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
     ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
@@ -560,7 +574,7 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
                            reset_config=False,
                            MD_steps=user_MD_steps)
 
-    assert ctrl.MD_steps == user_MD_steps
+    assert ctrl.MD_steps == expected_steps
 
 
 @pytest.mark.parametrize('file_name',
@@ -609,3 +623,49 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
                         exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
                         reset_config=False)
+
+
+def test_control_fit_parameters(simulation):
+    """
+    Test that unsuitable fit_parameters are removed from the Control object:
+      - Parameters with a value of 0
+      - Parameters that are fixed
+      - Parameters that are tied
+    As these cannot be refined
+    """
+
+    tie_target = Parameter(-1., 'tie_target')
+    tied_param = Parameter(2., 'tied')
+    tied_param.set_tie(tie_target, '')
+    fit_parameters = [Parameter(0., 'zero'),
+                      Parameter(1., 'fixed', fixed=True),
+                      tied_param,
+                      Parameter(3., 'constraints', constraints=(2.9, 3.1))]
+
+    ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
+                           reset_config=False)
+
+    assert len(ctrl.fit_parameters) == 1
+    assert ctrl.fit_parameters[0].name == 'constraints'
+
+
+def test_control_resolution_function(simulation, exp_datasets):
+    """
+    Test that when a resolution file is provided, a resolution function is added to both the
+    experimental and MD observables.
+    """
+
+    file_name = '263K05Awat_LAMP'
+    resolution_file = '262p7K0A5van_LAMP'
+
+    dt = DATASET_INFO['use_FFT'][file_name]['dt']
+    traj_step = 1
+    time_step = dt / traj_step
+
+    ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
+                           exp_datasets(file_name=file_name, resolution_file=resolution_file),
+                           [],
+                           reset_config=False)
+
+    assert ctrl.observable_pairs[0].exp_obs.resolution_functions['SQw'] is not None
+    assert ctrl.observable_pairs[0].MD_obs.resolution_functions['SQw'] is not None

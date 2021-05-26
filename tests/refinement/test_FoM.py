@@ -158,13 +158,13 @@ def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_exp_diff,
     pair.MD_obs = SQw_from_MD
     pair.exp_obs = SQw_from_exp
 
-    # Tests foir exception with different shape dependent variables
+    # Tests for exception with different shape dependent variables
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.dependent_variables:
-        SQw_from_exp_diff._dependent_variables[k] = np.transpose(
-            SQw_from_exp_diff.dependent_variables[k])
+        SQw_from_exp_diff._dependent_variables[k] = [np.transpose(
+            SQw_from_exp_diff.dependent_variables[k][0])]
         SQw_from_MD_diff._dependent_variables[k] = \
-            SQw_from_MD_diff.dependent_variables[k].flatten()
+            [SQw_from_MD_diff.dependent_variables[k][0].flatten()]
 
     init_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff)
     set_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff,
@@ -187,8 +187,8 @@ def test_OP_shape_errors(SQw_from_exp, SQw_from_exp_diff, SQw_from_MD,
     # Tests foir exception with different shape dependent variables
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.errors:
-        SQw_from_exp_diff._errors[k] = np.transpose(SQw_from_exp_diff.errors[k])
-        SQw_from_MD_diff._errors[k] = SQw_from_MD_diff.errors[k].flatten()
+        SQw_from_exp_diff._errors[k] = np.transpose(SQw_from_exp_diff.errors[k][0])
+        SQw_from_MD_diff._errors[k] = SQw_from_MD_diff.errors[k][0].flatten()
 
     init_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff)
     set_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff,

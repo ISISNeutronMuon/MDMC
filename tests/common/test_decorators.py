@@ -116,7 +116,7 @@ def test_wrap_docstring_wrapping(docstring, length, n_expected_lines):
     """
     This tests wrapping a docstring to a specific line length
 
-    Tests that the the wrapping results in the expected number of lines, and
+    Tests that the wrapping results in the expected number of lines, and
     that none of the wrapped lines have a length greater than the wrapping line
     length.
     """

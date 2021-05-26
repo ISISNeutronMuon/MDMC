@@ -578,6 +578,10 @@ def create_units(codata_version):
     units['kcal'] = units['kJ'] * 4.184
     unit_properties['kcal'] = 'ENERGY'
 
+    # Energy transfer
+    units['ueV'] = units['meV'] * 1000.
+    unit_properties['ueV'] = 'ENERGY_TRANSFER'
+
     # Force
     # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
     units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
@@ -791,7 +795,7 @@ def unit_array(obj, unit, dtype=None):
         return None
 
     if not isinstance(unit, str):
-        raise TypeError('unit must be a string')
+        raise TypeError('unit must be a string, but was {}'.format(unit))
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):

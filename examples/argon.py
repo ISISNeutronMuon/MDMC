@@ -60,9 +60,7 @@ exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'reader':'xml_SQw',
                  'weight':1.}]
 
-# Fit parameters is the set of all unique fit parameters in the universe
-# which are not fixed
-fit_parameters = set([p for p in universe.parameters if p.fixed is False])
+fit_parameters = universe.parameters
 
 # Specify how the refinement is going to be controlled
 control = Control(simulation=simulation,

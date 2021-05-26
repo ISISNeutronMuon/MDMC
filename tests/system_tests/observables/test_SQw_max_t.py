@@ -77,26 +77,20 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     E_RES = 49.99998257
     DIMENSIONS = [39.42210674, 39.42210674, 39.42210674]
 
-    SQw_full = ObservableFactory.create_observable(SQw_type)
-    SQw_1 = ObservableFactory.create_observable(SQw_type)
-    SQw_2 = ObservableFactory.create_observable(SQw_type)
-
-    for SQw in [SQw_full, SQw_1, SQw_2]:
-        SQw.independent_variables = independent_variables
-
+    SQw_observable = ObservableFactory.create_observable(SQw_type)
+    SQw_observable.independent_variables = independent_variables
     n = len(trajectory.times) // 2
-    SQw_full.calculate_from_MD(trajectory,
-                               energy_resolution=E_RES,
-                               dimensions=DIMENSIONS)
-    SQw_1.calculate_from_MD(trajectory[:n],
-                            energy_resolution=E_RES,
-                            dimensions=DIMENSIONS)
-    SQw_2.calculate_from_MD(trajectory[n:],
-                            energy_resolution=E_RES,
-                            dimensions=DIMENSIONS)
-    SQw_full_array = SQw_full.SQw
-    SQw_1_array = SQw_1.SQw
-    SQw_2_array = SQw_2.SQw
+
+    SQw_observable.calculate_from_MD(trajectory,
+                                     energy_resolution=E_RES,
+                                     dimensions=DIMENSIONS)
+    SQw_full_array = SQw_observable.SQw[0]
+
+    SQw_observable.calculate_from_MD([trajectory[:n], trajectory[n:]],
+                                     energy_resolution=E_RES,
+                                     dimensions=DIMENSIONS)
+    SQw_1_array = SQw_observable.SQw[0]
+    SQw_2_array = SQw_observable.SQw[1]
 
     # Calculate the total standard deviation for the two half runs and test that
     # the total run is within a factor of 3
@@ -110,25 +104,33 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
     # factor of 2 of the maximum standard deviation of any point
     assert np.all(stdev_full < 2 * np.max(stdev))
 
-    SQw_full.use_FFT = False
-    SQw_1.use_FFT = False
-    SQw_2.use_FFT = False
-    SQw_full.calculate_from_MD(trajectory, energy_resolution=E_RES,
-                               dimensions=DIMENSIONS)
-    SQw_1.calculate_from_MD(trajectory[:n], energy_resolution=E_RES,
-                            dimensions=DIMENSIONS)
-    SQw_2.calculate_from_MD(trajectory[n:], energy_resolution=E_RES,
-                            dimensions=DIMENSIONS)
+    # Test without FFT
+    SQw_observable.use_FFT = False
+
+    SQw_observable.calculate_from_MD(trajectory,
+                                     energy_resolution=E_RES,
+                                     dimensions=DIMENSIONS)
+    SQw_full_array_no_FFT = SQw_observable.SQw[0]
+
+    SQw_observable.calculate_from_MD(trajectory[:n],
+                                     energy_resolution=E_RES,
+                                     dimensions=DIMENSIONS)
+    SQw_1_array_no_FFT = SQw_observable.SQw[0]
+
+    SQw_observable.calculate_from_MD(trajectory[n:],
+                                     energy_resolution=E_RES,
+                                     dimensions=DIMENSIONS)
+    SQw_2_array_no_FFT = SQw_observable.SQw[0]
 
     # Assert there is no difference between FFT and non-FFT calculation for
     # the short trajectories, as in both cases all frames are utilised
-    assert_allclose(SQw_1_array, SQw_1.SQw, atol=ATOL)
-    assert_allclose(SQw_2_array, SQw_2.SQw, atol=ATOL)
+    assert_allclose(SQw_1_array, SQw_1_array_no_FFT, atol=ATOL)
+    assert_allclose(SQw_2_array, SQw_2_array_no_FFT, atol=ATOL)
 
     # For the full trajectory, the FFT method will only utilise the first n
     # frames. The non-FFT method uses all the frames, and so we cannot assert
     # that the two are "allclose" in general. Instead, apply the same criteria
     # of being within a number of standard deviations as we did before
-    stdev_full_no_FFT = np.std([SQw_1_2_mean, SQw_full.SQw], axis=0)
+    stdev_full_no_FFT = np.std([SQw_1_2_mean, SQw_full_array_no_FFT], axis=0)
     assert np.sum(stdev_full_no_FFT) < 3 * stdev_total
     assert np.all(stdev_full_no_FFT < 2 * np.max(stdev))

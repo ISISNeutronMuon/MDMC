@@ -232,7 +232,12 @@ class Minimizer(ABC):
 
         for parameter in parameters:
             if parameter.fixed is True:
-                raise ValueError('Parameter {0} is fixed'.format(parameter.name))
+                raise ValueError('Parameter {0} is fixed, and so cannot be '
+                                 'refined'.format(parameter.name))
+            if parameter.tied is True:
+                raise ValueError('Parameter {0} is tied to the value of '
+                                 'another parameter and so cannot be refined'
+                                 ''.format(parameter.name))
 
     def write_history(self, filename):
 
@@ -312,7 +317,11 @@ class MMC(Minimizer):
 
         """
         Selects a new value for each parameter from a distribution centered
-        around the current value
+        around the current value.
+
+        Note that for ``Parameter``s with ``constraints`` set, any proposed new value that would
+        lie outside the range of the constraint is clipped to the lower or upper limit as
+        appropriate.
 
         Parameters
         ----------
@@ -333,7 +342,15 @@ class MMC(Minimizer):
         changes = self.comm.bcast(changes, root=0)
         # Change parameters by same amount on all processes
         for i, parameter in enumerate(parameters):
-            parameter.value += parameter.value * changes[i]
+            new_value = parameter.value * (1 + changes[i])
+            # If the parameter is constrained, then clip changes that would be out of range
+            if parameter.constraints is not None:
+                if new_value < parameter.constraints[0]:
+                    new_value = parameter.constraints[0]
+                elif new_value > parameter.constraints[1]:
+                    new_value = parameter.constraints[1]
+
+            parameter.value = new_value
 
     def reset_parameters(self):
 
