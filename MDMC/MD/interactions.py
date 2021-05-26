@@ -490,9 +490,9 @@ class Coulombic(NonBondedInteraction):
             ``interaction_functions`` that are set, i.e. it makes ``function``
             parameter redundant
         ``atoms`` (`list`)
-            ``Atom`` objects to which the ``Coulombic`` applies. If specifying
-            the ``atoms``, ``universe`` does not need to be passed as a
-            parameter.
+            ``Atom`` objects (or ``int`` corresponding to an ``Atom.ID``) to which the
+            ``Coulombic`` applies. If specifying the ``atoms``, ``universe`` does not need to be
+            passed as a parameter.
 
 
 
@@ -574,12 +574,13 @@ class Coulombic(NonBondedInteraction):
             except KeyError:
                 raise TypeError('Coulombic takes either atom_types or atoms '
                                 'as parameters')
-            # Account for init argument atoms=atom rather than atoms=[atom]
-            if is_atom(atoms):
-                atoms = [atoms]
+                # Account for init argument atoms=atom rather than atoms=[atom]
+                if isinstance(atoms, (Atom, int)):
+                    atoms = [atoms]
+                parsed_atoms = parse_structural_unit_IDs(atoms)
             self._atoms = []
             self._atom_types = []
-            self.add_atoms(*atoms)
+            self.add_atoms(*parsed_atoms)
 
             # Assumes all atoms are in the same universe (or None)
             universe = self.atoms[0].universe
@@ -680,9 +681,9 @@ class BondedInteraction(Interaction):
     Parameters
     ----------
     atom_tuples : list
-        A `list` of `tuple`. Each `tuple` contains ``Atom`` objects which are
-        bonded together. For three or more ``Atom`` objects, the order of the
-        ``Atom`` objecys within each `tuple` is important.
+        A `list` of `tuple`. Each `tuple` contains ``Atom`` objects (or ``int`` corresponding to an
+        ``Atom.ID``) which are bonded together. For three or more ``Atom`` objects, the order of
+        the ``Atom`` objects within each `tuple` is important.
     **settings
         ``n_atoms`` (`int`)
             The number of atoms to which this ``BondedInteraction`` applies, for
@@ -719,14 +720,20 @@ class BondedInteraction(Interaction):
 
     def __init__(self, *atom_tuples, **settings):
 
-        if atom_tuples and is_atom(atom_tuples[0]):
+        if atom_tuples and isinstance(atom_tuples[0], (Atom, int)):
             atom_tuples = (atom_tuples, )
+
+        parsed_atom_tuples = []
+        for atom_tuple in atom_tuples:
+            parsed_atom_tuple = tuple(parse_structural_unit_IDs(atom_tuple))
+            parsed_atom_tuples.append(parsed_atom_tuple)
+
         if settings.get('n_atoms'):
             # This ensures that BondedInteractions can also be __init__ with 0
             # atoms
-            for tpl in atom_tuples:
+            for tpl in parsed_atom_tuples:
                 self._validate_atoms(tpl, settings.get('n_atoms'))
-        self.atoms = list(atom_tuples)
+        self.atoms = list(parsed_atom_tuples)
         super().__init__(**settings)
         LOGGER.info('%s created: {function:%s, atom IDs:%s}',
                     self.__class__,
@@ -1165,7 +1172,9 @@ def _add_atoms(self, *atoms):
         list of ``Atom``
     """
 
-    for atom in atoms:
+    parsed_atoms = parse_structural_unit_IDs(atoms)
+
+    for atom in parsed_atoms:
         # Add atom to interaction
         self._atoms.append(atom)
         # Add interaction to atom
