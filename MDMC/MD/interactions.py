@@ -574,10 +574,10 @@ class Coulombic(NonBondedInteraction):
             except KeyError:
                 raise TypeError('Coulombic takes either atom_types or atoms '
                                 'as parameters')
-                # Account for init argument atoms=atom rather than atoms=[atom]
-                if isinstance(atoms, (Atom, int)):
-                    atoms = [atoms]
-                parsed_atoms = parse_structural_unit_IDs(atoms)
+            # Account for init argument atoms=atom rather than atoms=[atom]
+            if is_atom(atoms) or isinstance(atoms, int):
+                atoms = [atoms]
+            parsed_atoms = parse_structural_unit_IDs(atoms)
             self._atoms = []
             self._atom_types = []
             self.add_atoms(*parsed_atoms)
