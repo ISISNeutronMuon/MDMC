@@ -1169,7 +1169,7 @@ def _add_atoms(self, *atoms):
     Parameters
     ----------
     atoms : list
-        list of ``Atom``
+        list of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
     """
 
     parsed_atoms = parse_structural_unit_IDs(atoms)
