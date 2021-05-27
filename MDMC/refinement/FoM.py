@@ -322,11 +322,25 @@ class ObservablePair:
             account.
         """
 
-        errors = ((np.array(*self.exp_obs.errors.values())
-                   * self.rescale_factor) ** 2
+        errors = (self.calculate_exp_errors() ** 2
                   + np.array(*self.MD_obs.errors.values()) ** 2) ** 0.5
 
         return errors
+
+    def calculate_exp_errors(self):
+
+        """
+        Assumes a single dependent variable error for each ``Observable``.
+        Calculates only the experimental errors.
+
+        Returns
+        -------
+        numpy.ndarray
+            An array with the same dimensions as the ``errors`` of the
+            ``exp_obs``, taking the ``rescale_factor`` into account.
+        """
+
+        return np.array(*self.exp_obs.errors.values()) * self.rescale_factor
 
 
 @repr_decorator('value', 'obs_pairs')
@@ -340,6 +354,12 @@ class FigureOfMeritCalculator(ABC):
     ----------
     obs_pairs : list
         A `list` of ``ObservablePairs``
+    norm : {'data_points', 'dof', 'none'}, optional
+        What method of normalisation to use when calculating the FoM for a single dataset.
+        Default is 'data_points'.
+    n_parameters : int, optional
+        The number of parameters being refined. Optional if ``norm`` is either 'data_points' or
+        'none', but required when 'dof'. Default is None.
 
     Attributes
     ----------
@@ -349,10 +369,26 @@ class FigureOfMeritCalculator(ABC):
         The Figure of Merit for all ``obs_pairs``
     """
 
-    def __init__(self, obs_pairs):
+    def __init__(self, obs_pairs, norm: str = 'data_points', n_parameters: int = None):
 
         self.obs_pairs = list(obs_pairs)
         self.value = None
+        self.n_parameters = 0
+
+        if norm == 'data_points':
+            self.norm = True
+        elif norm == 'dof':
+            if n_parameters is None:
+                raise ValueError('`n_parameters` must be provided if using '
+                                 'degrees of freedom normalisation.')
+            self.norm = True
+            self.n_parameters = n_parameters
+        elif norm == 'none':
+            self.norm = False
+        else:
+            raise ValueError('Unrecognised value for `norm` passed, should be '
+                             'one of "data_points", "dof", "none", but it was '
+                             '"{}"'.format(norm))
 
     def calculate(self):
 
@@ -399,7 +435,7 @@ class FigureOfMeritCalculator(ABC):
         raise NotImplementedError
 
 
-class StandardFoMCalculator(FigureOfMeritCalculator):
+class ChiSquaredExpError(FigureOfMeritCalculator):
 
     r"""
     Calculates the weighted sum of the Figure of Merits for a number of datasets:
@@ -414,26 +450,28 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
 
     .. math::
 
-        FoM_{i} = \frac{w_{i}}{N_{i}} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
+        FoM_{i} = \frac{w_{i}}{\nu_{i}} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
 
     where the sum is over the :math:`N_{i}` data points in the ``ObservablePair`` corresponding to
-    the :math:`i`-th dataset, and :math:`w_{i}` is an importance weighting assigned to the
-    :math:`i`-th dataset. :math:`D_{j}` are the individual data points in the 1-D or 2-D array of
-    the experimental ``Observable`` (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and
-    :math:`\sigma_{j}^{exp}` are the elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th
-    data point. Note that the subtraction and division over the arrays are element-wise. Note also that if the
+    the :math:`i`-th dataset, and the normalisation factor :math:`\nu_{i}` is either :math:`N_{i}`,
+    :math:`N_{i} - M` where :math:`M` is the number of fitting parameters, or :math:`1`.
+    :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset. :math:`D_{j}`
+    are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
+    (:math:`exp`) or simulated ``Observable`` (:math:`sim`), and :math:`\sigma_{j}^{exp}` are the
+    elements in a 1-D or 2-D array corresponding to the error of the :math:`j`-th data point. Note
+    that the subtraction and division over the arrays are element-wise. Note also that if the
     experimental ``Observable`` is not on an absolute scale, an additional ``rescale_factor`` can be
-    specified (or automatically determined) by the ``ObservablePair`` to scale the experimental data points and
-    errors by a simple linear scaling.
+    specified (or automatically determined) by the ``ObservablePair`` to scale the experimental
+    data points and errors by a simple linear scaling.
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
 
         r"""
-        Performs the error normalised square difference for an
-        ``ObservablePair``. If ``obs_pair.auto_scale`` is `True`, then this
-        will also set ``obs_pair.rescale`` to the value which minimizes the
-        FoM. If we label ``rescale_factor``:math:`=\lambda` then the minimum of the FoM is obtained as:
+        Performs the error normalised square difference for an ``ObservablePair``. If
+        ``obs_pair.auto_scale`` is `True`, then this will also set ``obs_pair.rescale`` to the
+        value which minimizes the FoM. If we label ``rescale_factor``:math:`=\lambda` then the
+        minimum of the FoM is obtained as:
 
         .. math::
 
@@ -469,8 +507,89 @@ class StandardFoMCalculator(FigureOfMeritCalculator):
                                        / np.sum(MD_values * exp_values
                                                 / exp_errors ** 2))
 
-        n_datapoints = np.size(*obs_pair.exp_obs.dependent_variables.values())
+        if self.norm:
+            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
+            norm_factor -= self.n_parameters
+        else:
+            norm_factor = 1
+
         value_unreduced = np.sum((obs_pair.calculate_difference()
-                                  / obs_pair.calculate_errors()) ** 2)
-        return (obs_pair.weight * value_unreduced
-                / (n_datapoints * np.sum(*obs_pair.n_averages.values())))
+                                  / obs_pair.calculate_exp_errors()) ** 2)
+        return obs_pair.weight * value_unreduced / norm_factor
+
+
+class ChiSquaredNoError(FigureOfMeritCalculator):
+
+    r"""
+    Calculates the weighted sum of the Figure of Merits for a number of datasets:
+
+    .. math::
+
+        FoM_{total} = \frac{\sum_{i} FoM_{i}}{\sum_{i} w_{i}}
+
+    Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
+    a sum of the square difference between data points for a single ``ObservablePair``:
+
+    .. math::
+
+        FoM_{i} = \frac{w_{i}}{\nu_{i}} \sum_{j} (D_{j}^{exp} - D_{j}^{sim})^2
+
+    where the sum is over the :math:`N_{i}` data points in the ``ObservablePair`` corresponding to
+    the :math:`i`-th dataset, and the normalisation factor :math:`\nu_{i}` is either :math:`N_{i}`,
+    :math:`N_{i} - M` where :math:`M` is the number of fitting parameters, or :math:`1`.
+    :math:`w_{i}` is an importance weighting assigned to the :math:`i`-th dataset. :math:`D_{j}`
+    are the individual data points in the 1-D or 2-D array of the experimental ``Observable``
+    (:math:`exp`) or simulated ``Observable`` (:math:`sim`). Note that the subtraction and division
+    over the arrays are element-wise. Note also that if the experimental ``Observable`` is not on
+    an absolute scale, an additional ``rescale_factor`` can be specified (or automatically
+    determined) by the ``ObservablePair`` to scale the experimental data points and errors by a
+    simple linear scaling.
+    """
+
+    def calculate_single_FoM(self, obs_pair: ObservablePair):
+
+        r"""
+        Performs the square difference for an ``ObservablePair``. If ``obs_pair.auto_scale`` is
+        `True`, then this will also set ``obs_pair.rescale`` to the value which minimizes the FoM.
+        If we label ``rescale_factor``:math:`=\lambda` then the minimum of the FoM is obtained as:
+
+        .. math::
+
+
+            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \left(\lambda*D_{j}^{exp} - D_{j}^{sim}\right)^2 \\\\
+            \left. \frac{dFoM_{i}}{d\lambda}\right|_{\lambda=\lambda_{min}} &=& 0 \\\\
+            \lambda_{min} &=& \frac{A}{B} \\\\
+
+        where we have:
+
+        .. math::
+
+            A &=& \sum D_{j}^{exp}*D_{j}^{sim} \\\\
+            B &=& \sum\left(D_{j}^{exp}\right)^2
+
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the FoM is calculated
+
+        Returns
+        -------
+        float
+            The FoM for the obs_pair
+        """
+
+        if obs_pair.auto_scale:
+            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+            MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
+            obs_pair.rescale_factor = (np.sum(MD_values * exp_values)
+                                       / np.sum(exp_values ** 2))
+
+        if self.norm:
+            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
+            norm_factor -= self.n_parameters
+        else:
+            norm_factor = 1
+
+        value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
+        return obs_pair.weight * value_unreduced / norm_factor

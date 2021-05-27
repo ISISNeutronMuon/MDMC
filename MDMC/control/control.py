@@ -69,8 +69,15 @@ class Control:
         Determines the accept/reject ratio of the MC. Default is 1.
     minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'MMC'.
-    FoM_type : str, optional
-        The type of ``FigureOfMeritCalculator``. Default is ``standard``.
+    FoM_options : dict of {str : str}, optional
+        Defines the details of the ``FigureOfMeritCalculator`` to use. Default is `None`, in which
+        case the first option for each of the following keys is used:
+          - ``errors`` {'exp', 'none'} Whether to weight the differences between MD and
+            experimental data with the experimental error or not (errors from MD are not currently
+            supported).
+          - ``norm`` {'data_points', 'dof', 'none'} How to normalise the FoM, either by the total
+            number of data_points (n), the degrees of freedom (n - m, where m is the number of
+            parameters being varied), or not at all.
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
@@ -131,11 +138,11 @@ class Control:
     """
 
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
-    FOM_DICT = {"standard":FoM.StandardFoMCalculator}
+    FOM_DICT = {"exp":FoM.ChiSquaredExpError, "none":FoM.ChiSquaredNoError}
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
-                 minimizer_type: str='MMC', FoM_type: str='standard',
+                 minimizer_type: str='MMC', FoM_options: dict = None,
                  reset_config: bool=True, MD_steps: int=None,
                  equilibration_steps: int = 0,
                  max_parameter_change: float=0.01, **settings):
@@ -196,7 +203,20 @@ class Control:
             min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
             minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
-        self.FoM_calculator = self.FOM_DICT[FoM_type](self.observable_pairs)
+        if FoM_options is None or FoM_options.get('error') is None:
+            FoM_error = 'exp'
+        else:
+            FoM_error = FoM_options.get('error')
+
+        if FoM_options is None or FoM_options.get('norm') is None:
+            FoM_norm = 'data_points'
+        else:
+            FoM_norm = FoM_options.get('norm')
+
+        FoM_class = self.FOM_DICT[FoM_error]
+        self.FoM_calculator = FoM_class(self.observable_pairs,
+                                        norm=FoM_norm,
+                                        n_parameters=len(self.fit_parameters))
 
         # Use specified MD_steps if supplied, else calculate
         if MD_steps:
@@ -227,14 +247,14 @@ class Control:
 
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
-                                    [FoM_type],
+                                    [self.FoM_calculator.__class__.__name__],
                                     [len(self.observable_pairs)],
                                     [len(self.fit_parameters)]],
-                                    index=['  Minimizer',
-                                           '  MC norm',
-                                           '  FoM type',
-                                           '  Number of observables',
-                                           '  Number of parameters'])
+                                   index=['  Minimizer',
+                                          '  MC norm',
+                                          '  FoM type',
+                                          '  Number of observables',
+                                          '  Number of parameters'])
 
         print('Control created with:\n{}\n'
               ''.format(setup_frame.to_string(index=True, header=False)))
