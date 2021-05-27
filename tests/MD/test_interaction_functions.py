@@ -12,8 +12,7 @@ from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            Periodic)
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import Coulombic
-
+from MDMC.MD.interactions import Coulombic
 
 BUCK_A, BUCK_B, BUCK_C = 1., 2., 3.
 BUCK_A_UNIT = Unit('kJ') / Unit('mol')

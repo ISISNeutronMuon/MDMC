@@ -20,7 +20,7 @@ import pandas as pd
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
-from MDMC.MD.structural_units import BondedInteraction, Coulombic
+from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.MD import interaction_functions
 
 

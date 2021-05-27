@@ -11,9 +11,9 @@ import pytest
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, BoundingBox, Coulombic, Molecule,
+from MDMC.MD.structural_units import (Atom, BoundingBox, Molecule,
                                       get_reduced_chemical_formula, parse_structural_unit_IDs)
-
+from MDMC.MD.interactions import Coulombic
 
 ATOM_TYPES = [1, 2, 3]
 POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]

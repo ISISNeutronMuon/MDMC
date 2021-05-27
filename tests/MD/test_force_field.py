@@ -6,8 +6,9 @@ import pytest
 
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, Bond, BondAngle, Coulombic,
-                                      DihedralAngle, Dispersion, Molecule)
+from MDMC.MD.structural_units import (Atom, Molecule)
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
+
 
 @pytest.fixture
 def water_universe():

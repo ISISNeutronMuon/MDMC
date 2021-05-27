@@ -9,7 +9,8 @@ import ase
 from ase.io import x3d
 import numpy as np
 
-from MDMC.MD.structural_units import Atom, Bond
+from MDMC.MD.structural_units import Atom
+from MDMC.MD.interactions import Bond
 
 
 class ASEAtoms(ase.atoms.Atoms):

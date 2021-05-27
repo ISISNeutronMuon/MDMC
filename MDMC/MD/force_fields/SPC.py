@@ -19,7 +19,7 @@ from MDMC.common.units import UnitFloat
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
                                            LennardJones)
-from MDMC.MD.structural_units import Bond, BondAngle, Coulombic, Dispersion
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
 
 class SPC(WaterModel):
