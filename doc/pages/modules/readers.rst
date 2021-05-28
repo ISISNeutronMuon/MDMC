@@ -10,6 +10,7 @@ readers
   ./readers/configurations/conf_reader_factory
   ./readers/configurations/conf_reader
   ./readers/observables/LAMPSQw
+  ./readers/observables/MantidSQw
   ./readers/observables/netCDF
   ./readers/observables/obs_reader_factory
   ./readers/observables/obs_reader

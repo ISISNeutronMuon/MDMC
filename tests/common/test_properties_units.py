@@ -1,7 +1,7 @@
 """Tests units assigned to properties
 
 Tests properties belonging to the following classes: StructuralUnit, Atom,
-Molecule, BoundingBox, Parameter, LAMPSQW, netCDF, xml_SQw, SQw"""
+Molecule, BoundingBox, Parameter, LAMPSQW, MantidSQw, netCDF, xml_SQw, SQw"""
 
 import numpy as np
 import pytest
@@ -138,6 +138,9 @@ Q_UNIT = units.LENGTH ** -1
 E_UNIT = units.ENERGY_TRANSFER
 READERS_TEST_INFO = [('LAMPSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
                                   {'name':'E', 'value':LIST, 'unit':E_UNIT}]
+                     ),
+                     ('MantidSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
+                                    {'name':'E', 'value':LIST, 'unit':E_UNIT}]
                      ),
                      ('netCDF', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
                                  {'name':'E', 'value':LIST, 'unit':E_UNIT}]
