@@ -8,11 +8,13 @@ import numpy as np
 from MDMC.common.decorators import repr_decorator
 
 
-class AtomCollection:
+class AtomCollection(object):
 
     """
     Base class for shared attributes for ``Configurations`` and ``Trajectories``
     """
+
+    __slots__ = ('_universe', )
 
     @property
     def universe(self):
@@ -79,6 +81,8 @@ class Configuration(AtomCollection):
     universe : Universe or None
     data : *structural_units
     """
+
+    __slots__ = ('_data', 'element_set', 'structure_list')
 
     def __init__(self, *structural_units, **settings):
 
@@ -196,7 +200,7 @@ class Configuration(AtomCollection):
             ``'velocity'`` fields
         """
 
-        return np.array([(atom, atom.position, atom.velocity)
+        return np.array([(atom(), atom().position, atom().velocity)
                          for atom in self._data],
                         dtype=[('atom', 'object'),
                                ('position', 'object'),
@@ -222,8 +226,8 @@ class Configuration(AtomCollection):
         """
 
         self.validate_structure(structural_unit)
-        self.structure_list.append(structural_unit)
-        self._data.extend([atom for atom in structural_unit.atom_list])
+        self.structure_list.append(weakref.proxy(structural_unit))
+        self._data.extend([weakref.ref(atom) for atom in structural_unit.atom_list])
 
     def validate_structure(self, structure):
 
@@ -394,6 +398,8 @@ class TemporalConfiguration(Configuration):
         Zero or more ``StructuralUnits``
     """
 
+    __slots__ = ('time', )
+
     def __init__(self, time, *structural_units, **settings):
 
         super().__init__(*structural_units, **settings)
@@ -432,6 +438,8 @@ class Trajectory(AtomCollection):
     configurations : list
         A `list` of ``TemporalConfigurations``
     """
+
+    __slots__ = ('_data', )
 
     def __init__(self, *configurations: TemporalConfiguration):
 
