@@ -154,10 +154,25 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
+@pytest.mark.parametrize('error', 
+                         [['exp',
+                           ('Control created with:\n'
+                            '  Minimizer                             MMC\n'
+                            '  MC norm                                 1\n'
+                            '  FoM type               ChiSquaredExpError\n'
+                            '  Number of observables                   1\n'
+                            '  Number of parameters                    0\n')],
+                           ['none',
+                            ('Control created with:\n'
+                            '  Minimizer                            MMC\n'
+                            '  MC norm                                1\n'
+                            '  FoM type               ChiSquaredNoError\n'
+                            '  Number of observables                  1\n'
+                            '  Number of parameters                   0\n')]])
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
-                               file_name, capsys):
+                               file_name, error, capsys):
 
     """
     Tests that the stdout from Control.refine is in the expected format. Test
@@ -184,6 +199,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           FoM_options={'error': error[0]},
                            reset_config=False)
 
     ctrl.minimizer = minim
@@ -191,12 +207,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
 
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == ('Control created with:\n'
-                      '  Minimizer                   MMC\n'
-                      '  MC norm                       1\n'
-                      '  FoM type               standard\n'
-                      '  Number of observables         1\n'
-                      '  Number of parameters          0\n'
+    assert stdout == (error[1] +
                       '\n'
                       'Step       float          str          int really_lo...\n'
                       '   0       1.657         str1           10            1\n'
@@ -253,11 +264,11 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
     assert stdout == ('Control created with:\n'
-                      '  Minimizer                   MMC\n'
-                      '  MC norm                       1\n'
-                      '  FoM type               standard\n'
-                      '  Number of observables         1\n'
-                      '  Number of parameters          0\n'
+                      '  Minimizer                             MMC\n'
+                      '  MC norm                                 1\n'
+                      '  FoM type               ChiSquaredExpError\n'
+                      '  Number of observables                   1\n'
+                      '  Number of parameters                    0\n'
                       '\n'
                       'Step       float          str          int really_lo...\n'
                       '   0       1.657         str1           10            1\n'
@@ -357,11 +368,11 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
     assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
                       '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
-                      '  Minimizer                   MMC\n'
-                      '  MC norm                       1\n'
-                      '  FoM type               standard\n'
-                      '  Number of observables         1\n'
-                      '  Number of parameters          0\n'
+                      '  Minimizer                             MMC\n'
+                      '  MC norm                                 1\n'
+                      '  FoM type               ChiSquaredExpError\n'
+                      '  Number of observables                   1\n'
+                      '  Number of parameters                    0\n'
                       '\n'
                       ''.format(datasets[0]['file_name']))
 

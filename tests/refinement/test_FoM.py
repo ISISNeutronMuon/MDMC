@@ -318,19 +318,20 @@ def test_error_calculation(SQw_dict):
     assert (np.all(rescaled_pair.calculate_errors()
             == ((ERR_NEG * 0.75) ** 2 + ERR_NEG ** 2) ** 0.5))
 
-
-def test_FoM_calculation(pairs):
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+def test_FoM_calculation(FoM_calculator, pairs):
 
     """
     Tests that the FoM calculation is valid for a pair of observables i.e. it is
     a non-negative float
     """
 
-    calculator = fom.StandardFoMCalculator(pairs)
+    calculator = FoM_calculator(pairs)
     assert calculator.calculate() >= 0
 
 
-def test_multiple_FoM_calculation(pairs):
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+def test_multiple_FoM_calculation(FoM_calculator, pairs):
 
     """
     Tests that the FoM calculation is valid for for multiple pairs of
@@ -338,55 +339,184 @@ def test_multiple_FoM_calculation(pairs):
     """
 
     pairs += pairs
-    calculator = fom.StandardFoMCalculator(pairs)
+    calculator = FoM_calculator(pairs)
     assert calculator.calculate() >= 0
 
 
-def test_FoM_calculation_dataset_size(pairs):
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+def test_FoM_calculation_data_point_norm(FoM_calculator, pairs):
 
     """
     Tests that the FoM calculation normalises for the size of the dataset
     """
 
     # Create datasets with twice the number of entries
-    pairs_large = pairs
+    pairs_large = copy.deepcopy(pairs)
     for pair in pairs_large:
-        dependent_array = pair.exp_obs._dependent_variables['dep']
-        pair.exp_obs._dependent_variables = {'dep': np.append(dependent_array, dependent_array)}
-        pair.MD_obs._dependent_variables = {'dep': np.append(dependent_array, dependent_array)}
+        dep_array_exp = pair.exp_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep': np.append(dep_array_exp, dep_array_exp)}
 
-        error_array = pair.exp_obs._errors['err']
-        pair.exp_obs._errors = {'err': np.append(error_array, error_array)}
-        pair.MD_obs._errors = {'err': np.append(error_array, error_array)}
+        dep_array_MD = pair.MD_obs._dependent_variables['dep']
+        pair.MD_obs._dependent_variables = {'dep': np.append(dep_array_MD, dep_array_MD)}
 
-    calculator = fom.StandardFoMCalculator(pairs)
-    calculator_large = fom.StandardFoMCalculator(pairs_large)
-    assert calculator.calculate() == calculator_large.calculate()
+        error_array_exp = pair.exp_obs._errors['err']
+        pair.exp_obs._errors = {'err': np.append(error_array_exp, error_array_exp)}
+
+        error_array_MD = pair.MD_obs._errors['err']
+        pair.MD_obs._errors = {'err': np.append(error_array_MD, error_array_MD)}
+
+    calculator = FoM_calculator(pairs, norm='data_points')
+    calculator_large = FoM_calculator(pairs_large, norm='data_points')
+    assert np.isclose(calculator.calculate(), calculator_large.calculate())
 
 
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+def test_FoM_calculation_dof_norm(FoM_calculator, pairs):
+
+    """
+    Tests that the FoM calculation normalises for the size of the dataset and degrees of freedom
+    """
+
+    dataset_size = pairs[0].exp_obs._dependent_variables['dep'].size
+
+    # Set n_parameters to be half the dataset size, so in the second case we normalise by
+    # `dataset_size - dataset_size / 2 = dataset_size / 2` giving twice the FoM
+    calculator = FoM_calculator(pairs, norm='dof', n_parameters=0)
+    calculator_dof = FoM_calculator(pairs, norm='dof', n_parameters=dataset_size / 2)
+
+    assert calculator.calculate() == calculator_dof.calculate() / 2
+
+
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+def test_FoM_calculation_no_norm(FoM_calculator, pairs):
+
+    """
+    Tests that the FoM calculation is increased for larger datasets when no norm is used
+    """
+
+    # Create datasets with twice the number of entries
+    pairs_large = copy.deepcopy(pairs)
+    for pair in pairs_large:
+        dep_array_exp = pair.exp_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep': np.append(dep_array_exp, dep_array_exp)}
+
+        dep_array_MD = pair.MD_obs._dependent_variables['dep']
+        pair.MD_obs._dependent_variables = {'dep': np.append(dep_array_MD, dep_array_MD)}
+
+        error_array_exp = pair.exp_obs._errors['err']
+        pair.exp_obs._errors = {'err': np.append(error_array_exp, error_array_exp)}
+
+        error_array_MD = pair.MD_obs._errors['err']
+        pair.MD_obs._errors = {'err': np.append(error_array_MD, error_array_MD)}
+
+    calculator = FoM_calculator(pairs, norm='none')
+    calculator_large = FoM_calculator(pairs_large, norm='none')
+    assert np.isclose(calculator.calculate(), calculator_large.calculate() / 2)
+
+
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+def test_FoM_calculation_raises_errors(FoM_calculator, pairs):
+
+    """
+    Tests that the FoM calculators raise a ValueError when given unrecognised or incompatible
+    arguments.
+    """
+
+    # Unrecognised option for the norm
+    with pytest.raises(ValueError):
+        FoM_calculator(pairs, norm='unrecognised')
+
+    # DoF normalisation without providing number of parameters
+    with pytest.raises(ValueError):
+        FoM_calculator(pairs, norm='dof')
+
+
+@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
 @pytest.mark.parametrize('weight', [0.1, 1., 10.])
-def test_weighted_FoM_calculation(pairs, weight):
+def test_weighted_FoM_calculation(FoM_calculator, weight, pairs):
 
     """
     Tests that the FoM calculation takes weighting into account
     """
 
-    # Create datasets with infinite errors (which will give FoM of zero) and a
-    # varying weight
-    pairs_inf_error = pairs
-    for pair in pairs_inf_error:
-        pair.weight = weight
-        error_shape = np.shape(pair.exp_obs._errors['err'])
-        error_array = np.full(error_shape, np.float('inf'))
-        pair.exp_obs._errors = {'err': error_array}
-
-    calculator = fom.StandardFoMCalculator(pairs)
-    calculator_weighted = fom.StandardFoMCalculator(pairs + pairs_inf_error)
-
+    normal_weight = pairs[0].weight
+    calculator = FoM_calculator(pairs)
     normal_FoM = calculator.calculate()
+
+    # Create datasets with the same dependent variable for MD and exp (which
+    # will give FoM of zero) and a varying weight
+    pairs_weighted = copy.deepcopy(pairs)
+    for pair in pairs_weighted:
+        pair.weight = weight
+        SQw_array = pair.MD_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep':SQw_array}
+
+    calculator_weighted = FoM_calculator(pairs + pairs_weighted)
     weighted_FoM = calculator_weighted.calculate()
 
-    assert weighted_FoM == normal_FoM / (pairs[0].weight + weight)
+    assert weighted_FoM == normal_FoM / (normal_weight + weight)
+
+
+@pytest.mark.parametrize('exp_error', [0.1, 1., 10.])
+@pytest.mark.parametrize('MD_error', [0.1, 1., 10.])
+def test_errors_ChiSquaredExpError(exp_error, MD_error, pairs):
+
+    """
+    Test that changing the value of the experimental errors affects the ChiSquaredExpError, but
+    that changing the MD errors does not.
+    """
+
+    # Set errors to be constant for ease of testing
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.ones(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = fom.ChiSquaredExpError(pairs)
+    normal_FoM = calculator.calculate()
+
+    # Create datasets with scaled errors
+    pairs_scaled_error = copy.deepcopy(pairs)
+    for pair in pairs_scaled_error:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.full(error_shape, exp_error)}
+        pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
+
+    calculator_weighted = fom.ChiSquaredExpError(pairs_scaled_error)
+    scaled_FoM = calculator_weighted.calculate()
+
+    assert np.isclose(scaled_FoM, normal_FoM / exp_error ** 2)
+
+
+@pytest.mark.parametrize('exp_error', [0.1, 1., 10.])
+@pytest.mark.parametrize('MD_error', [0.1, 1., 10.])
+def test_errors_ChiSquaredNoError(exp_error, MD_error, pairs):
+
+    """
+    Test that changing the value of neither the experimental errors nor the MD errors affects the
+    ChiSquaredNoError.
+    """
+
+    # Set errors to be constant for ease of testing
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.ones(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = fom.ChiSquaredNoError(pairs)
+    normal_FoM = calculator.calculate()
+
+    # Create datasets with scaled errors
+    pairs_scaled_error = copy.deepcopy(pairs)
+    for pair in pairs_scaled_error:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.full(error_shape, exp_error)}
+        pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
+
+    calculator_weighted = fom.ChiSquaredNoError(pairs_scaled_error)
+    scaled_FoM = calculator_weighted.calculate()
+
+    assert np.isclose(scaled_FoM, normal_FoM)
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
