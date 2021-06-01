@@ -215,7 +215,7 @@ class Configuration(AtomCollection):
             ``'velocity'`` fields
         """
 
-        return np.array([(atom(), atom().position, atom().velocity)
+        return np.array([(atom, atom.position, atom.velocity)
                          for atom in self._data],
                         dtype=[('atom', 'object'),
                                ('position', 'object'),
@@ -242,7 +242,7 @@ class Configuration(AtomCollection):
 
         self.validate_structure(structural_unit)
         self._structure_list.append(weakref.ref(structural_unit))
-        self._data.extend([weakref.ref(atom) for atom in structural_unit.atom_list])
+        self._data.extend([atom for atom in structural_unit.atom_list])
 
     def validate_structure(self, structure):
 
