@@ -415,6 +415,33 @@ class FigureOfMeritCalculator(ABC):
         assert self.value >= 0.
         return self.value
 
+    def data_norm_factor(self, obs_pair: ObservablePair):
+
+        """
+        Calculates the normalisation factor for ``obs_pair``. If ``self.norm`` is `True`, then
+        returns the number of data points less the number of refinement parameters if `'dof'`
+        normalisation was chosen, or just the number of data points for the default `'data_points'`
+        normalisation. If ``self.norm`` is `False`, then returns `1`.
+
+        Parameters
+        ----------
+        obs_pair : ObservablePair
+            An ``ObservablePair`` for which the normalisation factor is calculated
+
+        Returns
+        -------
+        int
+            The normalisation factor
+        """
+
+        if self.norm:
+            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
+            norm_factor -= self.n_parameters
+        else:
+            norm_factor = 1
+
+        return norm_factor
+
     @abstractmethod
     def calculate_single_FoM(self, obs_pair):
 
@@ -484,8 +511,8 @@ class ChiSquaredExpError(FigureOfMeritCalculator):
 
         .. math::
 
-            A &=& \sum\left(\frac{D_{j}^{sim}}{\sigma_{j}^{exp}}\right)^2 \\\\
-            B &=& \sum \frac{D_{j}^{exp}*D_{j}^{sim}}{(\sigma_{j}^{exp})^2}
+            A &=& \sum_{j}\left(\frac{D_{j}^{sim}}{\sigma_{j}^{exp}}\right)^2 \\\\
+            B &=& \sum_{j} \frac{D_{j}^{exp}*D_{j}^{sim}}{(\sigma_{j}^{exp})^2}
 
 
         Parameters
@@ -507,12 +534,7 @@ class ChiSquaredExpError(FigureOfMeritCalculator):
                                        / np.sum(MD_values * exp_values
                                                 / exp_errors ** 2))
 
-        if self.norm:
-            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
-            norm_factor -= self.n_parameters
-        else:
-            norm_factor = 1
-
+        norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum((obs_pair.calculate_difference()
                                   / obs_pair.calculate_exp_errors()) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
@@ -564,8 +586,8 @@ class ChiSquaredNoError(FigureOfMeritCalculator):
 
         .. math::
 
-            A &=& \sum D_{j}^{exp}*D_{j}^{sim} \\\\
-            B &=& \sum\left(D_{j}^{exp}\right)^2
+            A &=& \sum_{j} D_{j}^{exp}*D_{j}^{sim} \\\\
+            B &=& \sum_{j}\left(D_{j}^{exp}\right)^2
 
 
         Parameters
@@ -585,11 +607,6 @@ class ChiSquaredNoError(FigureOfMeritCalculator):
             obs_pair.rescale_factor = (np.sum(MD_values * exp_values)
                                        / np.sum(exp_values ** 2))
 
-        if self.norm:
-            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
-            norm_factor -= self.n_parameters
-        else:
-            norm_factor = 1
-
+        norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
