@@ -82,7 +82,7 @@ class Configuration(AtomCollection):
     data : *structural_units
     """
 
-    __slots__ = ('_data', 'element_set', 'structure_list')
+    __slots__ = ('_data', 'element_set', '_structure_list')
 
     def __init__(self, *structural_units, **settings):
 
@@ -100,11 +100,12 @@ class Configuration(AtomCollection):
         if id(other) == id(self):
             return True
         if isinstance(other, self.__class__):
-            for k, v in self.__dict__.items():
+            for k in self.__slots__:
                 if k == '_universe':
                     # As Configurations can have Universes as an attribute, and
                     # vice versa, skip comparison to prevent infinite recursion
                     continue
+                v = getattr(self, k)
                 try:
                     iter(v)
                     if any(v != getattr(other, k)):
@@ -187,6 +188,20 @@ class Configuration(AtomCollection):
         return self.filter_structures(lambda x: x.structure_type == 'Molecule')
 
     @property
+    def structure_list(self):
+
+        """
+        Get the `list` of ``StructuralUnit`` which belong to the ``Configuration``
+
+        Returns
+        -------
+        list
+            A `list` of ``StructuralUnit``
+        """
+
+        return [structural_unit() for structural_unit in self._structure_list]
+
+    @property
     def data(self):
 
         """
@@ -209,7 +224,7 @@ class Configuration(AtomCollection):
     @data.setter
     def data(self, structural_units):
 
-        self.structure_list = []
+        self._structure_list = []
         self._data = []
         for unit in structural_units:
             self.add_structural_unit(unit)
@@ -226,7 +241,7 @@ class Configuration(AtomCollection):
         """
 
         self.validate_structure(structural_unit)
-        self.structure_list.append(weakref.proxy(structural_unit))
+        self._structure_list.append(weakref.ref(structural_unit))
         self._data.extend([weakref.ref(atom) for atom in structural_unit.atom_list])
 
     def validate_structure(self, structure):
@@ -458,6 +473,20 @@ class Trajectory(AtomCollection):
 
         self.data = configurations
 
+    def __getstate__(self):
+        structures = []
+        for config in self.configurations:
+            structures.append(config.structure_list)
+        return {'universe': self.universe,
+                'times': self.times,
+                'structures': structures}
+
+    def __setstate__(self, d):
+        configs = [TemporalConfiguration(d['times'][i],
+                                         *d['structures'][i],
+                                         universe=d['universe']) for i in range(len(d['times']))]
+        self.__init__(*configs)
+
     @property
     def data(self):
 
@@ -478,13 +507,13 @@ class Trajectory(AtomCollection):
 
         self._data = np.array(
             [(i, config.time, config) for
-            i, config in enumerate(configurations, 1)],
-            dtype = [('frame', 'int64'),
-            ('time', 'float64'),
-            ('configuration', 'object')])
+             i, config in enumerate(configurations, 1)],
+            dtype=[('frame', 'int64'),
+                   ('time', 'float64'),
+                   ('configuration', 'object')])
 
         for datum in self._data:
-            if datum['frame']==1:
+            if datum['frame'] == 1:
                 config0 = datum['configuration']
             else:
                 self.validate_config(datum['configuration'], validator=config0)
