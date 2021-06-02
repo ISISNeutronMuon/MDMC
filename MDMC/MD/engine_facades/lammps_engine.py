@@ -617,17 +617,16 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         raise TypeError('triclinic simulation boxes have not'
                                         ' been implemented')
                     # Test dimensions are as expected, if a universe was passed
-                    # CURRENTLY ASSUMES VOLUME IS CONSERVED
-                    # if self.universe:
-                    #     for i in range(3):
-                    #         line = file_handler.readline()
-                    #         dmin, dmax = [float(splt) for splt in line.split()]
-                    #         print(line)
-                    #         assert dmin == 0.0
-                    #         # unit is taken from universe dimensions (which is a
-                    #         # UnitArray)
-                    #         assert dmax == convert_unit(self.universe.dimensions[i],
-                    #                                     self.universe.dimensions.unit)
+                    # and we are not using an NPT or NPH ensemble
+                    if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
+                        for i in range(3):
+                            line = file_handler.readline()
+                            dmin, dmax = [float(splt) for splt in line.split()]
+                            assert dmin == 0.0
+                            # unit is taken from universe dimensions (which is a
+                            # UnitArray)
+                            assert dmax == convert_unit(self.universe.dimensions[i],
+                                                        self.universe.dimensions.unit)
 
                 if 'ITEM: ATOMS' in line:
                     if frame_n == start:
