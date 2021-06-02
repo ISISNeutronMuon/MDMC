@@ -39,5 +39,9 @@ It is not necessary to download the latest version of the MDMC container before
 running the :code:`up` command; however if you would like to then please precede
 it with :code:`docker-compose pull`.
 
-Any notebooks which had been previously saved will still be available, unless
-you explicitly remove the Docker volume (using :code:`docker volume rm`).
+Note that :code:`docker-compose pull` and :code:`docker-compose up` commands
+will overwrite the contents of the local folder :code:`mdmc_sync_with_docker`,
+resulting in any modifications to the existing tutorial notebooks being
+overwritten. Any new notebooks which had been previously saved will still be
+available, unless you explicitly remove the Docker volume (using
+:code:`docker volume rm`).
