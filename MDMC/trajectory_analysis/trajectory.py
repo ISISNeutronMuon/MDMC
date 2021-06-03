@@ -29,6 +29,9 @@ class AtomCollection(object):
             if it has not been set
         """
 
+        # Call the weakref to return the universe as an object. If the use of
+        # weakref causes issues with prematurely garbage collecting the
+        # universe, revert this change to not use weakref.
         try:
             return self._universe()
         except TypeError:
@@ -37,6 +40,9 @@ class AtomCollection(object):
     @universe.setter
     def universe(self, universe):
 
+        # Create a weakref of the universe for _universe. If the use of weakref
+        # causes issues with prematurely garbage collecting the universe,
+        # revert this change to not use weakref.
         try:
             self._universe = weakref.ref(universe)
         except TypeError:
@@ -199,6 +205,9 @@ class Configuration(AtomCollection):
             A `list` of ``StructuralUnit``
         """
 
+        # Call the weakref to return the structural_unit as an object. If the
+        # use of weakref causes issues with prematurely garbage collecting the
+        # structural_units, revert this change to not use weakref.
         return [structural_unit() for structural_unit in self._structure_list]
 
     @property
@@ -241,6 +250,9 @@ class Configuration(AtomCollection):
         """
 
         self.validate_structure(structural_unit)
+        # Create a weakref of the structural_unit for _structure_list. If the
+        # use of weakref causes issues with prematurely garbage collecting the
+        # structural_units, revert this change to not use weakref.
         self._structure_list.append(weakref.ref(structural_unit))
         self._data.extend([atom for atom in structural_unit.atom_list])
 
