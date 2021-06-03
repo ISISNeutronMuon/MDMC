@@ -697,7 +697,12 @@ class Atom(StructuralUnit):
         ``Ang``. The default is ``(0., 0., 0.)``.
     velocity : list, tuple, numpy.ndarray, optional
         A 3 element `list`, `tuple` or ``array`` with the velocity in units of
-        ``Ang``. The default is ``(0., 0., 0.)``.
+        ``Ang``. Note that if set, the velocity of atoms in the MD engine will
+        be scaled when creating a `Simulation` in order to ensure the
+        temperature is accurate. Otherwise, if the velocities of all `Atom`
+        objects in a `Simulation` are 0, then the velocities of the atoms in
+        the MD engine will be randomly chosen in order to provide an accurate
+        temperature. The default is ``(0., 0., 0.)``.
     charge : float
         The charge of the ``Atom`` in units of elementary charge (``e)``. The
         default is `None`, meaning that a ``Coulomb`` interaction is not applied

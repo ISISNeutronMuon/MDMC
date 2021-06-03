@@ -1303,7 +1303,7 @@ def test_parse_constraint_no_IDs(arguments, request):
 def test_initialize_velocities(universe, lammps_universe, temperature):
 
     """
-    Test that the velocities have been set correctly
+    Test that the LAMMPS velocities have been set correctly when MDMC velocities are zero
 
     Initialize the velocities by setting the temperature. Set the ensemble to
     NVE and run for 0 steps. Test if the 0 step temperature is as expected.
@@ -1313,6 +1313,46 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
                                                  temperature=temperature,
                                                  traj_step=10,
                                                  lmp=lammps_universe.lmp)
+
+    for i, atom in enumerate(universe.atom_list):
+        # MDMC atoms should be unchanged, but the LAMMPS atoms should have velocities
+        assert np.all(np.array(atom.velocity) == 0)
+        assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity) != 0)
+
+    lammps_simulation.lmp.run(0)
+    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
+
+
+@pytest.mark.parametrize('temperature', [150., 300., 450.])
+def test_initialize_nonzero_velocities(universe, temperature):
+
+    """
+    Test that the LAMMPS velocities have been set correctly when MDMC velocities are non-zero
+
+    Initialize the velocities by setting the temperature. Set the ensemble to
+    NVE and run for 0 steps. Test if the 0 step temperature is as expected.
+    """
+
+    # Set the MDMC velocities
+    velocity = []
+    for i, atom in enumerate(universe.atom_list):
+        velocity.append(np.array((-(i + 1), 0, i + 1)))
+        atom.velocity = velocity[i]
+
+    # Create new LAMMPS universe/simulation with these velocities
+    lammps_universe = lmp_eng.LAMMPSUniverse(universe)
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe,
+                                                 temperature=temperature,
+                                                 traj_step=10,
+                                                 lmp=lammps_universe.lmp)
+
+    # LAMMPS should scale all velocities by the same amount to ensure the temperature is accurate.
+    # Get this factor from the first atom, as it had an initial velocity of 1 in the z direction.
+    scale_factor = lammps_simulation.lmp.atoms[0].velocity[2]
+    for i, atom in enumerate(universe.atom_list):
+        assert np.all(np.array(atom.velocity) == velocity[i])
+        assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity)
+                      == scale_factor * velocity[i])
 
     lammps_simulation.lmp.run(0)
     assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
