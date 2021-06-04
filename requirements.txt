@@ -7,4 +7,3 @@ ase>=3.19
 mpi4py
 ipython
 ipykernel
-pytest==3.10.0
