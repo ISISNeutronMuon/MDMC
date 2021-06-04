@@ -485,18 +485,49 @@ class Trajectory(AtomCollection):
 
         self.data = configurations
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
+
+        """
+        Gets the state of the Trajectory so that it can be pickled. The ``_structure_list``
+        attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
+        which cannot be pickled. Therefore we must create a custom dictionary that contains the
+        original objects the weak references were pointing to.
+
+        Returns
+        -------
+        dict
+            Dictionary containing all the necessary objects to define a ``Trajectory`` without
+            including any weak references.
+        """
+
         structures = []
         for config in self.configurations:
             structures.append(config.structure_list)
+
         return {'universe': self.universe,
                 'times': self.times,
                 'structures': structures}
 
-    def __setstate__(self, d):
+    def __setstate__(self, d: dict):
+
+        """
+        Sets the state of the Trajectory when it is being  unpickled. The ``_structure_list``
+        attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
+        which cannot be pickled. We load the custom dictionary ``d`` that contains objects and then
+        use it to initialise the ``TemporalConfiguration`` and ``Trajectory``. In doing so, their
+        attributes are populated with weak references to the objects in ``d``.
+
+        Parameters
+        ----------
+        d, dict
+            Dictionary containing all the necessary objects to define a ``Trajectory`` without
+            including any weak references.
+        """
+
         configs = [TemporalConfiguration(d['times'][i],
                                          *d['structures'][i],
                                          universe=d['universe']) for i in range(len(d['times']))]
+
         self.__init__(*configs)
 
     @property
