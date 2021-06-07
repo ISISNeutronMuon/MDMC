@@ -19,6 +19,9 @@ _OBJECT_PATH = '/MDMC_objects'
 # From Bertil Halle. QENS water data collected on in5.
 # J. Chem. Phys. 134, 144508 (2011); https://doi.org/10.1063/1.3578472
 #
+# MantidSQw
+# TODO cite data once published, the Mantid data file was provided by Jeff Armstrong
+#
 # XML_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
 
