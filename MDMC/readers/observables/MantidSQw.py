@@ -161,6 +161,7 @@ class MantidSQw(ObservableReader):
 
         data = {}
         for line in file:
+            line = line.strip()
             # Expect the first line to be a header with no information
             if line == '# X , Y , E':
                 continue
@@ -171,8 +172,8 @@ class MantidSQw(ObservableReader):
                 data[detector_ID] = {'X':[], 'Y':[], 'E':[]}
             else:
                 data[detector_ID]['X'].append(self._make_float(strings[0]))
-                data[detector_ID]['Y'].append(strings[1])
-                data[detector_ID]['E'].append(strings[2])
+                data[detector_ID]['Y'].append(self._make_float(strings[1]))
+                data[detector_ID]['E'].append(self._make_float(strings[2]))
 
         self.detector_IDs = data.keys()
         X = np.array(data[detector_ID]['X'])
@@ -180,7 +181,7 @@ class MantidSQw(ObservableReader):
         E = np.zeros((len(data.keys()), len(X)))
         for i, detector_ID in enumerate(self.detector_IDs):
             # X data should be the same for each detector
-            assert np.array(data[detector_ID]['X']) == X
+            assert np.all(np.array(data[detector_ID]['X']) == X)
             Y[i] = np.array(data[detector_ID]['Y'])
             E[i] = np.array(data[detector_ID]['E'])
 
@@ -204,9 +205,31 @@ class MantidSQw(ObservableReader):
 
         Q = np.zeros(len(self.detector_IDs))
         data = {}
-        for line in file:
-            # TODO get the ID and momenta as a dict
-            pass
+        for i, line in enumerate(file):
+            if i == 0:
+                headings = line.split(', ')
+                try:
+                    # Example file has a typo, unclear if this will affect all Mantid files so
+                    # make an allowance for 'Spextrum No'
+                    ID_header = 'Spextrum No'
+                    spectrum_index = headings.index(ID_header)
+                except ValueError as error:
+                    try:
+                        ID_header = 'Spectrum No'
+                        spectrum_index = headings.index(ID_header)
+                    except ValueError as error:
+                        raise ValueError('Detector file must have the heading "{0}"'
+                                         ''.format(ID_header)) from error
+
+                try:
+                    Q_header = 'Q'
+                    Q_index = headings.index(Q_header)
+                except ValueError as error:
+                    raise ValueError('Detector file must have the heading "{0}"'
+                                     ''.format(Q_header)) from error
+            else:
+                values = line.split()
+                data[values[spectrum_index]] = self._make_float(values[Q_index])
 
         for i, detector_ID in enumerate(self.detector_IDs):
             Q[i] = data[detector_ID]
