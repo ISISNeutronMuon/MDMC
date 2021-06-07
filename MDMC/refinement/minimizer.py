@@ -179,7 +179,7 @@ class Minimizer(ABC):
 
         raise NotImplementedError
 
-    def has_converged(self, conv_tol: float=1e-3, min_steps: int=2) -> bool:
+    def has_converged(self, conv_tol: float=1e-5, min_steps: int=2) -> bool:
 
         """
         Checks if the refinement process has converged on a stable solution. Specifically, it checks if

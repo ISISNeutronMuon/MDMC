@@ -96,6 +96,13 @@ class Control:
         much shorter than the equilibration needed before starting the refinement process, but in
         general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
         is 0.
+    convergence_tol : float, optional
+        The relative tolerance used to determine if a refinement has converged. If the Figure of Merit and all
+        ``Parameters`` change less than this tolerance between two accepted refinement steps the refinement stops.
+        Default value is 1e-5.
+    min_refinement_steps : int, optional
+        The minimum number of refinement steps before the refinement process can stop if all parameters and the
+        Figure of Merit have converged. Default value is 2.
     **settings
         ``energy_resolution`` : float
             Instrument energy resolution as the FWHM in ``ueV``.
@@ -145,6 +152,8 @@ class Control:
                  minimizer_type: str='MMC', FoM_options: dict = None,
                  reset_config: bool=True, MD_steps: int=None,
                  equilibration_steps: int = 0,
+                 convergence_tol: float = 1e-5,
+                 min_refinement_steps: int = 2,
                  max_parameter_change: float=0.01, **settings):
 
         self.simulation = simulation
@@ -161,6 +170,8 @@ class Control:
                                                              max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
+        self.convergence_tol = convergence_tol
+        self.min_refine_steps = min_refinement_steps
         self.settings = settings
 
         # Create experimental observables from datasets and placeholders for
@@ -291,7 +302,7 @@ class Control:
         count = -1
 
         self._print_header()
-        while count < n_steps and not self.minimizer.has_converged():
+        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol, min_steps=self.min_refine_steps):
             if count >= 0 and self.equilibration_steps > 0:
                 self.equilibrate()
 
