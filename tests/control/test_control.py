@@ -57,7 +57,7 @@ class MockMinimizer:
         self._history = (row for _, row in df.iterrows())
         self.history = pd.DataFrame(columns=df.columns)
 
-    def has_converged(self):
+    def has_converged(self, conv_tol=None, min_steps=None):
 
         return False
 
