@@ -23,6 +23,7 @@ READER_TEST_INFO contains the following:
 """
 
 READERS_TEST_INFO = [('LAMPSQw', ['Q', 'E'], 'SQw'),
+                     ('MantidSQw', ['Q', 'E'], 'SQw'),
                      ('xml_SQw', ['Q', 'E'], 'SQw')]
 
 
