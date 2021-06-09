@@ -12,6 +12,7 @@ from itertools import count, permutations
 import logging
 from math import gcd
 from types import MethodType
+from typing import List
 import weakref
 
 import numpy as np
@@ -1311,7 +1312,9 @@ class BoundingBox:
         maximum extents are determined
     """
 
-    def __init__(self, atom_list):
+    def __init__(self, atom_list: List):
+        if not atom_list:
+            raise ValueError("Empty atom_list passed; it must contain at least one atom to create a BoundingBox object.")
 
         parsed_atoms = parse_structural_unit_IDs(atom_list)
         # Start with arbitrary min and max from the positions of the atoms in
