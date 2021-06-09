@@ -236,6 +236,14 @@ def test_charge_getter_checks(atom_charge):
     with pytest.raises(ValueError):
         atom_charge.charge
 
+def test_bounding_box_empty_raises_value_error():
+
+    """
+    Tests that passing an empty atom list raises a value Error
+    """
+
+    with pytest.raises(ValueError):
+        BoundingBox(atom_list=[])
 
 @pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
 def test_bounding_box_min(atom_list):
