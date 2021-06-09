@@ -125,15 +125,18 @@ class InteractionFunction:
 def inter_func_decorator(*parameter_units):
 
     """
-    Decorates a method to add units to all non-keyword arguments
+    Decorates a method to add units to all positional and any relevant keyword
+    arguments
 
     Designed for adding units to parameters of ``__init__`` method for
     subclasses of ``InteractionFunction``.
 
     Parameters
     ----------
-    *parameter_units
-        one or more `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
+    *parameter_units : tuple
+        One or more `tuple` where the first element is a `str` giving the
+        keyword name of an expected parameter. The second element is a       
+        `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
         which is applied to the corresponding value passed to the decorated
         method. If one of the values is unitless, pass `None` at the
         corresponding index in ``parameter_units``.
@@ -147,7 +150,7 @@ def inter_func_decorator(*parameter_units):
         .. highlight:: python
         .. code-block:: python
 
-            @inter_func_decorator('Ang', 's', 'Pa')
+            @inter_func_decorator(('alpha', 'Ang'), ('beta', 's'), ('gamma', 'Pa'))
             def __init__(self, alpha, beta, gamma):
                 ...
 
@@ -159,7 +162,7 @@ def inter_func_decorator(*parameter_units):
         .. highlight:: python
         .. code-block:: python
 
-            @inter_func_decorator('arb', None, 'deg')
+            @inter_func_decorator(('delta', 'arb'), ('epsilon', None), ('gamma', 'deg'))
             def __init__(self, delta, epsilon, gamma):
                 ...
     """
@@ -179,12 +182,20 @@ def inter_func_decorator(*parameter_units):
 
         @functools.wraps(func)
         def wrapper(self, *values, **settings):
-            # Use zip to associate each value in *values with the corresponding
-            # unit in *parameter_units. unit_creator return a UnitFloat or
-            # UnitNDArray with this unit, or returns the original value if the
-            # unit is None.
-            return func(self, *[unit_creator(value, unit) for value, unit in
-                                zip(values, parameter_units)], **settings)
+            # If the name associated with a unit matches a keyword argument
+            # (in **settings), then create associate that parameter with its
+            # unit. If not, then the parameter has been passed as a positional
+            # argument (in *values) and so we associate the next entry in
+            # *values with that unit (as we can rely on the order of the
+            # arguments being the same as the order of units in the decorator)
+            values = list(values)
+            for name, unit in parameter_units:
+                if name in settings.keys():
+                    settings[name] = unit_creator(settings[name], unit)
+                else:
+                    settings[name] = unit_creator(values.pop(0), unit)
+
+            return func(self, **settings)
         return wrapper
     return decorator
 
@@ -224,8 +235,8 @@ class Buckingham(InteractionFunction):
         O_disp = Dispersion(universe, (O.atom_type, O.atom_type), function=buck)
     """
 
-    @inter_func_decorator(units.ENERGY, units.LENGTH ** -1,
-                          units.LENGTH ** 6 * units.ENERGY)
+    @inter_func_decorator(('A', units.ENERGY), ('B', units.LENGTH ** -1),
+                          ('C', units.LENGTH ** 6 * units.ENERGY))
     def __init__(self, A, B, C):
 
         super().__init__(locals())
@@ -267,7 +278,7 @@ class Coulomb(InteractionFunction):
         O = Atom('O', charge=-0.8476)
     """
 
-    @inter_func_decorator(units.CHARGE)
+    @inter_func_decorator(('charge', units.CHARGE))
     def __init__(self, charge):
 
         super().__init__(locals())
@@ -371,7 +382,7 @@ class HarmonicPotential(InteractionFunction):
         # irrelevant, as the original decorator will be the last called. So
         # cls._init is used as it will always be equivalent to the undecorated
         # __init__ visible below.
-        cls.__init__ = inter_func_decorator(eq_unit, pot_unit)(cls._init)
+        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit), ('potential_strength', pot_unit))(cls._init)
         return h_pot
 
     def __init__(self, equilibrium_state, potential_strength, **settings):
@@ -499,9 +510,9 @@ class LennardJones(InteractionFunction):
         O_disp = Disperion(universe, (O.atom_type, O.atom_type), function=lj)
     """
 
-    @inter_func_decorator(units.ENERGY, units.LENGTH)
+    @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
     def __init__(self, epsilon, sigma, **settings):
 
-        super().__init__(locals())
+        super().__init__({'epsilon':epsilon, 'sigma':sigma})
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)

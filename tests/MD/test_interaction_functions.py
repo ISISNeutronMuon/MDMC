@@ -253,21 +253,44 @@ def test_interaction_function_attributes(inter_func_fixture, parameters, request
         assert getattr(inter_func, parameter).name == parameter
 
 
-@pytest.mark.parametrize("inter_func_fixture, units",
-                         [('buckingham', {'A':BUCK_A_UNIT,
-                                          'B':BUCK_B_UNIT,
-                                          'C':BUCK_C_UNIT}),
-                          ('coulomb', {'charge':COULOMB_CHARGE_UNIT}),
-                          ('lennardjones', {'epsilon':LJ_EPSILON_UNIT,
-                                            'sigma':LJ_SIGMA_UNIT})])
-def test_interaction_function_units(inter_func_fixture, units, request):
+@pytest.mark.parametrize("inter_func, units",
+                         [(Buckingham(BUCK_A, BUCK_B, BUCK_C),
+                           {'A':BUCK_A_UNIT,
+                            'B':BUCK_B_UNIT,
+                            'C':BUCK_C_UNIT}),
+                          (Buckingham(A=BUCK_A, B=BUCK_B, C=BUCK_C),
+                           {'A':BUCK_A_UNIT,
+                            'B':BUCK_B_UNIT,
+                            'C':BUCK_C_UNIT}),
+                          (Buckingham(BUCK_A, BUCK_B, C=BUCK_C),
+                           {'A':BUCK_A_UNIT,
+                            'B':BUCK_B_UNIT,
+                            'C':BUCK_C_UNIT}),
+                          (Buckingham(BUCK_A, C=BUCK_C, B=BUCK_B),
+                           {'A':BUCK_A_UNIT,
+                            'B':BUCK_B_UNIT,
+                            'C':BUCK_C_UNIT}),
+                          (Coulomb(COULOMB_CHARGE),
+                           {'charge':COULOMB_CHARGE_UNIT}),
+                          (Coulomb(charge=COULOMB_CHARGE),
+                           {'charge':COULOMB_CHARGE_UNIT}),
+                          (LennardJones(LJ_EPSILON, LJ_SIGMA),
+                           {'epsilon':LJ_EPSILON_UNIT,
+                            'sigma':LJ_SIGMA_UNIT}),
+                          (LennardJones(epsilon=LJ_EPSILON, sigma=LJ_SIGMA),
+                           {'epsilon':LJ_EPSILON_UNIT,
+                            'sigma':LJ_SIGMA_UNIT}),
+                          (LennardJones(LJ_EPSILON, sigma=LJ_SIGMA),
+                           {'epsilon':LJ_EPSILON_UNIT,
+                            'sigma':LJ_SIGMA_UNIT})])
+def test_interaction_function_units(inter_func, units):
 
     """
     Tests that the units of the parameters of all subclasses of
-    InteractionFunction (except HarmonicPotential) are set correctly
+    InteractionFunction (except HarmonicPotential) are set correctly when using
+    positional arguments, keyword arguments, and a mixture of the two
     """
 
-    inter_func = request.getfixturevalue(inter_func_fixture)
     for parameter_name, unit in units.items():
         assert getattr(inter_func, parameter_name).unit == unit
         # Test an incorrect unit
