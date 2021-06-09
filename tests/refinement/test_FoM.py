@@ -86,13 +86,13 @@ def SQw_dict():
 
 PAIRS_INFO = [(('experiment',
                 np.arange(-5., 5.5, 0.5),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9)
+                np.random.random_sample(21) * np.random.randint(1, 1e9),
+                np.random.random_sample(21) * np.random.randint(1, 1e9)
                ),
                ('MD',
                 np.arange(-5, 5.5, 0.5),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9)
+                np.random.random_sample(21) * np.random.randint(1, 1e9),
+                np.random.random_sample(21) * np.random.randint(1, 1e9)
                ),
               ),
              ]
