@@ -1505,14 +1505,21 @@ class LAMMPSSimulation(PyLammpsAttribute):
         try:
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
-                velocities = [np.array(atom.velocity) for atom in self.universe.atom_list]
-                if np.all(np.array(velocities) == 0):
+                zero_velocity = [np.array_equal(atom.velocity, (0, 0, 0))
+                                for atom in self.universe.atom_list]
+                if all(zero_velocity):
                     # If we have not set any velocities (they are all the default value of zero)
                     # then "create" a velocity for each atom
                     self.lmp.velocity('all', 'create',
                                       convert_unit(self._temperature),
                                       randint(1, 9999))
                 else:
+                    if any(zero_velocity):
+                        msg = ('Some but not all atom velocities set. Atoms with non-zero velocity'
+                               ' will be re-scaled to match target temperature, atoms with zero '
+                               'velocity will remain stationary.')
+                        LOGGER.info('%s %s', self.__class__, msg)
+                        print(msg)
                     # If we have set velocities then "scale" the velocities we have to the correct
                     # temperature
                     self.lmp.velocity('all', 'scale', convert_unit(self._temperature))
