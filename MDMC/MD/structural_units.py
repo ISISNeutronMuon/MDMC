@@ -43,7 +43,7 @@ class StructuralUnit(ABC):
         ``Ang``.
     velocity : list, tuple, numpy.ndarray
         A 3 element `list`, `tuple` or ``array`` with the velocity in units of
-        ``Ang``.
+        ``Ang / fs``.
     name : str
         The name of the structure.
 
@@ -697,7 +697,7 @@ class Atom(StructuralUnit):
         ``Ang``. The default is ``(0., 0., 0.)``.
     velocity : list, tuple, numpy.ndarray, optional
         A 3 element `list`, `tuple` or ``array`` with the velocity in units of
-        ``Ang``. Note that if set, the velocity of atoms in the MD engine will
+        ``Ang / fs``. Note that if set, the velocity of atoms in the MD engine will
         be scaled when creating a `Simulation` in order to ensure the
         temperature is accurate. Otherwise, if the velocities of all `Atom`
         objects in a `Simulation` are 0, then the velocities of the atoms in
@@ -1182,7 +1182,7 @@ class Molecule(CompositeStructuralUnit):
         ``Molecule``.
     velocity : list, tuple, numpy.ndarray, optional
         A 3 element `list`, `tuple` or ``array`` with the velocity in units of
-        ``Ang``. The default is ``(0., 0., 0.)``.
+        ``Ang / fs``. The default is ``(0., 0., 0.)``.
     name : str, optional
         The name of the structure. The default is `None`.
     **settings
