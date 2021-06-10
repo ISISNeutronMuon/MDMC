@@ -1317,7 +1317,14 @@ class Simulation:
         The ``MDEngine`` used for the simulation. Default is ``'mmtk'``.
     **settings
         ``temperature`` (`float`)
-            Simulation temperature in ``K``.
+            Simulation temperature in ``K``. Note that velocities of atoms in
+            the MD engine are set based on the ``temperature``. If all atoms in
+            the ``universe`` have 0 velocity, then velocities for the MD engine
+            will be randomly chosen from a uniform distribution and then scaled
+            to give the correct temperature. If one or more velocities are set,
+            then these will be scaled to give the correct temperature. In
+            either case, only the velocities on the ``engine``, not the
+            ``universe``, are affected.
         ``integrator`` (`str`)
             Simulation time integrator.
         ``lj_options`` (`dict`)

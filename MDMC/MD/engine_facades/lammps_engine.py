@@ -978,6 +978,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
                     # self.lmp.atoms[index].id, use number of atoms as proxy for
                     # new atom id (as it is sequential)
                     lmp_atom_id = self.lmp.atoms.natoms
+                    self.lmp.set('atom', lmp_atom_id,
+                                 'vx', atom.velocity[0],
+                                 'vy', atom.velocity[1],
+                                 'vz', atom.velocity[2])
                 else:
                     lmp_atom_id = None
                 self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
@@ -1500,9 +1504,24 @@ class LAMMPSSimulation(PyLammpsAttribute):
         try:
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
-                self.lmp.velocity('all', 'create',
-                                  convert_unit(self._temperature),
-                                  randint(1, 9999))
+                zero_velocity = [np.array_equal(atom.velocity, (0, 0, 0))
+                                for atom in self.universe.atom_list]
+                if all(zero_velocity):
+                    # If we have not set any velocities (they are all the default value of zero)
+                    # then "create" a velocity for each atom
+                    self.lmp.velocity('all', 'create',
+                                      convert_unit(self._temperature),
+                                      randint(1, 9999))
+                else:
+                    if any(zero_velocity):
+                        msg = ('Some but not all atom velocities set. Atoms with non-zero velocity'
+                               ' will be re-scaled to match target temperature, atoms with zero '
+                               'velocity will remain stationary.')
+                        LOGGER.info('%s %s', self.__class__, msg)
+                        print(msg)
+                    # If we have set velocities then "scale" the velocities we have to the correct
+                    # temperature
+                    self.lmp.velocity('all', 'scale', convert_unit(self._temperature))
         except ValueError:
             pass
 
