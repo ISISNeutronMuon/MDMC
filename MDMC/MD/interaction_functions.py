@@ -182,12 +182,13 @@ def inter_func_decorator(*parameter_units):
 
         @functools.wraps(func)
         def wrapper(self, *values, **settings):
-            # If the name associated with a unit matches a keyword argument
-            # (in **settings), then create associate that parameter with its
-            # unit. If not, then the parameter has been passed as a positional
-            # argument (in *values) and so we associate the next entry in
-            # *values with that unit (as we can rely on the order of the
-            # arguments being the same as the order of units in the decorator)
+            # If the name associated with a unit in parameter_units matches a
+            # keyword argument (in **settings), then associate that parameter
+            # with its unit. If not, then the parameter has been passed as a
+            # positional argument (in *values) and so we associate the next
+            # entry in *values with that unit (as we can rely on the order of
+            # the arguments being the same as the order of units in the
+            # decorator)
             values = list(values)
             for name, unit in parameter_units:
                 if name in settings.keys():
