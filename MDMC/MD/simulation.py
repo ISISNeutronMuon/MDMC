@@ -646,6 +646,14 @@ class Universe(AtomContainer):
             added
         """
 
+        if self._check_out_of_bounds(structural_unit.position):
+            msg = ('We do not currently support adding a StructuralUnit outside the Universe dimensions')
+            LOGGER.error('%s: {add_structural_unit: %s, density: %s}. %s',
+                         self.__class__,
+                         structural_unit.name,
+                         structural_unit.position, msg)
+            raise ValueError(msg)
+
         parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
 
         if center:
@@ -928,7 +936,7 @@ class Universe(AtomContainer):
             of not converging.
         solvent : str, optional
             A `str` specifying an inbuilt ``Solvent`` from the following:
-            DYNAMIC_SOLVENT_LIST.
+             .
             The default is 'SPCE'.
         **settings
             ``constraint_algorithm`` (`ConstraintAlgorithm`)
