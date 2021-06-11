@@ -1,6 +1,7 @@
 """A module for performing the refinement"""
 
 from copy import deepcopy
+from time import time
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -21,7 +22,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
-                'max_parameter_change', 'settings')
+                'max_parameter_change', 'verbose', 'settings')
 class Control:
 
     """
@@ -103,6 +104,11 @@ class Control:
     min_refinement_steps : int, optional
         The minimum number of refinement steps before the refinement process can stop if all parameters and the
         Figure of Merit have converged. Default value is 2.
+    verbose: int, optional
+        If 2, timings are printed for every step of the refinement. If 1,
+        timings are printed at the end of the refinement. If 0, no timings
+        are printed. In all cases information about the FoM and parameter
+        values will still be printed. Default is 0.
     **settings
         ``energy_resolution`` : float
             Instrument energy resolution as the FWHM in ``ueV``.
@@ -154,10 +160,19 @@ class Control:
                  equilibration_steps: int = 0,
                  convergence_tol: float = 1e-5,
                  min_refinement_steps: int = 2,
-                 max_parameter_change: float=0.01, **settings):
+                 max_parameter_change: float=0.01,
+                 verbose: int=0,
+                 **settings):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
+        self.verbose = verbose
+        self.timings = {'equilibrate':[],
+                        '_run_MD':[],
+                        'convert_trajectory':[],
+                        'FoM_calculator':[],
+                        'minimizer':[],
+                        'TOTAL STEP':[]}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         fit_parameters = set([p for p in fit_parameters if (not (p.fixed or p.tied)
@@ -279,7 +294,7 @@ class Control:
             'parameter' if len(self.fit_parameters) == 1 else 'parameters',
             exp_dataset_types)
 
-    def refine(self, n_steps):
+    def refine(self, n_steps: int):
 
         """
         Refines the specified potential parameters
@@ -302,12 +317,24 @@ class Control:
         count = -1
 
         self._print_header()
-        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol, min_steps=self.min_refine_steps):
+        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
+                                                                   min_steps=self.min_refine_steps):
+            if self.verbose > 0:
+                time_0 = time()
             if count >= 0 and self.equilibration_steps > 0:
                 self.equilibrate()
+                if self. verbose == 1:
+                    self.timings['equilibrate'].append(time() - time_0)
+                if self.verbose == 2:
+                    print('         equilibrate: {} s'.format(round(time() - time_0, 3)))
 
             self.step()
             count += 1
+            if self.verbose == 1:
+                self.timings['TOTAL STEP'].append(time() - time_0)
+            elif self.verbose == 2:
+                print('          TOTAL STEP: {} s'.format(round(time() - time_0, 3)))
+            self._print_data()
 
         # Try/except accounts for n_steps <= -1
         try:
@@ -338,6 +365,23 @@ class Control:
             print('\nAutomatic Scale Factors\n{}'
                   ''.format(scaling_df.to_string(index=True, header=False)))
 
+        # Average timings
+        if self.verbose == 1:
+            timing_keys = ['  ' + key for key in self.timings]
+            timing_values = [round(np.mean(values), 3)
+                             for values in self.timings.values()]
+            # Our first 6 timed operations are well defined in __init__, with the first 3 taking
+            # place before calculate_from_MD and the the second 3 taking place after. We add
+            # additional entries to self.timings during calculate_from_MD, but as this depends on
+            # the observable we do not know how many, or what keys, beforehand. To preserve the
+            # chronological order of the timed operations, move keys/values 3:6 to the end of the
+            # lists.
+            timing_keys = timing_keys[:3] + timing_keys[6:] + timing_keys[3:6]
+            timing_values = timing_values[:3] + timing_values[6:] + timing_values[3:6]
+            timing_df = pd.DataFrame(timing_values, index=timing_keys)
+            print('\nAverage Timings (s)\n{}'
+                  ''.format(timing_df.to_string(index=True, header=False)))
+
     def equilibrate(self):
 
         """
@@ -357,11 +401,13 @@ class Control:
 
         # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
+
+        if self.verbose > 0:
+            time_0 = time()
         # Select new parameters to consider
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
-        self._print_data()
 
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
@@ -372,6 +418,10 @@ class Control:
             else:
                 # Set MD engine to reset to old config
                 self.simulation.engine.reset_config()
+        if self.verbose == 1:
+            self.timings['minimizer'].append(time() - time_0)
+        elif self.verbose == 2:
+            print('           minimizer: {} s'.format(round(time() - time_0, 3)))
 
         self.minimizer.write_history('results.csv')
 
@@ -409,10 +459,25 @@ class Control:
             Non-negative `float` FoM
         """
 
+        if self.verbose > 0:
+            time_0 = time()
         self._run_MD()
+        if self.verbose == 1:
+            self.timings['_run_MD'].append(time() - time_0)
+        elif self.verbose == 2:
+            print('             _run_MD: {} s'.format(round(time() - time_0, 3)))
+
         self._calculate_observables(self.simulation, self.observable_pairs)
 
-        return self.FoM_calculator.calculate()
+        if self.verbose > 0:
+            time_1 = time()
+        FoM_value = self.FoM_calculator.calculate()
+        if self.verbose == 1:
+            self.timings['FoM_calculator'].append(time() - time_1)
+        elif self.verbose == 2:
+            print('      FoM_calculator: {} s'.format(round(round(time() - time_1, 3), 3)))
+
+        return FoM_value
 
     def _run_MD(self):
 
@@ -533,7 +598,14 @@ class Control:
             calculated
         """
 
+        if self.verbose > 0:
+            time_0 = time()
         trj = simulation.engine.convert_trajectory()
+        if self.verbose == 1:
+            self.timings['convert_trajectory'].append(time() - time_0)
+        elif self.verbose == 2:
+            print('  convert_trajectory: {} s'.format(round(time() - time_0, 3)))
+
         for pair in observable_pairs:
             maximum_frames = pair.MD_obs.maximum_frames()
             if maximum_frames:
@@ -544,10 +616,20 @@ class Control:
                 n_averages = len(trj) // maximum_frames
                 for i in range(n_averages):
                     sub_trj.append(trj[i * maximum_frames : (i + 1) * maximum_frames])
-                pair.MD_obs.calculate_from_MD(sub_trj, **self.settings)
+                obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
+                                                            verbose=self.verbose,
+                                                            **self.settings)
             else:
                 # Otherwise, provide the whole trajectory
-                pair.MD_obs.calculate_from_MD([trj], **self.settings)
+                obs_timings = pair.MD_obs.calculate_from_MD([trj],
+                                                            verbose=self.verbose,
+                                                            **self.settings)
+
+            if self.verbose == 1 and obs_timings is not None:
+                for key, value in obs_timings.items():
+                    if key not in self.timings:
+                        self.timings[key] = []
+                    self.timings[key] += value
 
     def _calculate_minimum_MD_steps(self, observable_pair: FoM.ObservablePair):
 

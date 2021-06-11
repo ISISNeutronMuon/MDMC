@@ -5,8 +5,8 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
+from time import time
 
-from enum import Enum
 import numpy as np
 import pandas as pd
 
@@ -1390,7 +1390,7 @@ class Simulation:
                                      time_step=self.time_step,
                                      **self.settings)
 
-    def minimize(self, n_steps: int, **settings):
+    def minimize(self, n_steps: int, verbose: bool=False, **settings):
 
         """
         Minimizes the total potential energy of the simulated system by
@@ -1401,6 +1401,9 @@ class Simulation:
         ----------
         n_steps : int
             Maximum number of steps to run the minimization
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the
+            minimization. Default is `False`.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1413,9 +1416,15 @@ class Simulation:
                 on engine used.
         """
 
-        print('Starting minimization for {} steps'.format(n_steps))
+
+        if verbose:
+            print('Starting minimization for {} steps'.format(n_steps))
+            time_0 = time()
+
         self.engine.minimize(n_steps, **settings)
-        print('Minimization complete')
+
+        if verbose:
+            print('Minimization complete in {} s'.format(round(time() - time_0, 3)))
 
     def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
 
@@ -1445,11 +1454,12 @@ class Simulation:
 
         if verbose:
             print('Starting {0} for {1} steps'.format(process, n_steps))
+            time_0 = time()
 
         self.engine.run(n_steps, equilibration)
 
         if verbose:
-            print('{0} complete'.format(process.capitalize()))
+            print('{0} complete in {1} s'.format(process.capitalize(), round(time() - time_0, 3)))
 
     @property
     def trajectory(self):
