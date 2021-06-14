@@ -958,7 +958,7 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
 
 
 @pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar)
-                                 for scalar in [0.9, 1.0, 1.1]])
+                                for scalar in [0.9, 1.0, 1.1]])
 def test_solvate_spce_no_solute(uni):
 
     """
@@ -995,7 +995,7 @@ def test_solvate_spce_with_solute(molecule):
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
-def test_solvate_spce_no_out_of_bounds(solvated_universe):
+#def test_solvate_spce_no_out_of_bounds(solvated_universe):
 
     """
     Tests that solvating an empty universe with SPCE water results in no
@@ -1264,6 +1264,28 @@ def test_universe_density(structural_units, expected, universe):
         universe.add_structural_unit(structural_unit)
     assert universe.density == expected
 
+
+def test_universe_universe_dimensions_setting():
+    """
+    Tests that setting incorrect `Universe.dimensions` raises the expected errors.
+    """
+    univ=sim.Universe(1.)
+    with pytest.raises(ValueError):
+        univ.dimensions = -1.
+    with pytest.raises(ValueError):
+        univ.dimensions = -1.
+    with pytest.raises(ValueError):
+        univ.dimensions = (-1., 1., 1.)
+    with pytest.raises(ValueError):
+        univ.dimensions = [0., 1., 2.]
+    with pytest.raises(ValueError):
+        univ.dimensions = (-1., 1., 1.)
+    with pytest.raises(TypeError):
+        univ.dimensions = 1
+    with pytest.raises(ValueError):
+        univ.dimensions = (1., 2.)
+    with pytest.raises(ValueError):
+        univ.dimensions = [1., 2., 3., 4.]
 
 def get_dispersions(inters):
 
