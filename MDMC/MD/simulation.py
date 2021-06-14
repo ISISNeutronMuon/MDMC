@@ -167,9 +167,6 @@ class Universe(AtomContainer):
         Raises
         ------
         TypeError
-            If the dimensions of a non-cubic ``Universe`` are specified with a
-            float
-        TypeError
             If a `float`, `list`, or ``array`` are not passed
         ValueError
             If a `list` or ``array`` is not 1d with 3 elements
@@ -185,9 +182,23 @@ class Universe(AtomContainer):
     def dimensions(self, dimensions):
 
         if isinstance(dimensions, float):
+            if dimensions <= 0:
+                msg = ('Only positive values for the Universe dimensions are currently supported.')
+                LOGGER.error('%s: {dimensions: %s} %s',
+                             self.__class__,
+                             dimensions,
+                             msg)
+                raise ValueError(msg)
             self._dimensions = np.array([dimensions] * 3)
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
+                if any(dim <= 0 for dim in np.array(dimensions)):
+                    msg = ('Only positive values for the Universe dimensions are currently supported.')
+                    LOGGER.error('%s: {dimensions: %s} %s',
+                                 self.__class__,
+                                 dimensions,
+                                 msg)
+                    raise ValueError(msg)
                 self._dimensions = np.array(dimensions)
             else:
                 msg = ('3 dimensions must be specified')
