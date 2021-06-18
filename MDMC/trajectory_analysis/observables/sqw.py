@@ -372,10 +372,9 @@ class AbstractSQw(Observable):
         MD_input : Trajectory or list of Trajectory
             Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         verbose: int, optional
-            If 2, timings are printed for every step of the refinement. If 1,
-            timings are printed at the end of the refinement. If 0, no timings
-            are printed. In all cases information about the FoM and parameter
-            values will still be printed. Default is 0.
+            If 2, timings are printed for each calculation of FQt and SQw. If 1,
+            timings are collected so they can be printed at the end of the refinement.
+            If 0, no timings are collected. Default is 0.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The

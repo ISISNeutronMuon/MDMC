@@ -1402,8 +1402,8 @@ class Simulation:
         n_steps : int
             Maximum number of steps to run the minimization
         verbose: bool, optional
-            Whether to print statements upon starting and completing the
-            minimization. Default is `False`.
+            Whether to print statements when the minimization has been started and completed
+            (including the number minimizatin steps and time taken). Default is `False`.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,

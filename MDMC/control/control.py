@@ -371,7 +371,7 @@ class Control:
             timing_values = [round(np.mean(values), 3)
                              for values in self.timings.values()]
             # Our first 6 timed operations are well defined in __init__, with the first 3 taking
-            # place before calculate_from_MD and the the second 3 taking place after. We add
+            # place before calculate_from_MD and the second 3 taking place after. We add
             # additional entries to self.timings during calculate_from_MD, but as this depends on
             # the observable we do not know how many, or what keys, beforehand. To preserve the
             # chronological order of the timed operations, move keys/values 3:6 to the end of the
