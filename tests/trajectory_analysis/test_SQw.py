@@ -177,3 +177,27 @@ def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
     SQw_obj = SQw_from_MD()
     with pytest.raises(AssertionError):
         SQw_obj.calculate_from_MD(MD_input, energy_resolution=1.)
+
+
+@pytest.mark.parametrize('verbose_tuple',
+                         [(0, 0, False), (1, 1, False), (2, 1, True)])
+def test_verbose(SQw_from_MD, trajectory, verbose_tuple, capsys):
+
+    """
+    Test that we only return timings of operations when ``verbose > 0``, and
+    that we only print to stdout when ``verbose=2``.
+
+    The pytest parameter ``verbose_tuple`` has the value of ``verbose`` as the
+    first element, the expected number of timings as the second element, and
+    whether stdout should contain information as the third element.
+    """
+
+    SQw_obj = SQw_from_MD()
+    timings = SQw_obj.calculate_from_MD(trajectory, energy_resolution=1.,
+                                        verbose=verbose_tuple[0])
+
+    assert len(timings['calculate_FQt']) == verbose_tuple[1]
+    assert len(timings['_calculate_SQw']) == verbose_tuple[1]
+
+    stdout = capsys.readouterr().out
+    assert (len(stdout) > 0) == verbose_tuple[2]

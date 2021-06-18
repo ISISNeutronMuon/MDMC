@@ -1,6 +1,7 @@
 """Module for AbstractSQw and total SQw class"""
 
 from abc import abstractmethod
+from time import time
 
 from mpi4py import MPI
 from numba import jit
@@ -356,7 +357,7 @@ class AbstractSQw(Observable):
             assert isclose or dt <= dt_required, msg
 
     def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
-                          **settings):
+                          verbose: int = 0, **settings):
 
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
@@ -370,6 +371,10 @@ class AbstractSQw(Observable):
         ----------
         MD_input : Trajectory or list of Trajectory
             Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        verbose: int, optional
+            If 2, timings are printed for each calculation of FQt and SQw. If 1,
+            timings are collected so they can be printed at the end of the refinement.
+            If 0, no timings are collected. Default is 0.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -383,6 +388,7 @@ class AbstractSQw(Observable):
         self._origin = 'MD'
         SQw_list = []
         errors_list = []
+        obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
         # Convert the user friendly ueV into preferred system unit of meV
         self.e_res = settings['energy_resolution'] / 1000
@@ -458,16 +464,30 @@ class AbstractSQw(Observable):
                        'consistent with the first `Trajectory` passed')
                 raise AssertionError(msg) from AssertionError
 
+            if verbose > 0:
+                time_0 = time()
             self.FQt = self.calculate_FQt()
+            if verbose == 2:
+                print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
 
+            if verbose > 0:
+                time_1 = time()
             SQw_list.append(self._calculate_SQw())
             errors_list.append(np.zeros(np.shape(SQw_list[-1])))
+            if verbose == 2:
+                print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
+
+            if verbose > 0:
+                obs_timings['calculate_FQt'].append(time_1 - time_0)
+                obs_timings['_calculate_SQw'].append(time() - time_1)
 
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
 
         self._dependent_variables = {'SQw': SQw_list}
         self._errors = {'SQw': errors_list}
+
+        return obs_timings
 
     @abstractmethod
     def _set_weights(self):
