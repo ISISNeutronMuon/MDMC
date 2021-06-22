@@ -1264,6 +1264,16 @@ def test_universe_density(structural_units, expected, universe):
         universe.add_structural_unit(structural_unit)
     assert universe.density == expected
 
+@pytest.mark.parametrize("dimensions, expected",
+                         [(-1., ValueError), ((-1., 1., 1.), ValueError), ([0., 1., 2.], ValueError),
+                          ((-1., 1., 1.), ValueError), (1, TypeError), ((1., 2.), ValueError),
+                          ([1., 2., 3., 4.], ValueError), ("1.", TypeError)])
+def test_universe_universe_dimensions_setting(dimensions, expected):
+    """
+    Tests that setting incorrect `Universe.dimensions` raises the expected errors.
+    """
+    with pytest.raises(expected):
+        sim.Universe(dimensions)
 
 def get_dispersions(inters):
 
