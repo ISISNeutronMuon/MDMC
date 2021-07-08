@@ -22,7 +22,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
-                'max_parameter_change', 'verbose', 'settings')
+                'verbose', 'settings')
 class Control:
 
     """
