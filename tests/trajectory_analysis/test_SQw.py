@@ -46,8 +46,9 @@ def SQw_from_MD(trajectory, universe) -> callable:
     Returns
     -------
     callable
-        A function which optionally accepts ``use_FFT`` (defaults to `True`) and ``use_traj_list``
-        (defaults to `False`). Returns an ``SQw`` ``Observable``.
+        A function which optionally accepts ``use_FFT`` (defaults to `True`) and
+        ``use_traj_list`` (defaults to `False`).
+        Returns an ``SQw`` ``Observable``.
     """
 
     def _SQw_from_MD(use_FFT: bool = True, use_traj_list: bool = False,
@@ -140,9 +141,9 @@ def test_from_MD(SQw_from_MD):
 def test_apply_resolution_function(SQw_from_data):
 
     """
-    Test we apply a general resolution function in the time domain to FQt correctly. Also include
-    variation in momentum for the resolution function which should be normalised when applied to
-    FQt.
+    Test we apply a general resolution function in the time domain to FQt
+    correctly. Also include variation in momentum for the resolution function
+    which should be normalised when applied to FQt.
     """
 
     t_vector = np.linspace(0, 100, 10)
@@ -153,17 +154,20 @@ def test_apply_resolution_function(SQw_from_data):
 
     def mock_resolution_function(y_data, x_data):
         """
-        Define a mock resolution function which linearly increases in both the x and y directions
+        Define a mock resolution function which linearly increases in both the
+        x and y directions
         """
         x_variation = np.linspace(1, len(x_data) + 1, len(x_data), endpoint=False)
         y_variation = np.linspace(1, len(y_data) + 1, len(y_data), endpoint=False)
         return np.outer(x_variation, y_variation)
 
-    # As we defined mock_FQt to be an array of ones, after applying the resolution function we
-    # expect the variation in the time domain to be the same as that of the resolution function.
-    # However, because the resolution function is normalised to 1 at t=0 for each Q value, we do
+    # As we defined mock_FQt to be an array of ones, after applying the
+    # resolution function we expect the variation in the time domain to be the
+    # same as that of the resolution function. However, because the resolution
+    # function is normalised to 1 at t=0 for each Q value, we do
     # not expect any variation in that dimension and so broadcast across it.
-    t_variation = np.linspace(1, len(t_vector) + 1, len(t_vector), endpoint=False)
+    t_variation = np.linspace(1, len(t_vector) + 1, len(t_vector),
+                              endpoint=False)
     expected_FQt = np.broadcast_to(t_variation, FQt_shape)
 
     SQw_from_data.t = t_vector
@@ -175,8 +179,8 @@ def test_apply_resolution_function(SQw_from_data):
 def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
 
     """
-    Test that an ``AssertionError`` is raised when a list of trajectories that have different times
-    are given to ``calculate_from_MD()``
+    Test that an ``AssertionError`` is raised when a list of trajectories that
+    have different times are given to ``calculate_from_MD()``
     """
 
     MD_input = [trajectory, altered_trajectory]
