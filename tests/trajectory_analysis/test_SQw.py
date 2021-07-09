@@ -6,6 +6,7 @@ Includes calculation from MD trajectory and reading from experimental data file.
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+from typing import Optional
 
 from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
@@ -49,12 +50,12 @@ def SQw_from_MD(trajectory, universe) -> callable:
         (defaults to `False`). Returns an ``SQw`` ``Observable``.
     """
 
-    def _SQw_from_MD(use_FFT: bool = True, use_traj_list: bool = False) -> SQw:
+    def _SQw_from_MD(use_FFT: bool = True, use_traj_list: bool = False,
+                     energy_resolution: Optional[float] = None) -> SQw:
         _SQw = of.ObservableFactory.create_observable('SQw')
         _SQw.use_FFT = use_FFT
         dimensions = universe.dimensions
         n_Q = 10
-        energy_resolution = 49.99998257
         Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
 
         if use_traj_list:
@@ -62,10 +63,15 @@ def SQw_from_MD(trajectory, universe) -> callable:
         else:
             MD_input = trajectory
 
-        _SQw.calculate_from_MD(MD_input,
-                               Q_values=Q_values,
-                               dimensions=dimensions,
-                               energy_resolution=energy_resolution)
+        if energy_resolution is None:
+            _SQw.calculate_from_MD(MD_input,
+                                   Q_values=Q_values,
+                                   dimensions=dimensions)
+        else:
+            _SQw.calculate_from_MD(MD_input,
+                                   Q_values=Q_values,
+                                   dimensions=dimensions,
+                                   energy_resolution=energy_resolution)
         return _SQw
 
     return _SQw_from_MD
@@ -105,7 +111,6 @@ def test_from_MD(SQw_from_MD):
     """
     Test the following:
     - ``origin`` is 'MD'
-    - reader is LAMPSQw
     - Q and E are the independent variables
     - SQw is the dependent variable
     - SQw is the variable on which there is an error
@@ -114,8 +119,9 @@ def test_from_MD(SQw_from_MD):
     - SQw handles either a single, or ``list`` of, ``Trajectory`` objects
     """
 
-    SQw_FFT = SQw_from_MD()
-    SQw_no_FFT = SQw_from_MD(use_FFT=False, use_traj_list=True)
+    SQw_FFT = SQw_from_MD(energy_resolution = 49.99998257)
+    SQw_no_FFT = SQw_from_MD(use_FFT=False, use_traj_list=True,
+                             energy_resolution = 49.99998257)
 
     assert SQw_FFT.origin == 'MD'
     assert 'Q' in SQw_FFT.independent_variables and \
@@ -176,7 +182,7 @@ def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
     MD_input = [trajectory, altered_trajectory]
     SQw_obj = SQw_from_MD()
     with pytest.raises(AssertionError):
-        SQw_obj.calculate_from_MD(MD_input, energy_resolution=1.)
+        SQw_obj.calculate_from_MD(MD_input)
 
 
 @pytest.mark.parametrize('verbose_tuple',
@@ -193,7 +199,7 @@ def test_verbose(SQw_from_MD, trajectory, verbose_tuple, capsys):
     """
 
     SQw_obj = SQw_from_MD()
-    timings = SQw_obj.calculate_from_MD(trajectory, energy_resolution=1.,
+    timings = SQw_obj.calculate_from_MD(trajectory,
                                         verbose=verbose_tuple[0])
 
     assert len(timings['calculate_FQt']) == verbose_tuple[1]

@@ -394,7 +394,7 @@ class AbstractSQw(Observable):
         obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
         # Convert the user friendly ueV into preferred system unit of meV
-        if hasattr(settings, 'energy_resolution'):
+        if 'energy_resolution' in settings:
             self.e_res = settings['energy_resolution'] / 1000
         else:
             # none here is to record no enery resolation in the sense of the
