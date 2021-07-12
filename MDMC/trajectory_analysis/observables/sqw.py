@@ -397,8 +397,7 @@ class AbstractSQw(Observable):
         if 'energy_resolution' in settings:
             self.e_res = settings['energy_resolution'] / 1000
         else:
-            # none here is to record no enery resolation in the sense of the
-            # meaning of the optional enery_resolution parameter
+            # None here is to record that the energy_resolution parameter has not been set
             self.e_res = None
 
         # Create independent_variables dictionary if it doesn't exist
