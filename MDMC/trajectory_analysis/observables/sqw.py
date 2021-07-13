@@ -383,6 +383,9 @@ class AbstractSQw(Observable):
             ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
                 A 3 element `tuple` or ``array`` of `float` specifying the
                 dimensions of the ``Universe`` in units of ``Ang``
+            ``energy_resolution` (`float`)
+                Optionally specify Gaussian energy resolution in units of
+                ueV (micro eV)
         """
 
         self._origin = 'MD'
@@ -391,7 +394,11 @@ class AbstractSQw(Observable):
         obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
         # Convert the user friendly ueV into preferred system unit of meV
-        self.e_res = settings['energy_resolution'] / 1000
+        if 'energy_resolution' in settings:
+            self.e_res = settings['energy_resolution'] / 1000
+        else:
+            # None here is to record that the energy_resolution parameter has not been set
+            self.e_res = None
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
@@ -884,7 +891,7 @@ class AbstractSQw(Observable):
         resolution_function = self.resolution_functions.get('SQw')
         if resolution_function is not None:
             window = self._calculate_resolution_window(resolution_function)
-        else:
+        elif self.e_res is not None:
             # If we do not have a resolution function for SQw, use a Gaussian instead. We convert
             # the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
             # relationship between the width of a Gaussian and its Fourier
@@ -892,6 +899,9 @@ class AbstractSQw(Observable):
             # of 1e18 to convert from h / h_bar's units of eV s into system units
             sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
             window = function(self.t[:N_T], sigma_t, norm=False)
+        else:
+            # no resolution function to apply and just return back FQt
+            return FQt
 
         # Broadcast the window so that it is applied for all Q values
         return np.broadcast_to(window, (N_Q, N_T)) * FQt

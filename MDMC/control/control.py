@@ -111,7 +111,7 @@ class Control:
         values will still be printed. Default is 0.
     **settings
         ``energy_resolution`` : float
-            Instrument energy resolution as the FWHM in ``ueV``.
+            Instrument energy resolution as the FWHM in ``ueV`` (micro eV).
 
     Example
     -------
