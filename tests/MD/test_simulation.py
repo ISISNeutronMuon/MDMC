@@ -973,7 +973,7 @@ def test_solvate_spce_no_solute(uni):
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
-@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
+@pytest.mark.parametrize("molecule", ['small_diatomic', 'large_diatomic'])
 def test_solvate_spce_with_solute(molecule):
 
     """
@@ -1007,7 +1007,7 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
         assert all(atom.position >= [0, 0, 0])
 
 
-@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
+@pytest.mark.parametrize("molecule", ['small_diatomic', 'large_diatomic'])
 def test_solvate_spce_no_overlap_with_solute(molecule):
 
     """
