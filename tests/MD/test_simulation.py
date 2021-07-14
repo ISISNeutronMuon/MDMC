@@ -139,7 +139,7 @@ def test_create_atom(atom):
 
 
 @pytest.mark.parametrize("unit, changed_attr",
-                         [(atom(),
+                         [('atom',
                            ['ID', 'parent', '_interactions']),
                           (water_molecule(atom()),
                            ['ID', 'parent', '_interactions', '_structure_list',

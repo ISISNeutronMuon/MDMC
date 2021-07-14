@@ -245,7 +245,7 @@ def test_bounding_box_empty_raises_value_error():
     with pytest.raises(ValueError):
         BoundingBox(atom_list=[])
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+@pytest.mark.parametrize('atom_list', ['atom_list'[:i] for i in range(1, 4)])
 def test_bounding_box_min(atom_list):
 
     """
