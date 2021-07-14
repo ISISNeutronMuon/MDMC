@@ -9,7 +9,10 @@ are described below, as well as selected reminders of PEP 8 standards.
 
 Line length
 -----------
-The line length in MDMC (including documentation) is 80 characters.
+In MDMC we strive to adhere to the maximum line (including documentation) of 80
+characters. The line length can be increased up to 100 characters in exceptional
+cases where the readability of the code would otherwise be significantly
+degraded by the lower limit.
 
 snake_case
 ----------
@@ -89,3 +92,12 @@ include `type hints <https://docs.python.org/3/library/typing.html>`_ in the
 MDMC codebase. It is encouraged that any new code includes type hints for
 function/method parameters and return values, and class variables, although code
 will not be rejected if it does not include type hints. 
+
+Jupyter notebooks
+-----------------
+MDMC contains a number of tutorial-style Jupyter notebooks. Only the source
+commands inside the notebooks should be under version control, i.e. not
+including the output of said commands. This is to ensure readable pull
+requests involving changes to these notebooks. It is the responsibility of
+the reviewer to ensure that changes to notebooks in a pull request lead to the
+desired output. 
