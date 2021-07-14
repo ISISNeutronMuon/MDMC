@@ -24,9 +24,7 @@ matrix:
         - pip3 install --upgrade pip
         - pip3 install -r requirements.txt
         - pip3 install .
-        # Currently limited to pytest < 4.0 due to the way in which fixtures are
-        # used. This can be removed once these have been updated.
-        - pip3 install pytest==3.10.0
+        - pip3 install pytest
         # ase version 3.21.1 breaks test but e.g. 3.20.1 is fine
         - pip3 install ase==3.20.1
       script:
