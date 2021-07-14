@@ -35,7 +35,7 @@ def uarray_helper():
     return unit_array(LIST, UNIT)
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray()])
+@pytest.mark.parametrize("uclass", ['ufloat', 'uarray'])
 def test_unit_deepcopy(uclass):
 
     """
@@ -50,7 +50,7 @@ def test_unit_deepcopy(uclass):
     assert cpy_uclass.unit != uclass.unit
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray(), uarray_helper()])
+@pytest.mark.parametrize("uclass", ['ufloat', 'uarray', 'uarray_helper'])
 def test_unit_is_Unit(uclass):
 
     """
@@ -61,7 +61,7 @@ def test_unit_is_Unit(uclass):
     assert isinstance(uclass.unit, Unit)
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray(), uarray_helper()])
+@pytest.mark.parametrize("uclass", ['ufloat', 'uarray', 'uarray_helper'])
 def test_repr_contains_unit(uclass):
 
     """
