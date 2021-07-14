@@ -260,7 +260,7 @@ def test_bounding_box_min(atom_list):
     np.testing.assert_array_equal(bb_mn, mn)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+@pytest.mark.parametrize('atom_list', ['atom_list'[:i] for i in range(1, 4)])
 def test_bounding_box_max(atom_list):
 
     """
@@ -275,7 +275,7 @@ def test_bounding_box_max(atom_list):
     np.testing.assert_array_equal(bb_mx, mx)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+@pytest.mark.parametrize('atom_list', ['atom_list'[:i] for i in range(1, 4)])
 def test_bounding_box_volume(atom_list):
 
     """
@@ -366,7 +366,7 @@ def test_init_coulombic_error_atoms_and_atom_types(atom_list,
                   atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
+@pytest.mark.parametrize('atom_list', ['atom_list'[:i] for i in range(1, 4)])
 def test_molecule_mass(atom_list):
 
     """
