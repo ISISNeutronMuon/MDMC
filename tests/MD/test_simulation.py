@@ -430,7 +430,7 @@ def test_universe_membership(water_SPCE_universe):
     assert atom_false.universe is None
 
 
-@pytest.mark.parametrize("unit", [atom(), water_molecule(atom())])
+@pytest.mark.parametrize("unit", ['atom', 'water_molecule(atom)'])
 def test_translate(unit, universe):
 
     """
