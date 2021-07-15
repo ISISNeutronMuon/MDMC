@@ -222,8 +222,9 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
-
-    for idx, parameter in enumerate(obj.parameters):
+    
+    func = request.getfixturevalue(obj)
+    for idx, parameter in enumerate(func.parameters):
         assert parameter.value == values[idx]
         assert parameter.name == names[idx]
 
