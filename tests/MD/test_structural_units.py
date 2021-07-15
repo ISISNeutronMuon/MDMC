@@ -370,7 +370,7 @@ def test_init_coulombic_error_atoms_and_atom_types(atom_list,
 
 
 @pytest.mark.parametrize('atom_list_size', [1, 2, 3])
-def test_molecule_mass(atom_list):
+def test_molecule_mass(atom_list_size):
 
     """
     Tests that the mass property returns the expected result for 1, 2,
