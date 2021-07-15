@@ -712,7 +712,14 @@ class Atom(StructuralUnit):
         ``mass`` (`float`)
             The atomic mass in ``amu``. If not provided a lookup table will be
             used.
-
+        ``atom_type`` (`int`)
+            All atoms with the same atom_type will have the same non-bonded interactions
+            applied to them. If not provided, MDMC will automatically infer/assign atom types.
+            All atoms with the same element and interactions will have the same atom type.
+        ``name`` (`str`)
+            A name to uniquely identify the atom. Used by ForceFields (e.g. OPLSAA). Atoms
+            should only have the same names if they are equivalent. Defaults to the element
+            of the atom.
     Attributes
     ----------
     element : str
