@@ -262,7 +262,7 @@ def test_bounding_box_min(atom_list_size):
 
 
 @pytest.mark.parametrize('atom_list_size', [1, 2, 3])
-def test_bounding_box_max(atom_list):
+def test_bounding_box_max(atom_list_size):
 
     """
     Tests that the max property of the BoundingBox class returns the correct
@@ -278,7 +278,7 @@ def test_bounding_box_max(atom_list):
 
 
 @pytest.mark.parametrize('atom_list_size', [1, 2, 3])
-def test_bounding_box_volume(atom_list):
+def test_bounding_box_volume(atom_list_size):
 
     """
     Tests that the correct volume is returned for the bounding box of a
