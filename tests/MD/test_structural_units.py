@@ -261,7 +261,7 @@ def test_bounding_box_min(atom_list_size):
     np.testing.assert_array_equal(bb_mn, mn)
 
 
-@pytest.mark.parametrize('atom_list', ['atom_list_size', [1, 2, 3])
+@pytest.mark.parametrize('atom_list_size', [1, 2, 3])
 def test_bounding_box_max(atom_list):
 
     """
@@ -277,7 +277,7 @@ def test_bounding_box_max(atom_list):
     np.testing.assert_array_equal(bb_mx, mx)
 
 
-@pytest.mark.parametrize('atom_list', ['atom_list_size', [1, 2, 3])
+@pytest.mark.parametrize('atom_list_size', [1, 2, 3])
 def test_bounding_box_volume(atom_list):
 
     """
