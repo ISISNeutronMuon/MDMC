@@ -377,7 +377,7 @@ def test_molecule_mass(atom_list_size):
     and 3-bodied Molecule objects.
     """
 
-    atom_list = fixture.getrequestvalue(atom_list)[:atom_list_size]
+    atom_list = request.getfixturevalue(atom_list)[:atom_list_size]
     mol = Molecule(atoms=atom_list)
     exp_mass = 0.
     for atom in atom_list:
