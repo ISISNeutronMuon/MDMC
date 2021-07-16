@@ -138,15 +138,15 @@ def test_create_atom(atom):
     assert atom.mass == 1.008
 
 
-@pytest.mark.parametrize("unit, changed_attr",
-                         [(atom(),
+@pytest.mark.parametrize("unitfixt, changed_attr",
+                         [('atom',
                            ['ID', 'parent', '_interactions']),
-                          (water_molecule(atom()),
+                          ('water_molecule',
                            ['ID', 'parent', '_interactions', '_structure_list',
                             '_CoM_frame_positions'])
                          ]
                         )
-def test_copy_structural_unit(unit, changed_attr):
+def test_copy_structural_unit(unitfixt, changed_attr):
 
     """
     Tests that structural_unit.copy copies the correct attributes and modifies
@@ -157,6 +157,7 @@ def test_copy_structural_unit(unit, changed_attr):
     """
 
     new_position = (5., 5., 5.)
+    unit = request.getfixturevalue(unitfixt)
     cpy_unit = unit.copy(position=new_position)
     for attr in unit.__dict__:
         if attr == '_position':
@@ -430,14 +431,14 @@ def test_universe_membership(water_SPCE_universe):
     assert atom_false.universe is None
 
 
-@pytest.mark.parametrize("unit", [atom(), water_molecule(atom())])
-def test_translate(unit, universe):
+@pytest.mark.parametrize("unitfixt", ['atom', 'water_molecule'])
+def test_translate(unitfixt, universe):
 
     """
     Tests that the translate method changes the position of an atom, a molecule,
     and the corresponding positions in the universe which they belong to
     """
-
+    unit = request.getfixturevalue(unitfixt)
     def positions_in_universe(positions, universe):
         # List construction due to ambiguity with array in array
         uni_positions = [list(position) for position
@@ -973,8 +974,8 @@ def test_solvate_spce_no_solute(uni):
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
-@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
-def test_solvate_spce_with_solute(molecule):
+@pytest.mark.parametrize("moleculefixt", ['small_diatomic', 'large_diatomic'])
+def test_solvate_spce_with_solute(moleculefixt):
 
     """
     Tests that the achieved density is within the tolerance for solvating
@@ -983,7 +984,8 @@ def test_solvate_spce_with_solute(molecule):
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a large diatomic molecule.
     """
-
+    
+    molecule = request.getfixturevalue(moleculefixt)
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -1007,14 +1009,15 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
         assert all(atom.position >= [0, 0, 0])
 
 
-@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
-def test_solvate_spce_no_overlap_with_solute(molecule):
+@pytest.mark.parametrize("moleculefixt", ['small_diatomic', 'large_diatomic'])
+def test_solvate_spce_no_overlap_with_solute(moleculefixt):
 
     """
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
-
+    
+    molecule = request.getfixturevalue(moleculefixt)
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)

@@ -69,7 +69,7 @@ def test_divide_Unit(unit):
 @pytest.mark.parametrize("input,expected", [(2, ' ^ 2'),
                                             (2.0, ' ^ 2'),
                                             (np.float64(2.), ' ^ 2'),
-                                            (unit(), TypeError),
+                                            ('unit', TypeError),
                                             (STRING, TypeError),
                                             ('2', ' ^ 2')])
 def test_power_Unit(unit, input, expected):

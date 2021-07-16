@@ -245,14 +245,15 @@ def test_bounding_box_empty_raises_value_error():
     with pytest.raises(ValueError):
         BoundingBox(atom_list=[])
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_min(atom_list):
+@pytest.mark.parametrize('atom_list_size', [1, 2, 3])
+def test_bounding_box_min(atom_list_size):
 
     """
     Tests that the min property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
-
+    
+    atom_list = request.getfixturevalue(atom_list)[:atom_list_size]
     mn = atom_list[0].position
     for atom in atom_list:
         mn = np.minimum(mn, atom.position)
@@ -260,14 +261,15 @@ def test_bounding_box_min(atom_list):
     np.testing.assert_array_equal(bb_mn, mn)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_max(atom_list):
+@pytest.mark.parametrize('atom_list_size', [1, 2, 3])
+def test_bounding_box_max(atom_list_size):
 
     """
     Tests that the max property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
 
+    atom_list = request.getfixturevalue(atom_list)[:atom_list_size]
     mx = atom_list[0].position
     for atom in atom_list:
         mx = np.maximum(mx, atom.position)
@@ -275,14 +277,15 @@ def test_bounding_box_max(atom_list):
     np.testing.assert_array_equal(bb_mx, mx)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_volume(atom_list):
+@pytest.mark.parametrize('atom_list_size', [1, 2, 3])
+def test_bounding_box_volume(atom_list_size):
 
     """
     Tests that the correct volume is returned for the bounding box of a
     1, 2, and 3-bodied atom list.
     """
 
+    atom_list = request.getfixturevalue(atom_list)[:atom_list_size]
     bb = BoundingBox(atom_list)
     assert bb.volume == abs(np.prod(bb.max - bb.min))
 
@@ -366,14 +369,15 @@ def test_init_coulombic_error_atoms_and_atom_types(atom_list,
                   atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_molecule_mass(atom_list):
+@pytest.mark.parametrize('atom_list_size', [1, 2, 3])
+def test_molecule_mass(atom_list_size):
 
     """
     Tests that the mass property returns the expected result for 1, 2,
     and 3-bodied Molecule objects.
     """
 
+    atom_list = request.getfixturevalue(atom_list)[:atom_list_size]
     mol = Molecule(atoms=atom_list)
     exp_mass = 0.
     for atom in atom_list:

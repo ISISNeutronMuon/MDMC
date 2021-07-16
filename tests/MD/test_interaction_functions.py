@@ -205,14 +205,14 @@ def test_interaction_function_set_parameters_inters(interaction_func, coulombic)
 
 
 @pytest.mark.parametrize("obj, values, names",
-                         [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
+                         [('buckingham', [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
-                          (coulomb(), [COULOMB_CHARGE], ['charge']),
-                          (harmonic(), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
+                          ('coulomb', [COULOMB_CHARGE], ['charge']),
+                          ('harmonic', [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
                            ['equilibrium_state', 'potential_strength']),
-                          (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
+                          ('lennardjones', [LJ_EPSILON, LJ_SIGMA],
                            ['epsilon', 'sigma']),
-                          (periodic(),
+                          ('periodic',
                            [K1, K2, K3, K4, D1, D2, D3, D4, N1, N2, N3, N4],
                            ['K1', 'K2', 'K3', 'K4', 'd1', 'd2', 'd3', 'd4',
                             'n1', 'n2', 'n3', 'n4'])])
@@ -222,8 +222,9 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
-
-    for idx, parameter in enumerate(obj.parameters):
+    
+    func = request.getfixturevalue(obj)
+    for idx, parameter in enumerate(func.parameters):
         assert parameter.value == values[idx]
         assert parameter.name == names[idx]
 
