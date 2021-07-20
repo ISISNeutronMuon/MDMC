@@ -224,13 +224,12 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     correct values and names to the parameters.
     """
     
-    func = request.getfixturevalue(obj)
-    for idx, parameter in enumerate(func.parameters):
+    for idx, parameter in enumerate(obj.parameters):
         assert parameter.value == values[idx]
         assert parameter.name == names[idx]
 
 
-@pytest.mark.parametrize("inter_func_fixture, parameters",
+@parametrize("inter_func, parameters",
                          [(fixture_ref(buckingham), ['A', 'B', 'C']),
                           (fixture_ref(coulomb), ['charge']),
                           (fixture_ref(harmonic), ['equilibrium_state',
@@ -238,7 +237,7 @@ def test_interaction_function_subclass_parameters(obj, values, names):
                           (fixture_ref(lennardjones), ['epsilon', 'sigma']),
                           (fixture_ref(periodic), ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
                                         'K3', 'n3', 'd3', 'K4', 'n4', 'd4'])])
-def test_interaction_function_attributes(inter_func_fixture, parameters, request):
+def test_interaction_function_attributes(inter_func, parameters, request):
 
     """
     Tests that initializing a subclass of InteractionFunction creates an
@@ -248,7 +247,6 @@ def test_interaction_function_attributes(inter_func_fixture, parameters, request
     sigma, with a value of the corresponding Parameters
     """
 
-    inter_func = request.getfixturevalue(inter_func_fixture)
     for parameter in parameters:
         # Test both for existence of attribute and that the Parameter has the
         # correct name

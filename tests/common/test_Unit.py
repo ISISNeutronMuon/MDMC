@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.common.units import Unit
 
@@ -69,7 +70,7 @@ def test_divide_Unit(unit):
 @pytest.mark.parametrize("input,expected", [(2, ' ^ 2'),
                                             (2.0, ' ^ 2'),
                                             (np.float64(2.), ' ^ 2'),
-                                            ('unit', TypeError),
+                                            (fixture_ref(unit), TypeError),
                                             (STRING, TypeError),
                                             ('2', ' ^ 2')])
 def test_power_Unit(unit, input, expected):
