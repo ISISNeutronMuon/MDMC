@@ -6,7 +6,6 @@ from importlib import import_module
 from pkgutil import walk_packages
 
 import pytest
-from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 import MDMC
 
