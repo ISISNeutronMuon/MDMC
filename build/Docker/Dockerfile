@@ -28,8 +28,9 @@ RUN apt-get update && apt-get install -y \
 # running MDMC (i.e. not in requirements.txt)
 RUN pip3 install --upgrade pip
 RUN pip3 install setuptools --upgrade
-RUN pip3 install pytest==3.10.0 \
+RUN pip3 install pytest \
   pytest-cov \
+  pytest-cases \
   ipython>=5.8.0 \
   jupyter
 
