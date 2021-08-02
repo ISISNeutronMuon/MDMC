@@ -4,6 +4,7 @@ FROM ubuntu:18.04
 # Define environment variable
 ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
+ENV LD_LIBRARY_PATH /lammps/build/:/usr/local/
 
 # Install python, pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
 # scipy), and cmake for LAMMPS
@@ -34,6 +35,18 @@ RUN pip3 install pytest \
   ipython>=5.8.0 \
   jupyter
 
+# Install dependencies (like this for testing, when it works I will link it to the .txt)
+RUN pip3 install netCDF4 \
+numpy \
+pandas \
+scipy \
+numba \
+ase>=3.19 \
+mpi4py \
+ipython \
+ipykernel
+
+
 # Get LAMMPS
 RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
 RUN mkdir /lammps \
@@ -54,6 +67,8 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
           ../cmake
 RUN make
 RUN make install-python
+# test layer in attempt to fix container issues
+RUN cp /lammps/build/liblammps.so /usr/local/lib/python3.6/dist-packages/
 
 # Start in /home
 WORKDIR /home
