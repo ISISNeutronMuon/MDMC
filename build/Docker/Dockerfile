@@ -4,7 +4,8 @@ FROM ubuntu:18.04
 # Define environment variable
 ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
-ENV LD_LIBRARY_PATH /lammps/build/:/usr/local/
+ENV LD_LIBRARY_PATH /lammps/build/
+ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
 
 # Install python, pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
 # scipy), and cmake for LAMMPS
@@ -67,8 +68,6 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
           ../cmake
 RUN make
 RUN make install-python
-# test layer in attempt to fix container issues
-RUN cp /lammps/build/liblammps.so /usr/local/lib/python3.6/dist-packages/
 
 # Start in /home
 WORKDIR /home
