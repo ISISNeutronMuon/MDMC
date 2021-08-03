@@ -4,6 +4,7 @@ from math import ceil
 
 import numpy as np
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
@@ -204,15 +205,15 @@ def test_interaction_function_set_parameters_inters(interaction_func, coulombic)
             assert isinstance(inter, Coulombic)
 
 
-@pytest.mark.parametrize("obj, values, names",
-                         [(buckingham(), [BUCK_A, BUCK_B, BUCK_C],
+@parametrize("obj, values, names",
+                         [(fixture_ref(buckingham), [BUCK_A, BUCK_B, BUCK_C],
                            ['A', 'B', 'C']),
-                          (coulomb(), [COULOMB_CHARGE], ['charge']),
-                          (harmonic(), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
+                          (fixture_ref(coulomb), [COULOMB_CHARGE], ['charge']),
+                          (fixture_ref(harmonic), [HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN],
                            ['equilibrium_state', 'potential_strength']),
-                          (lennardjones(), [LJ_EPSILON, LJ_SIGMA],
+                          (fixture_ref(lennardjones), [LJ_EPSILON, LJ_SIGMA],
                            ['epsilon', 'sigma']),
-                          (periodic(),
+                          (fixture_ref(periodic),
                            [K1, K2, K3, K4, D1, D2, D3, D4, N1, N2, N3, N4],
                            ['K1', 'K2', 'K3', 'K4', 'd1', 'd2', 'd3', 'd4',
                             'n1', 'n2', 'n3', 'n4'])])
@@ -222,21 +223,21 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
     """
-
+    
     for idx, parameter in enumerate(obj.parameters):
         assert parameter.value == values[idx]
         assert parameter.name == names[idx]
 
 
-@pytest.mark.parametrize("inter_func_fixture, parameters",
-                         [('buckingham', ['A', 'B', 'C']),
-                          ('coulomb', ['charge']),
-                          ('harmonic', ['equilibrium_state',
+@parametrize("inter_func, parameters",
+                         [(fixture_ref(buckingham), ['A', 'B', 'C']),
+                          (fixture_ref(coulomb), ['charge']),
+                          (fixture_ref(harmonic), ['equilibrium_state',
                                         'potential_strength']),
-                          ('lennardjones', ['epsilon', 'sigma']),
-                          ('periodic', ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
+                          (fixture_ref(lennardjones), ['epsilon', 'sigma']),
+                          (fixture_ref(periodic), ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
                                         'K3', 'n3', 'd3', 'K4', 'n4', 'd4'])])
-def test_interaction_function_attributes(inter_func_fixture, parameters, request):
+def test_interaction_function_attributes(inter_func, parameters, request):
 
     """
     Tests that initializing a subclass of InteractionFunction creates an
@@ -246,7 +247,6 @@ def test_interaction_function_attributes(inter_func_fixture, parameters, request
     sigma, with a value of the corresponding Parameters
     """
 
-    inter_func = request.getfixturevalue(inter_func_fixture)
     for parameter in parameters:
         # Test both for existence of attribute and that the Parameter has the
         # correct name

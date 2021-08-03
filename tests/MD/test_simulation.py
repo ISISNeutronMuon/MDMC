@@ -6,6 +6,7 @@ from itertools import combinations, permutations
 import numpy as np
 import numpy.testing as npt
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
@@ -43,9 +44,9 @@ def atom():
     return su.Atom('H', mass=H_MASS)
 
 @pytest.fixture
-def water_molecule(atom):
+def water_molecule():
 
-    H1 = atom
+    H1 = su.Atom('H', mass=H_MASS)
     H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
     O = su.Atom('O', position=O_POSITION, mass=O_MASS)
     H_coulombic = interactions.Coulombic(atoms=[H1, H2])
@@ -138,10 +139,10 @@ def test_create_atom(atom):
     assert atom.mass == 1.008
 
 
-@pytest.mark.parametrize("unit, changed_attr",
-                         [(atom(),
+@parametrize("unit, changed_attr",
+                         [(fixture_ref(atom),
                            ['ID', 'parent', '_interactions']),
-                          (water_molecule(atom()),
+                          (fixture_ref(water_molecule),
                            ['ID', 'parent', '_interactions', '_structure_list',
                             '_CoM_frame_positions'])
                          ]
@@ -359,7 +360,7 @@ def test_spce_water_molecule(universe, water_molecule):
         SPCEparameters.remove(parameter)
 
 
-@pytest.mark.parametrize('structural_unit', ['atom', 'water_molecule'])
+@parametrize('structural_unit', [fixture_ref(atom), fixture_ref(water_molecule)])
 def test_add_structural_unit_center(universe, structural_unit, request):
 
     """
@@ -367,7 +368,6 @@ def test_add_structural_unit_center(universe, structural_unit, request):
     structural_unit to the center of the Universe
     """
 
-    structural_unit = request.getfixturevalue(structural_unit)
     assert all(structural_unit.position != universe.dimensions / 2)
     universe.add_structural_unit(structural_unit, center=True)
     assert all(structural_unit.position == universe.dimensions / 2)
@@ -430,14 +430,13 @@ def test_universe_membership(water_SPCE_universe):
     assert atom_false.universe is None
 
 
-@pytest.mark.parametrize("unit", [atom(), water_molecule(atom())])
+@parametrize("unit", [fixture_ref(atom), fixture_ref(water_molecule)])
 def test_translate(unit, universe):
 
     """
     Tests that the translate method changes the position of an atom, a molecule,
     and the corresponding positions in the universe which they belong to
     """
-
     def positions_in_universe(positions, universe):
         # List construction due to ambiguity with array in array
         uni_positions = [list(position) for position
@@ -973,7 +972,7 @@ def test_solvate_spce_no_solute(uni):
     assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
-@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
+@parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
 def test_solvate_spce_with_solute(molecule):
 
     """
@@ -983,7 +982,7 @@ def test_solvate_spce_with_solute(molecule):
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a large diatomic molecule.
     """
-
+    
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -1007,14 +1006,14 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
         assert all(atom.position >= [0, 0, 0])
 
 
-@pytest.mark.parametrize("molecule", [small_diatomic(), large_diatomic()])
+@parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
 def test_solvate_spce_no_overlap_with_solute(molecule):
 
     """
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
-
+    
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)

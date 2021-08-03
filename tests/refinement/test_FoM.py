@@ -532,9 +532,9 @@ def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
     weight - a non-negative float
     """
 
-    with pytest.raises(error,
-                       message="Expecting {0} upon init".format(str(error))):
+    with pytest.raises(error):
         fom.ObservablePair(obs_from_exp, obs_from_MD, weight)
+        pytest.fail("Expecting {0} upon init")
 
 
 def set_exception_check(error, obs_from_exp, obs_from_MD, pair):
@@ -550,12 +550,10 @@ def set_exception_check(error, obs_from_exp, obs_from_MD, pair):
     obs_from_MD
     """
 
-    with pytest.raises(error,
-                       message="Expecting {0} upon setting exp_obs".format(
-                           str(error))):
+    with pytest.raises(error):
         pair.exp_obs = obs_from_exp
+        pytest_fail("Expecting {0} upon setting exp_obs")
 
-    with pytest.raises(error,
-                       message="Expecting {0} upon setting MD_obs".format(
-                           str(error))):
+    with pytest.raises(error):
         pair.MD_obs = obs_from_MD
+        pytest_fail("Expecting {0} upon setting MD_obs")

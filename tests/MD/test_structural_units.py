@@ -8,6 +8,7 @@ from itertools import combinations, permutations
 
 import numpy as np
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
@@ -245,45 +246,49 @@ def test_bounding_box_empty_raises_value_error():
     with pytest.raises(ValueError):
         BoundingBox(atom_list=[])
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_min(atom_list):
+@parametrize('atom_list_size', [1, 2, 3])
+def test_bounding_box_min(atom_list, atom_list_size):
 
     """
     Tests that the min property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
 
+    body_list = atom_list[:atom_list_size]
     mn = atom_list[0].position
-    for atom in atom_list:
+    for atom in body_list:
         mn = np.minimum(mn, atom.position)
-    bb_mn = BoundingBox(atom_list).min
+    bb_mn = BoundingBox(body_list).min
     np.testing.assert_array_equal(bb_mn, mn)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_max(atom_list):
+
+@parametrize('atom_list_size', [1, 2, 3])
+def test_bounding_box_max(atom_list, atom_list_size):
 
     """
     Tests that the max property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
 
+    body_list = atom_list[:atom_list_size]
     mx = atom_list[0].position
-    for atom in atom_list:
+    for atom in body_list:
         mx = np.maximum(mx, atom.position)
-    bb_mx = BoundingBox(atom_list).max
+    bb_mx = BoundingBox(body_list).max
     np.testing.assert_array_equal(bb_mx, mx)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_volume(atom_list):
+@parametrize('atom_list_size', [1, 2, 3])
+def test_bounding_box_volume(atom_list, atom_list_size):
 
     """
     Tests that the correct volume is returned for the bounding box of a
     1, 2, and 3-bodied atom list.
     """
-
-    bb = BoundingBox(atom_list)
+    
+    body_list = atom_list[:atom_list_size]
+    bb = BoundingBox(body_list)
     assert bb.volume == abs(np.prod(bb.max - bb.min))
 
 
@@ -366,17 +371,18 @@ def test_init_coulombic_error_atoms_and_atom_types(atom_list,
                   atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_molecule_mass(atom_list):
+@parametrize('atom_list_size', [1, 2, 3])
+def test_molecule_mass(atom_list, atom_list_size):
 
     """
     Tests that the mass property returns the expected result for 1, 2,
     and 3-bodied Molecule objects.
     """
 
-    mol = Molecule(atoms=atom_list)
+    body_list = atom_list[:atom_list_size]
+    mol = Molecule(atoms=body_list)
     exp_mass = 0.
-    for atom in atom_list:
+    for atom in body_list:
         exp_mass += atom.mass
     assert mol.mass == exp_mass
 
