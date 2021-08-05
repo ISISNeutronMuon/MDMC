@@ -32,28 +32,6 @@ matrix:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
         - pip3 uninstall -y MDMC
 
-    # build documentation using docker container to access LAMMPS
-    - name: "Documentation"
-      language: minimal
-      services:
-        - docker
-      before_install:
-        - docker pull mdmc/mdmc:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
-
-    # tests using docker container - including tests which requires MD engines
-    - name: "Docker and including MD tests"
-      language: minimal
-      services: docker
-      before_install:
-        - docker pull mdmc/mdmc:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-      after_success:
-        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        - bash <(curl -s https://codecov.io/bash)
-        
     # testing that the Singularity container builds correctly
     - name: "Singularity container not inc MD tests"
       os: linux
@@ -83,6 +61,28 @@ matrix:
         - singularity exec mdmc_latest.sif pip3 install --upgrade pip
         - singularity exec mdmc_latest.sif pip3 install .
         - singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+
+    # build documentation using docker container to access LAMMPS
+    - name: "Documentation"
+      language: minimal
+      services:
+        - docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+
+    # tests using docker container - including tests which requires MD engines
+    - name: "Docker and including MD tests"
+      language: minimal
+      services: docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      after_success:
+        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        - bash <(curl -s https://codecov.io/bash)
 
       # testing on Windows
     - name: "Python 3.8.0 on Windows"
