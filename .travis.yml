@@ -6,11 +6,16 @@ notifications:
 branches:
   only:
     - master
-
+      # all tests except Docker have the if: branch = master condition. This means they
+      # only run for tests on the master branch (i.e. the weekly cron job test) and not
+      # for pull request tests. They still run on merge tests, but we still use less resources
+      # & a faster turnaround on CI testing for pull requests.
+      
 matrix:
   include:
     # tests non-container environment, and tests which does not require MD engines
     - name: "Non-container and not inc MD tests"
+      if: branch = master
       language: python
       python: 3.6
       os: linux
@@ -34,6 +39,7 @@ matrix:
 
     # testing that the Singularity container builds correctly
     - name: "Singularity container not inc MD tests"
+      if: branch = master
       os: linux
       language: go
       go:
@@ -65,6 +71,7 @@ matrix:
 
     # build documentation using docker container to access LAMMPS
     - name: "Documentation"
+      if: branch = master
       language: minimal
       services:
         - docker
@@ -87,6 +94,7 @@ matrix:
 
       # testing on Windows
     - name: "Python 3.8.0 on Windows"
+      if: branch = master
       os: windows
       language: shell   # 'language: python' is an error on Travis CI Windows
       before_install:
