@@ -19,8 +19,9 @@ export PATH="${GOPATH}/bin:${PATH}"
 mkdir -p "${GOPATH}/src/github.com/sylabs"
 cd "${GOPATH}/src/github.com/sylabs"
 
-git clone -b release-3.8.0 https://github.com/hpcng/singularity
-cd singularity
+wget https://github.com/hpcng/singularity/releases/download/v3.8.0/singularity-3.8.0.tar.gz
+tar -xzf singularity-3.8.0.tar.gz
+cd singularity-3.8.0
 ./mconfig -v -p /usr/local
 make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
 sudo make -C ./builddir install
