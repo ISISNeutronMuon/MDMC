@@ -36,6 +36,8 @@ matrix:
     - name: "Singularity container not inc MD tests"
       os: linux
       language: go
+      go:
+      - "1.13"
       addons:
         apt:
           packages:
