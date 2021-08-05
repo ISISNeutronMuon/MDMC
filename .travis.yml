@@ -6,16 +6,27 @@ notifications:
 branches:
   only:
     - master
-      # all tests except Docker have the if: branch = master condition. This means they
-      # only run for tests on the master branch (i.e. the weekly cron job test) and not
-      # for pull request tests. They still run on merge tests, but we still use less resources
-      # & a faster turnaround on CI testing for pull requests.
       
 matrix:
   include:
+      # tests using docker container - including tests which requires MD engines
+    - name: "Docker and including MD tests"
+      language: minimal
+      services: docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      after_success:
+        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        - bash <(curl -s https://codecov.io/bash)
+        
+    #### CRON JOBS ####
+    # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
+        
     # tests non-container environment, and tests which does not require MD engines
     - name: "Non-container and not inc MD tests"
-      if: branch = master
+      if: type = cron
       language: python
       python: 3.6
       os: linux
@@ -39,7 +50,7 @@ matrix:
 
     # testing that the Singularity container builds correctly
     - name: "Singularity container not inc MD tests"
-      if: branch = master
+      if: type = cron
       os: linux
       language: go
       go:
@@ -71,7 +82,7 @@ matrix:
 
     # build documentation using docker container to access LAMMPS
     - name: "Documentation"
-      if: branch = master
+      if: type = cron
       language: minimal
       services:
         - docker
@@ -80,21 +91,9 @@ matrix:
       script:
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
-    # tests using docker container - including tests which requires MD engines
-    - name: "Docker and including MD tests"
-      language: minimal
-      services: docker
-      before_install:
-        - docker pull mdmc/mdmc:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-      after_success:
-        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        - bash <(curl -s https://codecov.io/bash)
-
       # testing on Windows
     - name: "Python 3.8.0 on Windows"
-      if: branch = master
+      if: type = cron
       os: windows
       language: shell   # 'language: python' is an error on Travis CI Windows
       before_install:
