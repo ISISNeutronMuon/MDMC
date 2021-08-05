@@ -19,7 +19,7 @@ export PATH="${GOPATH}/bin:${PATH}"
 mkdir -p "${GOPATH}/src/github.com/sylabs"
 cd "${GOPATH}/src/github.com/sylabs"
 
-git clone -b release-3.2 https://github.com/sylabs/singularity
+git clone -b release-3.8.0 https://github.com/hpcng/singularity
 cd singularity
 ./mconfig -v -p /usr/local
 make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
