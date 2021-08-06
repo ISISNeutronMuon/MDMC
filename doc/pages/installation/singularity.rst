@@ -13,6 +13,7 @@ Thus installing with Singularity may be a better option if you are using MDMC at
 are working in a larger network where the admin cannot give you root access.
 
 This tutorial expects the user to be running Singularity in Linux - on Windows or Mac, you must install Singularity in a 
+virtual machine - see the [Singularity installation docs](https://sylabs.io/guides/3.0/user-guide/installation.html#install-on-windows-or-mac).
 
 Using MDMC with Singularity
 ---------------------------
