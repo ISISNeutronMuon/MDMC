@@ -14,6 +14,8 @@ are working in a larger network where the admin cannot give you root access.
 
 This tutorial expects the user to be running Singularity in Linux - on Windows or Mac, you must install Singularity in a 
 virtual machine - see the [Singularity installation docs](https://sylabs.io/guides/3.0/user-guide/installation.html#install-on-windows-or-mac).
+Note also that these instructions were tested in Singularity version 3.8.0; note that other versions may give different
+results, especially in major version 2 of Singularity.
 
 Using MDMC with Singularity
 ---------------------------
