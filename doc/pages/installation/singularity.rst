@@ -23,7 +23,7 @@ which is the definition file for the Singularity image. The image can then be bu
 
 .. code-block:: bash
 
-  singularity pull docker://mdmc/mdmc
+  singularity pull docker://mdmc/mdmc:latest
   
 which converts the MDMC Docker image to a .sif (Singularity container) file, which should be called mdmc_latest.sif. Then, assuming 
 you are in the directory containing the MDMC source code folder (here called MDMC), install MDMC with the following:
