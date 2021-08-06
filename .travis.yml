@@ -6,11 +6,27 @@ notifications:
 branches:
   only:
     - master
-
+      
 matrix:
   include:
+      # tests using docker container - including tests which requires MD engines
+    - name: "Docker and including MD tests"
+      language: minimal
+      services: docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      after_success:
+        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        - bash <(curl -s https://codecov.io/bash)
+        
+    #### CRON JOBS ####
+    # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
+        
     # tests non-container environment, and tests which does not require MD engines
     - name: "Non-container and not inc MD tests"
+      if: type = cron
       language: python
       python: 3.6
       os: linux
@@ -32,8 +48,41 @@ matrix:
         - python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
         - pip3 uninstall -y MDMC
 
+    # testing that the Singularity container builds correctly
+    - name: "Singularity container not inc MD tests"
+      if: type = cron
+      os: linux
+      language: go
+      go:
+      - "1.13"
+      addons:
+        apt:
+          packages:
+            - flawfinder
+            - squashfs-tools
+            - uuid-dev
+            - libuuid1
+            - libffi-dev
+            - libssl-dev
+            - libssl1.0.0
+            - libarchive-dev
+            - libgpgme11-dev
+            - libseccomp-dev
+        homebrew:
+          packages:
+            - squashfs
+      before_install:
+        - sudo chmod u+x .travis/singularity_setup.sh
+        - /bin/bash .travis/singularity_setup.sh
+      script:
+        - singularity pull docker://mdmc/mdmc
+        - singularity exec mdmc_latest.sif pip3 install --upgrade pip
+        - singularity exec mdmc_latest.sif pip3 install .
+        - singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+
     # build documentation using docker container to access LAMMPS
     - name: "Documentation"
+      if: type = cron
       language: minimal
       services:
         - docker
@@ -42,20 +91,9 @@ matrix:
       script:
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
-    # tests using docker container - including tests which requires MD engines
-    - name: "Docker and including MD tests"
-      language: minimal
-      services: docker
-      before_install:
-        - docker pull mdmc/mdmc:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-      after_success:
-        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        - bash <(curl -s https://codecov.io/bash)
-
       # testing on Windows
     - name: "Python 3.8.0 on Windows"
+      if: type = cron
       os: windows
       language: shell   # 'language: python' is an error on Travis CI Windows
       before_install:
@@ -67,3 +105,4 @@ matrix:
         - pip3 install .
       script:
         - pip3 uninstall -y MDMC
+
