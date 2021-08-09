@@ -42,7 +42,7 @@ numpy \
 pandas \
 scipy \
 numba \
-ase==3.20.1 \
+ase \
 mpi4py \
 ipython \
 ipykernel
