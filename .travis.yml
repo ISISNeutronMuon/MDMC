@@ -16,8 +16,8 @@ matrix:
       services: docker
       before_install:
         - chmod u+x .travis/require_rebuild_check.sh
-      script:
         - /bin/bash .travis/require_rebuild_check.sh
+      script:
         - docker build -q -t mdmc/mdmc:travis $(pwd)/build/Docker
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
         

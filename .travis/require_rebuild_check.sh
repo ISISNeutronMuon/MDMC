@@ -3,8 +3,8 @@
 
 #!/bin/bash 
 
-if ! git diff ${TRAVIS_BRANCH} ${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- requirements.txt | read REPLY && \
-  ! git diff ${TRAVIS_BRANCH} ${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./build/Docker | read REPLY
+if ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- requirements.txt | read REPLY && \
+  ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./build/Docker | read REPLY
 then
   echo; echo "Docker file does not require rebuilding." 
   exit 1; # fails harmlessly
