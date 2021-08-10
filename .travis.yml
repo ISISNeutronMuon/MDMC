@@ -17,7 +17,7 @@ matrix:
      
     # tests using docker container - including tests which requires MD engines
     - name: "Docker and including MD tests"
-      if: git diff --exit-code requirements.txt == 0 AND git diff --exit-code build/Docker == 0 # runs only if there are no changes to Docker image
+      if: (git diff --exit-code requirements.txt == 0 AND git diff --exit-code build/Docker == 0) OR type = cron # runs only if there are no changes to Docker image
       language: minimal
       services: docker
       before_install:
@@ -30,7 +30,7 @@ matrix:
         
     # if Dockerfile has been edited, or a dependency changed, rebuilds container, tests it, and deploys image to Docker hub
     - name: "Container rebuild and test"
-      if: git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1 # runs only if there is a change to Docker image
+      if: (git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1) AND type != cron # runs only if there is a change to Docker image
       language: minimal
       services: docker
       script:
