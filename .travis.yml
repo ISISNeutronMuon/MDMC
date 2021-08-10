@@ -1,7 +1,12 @@
 sudo: required
 
 notifications:
-  email: false
+    # sends an email if the Docker image has been successfully updated and can be pushed
+  email:
+    recipients:
+      - alex.room@stfc.ac.uk
+    if: git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1
+    on_success: always
 
 branches:
   only:
@@ -9,8 +14,10 @@ branches:
       
 matrix:
   include:
-      # tests using docker container - including tests which requires MD engines
+     
+    # tests using docker container - including tests which requires MD engines
     - name: "Docker and including MD tests"
+      if: git diff --exit-code requirements.txt == 0 AND git diff --exit-code build/Docker == 0 # runs only if there are no changes to Docker image
       language: minimal
       services: docker
       before_install:
@@ -20,6 +27,17 @@ matrix:
       after_success:
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         - bash <(curl -s https://codecov.io/bash)
+        
+    # if Dockerfile has been edited, or a dependency changed, rebuilds container, tests it, and deploys image to Docker hub
+    - name: "Container rebuild and test"
+      if: git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1 # runs only if there is a change to Docker image
+      language: minimal
+      services: docker
+      script:
+        - docker build -t mdmc/mdmc:travis $pwd/build/Docker
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      
+    
         
     #### CRON JOBS ####
     # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
@@ -89,7 +107,7 @@ matrix:
       script:
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
-      # testing on Windows
+    # testing on Windows
     - name: "Python 3.8.0 on Windows"
       if: type = cron
       os: windows
@@ -103,4 +121,3 @@ matrix:
         - pip3 install .
       script:
         - pip3 uninstall -y MDMC
-
