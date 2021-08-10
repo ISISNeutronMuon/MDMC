@@ -28,7 +28,7 @@ matrix:
       language: minimal
       services: docker
       script:
-        - docker build -t mdmc/mdmc:travis $(pwd)/build/Docker
+        - docker build -q -t mdmc/mdmc:travis $(pwd)/build/Docker
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
         
     #### CRON JOBS ####
