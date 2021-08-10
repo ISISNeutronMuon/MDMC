@@ -22,12 +22,14 @@ matrix:
         #- docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         #- bash <(curl -s https://codecov.io/bash)
         
-    # if Dockerfile has been edited, or a dependency changed, rebuilds container, tests it, and deploys image to Docker hub
+    # if Dockerfile has been edited, or a dependency changed; rebuilds container, tests it, and deploys image to Docker hub
     - name: "Container rebuild and test"
-      #if: (git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1) AND type != cron # runs only if there is a change to Docker image
       language: minimal
       services: docker
+      before_install:
+        - sudo chmod u+x .travis/require_rebuild_check.sh
       script:
+        - /bin/bash .travis/require_rebuild_check.sh
         - docker build -q -t mdmc/mdmc:travis $(pwd)/build/Docker
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
         
