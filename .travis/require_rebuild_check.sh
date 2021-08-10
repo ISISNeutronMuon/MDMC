@@ -3,8 +3,11 @@
 
 #!/bin/bash 
 
-if ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- requirements.txt | read REPLY && \
-  ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./build/Docker | read REPLY
+git checkout ${TRAVIS_PULL_REQUEST_BRANCH}
+git pull #by default, Travis only pulls the master branch, so we must also pull the PR branch
+
+if ! git diff remotes/origin/${TRAVIS_BRANCH} ${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- requirements.txt | read REPLY && \
+  ! git diff remotes/origin/${TRAVIS_BRANCH} ${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./build/Docker | read REPLY
 then
   echo; echo "Docker file does not require rebuilding." 
   exit 1; # fails harmlessly
