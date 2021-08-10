@@ -9,23 +9,22 @@ branches:
       
 matrix:
   include:
-     
     # tests using docker container - including tests which requires MD engines
-    - name: "Docker and including MD tests"
-      if: (git diff --exit-code requirements.txt == 0 AND git diff --exit-code build/Docker == 0) OR type = cron # runs only if there are no changes to Docker image
-      language: minimal
-      services: docker
-      before_install:
-        - docker pull mdmc/mdmc:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-      after_success:
-        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        - bash <(curl -s https://codecov.io/bash)
+    #- name: "Docker and including MD tests"
+      #if: (git diff --exit-code requirements.txt == 0 AND git diff --exit-code build/Docker == 0) OR type = cron # runs only if there are no changes to Docker image
+      #language: minimal
+      #services: docker
+      #before_install:
+        #- docker pull mdmc/mdmc:latest
+      #script:
+        #- docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      #after_success:
+        #- docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        #- bash <(curl -s https://codecov.io/bash)
         
     # if Dockerfile has been edited, or a dependency changed, rebuilds container, tests it, and deploys image to Docker hub
     - name: "Container rebuild and test"
-      if: (git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1) AND type != cron # runs only if there is a change to Docker image
+      #if: (git diff --exit-code requirements.txt == 1 OR git diff --exit-code build/Docker == 1) AND type != cron # runs only if there is a change to Docker image
       language: minimal
       services: docker
       script:
