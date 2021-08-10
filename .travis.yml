@@ -8,7 +8,7 @@ branches:
     - master
         
 matrix:
-  allow_failures:
+  include:
     # if Dockerfile has been edited, or a dependency changed; rebuilds container, tests it, and deploys image to Docker hub.
     # otherwise, fails harmlessly.
     - name: "Container rebuild and test"
@@ -21,19 +21,18 @@ matrix:
         - docker build -q -t mdmc/mdmc:travis $(pwd)/build/Docker
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
         
-  include:  
-    # # tests using docker container - including tests which requires MD engines
-    # - name: "Docker and including MD tests"
-      # if: env(REBUILD)!=true # runs only if there are no changes to Docker image
-      # language: minimal
-      # services: docker
-      # before_install:
-        # - docker pull mdmc/mdmc:latest
-      # script:
-        # - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-      # after_success:
-        # - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        # - bash <(curl -s https://codecov.io/bash)
+    # tests using docker container - including tests which requires MD engines
+    - name: "Docker and including MD tests"
+      if: env(REBUILD)!=true # runs only if there are no changes to Docker image
+      language: minimal
+      services: docker
+      before_install:
+        - docker pull mdmc/mdmc:latest
+      script:
+        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+      after_success:
+        - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+        - bash <(curl -s https://codecov.io/bash)
         
     #### CRON JOBS ####
     # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
