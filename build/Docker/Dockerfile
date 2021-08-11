@@ -40,6 +40,7 @@ RUN pip3 install pytest \
 # [if this fails, you may be running Docker from the wrong directory. Go to
 # the main directory and build the image with
 # "docker build -f $(pwd)/build/Docker/Dockerfile ."]
+COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
 # Get LAMMPS
