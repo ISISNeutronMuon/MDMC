@@ -11,12 +11,13 @@ matrix:
   include:
     # tests using docker container - including tests which requires MD engines
     # this test has a check for whether it needs to rebuild the Docker container,
-    # which makes it look quite complex. For readability of the test, the main script
-    # has been moved to .travis/docker_testing.sh
+    # which makes it look quite complex. For readability of the .travis.yml file, the main script
+    # has been moved to .travis/docker_testing.sh.
     - name: "Docker and including MD tests"
-      language: minimal
+      language: minimal.tra
       services: docker
       before_install:
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # logs in to docker to push new images
         - docker pull mdmc/mdmc:latest
         - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
         - git fetch --unshallow --tags
@@ -26,6 +27,7 @@ matrix:
       after_success:
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         - bash <(curl -s https://codecov.io/bash)
+        - docker push mdmc/mdmc:travis
         
     #### CRON JOBS ####
     # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
