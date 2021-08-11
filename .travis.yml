@@ -14,7 +14,7 @@ matrix:
     # which makes it look quite complex. For readability of the .travis.yml file, the main script
     # has been moved to .travis/docker_testing.sh.
     - name: "Docker and including MD tests"
-      language: minimal.tra
+      language: minimal
       services: docker
       before_install:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # logs in to docker to push new images

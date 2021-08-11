@@ -36,7 +36,7 @@ RUN pip3 install pytest \
   ipython>=5.8.0 \
   jupyter
 
-# Install dependencies (like this for testing, when it works I will link it to the .txt)
+# Install dependencies
 # [if this fails, you may be running Docker from the wrong directory. Go to
 # the main directory and build the image with
 # "docker build -f $(pwd)/build/Docker/Dockerfile ."]
