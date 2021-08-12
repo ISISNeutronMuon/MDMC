@@ -6,20 +6,26 @@ notifications:
 branches:
   only:
     - master
-      
+         
 matrix:
   include:
-      # tests using docker container - including tests which requires MD engines
+    # tests using docker container - including tests which requires MD engines
+    # this test has a check for whether it needs to rebuild the Docker container -
+    # see comments on .travis/docker_testing.sh for more details. 
     - name: "Docker and including MD tests"
       language: minimal
       services: docker
       before_install:
-        - docker pull mdmc/mdmc:latest
+        - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # grabs other branches to check if Docker files changed
+        - git fetch --unshallow --tags
       script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+        - source .travis/docker_testing.sh 
       after_success:
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         - bash <(curl -s https://codecov.io/bash)
+        - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # logs in to docker to push new images
+        - docker push mdmc/mdmc:travis # if a new image wasn't built, this throws a harmless exception
+        - docker logout
         
     #### CRON JOBS ####
     # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
@@ -70,8 +76,7 @@ matrix:
           packages:
             - squashfs
       before_install:
-        - sudo chmod u+x .travis/singularity_setup.sh
-        - /bin/bash .travis/singularity_setup.sh
+        - source .travis/singularity_setup.sh
       script:
         - singularity pull docker://mdmc/mdmc
         - singularity exec mdmc_latest.sif pip3 install --upgrade pip
@@ -89,7 +94,7 @@ matrix:
       script:
         - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
-      # testing on Windows
+    # testing on Windows
     - name: "Python 3.8.0 on Windows"
       if: type = cron
       os: windows
@@ -103,4 +108,3 @@ matrix:
         - pip3 install .
       script:
         - pip3 uninstall -y MDMC
-

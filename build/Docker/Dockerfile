@@ -36,17 +36,12 @@ RUN pip3 install pytest \
   ipython>=5.8.0 \
   jupyter
 
-# Install dependencies (like this for testing, when it works I will link it to the .txt)
-RUN pip3 install netCDF4 \
-numpy \
-pandas \
-scipy \
-numba \
-ase \
-mpi4py \
-ipython \
-ipykernel
-
+# Install dependencies
+# [if this fails, you may be running Docker from the wrong directory. Go to
+# the main directory and build the image with
+# "docker build -f $(pwd)/build/Docker/Dockerfile ."]
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
 
 # Get LAMMPS
 RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
