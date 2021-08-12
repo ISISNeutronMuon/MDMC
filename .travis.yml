@@ -10,9 +10,8 @@ branches:
 matrix:
   include:
     # tests using docker container - including tests which requires MD engines
-    # this test has a check for whether it needs to rebuild the Docker container,
-    # which makes it look quite complex. For readability of the .travis.yml file, the main script
-    # has been moved to .travis/docker_testing.sh.
+    # this test has a check for whether it needs to rebuild the Docker container -
+    # see comments on .travis/docker_testing.sh for more details. 
     - name: "Docker and including MD tests"
       language: minimal
       services: docker
@@ -21,9 +20,8 @@ matrix:
         - docker pull mdmc/mdmc:latest
         - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
         - git fetch --unshallow --tags
-        - chmod u+x .travis/docker_testing.sh
       script:
-        - /bin/bash .travis/docker_testing.sh 
+        - source .travis/docker_testing.sh 
       after_success:
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         - bash <(curl -s https://codecov.io/bash)
@@ -78,8 +76,7 @@ matrix:
           packages:
             - squashfs
       before_install:
-        - chmod u+x .travis/singularity_setup.sh
-        - /bin/bash .travis/singularity_setup.sh
+        - source .travis/singularity_setup.sh
       script:
         - singularity pull docker://mdmc/mdmc
         - singularity exec mdmc_latest.sif pip3 install --upgrade pip
@@ -111,4 +108,3 @@ matrix:
         - pip3 install .
       script:
         - pip3 uninstall -y MDMC
-        
