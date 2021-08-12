@@ -6,6 +6,9 @@ notifications:
 branches:
   only:
     - master
+    
+env: # encrypted docker password
+    - secure: "xGEa2QiuxpJ8kWKTJYqeKokJesMS4xEA3Q0wtucVlClIeTxMSMfKvWF7TgICzdipyY4jelaMkiwB8lSMiAcQyGjgYAN0dC1rBqHwxjeNFklzATSTTv2qpZGcKdTlDVdiMiDYEdo/LgUhBPHzRY9PixRs8ZUxIe58YjgIkyrkR22Y01NY6VSz5CgT1bS+K5LZK6GJowJK0LStONJJb7HEv4aoWw5gyI8CdjgRhqubGp9i8lmftrrHqAW1+J/1xZrsplztVDfHaVyrr6xYJsedlU5z0gyoE3XMarF2tNa7kmfj4dXAPpAiU48VdMAVll68YCFg6fR/WTAHfVl83LGugfXJ/GuXMvlzlS7G8tjaVGxCESApmsSZ92Hm81EB6tWzjzU6EXUzsSZqbZUdXIH3yj5TW+h0jl5w3Kat8v6JYKHt9tZTgaMe7NKDL/SvNNgcfSfj/f0ZV+DJ/q4u4YxxsIiaRnx+qSE9TscmNh2UMDiFtRFHAAFtFJY4Cz5gGWBd3WY8bH9L4aN4dvfEhyxm4b/5buSzguY217ANQessf41CK9QJg3us+NEtMInHfjosrQdFJHUpAbYFidbQeXoNNnHxyj4V8plNWbgt0ulLPm5h14NUm8wpj6uh3r3y4OAnyd1iHI2im5mN1AftKUT9mAwqiACscBzpcl012JvvbvA=" 
         
 matrix:
   include:
@@ -18,7 +21,7 @@ matrix:
       before_install:
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # logs in to docker to push new images
         - docker pull mdmc/mdmc:latest
-        - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # grabs other branches to check if Docker files changed
         - git fetch --unshallow --tags
       script:
         - source .travis/docker_testing.sh 
