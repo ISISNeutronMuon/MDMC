@@ -16,7 +16,6 @@ matrix:
       language: minimal
       services: docker
       before_install:
-        - docker pull mdmc/mdmc:latest
         - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* # grabs other branches to check if Docker files changed
         - git fetch --unshallow --tags
       script:
@@ -25,7 +24,7 @@ matrix:
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
         - bash <(curl -s https://codecov.io/bash)
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # logs in to docker to push new images
-        - docker push mdmc/mdmc:travis
+        - docker push mdmc/mdmc:travis # if a new image wasn't built, this throws a harmless exception
         - docker logout
         
     #### CRON JOBS ####

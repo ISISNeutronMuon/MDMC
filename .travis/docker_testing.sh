@@ -12,6 +12,7 @@ if ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUE
   ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./build/Docker | read REPLY
 then
   echo; echo "Docker file does not require rebuilding." 
+  docker pull mdmc/mdmc:latest
   docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
 else
   echo; echo "Docker file requires rebuilding."
