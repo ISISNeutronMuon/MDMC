@@ -81,6 +81,7 @@ Indices
   pages/developer/testing
   pages/developer/management
   pages/developer/containers
+  pages/developer/vscode
 
 .. toctree::
   :maxdepth: 1
