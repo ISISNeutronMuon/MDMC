@@ -59,6 +59,7 @@ Indices
 
    tutorials/building-a-universe.ipynb
    tutorials/read-configurations.ipynb
+   tutorials/units.ipynb
    tutorials/applying-a-forcefield.ipynb
    tutorials/solvating-a-universe.ipynb
    tutorials/molecular-visualization.ipynb
@@ -66,6 +67,7 @@ Indices
    tutorials/creating-an-observable.ipynb
    tutorials/selecting-fitting-parameters.ipynb
    tutorials/running-a-refinement.ipynb
+   tutorials/Argon-a-to-z.ipynb
 
 .. toctree::
   :maxdepth: 1
@@ -78,6 +80,7 @@ Indices
   pages/developer/units
   pages/developer/testing
   pages/developer/management
+  pages/developer/containers
 
 .. toctree::
   :maxdepth: 1

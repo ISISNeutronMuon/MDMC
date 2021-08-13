@@ -18,7 +18,7 @@ by the Docker container). However, to use the external :code:`'ASE'` viewer for
 molecular visualization, X11 forwarding must additionally be enabled **before**
 the instructions below are followed. The difference between
 these viewers is explained in the
-`Molecular Visualization <../tutorials/molecular-visualization.ipynb>`__
+`Molecular Visualization <../tutorials/molecular-visualization.ipynb>`_
 tutorial. Instructions on how to enable X11 forwarding are in
 :ref:`x11-forwarding-label`.  X11 forwarding occurs by default on Linux, so
 on that platform no additional steps are required.
