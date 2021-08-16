@@ -21,11 +21,11 @@ A container 'image' (see the next section) is a blueprint that the container sof
 The Docker image
 ----------------
 
-The 'regular' way that users can access MDMC is via our `Docker <https://www.docker.com/>`_ container. The Docker container also lies at the core of our Singularity container; the Singularity container is built from the Docker image. This is mainly for ease of development, as we only need to update one image.
+The 'regular' way that users can access MDMC is via `Docker <https://www.docker.com/>`_ . The Docker container also lies at the core of our Singularity container; the Singularity container is built from the Docker image. This is mainly for ease of development, as we only need to update one image.
 
-Our Docker image is on Docker Hub as ``mdmc/mdmc``. We use three tags for development:
+Our Docker image is on Docker Hub as ``mdmc/mdmc``. We use three tags for development (as of this writing):
 
-* ``mdmc/mdmc:latest``; the version used by docker-compose to install MDMC. This is the 'production' image.
+* ``mdmc/mdmc:latest``; the version is used by e.g. docker-compose to install MDMC. This is the 'production' image.
 
 * ``mdmc/mdmc:experimental``; if you are making manual changes to the image, it's useful to push it to this tag so you can swap it in and out vs other images, as well as let other developers and Travis use it.
 
@@ -34,7 +34,7 @@ Our Docker image is on Docker Hub as ``mdmc/mdmc``. We use three tags for develo
 Building the Docker image
 -------------------------
 
-As just mentioned, Travis CI, our testing and continuous integration service, automatically builds and tests new images. It does so ONLY IF files in the ``/build/Docker`` directory are changed, or if ``requirements.txt`` is changed. In this case, the pull request testing will automatically detect these changes, rebuild the image from the Dockerfile, test it, and then push it to ``mdmc/mdmc:travis``. The mdmc/mdmc:travis image should regularly be pushed to the mdmc/mdmc:latest when required.
+As just mentioned, Travis CI, our testing and continuous integration service, automatically builds and tests new images. It does so ONLY IF files in the ``/build/Docker`` directory are changed, or if ``requirements.txt`` is changed. In this case, the pull request testing will automatically detect these changes, rebuild the image from the Dockerfile, test it, and then push it to ``mdmc/mdmc:travis``. The mdmc/mdmc:travis image can then be pushed to the mdmc/mdmc:latest when required.
 
 If you need to rebuild the Docker image manually, go to the main directory for the source code then execute the command:
 
