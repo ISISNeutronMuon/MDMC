@@ -3,7 +3,7 @@
 Debugging inside Containers
 ===========================
 
-MDMC's source code has a ``.devcontainer`` folder which can be used by Visual Studio Code to run VSCode inside a Docker container. This is very useful for debugging or testing problems relating to molecular simulation.
+MDMC's source code has a ``.devcontainer`` folder that can be used by Visual Studio Code to run VSCode inside a Docker container. This is very useful for debugging or testing problems in our container setup.
 
 How to run VSCode inside a container
 ------------------------------------
