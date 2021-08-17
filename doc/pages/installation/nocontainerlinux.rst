@@ -1,4 +1,7 @@
-.. _NOCONTAINERLINUX-label:
+.. _containerless-label:
+
+Install without Containers
+==========================
 
 In general the MDMC code can be downloaded as self-contained docker image, which requires no further input from the user in order to make it work. However, in this document we give instructions of how to install a container-free version of MDMC and its dependencies on Linux systems. We suggest to install the molecular dynamics (MD) engine first, then the Python3 dependencies, followed by the MDMC code. The recommended MD engine to use with MDMC at the moment is LAMMPS.
 
@@ -115,7 +118,7 @@ Note, that here you do not do any install! You have your executable from CMake. 
 3.1 Using pip
 -------------
 3.1.1. Downloading MDMC SOURCE CODE
-----------------------------------
+------------------------------------
 MDMC based on Python3 and available on GitHub, which allows the source code to be downloaded as
 
 .. code-block:: bash
@@ -129,7 +132,7 @@ Alternatively, you can download a ZIP archive containing the source using
  wget https://github.com/MDMCproject/MDMCv0.2_pilot/archive/master.zip
 
 3.1.2. Installing Python dependencies
------------------------------------
+--------------------------------------
 We supply a requirements.txt file that can be used to install all required Python dependencies via
 
 .. code-block:: bash
@@ -166,7 +169,7 @@ Once this is done, you should see MDMC appear on the list of installed modules w
  pip3 list installed
 
 3.2. Using anaconda3
--------------------
+--------------------
 Since MDMC is a Python-based code the following dependencies are need to be installed:
 
 .. code-block:: bash
