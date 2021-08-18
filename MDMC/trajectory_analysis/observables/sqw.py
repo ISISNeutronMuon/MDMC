@@ -592,13 +592,13 @@ class AbstractSQw(Observable):
                 Q_vectors = np.pad(self.Q_vectors,
                                    ((0, axis_0 - shape[0]), (0, 0), (0, 0)),
                                    'constant',
-                                   constant_values=(np.float('nan')))
+                                   constant_values=(float('nan')))
             else:
                 # If we do not have a well defined shape (i.e. not every Q
                 # value has the same number of points in reciprocal space) then
                 # we need to manually pad Q_vectors using lists, as numpy
                 # arrays would need to have the same shape to be appended.
-                padding = np.array([np.full(3, np.float('nan'))])
+                padding = np.array([np.full(3, float('nan'))])
                 padding_list = [padding for _ in range(axis_0 - shape[0])]
                 Q_vectors_list = list(self.Q_vectors)
                 Q_vectors_list.extend(padding_list)
@@ -936,7 +936,7 @@ class AbstractSQw(Observable):
 
         # Remove any momentum values with infinite error, and the corresponding values from SQw
         error = self.SQw_err
-        masking = np.where(np.any(error == np.float('inf'), axis=-1))
+        masking = np.where(np.any(error == float('inf'), axis=-1))
         SQw_cropped = np.delete(self.SQw[0], masking, axis=0)
         Q_cropped = np.delete(self.Q, masking)
 

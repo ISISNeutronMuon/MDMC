@@ -1045,7 +1045,7 @@ def test_solvate_spce_bond_lengths(dim_scalings):
 
     def _get_min_molecule(universe):
 
-        min_norm = np.float('inf')
+        min_norm = float('inf')
         for mol in universe.molecule_list:
             mol_norm = np.linalg.norm(mol.position)
             if mol_norm < min_norm:

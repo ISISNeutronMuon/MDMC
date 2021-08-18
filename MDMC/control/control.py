@@ -813,10 +813,10 @@ class Control:
                 uniform_data = data_interpol(x_uniform)
                 # repeat the interpolation for the errors
                 err_data = observable.errors[var_key][0]
-                err_data[err_data == np.float('inf')] = 0
+                err_data[err_data == float('inf')] = 0
                 err_interpol = interp1d(x_data, err_data)
                 err_uniform = err_interpol(x_uniform)
-                err_uniform[err_uniform == 0.] = np.float('inf')
+                err_uniform[err_uniform == 0.] = float('inf')
             # interpolation for 2D
             elif var_dimension == 2:
                 # note: the interp2d interpolation function requires input of the form
@@ -835,10 +835,10 @@ class Control:
                 uniform_data = data_interpol(x_uniform, y_uniform)
                 # repeat the interpolation for the errors
                 err_data = observable.errors[var_key][0]
-                err_data[err_data == np.float('inf')] = 0
+                err_data[err_data == float('inf')] = 0
                 err_interpol = interp2d(x_data, y_data, err_data)
                 err_uniform = err_interpol(x_uniform, y_uniform)
-                err_uniform[err_uniform == 0.] = np.float('inf')
+                err_uniform[err_uniform == 0.] = float('inf')
             else:
                 raise NotImplementedError('Only 1D and 2D data can currently be made uniform')
             # save the uniform data and errors back into the Observable

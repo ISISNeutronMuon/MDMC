@@ -249,9 +249,9 @@ def test_OP_weight_validation(SQw_from_exp, SQw_from_MD, observable_pair):
         fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=weight)
         observable_pair.weight = weight
 
-    invalid_values = [np.float('inf'),
-                      np.float('nan'),
-                      np.float(-1.)]
+    invalid_values = [float('inf'),
+                      float('nan'),
+                      float(-1.)]
 
     invalid_types = ['one',
                      '1,234',

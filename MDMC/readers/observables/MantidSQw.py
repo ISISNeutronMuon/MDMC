@@ -65,7 +65,7 @@ class MantidSQw(ObservableReader):
 
         # Mantid sets errors to 0 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them.
-        self.SQw_err[np.where(self.SQw_err <= 0.)] = np.float('inf')
+        self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
 
     @property
     def independent_variables(self):
