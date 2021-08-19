@@ -373,7 +373,7 @@ class Unit(str):
             # List used rather than string so that sorting can be implemented
             component_list = []
             for comp, power in component_powers.items():
-                if power == 1:
+                if power is 1:
                     component_list.append(comp)
                 else:
                     component_list.append(comp + ' ^ ' + str(power))
