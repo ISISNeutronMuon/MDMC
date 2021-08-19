@@ -445,7 +445,7 @@ class AbstractSQw(Observable):
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if not hasattr(self, 'Q_vectors'):
             try:
-                self.Q_vectors = np.array(settings['Q_vectors'])
+                self.Q_vectors = np.array(settings['Q_vectors'], dtype="object")
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
@@ -750,7 +750,7 @@ class AbstractSQw(Observable):
 
         self.Q_values = updated_Q_values
 
-        return np.array(Q_vectors)
+        return np.array(Q_vectors, dtype="object")
 
     def _calculate_vectors_single_Q(self, Q_min, Q_max):
 
