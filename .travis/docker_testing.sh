@@ -16,6 +16,6 @@ then
   docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
 else
   echo; echo "Docker file requires rebuilding."
-  docker build -t mdmc/mdmc:travis -f $(pwd)/build/Docker/Dockerfile .
+  docker build -t mdmc/mdmc:travis -f $(pwd)/build/Docker/Dockerfile . || exit 1 
   docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
 fi
