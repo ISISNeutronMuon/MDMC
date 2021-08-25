@@ -54,11 +54,13 @@ matrix:
 
     # testing that the Singularity container builds correctly
     - name: "Singularity container not inc MD tests"
-      if: type = cron
+      #if: type = cron
       os: linux
       language: go
       go:
       - "1.13"
+      python:
+      - "3.8"
       addons:
         apt:
           packages:
