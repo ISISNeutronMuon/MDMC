@@ -56,11 +56,10 @@ matrix:
     - name: "Singularity container not inc MD tests"
       #if: type = cron
       os: linux
+      dist: bionic
       language: go
       go:
       - "1.13"
-      python:
-      - "3.8"
       addons:
         apt:
           packages:
@@ -78,6 +77,8 @@ matrix:
           packages:
             - squashfs
       before_install:
+        - apt-get install python3 --version 3.8.0
+        - python3 -m pip3 install --upgrade pip
         - source .travis/singularity_setup.sh
       script:
         - singularity pull docker://mdmc/mdmc
