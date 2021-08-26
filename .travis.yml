@@ -73,13 +73,11 @@ matrix:
             - libarchive-dev
             - libgpgme11-dev
             - libseccomp-dev
+            - python3-pip
         homebrew:
           packages:
             - squashfs
       before_install:
-        - sudo apt-get update 
-        - sudo apt-get install python3
-        - pip3 install --upgrade pip
         - source .travis/singularity_setup.sh
       script:
         - singularity pull docker://mdmc/mdmc
