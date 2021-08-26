@@ -56,10 +56,8 @@ matrix:
     - name: "Singularity container not inc MD tests"
       #if: type = cron
       os: linux
-      dist: bionic
       language: go
-      go:
-      - "1.13"
+      go: 1.13
       addons:
         apt:
           packages:
@@ -79,7 +77,7 @@ matrix:
       before_install:
         - source .travis/singularity_setup.sh
       script:
-        - cd ~/build/MDMCproject/
+        - cd ~/build/MDMCproject/MDMCv0.2_pilot
         - singularity pull docker://mdmc/mdmc 
         - singularity exec mdmc_latest.sif pip3 install --upgrade pip
         - singularity exec mdmc_latest.sif pip3 install .
