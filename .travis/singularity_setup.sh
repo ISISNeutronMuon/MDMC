@@ -9,7 +9,7 @@ sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
 
 SINGULARITY_BASE="${GOPATH}/src/github.com/sylabs/singularity"
 export PATH="${GOPATH}/bin:${PATH}"
-export SVER="3.8.2" #SVER is Singularity VERsion
+export SVER="3.8.1" #SVER is Singularity VERsion
 
 mkdir -p "${GOPATH}/src/github.com/sylabs"
 cd "${GOPATH}/src/github.com/sylabs"
