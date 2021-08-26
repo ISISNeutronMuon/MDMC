@@ -73,7 +73,6 @@ matrix:
             - libarchive-dev
             - libgpgme11-dev
             - libseccomp-dev
-            - python3-pip
         homebrew:
           packages:
             - squashfs

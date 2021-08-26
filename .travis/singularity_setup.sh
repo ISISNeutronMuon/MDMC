@@ -5,18 +5,14 @@
 
 sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
 
-# Check Python
-
-echo "Python Version:"
-python --version
-pip3 install --user sregistry[all]
-sregistry version
-
-echo "sregistry Version:"
-
 # Install Singularity
 
 SINGULARITY_BASE="${GOPATH}/src/github.com/sylabs/singularity"
+MAX_ENGINE_CONFIG_CHUNK=1000
+ENGINE_CONFIG_CHUNK_ENV=1000
+ENGINE_CONFIG_ENV=1000
+MAX_CHUNK_SIZE=1000
+MAX_ENGINE_CONFIG_SIZE=1000
 export PATH="${GOPATH}/bin:${PATH}"
 
 mkdir -p "${GOPATH}/src/github.com/sylabs"
