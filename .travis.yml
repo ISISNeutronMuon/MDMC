@@ -78,7 +78,7 @@ matrix:
             - squashfs
       before_install:
         - sudo apt-get update 
-        - sudo apt-get install python3=3.8.0
+        - sudo apt-get install python3
         - pip3 install --upgrade pip
         - source .travis/singularity_setup.sh
       script:
