@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM ubuntu:20.04
+FROM python:3.9.6-slim-buster
 
 # Define environment variable
 ENV NAME World
@@ -10,7 +10,6 @@ ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
 # Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
 # scipy), and cmake for LAMMPS
 RUN apt-get update && apt-get install --upgrade -y \
-  python3 \
   python3-pip \
   python3-dev \
   libhdf5-dev \
