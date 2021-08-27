@@ -240,7 +240,7 @@ class ObservablePair:
             If the ``weight`` is not positive or is infinite
         """
 
-        assert weight > 0. and weight != np.float('inf'), ('Weight must be a'
+        assert weight > 0. and weight != float('inf'), ('Weight must be a'
                                                            ' finite positive'
                                                            ' float')
 

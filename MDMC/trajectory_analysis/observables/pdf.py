@@ -653,10 +653,10 @@ class PairDistributionFunction(Observable):
             # Using next with default means pair_block will be filled with
             # np.array(['inf']) if StopIteration is returned. Then change
             # exhausted so that the while loop will stop.
-            pair_block = [np.subtract(*next(position_pairs, ([np.float('inf')],
+            pair_block = [np.subtract(*next(position_pairs, ([float('inf')],
                                                              [0.])))
                           for _ in range(BLOCK)]
-            exhausted = np.float('inf') in pair_block[-1]
+            exhausted = float('inf') in pair_block[-1]
             separations = map(self._calculate_euclidean_norm, pair_block)
             hist += jit_histogram(np.fromiter(separations,
                                               dtype=np.float64,

@@ -263,11 +263,11 @@ def test_simulation_stdout(universe, verbose, capsys):
     msg_main = ('LAMMPS output is captured by PyLammps wrapper\n'
                 'LAMMPS output is captured by PyLammps wrapper\n'
                 'Simulation created with lammps engine and settings:\n'
-                '  temperature     300\n'
-                '  pressure     101325\n'
-                '  thermostat     nose\n'
-                '  barostat       nose\n'
-                '  p_damp          100\n'
+                '  temperature     300.0\n'
+                '  pressure     101325.0\n'
+                '  thermostat       nose\n'
+                '  barostat         nose\n'
+                '  p_damp            100\n'
                 '\n')
     minimize_msg = ('Starting minimization for 0 steps\n'
                     'Minimization complete in ')
