@@ -27,6 +27,16 @@ matrix:
         - docker push mdmc/mdmc:travis # if a new image wasn't built, this throws a harmless exception
         - docker logout
         
+    # tests if documentation has been changed, and if so ensures it builds correctly.
+    # builds using docker container to access LAMMPS.
+    # TODO: if triggered as a cron job, will also deploy documentation to the github pages site.
+    - name: "Documentation testing"
+      language: minimal
+      services:
+        - docker
+      script:
+        - source .travis/documentation_testing.sh
+        
     #### CRON JOBS ####
     # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    
         
@@ -82,17 +92,6 @@ matrix:
         - singularity exec mdmc_latest.sif pip3 install --upgrade pip
         - singularity exec mdmc_latest.sif pip3 install .
         - singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
-
-    # build documentation using docker container to access LAMMPS
-    - name: "Documentation"
-      if: type = cron
-      language: minimal
-      services:
-        - docker
-      before_install:
-        - docker pull mdmc/mdmc:latest
-      script:
-        - docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
 
     # testing on Windows
     - name: "Python 3.8.0 on Windows"
