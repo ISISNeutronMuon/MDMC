@@ -368,7 +368,7 @@ class StructuralUnit(ABC):
             if (np.any(position < np.array([0., 0., 0])) or
                     np.any(position > self.universe.dimensions)):
                 return False
-            elif np.any(position == np.float('nan')):
+            elif np.any(position == float('nan')):
                 raise ValueError('position of {0} is undefined'.format(self))
             else:
                 return True

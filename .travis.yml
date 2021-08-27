@@ -44,7 +44,7 @@ matrix:
     - name: "Non-container and not inc MD tests"
       if: type = cron
       language: python
-      python: 3.6
+      python: 3.8
       os: linux
       dist: bionic
       addons:

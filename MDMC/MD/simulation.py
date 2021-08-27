@@ -999,7 +999,7 @@ class Universe(AtomContainer):
         except ValueError:
             max_atom_type = 0
         solvent_config.offset_atom_types(max_atom_type)
-        difference = np.float('inf')
+        difference = float('inf')
 
         while abs(difference * 100) >= abs(tolerance):
 
