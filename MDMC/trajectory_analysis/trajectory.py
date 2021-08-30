@@ -123,7 +123,7 @@ class Configuration(AtomCollection):
         return False
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
         """
         Get the `list` of ``Atom`` which belong to the ``Configuration``
@@ -177,7 +177,7 @@ class Configuration(AtomCollection):
             A `list` of `str` for the elements
         """
 
-        return [atom.element for atom in self.atom_list]
+        return [atom.element for atom in self.atoms]
 
     @property
     def molecule_list(self):
@@ -254,7 +254,7 @@ class Configuration(AtomCollection):
         # use of weakref causes issues with prematurely garbage collecting the
         # structural_units, revert this change to not use weakref.
         self._structure_list.append(weakref.ref(structural_unit))
-        self._data.extend([atom for atom in structural_unit.atom_list])
+        self._data.extend([atom for atom in structural_unit.atoms])
 
     def validate_structure(self, structure):
 
@@ -320,7 +320,7 @@ class Configuration(AtomCollection):
             The number of ``Atom`` objects in the ``Configuration``
         """
 
-        return len(self.atom_list)
+        return len(self.atoms)
 
     def __getitem__(self, item):
 
@@ -369,7 +369,7 @@ class Configuration(AtomCollection):
             A `list` of ``Atom`` which are `True` for the given predicate
         """
 
-        return list(filter(predicate, self.atom_list))
+        return list(filter(predicate, self.atoms))
 
     def filter_by_element(self, element):
 
@@ -581,7 +581,7 @@ class Trajectory(AtomCollection):
         """
 
         try:
-            assert len(config.atom_list) == len(validator.atom_list)
+            assert len(config.atoms) == len(validator.atoms)
         except AssertionError:
             raise AssertionError('Configurations do not contain the same number'
                                  ' of atoms')
@@ -638,7 +638,7 @@ class Trajectory(AtomCollection):
             Atoms from the frame 0 ``Configuration``
         """
 
-        return self.data['configuration'][0].atom_list
+        return self.data['configuration'][0].atoms
 
     @property
     def element_set(self):

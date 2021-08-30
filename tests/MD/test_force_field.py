@@ -53,14 +53,14 @@ def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
     assignment of virtual atoms, as these have not been implemented.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
         # Check that initial charges are 0.
         assert atom.charge == 0.
     water_universe.add_force_field('OPLSAA')
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         if atom.element == 'H':
             assert atom.charge == H_charge
         else:
@@ -79,14 +79,14 @@ def test_opls_water_model_masses(water_universe, model):
     All water models have the same H and O mass.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
         # Check that initial masses are not the same as model masses
         assert atom.mass not in [1.008, 15.999]
     water_universe.add_force_field('OPLSAA')
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         if atom.element == 'H':
             assert atom.mass == 1.008
         else:
@@ -110,7 +110,7 @@ def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
     parametrized.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -140,7 +140,7 @@ def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
     parametrization.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -167,7 +167,7 @@ def test_opls_water_model_bond_angle_parameters(water_universe, model,
     parametrization.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
