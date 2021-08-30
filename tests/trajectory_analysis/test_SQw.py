@@ -30,7 +30,7 @@ def altered_trajectory(water_SPCE_universe):
     times = np.arange(0., 10., 1.)
     for time in times:
         configurations.append(trj.TemporalConfiguration(
-            time, *water_SPCE_universe.configuration.atom_list))
+            time, *water_SPCE_universe.configuration.atoms))
     return trj.Trajectory(*configurations)
 
 @pytest.fixture

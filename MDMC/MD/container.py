@@ -14,13 +14,13 @@ class AtomContainer(ABC):
 
     Attributes
     ----------
-    atom_list : list
+    atoms : list
         A list of the ``Atom`` objects that belong to the ``AtomContainer``
     """
 
     @property
     @abstractmethod
-    def atom_list(self):
+    def atoms(self):
 
         """
         Returns
@@ -40,4 +40,4 @@ class AtomContainer(ABC):
             The atom (or atoms) for the specified index (or slice)
         """
 
-        return self.atom_list[index]
+        return self.atoms[index]

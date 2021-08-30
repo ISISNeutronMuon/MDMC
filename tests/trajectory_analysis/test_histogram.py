@@ -19,7 +19,7 @@ TIMES = np.arange(TRAJ_TIME_START, TRAJ_TIME_END, TRAJ_TIME_STEP)
 
 @pytest.fixture
 def configuration(water_SPCE_universe):
-    return trj.TemporalConfiguration(0., *water_SPCE_universe.atom_list)
+    return trj.TemporalConfiguration(0., *water_SPCE_universe.atoms)
 
 @pytest.fixture
 def trajectory(water_SPCE_universe):
@@ -32,7 +32,7 @@ def trajectory(water_SPCE_universe):
     configurations = []
     for time in TIMES:
         configurations.append(trj.TemporalConfiguration(
-            time, *water_SPCE_universe.configuration.atom_list))
+            time, *water_SPCE_universe.configuration.atoms))
     return trj.Trajectory(*configurations)
 
 def test_configuration(configuration):
@@ -40,7 +40,7 @@ def test_configuration(configuration):
     """
     Test for:
 
-    Existence of atom_list, atom_positions, atom_velocities, structure_list
+    Existence of atoms, atom_positions, atom_velocities, structure_list
     Add configurations
     Filter
     time
@@ -66,7 +66,7 @@ def test_configuration(configuration):
     H_atoms = configuration.filter_by_element('H')
     for atom in H_atoms:
         assert atom.element == 'H'
-    for atom in set(configuration.atom_list) - set(H_atoms):
+    for atom in set(configuration.atoms) - set(H_atoms):
         assert atom.element != 'H'
 
 def test_trajectory(trajectory):
@@ -74,7 +74,7 @@ def test_trajectory(trajectory):
     """
     Test for:
 
-    Existence of times, atom_list, positions, velocities
+    Existence of times, atoms, positions, velocities
     filter_by_time results in expected time for the new trajectory
     """
 

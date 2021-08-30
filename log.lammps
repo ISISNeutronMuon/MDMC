@@ -1,0 +1,404 @@
+LAMMPS (29 Oct 2020)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:94)
+  using 1 OpenMP thread(s) per MPI task
+units real
+atom_style full
+region universe block 0.0 50.0 0.0 50.0 0.0 50.0
+create_box 4 universe bond/types 2 angle/types 1 dihedral/types 1 improper/types 1 extra/bond/per/atom 2 extra/angle/per/atom 1 extra/dihedral/per/atom 1 extra/improper/per/atom 1
+Created orthogonal box = (0.0000000 0.0000000 0.0000000) to (50.000000 50.000000 50.000000)
+  1 by 1 by 1 MPI processor grid
+mass 1 12.011
+create_atoms 1 single 0.0 0.0 0.0
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 1 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+create_atoms 1 single 0.5 0.5 0.5
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 2 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+create_atoms 1 single 1.0 1.0 1.0
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 3 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+mass 2 1.008
+create_atoms 2 single 1.5 1.5 1.5
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 4 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+create_atoms 2 single 2.0 2.0 2.0
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 5 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+create_atoms 2 single 2.5 2.5 2.5
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 6 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+mass 3 14.007
+create_atoms 3 single 3.0 3.0 3.0
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 7 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+create_atoms 3 single 3.5 3.5 3.5
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 8 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+mass 4 16.0
+create_atoms 4 single 4.0 4.0 4.0
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 9 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+create_atoms 4 single 4.5 4.5 4.5
+Created 1 atoms
+  create_atoms CPU = 0.000 seconds
+info system
+info system
+set atom 10 vx 0.0 vy 0.0 vz 0.0
+Setting atom values ...
+  1 settings made for vx
+  1 settings made for vy
+  1 settings made for vz
+pair_style hybrid/overlay buck/coul/cut 10.0 8.0 coul/cut 8.0
+set atom 1 charge -0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 2 charge -0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 3 charge -0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 4 charge 0.0
+Setting atom values ...
+  1 settings made for charge
+set atom 5 charge 0.0
+Setting atom values ...
+  1 settings made for charge
+set atom 6 charge 0.0
+Setting atom values ...
+  1 settings made for charge
+set atom 7 charge 0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 8 charge 0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 9 charge 1.0
+Setting atom values ...
+  1 settings made for charge
+set atom 10 charge 1.0
+Setting atom values ...
+  1 settings made for charge
+pair_coeff 1 1 buck/coul/cut 0.02390057361376673 1.0 0.4780114722753346 10.0 8.0
+pair_coeff 1 2 coul/cut
+pair_coeff 1 3 coul/cut
+pair_coeff 1 4 coul/cut
+pair_coeff 2 2 buck/coul/cut 0.04780114722753346 0.5 0.9560229445506692 10.0 8.0
+pair_coeff 2 3 coul/cut
+pair_coeff 2 4 coul/cut
+pair_coeff 3 3 buck/coul/cut 0.07170172084130019 0.3333333333333333 1.4340344168260037 10.0 8.0
+pair_coeff 3 4 coul/cut
+pair_coeff 4 4 buck/coul/cut 0.09560229445506692 0.25 1.9120458891013383 10.0 8.0
+pair_modify pair buck/coul/cut tail yes
+bond_style hybrid harmonic
+bond_coeff 1 harmonic 0.9560229445506692 2.0
+create_bonds single/bond 1 1 3 special no
+create_bonds single/bond 1 4 6 special no
+create_bonds single/bond 1 7 9 special no
+bond_coeff 2 harmonic 0.4780114722753346 1.0
+create_bonds single/bond 2 1 2 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     1 = max # of 1-3 neighbors
+     1 = max # of 1-4 neighbors
+     2 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+create_bonds single/bond 2 3 4 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     2 = max # of 1-4 neighbors
+     4 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+create_bonds single/bond 2 5 6 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+create_bonds single/bond 2 7 8 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+create_bonds single/bond 2 9 10 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+angle_style hybrid harmonic
+angle_coeff 1 harmonic 0.00011950286806883366 1.0
+create_bonds single/angle 1 1 2 3 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+create_bonds single/angle 1 4 5 6 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+create_bonds single/angle 1 7 8 9 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+dihedral_style hybrid fourier
+dihedral_coeff 1 fourier 4 0.2390057361376673 1 90.0 0.4780114722753346 2 180.0 0.02390057361376673 3 -90.0 0.11950286806883365 4 -45.0
+create_bonds single/dihedral 1 1 2 3 4 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+improper_style hybrid harmonic
+improper_coeff 1 harmonic 4.780114722753346e-05 1.0
+create_bonds single/improper 1 1 2 3 4 special yes
+Finding 1-2 1-3 1-4 neighbors ...
+  special bond factors lj:    0.0      0.0      0.0     
+  special bond factors coul:  0.0      0.0      0.0     
+     2 = max # of 1-2 neighbors
+     2 = max # of 1-3 neighbors
+     3 = max # of 1-4 neighbors
+     5 = max # of special neighbors
+  special bonds CPU = 0.000 seconds
+set atom 1 charge -0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 2 charge -0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 3 charge -0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 4 charge 0.0
+Setting atom values ...
+  1 settings made for charge
+set atom 5 charge 0.0
+Setting atom values ...
+  1 settings made for charge
+set atom 6 charge 0.0
+Setting atom values ...
+  1 settings made for charge
+set atom 7 charge 0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 8 charge 0.5
+Setting atom values ...
+  1 settings made for charge
+set atom 9 charge 1.0
+Setting atom values ...
+  1 settings made for charge
+set atom 10 charge 1.0
+Setting atom values ...
+  1 settings made for charge
+bond_coeff 1 harmonic 0.9560229445506692 2.0
+bond_coeff 2 harmonic 0.4780114722753346 1.0
+angle_coeff 1 harmonic 0.00011950286806883366 1.0
+dihedral_coeff 1 fourier 4 0.2390057361376673 1 90.0 0.4780114722753346 2 180.0 0.02390057361376673 3 -90.0 0.11950286806883365 4 -45.0
+improper_coeff 1 harmonic 4.780114722753346e-05 1.0
+pair_coeff 1 1 buck/coul/cut 0.02390057361376673 1.0 0.4780114722753346 10.0 8.0
+pair_coeff 1 2 coul/cut
+pair_coeff 1 3 coul/cut
+pair_coeff 1 4 coul/cut
+pair_coeff 2 2 buck/coul/cut 0.04780114722753346 0.5 0.9560229445506692 10.0 8.0
+pair_coeff 2 3 coul/cut
+pair_coeff 2 4 coul/cut
+pair_coeff 3 3 buck/coul/cut 0.07170172084130019 0.3333333333333333 1.4340344168260037 10.0 8.0
+pair_coeff 3 4 coul/cut
+pair_coeff 4 4 buck/coul/cut 0.09560229445506692 0.25 1.9120458891013383 10.0 8.0
+info fixes
+info fixes
+fix nve all nve
+info fixes
+info fixes
+unfix nve
+info fixes
+fix nve all nve
+info fixes
+info fixes
+unfix nve
+info fixes
+fix nve all nve
+info fixes
+info fixes
+unfix nve
+info fixes
+fix nve all nve
+info fixes
+info fixes
+unfix nve
+info fixes
+fix nve all nve
+info fixes
+info system
+velocity all create 1.0 3963
+timestep 1.0
+neighbor 2.0 bin
+neigh_modify every 1 delay 0 check yes
+info fixes
+info system
+fix RemoveLinearMomentum all momentum 1 linear 1 1 1
+info fixes
+unfix RemoveLinearMomentum
+info system
+fix RemoveLinearMomentum all momentum 1 linear 1 1 1
+info fixes
+unfix nve
+info fixes
+fix nve all nve
+fix t_berendsen all temp/berendsen 1.0 1.0 100.0
+info fixes
+run 0
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 12
+  ghost atom cutoff = 12
+  binsize = 6, bins = 9 9 9
+  3 neighbor lists, perpetual/occasional/extra = 3 0 0
+  (1) pair buck/coul/cut, perpetual, skip from (3)
+      attributes: half, newton on
+      pair build: skip
+      stencil: none
+      bin: none
+  (2) pair coul/cut, perpetual, skip from (3)
+      attributes: half, newton on
+      pair build: skip
+      stencil: none
+      bin: none
+  (3) neighbor class addition, perpetual
+      attributes: half, newton on
+      pair build: half/bin/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 8.712 | 8.712 | 8.712 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0            1   -263.91529    1.1128528   -262.77561   -47.658681 
+Loop time of 8.12001e-07 on 1 procs for 0 steps with 10 atoms
+
+246.3% CPU use with 1 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Bond    | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 8.12e-07   |            |       |100.00
+
+Nlocal:        10.0000 ave          10 max          10 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:        70.0000 ave          70 max          70 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:        0.00000 ave           0 max           0 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 0
+Ave neighs/atom = 0.0000000
+Ave special neighs/atom = 3.6000000
+Neighbor list builds = 0
+Dangerous builds = 0
+info fixes
+unfix nve
+unfix t_berendsen
+info fixes
+fix nve all nve
+info fixes
+Total wall time: 0:00:00

@@ -32,7 +32,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
-                'atom_list')
+                'atoms')
 class StructuralUnit(ABC):
 
     """Abstract base class for all structural units
@@ -120,11 +120,11 @@ class StructuralUnit(ABC):
         self._velocity = velocity
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
         """
         Get a `list` of all of the `Atom` objects in the structure by
-        recursively calling ``atom_list`` for all substructures
+        recursively calling ``atoms`` for all substructures
 
         Returns
         -------
@@ -132,10 +132,10 @@ class StructuralUnit(ABC):
             All atoms in the structure
         """
 
-        atom_list = []
+        atoms = []
         for structure in self._structure_list:
-            atom_list.extend(structure.atom_list)
-        return atom_list
+            atoms.extend(structure.atoms)
+        return atoms
 
     @property
     @abstractmethod
@@ -386,11 +386,11 @@ class StructuralUnit(ABC):
             Contains the lower and upper extents of the ``Molecule``
         """
 
-        return BoundingBox(self.atom_list)
+        return BoundingBox(self.atoms)
 
 
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
-                'atom_list')
+                'atoms')
 class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     """
@@ -512,7 +512,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         """
 
         return get_reduced_chemical_formula([atom.element for atom
-                                             in self.atom_list])
+                                             in self.atoms])
 
     @property
     def universe(self):
@@ -623,7 +623,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         ``Ang``
         """
 
-        for atom in self.atom_list:
+        for atom in self.atoms:
             atom.position = self.position + self._CoM_frame_positions[atom]
 
     def _calc_CoM(self):
@@ -638,7 +638,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
         mass = 0.
         weighted_positions = np.zeros(3)
-        for atom in self.atom_list:
+        for atom in self.atoms:
             mass += atom.mass
             weighted_positions += (atom.position * atom.mass)
         return weighted_positions / mass
@@ -652,7 +652,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
         self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
-        for atom in self.atom_list:
+        for atom in self.atoms:
             self._CoM_frame_positions[atom] = atom.position - CoM
 
     def rotate(self, x=0., y=0., z=0.):
@@ -678,7 +678,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
         rotation = Rotation.from_euler('xyz', [x, y, z], degrees=True)
         CoM = self.position
-        for atom in self.atom_list:
+        for atom in self.atoms:
             atom.position = (CoM
                              + rotation.apply(self._CoM_frame_positions[atom]))
 
@@ -825,7 +825,7 @@ class Atom(StructuralUnit):
             self.position))
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
         """
         Get a `list` of the atoms, just consisting of the ``Atom``
@@ -1100,7 +1100,7 @@ class Atom(StructuralUnit):
             class ``Interaction``.  If an ``Interaction`` class is passed then
             it must be a ``NonBondedInteraction`` i.e. only takes a single
             ``Atom`` as an argument. If an ``Interaction`` object is passed then
-            this ``Atom`` must be in the ``interaction.atom_list``.
+            this ``Atom`` must be in the ``interaction.atoms``.
         from_interaction : bool, optional
             Specifies if this method has been called from an ``Interaction``.
             Default is `False`.
@@ -1252,7 +1252,7 @@ class Molecule(CompositeStructuralUnit):
             ``NonBondedInteraction`` objects acting on the ``Molecule``
         """
 
-        return [inter for atom in self.atom_list
+        return [inter for atom in self.atoms
                 for inter in atom.nonbonded_interactions]
 
     @property
@@ -1277,18 +1277,18 @@ class Molecule(CompositeStructuralUnit):
             [(Bond, (H1, O)), (Bond, (H2, O))]
         """
 
-        # Cache only most recent value, as atom_list only expected to increase
+        # Cache only most recent value, as atoms only expected to increase
         @lru_cache(maxsize=1)
-        def get_bonded_interaction_pairs(atom_list):
+        def get_bonded_interaction_pairs(atoms):
             # Preserve the order - required for consistent
             # bonded_interaction_pairs on different ranks (if using MPI)
             used = set()
-            return [pair for atom in atom_list for pair
+            return [pair for atom in atoms for pair
                     in atom.bonded_interaction_pairs if pair not in used
                     and (used.add(pair) or True)]
 
         # Cast to tuple required so that it is hashable for lru_cache
-        return get_bonded_interaction_pairs(tuple(self.atom_list))
+        return get_bonded_interaction_pairs(tuple(self.atoms))
 
     @property
     @unit_decorator_getter(unit=units.MASS)
@@ -1304,7 +1304,7 @@ class Molecule(CompositeStructuralUnit):
         """
 
         mass = 0
-        for atom in self.atom_list:
+        for atom in self.atoms:
             mass += atom.mass
 
         return mass
@@ -1319,16 +1319,16 @@ class BoundingBox:
 
     Parameters
     ----------
-    atom_list : list
+    atoms : list
         ``Atom`` objects (or ``int`` corresponding to an ``Atom.ID``) for which the minimum and
         maximum extents are determined
     """
 
-    def __init__(self, atom_list: List):
-        if not atom_list:
-            raise ValueError("Empty atom_list passed; it must contain at least one atom to create a BoundingBox object.")
+    def __init__(self, atoms: List):
+        if not atoms:
+            raise ValueError("Empty atoms passed; it must contain at least one atom to create a BoundingBox object.")
 
-        parsed_atoms = parse_structural_unit_IDs(atom_list)
+        parsed_atoms = parse_structural_unit_IDs(atoms)
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
         self.min = self.max = parsed_atoms[0].position

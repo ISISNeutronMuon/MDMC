@@ -609,7 +609,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     n_atoms = int(line.split()[0])
                     # Check that n_atoms is as expected, if a universe was passed
                     if self.universe:
-                        assert n_atoms == len(self.universe.atom_list)
+                        assert n_atoms == len(self.universe.atoms)
 
                 if 'ITEM: BOX BOUNDS' in line:
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
@@ -891,7 +891,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         n_improper_types = dihedral_types.count(True)
 
         # Determine max number of bonds and angles per atom
-        atoms = universe.atom_list
+        atoms = universe.atoms
         max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
         max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
@@ -1505,7 +1505,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
                 zero_velocity = [np.array_equal(atom.velocity, (0, 0, 0))
-                                for atom in self.universe.atom_list]
+                                for atom in self.universe.atoms]
                 if all(zero_velocity):
                     # If we have not set any velocities (they are all the default value of zero)
                     # then "create" a velocity for each atom
