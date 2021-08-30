@@ -325,7 +325,7 @@ info fixes
 fix nve all nve
 info fixes
 info system
-velocity all create 1.0 3963
+velocity all create 1.0 3248
 timestep 1.0
 neighbor 2.0 bin
 neigh_modify every 1 delay 0 check yes
@@ -368,9 +368,9 @@ Neighbor list info ...
 Per MPI rank memory allocation (min/avg/max) = 8.712 | 8.712 | 8.712 Mbytes
 Step Temp E_pair E_mol TotEng Press 
        0            1   -263.91529    1.1128528   -262.77561   -47.658681 
-Loop time of 8.12001e-07 on 1 procs for 0 steps with 10 atoms
+Loop time of 1.323e-06 on 1 procs for 0 steps with 10 atoms
 
-246.3% CPU use with 1 MPI tasks x 1 OpenMP threads
+226.8% CPU use with 1 MPI tasks x 1 OpenMP threads
 
 MPI task timing breakdown:
 Section |  min time  |  avg time  |  max time  |%varavg| %total
@@ -381,7 +381,7 @@ Neigh   | 0          | 0          | 0          |   0.0 |  0.00
 Comm    | 0          | 0          | 0          |   0.0 |  0.00
 Output  | 0          | 0          | 0          |   0.0 |  0.00
 Modify  | 0          | 0          | 0          |   0.0 |  0.00
-Other   |            | 8.12e-07   |            |       |100.00
+Other   |            | 1.323e-06  |            |       |100.00
 
 Nlocal:        10.0000 ave          10 max          10 min
 Histogram: 1 0 0 0 0 0 0 0 0 0

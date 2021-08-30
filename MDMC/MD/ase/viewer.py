@@ -28,7 +28,7 @@ def view(atoms, viewer='X3DOM', cell=None, **settings):
     Parameters
     ----------
     atoms : list
-        A `list` of ``Atom`` (``MDMC.MD.structural_unit.Atom``) to view
+        A `list` of ``Atom`` (``MDMC.MD.structure.Atom``) to view
     viewer : str, optional
         The viewer used to display the visualization. This can be 'X3DOM', which
         allows for inline visualization in Jupyter notebooks, or 'ASE', which

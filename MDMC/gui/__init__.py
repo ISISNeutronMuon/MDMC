@@ -30,6 +30,6 @@ def view(atom_container, viewer='X3DOM'):
     try:
         atoms = atom_container.atoms
     except AttributeError:
-        atoms = MD.structural_units.parse_structural_unit_IDs(atom_container)
+        atoms = MD.structures.parse_structure_IDs(atom_container)
 
     return MD.ase.viewer.view(atoms, viewer=viewer, cell=dimensions)

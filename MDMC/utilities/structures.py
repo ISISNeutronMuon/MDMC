@@ -11,10 +11,10 @@ def is_atom(atom: object) -> bool:
     bool
         Boolean if the passed Object is an ``Atom`` or not.
     """
-    from MDMC.MD.structural_units import Atom
+    from MDMC.MD.structures import Atom
     return isinstance(atom, Atom)
 
-def parse_structural_unit_IDs(structural_units):
+def parse_structure_IDs(structures):
     """
     Converts all ``int`` elements in ``atoms`` into ``StructuralUnit`` objects with that ``int`` as
     their ``ID``. Any elements that are not ``int`` (i.e. any that are already a
@@ -22,7 +22,7 @@ def parse_structural_unit_IDs(structural_units):
 
     Parameters
     ----------
-    structural_units : list
+    structures : list
         A `list` of ``StructuralUnit`` or ``int`` corresponding to an ``StructuralUnit.ID``
 
     Returns
@@ -33,15 +33,15 @@ def parse_structural_unit_IDs(structural_units):
     Raises
     ------
     KeyError
-        If one of the ``int`` in ``structural_units`` does not correspond to an existing
+        If one of the ``int`` in ``structures`` does not correspond to an existing
         ``StructuralUnit.ID``.
     """
 
     parsed_units = []
-    for unit in structural_units:
+    for unit in structures:
         if isinstance(unit, int):
             try:
-                from MDMC.MD.structural_units import StructuralUnit
+                from MDMC.MD.structures import StructuralUnit
                 parsed_unit = StructuralUnit._ID_dict[unit]
             except KeyError as error:
                 msg = 'No atom found with ID {}'.format(unit)

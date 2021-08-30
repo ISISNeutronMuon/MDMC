@@ -73,7 +73,7 @@ class Configuration(AtomCollection):
 
     Parameters
     ----------
-    *structural_units
+    *structures
         Zero or more ``StructuralUnit`` objects to be added to the
         ``Configuration``
     **settings
@@ -85,21 +85,21 @@ class Configuration(AtomCollection):
     element_set : set
         `set` of the elements in the ``Configuration``
     universe : Universe or None
-    data : *structural_units
+    data : *structures
     """
 
     __slots__ = ('_data', 'element_set', '_structure_list')
 
-    def __init__(self, *structural_units, **settings):
+    def __init__(self, *structures, **settings):
 
         try:
             self.universe = settings['universe']
         except KeyError:
             try:
-                self.universe = structural_units[0].universe
+                self.universe = structures[0].universe
             except IndexError:
                 self.universe = None
-        self.data = structural_units
+        self.data = structures
         self.element_set = set(self.element_list)
 
     def __eq__(self, other):
@@ -205,10 +205,10 @@ class Configuration(AtomCollection):
             A `list` of ``StructuralUnit``
         """
 
-        # Call the weakref to return the structural_unit as an object. If the
+        # Call the weakref to return the structure as an object. If the
         # use of weakref causes issues with prematurely garbage collecting the
-        # structural_units, revert this change to not use weakref.
-        return [structural_unit() for structural_unit in self._structure_list]
+        # structures, revert this change to not use weakref.
+        return [structure() for structure in self._structure_list]
 
     @property
     def data(self):
@@ -231,30 +231,30 @@ class Configuration(AtomCollection):
                                ('velocity', 'object')])
 
     @data.setter
-    def data(self, structural_units):
+    def data(self, structures):
 
         self._structure_list = []
         self._data = []
-        for unit in structural_units:
-            self.add_structural_unit(unit)
+        for unit in structures:
+            self.add_structure(unit)
 
-    def add_structural_unit(self, structural_unit):
+    def add_structure(self, structure):
 
         """
         Adds the ``Atom`` objects from a ``StructuralUnit`` to the data
 
         Parameters
         ----------
-        structural_unit : StructuralUnit
+        structure : StructuralUnit
             The ``StructuralUnit`` to add
         """
 
-        self.validate_structure(structural_unit)
-        # Create a weakref of the structural_unit for _structure_list. If the
+        self.validate_structure(structure)
+        # Create a weakref of the structure for _structure_list. If the
         # use of weakref causes issues with prematurely garbage collecting the
-        # structural_units, revert this change to not use weakref.
-        self._structure_list.append(weakref.ref(structural_unit))
-        self._data.extend([atom for atom in structural_unit.atoms])
+        # structures, revert this change to not use weakref.
+        self._structure_list.append(weakref.ref(structure))
+        self._data.extend([atom for atom in structure.atoms])
 
     def validate_structure(self, structure):
 
@@ -427,9 +427,9 @@ class TemporalConfiguration(Configuration):
 
     __slots__ = ('time', )
 
-    def __init__(self, time, *structural_units, **settings):
+    def __init__(self, time, *structures, **settings):
 
-        super().__init__(*structural_units, **settings)
+        super().__init__(*structures, **settings)
         self.time = time
 
     def __add__(self, configuration):

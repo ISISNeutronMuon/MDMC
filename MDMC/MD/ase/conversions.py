@@ -9,7 +9,7 @@ import ase
 from ase.io import x3d
 import numpy as np
 
-from MDMC.MD.structural_units import Atom
+from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import Bond
 
 

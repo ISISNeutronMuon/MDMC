@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.ase import conversions
-from MDMC.MD.structural_units import Atom
+from MDMC.MD.structures import Atom
 
 
 FORMULA = 'C8H4O2'

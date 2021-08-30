@@ -12,7 +12,7 @@ from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            Periodic)
 from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
                                 Ewald, PPPM, KSpaceSolver, Simulation)
-from MDMC.MD.structural_units import (Atom)
+from MDMC.MD.structures import (Atom)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
@@ -87,7 +87,7 @@ def universe_interactions(empty_universe, atoms):
     """
 
     for atom in atoms:
-        empty_universe.add_structural_unit(atom)
+        empty_universe.add_structure(atom)
 
     # Create InteractionFunctions for bonds, angles, dihedrals and dispersive
     # interactions
@@ -928,7 +928,7 @@ def test_update_charges_error():
     """
 
     universe = Universe(10.)
-    universe.add_structural_unit(Atom('H'))
+    universe.add_structure(Atom('H'))
     with pytest.raises(AttributeError):
         lmp_eng.LAMMPSUniverse(universe)
 

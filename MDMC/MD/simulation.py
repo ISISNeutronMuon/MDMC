@@ -18,7 +18,7 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import StructuralUnit, parse_structural_unit_IDs
+from MDMC.MD.structures import StructuralUnit, parse_structure_IDs
 from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Configuration
 
@@ -87,7 +87,7 @@ class Universe(AtomContainer):
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:
-            parsed_structures = parse_structural_unit_IDs(structures)
+            parsed_structures = parse_structure_IDs(structures)
             self.configuration = Configuration(parsed_structures)
         else:
             self.configuration = Configuration(universe=self)
@@ -468,12 +468,12 @@ class Universe(AtomContainer):
                 parents += add_all_parents(parent)
             return parents
 
-        structural_units = []
+        structures = []
         for atom in self.atoms:
-            structural_units += add_all_parents(atom)
+            structures += add_all_parents(atom)
 
-        structural_units += list(self.atoms)
-        return list(set(structural_units))
+        structures += list(self.atoms)
+        return list(set(structures))
 
     @property
     @mod_docstring(_FF_DOCSTRING)
@@ -637,7 +637,7 @@ class Universe(AtomContainer):
             raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structural_unit(self, structural_unit, force_field=None,
+    def add_structure(self, structure, force_field=None,
                             center=False):
 
         """
@@ -646,23 +646,23 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit or int
+        structure : StructuralUnit or int
             The ``StructuralUnit`` (or its ``ID`` as an `int`) to be added to the ``Universe``
         force_field : str, optional
-            The force field to be applied to the structural_unit. The available
+            The force field to be applied to the structure. The available
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
         center : bool, optional
-            Whether to center `structural_unit` within the Universe as it is
+            Whether to center `structure` within the Universe as it is
             added
         """
 
-        parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
+        parsed_unit = parse_structure_IDs([structure])[0]
 
         if center:
             parsed_unit.position = self.dimensions / 2.
         parsed_unit.universe = self
-        self.configuration.add_structural_unit(parsed_unit)
+        self.configuration.add_structure(parsed_unit)
         for atom in parsed_unit.atoms:
             self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
             self.add_nonbonded_interaction(*atom.nonbonded_interactions)
@@ -672,13 +672,13 @@ class Universe(AtomContainer):
             self.add_force_field(force_field, *parsed_unit.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
-    def fill(self, structural_unit: StructuralUnit, force_field: str=None,
+    def fill(self, structure: StructuralUnit, force_field: str=None,
              num_density: float=None, num_struc_units: int=None):
 
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
 
-        Adds copies of ``structural_unit`` to existing configuration until
+        Adds copies of ``structure`` to existing configuration until
         ``Universe`` is full.  As exclusion region is defined by the size of a
         bounding sphere, this method is most suitable for atoms or molecules
         with approximately equal dimensions.
@@ -693,7 +693,7 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit or int
+        structure : StructuralUnit or int
             The ``StructuralUnit`` (or its ``ID`` as an `int`) with which to fill the ``Universe``
         force_field : str
             Applies a ``ForceField`` to the ``Universe``. The available
@@ -738,7 +738,7 @@ class Universe(AtomContainer):
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
-        parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
+        parsed_unit = parse_structure_IDs([structure])[0]
 
         positions = []
         # Determine the upper and lower bounds for structural unit with its
@@ -756,11 +756,11 @@ class Universe(AtomContainer):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structural_unit(parsed_unit, force_field)
+                self.add_structure(parsed_unit, force_field)
                 parsed_unit.position = position
             else:
                 new_unit = parsed_unit.copy(position)
-                self.add_structural_unit(new_unit)
+                self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field, *interactions, **settings):
@@ -1060,7 +1060,7 @@ class Universe(AtomContainer):
         # Also determine the total density of the solvent
         bonded_interactions = []
         for molecule in mols:
-            self.add_structural_unit(molecule)
+            self.add_structure(molecule)
             bonded_interactions += molecule.interactions
 
 

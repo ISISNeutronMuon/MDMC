@@ -10,7 +10,7 @@ import logging
 
 import numpy as np
 
-from MDMC.utilities.structural_units import is_atom, parse_structural_unit_IDs
+from MDMC.utilities.structures import is_atom, parse_structure_IDs
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
@@ -520,7 +520,7 @@ class Coulombic(NonBondedInteraction):
 
         O = Atom('O', atom_type=1)
         universe = Universe(10.0)
-        universe.add_structural_unit('O')
+        universe.add_structure('O')
 
     The following initializations of Coulombic are equivalent:
 
@@ -577,7 +577,7 @@ class Coulombic(NonBondedInteraction):
             # Account for init argument atoms=atom rather than atoms=[atom]
             if is_atom(atoms) or isinstance(atoms, int):
                 atoms = [atoms]
-            parsed_atoms = parse_structural_unit_IDs(atoms)
+            parsed_atoms = parse_structure_IDs(atoms)
             self._atoms = []
             self._atom_types = []
             self.add_atoms(*parsed_atoms)
@@ -725,7 +725,7 @@ class BondedInteraction(Interaction):
 
         parsed_atom_tuples = []
         for atom_tuple in atom_tuples:
-            parsed_atom_tuple = tuple(parse_structural_unit_IDs(atom_tuple))
+            parsed_atom_tuple = tuple(parse_structure_IDs(atom_tuple))
             parsed_atom_tuples.append(parsed_atom_tuple)
 
         if settings.get('n_atoms'):
@@ -1172,7 +1172,7 @@ def _add_atoms(self, *atoms):
         list of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
     """
 
-    parsed_atoms = parse_structural_unit_IDs(atoms)
+    parsed_atoms = parse_structure_IDs(atoms)
 
     for atom in parsed_atoms:
         # Add atom to interaction

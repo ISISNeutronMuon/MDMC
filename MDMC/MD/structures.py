@@ -19,7 +19,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.utilities.structural_units import parse_structural_unit_IDs
+from MDMC.utilities.structures import parse_structure_IDs
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
@@ -287,9 +287,9 @@ class StructuralUnit(ABC):
             copied and a new ``position``
         """
 
-        structural_unit = deepcopy(self)
-        structural_unit.position = position
-        return structural_unit
+        structure = deepcopy(self)
+        structure.position = position
+        return structure
 
     def _generate_ID(self):
 
@@ -1208,7 +1208,7 @@ class Molecule(CompositeStructuralUnit):
     def __init__(self, position=None, velocity=(0, 0, 0), name=None,
                  **settings):
 
-        parsed_atoms = parse_structural_unit_IDs(settings['atoms'])
+        parsed_atoms = parse_structure_IDs(settings['atoms'])
         self._structure_list = parsed_atoms
         for structure in self._structure_list:
             structure.parent = self
@@ -1328,7 +1328,7 @@ class BoundingBox:
         if not atoms:
             raise ValueError("Empty atoms passed; it must contain at least one atom to create a BoundingBox object.")
 
-        parsed_atoms = parse_structural_unit_IDs(atoms)
+        parsed_atoms = parse_structure_IDs(atoms)
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
         self.min = self.max = parsed_atoms[0].position
@@ -1410,7 +1410,7 @@ def filter_atoms(atoms, predicate):
         ``Atom`` objects in ``atoms`` which meet the condition of ``predicate``
     """
 
-    parsed_atoms = parse_structural_unit_IDs(atoms)
+    parsed_atoms = parse_structure_IDs(atoms)
     return list(filter(predicate, parsed_atoms))
 
 
@@ -1432,7 +1432,7 @@ def filter_atoms_element(atoms, element):
         ``Atom`` objects of a specific element
     """
 
-    parsed_atoms = parse_structural_unit_IDs(atoms)
+    parsed_atoms = parse_structure_IDs(atoms)
     return list(filter(lambda a: a.element == element, parsed_atoms))
 
 

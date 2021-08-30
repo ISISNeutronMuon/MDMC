@@ -6,7 +6,7 @@ import pytest
 
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, Molecule)
+from MDMC.MD.structures import (Atom, Molecule)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 
 
@@ -30,7 +30,7 @@ def water_universe():
                          interactions=[Bond((H1, O), (H2, O), constrained=True),
                                        BondAngle(H1, O, H2, constrained=True)],
                          name='water')
-    universe.add_structural_unit(water_mol)
+    universe.add_structure(water_mol)
     O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                               vdw_tail_correction=True)
     H_dispersion = Dispersion(universe, (H1.atom_type, H1.atom_type),
@@ -494,8 +494,8 @@ def test_name_element_error():
     # name=1 corresponds to a F atom in OPLSAA
     H1 = Atom('H', name=1)
     H2 = Atom('H', name=1)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     Bond((H1, H2))
     with pytest.raises(KeyError):
         uni.add_force_field('OPLSAA')
@@ -511,8 +511,8 @@ def test_undefined_bond_error():
     # There is no OPLSAA bond between two "7" atoms
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     Bond((H1, H2))
     with pytest.raises(ValueError):
         uni.add_force_field('OPLSAA')
@@ -528,8 +528,8 @@ def test_coulombic_error():
     uni = Universe(10.)
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     # We only have atom_type of 1
     Coulombic(uni, atom_types=[2])
     with pytest.raises(ValueError):
@@ -546,8 +546,8 @@ def test_dispersion_error():
     uni = Universe(10.)
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     # We only have atom_type of 1
     Dispersion(uni, atom_types=[2])
     with pytest.raises(ValueError):
