@@ -34,6 +34,9 @@ matrix:
       language: minimal
       services:
         - docker
+       before_install:
+        - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        - git fetch --unshallow --tags
       script:
         - source .travis/documentation_testing.sh
         
