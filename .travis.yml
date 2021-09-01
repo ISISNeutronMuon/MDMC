@@ -29,7 +29,7 @@ matrix:
         
     # tests if documentation has been changed, and if so ensures it builds correctly.
     # builds using docker container to access LAMMPS.
-    # TODO: if triggered as a cron job, will also deploy documentation to the github pages site.
+    # if triggered as a cron job, will also deploy documentation to the github pages site.
     - name: "Documentation testing"
       language: minimal
       services: docker
