@@ -32,9 +32,8 @@ matrix:
     # TODO: if triggered as a cron job, will also deploy documentation to the github pages site.
     - name: "Documentation testing"
       language: minimal
-      services:
-        - docker
-       before_install:
+      services: docker
+      before_install:
         - git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
         - git fetch --unshallow --tags
       script:
