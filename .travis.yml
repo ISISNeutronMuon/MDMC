@@ -38,6 +38,16 @@ matrix:
         - git fetch --unshallow --tags
       script:
         - source .travis/documentation_testing.sh
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        repo: MDMCproject/MDMCproject.github.io 
+        local_dir: ./MDMCproject.github.io/
+        github_token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+        keep_history: true
+        on:
+          branch: main
+
         
     #### CRON JOBS ####
     # All below tests run weekly (Sunday at 8pm), rather than upon a pull request.    

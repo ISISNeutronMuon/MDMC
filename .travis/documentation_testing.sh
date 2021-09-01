@@ -30,11 +30,8 @@ then
     echo; echo "Starting cron job doc testing and deployment."
     docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html" || exit 1
     # deployment to a 'travis' github branch
-    echo; echo "Test successful. Deploying."
+    echo; echo "Test successful. Preparing deployment."
     cd ..
     git clone https://github.com/MDMCproject/MDMCproject.github.io
-    cp ./MDMCv0.2_pilot/doc/_build/html/* ./MDMCproject.github.io/
-    cd ./MDMCproject.github.io
-    git checkout -B travis --track origin/travis 
-    git add * && git commit -m "Travis weekly documentation update" && git push
+    cp -r  ./MDMCv0.2_pilot/doc/_build/html/* ./MDMCproject.github.io/
 fi
