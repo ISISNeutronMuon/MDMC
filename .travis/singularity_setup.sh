@@ -5,26 +5,18 @@
 
 sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
 
-# Check Python
-
-echo "Python Version:"
-python --version
-pip3 install --user sregistry[all]
-sregistry version
-
-echo "sregistry Version:"
-
 # Install Singularity
 
 SINGULARITY_BASE="${GOPATH}/src/github.com/sylabs/singularity"
 export PATH="${GOPATH}/bin:${PATH}"
+export SVER="3.8.1" #SVER is Singularity VERsion
 
 mkdir -p "${GOPATH}/src/github.com/sylabs"
 cd "${GOPATH}/src/github.com/sylabs"
 
-wget https://github.com/hpcng/singularity/releases/download/v3.8.0/singularity-3.8.0.tar.gz
-tar -xzf singularity-3.8.0.tar.gz
-cd singularity-3.8.0
+wget https://github.com/hpcng/singularity/releases/download/v${SVER}/singularity-${SVER}.tar.gz
+tar -xzf singularity-${SVER}.tar.gz
+cd singularity-${SVER}
 ./mconfig -v -p /usr/local
 make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
 sudo make -C ./builddir install
