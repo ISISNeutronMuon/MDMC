@@ -3,10 +3,10 @@
 
 # the workflow of this script is the following:
 # 1a. if the job is a PR, and not a cron job, test whether changes have been made to the doc folder of the PR branch. (line 18)
-# 1b. if so, test the documentation builds correctly. (lines 20-22)
-# 1c. if not, do not test and return a success. (lines 24-25)
+# 1b. if so, build the documentation to test that it builds correctly. (lines 20-22)
+# 1c. Otherwise, do not test and return a success. (lines 24-25)
 
-# 2a. if the job is a cron job, test the documentation. (lines 31-32)
+# 2a. if the job is a cron job, build the documentation to test that it builds successfully. (lines 31-32)
 # 2b. if the documentation test is successful, deploy it as a PR to our Github Pages repository. (lines 33-39)
 
 #!/bin/bash 
