@@ -12,7 +12,7 @@
 #!/bin/bash 
 
 ### PR testing here
-if [ ${TRAVIS_EVENT_TYPE} != cron ];
+if [ ${TRAVIS_EVENT_TYPE} = cron ];
 then  
   if git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./doc | read REPLY;
   then
