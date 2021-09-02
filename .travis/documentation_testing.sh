@@ -31,7 +31,6 @@ then
     docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html" || exit 1
     # deployment to a 'travis' github branch
     echo; echo "Test successful. Preparing deployment."
-    cd ..
     git clone https://github.com/MDMCproject/MDMCproject.github.io
-    cp -r  ./MDMCv0.2_pilot/doc/_build/html/* ./MDMCproject.github.io/
+    cp -r  ./doc/_build/html/* ./MDMCproject.github.io/
 fi
