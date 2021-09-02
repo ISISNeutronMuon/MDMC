@@ -367,7 +367,7 @@ class Universe(AtomContainer):
             The elements in the ``Universe``
         """
 
-        return [atom.element for atom in self.atom_list]
+        return [atom.element for atom in self.atoms]
 
     @property
     def element_dict(self):
@@ -387,10 +387,10 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.element:atom for atom in self.atom_list}
+        return {atom.element:atom for atom in self.atoms}
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
         """
         Get a list of the atoms in the Universe
@@ -401,7 +401,7 @@ class Universe(AtomContainer):
             The atoms in the Universe
         """
 
-        return self.configuration.atom_list
+        return self.configuration.atoms
 
     @property
     def n_atoms(self) -> int:
@@ -415,7 +415,7 @@ class Universe(AtomContainer):
             The number of atoms in the ``Universe``
         """
 
-        return len(self.atom_list)
+        return len(self.atoms)
 
     @property
     def molecule_list(self):
@@ -469,10 +469,10 @@ class Universe(AtomContainer):
             return parents
 
         structural_units = []
-        for atom in self.atom_list:
+        for atom in self.atoms:
             structural_units += add_all_parents(atom)
 
-        structural_units += list(self.atom_list)
+        structural_units += list(self.atoms)
         return list(set(structural_units))
 
     @property
@@ -536,7 +536,7 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe``
         """
 
-        return np.sum([atom.mass for atom in self.atom_list]) / self.volume
+        return np.sum([atom.mass for atom in self.atoms]) / self.volume
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
@@ -663,7 +663,7 @@ class Universe(AtomContainer):
             parsed_unit.position = self.dimensions / 2.
         parsed_unit.universe = self
         self.configuration.add_structural_unit(parsed_unit)
-        for atom in parsed_unit.atom_list:
+        for atom in parsed_unit.atoms:
             self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
             self.add_nonbonded_interaction(*atom.nonbonded_interactions)
             self._update_atom_types(atom)
@@ -797,7 +797,7 @@ class Universe(AtomContainer):
             if isinstance(add_dispersions, list):
                 atoms = add_dispersions
             elif isinstance(add_dispersions, bool):
-                atoms = self.atom_list
+                atoms = self.atoms
             else:
                 msg = ('add_dispersions parameter of add_force_field method'
                        'must be a list of Atoms or a bool.')
@@ -820,7 +820,7 @@ class Universe(AtomContainer):
 
         # FileForceFields also contain mass definitions for atoms, so set these
         try:
-            for atom in self.atom_list:
+            for atom in self.atoms:
                 self.force_fields.set_atom_mass(atom)
         except AttributeError:
             pass

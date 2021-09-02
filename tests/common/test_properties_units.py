@@ -94,7 +94,7 @@ def test_BoundingBox_units(molecule):
     max
     """
 
-    box = BoundingBox(molecule.atom_list)
+    box = BoundingBox(molecule.atoms)
 
     try:
         check_property(box.min, LIST, units.LENGTH, units.unit_array)

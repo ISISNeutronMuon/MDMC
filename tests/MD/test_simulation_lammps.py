@@ -49,7 +49,7 @@ def atoms():
 
     Ordering of atoms is to enable ease of comparison with atoms added to
     LAMMPS, as this is done ordered by atom_type, rather than necessary the
-    order which atoms appear in universe.atom_list
+    order which atoms appear in universe.atoms
     """
 
     symbols = ['C', 'H', 'N', 'O']
@@ -439,9 +439,9 @@ def test_atom_type_mass(lammps_universe, universe):
     Tests that the mass of each atom type is set correctly in LAMMPS
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].mass
-                == universe.atom_list[i].mass)
+                == universe.atoms[i].mass)
 
 
 def test_atom_ID(lammps_universe, universe):
@@ -453,10 +453,10 @@ def test_atom_ID(lammps_universe, universe):
     # Atom IDs in universe are offset by some integer related to the number of
     # time the atoms fixture is called. If this offset is subtracted, the IDs
     # should agree exactly with the LAMMPS atom IDs
-    offset = universe.atom_list[0].ID - 1
-    for i in range(len(universe.atom_list)):
+    offset = universe.atoms[0].ID - 1
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].id
-                == universe.atom_list[i].ID - offset)
+                == universe.atoms[i].ID - offset)
 
 
 def test_atom_type(lammps_universe, universe):
@@ -465,9 +465,9 @@ def test_atom_type(lammps_universe, universe):
     Tests that atoms created in LAMMPS have the correct atom types
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].type
-                == universe.atom_list[i].atom_type)
+                == universe.atoms[i].atom_type)
 
 
 def test_atom_position(lammps_universe, universe):
@@ -476,9 +476,9 @@ def test_atom_position(lammps_universe, universe):
     Tests that atoms created in LAMMPS have the correct position
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (np.array(lammps_universe.lmp.atoms[i].position)
-                == universe.atom_list[i].position).all()
+                == universe.atoms[i].position).all()
 
 
 def test_unimplemented_interactions(lammps_universe, universe):
@@ -839,9 +839,9 @@ def test_atom_charge_set(lammps_universe, universe):
     Tests that atom charges are set correctly
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].charge
-                == universe.atom_list[i].charge)
+                == universe.atoms[i].charge)
 
 
 def test_atom_charges_update(lammps_universe, universe):
@@ -854,13 +854,13 @@ def test_atom_charges_update(lammps_universe, universe):
     """
 
     # Change charges and update LAMMPSEngine
-    for atom in universe.atom_list:
+    for atom in universe.atoms:
         atom.charge *= 2.
     lammps_universe._update_charges()
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].charge
-                == universe.atom_list[i].charge)
+                == universe.atoms[i].charge)
 
 
 @pytest.mark.parametrize('interaction_fixture, lmp_name',
@@ -1314,7 +1314,7 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
                                                  traj_step=10,
                                                  lmp=lammps_universe.lmp)
 
-    for i, atom in enumerate(universe.atom_list):
+    for i, atom in enumerate(universe.atoms):
         # MDMC atoms should be unchanged, but the LAMMPS atoms should have velocities
         assert np.all(np.array(atom.velocity) == 0)
         assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity) != 0)
@@ -1335,7 +1335,7 @@ def test_initialize_nonzero_velocities(universe, temperature):
 
     # Set the MDMC velocities
     velocity = []
-    for i, atom in enumerate(universe.atom_list):
+    for i, atom in enumerate(universe.atoms):
         velocity.append(np.array((-(i + 1), 0, i + 1)))
         atom.velocity = velocity[i]
 
@@ -1349,7 +1349,7 @@ def test_initialize_nonzero_velocities(universe, temperature):
     # LAMMPS should scale all velocities by the same amount to ensure the temperature is accurate.
     # Get this factor from the first atom, as it had an initial velocity of 1 in the z direction.
     scale_factor = lammps_simulation.lmp.atoms[0].velocity[2]
-    for i, atom in enumerate(universe.atom_list):
+    for i, atom in enumerate(universe.atoms):
         assert np.all(np.array(atom.velocity) == velocity[i])
         assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity)
                       == scale_factor * velocity[i])
@@ -1542,9 +1542,9 @@ def test_save_config(lammps_engine, universe):
     lammps_engine.save_config()
     # Positions should be the same as those of the MDMC universe atoms, which
     # are also ordered by ID
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (np.array(lammps_engine.saved_config[i][:3])
-                == universe.atom_list[i].position).all()
+                == universe.atoms[i].position).all()
 
 
 def test_reset_config(lammps_engine):
