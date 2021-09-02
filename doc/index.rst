@@ -30,7 +30,7 @@ MDMC is open source and we welcome contributions to the project.  Please see
 Acknowledgements
 ----------------
 Funding for the development of MDMC has been provided by the Swedish Research
-Council under grant 2016-06954.
+Council under grant 2016-06954, the ISIS Neutron and Muon Source and the University of Copenhagen.
 
 Indices
 -------
