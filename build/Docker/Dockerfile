@@ -23,7 +23,8 @@ RUN apt-get update && apt-get install --upgrade -y \
   libfreetype6-dev \
   cmake \
   wget \
-  python3-tk
+  python3-tk \
+  jupyter-notebook
 
 # Install any packages required for container which are not specifically for
 # running MDMC (i.e. not in requirements.txt)
@@ -32,7 +33,6 @@ RUN pip3 install setuptools --upgrade
 RUN pip3 install pytest \
   pytest-cov \
   pytest-cases \
-  ipython>=5.8.0 \
   jupyter
 
 # Install dependencies
