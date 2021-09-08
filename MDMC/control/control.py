@@ -41,10 +41,14 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
-          - ``resolution_file`` (`str`, optional, defaults to `None`) a file in
+          - ``resolution`` : dict of {'file' : str} or {str : float}
+            if {'file' : str}, the str should be a file in
             the same format as ``file_name`` containing results of a vanadium
             sample which is used to determine instrument energy resolution for
-            this dataset (overriding the ``energy_resolution`` setting)
+            this dataset.
+            If {str : float}, the str should be the type of resolution function
+            (currently MDMC only accepts 'gaussian' and the float should be the
+            instrument energy resolution as the FWHM in ``ueV`` (micro eV).
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -109,9 +113,6 @@ class Control:
         timings are printed at the end of the refinement. If 0, no timings
         are printed. In all cases information about the FoM and parameter
         values will still be printed. Default is 0.
-    **settings
-        ``energy_resolution`` : float
-            Instrument energy resolution as the FWHM in ``ueV`` (micro eV).
 
     Example
     -------
@@ -121,12 +122,13 @@ class Control:
           'type':'SQw',
           'reader':'LAMPSQw',
           'weight':1.,
-          'resolution_file':data.LAMP_SQW_VAN_FILE
+          'resolution':{"file":data.LAMP_SQW_VAN_FILE}
           'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
           'weight':0.5,
+          'resolution':{"gaussian":2.35}
           'auto_scale':True}]
 
     Attributes
@@ -264,10 +266,11 @@ class Control:
             self.MD_steps = minimum_MD_steps
 
         for i, dset in enumerate(exp_datasets):
-            if dset.get('resolution_file'):
+            # if anyone knows a less clumsy way to check the index of a nested dict, please fix this
+            if 'file' in str(dset['resolution']):
                 resolution_functions = self._read_resolution_from_file(dset['type'],
                                                                        dset['reader'],
-                                                                       dset['resolution_file'])
+                                                                       dset['resolution']['file'])
                 self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
                 self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
 
