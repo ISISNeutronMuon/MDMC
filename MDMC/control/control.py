@@ -22,7 +22,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
-                'verbose', 'settings')
+                'verbose')
 class Control:
 
     """
@@ -41,14 +41,14 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
-          - ``resolution`` : dict of {'file' : str} or {str : float}
+          - ``resolution`` : dict of {'file' : str} or {key : float}
             if {'file' : str}, the str should be a file in
             the same format as ``file_name`` containing results of a vanadium
             sample which is used to determine instrument energy resolution for
             this dataset.
-            If {str : float}, the str should be the type of resolution function
-            (currently MDMC only accepts 'gaussian' and the float should be the
-            instrument energy resolution as the FWHM in ``ueV`` (micro eV).
+            If {key : float}, the key should be the type of resolution function.
+            allowed types are 'gaussian' and TODO:'lorentzian`.
+            the float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -122,13 +122,13 @@ class Control:
           'type':'SQw',
           'reader':'LAMPSQw',
           'weight':1.,
-          'resolution':{"file":data.LAMP_SQW_VAN_FILE}
+          'resolution':{'file':data.LAMP_SQW_VAN_FILE}
           'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
           'weight':0.5,
-          'resolution':{"gaussian":2.35}
+          'resolution':{'gaussian':2.35}
           'auto_scale':True}]
 
     Attributes
@@ -163,8 +163,7 @@ class Control:
                  convergence_tol: float = 1e-5,
                  min_refinement_steps: int = 2,
                  max_parameter_change: float=0.01,
-                 verbose: int=0,
-                 **settings):
+                 verbose: int=0):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -189,7 +188,6 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
         self.min_refine_steps = min_refinement_steps
-        self.settings = settings
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -265,15 +263,18 @@ class Control:
         else:
             self.MD_steps = minimum_MD_steps
 
-        for i, dset in enumerate(exp_datasets):
+        for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
             # if anyone knows a less clumsy way to check the index of a nested dict, please fix this
-            if 'file' in str(dset['resolution']):
+            if 'file' in str(dset['resolution']):  # if the resolution is defined as a file
                 resolution_functions = self._read_resolution_from_file(dset['type'],
                                                                        dset['reader'],
                                                                        dset['resolution']['file'])
                 self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
                 self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
+            else:  # if resolution is defined numerically
+                    self.energy_resolution = dset['resolution']
 
+        # setup the dataframe for stdout
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
                                     [self.FoM_calculator.__class__.__name__],
@@ -319,7 +320,7 @@ class Control:
 
         count = -1
 
-        self._print_header()
+        self._print_header()  # creates stdout header
         while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
                                                                    min_steps=self.min_refine_steps):
             if self.verbose > 0:
@@ -331,7 +332,7 @@ class Control:
                 if self.verbose == 2:
                     print('         equilibrate: {} s'.format(round(time() - time_0, 3)))
 
-            self.step()
+            self.step()  # advance the refinement by one step
             count += 1
             if self.verbose == 1:
                 self.timings['TOTAL STEP'].append(time() - time_0)
@@ -621,12 +622,12 @@ class Control:
                     sub_trj.append(trj[i * maximum_frames : (i + 1) * maximum_frames])
                 obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
                                                             verbose=self.verbose,
-                                                            **self.settings)
+                                                            **self.energy_resolution)
             else:
                 # Otherwise, provide the whole trajectory
                 obs_timings = pair.MD_obs.calculate_from_MD([trj],
                                                             verbose=self.verbose,
-                                                            **self.settings)
+                                                            **self.energy_resolution)
 
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():

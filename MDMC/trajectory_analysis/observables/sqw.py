@@ -383,7 +383,7 @@ class AbstractSQw(Observable):
             ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
                 A 3 element `tuple` or ``array`` of `float` specifying the
                 dimensions of the ``Universe`` in units of ``Ang``
-            ``energy_resolution` (`float`)
+            ``gaussian` (`float`)
                 Optionally specify Gaussian energy resolution in units of
                 ueV (micro eV)
         """
@@ -394,8 +394,8 @@ class AbstractSQw(Observable):
         obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
         # Convert the user friendly ueV into preferred system unit of meV
-        if 'energy_resolution' in settings:
-            self.e_res = settings['energy_resolution'] / 1000
+        if 'gaussian' in settings:
+            self.e_res = settings['gaussian'] / 1000
         else:
             # None here is to record that the energy_resolution parameter has not been set
             self.e_res = None
