@@ -179,11 +179,10 @@ def NVE(uni):
 def parameterize_decorator(func):
 
     """
-    A decorator for parametrizing all tests with each ensemble
+    A decorator for parameterizing all tests with each ensemble
     """
 
-    @parametrize('ensemble, expected',[NVE]
-                            )
+    @parametrize('ensemble, expected', [NVE])
     def wrapper(ensemble, expected, request):
         func(ensemble, expected, request)
 
