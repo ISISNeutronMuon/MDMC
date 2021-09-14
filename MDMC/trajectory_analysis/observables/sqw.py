@@ -397,7 +397,7 @@ class AbstractSQw(Observable):
         if 'gaussian' in settings:
             self.e_res = settings['gaussian'] / 1000
         else:
-            # None here is to record that the energy_resolution parameter has not been set
+            # None here is to record that the energy resolution parameter has not been set (i.e. is a file)
             self.e_res = None
 
         # Create independent_variables dictionary if it doesn't exist
