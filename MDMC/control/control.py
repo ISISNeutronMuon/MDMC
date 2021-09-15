@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from time import time
+from warnings import warn
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -41,13 +42,17 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
-          - ``resolution`` : dict of {'file' : str} or {key : float}
+          - ``resolution`` : dict
+            Should be a one-line dict of format {'file' : str} or {key : float}
             if {'file' : str}, the str should be a file in
             the same format as ``file_name`` containing results of a vanadium
             sample which is used to determine instrument energy resolution for
             this dataset.
             If {key : float}, the key should be the type of resolution function.
             allowed types are 'gaussian' and TODO:'lorentzian`.
+            Can also be 'lazily' given as just a `str` or `float`.
+            If just a string is given, it is assumed to be a filename.
+            If just a float is given, it is assumed to be Gaussian.
             the float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
@@ -264,15 +269,28 @@ class Control:
             self.MD_steps = minimum_MD_steps
 
         for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
-            # if anyone knows a less clumsy way to check the index of a nested dict, please fix this
-            if 'file' in str(dset['resolution']):  # if the resolution is defined as a file
-                resolution_functions = self._read_resolution_from_file(dset['type'],
-                                                                       dset['reader'],
-                                                                       dset['resolution']['file'])
-                self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
-                self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
-            else:  # if resolution is defined numerically
-                    self.energy_resolution = dset['resolution']
+            # 'lazy' resolution setting handling; assume it's a file if passed as a string, or
+            # a Gaussian if passed as a float
+            if type(dset['resolution']) == str:
+                dset['resolution'] = {'file': dset['resolution']}
+            elif type(dset['resolution']) == float:
+                dset['resolution'] = {'gaussian': dset['resolution']}
+                warn("Assuming energy resolution is Gaussian. To change this, "
+                     "input energy resolution as {'function': 'value'}, where"
+                     "'function' is your desired resolution approximation function.")
+            # routing resolution function based on type
+            elif type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
+                if 'file' in dset['resolution']:  # if the resolution is defined as a file
+                    resolution_functions = self._read_resolution_from_file(dset['type'],
+                                                                           dset['reader'],
+                                                                           dset['resolution']['file'])
+                    self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
+                    self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
+                else:  # if resolution is defined numerically
+                    self.energy_resolution = {'energy_resolution': dset['resolution']}
+                    # we pass energy resolution as a dict so SQw can use it as a **kwarg
+            else:  # if type is not recognised
+                raise TypeError("`resolution` should be a string, float or dictionary.")
 
         # setup the dataframe for stdout
         setup_frame = pd.DataFrame([[minimizer_type],

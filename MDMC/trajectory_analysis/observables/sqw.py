@@ -2,6 +2,7 @@
 
 from abc import abstractmethod
 from time import time
+from warnings import warn
 
 from mpi4py import MPI
 from numba import jit
@@ -302,11 +303,31 @@ class AbstractSQw(Observable):
 
         return self._e_res
 
+    @property
+    def approximation_function(self):
+        """
+        Get or set the energy resolution approximation function used to calculate the dynamic
+        structure factor, S(Q, w), from the intermediate scattering function,
+        F(Q, t)
+
+        Returns
+        -------
+        Callable
+            The function being used to approximate the resolution.
+        """
+
+        return self._approximation_function
+
     @e_res.setter
     @unit_decorator(unit=units.ENERGY_TRANSFER)
     def e_res(self, value):
 
         self._e_res = value
+
+    @approximation_function.setter
+    def approximation_function(self, function: Callable):
+
+        self._approximation_function = function
 
     def validate_energy(self, dt):
 
@@ -383,9 +404,12 @@ class AbstractSQw(Observable):
             ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
                 A 3 element `tuple` or ``array`` of `float` specifying the
                 dimensions of the ``Universe`` in units of ``Ang``
-            ``gaussian` (`float`)
-                Optionally specify Gaussian energy resolution in units of
-                ueV (micro eV)
+            ``energy_resolution` (`dict`)
+                Optionally specify energy resolution and function in units of ueV (micro eV),
+                in the format of the one-line dict {'function': 'value'};
+                e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
+                Currently accepted functions are 'gaussian' and TODO:'lorentzian'
+                Can also be 'lazily' given as a `float`, in which case it is assumed to be Gaussian.
         """
 
         self._origin = 'MD'
@@ -393,9 +417,20 @@ class AbstractSQw(Observable):
         errors_list = []
         obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
-        # Convert the user friendly ueV into preferred system unit of meV
-        if 'gaussian' in settings:
-            self.e_res = settings['gaussian'] / 1000
+        if 'energy_resolution' in settings:
+            if type(settings['energy_resolution']) == float:  # if given as a float, assume Gaussian and convert to dict
+                settings['energy_resolution'] = {'gaussian': settings['energy_resolution']}
+                warn("Assuming energy resolution is Gaussian. To change this, "
+                     "input energy resolution as {'function': 'value'}, where"
+                     "'function' is your desired resolution approximation function.")
+            # process energy resolution and function type
+            elif type(settings['energy_resolution']) == dict:
+                if 'gaussian' in settings['energy_resolution']:
+                    # Convert the user friendly ueV into preferred system unit of meV
+                    self.e_res = settings['energy_resolution']['gaussian'] / 1000
+                    self.approximation_function = gaussian
+            else:
+                raise TypeError("`energy_resolution` should be a float or dictionary.")
         else:
             # None here is to record that the energy_resolution parameter has not been set
             self.e_res = None
