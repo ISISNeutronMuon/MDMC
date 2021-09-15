@@ -303,6 +303,12 @@ class AbstractSQw(Observable):
 
         return self._e_res
 
+    @e_res.setter
+    @unit_decorator(unit=units.ENERGY_TRANSFER)
+    def e_res(self, value):
+
+        self._e_res = value
+
     @property
     def approximation_function(self):
         """
@@ -317,12 +323,6 @@ class AbstractSQw(Observable):
         """
 
         return self._approximation_function
-
-    @e_res.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def e_res(self, value):
-
-        self._e_res = value
 
     @approximation_function.setter
     def approximation_function(self, function: Callable):
