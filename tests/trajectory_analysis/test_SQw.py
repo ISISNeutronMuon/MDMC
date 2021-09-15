@@ -52,7 +52,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
     """
 
     def _SQw_from_MD(use_FFT: bool = True, use_traj_list: bool = False,
-                     gaussian: Optional[float] = None) -> SQw:
+                     energy_resolution: Optional[float] = None) -> SQw:
         _SQw = of.ObservableFactory.create_observable('SQw')
         _SQw.use_FFT = use_FFT
         dimensions = universe.dimensions
@@ -64,7 +64,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
         else:
             MD_input = trajectory
 
-        if gaussian is None:
+        if energy_resolution is None:
             _SQw.calculate_from_MD(MD_input,
                                    Q_values=Q_values,
                                    dimensions=dimensions)
@@ -72,7 +72,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
             _SQw.calculate_from_MD(MD_input,
                                    Q_values=Q_values,
                                    dimensions=dimensions,
-                                   gaussian=gaussian)
+                                   energy_resolution=energy_resolution)
         return _SQw
 
     return _SQw_from_MD
@@ -120,9 +120,9 @@ def test_from_MD(SQw_from_MD):
     - SQw handles either a single, or ``list`` of, ``Trajectory`` objects
     """
 
-    SQw_FFT = SQw_from_MD(gaussian = 49.99998257)
+    SQw_FFT = SQw_from_MD(energy_resolution = 49.99998257)
     SQw_no_FFT = SQw_from_MD(use_FFT=False, use_traj_list=True,
-                             gaussian = 49.99998257)
+                             energy_resolution = 49.99998257)
 
     assert SQw_FFT.origin == 'MD'
     assert 'Q' in SQw_FFT.independent_variables and \

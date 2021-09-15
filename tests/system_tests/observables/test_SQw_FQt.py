@@ -138,7 +138,7 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
     SQw_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                gaussian=E_RESOLUTION)
+                                energy_resolution=E_RESOLUTION)
     return SQw_total
 
 @pytest.fixture(scope="module")
@@ -153,7 +153,7 @@ def SQw_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
     SQw_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                gaussian=E_RESOLUTION)
+                                energy_resolution=E_RESOLUTION)
     return SQw_total
 
 @pytest.fixture(scope="module")
@@ -172,7 +172,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                gaussian=E_RESOLUTION)
+                                energy_resolution=E_RESOLUTION)
     return SQw_incoh
 
 @pytest.fixture(scope="module")
@@ -191,7 +191,7 @@ def SQw_incoh_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                gaussian=E_RESOLUTION)
+                                energy_resolution=E_RESOLUTION)
     return SQw_incoh
 
 @pytest.fixture(scope="module")
@@ -209,7 +209,7 @@ def SQw_coh_obs(trajectory, Q_vectors):
     SQw_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,
                               dimensions=DIMENSIONS,
-                              gaussian=E_RESOLUTION)
+                              energy_resolution=E_RESOLUTION)
     return SQw_coh
 
 @pytest.fixture(scope="module")
@@ -227,7 +227,7 @@ def SQw_coh_obs_no_FFT(trajectory, Q_vectors):
     SQw_coh.calculate_from_MD(trajectory,
                               Q_vectors=Q_vectors,
                               dimensions=DIMENSIONS,
-                              gaussian=E_RESOLUTION)
+                              energy_resolution=E_RESOLUTION)
     return SQw_coh
 
 
