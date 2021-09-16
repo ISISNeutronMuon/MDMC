@@ -35,7 +35,12 @@ class FoMFactory:
         try:
             module = import_module('.ChiSquared_' + module_name+'error', __package__)
         except ImportError:
-            raise ValueError('{0} is not a supported Figure of Merits'.format(module_name))
+            try:
+                module = import_module('.' + module_name, __package__)
+            except ImportError:
+                raise ValueError('{0} is not a supported Figure of Merits'.format(module_name))
+        
+        
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, FigureOfMerit)))
