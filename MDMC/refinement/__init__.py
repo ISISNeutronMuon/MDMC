@@ -8,4 +8,4 @@ minimizer
 """
 
 from . import FoM
-from . import minimizer
+from . import minimizers
