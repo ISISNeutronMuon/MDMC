@@ -279,7 +279,7 @@ class Control:
                      "input energy resolution as {'function': 'value'}, where"
                      "'function' is your desired resolution approximation function.")
             # routing resolution function based on type
-            elif type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
+            if type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
                 if 'file' in dset['resolution']:  # if the resolution is defined as a file
                     resolution_functions = self._read_resolution_from_file(dset['type'],
                                                                            dset['reader'],
