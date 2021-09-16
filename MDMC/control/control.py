@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from time import time
+from MDMC.refinement.FoM import FoM_factory
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -14,7 +15,9 @@ from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
-from MDMC.refinement import minimizer, FoM
+from MDMC.refinement import minimizer
+from MDMC.refinement.FoM.FoM_factory import FoMFactory
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -151,7 +154,6 @@ class Control:
     """
 
     MINIMIZER_DICT = {"MMC":minimizer.MMC}
-    FOM_DICT = {"exp":FoM.ChiSquaredExpError, "none":FoM.ChiSquaredNoError}
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
@@ -218,7 +220,7 @@ class Control:
             elif not rescale_factor:
                 rescale_factor = 1.
 
-            observable_pair = FoM.ObservablePair(exp_observable,
+            observable_pair = ObservablePair(exp_observable,
                                                  MD_observable,
                                                  dset['weight'],
                                                  rescale_factor=rescale_factor,
@@ -239,8 +241,7 @@ class Control:
         else:
             FoM_norm = FoM_options.get('norm')
 
-        FoM_class = self.FOM_DICT[FoM_error]
-        self.FoM_calculator = FoM_class(self.observable_pairs,
+        self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                         norm=FoM_norm,
                                         n_parameters=len(self.fit_parameters))
 
@@ -631,7 +632,7 @@ class Control:
                         self.timings[key] = []
                     self.timings[key] += value
 
-    def _calculate_minimum_MD_steps(self, observable_pair: FoM.ObservablePair):
+    def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair):
 
         """
         Calculates the minimum number of steps required for the MD engine in
@@ -660,7 +661,7 @@ class Control:
         return traj_step * minimum_frames
 
     def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: FoM.ObservablePair):
+                                    observable_pair: ObservablePair):
 
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
