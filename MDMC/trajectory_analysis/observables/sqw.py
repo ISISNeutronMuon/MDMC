@@ -16,7 +16,7 @@ from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.common.resolution_functions import gaussian
+from MDMC.common.resolution_functions import gaussian, lorentzian
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
@@ -424,11 +424,18 @@ class AbstractSQw(Observable):
                      "input energy resolution as {'function': 'value'}, where"
                      "'function' is your desired resolution approximation function.")
             # process energy resolution and function type
-            elif type(settings['energy_resolution']) == dict:
+            if type(settings['energy_resolution']) == dict:
                 if 'gaussian' in settings['energy_resolution']:
                     # Convert the user friendly ueV into preferred system unit of meV
                     self.e_res = settings['energy_resolution']['gaussian'] / 1000
                     self.approximation_function = gaussian
+                elif 'lorentzian' in settings['energy_resolution']:
+                    self.e_res = settings['energy_resolution']['lorentzian'] / 1000
+                    self.approximation_function = lorentzian
+                else:
+                    raise NameError("Resolution function not recognised. Recognised resolution functions: "
+                                    "- 'gaussian' "
+                                    "- 'lorentzian'")
             else:
                 raise TypeError("`energy_resolution` should be a float or dictionary.")
         else:

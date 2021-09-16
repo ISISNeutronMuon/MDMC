@@ -36,30 +36,27 @@ def gaussian(x, sigma, mu=0.0, norm=True):
     return y
 
 
-def _lorentzian(N, gamma):
+def lorentzian(x, gamma, x_0=0.0):
 
     """
     Calculates the Lorentzian (Cauchy) distribution
-
-    THIS FUNCTION HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
 
     Parameters
     ---------
     x : numpy.ndarray
         The x values at which the Gaussian distribution is calculated.
     gamma : float
-        The half-width at half-maximum
+        The full-width at half-maximum
+    x_0 : float
+        The offset of the distribution. Defaults to 0.0.
 
     Returns
     -------
     numpy.ndarray
         An ``array`` with the same length as ``x``, with the Lorentzian
         distribution
-
-    Raises
-    ------
-    NotImplementedError
-        THIS FUNCTION HAS NOT BEEN IMPLEMENTED
     """
 
-    raise NotImplementedError
+    y = (1 / np.pi) * ((0.5 * gamma) / ((x - x_0) ** 2 + (0.5 * gamma) ** 2))
+
+    return y
