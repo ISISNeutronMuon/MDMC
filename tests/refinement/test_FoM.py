@@ -6,7 +6,8 @@ import copy
 import numpy as np
 import pytest
 
-import MDMC.refinement.FoM as fom
+from  MDMC.refinement.FoM.FoM_factory import FoMFactory
+from  MDMC.refinement.FoM.FoM_abs import ObservablePair
 import MDMC.trajectory_analysis.observables.obs_factory as of
 
 from tests.test_data import data
@@ -62,7 +63,7 @@ def SQw_from_MD(SQw_from_exp):
 @pytest.fixture
 def observable_pair(SQw_from_exp, SQw_from_MD):
 
-    return fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    return ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
 
 @pytest.fixture
 def SQw_dict():
@@ -113,7 +114,7 @@ def pairs():
 
             obs_duo.append(obs)
 
-        obs_pairs.append(fom.ObservablePair(obs_duo[0], obs_duo[1], weight=1.))
+        obs_pairs.append(ObservablePair(obs_duo[0], obs_duo[1], weight=1.))
 
     return obs_pairs
 
@@ -126,7 +127,7 @@ def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_exp_diff,
     """
 
     # Test for no exception when init and when set with it
-    pair = fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    pair = ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
     assert (pair.exp_obs.independent_variables ==
             pair.MD_obs.independent_variables)
     pair.MD_obs = SQw_from_MD
@@ -152,7 +153,7 @@ def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_exp_diff,
     """
 
     # Test for no exception when init with SQw
-    pair = fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    pair = ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
     assert (np.shape(pair.exp_obs.dependent_variables) ==
             np.shape(pair.MD_obs.dependent_variables))
     pair.MD_obs = SQw_from_MD
@@ -179,7 +180,7 @@ def test_OP_shape_errors(SQw_from_exp, SQw_from_exp_diff, SQw_from_MD,
     """
 
     # Test for no exception when init with SQw
-    pair = fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    pair = ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
     assert (np.shape(pair.exp_obs.errors) == np.shape(pair.MD_obs.errors))
     pair.MD_obs = SQw_from_MD
     pair.exp_obs = SQw_from_exp
@@ -246,7 +247,7 @@ def test_OP_weight_validation(SQw_from_exp, SQw_from_MD, observable_pair):
                     '+1e1']
 
     for weight in valid_values:
-        fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=weight)
+        ObservablePair(SQw_from_exp, SQw_from_MD, weight=weight)
         observable_pair.weight = weight
 
     invalid_values = [float('inf'),
@@ -280,13 +281,13 @@ def test_difference_calculation(SQw_dict):
     from_MD = SQw_dict['from_MD']
     from_MD._dependent_variables['dep'] = 2 * SQw_dict['dep']
 
-    pair = fom.ObservablePair(from_exp, from_MD, weight=1.)
+    pair = ObservablePair(from_exp, from_MD, weight=1.)
     assert np.all(pair.calculate_difference() == -SQw_dict['dep'])
 
     pair.exp_obs._dependent_variables['dep'] = 4 * SQw_dict['dep']
     assert np.all(pair.calculate_difference() == 2 * SQw_dict['dep'])
 
-    rescaled_pair = fom.ObservablePair(from_exp, from_MD, weight=1.,
+    rescaled_pair = ObservablePair(from_exp, from_MD, weight=1.,
                                        rescale_factor=0.75)
     assert np.all(rescaled_pair.calculate_difference() == SQw_dict['dep'])
 
@@ -302,7 +303,7 @@ def test_error_calculation(SQw_dict):
     from_MD = SQw_dict['from_MD']
     from_MD._errors['err'] = 2 * ERR
 
-    pair = fom.ObservablePair(from_exp, from_MD, weight=1.)
+    pair = ObservablePair(from_exp, from_MD, weight=1.)
     assert np.all(pair.calculate_errors() == (ERR ** 2 + (2 * ERR) ** 2) ** 0.5)
 
     ERR_NEG = np.arange(0., -19., -0.19)
@@ -313,12 +314,12 @@ def test_error_calculation(SQw_dict):
     assert np.all(pair.calculate_errors() ==
                   (ERR_NEG ** 2 + ERR_NEG ** 2) ** 0.5)
 
-    rescaled_pair = fom.ObservablePair(from_exp, from_MD, weight=1.,
+    rescaled_pair = ObservablePair(from_exp, from_MD, weight=1.,
                                        rescale_factor=0.75)
     assert (np.all(rescaled_pair.calculate_errors()
             == ((ERR_NEG * 0.75) ** 2 + ERR_NEG ** 2) ** 0.5))
 
-@pytest.mark.parametrize('FoM_calculator', [fom.ChiSquaredExpError, fom.ChiSquaredNoError])
+
 def test_FoM_calculation(FoM_calculator, pairs):
 
     """
@@ -533,7 +534,7 @@ def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
     """
 
     with pytest.raises(error):
-        fom.ObservablePair(obs_from_exp, obs_from_MD, weight)
+        ObservablePair(obs_from_exp, obs_from_MD, weight)
         pytest.fail("Expecting {0} upon init")
 
 
