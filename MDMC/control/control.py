@@ -1,6 +1,4 @@
 """A module for performing the refinement"""
-
-
 from copy import deepcopy
 from time import time
 

@@ -105,10 +105,10 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
     Tests that the history columns for the ``MMC`` minimizer are as expected,
     including the names of the ``Parameter`` objects which are refined
     """
-    for minim in MinimizerFactory.get_minimizer_names():
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
 
-        mm = MinimizerFactory.create_minimizer(minim,1, parameters[slice(*p_slice)])
-        assert mm.history_columns == ['FoM', 'Change state'] + columns
+        minim = MinimizerFactory.create_minimizer(minimizer_name,1, parameters[slice(*p_slice)])
+        assert minim.history_columns == ['FoM', 'Change state'] + columns
 
 
 def mock_change_parameters(self, parameters):
@@ -217,11 +217,11 @@ def test_minimizer_change_parameters(parameters):
         return np.ones(size)
 
     expected_values = [2 * p.value for p in parameters]
-    for minim in MinimizerFactory.get_minimizer_names():
-        mm = MinimizerFactory.create_minimizer(minim,1, parameters)
-        mm.distribution = mock_distribution
-        mm.change_parameters(mm.parameters)
-        assert [p.value for p in mm.parameters] == expected_values
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name,1, parameters)
+        minim.distribution = mock_distribution
+        minim.change_parameters(minim.parameters)
+        assert [p.value for p in minim.parameters] == expected_values
 
 
 def test_minimizer_change_constrained_parameter():
@@ -240,11 +240,11 @@ def test_minimizer_change_constrained_parameter():
 
     # Expect values to be set to the upper/lower limit
     expected_values = [1.5, 0.5]
-    for minim in MinimizerFactory.get_minimizer_names():
-        mm = MinimizerFactory.create_minimizer(minim,1, parameters)
-        mm.distribution = mock_distribution
-        mm.change_parameters(mm.parameters)
-        assert [p.value for p in mm.parameters] == expected_values
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name,1, parameters)
+        minim.distribution = mock_distribution
+        minim.change_parameters(minim.parameters)
+        assert [p.value for p in minim.parameters] == expected_values
 
 
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm',
@@ -265,12 +265,12 @@ def test_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old,
     def mock_random():
 
         return 0.999999
-    for minim in MinimizerFactory.get_minimizer_names():
-        mm = MinimizerFactory.create_minimizer(minim,MC_norm, parameters)
-        mm.FoM_old = FoM_old
-        mm.FoM = FoM
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name,MC_norm, parameters)
+        minim.FoM_old = FoM_old
+        minim.FoM = FoM
         monkeypatch.setattr(np.random, 'random', mock_random)
-        assert mm.change_state() is True
+        assert minim.change_state() is True
 
 
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm, change',
@@ -293,12 +293,12 @@ def test_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
     def mock_random():
 
         return 0.5
-    for minim in MinimizerFactory.get_minimizer_names():
-        mm = MinimizerFactory.create_minimizer(minim,MC_norm, parameters)
-        mm.FoM_old = FoM_old
-        mm.FoM = FoM
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name,MC_norm, parameters)
+        minim.FoM_old = FoM_old
+        minim.FoM = FoM
         monkeypatch.setattr(np.random, 'random', mock_random)
-        assert mm.change_state() == change
+        assert minim.change_state() == change
 
 @pytest.mark.parametrize('mock_history, min_steps, expected',
     [([[3,'Accepted',4],[2,'Accepted',3],[1,'Accepted',2]], None, False),
@@ -314,13 +314,13 @@ def test_minimizer_has_converged(mock_history, min_steps, expected):
     Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
     """
     parameter = [Parameter(name='A', value=None)]
-    for minim in MinimizerFactory.get_minimizer_names():
-        mm = MinimizerFactory.create_minimizer(minim,MC_norm=1, parameter=parameter)
-        mm._history = mock_history
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name,MC_norm=1, parameter=parameter)
+        minim._history = mock_history
         if min_steps:
-            assert mm.has_converged(min_steps=min_steps) == expected
+            assert minim.has_converged(min_steps=min_steps) == expected
         else:
-            assert mm.has_converged() == expected
+            assert minim.has_converged() == expected
 
 
 def test_minimizer_fixed_parameter():
@@ -331,8 +331,8 @@ def test_minimizer_fixed_parameter():
 
     parameters = [Parameter(name='fixed', value=1., fixed=True)]
     with pytest.raises(ValueError):
-        for minim in MinimizerFactory.get_minimizer_names():
-            mm = MinimizerFactory.create_minimizer(minim,1, parameters)
+        for minimizer_name in MinimizerFactory.get_minimizer_names():
+            minim = MinimizerFactory.create_minimizer(minimizer_name,1, parameters)
 
 
 def test_minimizer_tied_parameter():
@@ -346,5 +346,5 @@ def test_minimizer_tied_parameter():
     tied_parameter.set_tie(target_parameter, ' * 2')
     parameters = [tied_parameter]
     with pytest.raises(ValueError):
-        for minim in MinimizerFactory.get_minimizer_names():
-           mm = MinimizerFactory.create_minimizer(minim,1, parameters)
+        for minimizer_name in MinimizerFactory.get_minimizer_names():
+           minim = MinimizerFactory.create_minimizer(minimizer_name,1, parameters)
