@@ -657,7 +657,7 @@ class Control:
         return traj_step * minimum_frames
 
     def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: FoM.ObservablePair):
+                                    observable_pair: ObservablePair):
 
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
