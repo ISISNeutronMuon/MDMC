@@ -16,8 +16,11 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
 from MDMC.refinement import minimizer
+from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
+
+from MDMC.refinement import FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -153,9 +156,7 @@ class Control:
         Number of molecular dynamics steps for each step of the refinement
     """
 
-    MINIMIZER_DICT = {"MMC":minimizer.MMC}
-
-    def __init__(self, simulation: Simulation, exp_datasets: List[dict],
+   def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_options: dict = None,
                  reset_config: bool=True, MD_steps: int=None,
@@ -182,9 +183,8 @@ class Control:
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
-        self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
-                                                             self.fit_parameters,
-                                                             max_parameter_change=max_parameter_change)
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, MC_norm,
+                                                             self.fit_parameters, max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
