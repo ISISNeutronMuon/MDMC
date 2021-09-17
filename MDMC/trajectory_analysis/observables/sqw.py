@@ -2,7 +2,7 @@
 
 from abc import abstractmethod
 from time import time
-from warnings import warn
+import warnings
 
 from mpi4py import MPI
 from numba import jit
@@ -418,11 +418,11 @@ class AbstractSQw(Observable):
         obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
         if 'energy_resolution' in settings:
-            if type(settings['energy_resolution']) == float:  # if given as a float, assume Gaussian and convert to dict
+            if type(settings['energy_resolution']) in [float, int]:  # if a number, assume Gaussian and convert to dict
                 settings['energy_resolution'] = {'gaussian': settings['energy_resolution']}
-                warn("Assuming energy resolution is Gaussian. To change this, "
-                     "input energy resolution as {'function': 'value'}, where"
-                     "'function' is your desired resolution approximation function.")
+                warnings.warn("Assuming energy resolution is Gaussian. To change this,"
+                              " input energy resolution as {'function': 'value'}, where"
+                              " 'function' is your desired resolution approximation function.")
             # process energy resolution and function type
             if type(settings['energy_resolution']) == dict:
                 if 'gaussian' in settings['energy_resolution']:
@@ -433,9 +433,9 @@ class AbstractSQw(Observable):
                     self.e_res = settings['energy_resolution']['lorentzian'] / 1000
                     self.approximation_function = lorentzian
                 else:
-                    raise NameError("Resolution function not recognised. Recognised resolution functions: "
-                                    "- 'gaussian' "
-                                    "- 'lorentzian'")
+                    raise NameError("""Resolution function not recognised. Recognised resolution functions: 
+                                    - 'gaussian' 
+                                    - 'lorentzian'""")
             else:
                 raise TypeError("`energy_resolution` should be a float or dictionary.")
         else:
@@ -933,14 +933,17 @@ class AbstractSQw(Observable):
         resolution_function = self.resolution_functions.get('SQw')
         if resolution_function is not None:
             window = self._calculate_resolution_window(resolution_function)
-        elif self.e_res is not None:
-            # If we do not have a resolution function for SQw, use a Gaussian instead. We convert
-            # the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
-            # relationship between the width of a Gaussian and its Fourier
-            # transform rather than explicitly transforming it, applying a factor
-            # of 1e18 to convert from h / h_bar's units of eV s into system units
-            sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
-            window = function(self.t[:N_T], sigma_t, norm=False)
+        elif self.e_res is not None:  # If we do not have a resolution function for SQw, use an approximation function.
+            if function == gaussian:
+                # We convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
+                # relationship between the width of a Gaussian and its Fourier
+                # transform rather than explicitly transforming it, applying a factor
+                # of 1e18 to convert from h / h_bar's units of eV s into system units
+                sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
+                window = function(self.t[:N_T], sigma_t, norm=False)
+            if function == lorentzian:
+                #TODO
+                raise NotImplementedError
         else:
             # no resolution function to apply and just return back FQt
             return FQt

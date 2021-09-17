@@ -382,7 +382,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
 
-
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_no_scaling(simulation, exp_datasets, file_name):

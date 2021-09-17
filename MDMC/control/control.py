@@ -2,7 +2,7 @@
 
 from copy import deepcopy
 from time import time
-from warnings import warn
+import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -42,7 +42,7 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
-          - ``resolution`` : dict
+          - ``resolution`` : (`dict`, but can be `str`, `float`, or None)
             Should be a one-line dict of format {'file' : str} or {key : float}
             if {'file' : str}, the str should be a file in
             the same format as ``file_name`` containing results of a vanadium
@@ -54,6 +54,8 @@ class Control:
             If just a string is given, it is assumed to be a filename.
             If just a float is given, it is assumed to be Gaussian.
             the float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
+            If you have already accounted for instrument resolution in your dataset, this field can
+            be set to None, and resolution application will be skipped. This must be done explicitly.
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -146,8 +148,6 @@ class Control:
         All ``Parameter`` objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    settings : `dict`
-        Settings for the MD and minimization.
     observable_pairs : `list` of ``ObservablePairs``
         Experimental observable/MD observable pairs which are used to calculate
         the Figure of Merit
@@ -273,11 +273,12 @@ class Control:
             # a Gaussian if passed as a float
             if type(dset['resolution']) == str:
                 dset['resolution'] = {'file': dset['resolution']}
-            elif type(dset['resolution']) == float:
+            elif type(dset['resolution']) in [float, int]:
                 dset['resolution'] = {'gaussian': dset['resolution']}
-                warn("Assuming energy resolution is Gaussian. To change this, "
-                     "input energy resolution as {'function': 'value'}, where"
-                     "'function' is your desired resolution approximation function.")
+                warnings.warn("Assuming energy resolution is Gaussian. To change this,"
+                              " input energy resolution as {'function': 'value'}, where"
+                              " 'function' is your desired resolution approximation function.")
+
             # routing resolution function based on type
             if type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
                 if 'file' in dset['resolution']:  # if the resolution is defined as a file
@@ -286,10 +287,10 @@ class Control:
                                                                            dset['resolution']['file'])
                     self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
                     self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
-                else:  # if resolution is defined numerically
+                else:  # if resolution is defined as an approximation function
                     self.energy_resolution = {'energy_resolution': dset['resolution']}
                     # we pass energy resolution as a dict so SQw can use it as a **kwarg
-            else:  # if type is not recognised
+            elif dset['resolution'] is not None:  # if type is not recognised
                 raise TypeError("`resolution` should be a string, float or dictionary.")
 
         # setup the dataframe for stdout
