@@ -2,20 +2,16 @@
 
 from copy import deepcopy
 from time import time
-from MDMC.refinement.FoM import FoM_factory
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pandas as pd
 from typing import List
 from scipy.interpolate import interp1d, interp2d
 from typing import Dict
 
-from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
-from MDMC.refinement import minimizer
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
@@ -156,7 +152,7 @@ class Control:
         Number of molecular dynamics steps for each step of the refinement
     """
 
-   def __init__(self, simulation: Simulation, exp_datasets: List[dict],
+    def __init__(self, simulation: Simulation, exp_datasets: List[dict],
                  fit_parameters: Parameters, MC_norm: float=1.,
                  minimizer_type: str='MMC', FoM_options: dict = None,
                  reset_config: bool=True, MD_steps: int=None,
@@ -661,7 +657,7 @@ class Control:
         return traj_step * minimum_frames
 
     def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: ObservablePair):
+                                    observable_pair: FoM.ObservablePair):
 
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
