@@ -44,7 +44,7 @@ class FoMFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, FigureOfMerit)))
-        return classes[0][1]( obs_pairs, norm, n_parameters)
+        return classes[0][1](obs_pairs, norm, n_parameters)
 
     @staticmethod
     def get_FoM_names():
