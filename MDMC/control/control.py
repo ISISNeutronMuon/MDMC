@@ -49,7 +49,7 @@ class Control:
             sample which is used to determine instrument energy resolution for
             this dataset.
             If {key : float}, the key should be the type of resolution function.
-            allowed types are 'gaussian' and TODO:'lorentzian`.
+            allowed types are 'gaussian' and 'lorentzian'
             Can also be 'lazily' given as just a `str` or `float`.
             If just a string is given, it is assumed to be a filename.
             If just a float is given, it is assumed to be Gaussian.
@@ -271,6 +271,7 @@ class Control:
         for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
             # 'lazy' resolution setting handling; assume it's a file if passed as a string, or
             # a Gaussian if passed as a float
+            self.energy_resolution = None  # fallback for if resolution is overridden
             if type(dset['resolution']) == str:
                 dset['resolution'] = {'file': dset['resolution']}
             elif type(dset['resolution']) in [float, int]:

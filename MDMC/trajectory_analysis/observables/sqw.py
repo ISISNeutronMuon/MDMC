@@ -408,7 +408,7 @@ class AbstractSQw(Observable):
                 Optionally specify energy resolution and function in units of ueV (micro eV),
                 in the format of the one-line dict {'function': 'value'};
                 e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
-                Currently accepted functions are 'gaussian' and TODO:'lorentzian'
+                Currently accepted functions are 'gaussian' and 'lorentzian'
                 Can also be 'lazily' given as a `float`, in which case it is assumed to be Gaussian.
         """
 
@@ -942,8 +942,11 @@ class AbstractSQw(Observable):
                 sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
                 window = function(self.t[:N_T], sigma_t, norm=False)
             if function == lorentzian:
-                #TODO
-                raise NotImplementedError
+                # The Fourier transform of the Lorentzian is F(k) = e^((2 * \pi * i) * k * x_0) - \Gamma * \pi * |k|
+                # where x_0 is the offset and \Gamma the FWHM.
+                # thus as the instrument resolution function is centred around x_0, this simplifies to
+                # e^-\Gamma * \pi * |k|.
+                window = np.exp((-self.e_res * np.pi * np.abs(self.t[:N_T])))
         else:
             # no resolution function to apply and just return back FQt
             return FQt
