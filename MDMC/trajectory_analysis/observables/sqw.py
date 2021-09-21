@@ -419,10 +419,10 @@ class AbstractSQw(Observable):
 
         if 'energy_resolution' in settings:
             if type(settings['energy_resolution']) in [float, int]:  # if a number, assume Gaussian and convert to dict
-                settings['energy_resolution'] = {'gaussian': settings['energy_resolution']}
                 warnings.warn("Assuming energy resolution is Gaussian. To change this,"
                               " input energy resolution as {'function': 'value'}, where"
-                              " 'function' is your desired resolution approximation function.")
+                              " 'function' is your desired resolution approximation function.", SyntaxWarning)
+                settings['energy_resolution'] = {'gaussian': settings['energy_resolution']}
             # process energy resolution and function type
             if type(settings['energy_resolution']) == dict:
                 if 'gaussian' in settings['energy_resolution']:

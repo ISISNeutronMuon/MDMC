@@ -269,17 +269,19 @@ class Control:
             self.MD_steps = minimum_MD_steps
 
         for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
+            # set energy resolution to an 'override' setting; we cannot simply set it to None
+            # because then it cannot be passed to the SQw object, but the SQw object will then ignore
+            # it when given in this state.
+            self.energy_resolution = {'override': True}
             # 'lazy' resolution setting handling; assume it's a file if passed as a string, or
             # a Gaussian if passed as a float
-            self.energy_resolution = None  # fallback for if resolution is overridden
             if type(dset['resolution']) == str:
                 dset['resolution'] = {'file': dset['resolution']}
             elif type(dset['resolution']) in [float, int]:
-                dset['resolution'] = {'gaussian': dset['resolution']}
                 warnings.warn("Assuming energy resolution is Gaussian. To change this,"
                               " input energy resolution as {'function': 'value'}, where"
-                              " 'function' is your desired resolution approximation function.")
-
+                              " 'function' is your desired resolution approximation function.", SyntaxWarning)
+                dset['resolution'] = {'gaussian': float(dset['resolution'])}
             # routing resolution function based on type
             if type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
                 if 'file' in dset['resolution']:  # if the resolution is defined as a file

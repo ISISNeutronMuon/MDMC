@@ -770,3 +770,42 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert ctrl.observable_pairs[0].exp_obs.resolution_functions['SQw'] is not None
     assert ctrl.observable_pairs[0].MD_obs.resolution_functions['SQw'] is not None
+
+
+@pytest.mark.parametrize('resolution, expected, test_warning',
+                         [(84, {'gaussian': 84.0}, True),
+                          (84.0, {'gaussian': 84.0}, True),
+                          (data.RESOLUTION_DATA['LAMPSQw'], {'file': data.RESOLUTION_DATA['LAMPSQw']}, False)])
+def test_control_lazy_evaluation(simulation, resolution, expected, test_warning):
+    """
+    Tests that when resolution is 'lazily' given as a number or string, it is converted to a dict denoting
+    a Gaussian or file respectively; and when given as None it is correctly changed to the override value.
+    If a number, also ensure that a warning is given.
+    """
+
+    file_name = data.READER_DATA['LAMPSQw']
+
+    dt = DATASET_INFO['use_FFT']['263K05Awat_LAMP']['dt']
+    traj_step = 1
+    time_step = dt / traj_step
+
+    # we create the dataset from scratch because exp_datasets()'s search overrides file as string
+    dataset = {'type': 'SQw',
+               'reader': 'LAMPSQw',
+               'file_name': file_name,
+               'weight': 1.,
+               'resolution': resolution}
+
+    if test_warning:  # if we are testing a warning is given, i.e. resolution is numeric
+        with pytest.warns(SyntaxWarning):
+            ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
+                                   [dataset],
+                                   [],
+                                   reset_config=False)
+    else:
+        ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
+                               [dataset],
+                               [],
+                               reset_config=False)
+
+    assert ctrl.exp_datasets[0]['resolution'] == expected
