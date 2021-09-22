@@ -971,7 +971,7 @@ class AbstractSQw(Observable):
         ----------
         dt : float
             The time spacing to use when performing the inverse Fourier transform in units of `fs`.
-            Ideally this should be the same as the frame seperation expected when applying this
+            Ideally this should be the same as the frame separation expected when applying this
             function.
 
         Returns

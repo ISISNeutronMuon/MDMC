@@ -809,3 +809,47 @@ def test_control_lazy_evaluation(simulation, resolution, expected, test_warning)
                                reset_config=False)
 
     assert ctrl.exp_datasets[0]['resolution'] == expected
+
+
+@pytest.mark.parametrize('function', ['lorentzian'])
+def test_control_refine_other_functions(simulation, function, monkeypatch):
+    """
+    Tests that a refinement runs without error for non-Gaussian approximation functions
+    """
+
+    # monkeypatch Control methods
+    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(control.Control, "_update_engine_parameters",
+                        mock_update_engine_parameters)
+
+    # Set history and parameters of MockMinimizer, as these are both involved in
+    # output
+    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
+               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
+               'int':[10, 100, 1000, 10000, 0.00001] * 3,
+               'really_long_title':[1, 1, 1, 1, 1] * 3}
+    minim = MockMinimizer(history)
+    minim.parameters = [MockParameter('epsilon', 3.134544),
+                        MockParameter('sigma', 0.339834),
+                        MockParameter('A', 1),
+                        MockParameter('B', 34743.233E6)]
+
+    file_name = data.READER_DATA['LAMPSQw']
+
+    dt = DATASET_INFO['use_FFT']['263K05Awat_LAMP']['dt']
+    traj_step = 1
+    time_step = dt / traj_step
+
+    dataset = {'type': 'SQw',
+               'reader': 'LAMPSQw',
+               'file_name': file_name,
+               'weight': 1.,
+               'resolution': {function: 84}}
+
+    ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
+                           [dataset],
+                           [],
+                           reset_config=False)
+
+    ctrl.minimizer = minim
+    ctrl.refine(1)

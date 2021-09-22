@@ -1,5 +1,5 @@
 """System tests for total, coherent and incoherent SQw and FQt calculations from
-MD
+MD with a Gaussian resolution
 
 Although SQw and FQt are two separate observables, as the calculation of SQw
 relies on the calculation of FQt they are tested together."""
@@ -25,7 +25,7 @@ pytestmark = pytest.mark.mpi
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
 E_RESOLUTION = {'gaussian': 49.99998257}
 
-# Absolute tolerance is inclufded to account for rounding differences in nMOLDYN
+# Absolute tolerance is included to account for rounding differences in nMOLDYN
 # and MDMC
 ATOL = 1e-7
 
