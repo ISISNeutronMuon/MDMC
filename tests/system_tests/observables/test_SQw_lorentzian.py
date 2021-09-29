@@ -19,9 +19,4 @@ from MDMC.trajectory_analysis.observables.sqw_incoh import SQwIncoherent
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
-pytestmark = pytest.mark.mpi
-
-# Values are equivalent to those used to generate the test data
-DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
-E_RESOLUTION = {'lorentzian': 49.99998257}
-
+# TODO
