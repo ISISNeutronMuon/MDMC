@@ -29,11 +29,8 @@ RUN apt-get update && apt-get install --upgrade -y \
 # running MDMC (i.e. not in requirements.txt)
 RUN pip3 install --upgrade pip
 RUN pip3 install setuptools --upgrade
-RUN pip3 install pytest \
-  pytest-cov \
-  pytest-cases \
-  ipython>=5.8.0 \
-  jupyter
+COPY .dev_requirements.txt .dev_requirements.txt 
+RUN pip3 install -r .dev_requirements.txt
 
 # Install dependencies
 # [if this fails, you may be running Docker from the wrong directory. Go to
