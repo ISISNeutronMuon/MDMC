@@ -406,7 +406,8 @@ class AbstractSQw(Observable):
                 dimensions of the ``Universe`` in units of ``Ang``
             ``energy_resolution` (`dict`)
                 Optionally specify energy resolution and function in units of ueV (micro eV),
-                in the format of the one-line dict {'function': 'value'};
+                in the format of the one-line dict {'function': value}, where `function`
+                is the resolution function and `value` is the desired `FWHM`.
                 e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
                 Currently accepted functions are 'gaussian' and 'lorentzian'
                 Can also be 'lazily' given as a `float`, in which case it is assumed to be Gaussian.

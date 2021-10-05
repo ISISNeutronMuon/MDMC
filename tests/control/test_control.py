@@ -775,12 +775,17 @@ def test_control_resolution_function(simulation, exp_datasets):
 @pytest.mark.parametrize('resolution, expected, test_warning',
                          [(84, {'gaussian': 84.0}, True),
                           (84.0, {'gaussian': 84.0}, True),
-                          (data.RESOLUTION_DATA['LAMPSQw'], {'file': data.RESOLUTION_DATA['LAMPSQw']}, False)])
-def test_control_lazy_evaluation(simulation, resolution, expected, test_warning):
+                          (data.RESOLUTION_DATA['LAMPSQw'], {'file': data.RESOLUTION_DATA['LAMPSQw']}, False),
+                          (None, None, False),
+                          ({'lorentzian': 84, 'gaussian': 85}, {'lorentzian': 84}, True)])
+def test_control_resolution_handling(simulation, resolution, expected, test_warning):
     """
-    Tests that when resolution is 'lazily' given as a number or string, it is converted to a dict denoting
-    a Gaussian or file respectively; and when given as None it is correctly changed to the override value.
-    If a number, also ensure that a warning is given.
+    Tests that when resolution is given as accepted methods other than a one-line dictionary,
+    that it is handled correctly. That is:
+    - if a float or int, assume Gaussian, convert to dict and give a warning
+    - if a string, assume file and convert to dict
+    - if None, change to override dict
+    - if a multi-line dictionary, take only the first line
     """
 
     file_name = data.READER_DATA['LAMPSQw']

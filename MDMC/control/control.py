@@ -167,7 +167,8 @@ class Control:
                  convergence_tol: float = 1e-5,
                  min_refinement_steps: int = 2,
                  max_parameter_change: float=0.01,
-                 verbose: int=0):
+                 verbose: int=0,
+                 **settings: dict):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -191,6 +192,7 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
         self.min_refine_steps = min_refinement_steps
+        self.settings = settings
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -269,7 +271,8 @@ class Control:
             # set energy resolution to an 'override' setting; we cannot simply set it to None
             # because then it cannot be passed to the SQw object, but the SQw object will then ignore
             # it when given in this state.
-            self.energy_resolution = {'override': True}
+            energy_resolution = {'override': True}
+
             # 'lazy' resolution setting handling; assume it's a file if passed as a string, or
             # a Gaussian if passed as a float
             if type(dset['resolution']) == str:
@@ -279,8 +282,13 @@ class Control:
                               " input energy resolution as {'function': 'value'}, where"
                               " 'function' is your desired resolution approximation function.", SyntaxWarning)
                 dset['resolution'] = {'gaussian': float(dset['resolution'])}
+
             # routing resolution function based on type
             if type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
+                if len(dset['resolution']) > 1:  # if there are multiple entries, ignore all but the first entered
+                    warnings.warn("The resolution dict should only have one line; ignoring"
+                                  " all lines except the first.", SyntaxWarning)
+                    dset['resolution'] = {list(dset['resolution'].keys())[0]: list(dset['resolution'].values())[0]}
                 if 'file' in dset['resolution']:  # if the resolution is defined as a file
                     resolution_functions = self._read_resolution_from_file(dset['type'],
                                                                            dset['reader'],
@@ -288,8 +296,8 @@ class Control:
                     self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
                     self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
                 else:  # if resolution is defined as an approximation function
-                    self.energy_resolution = {'energy_resolution': dset['resolution']}
-                    # we pass energy resolution as a dict so SQw can use it as a **kwarg
+                    energy_resolution = {'energy_resolution': dset['resolution']}
+                self.settings.update(energy_resolution)
             elif dset['resolution'] is not None:  # if type is not recognised
                 raise TypeError("`resolution` should be a string, float or dictionary.")
 
@@ -641,12 +649,12 @@ class Control:
                     sub_trj.append(trj[i * maximum_frames : (i + 1) * maximum_frames])
                 obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
                                                             verbose=self.verbose,
-                                                            **self.energy_resolution)
+                                                            **self.settings)
             else:
                 # Otherwise, provide the whole trajectory
                 obs_timings = pair.MD_obs.calculate_from_MD([trj],
                                                             verbose=self.verbose,
-                                                            **self.energy_resolution)
+                                                            **self.settings)
 
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():

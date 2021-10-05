@@ -12,7 +12,7 @@ If you would like to add a new approximation function for Control objects (e.g. 
 
 1. Change the docstrings for the `Control` class in `control.py` and the `AbstractSQw` class to list your function.
 2. open `MDMC/common/resolution_functions.py` and add your function.
-3. Open sqw.py, add your function to the list imported from `MDMC.common.resolution_functions`, then find the following block of code (around line 420 or so):
+3. Open sqw.py, add your function to the list imported from `MDMC.common.resolution_functions`, then find the following block of code:
 
 .. code-block:: python
 
@@ -38,7 +38,7 @@ etc. See the bottom of this code block (starting with Gaussian) is an if loop li
   	self.approximation_function = MY_FUNCTION
   	
 4. After this, there should be an `else` subroutine which raises a `NameError`, with a list of accepted functions. Add `'MY_FUNCTION'` to this list.
-5. Scroll down and find the following block of code (around line 930 or so):
+5. Scroll down and find the following block of code:
 
  .. code-block:: python
  
