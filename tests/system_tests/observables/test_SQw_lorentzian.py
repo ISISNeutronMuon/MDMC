@@ -1,8 +1,5 @@
 """System tests for total, coherent and incoherent SQw calculations from
-MD with a Lorentzian resolution
-
-This compares calculated data with an SQw object generated to be
-the Lorentzian function, but designed to make MDMC treat it like a file."""
+MD with a Lorentzian resolution"""
 
 from netCDF4 import Dataset
 import numpy as np
@@ -20,3 +17,4 @@ from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
 # TODO
+# see https://github.com/MDMCproject/MDMCv0.2_pilot/issues/737

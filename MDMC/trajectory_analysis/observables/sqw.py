@@ -16,7 +16,7 @@ from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.common.resolution_functions import gaussian, lorentzian
+from MDMC.common.resolution_function_factory import ResolutionFunctionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
@@ -310,7 +310,7 @@ class AbstractSQw(Observable):
         self._e_res = value
 
     @property
-    def approximation_function(self):
+    def resolution_approximation(self):
         """
         Get or set the energy resolution approximation function used to calculate the dynamic
         structure factor, S(Q, w), from the intermediate scattering function,
@@ -322,12 +322,12 @@ class AbstractSQw(Observable):
             The function being used to approximate the resolution.
         """
 
-        return self._approximation_function
+        return self._resolution_approximation
 
-    @approximation_function.setter
-    def approximation_function(self, function: Callable):
+    @resolution_approximation.setter
+    def resolution_approximation(self, function: Callable):
 
-        self._approximation_function = function
+        self._resolution_approximation = function
 
     def validate_energy(self, dt):
 
@@ -426,19 +426,16 @@ class AbstractSQw(Observable):
                 settings['energy_resolution'] = {'gaussian': settings['energy_resolution']}
             # process energy resolution and function type
             if type(settings['energy_resolution']) == dict:
-                if 'gaussian' in settings['energy_resolution']:
-                    # Convert the user friendly ueV into preferred system unit of meV
-                    self.e_res = settings['energy_resolution']['gaussian'] / 1000
-                    self.approximation_function = gaussian
-                elif 'lorentzian' in settings['energy_resolution']:
-                    self.e_res = settings['energy_resolution']['lorentzian'] / 1000
-                    self.approximation_function = lorentzian
-                else:
-                    raise NameError("""Resolution function not recognised. Recognised resolution functions: 
-                                    - 'gaussian' 
-                                    - 'lorentzian'""")
+                if len(settings['energy_resolution']) > 1:  # if there are multiple entries, ignore all but the first entered
+                    warnings.warn("The resolution dict should only have one line; ignoring"
+                                  " all lines except the first.", SyntaxWarning)
+                    settings['energy_resolution'] = {list(settings['energy_resolution'].keys())[0]: list(settings['energy_resolution'].values())[0]}
+                    # convert user friendly ueV into system unit meV
+                    self.e_res = settings['energy_resolution'].values()[0] / 1000
+                    # this will fail if the resolution function is not recognised
+                    self.resolution_approximation = ResolutionFunctionFactory.create_instance(settings['energy_resolution'].keys()[0])
             else:
-                raise TypeError("`energy_resolution` should be a float or dictionary.")
+                raise TypeError("`energy_resolution` should be a number or dictionary.")
         else:
             # None here is to record that the energy_resolution parameter has not been set
             self.e_res = None
