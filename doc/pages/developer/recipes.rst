@@ -18,11 +18,7 @@ Let MY_FUNCTION be the name of your function.
 
 Here, you are done implementation-wise! Factory patterns will handle the actual implementation of your function. However, you should add some tests:
 
-
-4. Open `tests/control/test_control.py`, and find the test `test_control_refine_other_functions`. The line above it should be a `@pytest.mark.parametrize` decorator; its second parameter should be a list of function names starting with `'lorentzian'`. Add `'MY_FUNCTION'` to this list.
-
-5. Similarly, open `tests/trajectory_analysis/test_resolution_window_factory.py` and add your function to the parameterisation of `test_resolution_window_factory`; do this by adding a tuple to the list, where the tuple is ("MY_FUNCTION", MY_FUNCTION_window).
-
+5. Open `tests/trajectory_analysis/test_resolution_window_factory.py` and add your function to the @pytest.mark.parametrize decorator of `test_resolution_window_factory`; do this by adding a tuple to the list, where the tuple is ("MY_FUNCTION", MY_FUNCTION_window).
 6. Create a new file in the directory `MDMC/tests/system_tests/observables/` and name it `test_SQw_MY_FUNCTION`. In here, please add tests which validate your new function's calculations against a benchmark (either a similar calculation made in a third-party software, or done by hand).
 
 Now you should be done; if you create a `Control` object with a dataset that has resolution `{'MY_FUNCTION': x}`, it should apply your resolution function to this data.
