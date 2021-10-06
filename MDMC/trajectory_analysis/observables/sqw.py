@@ -16,7 +16,7 @@ from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.common.resolution_function_factory import ResolutionFunctionFactory
+from MDMC.trajectory_analysis.sqw_resolution_windows.resolution_window_factory import ResolutionWindowFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
@@ -311,6 +311,7 @@ class AbstractSQw(Observable):
 
     @property
     def resolution_approximation(self):
+
         """
         Get or set the energy resolution approximation function used to calculate the dynamic
         structure factor, S(Q, w), from the intermediate scattering function,
@@ -430,15 +431,16 @@ class AbstractSQw(Observable):
                     warnings.warn("The resolution dict should only have one line; ignoring"
                                   " all lines except the first.", SyntaxWarning)
                     settings['energy_resolution'] = {list(settings['energy_resolution'].keys())[0]: list(settings['energy_resolution'].values())[0]}
-                    # convert user friendly ueV into system unit meV
-                    self.e_res = settings['energy_resolution'].values()[0] / 1000
-                    # this will fail if the resolution function is not recognised
-                    self.resolution_approximation = ResolutionFunctionFactory.create_instance(settings['energy_resolution'].keys()[0])
+                # convert user friendly ueV into system unit meV
+                self.e_res = list(settings['energy_resolution'].values())[0] / 1000
+                # get name of desired resolution function
+                self.resolution_approximation = str(list(settings['energy_resolution'].keys())[0])
             else:
-                raise TypeError("`energy_resolution` should be a number or dictionary.")
+                raise TypeError("`energy_resolution` must be a number or dictionary.")
         else:
             # None here is to record that the energy_resolution parameter has not been set
             self.e_res = None
+            self.resolution_approximation = None
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
@@ -903,8 +905,7 @@ class AbstractSQw(Observable):
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
-    def _apply_instrument_resolution(self, FQt: np.ndarray,
-            function: Callable[..., np.ndarray] = gaussian) -> np.ndarray:
+    def _apply_instrument_resolution(self, FQt: np.ndarray) -> np.ndarray:
 
         """
         If a general ``self.resolution_functions['SQw']`` is defined, we use that to apply
@@ -918,8 +919,6 @@ class AbstractSQw(Observable):
         ----------
         FQt : numpy.ndarray
             The F(Q, t) to which the resolution function is applied
-        function : function, optional
-            The resolution function to apply. The default is gaussian.
 
         Returns
         -------
@@ -932,19 +931,8 @@ class AbstractSQw(Observable):
         if resolution_function is not None:
             window = self._calculate_resolution_window(resolution_function)
         elif self.e_res is not None:  # If we do not have a resolution function for SQw, use an approximation function.
-            if function == gaussian:
-                # We convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
-                # relationship between the width of a Gaussian and its Fourier
-                # transform rather than explicitly transforming it, applying a factor
-                # of 1e18 to convert from h / h_bar's units of eV s into system units
-                sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
-                window = function(self.t[:N_T], sigma_t, norm=False)
-            if function == lorentzian:
-                # The Fourier transform of the Lorentzian is F(k) = e^((2 * \pi * i) * k * x_0) - \Gamma * \pi * |k|
-                # where x_0 is the offset and \Gamma the FWHM.
-                # thus as the instrument resolution function is centred around x_0, this simplifies to
-                # e^-\Gamma * \pi * |k|.
-                window = np.exp((-self.e_res * np.pi * np.abs(self.t[:N_T])))
+            rwf = ResolutionWindowFactory()
+            window = rwf.create_instance(self.resolution_approximation)(self.t[:N_T], self.e_res)
         else:
             # no resolution function to apply and just return back FQt
             return FQt

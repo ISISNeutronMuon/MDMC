@@ -9,3 +9,4 @@ trajectory
 
 from . import observables
 from . import trajectory
+from . import sqw_resolution_windows
