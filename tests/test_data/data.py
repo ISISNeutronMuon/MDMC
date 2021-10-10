@@ -27,7 +27,8 @@ _OBJECT_PATH = '/MDMC_objects'
 
 READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
                'MantidSQw':'/iris70429_graphite002_red',
-               'XML_SQw':'/Well_s_q_omega_Ar_data.xml'}
+               'XML_SQw':'/Well_s_q_omega_Ar_data.xml',
+               'LAMPRDF':'/rdf2.ref'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
