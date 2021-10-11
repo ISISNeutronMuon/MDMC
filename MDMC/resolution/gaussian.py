@@ -29,6 +29,11 @@ class GaussianResolution(Resolution):
         w: frequency
         mu: the offset of the function (defaults to 0)
         norm: if True, normalises the distribution to unity.
+
+        Returns
+        -------
+        The window function in frequency space (i.e. the Gaussian with
+        FWHM self.e_res, centred on 0)
         """
 
         window = np.exp(-0.5 * ((w - mu) / self.e_res)**2)
@@ -41,14 +46,23 @@ class GaussianResolution(Resolution):
         """
         The Gaussian window in time space
 
-        we convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
-        relationship between the width of a Gaussian and its Fourier transform,
-        rather than explicitly transforming it, then applying a factor
-        of 1e18 to convert from h / h_bar's units of eV s into system units.
+        Parameters
+        ----------
+        t: time
+
+        Returns
+        -------
+        The window function in time space (i.e. the Gaussian with FWHM sigma_t, centred on 0)
         """
+
+        # We convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
+        # relationship between the width of a Gaussian and its Fourier transform,
+        # rather than explicitly transforming it, then applying a factor
+        # of 1e18 to convert from h / h_bar's units of eV s into system units.
 
         sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
         window = np.exp(-0.5 * (t / sigma_t)**2)
+
         return window
 
     def __repr__(self):

@@ -15,3 +15,10 @@ class NullResolution(Resolution):
         # does not apply resolution
         return array
 
+    def __repr__(self):
+        """
+        Resolution objects are represented with the dictionary used to create them;
+        NullResolution is represented as {None} to match other objects.
+        """
+
+        return "Resolution{None}"

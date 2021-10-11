@@ -15,3 +15,7 @@ __pycache__
 <fdopen>
 
 .vscode/
+
+log.lammps
+
+.idea/
