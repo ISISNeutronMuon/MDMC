@@ -22,13 +22,14 @@ class ResolutionFactory(object):
             if isclass(_type) and issubclass(_type, MDMC.resolution.Resolution):
                 self.resolutions.update([[name, _type]])
 
-    # users will input e.g. 'gaussian' and this will provide GaussianResolution()
+    # users will input e.g. 'gaussian' and this will provide a GaussianResolution object
     def create_instance(self, resolution: dict, *args):
         resolution = _standardise_input(resolution)
         function_name = list(resolution.keys())[0].title() + 'Resolution'
         function_res = list(resolution.values())[0]
 
         if function_name in self.resolutions:
+            # *args are only required by some resolution types, e.g. file resolution
             return self.resolutions[function_name](function_res, *args)
         else:
             # error if unrecognised function is used

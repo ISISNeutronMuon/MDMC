@@ -10,13 +10,13 @@ class FileResolution(Resolution):
     """
 
     def __init__(self, file_name, file_type, file_reader, dt):
-        resolution_data = _read_resolution_from_file(file_type,
-                                                     file_reader,
-                                                     file_name,
-                                                     dt)
-        self.resolution_function = resolution_data[0]
+        self.resolution_function = _read_resolution_from_file(file_type,
+                                                              file_reader,
+                                                              file_name,
+                                                              dt)
 
-    def apply(self, x, fqt):
+    # ignored=None is here as apply() must have a number of parameters matching that of
+    def apply(self, fqt, ignored=None):
         N_Q, N_T = np.shape(fqt)
         window = self._calculate_resolution_window(N_Q, N_T)
 
@@ -45,7 +45,7 @@ class FileResolution(Resolution):
         # integral over all elements in the energy domain (with a factor for normalisation).
         # Setting this to one for all Q enforces that the static structure factor (the integral of
         # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = self.resolution_function(Q, T)
+        window = self.resolution_function(Q, t)
         norm = self.resolution_function([0], Q)
         return window / norm
 

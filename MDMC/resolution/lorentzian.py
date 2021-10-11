@@ -12,7 +12,7 @@ class LorentzianResolution(Resolution):
         self.use_FQT = True
         self.e_res = e_res
 
-    def apply(self, t, fqt):
+    def apply(self, fqt, t):
         N_Q, N_T = np.shape(fqt)
         window = self.window_in_t(t[:N_T])
 

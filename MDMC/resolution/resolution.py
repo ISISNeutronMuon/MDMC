@@ -7,7 +7,7 @@ class Resolution(ABC):
 	"""
 
 	@abstractmethod
-	def apply(self, x, array):
+	def apply(self, array, x):
 		"""
 		Applies resolution to an array.
 

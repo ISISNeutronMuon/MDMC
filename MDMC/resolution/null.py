@@ -7,6 +7,11 @@ class NullResolution(Resolution):
     Used when there is no resolution to apply.
     """
 
-    def apply(self, x, array):
+    def __init__(self, *ignore):
+        # takes arguments and ignores them entirely
+        pass
+
+    def apply(self, array, x):
+        # does not apply resolution
         return array
 

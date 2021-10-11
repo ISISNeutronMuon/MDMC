@@ -2,7 +2,6 @@
 
 from abc import abstractmethod
 from time import time
-import warnings
 
 from mpi4py import MPI
 from numba import jit
@@ -16,7 +15,7 @@ from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.trajectory_analysis.sqw_resolution_windows.resolution_window_factory import ResolutionWindowFactory
+from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
@@ -36,7 +35,6 @@ class AbstractSQw(Observable):
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
-        self._resolution_functions = {}
 
     @property
     def data(self):
@@ -287,49 +285,6 @@ class AbstractSQw(Observable):
 
         self._t = value
 
-    @property
-    def e_res(self):
-
-        """
-        Get or set the energy resolution (FWHM) used to calculate the dynamic
-        structure factor, S(Q, w), from the intermediate scattering function,
-        F(Q, t)
-
-        Returns
-        -------
-        float
-            The energy resolution (FWHM) in ``meV``
-        """
-
-        return self._e_res
-
-    @e_res.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def e_res(self, value):
-
-        self._e_res = value
-
-    @property
-    def resolution_approximation(self):
-
-        """
-        Get or set the energy resolution approximation function used to calculate the dynamic
-        structure factor, S(Q, w), from the intermediate scattering function,
-        F(Q, t)
-
-        Returns
-        -------
-        Callable
-            The function being used to approximate the resolution.
-        """
-
-        return self._resolution_approximation
-
-    @resolution_approximation.setter
-    def resolution_approximation(self, function: Callable):
-
-        self._resolution_approximation = function
-
     def validate_energy(self, dt):
 
         """
@@ -419,28 +374,14 @@ class AbstractSQw(Observable):
         errors_list = []
         obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
-        if 'energy_resolution' in settings:
-            if type(settings['energy_resolution']) in [float, int]:  # if a number, assume Gaussian and convert to dict
-                warnings.warn("Assuming energy resolution is Gaussian. To change this,"
-                              " input energy resolution as {'function': 'value'}, where"
-                              " 'function' is your desired resolution approximation function.", SyntaxWarning)
-                settings['energy_resolution'] = {'gaussian': settings['energy_resolution']}
-            # process energy resolution and function type
-            if type(settings['energy_resolution']) == dict:
-                if len(settings['energy_resolution']) > 1:  # if there are multiple entries, ignore all but the first entered
-                    warnings.warn("The resolution dict should only have one line; ignoring"
-                                  " all lines except the first.", SyntaxWarning)
-                    settings['energy_resolution'] = {list(settings['energy_resolution'].keys())[0]: list(settings['energy_resolution'].values())[0]}
-                # convert user friendly ueV into system unit meV
-                self.e_res = list(settings['energy_resolution'].values())[0] / 1000
-                # get name of desired resolution function
-                self.resolution_approximation = str(list(settings['energy_resolution'].keys())[0])
+        # adds resolution attribute if it doesn't already exist
+        if not hasattr(self, 'resolution'):
+            resolution_factory = ResolutionFactory()
+            if 'energy_resolution' in settings:
+                self.resolution = resolution_factory.create_instance(settings['energy_resolution'])
             else:
-                raise TypeError("`energy_resolution` must be a number or dictionary.")
-        else:
-            # None here is to record that the energy_resolution parameter has not been set
-            self.e_res = None
-            self.resolution_approximation = None
+                # if no resolution supplied, give the object null resolution
+                self.resolution = resolution_factory.create_instance(None)
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
@@ -875,7 +816,7 @@ class AbstractSQw(Observable):
             # are manually provided it may not be.
             self.FQt = self.FQt[:, :nE + 1]
 
-        FQt_res = self._apply_instrument_resolution(self.FQt)
+        FQt_res = self.resolution.apply(self.FQt, self.t)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
@@ -905,41 +846,6 @@ class AbstractSQw(Observable):
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
-    def _apply_instrument_resolution(self, FQt: np.ndarray) -> np.ndarray:
-
-        """
-        If a general ``self.resolution_functions['SQw']`` is defined, we use that to apply
-        resolution to the data. Otherwise, the ``function`` passed is applied to the S(Q,w) data.
-
-        As the S(Q,w) data is calculated from the time domain Fourier transform,
-        F(Q,t), the resolution function can be applied multiplicatively, rather
-        than by convolution by first converting it to the time domain.
-
-        Parameters
-        ----------
-        FQt : numpy.ndarray
-            The F(Q, t) to which the resolution function is applied
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` of the same dimensions as ``FQt``
-        """
-
-        N_Q, N_T = np.shape(FQt)
-        resolution_function = self.resolution_functions.get('SQw')
-        if resolution_function is not None:
-            window = self._calculate_resolution_window(resolution_function)
-        elif self.e_res is not None:  # If we do not have a resolution function for SQw, use an approximation function.
-            rwf = ResolutionWindowFactory()
-            window = rwf.create_instance(self.resolution_approximation)(self.t[:N_T], self.e_res)
-        else:
-            # no resolution function to apply and just return back FQt
-            return FQt
-
-        # Broadcast the window so that it is applied for all Q values
-        return np.broadcast_to(window, (N_Q, N_T)) * FQt
-
     def calculate_resolution_functions(self, dt):
         """
         Generates a resolution function in momentum and time that can be used in the calculation of
@@ -967,6 +873,10 @@ class AbstractSQw(Observable):
             and momentum (respectively) and returns a 2D array of values for the instrument
             resolution.
         """
+
+        # NB: this function is only used by methods in the FileResolution object (see MDMC.resolution.from_file)
+        # but it hasn't been moved to that file because it relies so heavily on the SQw object's attributes
+        # that moving it over is a nightmare
 
         # Remove any momentum values with infinite error, and the corresponding values from SQw
         error = self.SQw_err
@@ -1020,33 +930,6 @@ class AbstractSQw(Observable):
             return real(t, Q) + 1j * imag(t, Q)
 
         return {'SQw': data_interpol}
-
-    def _calculate_resolution_window(self, resolution_function: Callable) -> np.ndarray:
-        """
-        Calculate the resolution window in time from a general resolution function in the time
-        domain. Normalise this window so that the sum over energy for each Q
-        value is the same (this enforces that the static structure factor is constant for all Q).
-
-        Parameters
-        ----------
-        resolution_function : Callable
-            The resolution from which to calculate the window
-        N_T : int
-            The number of points in time for FQt
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with the shape ``(len(self.Q), N_T)``
-        """
-
-        # By definition, the value of the resolution function in the time domain at t=0 is the
-        # integral over all elements in the energy domain (with a factor for normalisation).
-        # Setting this to one for all Q enforces that the static structure factor (the integral of
-        # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = resolution_function(self.t, self.Q)
-        norm = resolution_function([0], self.Q)
-        return window / norm
 
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:

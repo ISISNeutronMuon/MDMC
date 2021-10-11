@@ -110,25 +110,6 @@ class Observable(ABC):
         raise NotImplementedError
 
     @property
-    def resolution_functions(self):
-
-        """
-        The resolution functions for the dependent variables
-
-        Return
-        ------
-        dict
-            resolution functions
-        """
-
-        return self._resolution_functions
-
-    @resolution_functions.setter
-    def resolution_functions(self, resolution_functions):
-
-        self._resolution_functions = resolution_functions
-
-    @property
     @abstractmethod
     def errors(self):
 

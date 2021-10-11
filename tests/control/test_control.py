@@ -12,6 +12,7 @@ from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter
 from MDMC.MD.simulation import Simulation, Universe
+from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
 
 
@@ -768,49 +769,6 @@ def test_control_resolution_function(simulation, exp_datasets):
                            [],
                            reset_config=False)
 
-    assert ctrl.observable_pairs[0].exp_obs.resolution_functions['SQw'] is not None
-    assert ctrl.observable_pairs[0].MD_obs.resolution_functions['SQw'] is not None
+    assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
+    assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
 
-
-@pytest.mark.parametrize('resolution, expected, test_warning',
-                         [(84, {'gaussian': 84.0}, True),
-                          (84.0, {'gaussian': 84.0}, True),
-                          (data.RESOLUTION_DATA['LAMPSQw'], {'file': data.RESOLUTION_DATA['LAMPSQw']}, False),
-                          (None, None, False),
-                          ({'lorentzian': 84, 'gaussian': 85}, {'lorentzian': 84}, True)])
-def test_control_resolution_handling(simulation, resolution, expected, test_warning):
-    """
-    Tests that when resolution is given as accepted methods other than a one-line dictionary,
-    that it is handled correctly. That is:
-    - if a float or int, assume Gaussian, convert to dict and give a warning
-    - if a string, assume file and convert to dict
-    - if None, change to override dict
-    - if a multi-line dictionary, take only the first line
-    """
-
-    file_name = data.READER_DATA['LAMPSQw']
-
-    dt = DATASET_INFO['use_FFT']['263K05Awat_LAMP']['dt']
-    traj_step = 1
-    time_step = dt / traj_step
-
-    # we create the dataset from scratch because exp_datasets()'s search overrides file as string
-    dataset = {'type': 'SQw',
-               'reader': 'LAMPSQw',
-               'file_name': file_name,
-               'weight': 1.,
-               'resolution': resolution}
-
-    if test_warning:  # if we are testing a warning is given, i.e. resolution is numeric
-        with pytest.warns(SyntaxWarning):
-            ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
-                                   [dataset],
-                                   [],
-                                   reset_config=False)
-    else:
-        ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
-                               [dataset],
-                               [],
-                               reset_config=False)
-
-    assert ctrl.exp_datasets[0]['resolution'] == expected

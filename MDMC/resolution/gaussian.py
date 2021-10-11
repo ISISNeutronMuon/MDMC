@@ -11,9 +11,10 @@ class GaussianResolution(Resolution):
     # *ignored just takes parameters needed by other resolutions but not this one and ignores them
     def __init__(self, e_res, *ignored):
         self.use_FQT = True
-        self.e_res = e_res
+        # converts energy resolution from user-friendly ueV to system unit meV
+        self.e_res = e_res / 1000
 
-    def apply(self, t, fqt):
+    def apply(self, fqt, t):
         N_Q, N_T = np.shape(fqt)
         window = self.window_in_t(t[:N_T])
 

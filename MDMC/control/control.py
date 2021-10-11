@@ -16,6 +16,7 @@ from MDMC.MD.simulation import Simulation
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.resolution.resolution_factory import ResolutionFactory
 
 from MDMC.refinement import FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
@@ -224,10 +225,10 @@ class Control:
                 rescale_factor = 1.
 
             observable_pair = ObservablePair(exp_observable,
-                                                 MD_observable,
-                                                 dset['weight'],
-                                                 rescale_factor=rescale_factor,
-                                                 auto_scale=auto_scale)
+                                             MD_observable,
+                                             dset['weight'],
+                                             rescale_factor=rescale_factor,
+                                             auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
             # Take the largest minimum number of MD_steps needed by any dataset
@@ -268,38 +269,12 @@ class Control:
             self.MD_steps = minimum_MD_steps
 
         for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
-            # set energy resolution to an 'override' setting; we cannot simply set it to None
-            # because then it cannot be passed to the SQw object, but the SQw object will then ignore
-            # it when given in this state.
-            energy_resolution = {'override': True}
+            resolution_factory = ResolutionFactory()
+            dt = self.simulation.time_step * self.simulation.traj_step
+            resolution = resolution_factory.create_instance(dset['resolution'], dset['type'], dset['reader'], dt)
 
-            # 'lazy' resolution setting handling; assume it's a file if passed as a string, or
-            # a Gaussian if passed as a float
-            if type(dset['resolution']) == str:
-                dset['resolution'] = {'file': dset['resolution']}
-            elif type(dset['resolution']) in [float, int]:
-                warnings.warn("Assuming energy resolution is Gaussian. To change this,"
-                              " input energy resolution as {'function': 'value'}, where"
-                              " 'function' is your desired resolution approximation function.", SyntaxWarning)
-                dset['resolution'] = {'gaussian': float(dset['resolution'])}
-
-            # routing resolution function based on type
-            if type(dset['resolution']) == dict:  # if it was a float or str, it should be converted to dict by now
-                if len(dset['resolution']) > 1:  # if there are multiple entries, ignore all but the first entered
-                    warnings.warn("The resolution dict should only have one line; ignoring"
-                                  " all lines except the first.", SyntaxWarning)
-                    dset['resolution'] = {list(dset['resolution'].keys())[0]: list(dset['resolution'].values())[0]}
-                if 'file' in dset['resolution']:  # if the resolution is defined as a file
-                    resolution_functions = self._read_resolution_from_file(dset['type'],
-                                                                           dset['reader'],
-                                                                           dset['resolution']['file'])
-                    self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
-                    self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
-                else:  # if resolution is defined as an approximation function
-                    energy_resolution = {'energy_resolution': dset['resolution']}
-                self.settings.update(energy_resolution)
-            elif dset['resolution'] is not None:  # if type is not recognised
-                raise TypeError("`resolution` should be a string, float or dictionary.")
+            self.observable_pairs[i].exp_obs.resolution = resolution
+            self.observable_pairs[i].MD_obs.resolution = resolution
 
         # setup the dataframe for stdout
         setup_frame = pd.DataFrame([[minimizer_type],
@@ -611,7 +586,6 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
-        observable.resolution_functions = exp_observable.resolution_functions
         return observable
 
     def _calculate_observables(self, simulation, observable_pairs):
