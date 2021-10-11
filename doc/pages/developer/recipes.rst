@@ -10,15 +10,26 @@ New approximation functions
 
 If you would like to add a new approximation function for Control objects (e.g. Gaussian, Lorentzian), MDMC's handling of these functions is built to be expandable. Do the following:
 
-Let MY_FUNCTION be the name of your function.
+Let `myfunction` be the name of your function.
 
 1. Change the docstrings for the `Control` class in `control.py` and the `AbstractSQw` class to list your function as a resolution function.
 2. open `MDMC/common/resolution_functions.py` and add your function.
-3. open `MDMC/trajectory_analysis/sqw_resolution_windows/resolution_windows.py` and add a function named MY_FUNCTION_window, which is the mathematics used to create the Fourier transform of your function on a Numpy array. Note you can use MY_FUNCTION() from resolution_functions.py if needed.
+3. go to `MDMC/resolution/` and add a file called myfunction.py. This file should define a subclass of Resolution named MyfunctionResolution (note the title case). This has a mandatory method, `apply(self, fqt, t)`, which takes your function and applies it to an FQt array.
+
+If your function is numeric, you should create another method, `window_in_t(self, t)` which calculates the Fourier transform of your function on an array t. `apply()` can then simply be:
+
+.. code-block:: python
+
+    def apply(self, fqt, t):
+        N_Q, N_T = np.shape(fqt)
+        window = self.window_in_t(t[:N_T])
+
+        return np.broadcast_to(window, (N_Q, N_T)) * fqt
 
 Here, you are done implementation-wise! Factory patterns will handle the actual implementation of your function. However, you should add some tests:
 
-5. Open `tests/trajectory_analysis/test_resolution_window_factory.py` and add your function to the @pytest.mark.parametrize decorator of `test_resolution_window_factory`; do this by adding a tuple to the list, where the tuple is ("MY_FUNCTION", MY_FUNCTION_window).
-6. Create a new file in the directory `MDMC/tests/system_tests/observables/` and name it `test_SQw_MY_FUNCTION`. In here, please add tests which validate your new function's calculations against a benchmark (either a similar calculation made in a third-party software, or done by hand).
+6. Create a new file in the directory `MDMC/tests/system_tests/observables/` and name it `test_SQw_myfunction`. In here, please add tests which validate your new function's calculations against a benchmark (either a similar calculation made in a third-party software, or done by hand).
+
+If your function is not simply numeric (i.e. requires __init__ arguments other than a single numeric value), some tweaking of `MDMC/trajectory_analysis/observables/sqw.py` and `tests/resolution/test_resolution_factory.py` will also be necessary, and your function may take a lot more work.
 
 Now you should be done; if you create a `Control` object with a dataset that has resolution `{'MY_FUNCTION': x}`, it should apply your resolution function to this data.
