@@ -21,8 +21,12 @@ matrix:
       script:
         - source .travis/docker_testing.sh 
       after_success:
+        # uploads code coverage
         - docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-        - bash <(curl -s https://codecov.io/bash)
+        - curl -Os https://uploader.codecov.io/latest/linux/codecov
+        - chmod +x codecov
+        - codecov -t ${CODECOV_TOKEN}
+        # pushes travis image if built
         - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # logs in to docker to push new images
         - docker push mdmc/mdmc:travis # if a new image wasn't built, this throws a harmless exception
         - docker logout
