@@ -65,7 +65,8 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
           -D PKG_MOLECULE=yes \
           -D PKG_PYTHON=yes \ 
           -D PKG_MOLFILE=yes \
-          -D PKG_VTK=yes \
+          -D DOWNLOAD_VORO=yes \
+          -D PKG_VORONOI=yes \
           -D BUILD_TOOLS=yes \
           ../cmake
 RUN make
