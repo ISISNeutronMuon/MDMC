@@ -52,13 +52,21 @@ RUN rm /lammps-stable.tar.gz
 WORKDIR /lammps/build
 RUN cmake -C ../cmake/presets/all_on.cmake \
           -C ../cmake/presets/nolib.cmake \
-          -D BUILD_LIB=on \
-          -D BUILD_SHARED_LIBS=on \
-          -D BUILD_MPI=on \
-          -D LAMMPS_EXCEPTIONS=on \
-          -D DOWNLOAD_VORO=on \
-          -D PKG_PYTHON=on \
-          -D PKG_VORONOI=on \
+          -D BUILD_LIB=yes \
+          -D LAMMPS_MACHINE=mpi \
+          -D BUILD_SHARED_LIBS=yes \
+          -D BUILD_MPI=yes \
+          -D LAMMPS_EXCEPTIONS=yes \
+          -D PKG_OPENMP=yes \
+          -D DOWNLOAD_MDI=yes \
+          -D PKG_NETCDF=yes \
+          -D BUILD_LAMMPS_TOOLS=yes \
+          -D BUILD_OMP=yes \
+          -D PKG_MOLECULE=yes \
+          -D PKG_PYTHON=yes \ 
+          -D PKG_MOLFILE=yes \
+          -D PKG_VTK=yes \
+          -D BUILD_TOOLS=yes \
           ../cmake
 RUN make
 RUN make install-python
