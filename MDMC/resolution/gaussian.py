@@ -1,5 +1,6 @@
 from MDMC.resolution.resolution import Resolution
 from MDMC.common.constants import h_bar
+from MDMC.common.resolution_functions import gaussian
 import numpy as np
 
 
@@ -8,9 +9,7 @@ class GaussianResolution(Resolution):
     A `Resolution` subclass for applying a Gaussian resolution
     """
 
-    # *ignored just takes parameters needed by other resolutions but not this one and ignores them
-    def __init__(self, e_res, *ignored):
-        self.use_FQT = True
+    def __init__(self, e_res):
         # converts energy resolution from user-friendly ueV to system unit meV
         self.e_res = e_res / 1000
 
@@ -20,7 +19,7 @@ class GaussianResolution(Resolution):
 
         return np.broadcast_to(window, (N_Q, N_T)) * fqt
 
-    def window_in_w(self, w, mu=0.0, norm=True):
+    def window_in_w(self, w, norm=True):
         """
         The Gaussian window in frequency space
 
@@ -36,9 +35,7 @@ class GaussianResolution(Resolution):
         FWHM self.e_res, centred on 0)
         """
 
-        window = np.exp(-0.5 * ((w - mu) / self.e_res)**2)
-        if norm:
-            window /= (self.e_res * np.sqrt(2.0 * np.pi))
+        window = gaussian(w, self.e_res, norm)
 
         return window
 
@@ -61,7 +58,7 @@ class GaussianResolution(Resolution):
         # of 1e18 to convert from h / h_bar's units of eV s into system units.
 
         sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
-        window = np.exp(-0.5 * (t / sigma_t)**2)
+        window = gaussian(t, sigma_t, norm=False)
 
         return window
 

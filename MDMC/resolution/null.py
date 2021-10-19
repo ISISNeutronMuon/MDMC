@@ -7,6 +7,8 @@ class NullResolution(Resolution):
     Used when there is no resolution to apply.
     """
 
+    # this __init__ needs to exist as otherwise passing a null resolution will create an error that the object
+    # has been given too many parameters at instantiation time.
     def __init__(self, *ignore):
         # takes arguments and ignores them entirely
         pass

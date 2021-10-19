@@ -30,7 +30,10 @@ class ResolutionFactory(object):
 
         if function_name in self.resolutions:
             # *args are only required by some resolution types, e.g. file resolution
-            return self.resolutions[function_name](function_res, *args)
+            if function_name == 'FileResolution':
+                return self.resolutions[function_name](function_res, *args)
+            else:
+                return self.resolutions[function_name](function_res)
         else:
             # error if unrecognised function is used
             # the list comprehension is to convert class names to the user equivalents

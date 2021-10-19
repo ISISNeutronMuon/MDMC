@@ -56,7 +56,7 @@ class Control:
             Can also be 'lazily' given as just a `str` or `float`.
             If just a string is given, it is assumed to be a filename.
             If just a float is given, it is assumed to be Gaussian.
-            the float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
+            The float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
             If you have already accounted for instrument resolution in your dataset, this field can
             be set to None, and resolution application will be skipped. This must be done explicitly.
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
@@ -525,43 +525,6 @@ class Control:
         observable = ObservableFactory.create_observable(type)
         observable.read_from_file(reader=reader, file_name=file_name)
         return observable
-
-    def _read_resolution_from_file(self, data_type: str, reader: str, file_name: str):
-
-        """
-        Reads resolution data for the specified ``data_type`` from file and interpolates it
-        to give a dictionary of general resolution functions in the time domain for each dependent
-        variable.
-
-        Note that if this resolution function is used on data outside its original range, then it
-        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
-        time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
-        appropriate for the data in question, this function should not be used.
-
-        This may not be supported for all ``Observable`` types.
-
-        Parameters
-        ----------
-        data_type : str
-            The ``type`` of the ``Observable``.
-        reader : str
-            The ``type`` of the ``Reader``.
-        file_name : str
-            The absolute or relative path of the resolution file name.
-
-        Returns
-        -------
-        dict
-            A dictionary with keys for each dependent variable, where the
-            values are resolution functions for that variable.
-        """
-
-        resolution_obs = self._read_observable_from_file(data_type,
-                                                         reader,
-                                                         file_name)
-
-        dt = self.simulation.time_step * self.simulation.traj_step
-        return resolution_obs.calculate_resolution_functions(dt)
 
     def _create_empty_observable(self, exp_observable):
 

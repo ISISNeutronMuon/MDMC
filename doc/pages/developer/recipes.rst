@@ -13,8 +13,7 @@ If you would like to add a new approximation function for Control objects (e.g. 
 Let `myfunction` be the name of your function.
 
 1. Change the docstrings for the `Control` class in `control.py` and the `AbstractSQw` class to list your function as a resolution function.
-2. open `MDMC/common/resolution_functions.py` and add your function.
-3. go to `MDMC/resolution/` and add a file called myfunction.py. This file should define a subclass of Resolution named MyfunctionResolution (note the title case). This has a mandatory method, `apply(self, fqt, t)`, which takes your function and applies it to an FQt array.
+2. go to `MDMC/resolution/` and add a file called myfunction.py. This file should define a subclass of Resolution named MyfunctionResolution (note the title case). This has a mandatory method, `apply(self, fqt, t)`, which takes your function and applies it to an FQt array.
 
 If your function is numeric, you should create another method, `window_in_t(self, t)` which calculates the Fourier transform of your function on an array t. `apply()` can then simply be:
 

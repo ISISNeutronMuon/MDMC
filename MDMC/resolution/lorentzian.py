@@ -1,4 +1,5 @@
 from MDMC.resolution.resolution import Resolution
+from MDMC.common.resolution_functions import lorentzian
 import numpy as np
 
 
@@ -7,10 +8,8 @@ class LorentzianResolution(Resolution):
     A `Resolution` subclass for applying a Lorentzian resolution
     """
 
-    # *ignored just takes parameters needed by other resolutions but not this one and ignores them
-    def __init__(self, e_res, *ignored):
-        self.use_FQT = True
-        self.e_res = e_res
+    def __init__(self, e_res):
+        self.e_res = e_res / 1000
 
     def apply(self, fqt, t):
         N_Q, N_T = np.shape(fqt)
@@ -23,7 +22,7 @@ class LorentzianResolution(Resolution):
         The Lorentzian window in frequency space
         """
 
-        window = (1 / np.pi) * ((0.5 * self.e_res) / (w ** 2 + (0.5 * self.e_res) ** 2))
+        window = lorentzian(w, self.e_res)
 
         return window
 

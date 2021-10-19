@@ -2,7 +2,8 @@ from MDMC.resolution.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 import numpy as np
-
+from os import getcwd
+from os.path import join
 
 class FileResolution(Resolution):
     """
@@ -16,7 +17,8 @@ class FileResolution(Resolution):
                                                               file_name,
                                                               dt)['SQw']
 
-    # ignored=None is here as apply() must have a number of parameters matching that of
+    # ignored=None is here as apply() must have a number of parameters matching that of the abstract method;
+    # however, file resolution requires fewer parameters than numerical resolution.
     def apply(self, fqt, ignored=None):
         N_Q, N_T = np.shape(fqt)
         window = self._calculate_resolution_window(N_Q, N_T)
@@ -87,6 +89,9 @@ def _read_resolution_from_file(file_type, file_reader, file_name, dt):
     """
 
     resolution_obs = ObservableFactory.create_observable(file_type)
-    resolution_obs.read_from_file(reader=file_reader, file_name=file_name)
+    try:
+        resolution_obs.read_from_file(reader=file_reader, file_name=file_name)
+    except FileNotFoundError:  # if file not found, check if it is in pwd (i.e. user put in filename rather than path)
+        resolution_obs.read_from_file(reader=file_reader, file_name=join(getcwd(), file_name))
     return resolution_obs.calculate_resolution_functions(dt)
 

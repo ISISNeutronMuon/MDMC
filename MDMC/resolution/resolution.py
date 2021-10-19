@@ -7,14 +7,14 @@ class Resolution(ABC):
 	"""
 
 	@abstractmethod
-	def apply(self, array, x):
+	def apply(self, FQt, t):
 		"""
 		Applies resolution to an array.
 
 		Parameters
 		----------
-		array: the array to which resolution is applied (usually SQw or FQt)
-		x: the variable along which the resolution window is calculated, usually t for FQt and w for SQw
+		FQt: the FQt array to which resolution is applied.
+		t: the variable to which resolution is applied.
 
 		Returns
 		-------
