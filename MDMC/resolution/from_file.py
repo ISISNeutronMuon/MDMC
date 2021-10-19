@@ -25,31 +25,31 @@ class FileResolution(Resolution):
 
         return np.broadcast_to(window, (N_Q, N_T)) * fqt
 
-    def _calculate_resolution_window(self, Q, t) -> np.ndarray:
+    def _calculate_resolution_window(self, N_Q, N_T) -> np.ndarray:
         """
-        Calculate the resolution window in time from a general resolution function in the time
+        Calculate the resolution window in time from a self.resolution_function in the time
         domain. Normalise this window so that the sum over energy for each Q
         value is the same (this enforces that the static structure factor is constant for all Q).
 
         Parameters
         ----------
-        resolution_function : Callable
-            The resolution from which to calculate the window
+        N_Q : int
+            The number of points in energy for FQt
         N_T : int
             The number of points in time for FQt
 
         Returns
         -------
         numpy.ndarray
-            An ``array`` with the shape ``(len(self.Q), N_T)``
+            An ``array`` with the shape ``(N_Q, N_T)``
         """
 
         # By definition, the value of the resolution function in the time domain at t=0 is the
         # integral over all elements in the energy domain (with a factor for normalisation).
         # Setting this to one for all Q enforces that the static structure factor (the integral of
         # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = self.resolution_function(Q, t)
-        norm = self.resolution_function([0], Q)
+        window = self.resolution_function(N_Q, N_T)
+        norm = self.resolution_function([0], N_Q)
         return window / norm
 
     def __repr__(self):
