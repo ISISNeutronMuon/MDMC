@@ -7,12 +7,16 @@ import pytest
 import MDMC.resolution as res
 from tests.test_data import data
 
+rf = res.ResolutionFactory()
+
 # turns the dict of resolution functions into a list of tuples for case parameterisation;
 # first entry is the user string input to get the resolution type, the second is the function.
 # this means that new resolution types are automatically added to the parameterisation when they are implemented.
-rf = res.ResolutionFactory()
 resdict = rf.resolutions
-reslist = [(str(list(resdict.keys())[i])[:-10].lower(), list(resdict.values())[i]) for i in range(0, len(resdict))]
+reslist = []
+for key, value in resdict.items():
+    stripped_key = key.lower().replace('resolution', '')
+    reslist.append((stripped_key, value))
 
 
 @pytest.mark.parametrize('resolution, expected', reslist)
@@ -20,7 +24,6 @@ def test_resolution_factory(resolution, expected):
     """
     Tests that input of working functions to the resolution factory gives the correct result.
     """
-    resolution_factory = res.ResolutionFactory()
 
     if resolution == 'file':
         resolution_function = rf.create_instance({resolution: data.RESOLUTION_DATA['LAMPSQw']},
@@ -47,7 +50,7 @@ def test_resolution_factory_input_handling(resolution, expected, test_warning):
     - if a multi-line dictionary, take only the first line entered
     """
 
-    if test_warning:  # if we are testing a warning is given, i.e. resolution is numeric
+    if test_warning:  # if we are testing whether a warning is given
         with pytest.warns(SyntaxWarning):
             # don't bother adding FileResolution args as no file will be in this part of the subroutine
             resolution_function = rf.create_instance(resolution)

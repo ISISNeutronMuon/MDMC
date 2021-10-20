@@ -36,10 +36,13 @@ class ResolutionFactory(object):
                 return self.resolutions[function_name](function_res)
         else:
             # error if unrecognised function is used
-            # the list comprehension is to convert class names to the user equivalents
+            # the userkeys line is to convert class names to the user equivalents
+            userkeys = []
+            for key in self.resolutions:
+                userkeys.append(key.lower().replace('resolution', ''))
             raise NotImplementedError("Resolution function " + list(resolution.keys())[0] +
                                       " not recognised. Recognised functions are: " +
-                                      str([i[:-10] for i in list(self.resolutions.keys())]).lower())
+                                      str(userkeys))
 
 
 def _standardise_input(resolution):

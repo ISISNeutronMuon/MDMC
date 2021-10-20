@@ -6,22 +6,14 @@ validation is done in tests/system_tests/observables.
 
 import pytest
 
-from inspect import getmembers, isclass, isabstract, isfunction
+from inspect import isfunction
 
 import MDMC.resolution as res
 from tests.test_data import data
 
 # we get the list of resolution functions from the module and use it to automatically create our `parametrize` cases.
 # This means that new functions will automatically be added to the tests when implemented.
-
-reslist = getmembers(res,
-                     lambda m: isclass(m) and not isabstract(m))
-resdict = {}
-
-for name, _type in reslist:
-    if isclass(_type) and issubclass(_type, res.Resolution):
-        resdict.update([[name, _type]])
-
+resdict = res.ResolutionFactory().resolutions
 resparms = list(resdict.values())
 
 
@@ -42,3 +34,4 @@ def test_resolution_initialise(resolution):
     else:  # else, resolution is numeric
         resfunc = resolution(84.0)
         assert resfunc.e_res == 0.084  # unit conversion turns FWHM from ueV to meV
+
