@@ -1,8 +1,8 @@
 """System tests for total, coherent and incoherent SQw and FQt calculations from
-MD
+MD with a Gaussian resolution
 
 Although SQw and FQt are two separate observables, as the calculation of SQw
-realies on the calculation of FQt they are tested together."""
+relies on the calculation of FQt they are tested together."""
 
 from netCDF4 import Dataset
 import numpy as np
@@ -23,7 +23,7 @@ pytestmark = pytest.mark.mpi
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
-E_RESOLUTION = 49.99998257
+E_RESOLUTION = {'gaussian': 49.99998257}
 
 # Absolute tolerance is included to account for rounding differences in nMOLDYN
 # and MDMC

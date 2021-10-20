@@ -2,6 +2,7 @@
 
 from copy import deepcopy
 from time import time
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from MDMC.MD.simulation import Simulation
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.resolution.resolution_factory import ResolutionFactory
 
 from MDMC.refinement import FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
@@ -24,7 +26,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
-                'verbose', 'settings')
+                'verbose')
 class Control:
 
     """
@@ -43,10 +45,20 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
-          - ``resolution_file`` (`str`, optional, defaults to `None`) a file in
+          - ``resolution`` : (`dict`, but can be `str`, `float`, or None)
+            Should be a one-line dict of format {'file' : str} or {key : float}
+            if {'file' : str}, the str should be a file in
             the same format as ``file_name`` containing results of a vanadium
             sample which is used to determine instrument energy resolution for
-            this dataset (overriding the ``energy_resolution`` setting)
+            this dataset.
+            If {key : float}, the key should be the type of resolution function.
+            allowed types are 'gaussian' and 'lorentzian'
+            Can also be 'lazily' given as just a `str` or `float`.
+            If just a string is given, it is assumed to be a filename.
+            If just a float is given, it is assumed to be Gaussian.
+            The float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
+            If you have already accounted for instrument resolution in your dataset, this field can
+            be set to None, and resolution application will be skipped. This must be done explicitly.
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -111,9 +123,6 @@ class Control:
         timings are printed at the end of the refinement. If 0, no timings
         are printed. In all cases information about the FoM and parameter
         values will still be printed. Default is 0.
-    **settings
-        ``energy_resolution`` : float
-            Instrument energy resolution as the FWHM in ``ueV`` (micro eV).
 
     Example
     -------
@@ -123,12 +132,13 @@ class Control:
           'type':'SQw',
           'reader':'LAMPSQw',
           'weight':1.,
-          'resolution_file':data.LAMP_SQW_VAN_FILE
+          'resolution':{'file':data.LAMP_SQW_VAN_FILE}
           'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
           'weight':0.5,
+          'resolution':{'gaussian':2.35}
           'auto_scale':True}]
 
     Attributes
@@ -141,8 +151,6 @@ class Control:
         All ``Parameter`` objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    settings : `dict`
-        Settings for the MD and minimization.
     observable_pairs : `list` of ``ObservablePairs``
         Experimental observable/MD observable pairs which are used to calculate
         the Figure of Merit
@@ -161,7 +169,7 @@ class Control:
                  min_refinement_steps: int = 2,
                  max_parameter_change: float=0.01,
                  verbose: int=0,
-                 **settings):
+                 **settings: dict):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
@@ -217,10 +225,10 @@ class Control:
                 rescale_factor = 1.
 
             observable_pair = ObservablePair(exp_observable,
-                                                 MD_observable,
-                                                 dset['weight'],
-                                                 rescale_factor=rescale_factor,
-                                                 auto_scale=auto_scale)
+                                             MD_observable,
+                                             dset['weight'],
+                                             rescale_factor=rescale_factor,
+                                             auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
             # Take the largest minimum number of MD_steps needed by any dataset
@@ -260,14 +268,15 @@ class Control:
         else:
             self.MD_steps = minimum_MD_steps
 
-        for i, dset in enumerate(exp_datasets):
-            if dset.get('resolution_file'):
-                resolution_functions = self._read_resolution_from_file(dset['type'],
-                                                                       dset['reader'],
-                                                                       dset['resolution_file'])
-                self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
-                self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
+        for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
+            resolution_factory = ResolutionFactory()
+            dt = self.simulation.time_step * self.simulation.traj_step
+            resolution = resolution_factory.create_instance(dset['resolution'], dset['type'], dset['reader'], dt)
 
+            self.observable_pairs[i].exp_obs.resolution = resolution
+            self.observable_pairs[i].MD_obs.resolution = resolution
+
+        # setup the dataframe for stdout
         setup_frame = pd.DataFrame([[minimizer_type],
                                     [MC_norm],
                                     [self.FoM_calculator.__class__.__name__],
@@ -313,7 +322,7 @@ class Control:
 
         count = -1
 
-        self._print_header()
+        self._print_header()  # creates stdout header
         while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
                                                                    min_steps=self.min_refine_steps):
             if self.verbose > 0:
@@ -325,7 +334,7 @@ class Control:
                 if self.verbose == 2:
                     print('         equilibrate: {} s'.format(round(time() - time_0, 3)))
 
-            self.step()
+            self.step()  # advance the refinement by one step
             count += 1
             if self.verbose == 1:
                 self.timings['TOTAL STEP'].append(time() - time_0)
@@ -517,43 +526,6 @@ class Control:
         observable.read_from_file(reader=reader, file_name=file_name)
         return observable
 
-    def _read_resolution_from_file(self, data_type: str, reader: str, file_name: str):
-
-        """
-        Reads resolution data for the specified ``data_type`` from file and interpolates it
-        to give a dictionary of general resolution functions in the time domain for each dependent
-        variable.
-
-        Note that if this resolution function is used on data outside its original range, then it
-        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
-        time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
-        appropriate for the data in question, this function should not be used.
-
-        This may not be supported for all ``Observable`` types.
-
-        Parameters
-        ----------
-        data_type : str
-            The ``type`` of the ``Observable``.
-        reader : str
-            The ``type`` of the ``Reader``.
-        file_name : str
-            The absolute or relative path of the resolution file name.
-
-        Returns
-        -------
-        dict
-            A dictionary with keys for each dependent variable, where the
-            values are resolution functions for that variable.
-        """
-
-        resolution_obs = self._read_observable_from_file(data_type,
-                                                         reader,
-                                                         file_name)
-
-        dt = self.simulation.time_step * self.simulation.traj_step
-        return resolution_obs.calculate_resolution_functions(dt)
-
     def _create_empty_observable(self, exp_observable):
 
         """
@@ -577,7 +549,6 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
-        observable.resolution_functions = exp_observable.resolution_functions
         return observable
 
     def _calculate_observables(self, simulation, observable_pairs):

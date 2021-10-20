@@ -29,7 +29,6 @@ class PairDistributionFunction(Observable):
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
-        self._resolution_functions = {}
 
     @property
     def data(self):

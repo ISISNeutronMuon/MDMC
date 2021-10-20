@@ -12,6 +12,7 @@ from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter
 from MDMC.MD.simulation import Simulation, Universe
+from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
 
 
@@ -120,7 +121,7 @@ def exp_datasets() -> callable:
                       auto_scale: bool = None,
                       use_FFT: bool = None,
                       file_name: str = None,
-                      resolution_file: str = None) -> List[dict]:
+                      resolution: dict = None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
@@ -134,7 +135,7 @@ def exp_datasets() -> callable:
                 # continue
                 continue
 
-            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.}
+            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1., 'resolution': {'gaussian': 84}}
             if rescale_factor:
                 dataset['rescale_factor'] = rescale_factor
             if auto_scale is not None:
@@ -143,9 +144,9 @@ def exp_datasets() -> callable:
                 dataset['use_FFT'] = use_FFT
 
             for resolution_v in data.RESOLUTION_DATA.values():
-                if (resolution_file is not None
-                        and re.search('{}$'.format(resolution_file), resolution_v)):
-                    dataset['resolution_file'] = resolution_v
+                if (resolution is not None
+                        and re.search('{}$'.format(resolution), resolution_v)):
+                    dataset['resolution'] = {'file': resolution_v}
 
             datasets.append(dataset)
 
@@ -381,7 +382,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
-
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
@@ -765,9 +765,10 @@ def test_control_resolution_function(simulation, exp_datasets):
     time_step = dt / traj_step
 
     ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
-                           exp_datasets(file_name=file_name, resolution_file=resolution_file),
+                           exp_datasets(file_name=file_name, resolution=resolution_file),
                            [],
                            reset_config=False)
 
-    assert ctrl.observable_pairs[0].exp_obs.resolution_functions['SQw'] is not None
-    assert ctrl.observable_pairs[0].MD_obs.resolution_functions['SQw'] is not None
+    assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
+    assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
+
