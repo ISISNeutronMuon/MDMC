@@ -1,0 +1,106 @@
+name: cron
+# contains jobs which run on a schedule rather than on a pull-request
+on: 
+  schedule:
+    - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
+    branches:
+      - master
+  
+jobs:
+  basic_tests:
+    name: Non-container and not inc MD tests
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: apt-get
+      run: sudo apt-get install -y libopenmpi-dev openmpi-bin
+    - name: pip install
+      run: |
+        pip3 install --upgrade pip
+        pip3 install -r requirements.txt
+        pip3 install -r .dev_requirements.txt
+
+    - name: Run tests
+      run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
+      
+  windows:
+    name: Python 3.8.0 on Windows
+    runs-on: windows-latest
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Install
+      run: |
+        pip3 install --upgrade pip
+        pip3 install .
+
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
+      
+  singularity:
+    name: Singularity tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.13'
+          architecture: x64
+      - name: Get Singularity requirements
+        run: |
+        sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.0.0 libarchive-dev libgpgme11-dev libseccomp-dev
+        sudo brew install squashfs 
+      - name: Setup Singularity
+        run: source .github/scripts/singularity_setup.sh 
+         
+      - name: Run tests
+         run: |
+         singularity pull docker://mdmc/mdmc:latest
+         singularity exec mdmc_latest.sif pip3 install --upgrade pip
+         singularity exec mdmc_latest.sif pip3 install .
+         singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ 
+       
+  parallel_system_tests:
+    name: Docker MPI tests
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Docker pull
+      run: docker pull mdmc/mdmc:latest
+
+    - name: Run tests
+      # To avoid issues with both processes accessing the coverage report
+      # simultaneously, first create the coverage file without mpi using a fake
+      # PyTest mark so we don't actually run any tests. Then use the
+      # --cov-append option for the actual tests. Using --allow-run-as-root as
+      # we are running inside a docker container, so root only affects the
+      # container. Usually running with this flag is *strongly* discouraged.
+      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
+
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
