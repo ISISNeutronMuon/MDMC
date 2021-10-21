@@ -3,9 +3,9 @@ name: CI
 on: 
   pull_request:
   schedule:
-    - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays alongside jobs in ci-cron.yml
+  - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays alongside jobs in ci-cron.yml
     branches:
-      - master
+    - master
 
 jobs:
   engine_tests:

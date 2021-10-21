@@ -2,7 +2,7 @@ name: cron
 # contains jobs which run on a schedule rather than on a pull-request
 on: 
   schedule:
-    - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
+  - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
     branches:
       - master
   
@@ -64,17 +64,17 @@ jobs:
           architecture: x64
       - name: Get Singularity requirements
         run: |
-        sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.0.0 libarchive-dev libgpgme11-dev libseccomp-dev
-        sudo brew install squashfs 
+          sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.0.0 libarchive-dev libgpgme11-dev libseccomp-dev
+          sudo brew install squashfs 
       - name: Setup Singularity
         run: source .github/scripts/singularity_setup.sh 
-         
+        
       - name: Run tests
-         run: |
-         singularity pull docker://mdmc/mdmc:latest
-         singularity exec mdmc_latest.sif pip3 install --upgrade pip
-         singularity exec mdmc_latest.sif pip3 install .
-         singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ 
+        run: |
+           singularity pull docker://mdmc/mdmc:latest
+           singularity exec mdmc_latest.sif pip3 install --upgrade pip
+           singularity exec mdmc_latest.sif pip3 install .
+           singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ 
        
   parallel_system_tests:
     name: Docker MPI tests
