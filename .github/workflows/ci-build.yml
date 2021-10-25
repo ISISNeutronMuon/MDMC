@@ -24,7 +24,8 @@ jobs:
       run: sudo apt-get install -y libopenmpi-dev openmpi-bin
 
     - name: Run script
-      with: DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      with: 
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: source .github/scripts/docker_testing.sh
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
