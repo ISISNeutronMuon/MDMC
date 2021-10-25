@@ -4,10 +4,14 @@
 ####### i.e. if there are changes to requirements.txt or the Dockerfile
 
 # the workflow of this script is the following:
-# 1. if the job is a PR, and not a cron job, test whether changes have been made to the doc folder of the PR branch. (line 18)
-# 2. if so, build the documentation to test that it builds correctly. (lines 20-22)
-# 3. Otherwise, do not test and return a success. (lines 24-25)
+# 1a. if the job is a PR, and not a cron job, test whether changes have been made to the doc folder of the PR branch. (line 18)
+# 1b. if so, build the documentation to test that it builds correctly. (lines 20-22)
+# 1c. Otherwise, do not test and return a success. (lines 24-25)
 
+# 2a. if the job is a cron job, build the documentation to test that it builds successfully. (lines 31-32)
+# 2b. if the documentation test is successful, deploy it as a PR to our Github Pages repository. (lines 33-39)
+
+### PR testing here
 if [ ${{ env.GITHUB_EVENT_NAME }} != schedule ]
   if git diff remotes/origin/${{ env.GITHUB_BASE_REF }} remotes/origin/${{ env.GITHUB_HEAD_REF }} --name-only -- ./doc | read REPLY && \
   ! git diff remotes/origin/${{ env.GITHUB_BASE_REF }} remotes/origin/${{ env.GITHUB_HEAD_REF }} -- requirements.txt | grep  '+ipython\|+ipykernel' # if there is a change to doc but not to ipython

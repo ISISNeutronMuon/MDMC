@@ -9,9 +9,7 @@
 # 3. if it doesn't, test with the original container (mdmc/mdmc:latest)
 
 echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
-if ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- requirements.txt | read REPLY && \
-  ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- .dev_requirements.txt | read REPLY && \
-  ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- ./build/Docker | read REPLY
+if git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUEST_BRANCH} --name-only -- requirements.txt | grep 'build\|requirements.txt'
 then
   echo; echo "Docker file does not require rebuilding." 
   docker pull mdmc/mdmc:latest
