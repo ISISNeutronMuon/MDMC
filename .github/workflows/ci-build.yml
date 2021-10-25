@@ -26,6 +26,7 @@ jobs:
     - name: Run script
       env: 
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ env.GITHUB_HEAD_REF }} 
       run: source .github/scripts/docker_testing.sh
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
@@ -43,4 +44,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Run script
+      env:
+        BRANCH: ${{ env.GITHUB_HEAD_REF }} 
+        EVENT_TYPE: ${{ env.GITHUB_EVENT_NAME }}
       run: source .github/scripts/documentation_testing.sh
