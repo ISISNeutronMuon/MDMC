@@ -8,7 +8,7 @@
 # 2. if it does, rebuild the Docker container under the tag mdmc/mdmc:travis. Test the software inside this new container, then push the new container.
 # 3. if it doesn't, test with the original container (mdmc/mdmc:latest)
 
-echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
+echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
 if git diff remotes/origin/${{ env.GITHUB_BASE_REF }} remotes/origin/${{ env.GITHUB_HEAD_REF }} --name-only | grep 'build\|requirements.txt'
 then
   echo; echo "Docker file does not require rebuilding." 
