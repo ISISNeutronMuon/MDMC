@@ -22,8 +22,8 @@ jobs:
 
     - name: apt-get
       run: |
-        apt-get update
-        apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
       
     - name: fetch  # grabs other branches to check if Docker files changed
       run: |

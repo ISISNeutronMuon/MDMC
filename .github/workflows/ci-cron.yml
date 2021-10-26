@@ -21,8 +21,8 @@ jobs:
 
     - name: apt-get
       run: |
-        apt-get update
-        apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
     - name: pip install
       run: |
         pip3 install --upgrade pip
@@ -66,8 +66,8 @@ jobs:
           architecture: x64
       - name: Get Singularity requirements
         run: |
-          apt-get update
-          apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.0.0 libarchive-dev libgpgme11-dev libseccomp-dev
+          sudo apt-get update
+          sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.0.0 libarchive-dev libgpgme11-dev libseccomp-dev
       - name: Setup Singularity
         run: source .github/scripts/singularity_setup.sh 
         
