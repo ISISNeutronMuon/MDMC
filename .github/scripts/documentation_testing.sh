@@ -12,18 +12,18 @@
 # 2b. if the documentation test is successful, deploy it as a PR to our Github Pages repository. (lines 33-39)
 
 ### PR testing here
-if [ "$EVENT_TYPE" != schedule ]
+if [ "$EVENT_TYPE" != schedule ]; then
   if git diff remotes/origin/master remotes/origin/"$BRANCH" --name-only -- ./doc | read REPLY && \
   ! git diff remotes/origin/master remotes/origin/"$BRANCH" -- requirements.txt | grep  '+ipython\|+ipykernel' # if there is a change to doc but not to ipython
   then
     echo; echo "Documentation requires testing."
     docker pull mdmc/mdmc:latest
-    docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+    docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
   elif git diff remotes/origin/master remotes/origin/"$BRANCH" -- requirements.txt | grep  '+ipython\|+ipykernel' # if there is a change to ipython which affects jupyter
   then
     echo; echo "Documentation requires testing on new image"
     docker pull mdmc/mdmc:travis
-    docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+    docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:travis /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
   else
     echo; echo "Documentation does not require testing."
     exit 0;
@@ -31,9 +31,9 @@ if [ "$EVENT_TYPE" != schedule ]
 
 ### cron job testing & deployment here
 else 
-      # testing - the `|| exit 1` at the end of the test line will exit the test and not deploy if the test build fails.
+    # testing - the `|| exit 1` at the end of the test line will exit the test and not deploy if the test build fails.
     echo; echo "Starting cron job doc testing and deployment."
-    docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html" || exit 1
+    docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html" || exit 1
     # deployment to a 'travis' github branch
     echo; echo "Test successful. Preparing deployment."
     git clone https://github.com/MDMCproject/MDMCproject.github.io
