@@ -2,7 +2,8 @@
 ####### Originally from https://github.com/singularityhub/travis-ci
 
 #!/bin/bash -ex
-
+# sudo resets $PATH for security reasons, so this is a workaround
+# note you should never execute this line outside of a VM
 sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
 
 # Install Singularity
