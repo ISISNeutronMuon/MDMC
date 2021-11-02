@@ -16,3 +16,9 @@ export PYTHONPATH=${PYTHONPATH}:/usr/lib/x86_64-linux-gnu:/usr/include/x86_64-li
 full paths:
 export PATH=/lib:/bin:/include:/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/include/x86_64-linux-gnu:/usr/include:/usr/bin:/usr/local/bin:/usr/include:/usr/local/include
 export PYTHONPATH=/lib:/bin:/include:/usr/lib:/usr/lib/x86_64-linux-gnu:/usr/include/x86_64-linux-gnu:/usr/include:/usr/bin:/usr/local/bin:/usr/include:/usr/local/include
+
+to compile:
+cmake -C ../cmake/presets/all_on.cmake ../cmake
+make -j4
+make install
+make install-python
