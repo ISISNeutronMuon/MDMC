@@ -62,33 +62,10 @@ def w_ref(incoh_file):
     return w_raw[:-1] * len(w_raw) / (len(w_raw) - 1)
 
 @pytest.fixture(scope="module")
-def FQt_incoh_ref(incoh_file):
-    return np.array(incoh_file.variables['Fqt-total'][:])
-
-@pytest.fixture(scope="module")
 def SQw_incoh_ref(incoh_file):
     # nMOLDYN test file has 50 points in time and frequency, however we can
     # only generate 49 energy points from 50 frames so crop the array in energy
     return np.array(incoh_file.variables['Sqw-total'][:])[:, :-1]
-
-@pytest.fixture(scope="module")
-def FQt_coh_HH_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-HH'][:])
-
-@pytest.fixture(scope="module")
-def FQt_coh_HO_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-HO'][:])
-
-@pytest.fixture(scope="module")
-def FQt_coh_OO_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-OO'][:])
-
-@pytest.fixture(scope="module")
-def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
-    FQt_coh_ref = (FQt_coh_HH_ref * ap.B_COH['H']**2 * N_H
-                   + FQt_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
-                   + FQt_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
-    return FQt_coh_ref
 
 @pytest.fixture(scope="module")
 def SQw_coh_HH_ref(coh_file):
