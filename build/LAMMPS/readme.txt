@@ -5,9 +5,9 @@ libpthread-stubs0-dev
 location of netcdf header:
 /usr/lib/x86_64-linux-gnu/libnetcdf.so
 
-all_on.cmake copy to /lammps/cmake/presets
-Makefile.lammps_NETCDF copy to /lammps/lib/netcdf/Makefile.lammps
-Makefile.lammps_MOLFILE copy to /lammps/lib/molfile/Makefile.lammps
+cp /workspaces/MDMCv0.2_pilot/build/LAMMPS/all_on.cmake /lammps/cmake/presets/
+cp /workspaces/MDMCv0.2_pilot/build/LAMMPS/Makefile.lammps_NETCDF /lammps/lib/netcdf/Makefile.lammps
+cp /workspaces/MDMCv0.2_pilot/build/LAMMPS/Makefile.lammps_MOLFILE /lammps/lib/molfile/Makefile.lammps
 
 export PATH=${PATH}:/usr/lib/x86_64-linux-gnu:/usr/include/x86_64-linux-gnu
 export PYTHONPATH=${PYTHONPATH}:/usr/lib/x86_64-linux-gnu:/usr/include/x86_64-linux-gnu

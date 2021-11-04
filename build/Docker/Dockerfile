@@ -6,6 +6,7 @@ ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
 ENV LD_LIBRARY_PATH /lammps/build/
 ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
+ENV PATH ${PATH}:/lammps/build/
 
 # Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
 # scipy), and cmake for LAMMPS
@@ -23,7 +24,9 @@ RUN apt-get update && apt-get install --upgrade -y \
   libfreetype6-dev \
   cmake \
   wget \
-  python3-tk
+  python3-tk \
+  libeigen3-dev \
+  libpthread-stubs0-dev
 
 # Install any packages required for container which are not specifically for
 # running MDMC (i.e. not in requirements.txt)
@@ -45,19 +48,17 @@ RUN mkdir /lammps \
     && tar xvzf lammps-stable.tar.gz -C /lammps --strip-components=1
 RUN rm /lammps-stable.tar.gz
 
+# copy over makefiles
+COPY ./build/LAMMPS/all_on.cmake /lammps/cmake/presets/all_on.cmake
+COPY ./build/LAMMPS/Makefile.lammps_NETCDF /lammps/lib/netcdf/Makefile.lammps
+COPY ./build/LAMMPS/Makefile.lammps_MOLFILE /lammps/lib/molfile/Makefile.lammps
+
 # Build LAMMPS from source
 WORKDIR /lammps/build
 RUN cmake -C ../cmake/presets/all_on.cmake \
-          -C ../cmake/presets/nolib.cmake \
-          -D BUILD_LIB=on \
-          -D BUILD_SHARED_LIBS=on \
-          -D BUILD_MPI=on \
-          -D LAMMPS_EXCEPTIONS=on \
-          -D DOWNLOAD_VORO=on \
-          -D PKG_PYTHON=on \
-          -D PKG_VORONOI=on \
           ../cmake
 RUN make
+RUN make install
 RUN make install-python
 
 # Start in /home
