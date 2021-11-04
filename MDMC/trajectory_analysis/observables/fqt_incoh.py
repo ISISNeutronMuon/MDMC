@@ -1,23 +1,18 @@
-"""Module for incoherent SQw class"""
+"""Module for incoherent FQt class"""
 
 import numpy as np
 
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import correlation
+from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.observables.sqw import AbstractSQw, calculate_rho
 
 
-@ObservableFactory.register(('IncoherentDynamicStructureFactor',
-                             'SQwIncoherent'
-                             'SQwIncoh',
-                             'SQw_incoh'))
-class SQwIncoherent(AbstractSQw):
-
-    """
-    A class for containing, calculating and reading the incoherent dynamic
-    structure factor
-    """
+@ObservableFactory.register(('IncoherentIntermediateScatteringFunction',
+                             'FQtIncoherent'
+                             'FQtIncoh',
+                             'FQt_incoh'))
+class FQtIncoherent(AbstractFQt):
 
     def _set_weights(self):
 
@@ -26,20 +21,20 @@ class SQwIncoherent(AbstractSQw):
         """
 
         element_weights = {element:B_INCOH[element]**2 for element
-                           in self.trajectory.element_set}
+                           in self._trajectory.element_set}
         self.weights = [element_weights[atom.element] for atom
-                        in self.trajectory.atoms]
+                        in self._trajectory.atoms]
 
     def _calculate_FQt_single_Q(self, single_Q_vectors):
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
-        n_atoms = len(self.trajectory.atoms)
+        n_atoms = len(self._trajectory.atoms)
         FQt_single_Q = np.zeros(n_t)
 
         # Arrange configs so that axes are [atoms, times, positions] i.e.
         # iterating over the first axis is iterating over each atom
-        configs = np.swapaxes([config.positions for config in self.trajectory],
+        configs = np.swapaxes([config.positions for config in self._trajectory],
                               0,
                               1)
         for atom_positions, weight in zip(configs, self.weights):

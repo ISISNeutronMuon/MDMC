@@ -9,9 +9,6 @@ import pytest
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables import sqw
-from MDMC.trajectory_analysis.observables.sqw_coh import SQwCoherent
-from MDMC.trajectory_analysis.observables.sqw_incoh import SQwIncoherent
-
 
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
