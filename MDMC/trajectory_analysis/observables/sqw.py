@@ -33,56 +33,6 @@ class AbstractSQw(Observable):
         self._use_FFT = True
 
     @property
-    def data(self):
-
-        """
-        Get the independent, dependent and error data
-
-        Returns
-        -------
-        dict
-            The independent, dependent and error data
-        """
-
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
-
-    @property
-    def independent_variables(self):
-
-        """
-        Get or set the independent variables, Q (in ``Ang^-1``) and E (in
-        ``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables
-        """
-
-        return self._independent_variables
-
-    @independent_variables.setter
-    def independent_variables(self, value):
-
-        self._independent_variables = value
-
-    @property
-    def dependent_variables(self):
-
-        """
-        Get or set the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables
-        """
-
-        return self._dependent_variables
-
-    @property
     def errors(self):
 
         """

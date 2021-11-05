@@ -31,48 +31,6 @@ class PairDistributionFunction(Observable):
         self._errors = None
 
     @property
-    def data(self):
-
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
-
-    @property
-    def independent_variables(self):
-
-        """
-        Get or set the independent variables, the atomic separation distance r
-        (in ``Ang``)
-
-        Returns
-        -------
-        dict
-            The independent variables
-        """
-
-        return self._independent_variables
-
-    @independent_variables.setter
-    def independent_variables(self, value):
-
-        self._independent_variables = value
-
-    @property
-    def dependent_variables(self):
-
-        """
-        Get or set the dependent variables, the pair distribution function (in
-        ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables
-        """
-
-        return self._dependent_variables
-
-    @property
     def errors(self):
 
         """

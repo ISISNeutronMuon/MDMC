@@ -27,58 +27,10 @@ class AbstractFQt(Observable):
         self._use_FFT = True
 
     @property
-    def data(self):
-        """
-        Get the independent and dependent data
-
-        Returns
-        -------
-        dict
-            The independent, dependent and error data
-        """
-
-        return {'independent': self.independent_variables,
-                'dependent': self.dependent_variables}
-
-    @property
-    def independent_variables(self):
-
-        """
-        Get or set the independent variables, Q (in ``Ang^-1``) and E (in
-        ``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables
-        """
-
-        return self._independent_variables
-
-    @independent_variables.setter
-    def independent_variables(self, value):
-
-        self._independent_variables = value
-
-    @property
-    def dependent_variables(self):
-
-        """
-        Get or set the dependent variables, FQt (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables
-        """
-
-        return self._dependent_variables
-
-    @property
     def errors(self):
         """Error is not implemented for FQt objects from MD"""
         # TODO once reading FQt from file is added
-        pass
+        return 0
 
     def minimum_frames(self, dt: float = None):
 

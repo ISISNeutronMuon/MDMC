@@ -65,11 +65,10 @@ class Observable(ABC):
         self._origin = origin
 
     @property
-    @abstractmethod
     def data(self):
 
         """
-        The independent, dependent and error data in the Observable
+        Get the independent, dependent and error data
 
         Returns
         -------
@@ -77,37 +76,48 @@ class Observable(ABC):
             The independent, dependent and error data
         """
 
-        raise NotImplementedError
+        return {'independent':self.independent_variables,
+                'dependent':self.dependent_variables,
+                'errors':self.errors}
 
     @property
-    @abstractmethod
     def independent_variables(self):
 
         """
-        The independent variables
+        Get or set the independent variables: these are
+        PDF: the atomic separation distance r (in ``Ang``)
+        SQw: the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
+        FQt: the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The independent variables
         """
 
-        raise NotImplementedError
+        return self._independent_variables
+
+    @independent_variables.setter
+    def independent_variables(self, value):
+
+        self._independent_variables = value
 
     @property
-    @abstractmethod
     def dependent_variables(self):
 
         """
-        The dependent variables
+        Get or set the dependent variables: these are
+        PDF: the pair distribution function (in ``arb``)
+        SQw: the dynamic structure factor (in ``arb``)
+        FQt: the intermediate scattering function (in ``arb``)
 
-        Return
-        ------
+        Returns
+        -------
         dict
             The dependent variables
         """
 
-        raise NotImplementedError
+        return self._dependent_variables
 
     @property
     @abstractmethod
