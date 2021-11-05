@@ -30,26 +30,6 @@ class PairDistributionFunction(Observable):
         self._dependent_variables = None
         self._errors = None
 
-    @property
-    def errors(self):
-
-        """
-        Get or set the errors on the dependent variables, the pair distribution
-        function (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The errors on the ``dependent_variables``
-        """
-
-        return self._errors
-
-    @errors.setter
-    def errors(self, value):
-
-        self._errors = value
-
     def minimum_frames(self, dt: float = None):
 
         """

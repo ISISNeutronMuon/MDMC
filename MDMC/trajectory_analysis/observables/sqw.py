@@ -32,20 +32,6 @@ class AbstractSQw(Observable):
         # Use FFT by default
         self._use_FFT = True
 
-    @property
-    def errors(self):
-
-        """
-        Get or set the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The errors on the dependent variables
-        """
-
-        return self._errors
-
     def minimum_frames(self, dt: float = None):
 
         r"""

@@ -120,19 +120,24 @@ class Observable(ABC):
         return self._dependent_variables
 
     @property
-    @abstractmethod
     def errors(self):
 
         """
-        The errors on the dependent variables
+        Get or set the errors on the dependent variables, the pair distribution
+        function (in ``arb``)
 
-        Return
-        ------
+        Returns
+        -------
         dict
-            The errors
+            The errors on the ``dependent_variables``
         """
 
-        raise NotImplementedError
+        return self._errors
+
+    @errors.setter
+    def errors(self, value):
+
+        self._errors = value
 
     @abstractmethod
     def minimum_frames(self, dt: float = None):

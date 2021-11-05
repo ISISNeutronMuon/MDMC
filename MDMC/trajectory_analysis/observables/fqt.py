@@ -26,12 +26,6 @@ class AbstractFQt(Observable):
         # Use FFT by default
         self._use_FFT = True
 
-    @property
-    def errors(self):
-        """Error is not implemented for FQt objects from MD"""
-        # TODO once reading FQt from file is added
-        return 0
-
     def minimum_frames(self, dt: float = None):
 
         r"""
