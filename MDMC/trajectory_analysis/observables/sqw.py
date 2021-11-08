@@ -208,27 +208,6 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    @property
-    def t(self):
-
-        """
-        Get or set the times of the intermediate scattering function in units of
-        ``fs``
-
-        Returns
-        -------
-        array
-            1D array of times in ``fs``
-        """
-
-        return self._t
-
-    @t.setter
-    @unit_decorator(unit=units.TIME)
-    def t(self, value):
-
-        self._t = value
-
     def validate_energy(self, dt):
 
         """
@@ -335,8 +314,8 @@ class AbstractSQw(SQwMixins, Observable):
             MD_input = [MD_input]
 
         # Extract information that should be constant from the first Trajectory
-        self.t = MD_input[0].times - MD_input[0].times[0]
-        dt = self.t[1] - self.t[0]
+        t = MD_input[0].times - MD_input[0].times[0]
+        dt = t[1] - t[0]
 
         try:
             self.universe_dimensions = MD_input[0].dimensions
@@ -353,9 +332,9 @@ class AbstractSQw(SQwMixins, Observable):
         if self.E is not None:
             self.validate_energy(dt)
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(self.t) - 1, dt)
+            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
         else:
-            self.independent_variables = {'E':self.calculate_E(len(self.t) - 1, dt)}
+            self.independent_variables = {'E':self.calculate_E(len(t) - 1, dt)}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])
@@ -368,7 +347,7 @@ class AbstractSQw(SQwMixins, Observable):
 
             # Assert that the times and dimensions are consistent with original trajectory
             try:
-                assert_allclose(self.trajectory.times - self.trajectory.times[0], self.t)
+                assert_allclose(self.trajectory.times - self.trajectory.times[0], t)
             except AssertionError as error:
                 msg = ('The `times` of the current `Trajectory` were not '
                        'consistent with the first `Trajectory` passed')
@@ -391,9 +370,9 @@ class AbstractSQw(SQwMixins, Observable):
             FQt.Q = self.Q
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
+
             if verbose == 2:
                 print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
-
             if verbose > 0:
                 time_1 = time()
             SQw_list.append(FQt.calculate_SQw(self.resolution, self.E))
@@ -603,8 +582,20 @@ class AbstractSQw(SQwMixins, Observable):
         return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
 
+class SQwTypesMixins:
+    """
+    A reusable function for all the SQw types to get their corresponding FQt type
+    """
+
+    def _get_fqt_type(self):
+        fqt_types = {'SQw': 'FQt',
+                     'SQwCoherent': 'FQt_coh',
+                     'SQwIncoherent': 'FQt_incoh'}
+        return fqt_types[self.__class__.__name__]
+
+
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
-class SQw(AbstractSQw):
+class SQw(SQwTypesMixins, AbstractSQw):
 
     """
     A class for containing, calculating and reading the total dynamic structure
@@ -614,33 +605,26 @@ class SQw(AbstractSQw):
     just a reference to get the correct FQt object.
     """
 
-    def _get_fqt_type(self):
-        return 'FQt'
-
 
 @ObservableFactory.register(('CoherentDynamicStructureFactor',
                              'SQwCoherent',
                              'SQwCoh',
                              'SQw_coh'))
-class SQwCoherent(AbstractSQw):
+class SQwCoherent(SQwTypesMixins, AbstractSQw):
 
     """
     A class for containing, calculating and reading the coherent dynamic
     structure factor
     """
-    def _get_fqt_type(self):
-        return 'FQt_coh'
 
 
 @ObservableFactory.register(('IncoherentDynamicStructureFactor',
                              'SQwIncoherent'
                              'SQwIncoh',
                              'SQw_incoh'))
-class SQwIncoherent(AbstractSQw):
+class SQwIncoherent(SQwTypesMixins, AbstractSQw):
 
     """
     A class for containing, calculating and reading the incoherent dynamic
     structure factor
     """
-    def _get_fqt_type(self):
-        return 'FQt_incoh'

@@ -51,10 +51,6 @@ def Q_ref(incoh_file):
     return np.array(incoh_file.variables['q'][:])
 
 @pytest.fixture(scope="module")
-def time_ref(incoh_file):
-    return np.array(incoh_file.variables['time'][:])
-
-@pytest.fixture(scope="module")
 def w_ref(incoh_file):
     # nMOLDYN test file has 50 points in time and frequency, however we can
     # only generate 49 energy points from 50 frames so crop and rescale array
@@ -204,16 +200,6 @@ def SQw_coh_obs_no_FFT(trajectory, Q_vectors):
                               dimensions=DIMENSIONS,
                               energy_resolution=E_RESOLUTION)
     return SQw_coh
-
-
-def test_time(time_ref, SQw_obs):
-
-    """
-    Test time equivalence
-    """
-
-    # Time in MDMC is in fs, in nMOLDYN is in ps, so factor of 1000 converts
-    assert np.all(SQw_obs.t / 1000. == time_ref)
 
 
 def test_w(w_ref, SQw_obs):

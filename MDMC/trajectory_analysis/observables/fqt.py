@@ -72,6 +72,9 @@ class AbstractFQt(SQwMixins, Observable):
         self.dependent_variables['FQt'] = value
 
     def calculate_from_MD(self, MD_input: Trajectory,  **settings):
+        """
+        Calculates the intermediate scattering function from a trajectory.
+        """
 
         self._origin = "MD"
 
