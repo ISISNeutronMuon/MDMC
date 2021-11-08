@@ -17,17 +17,14 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
-class AbstractSQw(Observable):
-
+class SQwMixins:
     """
-    An abstract class for total, coherent and incoherent dynamic structure
-    factors. The equations used for calculating this are based on Kneller et
-    al. Comput. Phys. Commun. 91 (1995) 191-214.
+    A mixin class for properties used by both SQw and FQt objects
     """
 
     def __init__(self):
-        self._independent_variables = None
-        self._dependent_variables = None
+        self._independent_variables = {}
+        self._dependent_variables = {}
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
@@ -108,7 +105,6 @@ class AbstractSQw(Observable):
         return None
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
 
         """
@@ -119,11 +115,27 @@ class AbstractSQw(Observable):
         array
             1D array of Q `float` (in ``Ang^-1``)
         """
-
         try:
             return self.independent_variables['Q']
         except KeyError:
             return None
+
+    @Q.setter
+    @unit_decorator(unit=units.LENGTH ** -1)
+    def Q(self, value):
+
+        self.independent_variables['Q'] = value
+
+
+class AbstractSQw(SQwMixins, Observable):
+
+    """
+    An abstract class for total, coherent and incoherent dynamic structure
+    factors. The equations used for calculating this are based on Kneller et
+    al. Comput. Phys. Commun. 91 (1995) 191-214.
+
+    Note that the __init__ method and properties for MD frames & Q are found in the SQwMixins class.
+    """
 
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)

@@ -14,112 +14,18 @@ from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
-class AbstractFQt(Observable):
+class AbstractFQt(SQwMixins, Observable):
+    """
+    An abstract class for total, coherent, and incoherent intermediate scattering functions.
+    Equations used for calculating this are based on Kneller et
+    al. Comput. Phys. Commun. 91 (1995) 191-214.
 
-    def __init__(self):
-        self._independent_variables = {}
-        self._dependent_variables = {}
-        self._errors = None
-        # Use FFT by default
-        self._use_FFT = True
-
-    def minimum_frames(self, dt: float = None):
-
-        r"""
-        The minimum number of ``Trajectory`` frames needed to calculate the
-        ``dependent_variables`` depends on ``self.use_FFT``.
-
-        If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
-        a reflection in time which only counts the end points once.
-
-        If `self.use_FFT == False`, there is not a hard minimum on number of frames. However, to
-        distinguish our smallest differences in energy :math:`F(Q,t)` needs to
-        cover at least a time period :math:`T_{min}` such that:
-
-        .. math::
-
-            T_{min} \sim \frac{h}{\Delta E_{min}}
-
-        Due to the aforementioned reflection in the time domain, to cover a
-        period of :math:`T_{min}` we only need :math:`N` frames:
-
-        .. math::
-
-            N = \frac{T_{min}}{2 \Delta t} + 1 = \frac{h}{2 \Delta t \Delta E_{min}} + 1
-
-        Parameters
-        ----------
-        dt : float, optional
-            The time separation of frames in ``fs``, default is `None`
-
-        Returns
-        -------
-        int
-            The minimum number of frames
-        """
-
-        nE = len(self.E)
-        if self.use_FFT:
-            return nE + 1
-
-        # Either take the smallest absolute energy, or the smallest separation
-        # of energies we wish to discriminate between
-        minimum_abs_energy = np.min(np.abs(self.E[self.E != 0]))
-        minimum_energy_separation = np.min(np.diff(np.sort(self.E)))
-        limiting_energy = min(minimum_abs_energy, minimum_energy_separation)
-
-        # h is in units of eV s whereas system units are meV fs, so apply a
-        # factor of 1e3 * 1e15 to convert it
-        required_time = h * 1e18 / limiting_energy
-        # We need an integer number of frames, so round up using np.ceil to
-        # ensure we exceed the minimum number of frames needed
-        return int(np.ceil(required_time / (2 * dt) + 1))
-
-    def maximum_frames(self):
-
-        """
-        The maximum number of ``Trajectory`` frames that can be used to
-        calculate the ``dependent_variables`` depends on ``self.use_FFT``.
-
-        If `True`, it is the number of energy steps + 1, in order to allow for
-        a reflection in time which only counts the end points once.
-
-        Otherwise, there is no limit and all frames will contribute to the
-        calculation.
-
-        Returns
-        -------
-        int
-            The maximum number of frames
-        """
-
-        if self.use_FFT:
-            return len(self.E) + 1
-
-        return None
-
-    @property
-    def Q(self):
-
-        """
-        Get the momentum transfers
-
-        Returns
-        -------
-        array
-            1D array of Q `float` (in ``Ang^-1``)
-        """
-
-        return self.independent_variables['Q']
-
-    @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
-
-        self.independent_variables['Q'] = value
+    Note that the __init__ method and properties for MD frames & Q are found in the SQwMixins class.
+    """
 
     @property
     def t(self):
@@ -351,7 +257,6 @@ class AbstractFQt(Observable):
 
         return np.array(vectors)
 
-
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
 
@@ -518,19 +423,24 @@ class AbstractFQt(Observable):
     @property
     def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
-        Captures the current limitations on the energy 'E' and reciprocal
-        lattice points 'Q' within the dynamic structure factor ``Observables``.
-        If using FFT, then 'E' must be uniform and start at zero, otherwise it
+        Captures the current limitations on the time 't' and reciprocal
+        lattice points 'Q' within the intermediate scattering function ``Observables``.
+        If using FFT, then 't' must be uniform and start at zero, otherwise it
         has no restrictions. 'Q' must be uniform but does not need to start at
         zero.
 
         Return
         ------
         Dict[str, Dict[str, bool]]
-            Dictionary of uniformity restrictions for 'E' and 'Q'.
+            Dictionary of uniformity restrictions for 't' and 'Q'.
         """
 
-        return {'Q': {'uniform': True, 'zeroed': False}}
+        if self.use_FFT:
+            t_requirements = {'uniform': True, 'zeroed': True}
+        else:
+            t_requirements = {'uniform': False, 'zeroed': False}
+
+        return {'t': t_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
 
 @ObservableFactory.register(('IntermediateScatteringFunction', 'FQt'))
