@@ -24,8 +24,15 @@ class AbstractFQt(SQwMixins, Observable):
     Equations used for calculating this are based on Kneller et
     al. Comput. Phys. Commun. 91 (1995) 191-214.
 
-    Note that the __init__ method and properties for MD frames & Q are found in the SQwMixins class.
+    Note that properties for MD frames & Q are found in the SQwMixins class.
     """
+
+    def __init__(self):
+        self._independent_variables = {}
+        self._dependent_variables = {}
+        self._errors = None
+        # Use FFT by default
+        self._use_FFT = True
 
     @property
     def independent_variables(self):
