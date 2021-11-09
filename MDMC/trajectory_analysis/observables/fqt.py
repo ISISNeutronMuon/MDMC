@@ -28,6 +28,61 @@ class AbstractFQt(SQwMixins, Observable):
     """
 
     @property
+    def independent_variables(self):
+
+        """
+        Get or set the independent variables: these are
+        the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
+
+        Returns
+        -------
+        dict
+            The independent variables
+        """
+
+        return self._independent_variables
+
+    @independent_variables.setter
+    def independent_variables(self, value):
+
+        self._independent_variables = value
+
+    @property
+    def dependent_variables(self):
+
+        """
+        Get or set the dependent variables: this is
+        FQt, the intermediate scattering function (in ``arb``)
+
+        Returns
+        -------
+        dict
+            The dependent variables
+        """
+
+        return self._dependent_variables
+
+    @property
+    def errors(self):
+
+        """
+        Get or set the errors on the dependent variables, the intermediate
+        scattering function (in ``arb``)
+
+        Returns
+        -------
+        dict
+            The errors on the ``dependent_variables``
+        """
+
+        return self._errors
+
+    @errors.setter
+    def errors(self, value):
+
+        self._errors = value
+
+    @property
     def t(self):
 
         """
@@ -74,6 +129,26 @@ class AbstractFQt(SQwMixins, Observable):
     def calculate_from_MD(self, MD_input: Trajectory,  **settings):
         """
         Calculates the intermediate scattering function from a trajectory.
+
+        ``independent_variables`` can either be set previously or defined within
+        ``**settings``.
+
+        Parameters
+        ----------
+        MD_input : Trajectory
+            a single ``Trajectory`` object.
+        verbose: int, optional
+            If 2, timings are printed for each calculation of FQt and SQw. If 1,
+            timings are collected so they can be printed at the end of the refinement.
+            If 0, no timings are collected. Default is 0.
+        **settings
+            ``n_Q_vectors`` (`int`)
+                The maximum number of ``Q_vectors`` for any ``Q`` value. The
+                greater the number of ``Q_vectors``, the more accurate the
+                calculation, but the longer it will take.
+            ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
+                A 3 element `tuple` or ``array`` of `float` specifying the
+                dimensions of the ``Universe`` in units of ``Ang``
         """
 
         self._origin = "MD"
@@ -350,7 +425,7 @@ class AbstractFQt(SQwMixins, Observable):
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
 
-        In order to obtain ``len(self.E)`` values in energy, we reflect the
+        In order to obtain ``len(energy)`` values in energy, we reflect the
         intermediate scattering function in time to give it dimensions of
         ``(len(self.Q), 2 * (len(self.t)) - 2)``. This uses the fact it is even
         in time, and the number of time points is chosen to be 1 greater than
@@ -358,8 +433,15 @@ class AbstractFQt(SQwMixins, Observable):
         Simulation (2nd Edition), 2004, page 142].
 
         The numpy implementation of the FFT gives frequencies arranged so that
-        the first ``len(self.E)`` points in the energy dimension correspond to
+        the first ``len(energy)`` points in the energy dimension correspond to
         positive frequencies, and the remaining points have negative frequency.
+
+        Parameters
+        ----------
+        resolution: Resolution
+            The instrument resolution object which will be applied to FQt.
+        energy: list of floats
+            the list of energy (E) points at which S(Q, w) will be calculated.
 
         Returns
         -------
@@ -448,10 +530,9 @@ class AbstractFQt(SQwMixins, Observable):
 
 @ObservableFactory.register(('IntermediateScatteringFunction', 'FQt'))
 class FQt(AbstractFQt):
-
     """
-    A class for containing, calculating and reading the total dynamic structure
-    factor
+    A class for containing, calculating and reading the intermediate scattering
+    function for the total dynamic structure factor
     """
 
     def _set_weights(self):

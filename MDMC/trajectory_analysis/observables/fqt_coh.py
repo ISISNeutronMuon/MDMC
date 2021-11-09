@@ -13,6 +13,10 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
                              'FQtCoh',
                              'FQt_coh'))
 class FQtCoherent(AbstractFQt):
+    """
+    A class for containing, calculating and reading the intermediate scattering
+    function for the coherent dynamic structure factor
+    """
 
     def _set_weights(self):
 

@@ -81,13 +81,11 @@ class Observable(ABC):
                 'errors':self.errors}
 
     @property
+    @abstractmethod
     def independent_variables(self):
 
         """
-        Get or set the independent variables: these are
-        PDF: the atomic separation distance r (in ``Ang``)
-        SQw: the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
-        FQt: the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
+        Get or set the independent variables
 
         Returns
         -------
@@ -95,21 +93,14 @@ class Observable(ABC):
             The independent variables
         """
 
-        return self._independent_variables
-
-    @independent_variables.setter
-    def independent_variables(self, value):
-
-        self._independent_variables = value
+        pass
 
     @property
+    @abstractmethod
     def dependent_variables(self):
 
         """
-        Get or set the dependent variables: these are
-        PDF: the pair distribution function (in ``arb``)
-        SQw: the dynamic structure factor (in ``arb``)
-        FQt: the intermediate scattering function (in ``arb``)
+        Get or set the dependent variables
 
         Returns
         -------
@@ -117,14 +108,14 @@ class Observable(ABC):
             The dependent variables
         """
 
-        return self._dependent_variables
+        pass
 
     @property
+    @abstractmethod
     def errors(self):
 
         """
-        Get or set the errors on the dependent variables, the pair distribution
-        function (in ``arb``)
+        Get or set the errors on the dependent variables
 
         Returns
         -------
@@ -132,12 +123,7 @@ class Observable(ABC):
             The errors on the ``dependent_variables``
         """
 
-        return self._errors
-
-    @errors.setter
-    def errors(self, value):
-
-        self._errors = value
+        pass
 
     @abstractmethod
     def minimum_frames(self, dt: float = None):

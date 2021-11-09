@@ -138,6 +138,61 @@ class AbstractSQw(SQwMixins, Observable):
     """
 
     @property
+    def independent_variables(self):
+
+        """
+        Get or set the independent variables: these are
+        the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
+
+        Returns
+        -------
+        dict
+            The independent variables
+        """
+
+        return self._independent_variables
+
+    @independent_variables.setter
+    def independent_variables(self, value):
+
+        self._independent_variables = value
+
+    @property
+    def dependent_variables(self):
+
+        """
+        Get or set the dependent variables: this is
+        SQw, the dynamic structure factor (in ``arb``)
+
+        Returns
+        -------
+        dict
+            The dependent variables
+        """
+
+        return self._dependent_variables
+
+    @property
+    def errors(self):
+
+        """
+        Get or set the errors on the dependent variables, the dynamic
+        structure factor (in ``arb``)
+
+        Returns
+        -------
+        dict
+            The errors on the ``dependent_variables``
+        """
+
+        return self._errors
+
+    @errors.setter
+    def errors(self, value):
+
+        self._errors = value
+
+    @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
     def E(self):
 
@@ -392,13 +447,14 @@ class AbstractSQw(SQwMixins, Observable):
 
         return obs_timings
 
-    @abstractmethod
     def _get_fqt_type(self):
         """
-        Get the FQt type associated with the SQw type
+        Gets the name of the FQt type associated with each SQw type.
         """
-
-        pass
+        fqt_types = {'SQw': 'FQt',
+                     'SQwCoherent': 'FQt_coh',
+                     'SQwIncoherent': 'FQt_incoh'}
+        return fqt_types[self.__class__.__name__]
 
     def calculate_E(self, nE: int, dt: float):
 
@@ -582,26 +638,13 @@ class AbstractSQw(SQwMixins, Observable):
         return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
 
-class SQwTypesMixins:
-    """
-    A reusable function for all the SQw types to get their corresponding FQt type
-    """
-
-    def _get_fqt_type(self):
-        fqt_types = {'SQw': 'FQt',
-                     'SQwCoherent': 'FQt_coh',
-                     'SQwIncoherent': 'FQt_incoh'}
-        return fqt_types[self.__class__.__name__]
-
-
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
-class SQw(SQwTypesMixins, AbstractSQw):
+class SQw(AbstractSQw):
 
     """
-    A class for containing, calculating and reading the total dynamic structure
-    factor
+    A class for the total dynamic structure factor
 
-    Calculation has been moved over to the respective FQt object, and this is
+    Calculation is done in the respective FQt object, and this is
     just a reference to get the correct FQt object.
     """
 
@@ -610,11 +653,10 @@ class SQw(SQwTypesMixins, AbstractSQw):
                              'SQwCoherent',
                              'SQwCoh',
                              'SQw_coh'))
-class SQwCoherent(SQwTypesMixins, AbstractSQw):
+class SQwCoherent(AbstractSQw):
 
     """
-    A class for containing, calculating and reading the coherent dynamic
-    structure factor
+    A class for the coherent dynamic structure factor
     """
 
 
@@ -622,9 +664,8 @@ class SQwCoherent(SQwTypesMixins, AbstractSQw):
                              'SQwIncoherent'
                              'SQwIncoh',
                              'SQw_incoh'))
-class SQwIncoherent(SQwTypesMixins, AbstractSQw):
+class SQwIncoherent(AbstractSQw):
 
     """
-    A class for containing, calculating and reading the incoherent dynamic
-    structure factor
+    A class for the incoherent dynamic structure factor
     """
