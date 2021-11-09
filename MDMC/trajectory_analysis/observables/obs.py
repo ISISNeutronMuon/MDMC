@@ -85,45 +85,45 @@ class Observable(ABC):
     def independent_variables(self):
 
         """
-        Get or set the independent variables
+        The independent variables
 
-        Returns
-        -------
+        Return
+        ------
         dict
             The independent variables
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def dependent_variables(self):
 
         """
-        Get or set the dependent variables
+        The dependent variables
 
-        Returns
-        -------
+        Return
+        ------
         dict
             The dependent variables
         """
 
-        pass
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def errors(self):
 
         """
-        Get or set the errors on the dependent variables
+        The errors on the dependent variables
 
-        Returns
-        -------
+        Return
+        ------
         dict
             The errors on the ``dependent_variables``
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def minimum_frames(self, dt: float = None):
