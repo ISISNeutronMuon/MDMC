@@ -13,11 +13,11 @@ if ! git diff remotes/origin/${TRAVIS_BRANCH} remotes/origin/${TRAVIS_PULL_REQUE
 then
   echo "Docker file does not require rebuilding." 
   docker pull mdmc/mdmc:latest
-  docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+  docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; [ $? -eq 0 ]  || exit 1
 else
   echo "Docker file requires rebuilding."
   echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
   docker build -t mdmc/mdmc:travis -f $(pwd)/build/Docker/Dockerfile . || exit 1 
-  docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
+  docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:travis python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; [ $? -eq 0 ]  || exit 1
 fi
 docker logout

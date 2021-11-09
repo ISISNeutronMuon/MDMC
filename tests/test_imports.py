@@ -36,6 +36,13 @@ def get_paths(modules=True):
                 if module_info.ispkg][1:]
     return [module_info.name for module_info in module_infos][1:]
 
+def test_valid_imports(path):
+
+    """
+    test test for travis fix
+    """
+
+    assert 1==2
 
 @pytest.mark.parametrize('path', get_paths())
 def test_valid_imports(path):
