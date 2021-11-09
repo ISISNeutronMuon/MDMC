@@ -98,6 +98,7 @@ class SQwMixins:
         return None
 
     @property
+    @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
 
         """
@@ -114,7 +115,6 @@ class SQwMixins:
             return None
 
     @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
     def Q(self, value):
 
         self.independent_variables['Q'] = value

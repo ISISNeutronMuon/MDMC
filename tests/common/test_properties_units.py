@@ -194,14 +194,12 @@ def test_SQw_units():
     Q
     SQw
     SQw_err
-    time
     """
 
     sqw = SQw()
     sqw.independent_variables = {'E':LIST,'Q':LIST}
     sqw._dependent_variables = {'SQw':[LIST, LIST, LIST]}
     sqw._errors = {'SQw':[LIST, LIST, LIST]}
-    sqw.t = LIST
 
     try:
         check_property(sqw.E, LIST, units.ENERGY_TRANSFER, units.unit_array)
@@ -210,7 +208,6 @@ def test_SQw_units():
                        units.unit_array)
         check_property(sqw.SQw_err, [LIST, LIST, LIST], units.ARBITRARY,
                        units.unit_array)
-        check_property(sqw.t, LIST, units.TIME, units.unit_array)
     except AssertionError:
         raise AssertionError(ERROR_MESSAGE.format('SQw'))
 
