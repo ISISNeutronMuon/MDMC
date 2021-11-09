@@ -457,11 +457,11 @@ class AbstractFQt(SQwMixins, Observable):
             # are manually provided it may not be.
             self.FQt = self.FQt[:, :nE + 1]
 
-        FQt_res = resolution.apply(self.FQt, self.t)
+        self.apply_resolution(resolution)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
-        FQt_mirror = np.append(FQt_res, FQt_res[:, -2:0:-1], axis=1)
+        FQt_mirror = np.append(self.FQt, self.FQt[:, -2:0:-1], axis=1)
 
         if self.use_FFT:
             # FFT and reduce the energy dimension to positive energies
@@ -486,6 +486,24 @@ class AbstractFQt(SQwMixins, Observable):
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
+
+    def apply_resolution(self, resolution: Resolution):
+        """
+        Apply instrument resolution to an FQt object.
+
+        Parameters
+        ----------
+        resolution: Resolution
+            The Resolution object to apply to FQt.
+
+        Returns
+        -------
+        The FQt object with resolution applied.
+        """
+        FQt_res = resolution.apply(self.FQt, self.t)
+        self.FQt = FQt_res
+
+        return FQt_res
 
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:
