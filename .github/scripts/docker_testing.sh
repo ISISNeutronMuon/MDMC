@@ -13,7 +13,7 @@ if ! git diff remotes/origin/master remotes/origin/"$BRANCH" --name-only | grep 
 then
   echo "Docker file does not require rebuilding." 
   docker pull mdmc/mdmc:latest
-  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml [ $? -eq 0 ]  || exit 1
+  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ]  || exit 1
 else
   echo "Docker file requires rebuilding."
   docker build -t mdmc/mdmc:ci -f "$(pwd)"/build/Docker/Dockerfile . || exit 1 
