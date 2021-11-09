@@ -420,7 +420,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         pass
 
-    def calculate_SQw(self, resolution: Resolution, energy):
+    def calculate_SQw(self, energy, resolution: Resolution = None):
 
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
@@ -438,10 +438,10 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        resolution: Resolution
-            The instrument resolution object which will be applied to FQt.
         energy: list of floats
             the list of energy (E) points at which S(Q, w) will be calculated.
+        resolution: Resolution (default None)
+            The instrument resolution object which will be applied to FQt.
 
         Returns
         -------
@@ -457,7 +457,8 @@ class AbstractFQt(SQwMixins, Observable):
             # are manually provided it may not be.
             self.FQt = self.FQt[:, :nE + 1]
 
-        self.apply_resolution(resolution)
+        if resolution is not None:
+            self.apply_resolution(resolution)
 
         # Reflect F(t) [except for both end points] for each Q value and append
         # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
@@ -500,10 +501,10 @@ class AbstractFQt(SQwMixins, Observable):
         -------
         The FQt object with resolution applied.
         """
-        FQt_res = resolution.apply(self.FQt, self.t)
-        self.FQt = FQt_res
 
-        return FQt_res
+        self.FQt = resolution.apply(self.FQt, self.t)
+
+        return self.FQt
 
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:

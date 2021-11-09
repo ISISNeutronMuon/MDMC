@@ -430,7 +430,7 @@ class AbstractSQw(SQwMixins, Observable):
                 print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
             if verbose > 0:
                 time_1 = time()
-            SQw_list.append(FQt.calculate_SQw(self.resolution, self.E))
+            SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
             errors_list.append(np.zeros(np.shape(SQw_list[-1])))
             if verbose == 2:
                 print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
