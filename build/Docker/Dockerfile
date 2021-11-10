@@ -31,6 +31,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install setuptools --upgrade
 COPY .dev_requirements.txt .dev_requirements.txt 
 RUN pip3 install -r .dev_requirements.txt
+RUN rm .dev_requirements.txt
 
 # Install dependencies
 # [if this fails, you may be running Docker from the wrong directory. Go to
@@ -38,6 +39,15 @@ RUN pip3 install -r .dev_requirements.txt
 # "docker build -f $(pwd)/build/Docker/Dockerfile ."]
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
+RUN rm requirements.txt
+
+# create a file in root directory called TIMESTAMP, containing
+# the time and date the image was created, as well as its dependency versions.
+# This is useful for troubleshooting docker image issues.
+RUN echo "This docker image was created on: " > TIMESTAMP && \
+echo `date` >> TIMESTAMP && \
+echo "With the following packages: " >> TIMESTAMP && \
+pip3 list >> TIMESTAMP
 
 # Get LAMMPS
 RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
