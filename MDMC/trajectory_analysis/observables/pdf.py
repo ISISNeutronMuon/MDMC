@@ -16,6 +16,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
+
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
 
@@ -31,18 +32,11 @@ class PairDistributionFunction(Observable):
         self._errors = None
 
     @property
-    def data(self):
-
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
-
-    @property
     def independent_variables(self):
 
         """
-        Get or set the independent variables, the atomic separation distance r
-        (in ``Ang``)
+        Get or set the independent variable: this is
+        the atomic separation distance r (in ``Ang``)
 
         Returns
         -------
@@ -61,8 +55,8 @@ class PairDistributionFunction(Observable):
     def dependent_variables(self):
 
         """
-        Get or set the dependent variables, the pair distribution function (in
-        ``arb``)
+        Get or set the dependent variables: these are
+        PDF, the pair distribution function (in ``arb``)
 
         Returns
         -------

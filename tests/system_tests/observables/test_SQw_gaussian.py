@@ -11,9 +11,7 @@ import pytest
 
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
-from MDMC.trajectory_analysis.observables import sqw
-from MDMC.trajectory_analysis.observables.sqw_coh import SQwCoherent
-from MDMC.trajectory_analysis.observables.sqw_incoh import SQwIncoherent
+from MDMC.common.atom_properties import B_INCOH
 
 
 from tests.test_data import data
@@ -53,10 +51,6 @@ def Q_ref(incoh_file):
     return np.array(incoh_file.variables['q'][:])
 
 @pytest.fixture(scope="module")
-def time_ref(incoh_file):
-    return np.array(incoh_file.variables['time'][:])
-
-@pytest.fixture(scope="module")
 def w_ref(incoh_file):
     # nMOLDYN test file has 50 points in time and frequency, however we can
     # only generate 49 energy points from 50 frames so crop and rescale array
@@ -64,33 +58,10 @@ def w_ref(incoh_file):
     return w_raw[:-1] * len(w_raw) / (len(w_raw) - 1)
 
 @pytest.fixture(scope="module")
-def FQt_incoh_ref(incoh_file):
-    return np.array(incoh_file.variables['Fqt-total'][:])
-
-@pytest.fixture(scope="module")
 def SQw_incoh_ref(incoh_file):
     # nMOLDYN test file has 50 points in time and frequency, however we can
     # only generate 49 energy points from 50 frames so crop the array in energy
     return np.array(incoh_file.variables['Sqw-total'][:])[:, :-1]
-
-@pytest.fixture(scope="module")
-def FQt_coh_HH_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-HH'][:])
-
-@pytest.fixture(scope="module")
-def FQt_coh_HO_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-HO'][:])
-
-@pytest.fixture(scope="module")
-def FQt_coh_OO_ref(coh_file):
-    return np.array(coh_file.variables['Fqt-OO'][:])
-
-@pytest.fixture(scope="module")
-def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
-    FQt_coh_ref = (FQt_coh_HH_ref * ap.B_COH['H']**2 * N_H
-                   + FQt_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
-                   + FQt_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
-    return FQt_coh_ref
 
 @pytest.fixture(scope="module")
 def SQw_coh_HH_ref(coh_file):
@@ -134,7 +105,7 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
 
     SQw_total = of.ObservableFactory.create_observable('SQw')
     SQw_total.use_FFT = True
-    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
+    monkeymodule.setitem(B_INCOH, 'O', 0.)
     SQw_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
@@ -149,7 +120,7 @@ def SQw_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
 
     SQw_total = of.ObservableFactory.create_observable('SQw')
     SQw_total.use_FFT = False
-    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
+    monkeymodule.setitem(B_INCOH, 'O', 0.)
     SQw_total.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
@@ -168,7 +139,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
     SQw_incoh.use_FFT = True
-    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
+    monkeymodule.setitem(B_INCOH, 'O', 0.)
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
@@ -187,7 +158,7 @@ def SQw_incoh_obs_no_FFT(monkeymodule, trajectory, Q_vectors):
 
     SQw_incoh = of.ObservableFactory.create_observable('SQw_incoh')
     SQw_incoh.use_FFT = False
-    monkeymodule.setitem(sqw.B_INCOH, 'O', 0.)
+    monkeymodule.setitem(B_INCOH, 'O', 0.)
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
@@ -231,16 +202,6 @@ def SQw_coh_obs_no_FFT(trajectory, Q_vectors):
     return SQw_coh
 
 
-def test_time(time_ref, SQw_obs):
-
-    """
-    Test time equivalence
-    """
-
-    # Time in MDMC is in fs, in nMOLDYN is in ps, so factor of 1000 converts
-    assert np.all(SQw_obs.t / 1000. == time_ref)
-
-
 def test_w(w_ref, SQw_obs):
 
     """
@@ -250,45 +211,6 @@ def test_w(w_ref, SQw_obs):
     """
 
     assert_allclose(SQw_obs.w, w_ref, atol=1e-07)
-
-
-def test_FQt_incoh(FQt_incoh_ref, SQw_incoh_obs):
-
-    """
-    Validate the calculation of the intermediate incoherent structure factor
-    against nMOLDYN
-
-    nMOLDYN normalises all FQt to 1, rather than the incoherent scattering cross
-    section, so this factor is included.
-    """
-
-    assert np.all(np.shape(SQw_incoh_obs.FQt) == np.shape(FQt_incoh_ref))
-    assert_allclose(SQw_incoh_obs.FQt / B_FACTOR, FQt_incoh_ref, atol=ATOL)
-
-
-def test_FQt_coh(FQt_coh_ref, SQw_coh_obs):
-
-    """
-    Validate the calculation of the intermediate coherent structure factor
-    against nMOLDYN
-    """
-
-    assert np.all(np.shape(SQw_coh_obs.FQt) == np.shape(FQt_coh_ref))
-    assert_allclose(SQw_coh_obs.FQt, FQt_coh_ref, atol=ATOL)
-
-
-def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, SQw_obs):
-
-    """
-    Validate the calculation of the intermediate total structure factor against
-    the sum of the intermediate incoherent and coherent structure factors
-    calculated by MOLDYN
-    """
-
-    assert np.all(np.shape(SQw_obs.FQt) == np.shape(FQt_incoh_ref))
-    # Coherent reference is already normalised - do the same for incoherent
-    FQt_ref = FQt_incoh_ref * B_FACTOR + FQt_coh_ref
-    assert_allclose(SQw_obs.FQt, FQt_ref, atol=ATOL)
 
 
 def test_SQw_incoh(SQw_incoh_ref, SQw_incoh_obs, SQw_incoh_obs_no_FFT):

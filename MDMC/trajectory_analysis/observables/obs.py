@@ -65,11 +65,10 @@ class Observable(ABC):
         self._origin = origin
 
     @property
-    @abstractmethod
     def data(self):
 
         """
-        The independent, dependent and error data in the Observable
+        Get the independent, dependent and error data
 
         Returns
         -------
@@ -77,7 +76,9 @@ class Observable(ABC):
             The independent, dependent and error data
         """
 
-        raise NotImplementedError
+        return {'independent':self.independent_variables,
+                'dependent':self.dependent_variables,
+                'errors':self.errors}
 
     @property
     @abstractmethod
@@ -119,7 +120,7 @@ class Observable(ABC):
         Return
         ------
         dict
-            The errors
+            The errors on the ``dependent_variables``
         """
 
         raise NotImplementedError
