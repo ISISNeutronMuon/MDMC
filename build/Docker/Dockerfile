@@ -39,7 +39,6 @@ RUN rm .dev_requirements.txt
 # "docker build -f $(pwd)/build/Docker/Dockerfile ."]
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
-COPY requirements.txt requirements.txt
 
 # create a file in root directory called TIMESTAMP, containing
 # the time and date the image was created, as well as its dependency versions.
