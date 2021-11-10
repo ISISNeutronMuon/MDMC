@@ -39,16 +39,15 @@ RUN rm .dev_requirements.txt
 # "docker build -f $(pwd)/build/Docker/Dockerfile ."]
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
-COPY requirements.txt requirements.txt
+RUN rm requirements.txt
 
 # create a file in root directory called TIMESTAMP, containing
 # the time and date the image was created, as well as its dependency versions.
 # This is useful for troubleshooting docker image issues.
-COPY ./build/Docker/create_timestamp.sh create_timestamp.sh
-RUN chmod +x /create_timestamp.sh
-RUN /create_timestamp.sh
-RUN rm requirements.txt
-RUN rm create_timestamp.sh
+RUN echo "This docker image was created on: " > TIMESTAMP && \
+echo `date` >> TIMESTAMP && \
+echo "With the following packages: " >> TIMESTAMP && \
+pip3 list >> TIMESTAMP
 
 # Get LAMMPS
 RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
