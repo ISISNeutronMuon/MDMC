@@ -30,8 +30,8 @@ def test_resolution_initialise(resolution):
         resfunc = resolution(data.RESOLUTION_DATA['LAMPSQw'],
                              'SQw', 'LAMPSQw', 1055.8303421611213)
         assert resfunc.file_name == data.RESOLUTION_DATA['LAMPSQw']
-        assert isfunction(resfunc.resolution_function)
     else:  # else, resolution is numeric
         resfunc = resolution(84.0)
         assert resfunc.e_res == 0.084  # unit conversion turns FWHM from ueV to meV
 
+# TODO test_resolution_calculate_resolution_function

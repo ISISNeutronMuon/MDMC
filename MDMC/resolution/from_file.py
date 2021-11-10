@@ -11,46 +11,41 @@ class FileResolution(Resolution):
     """
 
     def __init__(self, file_name, file_type, file_reader, dt):
+        self.file_type = file_type
+        self.file_reader = file_reader
         self.file_name = file_name
-        self.resolution_function = _read_resolution_from_file(file_type,
-                                                              file_reader,
-                                                              file_name,
-                                                              dt)['SQw']
+        self.dt = dt
+
+    def apply(self, array, x, frequency_space=False):
+        # has an extra line to get array shape,
+        # then runs original apply function
+        self.N_Q, self.N_x = np.shape(array)
+        super(FileResolution, self).apply()
 
     # ignored=None is here as apply() must have a number of parameters matching that of the abstract method;
     # however, file resolution requires fewer parameters than numerical resolution.
-    def apply(self, fqt, ignored=None):
-        N_Q, N_T = np.shape(fqt)
-        window = self._calculate_resolution_window(N_Q, N_T)
-
-        return np.broadcast_to(window, (N_Q, N_T)) * fqt
-
-    def _calculate_resolution_window(self, N_Q, N_T) -> np.ndarray:
+    def _calculate_resolution_window(self, ignored, frequency_space=False) -> np.ndarray:
         """
         Calculate the resolution window in time from a self.resolution_function in the time
         domain. Normalise this window so that the sum over energy for each Q
         value is the same (this enforces that the static structure factor is constant for all Q).
-
-        Parameters
-        ----------
-        N_Q : int
-            The number of points in energy for FQt
-        N_T : int
-            The number of points in time for FQt
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with the shape ``(N_Q, N_T)``
         """
 
-        # By definition, the value of the resolution function in the time domain at t=0 is the
-        # integral over all elements in the energy domain (with a factor for normalisation).
-        # Setting this to one for all Q enforces that the static structure factor (the integral of
-        # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = self.resolution_function(N_Q, N_T)
-        norm = self.resolution_function([0], N_Q)
-        return window / norm
+        self.resolution_function = _read_resolution_from_file(self.file_type,
+                                                              self.file_reader,
+                                                              self.file_name,
+                                                              self.dt)['SQw']
+
+        if frequency_space:
+            return self.resolution_function
+        else:
+            # By definition, the value of the resolution function in the time domain at t=0 is the
+            # integral over all elements in the energy domain (with a factor for normalisation).
+            # Setting this to one for all Q enforces that the static structure factor (the integral of
+            # S(Q,w) over all w) is the same for all Q values in the resolution sample.
+            window = self.resolution_function(self.N_Q, self.N_x)
+            norm = self.resolution_function([0], self.N_Q)
+            return window / norm
 
     def __repr__(self):
         """

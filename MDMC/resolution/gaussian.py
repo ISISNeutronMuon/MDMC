@@ -13,21 +13,19 @@ class GaussianResolution(Resolution):
         # converts energy resolution from user-friendly ueV to system unit meV
         self.e_res = e_res / 1000
 
-    def apply(self, fqt, t):
-        N_Q, N_T = np.shape(fqt)
-        window = self.window_in_t(t[:N_T])
+    def _calculate_resolution_window(self, x, frequency_space=False):
+        if frequency_space:
+            return self._window_in_w(x)
+        else:
+            return self._window_in_t(x)
 
-        return np.broadcast_to(window, (N_Q, N_T)) * fqt
-
-    def window_in_w(self, w, norm=True):
+    def _window_in_w(self, E):
         """
         The Gaussian window in frequency space
 
         Parameters
         ----------
-        w: frequency
-        mu: the offset of the function (defaults to 0)
-        norm: if True, normalises the distribution to unity.
+        E: energy in meV
 
         Returns
         -------
@@ -35,11 +33,11 @@ class GaussianResolution(Resolution):
         FWHM self.e_res, centred on 0)
         """
 
-        window = gaussian(w, self.e_res, norm)
+        window = gaussian(E, self.e_res, norm=False)
 
         return window
 
-    def window_in_t(self, t):
+    def _window_in_t(self, t):
         """
         The Gaussian window in time space
 

@@ -13,7 +13,8 @@ class NullResolution(Resolution):
         # takes arguments and ignores them entirely
         pass
 
-    def apply(self, array, x):
+    # overrides default apply
+    def apply(self, array, x, frequency_space=False):
         # does not apply resolution
         return array
 
