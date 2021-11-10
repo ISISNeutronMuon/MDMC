@@ -41,6 +41,7 @@ COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 RUN rm requirements.txt
 
+
 # create a file in root directory called TIMESTAMP, containing
 # the time and date the image was created, as well as its dependency versions.
 # This is useful for troubleshooting docker image issues.
