@@ -456,6 +456,9 @@ class AbstractFQt(SQwMixins, Observable):
             The S(Q, w) calculated from F(Q, t)
         """
 
+        # dt is calculated for normalisation and energy calculation
+        dt = (self.t[1] - self.t[0])
+
         nE = len(energy)
         if self.use_FFT:
             # Ensure that if we recorded a longer trajectory than required by
@@ -489,11 +492,19 @@ class AbstractFQt(SQwMixins, Observable):
 
         # Normalisation requires factor of dt (in ps, so convert from fs)
         # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
-        dt = (self.t[1] - self.t[0]) / 1000.
         # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
-        return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
+        SQw_array = 0.5 * (dt / 1000) * np.real(SQw_cropped) / len(FQt_mirror)
+
+        # create SQw object with the variables that have been calculated
+        SQw_object = ObservableFactory.create_observable('SQw')
+        SQw_object._independent_variables, SQw_object._dependent_variables = {}, {}
+        SQw_object.independent_variables['Q'] = self.Q
+        SQw_object.independent_variables['E'] = energy
+        SQw_object.dependent_variables['SQw'] = SQw_array
+
+        return SQw_object
 
     def apply_resolution(self, resolution: Resolution):
         """
