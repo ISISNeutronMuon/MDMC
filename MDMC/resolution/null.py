@@ -18,6 +18,9 @@ class NullResolution(Resolution):
         # does not apply resolution
         return array
 
+    def _calculate_resolution_window(self, x, frequency_space=False):
+        pass
+
     def __repr__(self):
         """
         Resolution objects are represented with the dictionary used to create them;
