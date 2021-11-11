@@ -119,6 +119,55 @@ class SQwMixins:
 
         self.independent_variables['Q'] = value
 
+    def validate_energy(self, dt, energy):
+
+        """
+        Asserts that the user set frame separation ``dt`` leads to energy
+        separation that matches that of the experiment. If not, it
+        includes the time separation required in the error.
+
+        Parameters
+        ----------
+        dt : float
+            Frame separation in ``fs``
+        energy : list of floats
+            Energy values in ``meV``
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+        """
+
+        dt_required = calculate_dt(energy)
+        if self.use_FFT:
+            # When using FFT, require all experimental/simulated energies
+            # to match
+            msg = ("Experimental E values are not consistent with the "
+                   "`Simulation`. For the experimental data provided, the "
+                   "product of `time_step` and `traj_step` must be {0}, "
+                   "but it was {1}".format(dt_required, dt))
+            assert_allclose(calculate_E(len(energy), dt),
+                            energy,
+                            rtol=1e-5,
+                            err_msg=msg)
+        else:
+            # When not using FFT, there is not a hard requirement to match
+            # the energies, instead impose a requirement that our frame
+            # separation is small enough to capture the highest frequencies
+            msg = ("In order to capture the maximum experimental energy "
+                   "(frequency) value, the frame separation must be at least "
+                   "as small as the time period for oscillations at that "
+                   "frequency. The frame separation is given by the product of"
+                   " `time_step` and `traj_step` and must be less than {0}, "
+                   "but it was {1}".format(dt_required, dt))
+            # Allow for rounding errors by using isclose
+            isclose = np.isclose(dt, dt_required, rtol=1e-5)
+            assert isclose or dt <= dt_required, msg
+
 
 class AbstractSQw(SQwMixins, Observable):
 
@@ -263,54 +312,6 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    def validate_energy(self, dt):
-
-        """
-        Asserts that the user set frame separation ``dt`` leads to energy
-        separation that matches that of the experiment. If not, it
-        includes the time separation required in the error.
-
-        Parameters
-        ----------
-        dt : float
-            Frame separation in ``fs``
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        AssertionError
-        """
-
-        dt_required = self.calculate_dt()
-        if self.use_FFT:
-            # When using FFT, require all experimental/simulated energies
-            # to match
-            energy = self.E
-            msg = ("Experimental E values are not consistent with the "
-                   "`Simulation`. For the experimental data provided, the "
-                   "product of `time_step` and `traj_step` must be {0}, "
-                   "but it was {1}".format(dt_required, dt))
-            assert_allclose(calculate_E(len(energy), dt),
-                            energy,
-                            rtol=1e-5,
-                            err_msg=msg)
-        else:
-            # When not using FFT, there is not a hard requirement to match
-            # the energies, instead impose a requirement that our frame
-            # separation is small enough to capture the highest frequencies
-            msg = ("In order to capture the maximum experimental energy "
-                   "(frequency) value, the frame separation must be at least "
-                   "as small as the time period for oscillations at that "
-                   "frequency. The frame separation is given by the product of"
-                   " `time_step` and `traj_step` and must be less than {0}, "
-                   "but it was {1}".format(dt_required, dt))
-            # Allow for rounding errors by using isclose
-            isclose = np.isclose(dt, dt_required, rtol=1e-5)
-            assert isclose or dt <= dt_required, msg
-
     def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
                           verbose: int = 0, **settings):
 
@@ -385,7 +386,7 @@ class AbstractSQw(SQwMixins, Observable):
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
-            self.validate_energy(dt)
+            self.validate_energy(dt, self.E)
         elif self.independent_variables:
             self.independent_variables['E'] = calculate_E(len(t) - 1, dt)
         else:
@@ -458,31 +459,6 @@ class AbstractSQw(SQwMixins, Observable):
                      'SQwCoherent': 'FQt_coh',
                      'SQwIncoherent': 'FQt_incoh'}
         return fqt_types[self.__class__.__name__]
-
-    def calculate_dt(self):
-
-        r"""
-        Calculates the time separation of frames required by the experimental
-        dataset, assuming uniform spacing. Note that this may be different from
-        the time separation that the user has given as an input, as it only
-        depends on the current values for ``self.E``. The relationship between
-        time and energy comes from the numpy implementation of the FFT for
-        ``2 * nE`` points where:
-
-        .. math::
-            \nu_{max} &=& \frac{n_E - 1}{2 n_E \Delta t} \\\\
-            \therefore \Delta t &=& \frac{h (n_E - 1)}{2 n_E E_{max}}
-
-        Returns
-        -------
-        float
-            The time separation required by the current values of ``self.E``
-        """
-
-        # h is in units of eV s whereas system units are meV fs, so apply a
-        # factor of 1e3 * 1e15 to convert it
-        nE = len(self.E)
-        return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
 
     def calculate_resolution_functions(self, dt):
         """
@@ -573,7 +549,7 @@ class AbstractSQw(SQwMixins, Observable):
         """
         Apply a Resolution object to an SQw object.
         """
-        self.dependent_variables['SQw'] = resolution.apply(self.SQw, frequency_space=True)
+        self.dependent_variables['SQw'] = resolution.apply(self.SQw, self.E, frequency_space=True)
         
         return self.dependent_variables['SQw']
 
@@ -648,6 +624,32 @@ def calculate_E(nE: int, dt: float):
     # h is in units of eV s whereas system units are meV fs, so apply a
     # factor of 1e3 * 1e15 to convert it
     return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
+
+
+def calculate_dt(energy):
+
+    r"""
+    Calculates the time separation of frames required by the experimental
+    dataset, assuming uniform spacing. Note that this may be different from
+    the time separation that the user has given as an input, as it only
+    depends on the current values for ``self.E``. The relationship between
+    time and energy comes from the numpy implementation of the FFT for
+    ``2 * nE`` points where:
+
+    .. math::
+        \nu_{max} &=& \frac{n_E - 1}{2 n_E \Delta t} \\\\
+        \therefore \Delta t &=& \frac{h (n_E - 1)}{2 n_E E_{max}}
+
+    Returns
+    -------
+    float
+        The time separation required by the current values of ``self.E``
+    """
+
+    # h is in units of eV s whereas system units are meV fs, so apply a
+    # factor of 1e3 * 1e15 to convert it
+    nE = len(energy)
+    return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(energy))))
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))

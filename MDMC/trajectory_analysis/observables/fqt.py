@@ -14,7 +14,7 @@ from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.observables.sqw import SQwMixins
+from MDMC.trajectory_analysis.observables.sqw import SQwMixins, calculate_E
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
@@ -427,7 +427,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         pass
 
-    def calculate_SQw(self, energy, resolution: Resolution = None):
+    def calculate_SQw(self, energy=None, resolution: Resolution = None) -> Observable:
 
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
@@ -445,15 +445,17 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        energy: list of floats
+        energy: list of floats (default None)
             the list of energy (E) points at which S(Q, w) will be calculated.
+            if None, energy will be calculated from time.
         resolution: Resolution (default None)
             The instrument resolution object which will be applied to FQt.
+            if None, resolution will not be applied.
 
         Returns
         -------
-        numpy.ndarray
-            The S(Q, w) calculated from F(Q, t)
+        SQw
+            The S(Q, w) Observable calculated from F(Q, t)
         """
 
         # dt is calculated for normalisation and energy calculation
@@ -466,6 +468,12 @@ class AbstractFQt(SQwMixins, Observable):
             # already be the case, but if the energy values and trajectories
             # are manually provided it may not be.
             self.FQt = self.FQt[:, :nE + 1]
+
+        # check if energy has been given: if yes, validate it; else, calculate it.
+        if energy is not None:
+            self.validate_energy(dt, energy)
+        else:
+            energy = calculate_E(len(self.t) - 1, dt)
 
         if resolution is not None:
             self.apply_resolution(resolution)
