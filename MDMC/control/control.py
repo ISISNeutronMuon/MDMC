@@ -840,6 +840,6 @@ class Control:
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
         try:
-            obs.validate_energy(dt)
+            obs.validate_energy(dt, obs.E)
         except AttributeError:
             pass
