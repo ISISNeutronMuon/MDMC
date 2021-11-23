@@ -1,5 +1,5 @@
 """Module for AbstractSQw and total SQw class"""
-
+import warnings
 from abc import abstractmethod
 from time import time
 
@@ -11,6 +11,7 @@ from typing import Dict, List, Union
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.resolution import Resolution
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -185,6 +186,8 @@ class AbstractSQw(SQwMixins, Observable):
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
+        # used for warnings if applying resolution twice
+        self._ideal = True
 
     @property
     def independent_variables(self):
@@ -549,6 +552,14 @@ class AbstractSQw(SQwMixins, Observable):
         """
         Apply a Resolution object to an SQw object.
         """
+
+        # produces a warning if resolution has already been applied.
+        if not self._ideal:
+            warnings.warn("Resolution has already been applied to this array, and is being applied a second time."
+                          " Was this intentional?")
+        else:
+            self._ideal = False
+
         self.dependent_variables['SQw'] = resolution.apply(self.SQw, self.E, frequency_space=True)
         
         return self.dependent_variables['SQw']

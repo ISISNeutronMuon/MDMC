@@ -1,4 +1,5 @@
 """Module for Intermediate Scattering Function class"""
+import warnings
 from abc import abstractmethod
 from typing import Dict
 
@@ -33,6 +34,8 @@ class AbstractFQt(SQwMixins, Observable):
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
+        # used for warnings if applying resolution twice
+        self._ideal = True
 
     @property
     def independent_variables(self):
@@ -511,6 +514,7 @@ class AbstractFQt(SQwMixins, Observable):
         SQw_object.independent_variables['Q'] = self.Q
         SQw_object.independent_variables['E'] = energy
         SQw_object.dependent_variables['SQw'] = SQw_array
+        SQw_object._ideal = self._ideal
 
         return SQw_object
 
@@ -527,6 +531,12 @@ class AbstractFQt(SQwMixins, Observable):
         -------
         The FQt object with resolution applied.
         """
+        # give a warning if resolution has already been applied
+        if not self._ideal:
+            warnings.warn("Resolution has already been applied to this array, and is being applied a second time."
+                          " Was this intentional?")
+        else:
+            self._ideal = False
 
         self.FQt = resolution.apply(self.FQt, self.t, frequency_space=False)
 
