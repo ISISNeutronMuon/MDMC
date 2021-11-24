@@ -561,7 +561,7 @@ class AbstractSQw(SQwMixins, Observable):
         time = np.arange(0, ((nE + 1) * dt), dt)
 
         # inverse fourier transform the SQw array to get the FQt array
-        FQt_array = np.real(np.fft.ifft(self.SQw, 2 * (nE + 1)))[:, :, :nE + 1]
+        FQt_array = np.real(np.fft.ifft(self.SQw, (nE + 1)))
 
         # create FQt object with the variables that have been calculated
         FQt_object = ObservableFactory.create_observable('FQt')
