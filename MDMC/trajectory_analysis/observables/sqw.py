@@ -186,7 +186,7 @@ class AbstractSQw(SQwMixins, Observable):
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
-        # used for warnings if applying resolution twice
+        # tracks whether resolution has been applied
         self._ideal = True
 
     @property
@@ -548,12 +548,36 @@ class AbstractSQw(SQwMixins, Observable):
 
         return {'SQw': data_interpol}
 
+    def calculate_FQt(self):
+        """
+        Calculate F(Q, t) from S(Q, w), accounting for instrument resolution.
+        """
+
+        # get nE (for ifft) and calculate dt from energy (for time array)
+        nE = len(self.E)
+        dt = calculate_dt(self.E)
+
+        # create `nE+1` values, each of which are `dt` apart
+        time = np.arange(0, ((nE + 1) * dt), dt)
+
+        # inverse fourier transform the SQw array to get the FQt array
+        FQt_array = np.real(np.fft.ifft(self.SQw, 2 * (nE + 1)))[:, :, :nE + 1]
+
+        # create FQt object with the variables that have been calculated
+        FQt_object = ObservableFactory.create_observable('FQt')
+        FQt_object.independent_variables['Q'] = self.Q
+        FQt_object.independent_variables['t'] = time
+        FQt_object.dependent_variables['FQt'] = FQt_array
+        FQt_object._ideal = self._ideal
+
+        return FQt_object
+
     def apply_resolution(self, resolution):
         """
         Apply a Resolution object to an SQw object.
         """
 
-        # produces a warning if resolution has already been applied.
+        # produces a warning if resolution has already been applied, and otherwise marks the object as no longer ideal
         if not self._ideal:
             warnings.warn("Resolution has already been applied to this array, and is being applied a second time."
                           " Was this intentional?")

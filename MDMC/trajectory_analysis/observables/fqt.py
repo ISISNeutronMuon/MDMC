@@ -34,7 +34,7 @@ class AbstractFQt(SQwMixins, Observable):
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
-        # used for warnings if applying resolution twice
+        # tracks whether resolution has been applied
         self._ideal = True
 
     @property
@@ -464,19 +464,20 @@ class AbstractFQt(SQwMixins, Observable):
         # dt is calculated for normalisation and energy calculation
         dt = (self.t[1] - self.t[0])
 
+        # check if energy has been given: if yes, validate it; else, calculate it.
+        if energy is not None:
+            self.validate_energy(dt, energy)
+        else:
+            energy = calculate_E(len(self.t) - 1, dt)
+
         nE = len(energy)
+
         if self.use_FFT:
             # Ensure that if we recorded a longer trajectory than required by
             # the FFT, we crop it to match the energy points. This should
             # already be the case, but if the energy values and trajectories
             # are manually provided it may not be.
             self.FQt = self.FQt[:, :nE + 1]
-
-        # check if energy has been given: if yes, validate it; else, calculate it.
-        if energy is not None:
-            self.validate_energy(dt, energy)
-        else:
-            energy = calculate_E(len(self.t) - 1, dt)
 
         if resolution is not None:
             self.apply_resolution(resolution)
@@ -516,6 +517,8 @@ class AbstractFQt(SQwMixins, Observable):
         SQw_object.dependent_variables['SQw'] = SQw_array
         SQw_object._ideal = self._ideal
 
+        #SQw_object.apply_resolution(resolution)
+
         return SQw_object
 
     def apply_resolution(self, resolution: Resolution):
@@ -531,7 +534,7 @@ class AbstractFQt(SQwMixins, Observable):
         -------
         The FQt object with resolution applied.
         """
-        # give a warning if resolution has already been applied
+        # produces a warning if resolution has already been applied, and otherwise marks the object as no longer ideal
         if not self._ideal:
             warnings.warn("Resolution has already been applied to this array, and is being applied a second time."
                           " Was this intentional?")

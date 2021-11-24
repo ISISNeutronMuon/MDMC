@@ -1,8 +1,5 @@
 """System tests for total, coherent and incoherent SQw and FQt calculations from
-MD with a Gaussian resolution
-
-Although SQw and FQt are two separate observables, as the calculation of SQw
-relies on the calculation of FQt they are tested together."""
+MD with a Gaussian resolution"""
 
 from netCDF4 import Dataset
 import numpy as np
@@ -15,6 +12,8 @@ from MDMC.common.atom_properties import B_INCOH
 
 
 from tests.test_data import data
+from tests.system_tests.observables.test_FQt import FQt_incoh_ref, FQt_coh_ref, FQt_coh_HH_ref, FQt_coh_HO_ref, \
+    FQt_coh_OO_ref
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
 pytestmark = pytest.mark.mpi
@@ -110,6 +109,21 @@ def SQw_obs(monkeymodule, trajectory, Q_vectors):
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
                                 energy_resolution=E_RESOLUTION)
+    return SQw_total
+
+@pytest.fixture(scope="module")
+def SQw_obs_nores(monkeymodule, trajectory, Q_vectors):
+    """
+    Setup the container for Q, time, w, total FQt and total SQt
+    This variant has no resolution applied.
+    """
+
+    SQw_total = of.ObservableFactory.create_observable('SQw')
+    SQw_total.use_FFT = True
+    monkeymodule.setitem(B_INCOH, 'O', 0.)
+    SQw_total.calculate_from_MD(trajectory,
+                                Q_vectors=Q_vectors,
+                                dimensions=DIMENSIONS)
     return SQw_total
 
 @pytest.fixture(scope="module")
@@ -263,3 +277,13 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs, SQw_obs_no_FFT):
 
     # Assert there is no difference between FFT and non-FFT calculation
     assert_allclose(SQw_obs.SQw[0], SQw_obs_no_FFT.SQw[0], atol=ATOL)
+
+
+def test_calculate_FQt(SQw_obs_nores, FQt_incoh_ref, FQt_coh_ref):
+    """
+    Tests that SQw.calculate_FQt returns the correct FQt object
+    """
+    FQt_ref = FQt_incoh_ref * B_FACTOR + FQt_coh_ref
+    FQt_obs = SQw_obs_nores.calculate_FQt()
+
+    assert_allclose(FQt_obs.FQt[0], FQt_ref, atol=ATOL)

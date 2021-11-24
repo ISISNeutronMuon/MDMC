@@ -5,12 +5,12 @@ from scipy import signal
 
 
 class Resolution(ABC):
-	"""
+    """
 	An abstract base class for resolution functions.
 	"""
 
-	def apply(self, array, x, frequency_space=False):
-		"""
+    def apply(self, array, x, frequency_space=False):
+        """
 		Applies resolution to an array.
 
 		Parameters
@@ -26,17 +26,19 @@ class Resolution(ABC):
 		The array with the resolution function applied to it.
 		"""
 
-		N_Q, N_x = np.shape(array)
-		window = self._calculate_resolution_window(x[:N_x], frequency_space)
+        N_Q, N_x = np.shape(array)
+        window = self._calculate_resolution_window(x[:N_x], frequency_space)
+        # the window is broadcast to be the same shape as the array
+        broadcast_window = np.broadcast_to(window, (N_Q, N_x))
 
-		if frequency_space:
-			return signal.convolve(array, np.broadcast_to(window, (N_Q, N_x)), mode="same")
-		else:
-			return np.broadcast_to(window, (N_Q, N_x)) * array
+        if frequency_space:
+            return signal.convolve(array, broadcast_window, mode="same")
+        else:
+            return broadcast_window * array
 
-	@abstractmethod
-	def _calculate_resolution_window(self, x, frequency_space=False):
-		"""
+    @abstractmethod
+    def _calculate_resolution_window(self, x, frequency_space=False):
+        """
 		Calculate the resolution window to be applied.
 		"""
-		raise NotImplementedError
+        raise NotImplementedError
