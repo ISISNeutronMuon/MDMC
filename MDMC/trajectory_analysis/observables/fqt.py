@@ -6,6 +6,7 @@ from typing import Dict
 import numpy as np
 from mpi4py import MPI
 from numba import jit
+from numpy.testing import assert_allclose
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
@@ -169,9 +170,10 @@ class AbstractFQt(SQwMixins, Observable):
         except KeyError:
             pass
 
-        self.t = MD_input.times - MD_input.times[0]
-        self._trajectory = MD_input
-        self._set_weights()
+        if isinstance(MD_input, Trajectory):
+            MD_input = [MD_input]
+
+        self.t = MD_input[0].times - MD_input[0].times[0]
 
         try:
             self.universe_dimensions = MD_input[0].dimensions
@@ -194,61 +196,91 @@ class AbstractFQt(SQwMixins, Observable):
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        comm = MPI.COMM_WORLD
-        # Determine the shape of Q vectors array. If the number of processors
-        # (comm.size) is not a factor of the first index, mpi4py cannot split
-        # the number of Q vectors equally amongst the processors.
-        shape = list(np.shape(self.Q_vectors))
-        if shape[0] % comm.size != 0:
-            # Determine the smallest integer larger than the number of Q vectors
-            # that is exactly divisible by the number of processors
-            axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
+        FQt_list = []
 
-            # Increase the size of Q vectors up to the required size by padding
-            # the end of the array with NaNs. This can be passed to calculate
-            # rho in the _calculate_FQt_single_Q method, resulting in an array
-            # of NaN's for each zero element.  These arrays are then removed
-            # after gathering.
-            if len(shape) == 3:
-                Q_vectors = np.pad(self.Q_vectors,
-                                   ((0, axis_0 - shape[0]), (0, 0), (0, 0)),
-                                   'constant',
-                                   constant_values=(float('nan')))
+        for trajectory in MD_input:
+            self._trajectory = trajectory
+            self._set_weights()
+
+            # Assert that the times and dimensions are consistent with original trajectory
+            try:
+                assert_allclose(self._trajectory.times - self._trajectory.times[0], self.t)
+            except AssertionError as error:
+                msg = ('The `times` of the current `Trajectory` were not '
+                       'consistent with the first `Trajectory` passed')
+                raise AssertionError(msg) from AssertionError
+            try:
+                assert_allclose(self.universe_dimensions, self._trajectory.dimensions)
+            except AttributeError:
+                # May not have dimensions set, in which case pass
+                pass
+            except AssertionError as error:
+                msg = ('The `dimensions` of the current `Trajectory` were not '
+                       'consistent with the first `Trajectory` passed')
+                raise AssertionError(msg) from AssertionError
+
+
+            comm = MPI.COMM_WORLD
+            # Determine the shape of Q vectors array. If the number of processors
+            # (comm.size) is not a factor of the first index, mpi4py cannot split
+            # the number of Q vectors equally amongst the processors.
+            shape = list(np.shape(self.Q_vectors))
+            if shape[0] % comm.size != 0:
+                # Determine the smallest integer larger than the number of Q vectors
+                # that is exactly divisible by the number of processors
+                axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
+
+                # Increase the size of Q vectors up to the required size by padding
+                # the end of the array with NaNs. This can be passed to calculate
+                # rho in the _calculate_FQt_single_Q method, resulting in an array
+                # of NaN's for each zero element.  These arrays are then removed
+                # after gathering.
+                if len(shape) == 3:
+                    Q_vectors = np.pad(self.Q_vectors,
+                                       ((0, axis_0 - shape[0]), (0, 0), (0, 0)),
+                                       'constant',
+                                       constant_values=(float('nan')))
+                else:
+                    # If we do not have a well defined shape (i.e. not every Q
+                    # value has the same number of points in reciprocal space) then
+                    # we need to manually pad Q_vectors using lists, as numpy
+                    # arrays would need to have the same shape to be appended.
+                    padding = np.array([np.full(3, float('nan'))])
+                    padding_list = [padding for _ in range(axis_0 - shape[0])]
+                    Q_vectors_list = list(self.Q_vectors)
+                    Q_vectors_list.extend(padding_list)
+                    Q_vectors = np.array(Q_vectors_list)
             else:
-                # If we do not have a well defined shape (i.e. not every Q
-                # value has the same number of points in reciprocal space) then
-                # we need to manually pad Q_vectors using lists, as numpy
-                # arrays would need to have the same shape to be appended.
-                padding = np.array([np.full(3, float('nan'))])
-                padding_list = [padding for _ in range(axis_0 - shape[0])]
-                Q_vectors_list = list(self.Q_vectors)
-                Q_vectors_list.extend(padding_list)
-                Q_vectors = np.array(Q_vectors_list)
-        else:
-            Q_vectors = self.Q_vectors
-            axis_0 = 0
-        # Split the Q vectors into a single array of Q vectors for each
-        # processor
-        Q_vectors = np.split(Q_vectors, comm.size)
-        # Scatter the Q vector arrays to all processors
-        Q_vectors = comm.scatter(Q_vectors, root=0)
-        # Calculate FQt for each Q vector for all processors
-        FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
-                        in Q_vectors])
+                Q_vectors = self.Q_vectors
+                axis_0 = 0
+            # Split the Q vectors into a single array of Q vectors for each
+            # processor
+            Q_vectors = np.split(Q_vectors, comm.size)
+            # Scatter the Q vector arrays to all processors
+            Q_vectors = comm.scatter(Q_vectors, root=0)
+            # Calculate FQt for each Q vector for all processors
+            FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
+                            in Q_vectors])
 
-        # Gather the calculated FQt's together on every processor. This ensures
-        # that all other calculations can be performed on every processor, so
-        # no other methods in SQw need to be made MPI compliant.
-        FQt = np.array(comm.allgather(FQt))
-        # Reshape FQt as gather doesn't join the arrays but just collects them
-        # as arrays within an array. This is equivalent to flattening the first
-        # index.
-        FQt_shape = np.shape(FQt)
-        FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
+            # Gather the calculated FQt's together on every processor. This ensures
+            # that all other calculations can be performed on every processor, so
+            # no other methods in SQw need to be made MPI compliant.
+            FQt = np.array(comm.allgather(FQt))
+            # Reshape FQt as gather doesn't join the arrays but just collects them
+            # as arrays within an array. This is equivalent to flattening the first
+            # index.
+            FQt_shape = np.shape(FQt)
+            FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
-        # Remove the padded elements at the end of FQt which will be filled
-        # with NaN's
-        self.FQt = FQt[:shape[0] - axis_0]
+            # Remove the padded elements at the end of FQt which will be filled
+            # with NaN's
+            FQt = FQt[:shape[0] - axis_0]
+
+            FQt_list.append(FQt)
+
+        self.FQt = FQt_list
+
+        return self.FQt
 
     def _calculate_Q_vectors(self, Q_values):
 
@@ -471,50 +503,53 @@ class AbstractFQt(SQwMixins, Observable):
             energy = calculate_E(len(self.t) - 1, dt)
 
         nE = len(energy)
+        SQw_list = []
 
         if self.use_FFT:
             # Ensure that if we recorded a longer trajectory than required by
             # the FFT, we crop it to match the energy points. This should
             # already be the case, but if the energy values and trajectories
             # are manually provided it may not be.
-            self.FQt = self.FQt[:, :nE + 1]
+            self.FQt = self.FQt[:, :, :nE + 1]
 
         if resolution is not None:
             self.apply_resolution(resolution)
 
-        # Reflect F(t) [except for both end points] for each Q value and append
-        # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
-        FQt_mirror = np.append(self.FQt, self.FQt[:, -2:0:-1], axis=1)
+        for FQt_array in self.FQt:
+            # Reflect F(t) [except for both end points] for each Q value and append
+            # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
+            FQt_mirror = np.append(FQt_array, FQt_array[:, -2:0:-1], axis=1)
 
-        if self.use_FFT:
-            # FFT and reduce the energy dimension to positive energies
-            SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
-        else:
-            SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
-            for i, energy in enumerate(energy):
-                # Create 1D array of exponential factors. Dotting with F(Q,t)
-                # sums over the time/energy dimension as required for a
-                # discrete Fourier transform
-                # h_bar is in units of eV s whereas system units are meV fs, so
-                # apply a factor of 1e3 * 1e15 to convert it
-                exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
-                exp_neg = np.exp(1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
-                exp_mirror = np.append(exp, exp_neg)
-                SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
+            if self.use_FFT:
+                # FFT and reduce the energy dimension to positive energies
+                SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
+            else:
+                SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
+                for i, energy in enumerate(energy):
+                    # Create 1D array of exponential factors. Dotting with F(Q,t)
+                    # sums over the time/energy dimension as required for a
+                    # discrete Fourier transform
+                    # h_bar is in units of eV s whereas system units are meV fs, so
+                    # apply a factor of 1e3 * 1e15 to convert it
+                    exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
+                    exp_neg = np.exp(1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
+                    exp_mirror = np.append(exp, exp_neg)
+                    SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
-        # Normalisation requires factor of dt (in ps, so convert from fs)
-        # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
-        # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
-        # By default numpy fft is unnormalized, so to have the same power as in
-        # FQt the transform should be normalized to the length of the spectra
-        SQw_array = 0.5 * (dt / 1000) * np.real(SQw_cropped) / len(FQt_mirror)
+            # Normalisation requires factor of dt (in ps, so convert from fs)
+            # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
+            # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
+            # By default numpy fft is unnormalized, so to have the same power as in
+            # FQt the transform should be normalized to the length of the spectra
+            SQw_array = 0.5 * (dt / 1000) * np.real(SQw_cropped) / len(FQt_mirror)
+            SQw_list.append(SQw_array)
 
         # create SQw object with the variables that have been calculated
         SQw_object = ObservableFactory.create_observable('SQw')
         SQw_object._independent_variables, SQw_object._dependent_variables = {}, {}
         SQw_object.independent_variables['Q'] = self.Q
         SQw_object.independent_variables['E'] = energy
-        SQw_object.dependent_variables['SQw'] = SQw_array
+        SQw_object.dependent_variables['SQw'] = SQw_list
         SQw_object._ideal = self._ideal
 
         #SQw_object.apply_resolution(resolution)
@@ -541,8 +576,12 @@ class AbstractFQt(SQwMixins, Observable):
         else:
             self._ideal = False
 
-        self.FQt = resolution.apply(self.FQt, self.t, frequency_space=False)
+        FQt_real_list = []
 
+        for FQt_array in self.FQt:
+            FQt_real_list.append(resolution.apply(FQt_array, self.t, frequency_space=False))
+
+        self.FQt = FQt_real_list
         return self.FQt
 
     @property

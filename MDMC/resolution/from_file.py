@@ -20,7 +20,7 @@ class FileResolution(Resolution):
         # has an extra line to get array shape,
         # then runs original apply function
         self.N_Q, self.N_x = np.shape(array)
-        super(FileResolution, self).apply()
+        super(FileResolution, self).apply(array, x)
 
     # ignored=None is here as apply() must have a number of parameters matching that of the abstract method;
     # however, file resolution requires fewer parameters than numerical resolution.

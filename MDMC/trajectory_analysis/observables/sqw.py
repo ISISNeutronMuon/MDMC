@@ -405,49 +405,30 @@ class AbstractSQw(SQwMixins, Observable):
         FQt = ObservableFactory.create_observable(fqt_type)
         FQt.Q = self.Q
 
-        # Perform calculations for each Trajectory
-        for trajectory in MD_input:
-            self.trajectory = trajectory
+        if verbose > 0:
+            time_0 = time()
 
-            # Assert that the times and dimensions are consistent with original trajectory
-            try:
-                assert_allclose(self.trajectory.times - self.trajectory.times[0], t)
-            except AssertionError as error:
-                msg = ('The `times` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from AssertionError
-            try:
-                assert_allclose(self.universe_dimensions, self.trajectory.dimensions)
-            except AttributeError:
-                # May not have dimensions set, in which case pass
-                pass
-            except AssertionError as error:
-                msg = ('The `dimensions` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from AssertionError
+        # calculate FQt
+        FQt.calculate_from_MD(MD_input, **settings)
 
-            if verbose > 0:
-                time_0 = time()
+        if verbose == 2:
+            print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
+        if verbose > 0:
+            time_1 = time()
 
-            # calculate FQt
-            FQt.calculate_from_MD(trajectory, **settings)
+        # get array from SQw object created by FQt.calculate_SQw
+        SQw_list = FQt.calculate_SQw(self.E, self.resolution).SQw
+        errors_list.append(np.zeros(np.shape(SQw_list[-1])))
 
-            if verbose == 2:
-                print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
-            if verbose > 0:
-                time_1 = time()
-            # get array from SQw object created by FQt.calculate_SQw
-            SQw_list.append(FQt.calculate_SQw(self.E, self.resolution).SQw)
-            errors_list.append(np.zeros(np.shape(SQw_list[-1])))
-            if verbose == 2:
-                print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
+        if verbose == 2:
+            print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
 
-            if verbose > 0:
-                obs_timings['calculate_FQt'].append(time_1 - time_0)
-                obs_timings['_calculate_SQw'].append(time() - time_1)
+        if verbose > 0:
+            obs_timings['calculate_FQt'].append(time_1 - time_0)
+            obs_timings['_calculate_SQw'].append(time() - time_1)
 
-            # Cleanup the trajectory to reduce memory usage
-            self.trajectory = None
+        # Cleanup the trajectory to reduce memory usage
+        self.trajectory = None
 
         self._dependent_variables = {'SQw': SQw_list}
         self._errors = {'SQw': errors_list}
@@ -610,7 +591,12 @@ class AbstractSQw(SQwMixins, Observable):
         else:
             self._ideal = False
 
-        self.dependent_variables['SQw'] = resolution.apply(self.SQw, self.E, frequency_space=True)
+        SQw_real_list = []
+
+        for SQw_array in self.dependent_variables['SQw']:
+            SQw_real_list.append(resolution.apply(SQw_array, self.E, frequency_space=True))
+
+        self.dependent_variables['SQw'] = SQw_real_list
         
         return self.dependent_variables['SQw']
 
