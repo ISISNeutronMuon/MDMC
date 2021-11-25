@@ -51,5 +51,7 @@ class MDEngineFacadeFactory:
             module_name = 'mmtk'
         elif alias.upper() == 'LAMMPS' or alias.lower() == 'lammps_engine':
             module_name = 'lammps_engine'
+        elif alias.upper() == 'DLPOLY' or alias.lower() == 'dlpoly_engine':
+            module_name = 'dlpoly_engine'
 
         return import_module('.' + module_name, __package__)

@@ -9,7 +9,9 @@ lammps_engine (requires external module lammps.py)
 
 from . import facade_factory
 from . import facade
-try:
-    from . import lammps_engine
-except ModuleNotFoundError:
-    pass
+
+for engine in "lammps_engine dlpoly_engine".split():
+    try:
+        from . import engine
+    except ModuleNotFoundError:
+        pass

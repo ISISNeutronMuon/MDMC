@@ -12,9 +12,12 @@ Notes
 from copy import copy
 from itertools import tee
 import logging
+from ase import Atoms,Atom
+from ase.io import write
 
-#import dlpoly
-from mpi4py import MPI
+from dlpoly import DLPoly
+from dlpoly.field import Field
+from dlpoly.new_control import NewControl as Control
 
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
@@ -42,23 +45,20 @@ class DLPOLYAttribute:
         The ``dlpoly-py`` object owned by this class
     """
 
-    def __init__(self, dlpoly=None, atom_style='full'):
+    def __init__(self, dlpoly=None, control=None, config=None, field=None, statis=None, output=None,
+            destconfig=None, rdf=None, workdir=None):
 
-        # Set communicator to MPI predefined intracommunicator instance which
-        # contains all processes
-        self.comm = MPI.COMM_WORLD
 
         if dlpoly:
             self.dlpoly = dlpoly
         else:
-            self.dlpoly = dlpoly.create_dlpoly()
+            self.dlpoly = DLPoly(workdir = 'argon')
 
 
-        LOGGER.debug('%s: {dlpoly: %s, communicator: %s}. dlpoly-py'
+        LOGGER.debug('%s: {dlpoly: %s}. dlpoly-py'
                      ' instance %s.',
                      self.__class__,
                      self.dlpoly,
-                     self.comm,
                      'added to class' if dlpoly else 'created by class')
 
 
@@ -324,7 +324,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``trajectory``. Otherwise run is prodution.
         """
 
-        self.dlpoly.run(n_steps)
+        self.dlpoly.control['time_run'] = (n_steps,'steps')
+        self.dlpoly.run()
 
         if equilibration:
             self.thermostat = None
@@ -415,6 +416,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
     def __init__(self, universe, dlpoly=None, **settings):
 
         #example methods
+        super().__init__(dlpoly=dlpoly)
         self.universe = universe
         self._define_simulation_box(self.universe)
         self._build_config(self.universe)
@@ -443,8 +445,16 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` used to create the region and simulation box.
         """
 
-        #example method
-        self.dlpoly.create_box()
+        self.dlpoly.control=Control()
+        self.dlpoly.control['title'] = 'my simulation title'
+        self.dlpoly.control['time_job'] = (10000,'s')
+        self.dlpoly.control['time_close'] = (10,'s')
+        self.dlpoly.control['data_dump_frequency'] = (5000,'steps')
+        self.dlpoly.control['stats_frequency'] = (100,'steps')
+        self.dlpoly.control['print_frequency'] = (100,'steps')
+        self.dlpoly.control['stack_size'] = (10,'steps')
+        self.dlpoly.control['padding'] = (0.5, 'Ang')
+        self.dlpoly.control['vdw_method'] = 'direct'
 
     def _build_config(self, universe):
 
@@ -456,11 +466,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
         universe : Universe
             The MDMC ``Universe`` used to fill the DL_POLY box with atoms.
         """
-
-        self.atom_types = universe.atom_types
-        for type_ID, atom_type_group in self.atom_types.items():
-            for atom in atom_type_group:
-                self.dlpoly.create_atoms(type_ID, *atom.position)
+# assume the dimensions are in angstrom
+        a = Atoms(cell = universe.dimensions,pbc = True)
+        for atom in universe.atoms:
+            a.append(Atom(atom.name,atom.position))
+        write('test.config', a, format='dlp4')
+        self.dlpoly.load_config('test.config')
 
     def _add_topology(self, universe, **settings):
 
@@ -593,6 +604,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
     """
 
     def __init__(self, universe, dlpoly=None, **settings):
+        super().__init__(dlpoly=dlpoly)
 
         self.universe = universe
         self.ensemble = DLPOLYEnsemble(self.dlpoly, **settings)
@@ -621,7 +633,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
         self._time_step = value
         try:
             # Set the timestep in DL_POLY wrapper
-            self.dlpoly.timestep(convert_unit(self._time_step))
+            self.dlpoly.control['timestep'] = (convert_unit(self._time_step),'fs')
         except ValueError:
             pass
 
@@ -644,11 +656,9 @@ class DLPOLYSimulation(DLPOLYAttribute):
     def temperature(self, value):
 
         self._temperature = value
-        self.ensemble.temperature = value
         try:
             # Set the initial temperature in the DL_POLY wrapper
-            if self.system_state.natoms > 0:
-                self.dlpoly.temperature(convert_unit(self._temperature))
+            self.dlpoly.control['temperature'] = (convert_unit(self._temperature), 'K')
         except ValueError:
             pass
 
@@ -750,6 +760,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         super().__init__(dlpoly)
         self.temperature = temperature
         self.pressure = pressure
+        self.dlpoly.control['ensemble'] = 'nve'
 
         self.time_step = settings.get('time_step')
         self.t_damp = settings.get('t_damp')
@@ -775,7 +786,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def temperature(self, value):
 
         self._temperature = value
-        self.apply_ensemble_fixes()
 
     @property
     def pressure(self):
@@ -791,7 +801,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def pressure(self, value):
 
         self._pressure = value
-        self.apply_ensemble_fixes()
 
     @property
     def thermostat(self):
@@ -815,7 +824,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
                                  ' temperature')
         self._thermostat = value
         # Set the thermostat and barostat in DL_POLY wrapper
-        self.apply_ensemble_fixes()
 
     @property
     def barostat(self):
@@ -824,8 +832,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         Get or set the `str` which specifies the barostat
 
         Raises
-        ------
-        AttributeError
             If ``self.pressure`` has not been set.
         """
 
@@ -840,7 +846,6 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
         self._barostat = value
         # Set the thermostat and barostat in DL_POLY wrapper
-        self.apply_ensemble_fixes()
 
 # Define the unit system used in DL_POLY
 SYSTEM = {
