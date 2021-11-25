@@ -555,10 +555,36 @@ class AbstractSQw(SQwMixins, Observable):
 
         # get nE (for ifft) and calculate dt from energy (for time array)
         nE = len(self.E)
+        nQ = len(self.Q)
         dt = calculate_dt(self.E)
 
         # create `nE+1` values, each of which are `dt` apart
         time = np.arange(0, ((nE + 1) * dt), dt)
+
+        # check that Q-values are in right order.
+        # if the first half of the array is negative,
+        # rearrange so first half of array is positive and second half negative, as expected by np.fft.ifft
+        # we do this by doubling the array then cropping the repeated elements.
+        # if first half is positive, check negative entries are at end; if not, flag that all entries are positive
+        if np.count_nonzero(self.Q[:nQ // 2] < 0) == nQ // 2:
+            negatives_first = True
+            SQw_array = np.append(self.SQw, self.SQw, axis=1)[:, nQ // 2 + 1:nQ, :]
+        elif np.count_nonzero(self.Q[:nQ // 2] < 0) == 0:  # array may be as expected, but check positives anyway
+            if np.count_nonzero(self.Q[nQ // 2:] < 0) == nQ // 2:  # if positives are at end
+                SQw_array = self.SQw
+            elif np.count_nonzero(self.Q[nQ // 2:] < 0) == 0:
+                all_entries_positive = True
+                SQw_array = self.SQw
+            else:
+                raise ValueError("SQw array is in an exceptional order. Either:"
+                                 " one half of the array should be negative, and the other positive,"
+                                 " with zero in the middle, or"
+                                 " all entries should be non-negative.")
+        else:
+            raise ValueError("SQw array is in an exceptional order. Either:"
+                             " one half of the array should be negative, and the other positive,"
+                             " with zero in the middle, or"
+                             " all entries should be non-negative.")
 
         # inverse fourier transform the SQw array to get the FQt array
         FQt_array = np.real(np.fft.ifft(self.SQw, (nE + 1)))
