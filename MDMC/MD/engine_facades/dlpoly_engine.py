@@ -13,7 +13,7 @@ from copy import copy
 from itertools import tee
 import logging
 from ase import Atoms,Atom
-from ase.io import write,iread
+from ase.io import write
 from MDMC.MD.structural_units import Atom as  MAtom
 
 from dlpoly import DLPoly

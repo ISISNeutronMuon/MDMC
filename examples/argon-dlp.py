@@ -26,7 +26,7 @@ density = 0.0176
 # 30.7553 A will contain 512 Ar atoms
 # 38.4441 A will contain 1000 Ar atoms
 universe = Universe(dimensions=38.4441)
-Ar = Atom('Ar')
+Ar = Atom('Ar', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
 n_ar_atoms = int(density * np.product(universe.dimensions))
 print(n_ar_atoms)
