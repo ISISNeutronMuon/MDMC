@@ -4,7 +4,7 @@ An example MDMC script for optimizing spce parameters for water at 263 K
 Water data provided by Bertil Halle. Ref: J. Chem. Phys. 134, 144508 (2011)
 """
 
-import numpy as np
+from MDMC.MD.interactions import Bond, BondAngle
 
 from MDMC.control import Control
 from MDMC.MD import *
@@ -60,7 +60,7 @@ for p in universe.parameters:
     if p.name != 'epsilon':
         p.fixed = True
 
-fit_parameters = set([p for p in universe.parameters if p.fixed is False])
+fit_parameters = universe.parameters
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,

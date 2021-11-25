@@ -9,7 +9,8 @@ import ase
 from ase.io import x3d
 import numpy as np
 
-from MDMC.MD.structural_units import Atom, Bond
+from MDMC.MD.structural_units import Atom
+from MDMC.MD.interactions import Bond
 
 
 class ASEAtoms(ase.atoms.Atoms):
@@ -307,7 +308,7 @@ class X3D(x3d.X3D):
                 raise ValueError("filename must end in '.x3d' or '.html'.")
 
         # Write the header
-        w = x3d.WriteToFile(filename, 'w')
+        w = x3d.WriteToFile(filename)
         if datatype == 'X3DOM':
             w(0, '<html>')
             w(1, '<head>')

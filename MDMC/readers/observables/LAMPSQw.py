@@ -60,7 +60,7 @@ class LAMPSQw(ObservableReader):
         # LAMP sets errors -1 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them but
         # result in inf.
-        self.SQw_err[np.where(self.SQw_err < 0.)] = np.float('inf')
+        self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
 
     @property
     def independent_variables(self):
@@ -88,7 +88,7 @@ class LAMPSQw(ObservableReader):
             The dependent variables, SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw}
+        return {"SQw": [self.SQw]}
 
     @property
     def errors(self):
@@ -102,7 +102,7 @@ class LAMPSQw(ObservableReader):
             The error on SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw_err}
+        return {"SQw": [self.SQw_err]}
 
     @property
     def E(self):
@@ -269,6 +269,7 @@ class LAMPSQw(ObservableReader):
         else:
             for k in range(dimensions[0]):
                 var[k] = get_row_data(dimensions[1])
-        # return the transpose of var such that np.shape() of the returned array = (np.size(E),np.size(Q)),
-        # consistent with the output of the xml_SQw reader
-        return np.transpose(var)
+        # For the 263K05Awat_LAMP data file the outpout is SQw structured such that:
+        # np.shape(SQw) == (np.shape(Q), np.shape(E))
+        # this is consistent with SQw as we currently calculate it from MD
+        return var

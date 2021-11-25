@@ -56,3 +56,4 @@ for name in OBS_NAMES:
 # merge these and insert them into the module docstring
 OBS_ALIASES = _merge_obs_aliases(OBS_REGISTRY)
 __doc__ = __doc__.replace('DYNAMIC_OBS_ALIASES', '\n'.join(OBS_ALIASES))
+

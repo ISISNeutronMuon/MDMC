@@ -6,8 +6,8 @@ from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import Coulomb, LennardJones
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import Atom, Bond, Coulombic, Dispersion, Molecule
-
+from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.interactions import Bond, Dispersion, Coulombic
 
 NAME = 'length'
 UNIT = Unit('Ang')
@@ -417,7 +417,7 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
 
     # Create bonds that can be set as the a parameter's interactions
     H2 = Molecule(atoms=[Atom('H'), Atom('H')], name='H2')
-    H2_bond = Bond(H2.atom_list[0], H2.atom_list[1])
+    H2_bond = Bond(H2.atoms[0], H2.atoms[1])
     C_bond = Bond(Atom('C'), Atom('C'))
 
     for index, parameter in enumerate(parameters):

@@ -8,12 +8,13 @@ from itertools import combinations, permutations
 
 import numpy as np
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, BoundingBox, Coulombic, Molecule,
-                                      get_reduced_chemical_formula)
-
+from MDMC.MD.structural_units import (Atom, BoundingBox, Molecule,
+                                      get_reduced_chemical_formula, parse_structural_unit_IDs)
+from MDMC.MD.interactions import Coulombic
 
 ATOM_TYPES = [1, 2, 3]
 POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
@@ -41,7 +42,7 @@ def universe():
     return Universe(UNIVERSE_DIMENSIONS)
 
 @pytest.fixture
-def atom_list():
+def atoms():
 
     """
     Generates a 3-body atom list with positions and masses defined by a
@@ -51,16 +52,16 @@ def atom_list():
     return [Atom('H', position=pos, mass=mass) for (pos, mass) in POS_MASS]
 
 @pytest.fixture
-def atom_types_universe(atom_list, universe):
+def atom_types_universe(atoms, universe):
 
     """
     Generates a list of atom_types for atoms added to a universe.
     Returns the atom_types and the universe.
     """
 
-    for atom in atom_list:
+    for atom in atoms:
         universe.add_structural_unit(atom)
-    return ([atom.atom_type for atom in atom_list], universe)
+    return ([atom.atom_type for atom in atoms], universe)
 
 @pytest.fixture
 def atom_charge():
@@ -236,62 +237,74 @@ def test_charge_getter_checks(atom_charge):
     with pytest.raises(ValueError):
         atom_charge.charge
 
+def test_bounding_box_empty_raises_value_error():
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_min(atom_list):
+    """
+    Tests that passing an empty atom list raises a value Error
+    """
+
+    with pytest.raises(ValueError):
+        BoundingBox(atoms=[])
+
+@parametrize('atoms_size', [1, 2, 3])
+def test_bounding_box_min(atoms, atoms_size):
 
     """
     Tests that the min property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
 
-    mn = atom_list[0].position
-    for atom in atom_list:
+    body_list = atoms[:atoms_size]
+    mn = atoms[0].position
+    for atom in body_list:
         mn = np.minimum(mn, atom.position)
-    bb_mn = BoundingBox(atom_list).min
+    bb_mn = BoundingBox(body_list).min
     np.testing.assert_array_equal(bb_mn, mn)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_max(atom_list):
+
+@parametrize('atoms_size', [1, 2, 3])
+def test_bounding_box_max(atoms, atoms_size):
 
     """
     Tests that the max property of the BoundingBox class returns the correct
     value for a 1, 2, and 3-bodied atom list.
     """
 
-    mx = atom_list[0].position
-    for atom in atom_list:
+    body_list = atoms[:atoms_size]
+    mx = atoms[0].position
+    for atom in body_list:
         mx = np.maximum(mx, atom.position)
-    bb_mx = BoundingBox(atom_list).max
+    bb_mx = BoundingBox(body_list).max
     np.testing.assert_array_equal(bb_mx, mx)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_bounding_box_volume(atom_list):
+@parametrize('atoms_size', [1, 2, 3])
+def test_bounding_box_volume(atoms, atoms_size):
 
     """
     Tests that the correct volume is returned for the bounding box of a
     1, 2, and 3-bodied atom list.
     """
-
-    bb = BoundingBox(atom_list)
+    
+    body_list = atoms[:atoms_size]
+    bb = BoundingBox(body_list)
     assert bb.volume == abs(np.prod(bb.max - bb.min))
 
 
-def test_init_coulombic_atoms_no_universe(atom_list):
+def test_init_coulombic_atoms_no_universe(atoms):
 
     """
     Tests that a Coulombic interaction can be initialised by passing
     atoms as a parameter.
     """
 
-    coul = Coulombic(atoms=atom_list, charge=TEST_CHARGE_1)
-    assert all(coul.atoms) == all(atom_list)
+    coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1)
+    assert all(coul.atoms) == all(atoms)
     assert coul.parameters[0].value == TEST_CHARGE_1
 
 
-def test_init_coulombic_atoms_added_to_universe(atom_list, universe):
+def test_init_coulombic_atoms_added_to_universe(atoms, universe):
 
     """
     Tests that a Coulombic interaction can be initialised by passing
@@ -299,13 +312,13 @@ def test_init_coulombic_atoms_added_to_universe(atom_list, universe):
     added to the universe.
     """
 
-    for atom in atom_list:
+    for atom in atoms:
         universe.add_structural_unit(atom)
-    coul = Coulombic(universe, atoms=atom_list, charge=TEST_CHARGE_1)
+    coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
 
 
-def test_init_coulombic_atoms_not_added_to_universe(atom_list, universe):
+def test_init_coulombic_atoms_not_added_to_universe(atoms, universe):
 
     """
     Tests that a Coulombic interacion can be initialised by passing
@@ -315,7 +328,7 @@ def test_init_coulombic_atoms_not_added_to_universe(atom_list, universe):
     Tests that the universe property of the Coulombic object is None.
     """
 
-    assert (Coulombic(universe, atoms=atom_list, charge=TEST_CHARGE_1).universe
+    assert (Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1).universe
             is None)
 
 
@@ -345,7 +358,7 @@ def test_init_coulombic_error_atom_types_no_universe():
         Coulombic(atom_types=[1, 2, 3], charge=TEST_CHARGE_1)
 
 
-def test_init_coulombic_error_atoms_and_atom_types(atom_list,
+def test_init_coulombic_error_atoms_and_atom_types(atoms,
                                                    atom_types_universe):
 
     """
@@ -354,21 +367,22 @@ def test_init_coulombic_error_atoms_and_atom_types(atom_list,
     """
 
     with pytest.raises(TypeError):
-        Coulombic(atom_types_universe[1], atoms=atom_list,
+        Coulombic(atom_types_universe[1], atoms=atoms,
                   atom_types=atom_types_universe[0], charge=TEST_CHARGE_1)
 
 
-@pytest.mark.parametrize('atom_list', [atom_list()[:i] for i in range(1, 4)])
-def test_molecule_mass(atom_list):
+@parametrize('atoms_size', [1, 2, 3])
+def test_molecule_mass(atoms, atoms_size):
 
     """
     Tests that the mass property returns the expected result for 1, 2,
     and 3-bodied Molecule objects.
     """
 
-    mol = Molecule(atoms=atom_list)
+    body_list = atoms[:atoms_size]
+    mol = Molecule(atoms=body_list)
     exp_mass = 0.
-    for atom in atom_list:
+    for atom in body_list:
         exp_mass += atom.mass
     assert mol.mass == exp_mass
 
@@ -407,9 +421,9 @@ def test_molecule_rotation_preserves_distances(angles, water_molecule):
         return [round(np.linalg.norm(atom1.position - atom2.position), 5)
                 for atom1, atom2 in combinations(atoms, 2)]
 
-    initial_separations = get_separations(water_molecule.atom_list)
+    initial_separations = get_separations(water_molecule.atoms)
     water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
-    final_separations = get_separations(water_molecule.atom_list)
+    final_separations = get_separations(water_molecule.atoms)
     assert initial_separations == final_separations
 
 
@@ -429,7 +443,7 @@ def test_molecule_rotation(angles, expected, water_molecule):
     """
 
     water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
-    assert np.allclose(water_molecule.atom_list[0].position, expected,
+    assert np.allclose(water_molecule.atoms[0].position, expected,
                        atol=1e-5)
 
 
@@ -480,3 +494,30 @@ def test_get_reduced_chemical_formula_error(symbols, factor, formula, system):
     """
 
     assert get_reduced_chemical_formula(symbols, factor, system) == formula
+
+
+def test_parse_structural_unit_IDs_success(atoms):
+
+    """
+    Tests that we can convert a valid ``ID`` of a ``StructuralUnit`` into the object itself whilst
+    leaving existing ``StructuralUnit`` objects unchanged.
+    """
+
+    altered_list = atoms.copy()
+    altered_list[-1] = atoms[-1].ID
+
+    assert parse_structural_unit_IDs(altered_list) == atoms
+
+
+def test_parse_structural_unit_IDs_failure(atoms):
+
+    """
+    Tests that we raise a `KeyError` when given an ``ID`` that does not correspond to an existing
+    ``StructuralUnit``.
+    """
+
+    altered_list = atoms.copy()
+    altered_list[-1] = atoms[-1].ID + 1
+
+    with pytest.raises(KeyError):
+        parse_structural_unit_IDs(altered_list)

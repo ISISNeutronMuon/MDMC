@@ -30,7 +30,7 @@ MDMC is open source and we welcome contributions to the project.  Please see
 Acknowledgements
 ----------------
 Funding for the development of MDMC has been provided by the Swedish Research
-Council under grant 2016-06954.
+Council under grant 2016-06954, the ISIS Neutron and Muon Source and the University of Copenhagen.
 
 Indices
 -------
@@ -59,6 +59,7 @@ Indices
 
    tutorials/building-a-universe.ipynb
    tutorials/read-configurations.ipynb
+   tutorials/units.ipynb
    tutorials/applying-a-forcefield.ipynb
    tutorials/solvating-a-universe.ipynb
    tutorials/molecular-visualization.ipynb
@@ -66,6 +67,7 @@ Indices
    tutorials/creating-an-observable.ipynb
    tutorials/selecting-fitting-parameters.ipynb
    tutorials/running-a-refinement.ipynb
+   tutorials/Argon-a-to-z.ipynb
 
 .. toctree::
   :maxdepth: 1
@@ -78,6 +80,9 @@ Indices
   pages/developer/units
   pages/developer/testing
   pages/developer/management
+  pages/developer/containers
+  pages/developer/vscode
+  pages/developer/recipes
 
 .. toctree::
   :maxdepth: 1

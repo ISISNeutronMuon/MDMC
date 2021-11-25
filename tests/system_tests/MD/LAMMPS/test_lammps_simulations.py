@@ -10,8 +10,8 @@ import numpy as np
 import pytest
 
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
-from MDMC.MD.structural_units import Atom, Bond, BondAngle, Coulombic, \
-    Dispersion, Molecule
+from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
 pytestmark = pytest.mark.mpi
 
@@ -206,7 +206,7 @@ def NVE_unconstrained(universe):
                 if interaction.name == 'Bond':
                     parameter.value = 4410.7728 / 2
                 elif interaction.name == 'BondAngle':
-                    parameter.value = 0.04836800684250899
+                    parameter.value = 158.7828
     # Remove constraint algorithm from universe
     universe.constraint_algorithm = None
 
@@ -243,33 +243,46 @@ def parameterize_decorator(func):
     return wrapper
 
 
-def test_simulation_stdout(universe, capsys):
+@pytest.mark.parametrize('verbose', [False, True])
+def test_simulation_stdout(universe, verbose, capsys):
+
+    """
+    Test that calling run with different verbose arguments results in the
+    expected stdout
+    """
+
     sim = Simulation(universe, engine='lammps', time_step=1.,
-               temperature=TEMPERATURE, pressure=101325., thermostat='nose',
-               barostat='nose', p_damp=100, traj_step=10)
-    sim.minimize(0)
-    sim.run(0, equilibration=True)
-    sim.run(0, equilibration=True, verbose=True)
-    sim.run(0)
-    sim.run(0, verbose=True)
+                     temperature=TEMPERATURE, pressure=101325.,
+                     thermostat='nose', barostat='nose',
+                     p_damp=100, traj_step=10)
+    sim.minimize(0, verbose=verbose)
+    sim.run(0, equilibration=True, verbose=verbose)
+    sim.run(0, verbose=verbose)
     stdout = capsys.readouterr().out
-    assert stdout == ('LAMMPS output is captured by PyLammps wrapper\n'
-                      'LAMMPS output is captured by PyLammps wrapper\n'
-                      'Simulation created with lammps engine and settings:\n'
-                      '  time_step         1\n'
-                      '  temperature     300\n'
-                      '  pressure     101325\n'
-                      '  thermostat     nose\n'
-                      '  barostat       nose\n'
-                      '  p_damp          100\n'
-                      '  traj_step        10\n'
-                      '\n'
-                      'Starting minimization for 0 steps\n'
-                      'Minimization complete\n'
-                      'Starting equilibration for 0 steps\n'
-                      'Equilibration complete\n'
-                      'Starting simulation for 0 steps\n'
-                      'Simulation complete\n')
+
+    msg_main = ('LAMMPS output is captured by PyLammps wrapper\n'
+                'LAMMPS output is captured by PyLammps wrapper\n'
+                'Simulation created with lammps engine and settings:\n'
+                '  temperature     300.0\n'
+                '  pressure     101325.0\n'
+                '  thermostat       nose\n'
+                '  barostat         nose\n'
+                '  p_damp            100\n'
+                '\n')
+    minimize_msg = ('Starting minimization for 0 steps\n'
+                    'Minimization complete in ')
+    equilibration_msg = ('Starting equilibration for 0 steps\n'
+                         'Equilibration complete in ')
+    run_msg = ('Starting simulation for 0 steps\n'
+               'Simulation complete in ')
+
+    if verbose:
+        assert msg_main in stdout
+        assert minimize_msg in stdout
+        assert equilibration_msg in stdout
+        assert run_msg in stdout
+    else:
+        assert stdout == msg_main
 
 
 @parameterize_decorator

@@ -7,12 +7,15 @@ import warnings
 
 from numba import jit
 import numpy as np
+from typing import Dict, List, Union
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.trajectory import Trajectory
+
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -29,18 +32,11 @@ class PairDistributionFunction(Observable):
         self._errors = None
 
     @property
-    def data(self):
-
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
-
-    @property
     def independent_variables(self):
 
         """
-        Get or set the independent variables, the atomic separation distance r
-        (in ``Ang``)
+        Get or set the independent variable: this is
+        the atomic separation distance r (in ``Ang``)
 
         Returns
         -------
@@ -59,8 +55,8 @@ class PairDistributionFunction(Observable):
     def dependent_variables(self):
 
         """
-        Get or set the dependent variables, the pair distribution function (in
-        ``arb``)
+        Get or set the dependent variables: these are
+        PDF, the pair distribution function (in ``arb``)
 
         Returns
         -------
@@ -90,12 +86,17 @@ class PairDistributionFunction(Observable):
 
         self._errors = value
 
-    @property
-    def minimum_frames(self):
+    def minimum_frames(self, dt: float = None):
 
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` is 1
+
+        Parameters
+        ----------
+        dt : float, optional
+            The time separation of frames in ``fs``, default is `None`, not
+            used
 
         Returns
         -------
@@ -105,7 +106,6 @@ class PairDistributionFunction(Observable):
 
         return 1
 
-    @property
     def maximum_frames(self):
 
         """
@@ -154,7 +154,8 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input, **settings):
+    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
+                          **settings):
 
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
@@ -190,8 +191,8 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            An MD ``Trajectory``
+        MD_input : Trajectory or list of Trajectory
+            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
@@ -268,7 +269,11 @@ class PairDistributionFunction(Observable):
         """
 
         self.origin = 'MD'
-        self._parse_calc_MD_settings(MD_input, settings)
+
+        if isinstance(MD_input, Trajectory):
+            MD_input = [MD_input]
+
+        self._parse_calc_MD_settings(MD_input[0], settings)
 
         for trajectory in self.trajectory:
             self._calculate_histogram(trajectory.configurations[0])
@@ -283,7 +288,7 @@ class PairDistributionFunction(Observable):
         # Partial independent prefactor (e.g. anything element independent)
         prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
                                             * self.r_step)
-        self._dependent_variables['PDF'] = np.zeros(np.shape(self.r))
+        self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
         concentration_norm = np.sum(list(self.numbers.values())) ** 2
         for partial_string, partial in self.partial_pdfs.items():
             numbers = np.multiply(*[self.numbers[elem] for elem
@@ -303,8 +308,8 @@ class PairDistributionFunction(Observable):
                 fac = 1.
             else:
                 fac = 2.
-            self._dependent_variables['PDF'] += ((partial - 1) * fac * weights
-                                                 * concentration)
+            self._dependent_variables['PDF'][0] += ((partial - 1) * fac
+                                                    * weights * concentration)
 
     def _parse_calc_MD_settings(self, trajectory, settings):
 
@@ -641,10 +646,10 @@ class PairDistributionFunction(Observable):
             # Using next with default means pair_block will be filled with
             # np.array(['inf']) if StopIteration is returned. Then change
             # exhausted so that the while loop will stop.
-            pair_block = [np.subtract(*next(position_pairs, ([np.float('inf')],
+            pair_block = [np.subtract(*next(position_pairs, ([float('inf')],
                                                              [0.])))
                           for _ in range(BLOCK)]
-            exhausted = np.float('inf') in pair_block[-1]
+            exhausted = float('inf') in pair_block[-1]
             separations = map(self._calculate_euclidean_norm, pair_block)
             hist += jit_histogram(np.fromiter(separations,
                                               dtype=np.float64,
@@ -720,3 +725,31 @@ class PairDistributionFunction(Observable):
 
         return {element:element_list.count(element) for element
                 in unique_elements}
+
+    @property
+    def dependent_variables_structure(self) -> Dict[str, list]:
+        """
+        The shape of the 'PDF' dependent variable in terms of 'r'':
+        np.shape(self.PDF)=(np.size(self.r))
+
+        Return
+        ------
+        dict
+            The shape of the PDF dependent variable
+        """
+        return {'PDF': ['r']}
+
+    @property
+    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+        """
+        # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
+        # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
+
+        Return
+        ------
+        Dict[str, Dict[str, bool]]
+            Dictionary of uniformity restrictions for 'r'.
+        """
+
+        return {'r': {'uniform': True, 'zeroed': False}}
+

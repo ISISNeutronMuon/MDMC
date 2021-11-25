@@ -13,9 +13,8 @@ from ase.io.cif import read_cif
 import numpy as np
 
 from MDMC.MD.ase.conversions import ASEAtoms, convert_from_ase_atom
-from MDMC.MD.structural_units import (Bond, BondAngle, BoundingBox, Coulombic,
-                                      DihedralAngle,
-                                      get_reduced_chemical_formula)
+from MDMC.MD.structural_units import (BoundingBox, get_reduced_chemical_formula)
+from MDMC.MD.interactions import Coulombic, Bond, BondAngle, DihedralAngle
 from MDMC.MD.interaction_functions import Coulomb
 
 
@@ -88,14 +87,22 @@ def ase_read_cif(file, **settings):
     add_bonds = settings.get('add_bonds', True)
     add_charges = settings.get('add_charges', True)
 
-    # ASE does not explicity define bonds, however when it reads a CIF file, it
+    # ASE does not explicitly define bonds, however when it reads a CIF file, it
     # also reads the bonding information (if this is defined in the file).
     # This information is not used by ASE, however it is included in the info
     # attribute of any Atoms objects if the store_tags parameter is set to True
     images = read_cif(file, index=slice(index, None, None), store_tags=True)
 
     # images is a generator with a single element, an ase.atoms.Atoms object
-    ase_atoms = list(images)[0]
+    try:
+        ase_atoms = list(images)[0]
+    except Exception as error:
+        msg = ('MDMC uses the ASE (Atomic Simulation Environment) module for reading your CIF file ({0}), '
+               'which failed. Please see the ASE CIF documentation for help with the CIF format ASE requires.'
+               ' Please note that the ASE CIF reader cannot parse CIF files with user defined text sections so these '
+               'must be stripped out before reading. The full Python stack error message should be shown '
+               'above.').format(file.name)
+        raise Exception(msg).with_traceback(error.__traceback__)
 
     ase_atoms = _reduce_ase_unit_cell(ase_atoms)
 

@@ -23,6 +23,7 @@ READER_TEST_INFO contains the following:
 """
 
 READERS_TEST_INFO = [('LAMPSQw', ['Q', 'E'], 'SQw'),
+                     ('MantidSQw', ['Q', 'E'], 'SQw'),
                      ('xml_SQw', ['Q', 'E'], 'SQw')]
 
 
@@ -80,10 +81,10 @@ def test_parse(reader_info):
         assert len(indep_var) in np.shape(
             reader.dependent_variables[dep_datatype])
 
-    assert np.all(list(reader.errors.values())[0] >= 0)
+    assert np.all(list(reader.errors.values())[0][0] >= 0)
 
     all_vars = (list(reader.independent_variables.values())
-                + list(reader.dependent_variables.values())
-                + list(reader.errors.values()))
+                + list(reader.dependent_variables.values())[0]
+                + list(reader.errors.values())[0])
     for var in all_vars:
         assert float in inspect.getmro(var.dtype.type)

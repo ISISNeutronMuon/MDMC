@@ -48,7 +48,8 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structural_units import Atom, BondedInteraction
+from MDMC.MD.structural_units import Atom
+from MDMC.MD.interactions import BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 
@@ -405,7 +406,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe = LAMMPSUniverse(self.universe, self.lmp, **settings)
         self._saved_config = None
 
-    def setup_simulation(self, **settings):
+    def setup_simulation(self, traj_step: int, time_step: float, **settings):
 
         """
         Sets simulation parameters in LAMMPS, such as the thermodynamic
@@ -413,11 +414,19 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         Parameters
         ----------
+        traj_step : int
+            How many steps the simulation should take between dumping each
+            ``Trajectory`` frame
+        time_step : float
+            Simulation timestep in ``fs``
         **settings
             Passed to ``LAMMPSSimulation``
         """
 
-        self.lmp_simulation = LAMMPSSimulation(self.universe, self.lmp,
+        self.lmp_simulation = LAMMPSSimulation(universe=self.universe,
+                                               time_step=time_step,
+                                               traj_step=traj_step,
+                                               lmp=self.lmp,
                                                **settings)
 
     def minimize(self, n_steps, **settings):
@@ -600,7 +609,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     n_atoms = int(line.split()[0])
                     # Check that n_atoms is as expected, if a universe was passed
                     if self.universe:
-                        assert n_atoms == len(self.universe.atom_list)
+                        assert n_atoms == len(self.universe.atoms)
 
                 if 'ITEM: BOX BOUNDS' in line:
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
@@ -608,17 +617,16 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         raise TypeError('triclinic simulation boxes have not'
                                         ' been implemented')
                     # Test dimensions are as expected, if a universe was passed
-                    # CURRENTLY ASSUMES VOLUME IS CONSERVED
-                    # if self.universe:
-                    #     for i in range(3):
-                    #         line = file_handler.readline()
-                    #         dmin, dmax = [float(splt) for splt in line.split()]
-                    #         print(line)
-                    #         assert dmin == 0.0
-                    #         # unit is taken from universe dimensions (which is a
-                    #         # UnitArray)
-                    #         assert dmax == convert_unit(self.universe.dimensions[i],
-                    #                                     self.universe.dimensions.unit)
+                    # and we are not using an NPT or NPH ensemble
+                    if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
+                        for i in range(3):
+                            line = file_handler.readline()
+                            dmin, dmax = [float(splt) for splt in line.split()]
+                            assert dmin == 0.0
+                            # unit is taken from universe dimensions (which is a
+                            # UnitArray)
+                            assert dmax == convert_unit(self.universe.dimensions[i],
+                                                        self.universe.dimensions.unit)
 
                 if 'ITEM: ATOMS' in line:
                     if frame_n == start:
@@ -883,7 +891,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         n_improper_types = dihedral_types.count(True)
 
         # Determine max number of bonds and angles per atom
-        atoms = universe.atom_list
+        atoms = universe.atoms
         max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
         max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
@@ -970,6 +978,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
                     # self.lmp.atoms[index].id, use number of atoms as proxy for
                     # new atom id (as it is sequential)
                     lmp_atom_id = self.lmp.atoms.natoms
+                    self.lmp.set('atom', lmp_atom_id,
+                                 'vx', atom.velocity[0],
+                                 'vy', atom.velocity[1],
+                                 'vz', atom.velocity[2])
                 else:
                     lmp_atom_id = None
                 self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
@@ -1396,13 +1408,16 @@ class LAMMPSSimulation(PyLammpsAttribute):
     ----------
     universe : Universe
         The MDMC ``Universe`` used to create the ``LAMMPSUniverse``.
+    traj_step : int
+        How many steps the simulation should take between dumping each
+        ``Trajectory`` frame
+    time_step : float, optional
+        Simulation timestep in ``fs``, default is ``1.``
     lmp : PyLammps, optional
         Set the ``lmp`` attribute to a ``PyLammps`` object. Default is `None`,
         which results in a new ``PyLammps`` object being initialised.
     **settings
         ``temperature`` (`float`)
-        ``time_step`` (`float`)
-        ``traj_step`` (`int`)
         ``skin`` (`float`)
         ``neighbor_steps`` (`int`)
         ``remove_linear_momentum`` (`int`)
@@ -1419,14 +1434,14 @@ class LAMMPSSimulation(PyLammpsAttribute):
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
 
-    def __init__(self, universe, lmp=None, **settings):
+    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
         self.ensemble = Ensemble(self.lmp, **settings)
         self.temperature = settings.get('temperature')
-        self.time_step = settings.get('time_step', 1.0)
-        self.traj_step = settings['traj_step']
+        self.traj_step = traj_step
+        self.time_step = time_step
 
         self.skin = settings.get('skin', 2.0)
         self.neighbor_steps = settings.get('neighbor_steps', 1)
@@ -1489,9 +1504,24 @@ class LAMMPSSimulation(PyLammpsAttribute):
         try:
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
-                self.lmp.velocity('all', 'create',
-                                  convert_unit(self._temperature),
-                                  randint(1, 9999))
+                zero_velocity = [np.array_equal(atom.velocity, (0, 0, 0))
+                                for atom in self.universe.atoms]
+                if all(zero_velocity):
+                    # If we have not set any velocities (they are all the default value of zero)
+                    # then "create" a velocity for each atom
+                    self.lmp.velocity('all', 'create',
+                                      convert_unit(self._temperature),
+                                      randint(1, 9999))
+                else:
+                    if any(zero_velocity):
+                        msg = ('Some but not all atom velocities set. Atoms with non-zero velocity'
+                               ' will be re-scaled to match target temperature, atoms with zero '
+                               'velocity will remain stationary.')
+                        LOGGER.info('%s %s', self.__class__, msg)
+                        print(msg)
+                    # If we have set velocities then "scale" the velocities we have to the correct
+                    # temperature
+                    self.lmp.velocity('all', 'scale', convert_unit(self._temperature))
         except ValueError:
             pass
 
@@ -2289,35 +2319,45 @@ def convert_unit(value, unit=None, to_lammps=True):
             return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
+        # SYSTEM represents the LAMMPS system units, units.SYSTEM the MDMC
+        # system units
         l_sys = copy(SYSTEM)
-        # For angular potential strength LAMMPS requires the units in rad,
-        # rather than degrees (which is uses otherwise). Therefore if the unit
-        # is in MDMC angular potential strength units (energy / angle^2), the
-        # ANGLE entry in SYSTEM is replaced by radians.
-        if unit == units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2:
+        mdmc_sys = copy(units.SYSTEM)
+
+        # For angular potential strength LAMMPS uses units derived from 'rad',
+        # namely 'kcal / mol rad^2', but uses 'deg' when measuring angles
+        # themselves. As a result 'deg' is recorded as their system unit. In
+        # order to prevent us from erroneously expressing potential strength in
+        # 'kcal / mol deg^2', we must override the LAMMPS system unit for angle
+        # ONLY in the case where we are dealing with angular potential, namely
+        # when the MDMC unit is measuring 'energy / angle^2'.
+        if (unit in (mdmc_sys['ENERGY'] / mdmc_sys['ANGLE'] ** 2,
+                     mdmc_sys['ENERGY'] / units.Unit('rad') ** 2)):
             l_sys['ANGLE'] = units.Unit('rad')
 
-        expanded_unit = expand_components(unit, units.SYSTEM)
-        system_inv = {unit:property for property, unit in units.SYSTEM.items()}
-        # Apply inversion to all components
-        unit_nums, unit_denoms = map(lambda comp_list: [l_sys[system_inv[comp]]
-                                                        for comp in comp_list],
-                                     expanded_unit)
+        expanded_unit = expand_components(unit, mdmc_sys)
+        # For each MDMC unit, determine the LAMMPS system unit that corresponds
+        # to that physical property (e.g. 'kJ / mol' -> 'ENERGY' -> 'kcal / mol')
+        l_unit_nums, l_unit_denoms = map(lambda unit_comps: [l_sys[comp.physical_property]
+                                                             for comp in unit_comps],
+                                         expanded_unit)
 
-        conv_nums, conv_denoms = [], []
-        for component in unit_nums:
-            conv_nums[len(conv_nums):], conv_denoms[len(conv_denoms):] = \
-                expand_components(component, l_sys)
-        for component in unit_denoms:
-            conv_denoms[len(conv_denoms):], conv_nums[len(conv_nums):] = \
-                expand_components(component, l_sys)
+        # In general we may have an MDMC measurement that is not wholly
+        # expressed in MDMC system units, for example 'kJ / mol rad^2' uses
+        # 'rad' rather than 'deg'. To account for this, multiply by the
+        # conversion_factor of the original MDMC unit to get the value in terms
+        # of MDMC system units only.
+        value *= unit.conversion_factor
+
+        # Then, for each component of the LAMMPS unit, divide by the
+        # conversion_factor to go from MDMC system units to LAMMPS system units.
+        for component in l_unit_nums:
+            value /= component.conversion_factor
+        for component in l_unit_denoms:
+            value *= component.conversion_factor
+
     else:
-        conv_denoms, conv_nums = expand_components(unit, SYSTEM)
-
-    for component in conv_nums:
-        value /= getattr(units, component)
-    for component in conv_denoms:
-        value *= getattr(units, component)
+        value *= unit.conversion_factor
 
     return value
 

@@ -68,6 +68,22 @@ def trajectory(universe):
     return trj
 
 
+def test_trajectory_list(PDF_setup, trajectory):
+
+    """
+    Assert that passing the MD_input as a ``Trajectory`` or ``list`` of ``Trajectory``s results in
+    the same behaviour.
+    """
+
+    PDF_setup.calculate_from_MD(trajectory)
+    PDF_trajectory = PDF_setup.trajectory
+
+    PDF_setup.calculate_from_MD([trajectory])
+    PDF_trajectory_list_input = PDF_setup.trajectory
+
+    assert len(PDF_trajectory) == len(PDF_trajectory_list_input)
+
+
 @pytest.mark.parametrize('n_frames',
                          [None, 1, 10, 30, 100])
 def test_set_n_frames(PDF_setup, trajectory, n_frames):
@@ -415,7 +431,7 @@ def test_low_r_limit(PDF, weights, numbers, expected):
     PDF._dependent_variables = {}
     PDF._sum_partial_pairs()
     # Very small tolerance to account for FP differences
-    assert np.isclose(PDF.PDF[0], expected, atol=1e-20, rtol=1e-12)
+    assert np.isclose(PDF.PDF[0, 0], expected, atol=1e-20, rtol=1e-12)
 
 
 def get_expected_partition_pairs(x, y, z):

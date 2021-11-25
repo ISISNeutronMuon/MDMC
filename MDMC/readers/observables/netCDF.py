@@ -78,7 +78,7 @@ class netCDF(ObservableReader):
             The dependent variables, SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw}
+        return {"SQw": [self.SQw]}
 
     @property
     def errors(self):
@@ -92,7 +92,7 @@ class netCDF(ObservableReader):
             The error on SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw_err}
+        return {"SQw": [self.SQw_err]}
 
     @property
     def E(self):

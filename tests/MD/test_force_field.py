@@ -6,8 +6,9 @@ import pytest
 
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, Bond, BondAngle, Coulombic,
-                                      DihedralAngle, Dispersion, Molecule)
+from MDMC.MD.structural_units import (Atom, Molecule)
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
+
 
 @pytest.fixture
 def water_universe():
@@ -52,14 +53,14 @@ def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
     assignment of virtual atoms, as these have not been implemented.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
         # Check that initial charges are 0.
         assert atom.charge == 0.
     water_universe.add_force_field('OPLSAA')
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         if atom.element == 'H':
             assert atom.charge == H_charge
         else:
@@ -78,14 +79,14 @@ def test_opls_water_model_masses(water_universe, model):
     All water models have the same H and O mass.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
         # Check that initial masses are not the same as model masses
         assert atom.mass not in [1.008, 15.999]
     water_universe.add_force_field('OPLSAA')
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         if atom.element == 'H':
             assert atom.mass == 1.008
         else:
@@ -109,7 +110,7 @@ def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
     parametrized.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -139,7 +140,7 @@ def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
     parametrization.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -166,7 +167,7 @@ def test_opls_water_model_bond_angle_parameters(water_universe, model,
     parametrization.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -481,3 +482,73 @@ def test_specific_force_fields_names():
     force_field_names = ForceFieldFactory.get_force_field_names()
     for name in ['SPC', 'SPCE', 'OPLSAA']:
         assert name in force_field_names
+
+
+def test_name_element_error():
+
+    """
+    Test that atoms with mismatched names and elements raise an error
+    """
+
+    uni = Universe(10.)
+    # name=1 corresponds to a F atom in OPLSAA
+    H1 = Atom('H', name=1)
+    H2 = Atom('H', name=1)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    Bond((H1, H2))
+    with pytest.raises(KeyError):
+        uni.add_force_field('OPLSAA')
+
+
+def test_undefined_bond_error():
+
+    """
+    Test that atoms without a defined bond raise an error
+    """
+
+    uni = Universe(10.)
+    # There is no OPLSAA bond between two "7" atoms
+    H1 = Atom('H', name=7)
+    H2 = Atom('H', name=7)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    Bond((H1, H2))
+    with pytest.raises(ValueError):
+        uni.add_force_field('OPLSAA')
+
+
+def test_coulombic_error():
+
+    """
+    Test that a coulombic interaction applied to an ``atom_type`` that is
+    missing from the universe raises an error
+    """
+
+    uni = Universe(10.)
+    H1 = Atom('H', name=7)
+    H2 = Atom('H', name=7)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    # We only have atom_type of 1
+    Coulombic(uni, atom_types=[2])
+    with pytest.raises(ValueError):
+        uni.add_force_field('OPLSAA')
+
+
+def test_dispersion_error():
+
+    """
+    Test that a dispersion interaction applied to an ``atom_type`` that is
+    missing from the universe raises an error
+    """
+
+    uni = Universe(10.)
+    H1 = Atom('H', name=7)
+    H2 = Atom('H', name=7)
+    uni.add_structural_unit(H1)
+    uni.add_structural_unit(H2)
+    # We only have atom_type of 1
+    Dispersion(uni, atom_types=[2])
+    with pytest.raises(ValueError):
+        uni.add_force_field('OPLSAA')

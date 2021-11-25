@@ -5,8 +5,8 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
+from time import time
 
-from enum import Enum
 import numpy as np
 import pandas as pd
 
@@ -18,8 +18,8 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import Coulombic, Dispersion, DihedralAngle, \
-    StructuralUnit
+from MDMC.MD.structural_units import StructuralUnit, parse_structural_unit_IDs
+from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -45,7 +45,8 @@ class Universe(AtomContainer):
         A force field to apply to the Universe. The force fields available are:
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
     structures : list, optional
-        Structures contained in the ``Universe``. Default is None.
+        Either ``StructuralUnit`` objects contained in the ``Universe`` or their ``ID`` (`int`).
+        Default is None.
     **settings
         ``kspace_solver`` (`KSpaceSolver`)
             The k-space solver to be used for both electrostatic and dispersive
@@ -86,13 +87,18 @@ class Universe(AtomContainer):
         self._atom_types = defaultdict(list)
         self._atom_type_interactions = {}
         if structures:
-            self.configuration = Configuration(structures)
+            parsed_structures = parse_structural_unit_IDs(structures)
+            self.configuration = Configuration(parsed_structures)
         else:
             self.configuration = Configuration(universe=self)
         self._solvent_density = 0.
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
-        self.force_fields = force_field
+        if force_field:
+            self._force_fields = ForceFieldFactory.create_force_field(
+                force_field)
+        else:
+            self._force_fields = None
 
         self.kspace_solver = settings.get('kspace_solver')
         self.electrostatic_solver = settings.get('electrostatic_solver')
@@ -117,10 +123,10 @@ class Universe(AtomContainer):
 
         setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
                                     [force_field],
-                                    [len(self.configuration.atom_list)]],
-                                    index=['  Dimensions',
-                                           '  Force field',
-                                           '  Number of atoms'])
+                                    [self.n_atoms]],
+                                   index=['  Dimensions',
+                                          '  Force field',
+                                          '  Number of atoms'])
 
         print('Universe created with:\n{}\n'
               ''.format(setup_frame.to_string(index=True, header=False)))
@@ -129,9 +135,9 @@ class Universe(AtomContainer):
 
         return ('Universe with {0} atoms, {1} bonded interactions, {2} '
                 'nonbonded interactions, and dimensions of {3}'
-                ''.format(len(self.atom_list),
-                          len(self.bonded_interactions),
-                          len(self.nonbonded_interactions),
+                ''.format(self.n_atoms,
+                          self.n_bonded,
+                          self.n_nonbonded,
                           self.dimensions))
 
     def __eq__(self, other):
@@ -161,9 +167,6 @@ class Universe(AtomContainer):
         Raises
         ------
         TypeError
-            If the dimensions of a non-cubic ``Universe`` are specified with a
-            float
-        TypeError
             If a `float`, `list`, or ``array`` are not passed
         ValueError
             If a `list` or ``array`` is not 1d with 3 elements
@@ -179,9 +182,23 @@ class Universe(AtomContainer):
     def dimensions(self, dimensions):
 
         if isinstance(dimensions, float):
+            if dimensions <= 0:
+                msg = ('Only positive values for the Universe dimensions are currently supported.')
+                LOGGER.error('%s: {dimensions: %s} %s',
+                             self.__class__,
+                             dimensions,
+                             msg)
+                raise ValueError(msg)
             self._dimensions = np.array([dimensions] * 3)
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
+                if any(dim <= 0 for dim in np.array(dimensions)):
+                    msg = ('Only positive values for the Universe dimensions are currently supported.')
+                    LOGGER.error('%s: {dimensions: %s} %s',
+                                 self.__class__,
+                                 dimensions,
+                                 msg)
+                    raise ValueError(msg)
                 self._dimensions = np.array(dimensions)
             else:
                 msg = ('3 dimensions must be specified')
@@ -266,6 +283,48 @@ class Universe(AtomContainer):
         return list(self._bonded_interaction_pairs)
 
     @property
+    def n_bonded(self) -> int:
+
+        """
+        Get the number of bonded interactions in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of bonded interactions in the ``Universe``
+        """
+
+        return len(self.bonded_interactions)
+
+    @property
+    def n_nonbonded(self) -> int:
+
+        """
+        Get the number of nonbonded interactions in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of nonbonded interactions in the ``Universe``
+        """
+
+        return len(self.nonbonded_interactions)
+
+    @property
+    def n_interactions(self) -> int:
+
+        """
+        Get the number of interactions in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of interactions in the ``Universe``
+        """
+
+        return self.n_bonded + self.n_nonbonded
+
+    @property
     def parameters(self):
 
         """
@@ -308,7 +367,7 @@ class Universe(AtomContainer):
             The elements in the ``Universe``
         """
 
-        return [atom.element for atom in self.atom_list]
+        return [atom.element for atom in self.atoms]
 
     @property
     def element_dict(self):
@@ -328,10 +387,10 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.element:atom for atom in self.atom_list}
+        return {atom.element:atom for atom in self.atoms}
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
         """
         Get a list of the atoms in the Universe
@@ -342,7 +401,21 @@ class Universe(AtomContainer):
             The atoms in the Universe
         """
 
-        return self.configuration.atom_list
+        return self.configuration.atoms
+
+    @property
+    def n_atoms(self) -> int:
+
+        """
+        Get the number of atoms in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of atoms in the ``Universe``
+        """
+
+        return len(self.atoms)
 
     @property
     def molecule_list(self):
@@ -357,6 +430,20 @@ class Universe(AtomContainer):
         """
 
         return self.configuration.molecule_list
+
+    @property
+    def n_molecules(self) -> int:
+
+        """
+        Get the number of molecules in the ``Universe``
+
+        Returns
+        -------
+        int
+            The number of molecules in the ``Universe``
+        """
+
+        return len(self.molecule_list)
 
     @property
     def structure_list(self):
@@ -382,10 +469,10 @@ class Universe(AtomContainer):
             return parents
 
         structural_units = []
-        for atom in self.atom_list:
+        for atom in self.atoms:
             structural_units += add_all_parents(atom)
 
-        structural_units += list(self.atom_list)
+        structural_units += list(self.atoms)
         return list(set(structural_units))
 
     @property
@@ -405,15 +492,6 @@ class Universe(AtomContainer):
         """
 
         return self._force_fields
-
-    @force_fields.setter
-    def force_fields(self, force_field):
-
-        if force_field:
-            self._force_fields = ForceFieldFactory.create_force_field(
-                force_field)
-        else:
-            self._force_fields = None
 
     @property
     def atom_types(self):
@@ -458,7 +536,7 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe``
         """
 
-        return np.sum([atom.mass for atom in self.atom_list]) / self.volume
+        return np.sum([atom.mass for atom in self.atoms]) / self.volume
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
@@ -568,8 +646,8 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit
-            The StructuralUnit to be added to the ``Universe``
+        structural_unit : StructuralUnit or int
+            The ``StructuralUnit`` (or its ``ID`` as an `int`) to be added to the ``Universe``
         force_field : str, optional
             The force field to be applied to the structural_unit. The available
             ``ForceField`` are:
@@ -579,17 +657,19 @@ class Universe(AtomContainer):
             added
         """
 
+        parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
+
         if center:
-            structural_unit.position = self.dimensions / 2.
-        structural_unit.universe = self
-        self.configuration.add_structural_unit(structural_unit)
-        for atom in structural_unit.atom_list:
+            parsed_unit.position = self.dimensions / 2.
+        parsed_unit.universe = self
+        self.configuration.add_structural_unit(parsed_unit)
+        for atom in parsed_unit.atoms:
             self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
             self.add_nonbonded_interaction(*atom.nonbonded_interactions)
             self._update_atom_types(atom)
 
         if force_field:
-            self.add_force_field(force_field, *structural_unit.interactions)
+            self.add_force_field(force_field, *parsed_unit.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
     def fill(self, structural_unit: StructuralUnit, force_field: str=None,
@@ -613,8 +693,8 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit
-            The ``StructuralUnit`` with which to fill the ``Universe``
+        structural_unit : StructuralUnit or int
+            The ``StructuralUnit`` (or its ``ID`` as an `int`) with which to fill the ``Universe``
         force_field : str
             Applies a ``ForceField`` to the ``Universe``. The available
             ``ForceField`` are:
@@ -658,12 +738,14 @@ class Universe(AtomContainer):
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
+        parsed_unit = parse_structural_unit_IDs([structural_unit])[0]
+
         positions = []
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
-        bounds = structural_unit.bounding_box
-        mn = np.array((0., 0., 0.)) - (bounds.min - structural_unit.position)
-        mx = self.dimensions - (bounds.min - structural_unit.position)
+        bounds = parsed_unit.bounding_box
+        mn = np.array((0., 0., 0.)) - (bounds.min - parsed_unit.position)
+        mx = self.dimensions - (bounds.min - parsed_unit.position)
         for i in range(len(self.dimensions)):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
                                          endpoint=False))
@@ -674,10 +756,10 @@ class Universe(AtomContainer):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structural_unit(structural_unit, force_field)
-                structural_unit.position = position
+                self.add_structural_unit(parsed_unit, force_field)
+                parsed_unit.position = position
             else:
-                new_unit = structural_unit.copy(position)
+                new_unit = parsed_unit.copy(position)
                 self.add_structural_unit(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
@@ -708,14 +790,14 @@ class Universe(AtomContainer):
                 default, no ``Dispersion`` interactions are added.
         """
 
-        self.force_fields = force_field
+        self._force_fields = ForceFieldFactory.create_force_field(force_field)
         add_dispersions = settings.get('add_dispersions', False)
 
         if add_dispersions:
             if isinstance(add_dispersions, list):
                 atoms = add_dispersions
             elif isinstance(add_dispersions, bool):
-                atoms = self.atom_list
+                atoms = self.atoms
             else:
                 msg = ('add_dispersions parameter of add_force_field method'
                        'must be a list of Atoms or a bool.')
@@ -738,7 +820,7 @@ class Universe(AtomContainer):
 
         # FileForceFields also contain mass definitions for atoms, so set these
         try:
-            for atom in self.atom_list:
+            for atom in self.atoms:
                 self.force_fields.set_atom_mass(atom)
         except AttributeError:
             pass
@@ -765,7 +847,16 @@ class Universe(AtomContainer):
         Parameters
         ----------
         *nonbonded_interactions
-            Nonbonded interactions to be added to the ``Universe``
+            Nonbonded interactions to be added to the ``Universe``.
+            Can take any number of non-bonded interactions:
+                ``Dispersion()``: 
+                    either Lennard-Jones or Buckingham dispersion
+                ``Coulombic()``:
+                    normal or modified Coulomb interaction
+            with appropriate parameters for the interaction.
+            See http://mdmcproject.org/tutorials/building-a-universe.html?highlight=interaction#Create-non-bonded-interactions
+            for more details on non-bonded interactions.
+                
         """
 
         # Check if interactions already exists in Universe
@@ -908,7 +999,7 @@ class Universe(AtomContainer):
         except ValueError:
             max_atom_type = 0
         solvent_config.offset_atom_types(max_atom_type)
-        difference = np.float('inf')
+        difference = float('inf')
 
         while abs(difference * 100) >= abs(tolerance):
 
@@ -1236,13 +1327,24 @@ class Simulation:
     ----------
     universe : Universe
         The ``Universe`` on which the simulation is performed.
+    traj_step : int
+        How many steps the simulation should take between dumping each
+        ``Trajectory`` frame. Along with ``time_step`` determines the time
+        separation of calculated variables such as energy.
+    time_step : float, optional
+        Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
         The ``MDEngine`` used for the simulation. Default is ``'mmtk'``.
     **settings
         ``temperature`` (`float`)
-            Simulation temperature in ``K``.
-        ``time_step``  (`float`)
-            Simulation timestep in ``fs``.
+            Simulation temperature in ``K``. Note that velocities of atoms in
+            the MD engine are set based on the ``temperature``. If all atoms in
+            the ``universe`` have 0 velocity, then velocities for the MD engine
+            will be randomly chosen from a uniform distribution and then scaled
+            to give the correct temperature. If one or more velocities are set,
+            then these will be scaled to give the correct temperature. In
+            either case, only the velocities on the ``engine``, not the
+            ``universe``, are affected.
         ``integrator`` (`str`)
             Simulation time integrator.
         ``lj_options`` (`dict`)
@@ -1261,6 +1363,10 @@ class Simulation:
     ----------
     universe : Universe
         The ``Universe`` on which the simulation is performed.
+    traj_step : int
+        How many steps the simulation should take between dumping each
+        ``Trajectory`` frame. Along with ``time_step`` determines the time
+        separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
         library.
@@ -1270,9 +1376,12 @@ class Simulation:
     """
 
     # TODO: Potentially separate out universe and simulation setup
-    def __init__(self, universe: Universe, engine: str="mmtk", **settings):
+    def __init__(self, universe: Universe, traj_step: int,
+                 time_step: float = 1., engine: str = "mmtk", **settings):
 
         self.universe = universe
+        self.traj_step = traj_step
+        self.time_step = time_step
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self._setup()
@@ -1297,9 +1406,11 @@ class Simulation:
         """
 
         self.engine.setup_universe(self.universe, **self.settings)
-        self.engine.setup_simulation(**self.settings)
+        self.engine.setup_simulation(traj_step=self.traj_step,
+                                     time_step=self.time_step,
+                                     **self.settings)
 
-    def minimize(self, n_steps: int, **settings):
+    def minimize(self, n_steps: int, verbose: bool=False, **settings):
 
         """
         Minimizes the total potential energy of the simulated system by
@@ -1310,6 +1421,9 @@ class Simulation:
         ----------
         n_steps : int
             Maximum number of steps to run the minimization
+        verbose: bool, optional
+            Whether to print statements when the minimization has been started and completed
+            (including the number minimizatin steps and time taken). Default is `False`.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1322,9 +1436,15 @@ class Simulation:
                 on engine used.
         """
 
-        print('Starting minimization for {} steps'.format(n_steps))
+
+        if verbose:
+            print('Starting minimization for {} steps'.format(n_steps))
+            time_0 = time()
+
         self.engine.minimize(n_steps, **settings)
-        print('Minimization complete')
+
+        if verbose:
+            print('Minimization complete in {} s'.format(round(time() - time_0, 3)))
 
     def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
 
@@ -1354,11 +1474,12 @@ class Simulation:
 
         if verbose:
             print('Starting {0} for {1} steps'.format(process, n_steps))
+            time_0 = time()
 
         self.engine.run(n_steps, equilibration)
 
         if verbose:
-            print('{0} complete'.format(process.capitalize()))
+            print('{0} complete in {1} s'.format(process.capitalize(), round(time() - time_0, 3)))
 
     @property
     def trajectory(self):

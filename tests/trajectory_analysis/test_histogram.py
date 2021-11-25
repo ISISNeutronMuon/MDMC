@@ -19,7 +19,7 @@ TIMES = np.arange(TRAJ_TIME_START, TRAJ_TIME_END, TRAJ_TIME_STEP)
 
 @pytest.fixture
 def configuration(water_SPCE_universe):
-    return trj.TemporalConfiguration(0., *water_SPCE_universe.atom_list)
+    return trj.TemporalConfiguration(0., *water_SPCE_universe.atoms)
 
 @pytest.fixture
 def trajectory(water_SPCE_universe):
@@ -32,7 +32,7 @@ def trajectory(water_SPCE_universe):
     configurations = []
     for time in TIMES:
         configurations.append(trj.TemporalConfiguration(
-            time, *water_SPCE_universe.configuration.atom_list))
+            time, *water_SPCE_universe.configuration.atoms))
     return trj.Trajectory(*configurations)
 
 def test_configuration(configuration):
@@ -40,7 +40,7 @@ def test_configuration(configuration):
     """
     Test for:
 
-    Existence of atom_list, atom_positions, atom_velocities, structure_list
+    Existence of atoms, atom_positions, atom_velocities, structure_list
     Add configurations
     Filter
     time
@@ -51,16 +51,22 @@ def test_configuration(configuration):
     # original and the copy.
     conf_copy = deepcopy(configuration)
     conf_sum = configuration + conf_copy
+    # Introducing the getter for structure_list (and in doing so, creating
+    # _structure_list) for Configuration objects means that we need to remove
+    # elements from a local variable (conf_sum_list) rather than directly from
+    # conf_sum.structure_list, as removing from the latter will have no effect
+    # the underlying _structure_list of weak references.
+    conf_sum_list = conf_sum.structure_list
     for structure in conf_copy.structure_list + configuration.structure_list:
-        assert structure in conf_sum.structure_list
-        conf_sum.structure_list.remove(structure)
-    assert len(conf_sum.structure_list) == 0
+        assert structure in conf_sum_list
+        conf_sum_list.remove(structure)
+    assert len(conf_sum_list) == 0
 
     # Testing filter_by_element
     H_atoms = configuration.filter_by_element('H')
     for atom in H_atoms:
         assert atom.element == 'H'
-    for atom in set(configuration.atom_list) - set(H_atoms):
+    for atom in set(configuration.atoms) - set(H_atoms):
         assert atom.element != 'H'
 
 def test_trajectory(trajectory):
@@ -68,7 +74,7 @@ def test_trajectory(trajectory):
     """
     Test for:
 
-    Existence of times, atom_list, positions, velocities
+    Existence of times, atoms, positions, velocities
     filter_by_time results in expected time for the new trajectory
     """
 

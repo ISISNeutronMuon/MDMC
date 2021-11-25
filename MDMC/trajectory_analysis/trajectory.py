@@ -8,11 +8,13 @@ import numpy as np
 from MDMC.common.decorators import repr_decorator
 
 
-class AtomCollection:
+class AtomCollection(object):
 
     """
     Base class for shared attributes for ``Configurations`` and ``Trajectories``
     """
+
+    __slots__ = ('_universe', )
 
     @property
     def universe(self):
@@ -27,6 +29,9 @@ class AtomCollection:
             if it has not been set
         """
 
+        # Call the weakref to return the universe as an object. If the use of
+        # weakref causes issues with prematurely garbage collecting the
+        # universe, revert this change to not use weakref.
         try:
             return self._universe()
         except TypeError:
@@ -35,6 +40,9 @@ class AtomCollection:
     @universe.setter
     def universe(self, universe):
 
+        # Create a weakref of the universe for _universe. If the use of weakref
+        # causes issues with prematurely garbage collecting the universe,
+        # revert this change to not use weakref.
         try:
             self._universe = weakref.ref(universe)
         except TypeError:
@@ -80,6 +88,8 @@ class Configuration(AtomCollection):
     data : *structural_units
     """
 
+    __slots__ = ('_data', 'element_set', '_structure_list')
+
     def __init__(self, *structural_units, **settings):
 
         try:
@@ -96,11 +106,12 @@ class Configuration(AtomCollection):
         if id(other) == id(self):
             return True
         if isinstance(other, self.__class__):
-            for k, v in self.__dict__.items():
+            for k in self.__slots__:
                 if k == '_universe':
                     # As Configurations can have Universes as an attribute, and
                     # vice versa, skip comparison to prevent infinite recursion
                     continue
+                v = getattr(self, k)
                 try:
                     iter(v)
                     if any(v != getattr(other, k)):
@@ -112,7 +123,7 @@ class Configuration(AtomCollection):
         return False
 
     @property
-    def atom_list(self):
+    def atoms(self):
 
         """
         Get the `list` of ``Atom`` which belong to the ``Configuration``
@@ -166,7 +177,7 @@ class Configuration(AtomCollection):
             A `list` of `str` for the elements
         """
 
-        return [atom.element for atom in self.atom_list]
+        return [atom.element for atom in self.atoms]
 
     @property
     def molecule_list(self):
@@ -181,6 +192,23 @@ class Configuration(AtomCollection):
         """
 
         return self.filter_structures(lambda x: x.structure_type == 'Molecule')
+
+    @property
+    def structure_list(self):
+
+        """
+        Get the `list` of ``StructuralUnit`` which belong to the ``Configuration``
+
+        Returns
+        -------
+        list
+            A `list` of ``StructuralUnit``
+        """
+
+        # Call the weakref to return the structural_unit as an object. If the
+        # use of weakref causes issues with prematurely garbage collecting the
+        # structural_units, revert this change to not use weakref.
+        return [structural_unit() for structural_unit in self._structure_list]
 
     @property
     def data(self):
@@ -205,7 +233,7 @@ class Configuration(AtomCollection):
     @data.setter
     def data(self, structural_units):
 
-        self.structure_list = []
+        self._structure_list = []
         self._data = []
         for unit in structural_units:
             self.add_structural_unit(unit)
@@ -222,8 +250,11 @@ class Configuration(AtomCollection):
         """
 
         self.validate_structure(structural_unit)
-        self.structure_list.append(structural_unit)
-        self._data.extend([atom for atom in structural_unit.atom_list])
+        # Create a weakref of the structural_unit for _structure_list. If the
+        # use of weakref causes issues with prematurely garbage collecting the
+        # structural_units, revert this change to not use weakref.
+        self._structure_list.append(weakref.ref(structural_unit))
+        self._data.extend([atom for atom in structural_unit.atoms])
 
     def validate_structure(self, structure):
 
@@ -289,7 +320,7 @@ class Configuration(AtomCollection):
             The number of ``Atom`` objects in the ``Configuration``
         """
 
-        return len(self.atom_list)
+        return len(self.atoms)
 
     def __getitem__(self, item):
 
@@ -338,7 +369,7 @@ class Configuration(AtomCollection):
             A `list` of ``Atom`` which are `True` for the given predicate
         """
 
-        return list(filter(predicate, self.atom_list))
+        return list(filter(predicate, self.atoms))
 
     def filter_by_element(self, element):
 
@@ -394,6 +425,8 @@ class TemporalConfiguration(Configuration):
         Zero or more ``StructuralUnits``
     """
 
+    __slots__ = ('time', )
+
     def __init__(self, time, *structural_units, **settings):
 
         super().__init__(*structural_units, **settings)
@@ -433,6 +466,8 @@ class Trajectory(AtomCollection):
         A `list` of ``TemporalConfigurations``
     """
 
+    __slots__ = ('_data', )
+
     def __init__(self, *configurations: TemporalConfiguration):
 
         # Check that each configuration has the same universe
@@ -449,6 +484,51 @@ class Trajectory(AtomCollection):
                                  ''.format(universe, configuration.universe))
 
         self.data = configurations
+
+    def __getstate__(self) -> dict:
+
+        """
+        Gets the state of the Trajectory so that it can be pickled. The ``_structure_list``
+        attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
+        which cannot be pickled. Therefore we must create a custom dictionary that contains the
+        original objects the weak references were pointing to.
+
+        Returns
+        -------
+        dict
+            Dictionary containing all the necessary objects to define a ``Trajectory`` without
+            including any weak references.
+        """
+
+        structures = []
+        for config in self.configurations:
+            structures.append(config.structure_list)
+
+        return {'universe': self.universe,
+                'times': self.times,
+                'structures': structures}
+
+    def __setstate__(self, d: dict):
+
+        """
+        Sets the state of the Trajectory when it is being  unpickled. The ``_structure_list``
+        attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
+        which cannot be pickled. We load the custom dictionary ``d`` that contains objects and then
+        use it to initialise the ``TemporalConfiguration`` and ``Trajectory``. In doing so, their
+        attributes are populated with weak references to the objects in ``d``.
+
+        Parameters
+        ----------
+        d, dict
+            Dictionary containing all the necessary objects to define a ``Trajectory`` without
+            including any weak references.
+        """
+
+        configs = [TemporalConfiguration(d['times'][i],
+                                         *d['structures'][i],
+                                         universe=d['universe']) for i in range(len(d['times']))]
+
+        self.__init__(*configs)
 
     @property
     def data(self):
@@ -470,13 +550,13 @@ class Trajectory(AtomCollection):
 
         self._data = np.array(
             [(i, config.time, config) for
-            i, config in enumerate(configurations, 1)],
-            dtype = [('frame', 'int64'),
-            ('time', 'float64'),
-            ('configuration', 'object')])
+             i, config in enumerate(configurations, 1)],
+            dtype=[('frame', 'int64'),
+                   ('time', 'float64'),
+                   ('configuration', 'object')])
 
         for datum in self._data:
-            if datum['frame']==1:
+            if datum['frame'] == 1:
                 config0 = datum['configuration']
             else:
                 self.validate_config(datum['configuration'], validator=config0)
@@ -501,7 +581,7 @@ class Trajectory(AtomCollection):
         """
 
         try:
-            assert len(config.atom_list) == len(validator.atom_list)
+            assert len(config.atoms) == len(validator.atoms)
         except AssertionError:
             raise AssertionError('Configurations do not contain the same number'
                                  ' of atoms')
@@ -558,7 +638,7 @@ class Trajectory(AtomCollection):
             Atoms from the frame 0 ``Configuration``
         """
 
-        return self.data['configuration'][0].atom_list
+        return self.data['configuration'][0].atoms
 
     @property
     def element_set(self):

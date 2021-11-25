@@ -6,7 +6,8 @@ import copy
 import numpy as np
 import pytest
 
-import MDMC.refinement.FoM as fom
+from  MDMC.refinement.FoM.FoM_factory import FoMFactory
+from  MDMC.refinement.FoM.FoM_abs import ObservablePair
 import MDMC.trajectory_analysis.observables.obs_factory as of
 
 from tests.test_data import data
@@ -62,7 +63,7 @@ def SQw_from_MD(SQw_from_exp):
 @pytest.fixture
 def observable_pair(SQw_from_exp, SQw_from_MD):
 
-    return fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    return ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
 
 @pytest.fixture
 def SQw_dict():
@@ -86,13 +87,13 @@ def SQw_dict():
 
 PAIRS_INFO = [(('experiment',
                 np.arange(-5., 5.5, 0.5),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9)
+                np.random.random_sample(21) * np.random.randint(1, 1e9),
+                np.random.random_sample(21) * np.random.randint(1, 1e9)
                ),
                ('MD',
                 np.arange(-5, 5.5, 0.5),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9),
-                np.random.random_sample(21) * np.random.random_integers(1, 1e9)
+                np.random.random_sample(21) * np.random.randint(1, 1e9),
+                np.random.random_sample(21) * np.random.randint(1, 1e9)
                ),
               ),
              ]
@@ -113,7 +114,7 @@ def pairs():
 
             obs_duo.append(obs)
 
-        obs_pairs.append(fom.ObservablePair(obs_duo[0], obs_duo[1], weight=1.))
+        obs_pairs.append(ObservablePair(obs_duo[0], obs_duo[1], weight=1.))
 
     return obs_pairs
 
@@ -126,7 +127,7 @@ def test_OP_identical_independent_variables(SQw_from_exp, SQw_from_exp_diff,
     """
 
     # Test for no exception when init and when set with it
-    pair = fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    pair = ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
     assert (pair.exp_obs.independent_variables ==
             pair.MD_obs.independent_variables)
     pair.MD_obs = SQw_from_MD
@@ -152,19 +153,19 @@ def test_OP_shape_dependent_variables(SQw_from_exp, SQw_from_exp_diff,
     """
 
     # Test for no exception when init with SQw
-    pair = fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    pair = ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
     assert (np.shape(pair.exp_obs.dependent_variables) ==
             np.shape(pair.MD_obs.dependent_variables))
     pair.MD_obs = SQw_from_MD
     pair.exp_obs = SQw_from_exp
 
-    # Tests foir exception with different shape dependent variables
+    # Tests for exception with different shape dependent variables
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.dependent_variables:
-        SQw_from_exp_diff._dependent_variables[k] = np.transpose(
-            SQw_from_exp_diff.dependent_variables[k])
+        SQw_from_exp_diff._dependent_variables[k] = [np.transpose(
+            SQw_from_exp_diff.dependent_variables[k][0])]
         SQw_from_MD_diff._dependent_variables[k] = \
-            SQw_from_MD_diff.dependent_variables[k].flatten()
+            [SQw_from_MD_diff.dependent_variables[k][0].flatten()]
 
     init_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff)
     set_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff,
@@ -179,7 +180,7 @@ def test_OP_shape_errors(SQw_from_exp, SQw_from_exp_diff, SQw_from_MD,
     """
 
     # Test for no exception when init with SQw
-    pair = fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
+    pair = ObservablePair(SQw_from_exp, SQw_from_MD, weight=1.)
     assert (np.shape(pair.exp_obs.errors) == np.shape(pair.MD_obs.errors))
     pair.MD_obs = SQw_from_MD
     pair.exp_obs = SQw_from_exp
@@ -187,8 +188,8 @@ def test_OP_shape_errors(SQw_from_exp, SQw_from_exp_diff, SQw_from_MD,
     # Tests foir exception with different shape dependent variables
     SQw_from_MD_diff = copy.deepcopy(SQw_from_MD)
     for k in SQw_from_exp_diff.errors:
-        SQw_from_exp_diff._errors[k] = np.transpose(SQw_from_exp_diff.errors[k])
-        SQw_from_MD_diff._errors[k] = SQw_from_MD_diff.errors[k].flatten()
+        SQw_from_exp_diff._errors[k] = np.transpose(SQw_from_exp_diff.errors[k][0])
+        SQw_from_MD_diff._errors[k] = SQw_from_MD_diff.errors[k][0].flatten()
 
     init_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff)
     set_exception_check(AssertionError, SQw_from_exp_diff, SQw_from_MD_diff,
@@ -246,12 +247,12 @@ def test_OP_weight_validation(SQw_from_exp, SQw_from_MD, observable_pair):
                     '+1e1']
 
     for weight in valid_values:
-        fom.ObservablePair(SQw_from_exp, SQw_from_MD, weight=weight)
+        ObservablePair(SQw_from_exp, SQw_from_MD, weight=weight)
         observable_pair.weight = weight
 
-    invalid_values = [np.float('inf'),
-                      np.float('nan'),
-                      np.float(-1.)]
+    invalid_values = [float('inf'),
+                      float('nan'),
+                      float(-1.)]
 
     invalid_types = ['one',
                      '1,234',
@@ -280,13 +281,13 @@ def test_difference_calculation(SQw_dict):
     from_MD = SQw_dict['from_MD']
     from_MD._dependent_variables['dep'] = 2 * SQw_dict['dep']
 
-    pair = fom.ObservablePair(from_exp, from_MD, weight=1.)
+    pair = ObservablePair(from_exp, from_MD, weight=1.)
     assert np.all(pair.calculate_difference() == -SQw_dict['dep'])
 
     pair.exp_obs._dependent_variables['dep'] = 4 * SQw_dict['dep']
     assert np.all(pair.calculate_difference() == 2 * SQw_dict['dep'])
 
-    rescaled_pair = fom.ObservablePair(from_exp, from_MD, weight=1.,
+    rescaled_pair = ObservablePair(from_exp, from_MD, weight=1.,
                                        rescale_factor=0.75)
     assert np.all(rescaled_pair.calculate_difference() == SQw_dict['dep'])
 
@@ -302,7 +303,7 @@ def test_error_calculation(SQw_dict):
     from_MD = SQw_dict['from_MD']
     from_MD._errors['err'] = 2 * ERR
 
-    pair = fom.ObservablePair(from_exp, from_MD, weight=1.)
+    pair = ObservablePair(from_exp, from_MD, weight=1.)
     assert np.all(pair.calculate_errors() == (ERR ** 2 + (2 * ERR) ** 2) ** 0.5)
 
     ERR_NEG = np.arange(0., -19., -0.19)
@@ -313,24 +314,25 @@ def test_error_calculation(SQw_dict):
     assert np.all(pair.calculate_errors() ==
                   (ERR_NEG ** 2 + ERR_NEG ** 2) ** 0.5)
 
-    rescaled_pair = fom.ObservablePair(from_exp, from_MD, weight=1.,
+    rescaled_pair = ObservablePair(from_exp, from_MD, weight=1.,
                                        rescale_factor=0.75)
     assert (np.all(rescaled_pair.calculate_errors()
             == ((ERR_NEG * 0.75) ** 2 + ERR_NEG ** 2) ** 0.5))
 
-
-def test_FoM_calculation(pairs):
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+def test_FoM_calculation(FoM_calculator, pairs):
 
     """
     Tests that the FoM calculation is valid for a pair of observables i.e. it is
     a non-negative float
     """
 
-    calculator = fom.StandardFoMCalculator(pairs)
+    calculator = FoMFactory.create_FoM(FoM_calculator,pairs)
     assert calculator.calculate() >= 0
 
 
-def test_multiple_FoM_calculation(pairs):
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names() )
+def test_multiple_FoM_calculation(FoM_calculator, pairs):
 
     """
     Tests that the FoM calculation is valid for for multiple pairs of
@@ -338,55 +340,184 @@ def test_multiple_FoM_calculation(pairs):
     """
 
     pairs += pairs
-    calculator = fom.StandardFoMCalculator(pairs)
+    calculator = FoMFactory.create_FoM(FoM_calculator,pairs)
     assert calculator.calculate() >= 0
 
 
-def test_FoM_calculation_dataset_size(pairs):
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+def test_FoM_calculation_data_point_norm(FoM_calculator, pairs):
 
     """
     Tests that the FoM calculation normalises for the size of the dataset
     """
 
     # Create datasets with twice the number of entries
-    pairs_large = pairs
+    pairs_large = copy.deepcopy(pairs)
     for pair in pairs_large:
-        dependent_array = pair.exp_obs._dependent_variables['dep']
-        pair.exp_obs._dependent_variables = {'dep': np.append(dependent_array, dependent_array)}
-        pair.MD_obs._dependent_variables = {'dep': np.append(dependent_array, dependent_array)}
+        dep_array_exp = pair.exp_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep': np.append(dep_array_exp, dep_array_exp)}
 
-        error_array = pair.exp_obs._errors['err']
-        pair.exp_obs._errors = {'err': np.append(error_array, error_array)}
-        pair.MD_obs._errors = {'err': np.append(error_array, error_array)}
+        dep_array_MD = pair.MD_obs._dependent_variables['dep']
+        pair.MD_obs._dependent_variables = {'dep': np.append(dep_array_MD, dep_array_MD)}
 
-    calculator = fom.StandardFoMCalculator(pairs)
-    calculator_large = fom.StandardFoMCalculator(pairs_large)
-    assert calculator.calculate() == calculator_large.calculate()
+        error_array_exp = pair.exp_obs._errors['err']
+        pair.exp_obs._errors = {'err': np.append(error_array_exp, error_array_exp)}
+
+        error_array_MD = pair.MD_obs._errors['err']
+        pair.MD_obs._errors = {'err': np.append(error_array_MD, error_array_MD)}
+
+    calculator = FoMFactory.create_FoM(FoM_calculator,pairs, norm='data_points')
+    calculator_large = FoMFactory.create_FoM(FoM_calculator,pairs_large, norm='data_points')
+    assert np.isclose(calculator.calculate(), calculator_large.calculate())
 
 
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+def test_FoM_calculation_dof_norm(FoM_calculator, pairs):
+
+    """
+    Tests that the FoM calculation normalises for the size of the dataset and degrees of freedom
+    """
+
+    dataset_size = pairs[0].exp_obs._dependent_variables['dep'].size
+
+    # Set n_parameters to be half the dataset size, so in the second case we normalise by
+    # `dataset_size - dataset_size / 2 = dataset_size / 2` giving twice the FoM
+    calculator =FoMFactory.create_FoM(FoM_calculator,pairs, norm='dof', n_parameters=0)
+    calculator_dof = FoMFactory.create_FoM(FoM_calculator,pairs, norm='dof', n_parameters=dataset_size / 2)
+
+    assert calculator.calculate() == calculator_dof.calculate() / 2
+
+
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
+def test_FoM_calculation_no_norm(FoM_calculator, pairs):
+
+    """
+    Tests that the FoM calculation is increased for larger datasets when no norm is used
+    """
+
+    # Create datasets with twice the number of entries
+    pairs_large = copy.deepcopy(pairs)
+    for pair in pairs_large:
+        dep_array_exp = pair.exp_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep': np.append(dep_array_exp, dep_array_exp)}
+
+        dep_array_MD = pair.MD_obs._dependent_variables['dep']
+        pair.MD_obs._dependent_variables = {'dep': np.append(dep_array_MD, dep_array_MD)}
+
+        error_array_exp = pair.exp_obs._errors['err']
+        pair.exp_obs._errors = {'err': np.append(error_array_exp, error_array_exp)}
+
+        error_array_MD = pair.MD_obs._errors['err']
+        pair.MD_obs._errors = {'err': np.append(error_array_MD, error_array_MD)}
+
+    calculator = FoMFactory.create_FoM(FoM_calculator,pairs, norm='none')
+    calculator_large = FoMFactory.create_FoM(FoM_calculator,pairs_large, norm='none')
+    assert np.isclose(calculator.calculate(), calculator_large.calculate() / 2)
+
+
+@pytest.mark.parametrize('FoM_calculator',FoMFactory.get_FoM_names())
+def test_FoM_calculation_raises_errors(FoM_calculator, pairs):
+
+    """
+    Tests that the FoM calculators raise a ValueError when given unrecognised or incompatible
+    arguments.
+    """
+
+    # Unrecognised option for the norm
+    with pytest.raises(ValueError):
+        FoMFactory.create_FoM(FoM_calculator,pairs, norm='unrecognised')
+
+    # DoF normalisation without providing number of parameters
+    with pytest.raises(ValueError):
+        FoMFactory.create_FoM(FoM_calculator,pairs, norm='dof')
+
+
+@pytest.mark.parametrize('FoM_calculator', FoMFactory.get_FoM_names())
 @pytest.mark.parametrize('weight', [0.1, 1., 10.])
-def test_weighted_FoM_calculation(pairs, weight):
+def test_weighted_FoM_calculation(FoM_calculator, weight, pairs):
 
     """
     Tests that the FoM calculation takes weighting into account
     """
 
-    # Create datasets with infinite errors (which will give FoM of zero) and a
-    # varying weight
-    pairs_inf_error = pairs
-    for pair in pairs_inf_error:
-        pair.weight = weight
-        error_shape = np.shape(pair.exp_obs._errors['err'])
-        error_array = np.full(error_shape, np.float('inf'))
-        pair.exp_obs._errors = {'err': error_array}
-
-    calculator = fom.StandardFoMCalculator(pairs)
-    calculator_weighted = fom.StandardFoMCalculator(pairs + pairs_inf_error)
-
+    normal_weight = pairs[0].weight
+    calculator = FoMFactory.create_FoM(FoM_calculator,pairs)
     normal_FoM = calculator.calculate()
+
+    # Create datasets with the same dependent variable for MD and exp (which
+    # will give FoM of zero) and a varying weight
+    pairs_weighted = copy.deepcopy(pairs)
+    for pair in pairs_weighted:
+        pair.weight = weight
+        SQw_array = pair.MD_obs._dependent_variables['dep']
+        pair.exp_obs._dependent_variables = {'dep':SQw_array}
+
+    calculator_weighted =FoMFactory.create_FoM(FoM_calculator,pairs + pairs_weighted)
     weighted_FoM = calculator_weighted.calculate()
 
-    assert weighted_FoM == normal_FoM / (pairs[0].weight + weight)
+    assert weighted_FoM == normal_FoM / (normal_weight + weight)
+
+
+@pytest.mark.parametrize('exp_error', [0.1, 1., 10.])
+@pytest.mark.parametrize('MD_error', [0.1, 1., 10.])
+def test_errors_ChiSquaredExpError(exp_error, MD_error, pairs):
+
+    """
+    Test that changing the value of the experimental errors affects the ChiSquaredExpError, but
+    that changing the MD errors does not.
+    """
+
+    # Set errors to be constant for ease of testing
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.ones(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = FoMFactory.create_FoM('exp',pairs)
+    normal_FoM = calculator.calculate()
+
+    # Create datasets with scaled errors
+    pairs_scaled_error = copy.deepcopy(pairs)
+    for pair in pairs_scaled_error:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.full(error_shape, exp_error)}
+        pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
+
+    calculator_weighted = FoMFactory.create_FoM('exp',pairs_scaled_error)
+    scaled_FoM = calculator_weighted.calculate()
+
+    assert np.isclose(scaled_FoM, normal_FoM / exp_error ** 2)
+
+
+@pytest.mark.parametrize('exp_error', [0.1, 1., 10.])
+@pytest.mark.parametrize('MD_error', [0.1, 1., 10.])
+def test_errors_ChiSquaredNoError(exp_error, MD_error, pairs):
+
+    """
+    Test that changing the value of neither the experimental errors nor the MD errors affects the
+    ChiSquaredNoError.
+    """
+
+    # Set errors to be constant for ease of testing
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.ones(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = FoMFactory.create_FoM('none',pairs)
+    normal_FoM = calculator.calculate()
+
+    # Create datasets with scaled errors
+    pairs_scaled_error = copy.deepcopy(pairs)
+    for pair in pairs_scaled_error:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.full(error_shape, exp_error)}
+        pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
+
+    calculator_weighted = FoMFactory.create_FoM('none',pairs_scaled_error)
+    scaled_FoM = calculator_weighted.calculate()
+
+    assert np.isclose(scaled_FoM, normal_FoM)
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
@@ -402,9 +533,9 @@ def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
     weight - a non-negative float
     """
 
-    with pytest.raises(error,
-                       message="Expecting {0} upon init".format(str(error))):
-        fom.ObservablePair(obs_from_exp, obs_from_MD, weight)
+    with pytest.raises(error):
+        ObservablePair(obs_from_exp, obs_from_MD, weight)
+        pytest.fail("Expecting {0} upon init")
 
 
 def set_exception_check(error, obs_from_exp, obs_from_MD, pair):
@@ -420,12 +551,10 @@ def set_exception_check(error, obs_from_exp, obs_from_MD, pair):
     obs_from_MD
     """
 
-    with pytest.raises(error,
-                       message="Expecting {0} upon setting exp_obs".format(
-                           str(error))):
+    with pytest.raises(error):
         pair.exp_obs = obs_from_exp
+        pytest_fail("Expecting {0} upon setting exp_obs")
 
-    with pytest.raises(error,
-                       message="Expecting {0} upon setting MD_obs".format(
-                           str(error))):
+    with pytest.raises(error):
         pair.MD_obs = obs_from_MD
+        pytest_fail("Expecting {0} upon setting MD_obs")

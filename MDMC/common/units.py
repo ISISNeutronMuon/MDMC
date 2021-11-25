@@ -245,7 +245,7 @@ class Unit(str):
         """
 
         factor = 1.
-        factors_dict = create_units(CODATA_VERSION)
+        factors_dict = create_units(CODATA_VERSION)[0]
         components = self.components
         numerator = components['numerator']
         denominator = components['denominator']
@@ -268,6 +268,29 @@ class Unit(str):
                            ' units'.format(str(unit))) from error
 
         return factor
+
+    @property
+    def physical_property(self) -> str:
+
+        """
+        The physical property (e.g. 'LENGTH', 'TIME', ...) that the unit measures.
+
+        Note that compound units may not be supported, for the list of supported units see
+        ``create_units``.
+
+        Returns
+        -------
+        `str` or None
+            The physical property
+        """
+
+        properties_dict = create_units(CODATA_VERSION)[1]
+        try:
+            return properties_dict[str(self)]
+        except KeyError as error:
+            raise KeyError('Unknown unit {} provided, cannot determine the '
+                           'physical property it measures '
+                           ''.format(str(self))) from error
 
     def _calculate_components(self, other, op):
 
@@ -493,8 +516,10 @@ def create_units(codata_version):
         Contains (``Unit``: conversion factor) pairs
     """
 
-    # SYSTEM units are defined to 1.0
+    # SYSTEM units are defined to 1.0, and have the physical properties they
+    # measure defined (e.g. {'Ang': 'LENGTH', ...})
     units = {unit:1.0 for unit in SYSTEM.values()}
+    unit_properties = {unit:property for property, unit in SYSTEM.items()}
 
     # CODATA version
     codata = CODATA[codata_version]
@@ -502,12 +527,16 @@ def create_units(codata_version):
     # Length
     # 1 m = 1e10 Ang
     units['m'] = units['Ang'] * 1e10
+    unit_properties['m'] = 'LENGTH'
     # 1 cm = 1e8 Ang
     units['cm'] = units['Ang'] * 1e8
+    unit_properties['cm'] = 'LENGTH'
     # 1 nm = 1e1 Ang
     units['nm'] = units['Ang'] * 1e1
+    unit_properties['nm'] = 'LENGTH'
     # 1 AA = 1 Ang
     units['AA'] = units['Ang']
+    unit_properties['AA'] = 'LENGTH'
 
     # Area
     # 1 barn = 1e-28 m^2 = 1e-8 Ang^2
@@ -516,47 +545,65 @@ def create_units(codata_version):
     # Time
     # 1 s = 1e15 fs
     units['s'] = units['fs'] * 1e15
+    unit_properties['s'] = 'TIME'
     # 1 ns = 1e6 fs
     units['ns'] = units['fs'] * 1e6
+    unit_properties['ns'] = 'TIME'
     # 1 ps = 1e3 fs
     units['ps'] = units['fs'] * 1e3
+    unit_properties['ps'] = 'TIME'
 
     # Mass
     # 1 kg = (1000 * N_av) amu = (1/u) amu
     units['kg'] = units['amu'] / codata['_amu']
+    unit_properties['kg'] = 'MASS'
     # 1 g = N_av amu = (1/1000u) amu = (1/1000) kg
     units['g'] = units['kg'] / 1000.
+    unit_properties['g'] = 'MASS'
     # 1 g mol^-1 = 1 amu by definition
     units['g / mol'] = units['amu']
+    unit_properties['g / mol'] = 'MASS'
 
     # Energy
     # 1 kcal mol^-1 = 4.184 kJ mol^-1
     units['kcal / mol'] = units['kJ / mol'] * 4.184
+    unit_properties['kcal / mol'] = 'ENERGY'
     # 1 kJ = 1 kJ mol^-1 * Nav
     units['kJ'] = units['kJ / mol'] * codata['_Nav']
+    unit_properties['kJ'] = 'ENERGY'
     # 1 J = (1/1000) kJ
     units['J'] = units['kJ'] / 1000.
+    unit_properties['J'] = 'ENERGY'
     # 1 kcal = 4.184 kJ
     units['kcal'] = units['kJ'] * 4.184
+    unit_properties['kcal'] = 'ENERGY'
+
+    # Energy transfer
+    units['ueV'] = units['meV'] * 1000.
+    unit_properties['ueV'] = 'ENERGY_TRANSFER'
 
     # Force
     # 1 kcal Ang^-1 mol^-1 = 4.184 kJ Ang^-1 mol^-1
     units['kcal / Ang mol'] = units['kJ / Ang mol'] * 4.184
+    unit_properties['kcal / Ang mol'] = 'FORCE'
 
     # Pressure
     # 1 atm = 101325 Pa
     units['atm'] = units['Pa'] * 101325.
+    unit_properties['atm'] = 'PRESSURE'
     # 1 bar = 1e5 Pa
     units['bar'] = units['Pa'] * 1e5
+    unit_properties['bar'] = 'PRESSURE'
 
     # Angle
     # 1 rad = (180 / pi) deg
     units['rad'] = units['deg'] * (180. / np.pi)
+    unit_properties['rad'] = 'ANGLE'
 
     # Amount
     units['mol'] = codata['_Nav']
 
-    return units
+    return units, unit_properties
 
 
 class UnitFloat(float):
@@ -748,7 +795,7 @@ def unit_array(obj, unit, dtype=None):
         return None
 
     if not isinstance(unit, str):
-        raise TypeError('unit must be a string')
+        raise TypeError('unit must be a string, but was {}'.format(unit))
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):
@@ -761,4 +808,4 @@ def unit_array(obj, unit, dtype=None):
 
 # Update the module scope to include the SYSTEM and units keys
 globals().update(SYSTEM)
-globals().update(create_units(CODATA_VERSION))
+globals().update(create_units(CODATA_VERSION)[0])

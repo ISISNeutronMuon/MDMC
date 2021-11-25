@@ -11,9 +11,9 @@ from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential, LennardJones,
                                            Periodic)
 from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
-                                Ewald, PPPM, KSpaceSolver)
-from MDMC.MD.structural_units import (Atom, Bond, BondAngle, Coulombic,
-                                      DihedralAngle, Dispersion)
+                                Ewald, PPPM, KSpaceSolver, Simulation)
+from MDMC.MD.structural_units import (Atom)
+from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
@@ -49,7 +49,7 @@ def atoms():
 
     Ordering of atoms is to enable ease of comparison with atoms added to
     LAMMPS, as this is done ordered by atom_type, rather than necessary the
-    order which atoms appear in universe.atom_list
+    order which atoms appear in universe.atoms
     """
 
     symbols = ['C', 'H', 'N', 'O']
@@ -298,8 +298,10 @@ def populated_lammps_simulation(universe, lammps_universe):
     simulation.
     """
 
-    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, lammps_universe.lmp,
-                                                 traj_step=10, time_step=1.)
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe,
+                                                 traj_step=10,
+                                                 time_step=1.,
+                                                 lmp=lammps_universe.lmp)
     return lammps_simulation
 
 @pytest.fixture
@@ -437,9 +439,9 @@ def test_atom_type_mass(lammps_universe, universe):
     Tests that the mass of each atom type is set correctly in LAMMPS
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].mass
-                == universe.atom_list[i].mass)
+                == universe.atoms[i].mass)
 
 
 def test_atom_ID(lammps_universe, universe):
@@ -451,10 +453,10 @@ def test_atom_ID(lammps_universe, universe):
     # Atom IDs in universe are offset by some integer related to the number of
     # time the atoms fixture is called. If this offset is subtracted, the IDs
     # should agree exactly with the LAMMPS atom IDs
-    offset = universe.atom_list[0].ID - 1
-    for i in range(len(universe.atom_list)):
+    offset = universe.atoms[0].ID - 1
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].id
-                == universe.atom_list[i].ID - offset)
+                == universe.atoms[i].ID - offset)
 
 
 def test_atom_type(lammps_universe, universe):
@@ -463,9 +465,9 @@ def test_atom_type(lammps_universe, universe):
     Tests that atoms created in LAMMPS have the correct atom types
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].type
-                == universe.atom_list[i].atom_type)
+                == universe.atoms[i].atom_type)
 
 
 def test_atom_position(lammps_universe, universe):
@@ -474,9 +476,9 @@ def test_atom_position(lammps_universe, universe):
     Tests that atoms created in LAMMPS have the correct position
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (np.array(lammps_universe.lmp.atoms[i].position)
-                == universe.atom_list[i].position).all()
+                == universe.atoms[i].position).all()
 
 
 def test_unimplemented_interactions(lammps_universe, universe):
@@ -740,7 +742,7 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
                            'HarmonicPotential',
                            (90., 1.),
                            {'interaction_type':'angle'},
-                           ['harmonic', 784.6095482819655, 90.]),
+                           ['harmonic', 0.2390057361376673, 90.]),
                           ('DihedralAngle',
                            'Periodic',
                            (1., 2, 30.),
@@ -755,7 +757,7 @@ def test_parse_unimplemented_styles(interaction, arguments, parser, request):
                            'HarmonicPotential',
                            (110., 15.),
                            {'improper':True, 'interaction_type':'improper'},
-                           ['harmonic', 11769.143224229483, 110.]),
+                           ['harmonic', 3.585086042065009, 110.]),
                           ('DihedralAngle',
                            'Periodic',
                            (5.5, 3, 0.),
@@ -837,9 +839,9 @@ def test_atom_charge_set(lammps_universe, universe):
     Tests that atom charges are set correctly
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].charge
-                == universe.atom_list[i].charge)
+                == universe.atoms[i].charge)
 
 
 def test_atom_charges_update(lammps_universe, universe):
@@ -852,13 +854,13 @@ def test_atom_charges_update(lammps_universe, universe):
     """
 
     # Change charges and update LAMMPSEngine
-    for atom in universe.atom_list:
+    for atom in universe.atoms:
         atom.charge *= 2.
     lammps_universe._update_charges()
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].charge
-                == universe.atom_list[i].charge)
+                == universe.atoms[i].charge)
 
 
 @pytest.mark.parametrize('interaction_fixture, lmp_name',
@@ -1301,15 +1303,56 @@ def test_parse_constraint_no_IDs(arguments, request):
 def test_initialize_velocities(universe, lammps_universe, temperature):
 
     """
-    Test that the velocities have been set correctly
+    Test that the LAMMPS velocities have been set correctly when MDMC velocities are zero
 
     Initialize the velocities by setting the temperature. Set the ensemble to
     NVE and run for 0 steps. Test if the 0 step temperature is as expected.
     """
 
-    lammps_simulation = lmp_eng.LAMMPSSimulation(universe, lammps_universe.lmp,
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe,
                                                  temperature=temperature,
-                                                 traj_step=10)
+                                                 traj_step=10,
+                                                 lmp=lammps_universe.lmp)
+
+    for i, atom in enumerate(universe.atoms):
+        # MDMC atoms should be unchanged, but the LAMMPS atoms should have velocities
+        assert np.all(np.array(atom.velocity) == 0)
+        assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity) != 0)
+
+    lammps_simulation.lmp.run(0)
+    assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
+
+
+@pytest.mark.parametrize('temperature', [150., 300., 450.])
+def test_initialize_nonzero_velocities(universe, temperature):
+
+    """
+    Test that the LAMMPS velocities have been set correctly when MDMC velocities are non-zero
+
+    Initialize the velocities by setting the temperature. Set the ensemble to
+    NVE and run for 0 steps. Test if the 0 step temperature is as expected.
+    """
+
+    # Set the MDMC velocities
+    velocity = []
+    for i, atom in enumerate(universe.atoms):
+        velocity.append(np.array((-(i + 1), 0, i + 1)))
+        atom.velocity = velocity[i]
+
+    # Create new LAMMPS universe/simulation with these velocities
+    lammps_universe = lmp_eng.LAMMPSUniverse(universe)
+    lammps_simulation = lmp_eng.LAMMPSSimulation(universe,
+                                                 temperature=temperature,
+                                                 traj_step=10,
+                                                 lmp=lammps_universe.lmp)
+
+    # LAMMPS should scale all velocities by the same amount to ensure the temperature is accurate.
+    # Get this factor from the first atom, as it had an initial velocity of 1 in the z direction.
+    scale_factor = lammps_simulation.lmp.atoms[0].velocity[2]
+    for i, atom in enumerate(universe.atoms):
+        assert np.all(np.array(atom.velocity) == velocity[i])
+        assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity)
+                      == scale_factor * velocity[i])
 
     lammps_simulation.lmp.run(0)
     assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
@@ -1499,9 +1542,9 @@ def test_save_config(lammps_engine, universe):
     lammps_engine.save_config()
     # Positions should be the same as those of the MDMC universe atoms, which
     # are also ordered by ID
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (np.array(lammps_engine.saved_config[i][:3])
-                == universe.atom_list[i].position).all()
+                == universe.atoms[i].position).all()
 
 
 def test_reset_config(lammps_engine):
@@ -1569,6 +1612,23 @@ def test_minimize(args, lammps_engine):
     assert lammps_engine.lmp.eval('pe') < start_energy
 
 
+@pytest.mark.parametrize('verbose', [False, True])
+def test_minimize_stdout(universe, verbose, capsys):
+
+    """
+    Test that calling minimize with different verbose arguments results in the
+    expected stdout
+    """
+
+    sim = Simulation(universe, 1, engine='lammps')
+    sim.minimize(0, verbose=verbose)
+
+    verbose_msg = ('Starting minimization for 0 steps\n'
+                   'Minimization complete in ')
+    stdout = capsys.readouterr().out
+    assert (verbose_msg in stdout) == verbose
+
+
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
                           ('nose', None, {}),
@@ -1595,6 +1655,40 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # Test that the largest step number in the LAMMPS wrapper runs attribute
     # (which records ThermoData from the previous run) is correct
     assert max(lammps_engine.lmp.runs[0][0].Step) == n_steps
+
+
+@pytest.mark.parametrize('verbose', [False, True])
+def test_run_stdout(universe, verbose, capsys):
+
+    """
+    Test that calling run with different verbose arguments results in the
+    expected stdout
+    """
+
+    sim = Simulation(universe, 1, engine='lammps')
+    sim.run(0, verbose=verbose)
+
+    verbose_msg = ('Starting simulation for 0 steps\n'
+                   'Simulation complete in ')
+    stdout = capsys.readouterr().out
+    assert (verbose_msg in stdout) == verbose
+
+
+@pytest.mark.parametrize('verbose', [False, True])
+def test_equilibration_stdout(universe, verbose, capsys):
+
+    """
+    Test that calling run with ``equilibration=True`` and different verbose
+    arguments results in the expected stdout
+    """
+
+    sim = Simulation(universe, 1, engine='lammps', temperature=1)
+    sim.run(0, equilibration=True, verbose=verbose)
+
+    verbose_msg = ('Starting equilibration for 0 steps\n'
+                   'Equilibration complete in ')
+    stdout = capsys.readouterr().out
+    assert (verbose_msg in stdout) == verbose
 
 
 @pytest.mark.parametrize("value", [1., 5, -100, -13.])
@@ -1706,15 +1800,18 @@ def test_convert_mdmc_compound_units(mdmc_unit, lmp_value):
     assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 
-def test_convert_mdmc_angular_potential_strength():
+@pytest.mark.parametrize("unit_str, conversion_factor",
+                         [('rad', 1.), ('deg', 180 / np.pi)])
+def test_convert_mdmc_angular_potential_strength(unit_str, conversion_factor):
 
     """
     Tests converting into LAMMPS angular potential strength units for harmonic
-    bond angles, which uses radians as the unit of angle, rather than degrees
+    bond angles (which uses radians as the unit of angle rather than degrees)
+    for MDMC units of both radians and degrees
     """
 
-    mdmc_unit = units.SYSTEM['ENERGY'] / units.SYSTEM['ANGLE'] ** 2
-    lmp_value = (180. / np.pi) ** 2 / 4.184
+    mdmc_unit = units.SYSTEM['ENERGY'] / units.Unit(unit_str) ** 2
+    lmp_value = (conversion_factor) ** 2 / 4.184
     assert np.isclose(lmp_eng.convert_unit(1., mdmc_unit), lmp_value)
 
 @pytest.mark.parametrize('lmp_unit, mdmc_value',

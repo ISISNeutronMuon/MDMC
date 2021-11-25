@@ -19,16 +19,24 @@ _OBJECT_PATH = '/MDMC_objects'
 # From Bertil Halle. QENS water data collected on in5.
 # J. Chem. Phys. 134, 144508 (2011); https://doi.org/10.1063/1.3578472
 #
+# MantidSQw
+# TODO cite data once published, the Mantid data file was provided by Jeff Armstrong
+#
 # XML_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
 
 READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
+               'MantidSQw':'/iris70429_graphite002_red',
                'XML_SQw':'/Well_s_q_omega_Ar_data.xml'}
+
+RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
 # Add paths to data values
 for key in READER_DATA:
     READER_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + READER_DATA[key]
 
+for key in RESOLUTION_DATA:
+    RESOLUTION_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + RESOLUTION_DATA[key]
 
 # Calculated observable data
 #

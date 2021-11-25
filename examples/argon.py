@@ -13,7 +13,8 @@ os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
 
 from MDMC.control import Control
-from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
+from MDMC.MD import Atom, LennardJones, Simulation, Universe
+from MDMC.MD.interactions import Dispersion
 
 # Build universe with density 0.0176 atoms per AA^-3
 density = 0.0176
@@ -59,16 +60,13 @@ exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'reader':'xml_SQw',
                  'weight':1.}]
 
-# Fit parameters is the set of all unique fit parameters in the universe
-# which are not fixed
-fit_parameters = set([p for p in universe.parameters if p.fixed is False])
+fit_parameters = universe.parameters
 
 # Specify how the refinement is going to be controlled
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
-                  MD_steps=555,
-                  energy_resolution=8.)
+                  MD_steps=570)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script

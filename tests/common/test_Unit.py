@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.common.units import Unit
 
@@ -69,7 +70,7 @@ def test_divide_Unit(unit):
 @pytest.mark.parametrize("input,expected", [(2, ' ^ 2'),
                                             (2.0, ' ^ 2'),
                                             (np.float64(2.), ' ^ 2'),
-                                            (unit(), TypeError),
+                                            (fixture_ref(unit), TypeError),
                                             (STRING, TypeError),
                                             ('2', ' ^ 2')])
 def test_power_Unit(unit, input, expected):
@@ -163,3 +164,29 @@ def test_conversion_factor(string, conversion_factor):
 
     t_unit = Unit(string)
     assert t_unit.conversion_factor == conversion_factor
+
+
+@pytest.mark.parametrize("string, physical_property",
+                         [('Ang', 'LENGTH'),
+                          ('nm', 'LENGTH'),
+                          ('fs', 'TIME'),
+                          ('s', 'TIME'),
+                          ('amu', 'MASS'),
+                          ('kg', 'MASS'),
+                          ('kJ / mol', 'ENERGY'),
+                          ('kcal', 'ENERGY'),
+                          ('kJ / Ang mol', 'FORCE'),
+                          ('kcal / Ang mol', 'FORCE'),
+                          ('Pa', 'PRESSURE'),
+                          ('atm', 'PRESSURE'),
+                          ('deg', 'ANGLE'),
+                          ('rad', 'ANGLE')])
+def test_physical_property(string, physical_property):
+
+    """
+    Tests that the ``physical_property`` of a Unit is correctly determined upon
+    passing a string
+    """
+
+    t_unit = Unit(string)
+    assert t_unit.physical_property == physical_property

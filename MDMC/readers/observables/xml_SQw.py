@@ -70,8 +70,12 @@ class XML_SQw(ObservableReader):
 
         self.E = self.w * 1e15 * h_bar
 
-        self.SQw = np.reshape(np.array(self.SQw), [n_w, n_Q])
-        self.SQw_err = np.reshape(np.array(self.SQw_err), [n_w, n_Q])
+        # the way the Wells Ar data is structured and read in, we need to reshape the self.SQw list with w points
+        # in the outer index and Q points in the inner index. we then need to transpose the result to make it consistent
+        # with our approach of calculating SQw from MD. The resulting arrays must satisfy:
+        # np.shape(SQw) == (np.size(Q), np.size(E))
+        self.SQw = np.transpose(np.reshape(np.array(self.SQw), [n_w, n_Q]))
+        self.SQw_err = np.transpose(np.reshape(np.array(self.SQw_err), [n_w, n_Q]))
 
     @property
     def independent_variables(self):
@@ -99,7 +103,7 @@ class XML_SQw(ObservableReader):
             The dependent variables, SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw}
+        return {"SQw": [self.SQw]}
 
     @property
     def errors(self):
@@ -113,7 +117,7 @@ class XML_SQw(ObservableReader):
             The error on SQw (in ``arb``)
         """
 
-        return {"SQw":self.SQw_err}
+        return {"SQw": [self.SQw_err]}
 
     @property
     def w(self):

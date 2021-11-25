@@ -10,7 +10,7 @@ import numpy as np
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
 from MDMC.common import units
-from MDMC.MD import structural_units
+from MDMC.MD import structural_units, interactions
 
 
 @repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
@@ -361,7 +361,7 @@ class SolventConfig(ABC):
             # at the start of each list in bonded_interactions. The rest of each
             # list (i.e. the atom names) are left unchanged.
             bonded_interactions = list(map(lambda b_i:
-                                           [getattr(structural_units,
+                                           [getattr(interactions,
                                                     el)(constrained=con)
                                             if not n else el
                                             for n, el in enumerate(b_i)],
@@ -379,9 +379,7 @@ class SolventConfig(ABC):
                 # Different __init__ for Coulombic than other
                 # NonBondedInteractions
                 if nb_i[0] == 'Coulombic':
-                    dummy = structural_units.Coulombic(universe=universe,
-                                                       atom_types=nb_i[1])
+                    dummy = interactions.Coulombic(universe=universe, atom_types=nb_i[1])
                 else:
-                    dummy = getattr(structural_units, nb_i[0])(universe,
-                                                               *nb_i[1:])
+                    dummy = getattr(interactions, nb_i[0])(universe, *nb_i[1:])
         return molecules

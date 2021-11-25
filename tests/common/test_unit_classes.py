@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.common.mathematics import correlation
 from MDMC.common.units import Unit, UnitFloat, UnitNDArray, unit_array
@@ -35,7 +36,7 @@ def uarray_helper():
     return unit_array(LIST, UNIT)
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray()])
+@parametrize("uclass", [fixture_ref(ufloat), fixture_ref(uarray)])
 def test_unit_deepcopy(uclass):
 
     """
@@ -50,7 +51,7 @@ def test_unit_deepcopy(uclass):
     assert cpy_uclass.unit != uclass.unit
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray(), uarray_helper()])
+@parametrize("uclass", [fixture_ref(ufloat), fixture_ref(uarray), fixture_ref(uarray_helper)])
 def test_unit_is_Unit(uclass):
 
     """
@@ -61,7 +62,7 @@ def test_unit_is_Unit(uclass):
     assert isinstance(uclass.unit, Unit)
 
 
-@pytest.mark.parametrize("uclass", [ufloat(), uarray(), uarray_helper()])
+@parametrize("uclass", [fixture_ref(ufloat), fixture_ref(uarray), fixture_ref(uarray_helper)])
 def test_repr_contains_unit(uclass):
 
     """

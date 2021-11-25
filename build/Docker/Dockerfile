@@ -1,14 +1,15 @@
 # Use an official Python runtime as a parent image
-FROM ubuntu:18.04
+FROM python:3.9.6-slim-buster
 
 # Define environment variable
 ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
+ENV LD_LIBRARY_PATH /lammps/build/
+ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
 
-# Install python, pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
+# Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
 # scipy), and cmake for LAMMPS
-RUN apt-get update && apt-get install -y \
-  python3 \
+RUN apt-get update && apt-get install --upgrade -y \
   python3-pip \
   python3-dev \
   libhdf5-dev \
@@ -28,10 +29,25 @@ RUN apt-get update && apt-get install -y \
 # running MDMC (i.e. not in requirements.txt)
 RUN pip3 install --upgrade pip
 RUN pip3 install setuptools --upgrade
-RUN pip3 install pytest==3.10.0 \
-  pytest-cov \
-  ipython>=5.8.0 \
-  jupyter
+COPY .dev_requirements.txt .dev_requirements.txt 
+RUN pip3 install -r .dev_requirements.txt
+RUN rm .dev_requirements.txt
+
+# Install dependencies
+# [if this fails, you may be running Docker from the wrong directory. Go to
+# the main directory and build the image with
+# "docker build -f $(pwd)/build/Docker/Dockerfile ."]
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
+RUN rm requirements.txt
+
+# create a file in root directory called TIMESTAMP, containing
+# the time and date the image was created, as well as its dependency versions.
+# This is useful for troubleshooting docker image issues.
+RUN echo "This docker image was created on: " > TIMESTAMP && \
+echo `date` >> TIMESTAMP && \
+echo "With the following packages: " >> TIMESTAMP && \
+pip3 list >> TIMESTAMP
 
 # Get LAMMPS
 RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz

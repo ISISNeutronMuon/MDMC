@@ -1,7 +1,7 @@
 """Tests units assigned to properties
 
 Tests properties belonging to the following classes: StructuralUnit, Atom,
-Molecule, BoundingBox, Parameter, LAMPSQW, netCDF, xml_SQw, SQw"""
+Molecule, BoundingBox, Parameter, LAMPSQW, MantidSQw, netCDF, xml_SQw, SQw"""
 
 import numpy as np
 import pytest
@@ -9,8 +9,8 @@ import pytest
 
 from MDMC.common import units
 from MDMC.MD.interaction_functions import Parameter
-from MDMC.MD.structural_units import Atom, Molecule, BoundingBox, Bond, \
-                                     Coulombic
+from MDMC.MD.structural_units import Atom, Molecule, BoundingBox
+from MDMC.MD.interactions import Bond, Coulombic
 from MDMC.MD.simulation import Universe
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.observables.sqw import SQw
@@ -94,7 +94,7 @@ def test_BoundingBox_units(molecule):
     max
     """
 
-    box = BoundingBox(molecule.atom_list)
+    box = BoundingBox(molecule.atoms)
 
     try:
         check_property(box.min, LIST, units.LENGTH, units.unit_array)
@@ -138,6 +138,9 @@ Q_UNIT = units.LENGTH ** -1
 E_UNIT = units.ENERGY_TRANSFER
 READERS_TEST_INFO = [('LAMPSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
                                   {'name':'E', 'value':LIST, 'unit':E_UNIT}]
+                     ),
+                     ('MantidSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
+                                    {'name':'E', 'value':LIST, 'unit':E_UNIT}]
                      ),
                      ('netCDF', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
                                  {'name':'E', 'value':LIST, 'unit':E_UNIT}]
@@ -191,16 +194,12 @@ def test_SQw_units():
     Q
     SQw
     SQw_err
-    time
-    e_res
     """
 
     sqw = SQw()
     sqw.independent_variables = {'E':LIST,'Q':LIST}
     sqw._dependent_variables = {'SQw':[LIST, LIST, LIST]}
     sqw._errors = {'SQw':[LIST, LIST, LIST]}
-    sqw.t = LIST
-    sqw.e_res = FLOAT
 
     try:
         check_property(sqw.E, LIST, units.ENERGY_TRANSFER, units.unit_array)
@@ -209,8 +208,6 @@ def test_SQw_units():
                        units.unit_array)
         check_property(sqw.SQw_err, [LIST, LIST, LIST], units.ARBITRARY,
                        units.unit_array)
-        check_property(sqw.t, LIST, units.TIME, units.unit_array)
-        check_property(sqw.e_res, FLOAT, units.ENERGY_TRANSFER, units.UnitFloat)
     except AssertionError:
         raise AssertionError(ERROR_MESSAGE.format('SQw'))
 

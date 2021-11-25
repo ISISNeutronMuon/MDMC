@@ -1,0 +1,5 @@
+# Packages required for the container that are not specifically required for running MDMC
+pytest==6.2.5
+pytest-cov==2.12.1
+pytest-cases==3.6.4
+jupyter==1.0.0
