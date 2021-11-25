@@ -324,11 +324,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``trajectory``. Otherwise run is prodution.
         """
 
-        self.dlpoly.control['time_run'] = (n_steps,'steps')
-        self.dlpoly.run()
-
         if equilibration:
-            self.thermostat = None
+            self.dlpoly.control['time_equilibration'] = (n_steps,'steps')
+
+        self.dlpoly.control['time_run'] = (n_steps,'steps')
+        self.dlpoly.run(executable = '/home/drFaustroll/lavello/build-dlpoly-alin/bin/DLPOLY.Z',numProcs = 2 )
+
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
@@ -427,6 +428,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         """
         Updates the DL_POLY force field parameters from the MDMC universe
+            self.workdir
+
         """
 
         #example methods
@@ -519,6 +522,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
             # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to DL_POLY hybrid angle_style
             self.dlpoly.create_angles(angles)
+        self.dlpoly.load_field('Ar.field')
+        self.dlpoly.control['cutoff'] = (12.0,'Ang')
 
     def _update_charges(self):
 
