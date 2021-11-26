@@ -46,12 +46,13 @@ Ar_dispersion = Dispersion(universe,
 simulation = Simulation(universe,
                         engine="dlpoly",
                         time_step=10.18893,
-                        temperature=120.,
+                        temperature=100.,
                         traj_step=15)
 
 # Energy Minimization and equilibration
-# simulation.minimize(n_steps=5000)
-simulation.run(n_steps=50000, equilibration=True)
+#simulation.minimize(n_steps=100)
+#simulation.run(n_steps=100, equilibration=True)
+simulation.run(n_steps=100, equilibration=False)
 
 ## dataset
 #exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',

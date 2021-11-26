@@ -18,6 +18,7 @@ from ase.io import write
 from dlpoly import DLPoly
 from dlpoly.field import Field
 from dlpoly.new_control import NewControl as Control
+import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
@@ -52,7 +53,7 @@ class DLPOLYAttribute:
         if dlpoly:
             self.dlpoly = dlpoly
         else:
-            self.dlpoly = DLPoly(workdir = 'argon')
+            self.dlpoly = DLPoly()
 
 
         LOGGER.debug('%s: {dlpoly: %s}. dlpoly-py'
@@ -302,11 +303,17 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         #example of how to use the **settings to specify parameters, e.g. tolerances
         etol = settings.get('etol', 1.e-4)
         ftol = settings.get('ftol', 0.)
-        maxeval = settings.get('maxeval', 10000)
-        LOGGER.info('%s minimize: {n_steps: %s, etol: %s, ftol: %s,'
-                    ' maxeval: %s}',
-                    self.__class__, n_steps, etol, ftol, maxeval)
-        self.dlpoly.minimize(etol, ftol, n_steps, maxeval)
+        LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
+                    self.__class__, n_steps, ftol)
+        if (ftol == 0.0):
+            self.dlpoly.control['minimisation_criterion'] = 'energy'
+            self.dlpoly.control['minimisation_tolerance'] = (etol,'e.V/mol')
+            self.dlpoly.control['minimisation_frequency'] = (10,'steps')
+        else:
+            self.dlpoly.control['minimisation_criterion'] = 'force'
+            self.dlpoly.control['minimisation_tolerance'] = (ftol,'e.V/Ang')
+            self.dlpoly.control['minimisation_frequency'] = (10,'steps')
+        self.run(n_steps,equilibration=True)
 
     def run(self, n_steps, equilibration=False):
         """
@@ -326,9 +333,16 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         if equilibration:
             self.dlpoly.control['time_equilibration'] = (n_steps,'steps')
+            self.dlpoly.control['traj_calculate'] ='Off'
+        else:
+            self.dlpoly.control['time_equilibration'] = (0,'steps')
+            self.dlpoly.control['traj_calculate'] ='On'
+            self.dlpoly.control['traj_start'] =(0,'steps')
+            self.dlpoly.control['traj_interval'] =(10,'steps')
+            self.dlpoly.control['traj_key'] ='pos'
 
         self.dlpoly.control['time_run'] = (n_steps,'steps')
-        self.dlpoly.run(executable = '/home/drFaustroll/lavello/build-dlpoly-alin/bin/DLPOLY.Z',numProcs = 2 )
+        self.dlpoly.run(executable = '/home/drFaustroll/lavello/build-dlpoly-alin/bin/DLPOLY.Z',numProcs = 1, outputFile='test.log')
 
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
@@ -523,7 +537,9 @@ class DLPOLYUniverse(DLPOLYAttribute):
             # to be (and in fact cannot) be passed to DL_POLY hybrid angle_style
             self.dlpoly.create_angles(angles)
         self.dlpoly.load_field('Ar.field')
-        self.dlpoly.control['cutoff'] = (12.0,'Ang')
+        mx = np.max([i.cutoff for i in self.universe.nonbonded_interactions])
+        print(mx)
+        self.dlpoly.control['cutoff'] = (np.max([i.cutoff for i in self.universe.nonbonded_interactions]),'Ang')
 
     def _update_charges(self):
 
