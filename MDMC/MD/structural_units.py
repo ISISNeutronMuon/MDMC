@@ -388,6 +388,29 @@ class StructuralUnit(ABC):
 
         return BoundingBox(self.atoms)
 
+    @abstractmethod
+    def is_equivalent(self, structural_unit) -> bool:
+
+        """
+        Checks the passed ``StructuralUnit`` against `self` for equivalence in
+        terms of the force field application, namely that the following are the
+        same:
+          - Element or chemical formula
+          - Mass
+          - Charge
+          - Bonded interactions
+          - Non bonded interactions
+
+        
+        Returns
+        -------
+        bool
+            Whether the two are equivalent
+        """
+
+        raise NotImplementedError
+
+
 
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
                 'atoms')
@@ -1154,6 +1177,25 @@ class Atom(StructuralUnit):
                 inter.add_atoms(*new_atoms)
                 memo[id(inter)] = inter
 
+    def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
+
+        if (isinstance(structural_unit, type(self))
+            and structural_unit.element == self.element
+            and structural_unit.mass == self.mass
+            and structural_unit.charge == self.charge
+            and (len(self.bonded_interactions)
+                 == len(structural_unit.bonded_interactions))
+            and (len(self.nonbonded_interactions)
+                 == len(structural_unit.nonbonded_interactions))):
+            for i, interaction in enumerate(self.bonded_interactions):
+                if not interaction.is_equivalent(structural_unit.bonded_interactions[i]):
+                    return False
+            for i, interaction in enumerate(self.nonbonded_interactions):
+                if not interaction.is_equivalent(structural_unit.nonbonded_interactions[i]):
+                    return False
+            return True
+        return False
+
 
 class _Group(CompositeStructuralUnit):
 
@@ -1308,6 +1350,45 @@ class Molecule(CompositeStructuralUnit):
             mass += atom.mass
 
         return mass
+
+    @property
+    @unit_decorator_getter(unit=units.CHARGE)
+    def charge(self) -> float:
+
+        """
+        Get the total charge of the ``Molecule`` in ``e``.
+
+        Returns
+        -------
+        float
+            The total charge in ``e``
+        """
+
+        charge = 0.
+        for atom in self.atoms:
+            if atom.charge is not None:
+                charge += atom.charge
+
+        return charge
+
+    def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
+
+        if (isinstance(structural_unit, type(self))
+            and structural_unit.formula == self.formula
+            and structural_unit.mass == self.mass
+            and structural_unit.charge == self.charge
+            and (len(self.bonded_interactions)
+                 == len(structural_unit.bonded_interactions))
+            and (len(self.nonbonded_interactions)
+                 == len(structural_unit.nonbonded_interactions))):
+            for i, interaction in enumerate(self.bonded_interactions):
+                if not interaction.is_equivalent(structural_unit.bonded_interactions[i]):
+                    return False
+            for i, interaction in enumerate(self.nonbonded_interactions):
+                if not interaction.is_equivalent(structural_unit.nonbonded_interactions[i]):
+                    return False
+            return True
+        return False
 
 
 @repr_decorator('min', 'max', 'volume')

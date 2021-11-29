@@ -6,6 +6,7 @@ from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
 from time import time
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -474,6 +475,62 @@ class Universe(AtomContainer):
 
         structural_units += list(self.atoms)
         return list(set(structural_units))
+
+    @property
+    def top_level_structure_list(self) -> List[StructuralUnit]:
+
+        """
+        Get a `list` of the top level ``StructuralUnit`` objects that exist in the
+        ``Universe``. This does not include any ``StructuralUnit`` that are a subunit
+        of another structure belonging to the ``Universe``.
+
+
+        Returns
+        -------
+        list
+            The top level ``StructuralUnit`` objects in the ``Universe``
+        """
+
+        structural_units = []
+        for atom in self.atoms:
+            structural_units.append(atom.top_level_structure)
+
+        # Remove duplicate entries from multiple atoms belonging to the same molecule,
+        # and sort by ID for consistency
+        top_level_structures = list(set(structural_units))
+        top_level_structures.sort(key=lambda x: x.ID)
+        return top_level_structures
+
+    @property
+    def equivalent_top_level_structures_dict(self) -> Dict[StructuralUnit, int]:
+
+        """
+        Get a `dict` of equivalent top level ``StructuralUnit`` objects that
+        exist in the ``Universe`` as keys, and the number of ``StructuralUnit``
+        that are equivalent to the key as a value. This does not include any
+        ``StructuralUnit`` that are a subunit of another structure belonging
+        to the ``Universe``.
+
+
+        Returns
+        -------
+        dict
+            The top level ``StructuralUnit`` objects in the ``Universe`` as
+            keys, and the number of each as a value
+        """
+
+        equivalent_dict = {}
+        for structural_unit in self.top_level_structure_list:
+            match = False
+            for key in equivalent_dict:
+                if structural_unit.is_equivalent(key):
+                    equivalent_dict[key] += 1
+                    match = True
+                    break
+            if not match:
+                equivalent_dict[structural_unit] = 1
+
+        return equivalent_dict
 
     @property
     @mod_docstring(_FF_DOCSTRING)

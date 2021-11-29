@@ -2,6 +2,7 @@
 
  ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
 
+from typing import Set, Union
 import weakref
 from abc import ABC, abstractmethod
 from itertools import permutations
@@ -356,6 +357,31 @@ class NonBondedInteraction(Interaction):
 
         self._cutoff = value
 
+    def is_equivalent(self, other) -> bool:
+
+        """
+        Checks for equivalence between two ``NonBondedInteraction``s, specifically
+        if they apply to the same ``atom_types``, have the same ``cuttoff`` and
+        the same ``function`` describing the interaction.
+
+        Parameters
+        ----------
+        other : NonBondedInteraction
+            The object to compare against.
+
+        Returns
+        -------
+        bool
+        """
+
+        if id(other) == id(self):
+            return True
+        return (isinstance(other, type(self))
+                and (sorted(self.atom_types, key=id)
+                     == sorted(other.atom_types, key=id))
+                and self.cutoff == other.cutoff
+                and self.function == other.function)
+
 
 class Dispersion(NonBondedInteraction):
 
@@ -469,6 +495,27 @@ class Dispersion(NonBondedInteraction):
         return [self.universe.atom_types[atom_type][0].element
                 for tpl in self.atom_types
                 for atom_type in tpl]
+    
+    def is_equivalent(self, other) -> bool:
+
+        """
+        Checks for equivalence between two ``Dispersion``s, specifically
+        if they apply to the same ``atom_types``, have the same ``cuttoff``,
+        the same ``function`` describing the interaction and
+        ``vdw_tail_correction`` setting.
+
+        Parameters
+        ----------
+        other : Dispersion
+            The object to compare against.
+
+        Returns
+        -------
+        bool
+        """
+
+        return (super().is_equivalent()
+                and self.vdw_tail_correction == other.vdw_tail_correction)
 
 
 class Coulombic(NonBondedInteraction):
@@ -777,6 +824,31 @@ class BondedInteraction(Interaction):
             self.__class__.__name__,
             len(self.atoms)))
 
+    def is_equivalent(self, other) -> bool:
+
+        """
+        Checks for equivalence between two ``BondedInteraction``s, specifically
+        if they apply to the same ``atom_types`` and the same ``function``
+        describing the interaction.
+
+        Parameters
+        ----------
+        other : BondedInteraction
+            The object to compare against.
+
+        Returns
+        -------
+        bool
+        """
+
+        if id(other) == id(self):
+            return True
+        elif (isinstance(other, self.__class__)
+              and self.atom_types == other.atom_types
+              and self.function == other.function):
+            return True
+        return False
+
     @property
     def atoms(self):
 
@@ -829,6 +901,32 @@ class BondedInteraction(Interaction):
                 self._add_to_universe(self.universe, tpl)
             except AttributeError:
                 pass
+
+    @property
+    def atom_types(self) -> Set[Union[int, None]]:
+
+        """
+        Get the `set` of all ``atom_type``s that this ``BondedInteraction``
+        corresponds to, including `None` if appropriate.
+
+        Returns
+        -------
+        Set[Union[int, NoneType]]
+            A set of all (unique) ``atom_type``s, sorted, with `None` as the
+            last entry if any of the ``atom_type``s were `None`.
+        """
+        append_None = False
+        all_atom_types = []
+        for atom_tuple in self.atoms:
+            for atom in atom_tuple:
+                if atom.atom_type is None:
+                    append_None = True
+                else:
+                    all_atom_types.append(atom.atom_type)
+        all_atom_types.sort()
+        if append_None:
+            all_atom_types.append(None)
+        return set(all_atom_types)
 
     @property
     def universe(self):
@@ -1034,6 +1132,25 @@ class Bond(Constrainable, BondedInteraction):
         settings['n_atoms'] = (2, )
         super().__init__(*atom_tuples, **settings)
 
+    def is_equivalent(self, other) -> bool:
+
+        """
+        Checks for equivalence between two ``BondedInteraction``s, specifically
+        if they apply to the same ``atom_types``, have the same ``function``
+        describing the interaction, and have the same ``constrained`` setting.
+
+        Parameters
+        ----------
+        other : BondedInteraction
+            The object to compare against.
+
+        Returns
+        -------
+        bool
+        """
+
+        return super().is_equivalent(other) and self.constrained == other.constrained
+
 
 @repr_decorator('function', 'constrained')
 class BondAngle(Constrainable, BondedInteraction):
@@ -1063,6 +1180,25 @@ class BondAngle(Constrainable, BondedInteraction):
 
         settings['n_atoms'] = (3, )
         super().__init__(*atom_tuples, **settings)
+
+    def is_equivalent(self, other) -> bool:
+
+        """
+        Checks for equivalence between two ``BondedInteraction``s, specifically
+        if they apply to the same ``atom_types``, have the same ``function``
+        describing the interaction, and have the same ``constrained`` setting.
+
+        Parameters
+        ----------
+        other : BondedInteraction
+            The object to compare against.
+
+        Returns
+        -------
+        bool
+        """
+
+        return super().is_equivalent(other) and self.constrained == other.constrained
 
 
 @repr_decorator('function', 'improper')
