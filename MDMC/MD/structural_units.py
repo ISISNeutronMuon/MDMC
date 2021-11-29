@@ -1203,6 +1203,7 @@ class Molecule(CompositeStructuralUnit):
     def __init__(self, position=None, velocity=(0, 0, 0), name=None,
                  **settings):
 
+        self._structure_list = settings['atoms']
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
