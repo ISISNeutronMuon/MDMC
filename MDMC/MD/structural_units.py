@@ -66,7 +66,6 @@ class StructuralUnit(ABC):
     def __init__(self, position, velocity, name):
 
         self.ID = self._generate_ID()
-        self._ID_dict[self.ID] = self
         self.position = position
         self.velocity = velocity
         self.name = name
