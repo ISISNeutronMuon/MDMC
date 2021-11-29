@@ -475,6 +475,27 @@ class Dispersion(NonBondedInteraction):
         return [self.universe.atom_types[atom_type][0].element
                 for tpl in self.atom_types
                 for atom_type in tpl]
+    
+    def is_equivalent(self, other) -> bool:
+
+        """
+        Checks for equivalence between two ``Dispersion``s, specifically
+        if they apply to the same ``atom_types``, have the same ``cuttoff``,
+        the same ``function`` describing the interaction and
+        ``vdw_tail_correction`` setting.
+
+        Parameters
+        ----------
+        other : Dispersion
+            The object to compare against.
+
+        Returns
+        -------
+        bool
+        """
+
+        return (super().is_equivalent()
+                and self.vdw_tail_correction == other.vdw_tail_correction)
 
     def is_equivalent(self, other) -> bool:
 
