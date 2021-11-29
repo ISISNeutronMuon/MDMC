@@ -13,7 +13,7 @@ from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import (Atom, BoundingBox, Molecule,
-                                      get_reduced_chemical_formula, parse_structural_unit_IDs)
+                                      get_reduced_chemical_formula)
 from MDMC.MD.interactions import Coulombic
 
 ATOM_TYPES = [1, 2, 3]
@@ -494,30 +494,3 @@ def test_get_reduced_chemical_formula_error(symbols, factor, formula, system):
     """
 
     assert get_reduced_chemical_formula(symbols, factor, system) == formula
-
-
-def test_parse_structural_unit_IDs_success(atoms):
-
-    """
-    Tests that we can convert a valid ``ID`` of a ``StructuralUnit`` into the object itself whilst
-    leaving existing ``StructuralUnit`` objects unchanged.
-    """
-
-    altered_list = atoms.copy()
-    altered_list[-1] = atoms[-1].ID
-
-    assert parse_structural_unit_IDs(altered_list) == atoms
-
-
-def test_parse_structural_unit_IDs_failure(atoms):
-
-    """
-    Tests that we raise a `KeyError` when given an ``ID`` that does not correspond to an existing
-    ``StructuralUnit``.
-    """
-
-    altered_list = atoms.copy()
-    altered_list[-1] = atoms[-1].ID + 1
-
-    with pytest.raises(KeyError):
-        parse_structural_unit_IDs(altered_list)
