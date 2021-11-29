@@ -399,7 +399,7 @@ class StructuralUnit(ABC):
           - Bonded interactions
           - Non bonded interactions
 
-        
+
         Returns
         -------
         bool
