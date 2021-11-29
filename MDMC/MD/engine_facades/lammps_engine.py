@@ -26,7 +26,7 @@ only be done on rank 0, and broadcast to other ranks if necessary. This is also
 true of calls to PyLammps.eval, and may also occur in other cases (anything that
 ends up using the OutputCapture class).
 """
-
+import warnings
 from collections import defaultdict, namedtuple
 from copy import copy
 from itertools import chain, combinations, count, product, tee
@@ -2109,29 +2109,47 @@ class Ensemble(PyLammpsAttribute):
                 press_parameters = ['iso', press, press, p_damp]
 
             # Apply thermostat
-            if self.thermostat == 'nose':
+            # we create local funcs for each thermostat, and use a dict to get the correct one.
+            # think of this like a proto-factory pattern, or like a switch-case block in C++.
+
+            def nose():
                 if self.barostat == 'nose':
                     self.lmp.fix('npt', 'all', 'npt', 'temp',
                                  *thermo_parameters + press_parameters)
                 else:
                     self.lmp.fix('nvt', 'all', 'nvt', 'temp', *thermo_parameters)
-            elif self.thermostat == 'berendsen':
+
+            def berendsen():
                 # berendsen does not do time integration so also requires nve
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
                              *thermo_parameters)
-            elif self.thermostat == 'langevin':
+
+            def langevin():
                 # langevin does not do time integration so also requires nve
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('langevin', 'all', 'langevin',
                              *thermo_parameters + [randint(0, 9999)])
-            elif self.thermostat == 'rescale':
+
+            def rescale():
                 # temp/rescale does not do time integration so also requires nve
                 t_window = convert_unit(self.t_window)
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('rescale', 'all', 'temp/rescale',
                              self.rescale_step, temp, temp, t_window,
                              self.t_fraction)
+
+            thermostat = {'nose': nose,
+                          'berendsen': berendsen,
+                          'langevin': langevin,
+                          'rescale': rescale}
+
+            try:
+                thermostat[self.thermostat]()
+            except KeyError:
+                warnings.warn("Thermostat type not recognised. No thermostat will be applied."
+                              " Your thermostat type may be misspelt or not currently implemented.")
+
             # Apply barostat
             if self.barostat == 'berendsen':
                 self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
