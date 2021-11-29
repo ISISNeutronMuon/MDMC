@@ -68,6 +68,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.1 libarchive-dev libgpgme11-dev libseccomp-dev
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
       - name: Setup Singularity
         run: source .github/scripts/singularity_setup.sh 
         
@@ -78,31 +81,31 @@ jobs:
            singularity exec mdmc_latest.sif pip3 install .
            singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/ 
        
-  parallel_system_tests:
-    name: Docker MPI tests
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v2
+  # parallel_system_tests:
+    # name: Docker MPI tests
+    # runs-on: ubuntu-20.04
+    # steps:
+    # - name: Setup Python
+      # uses: actions/setup-python@v2
+      # with:
+        # python-version: '3.8'
+        # architecture: x64
+    # - name: Checkout repo
+      # uses: actions/checkout@v2
 
-    - name: Docker pull
-      run: docker pull mdmc/mdmc:latest
+    # - name: Docker pull
+      # run: docker pull mdmc/mdmc:latest
 
-    - name: Run tests
-      # To avoid issues with both processes accessing the coverage report
-      # simultaneously, first create the coverage file without mpi using a fake
-      # PyTest mark so we don't actually run any tests. Then use the
-      # --cov-append option for the actual tests. Using --allow-run-as-root as
-      # we are running inside a docker container, so root only affects the
-      # container. Usually running with this flag is *strongly* discouraged.
-      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
+    # - name: Run tests
+      # # To avoid issues with both processes accessing the coverage report
+      # # simultaneously, first create the coverage file without mpi using a fake
+      # # PyTest mark so we don't actually run any tests. Then use the
+      # # --cov-append option for the actual tests. Using --allow-run-as-root as
+      # # we are running inside a docker container, so root only affects the
+      # # container. Usually running with this flag is *strongly* discouraged.
+      # run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
 
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+    # - name: Upload code coverage report
+      # uses: codecov/codecov-action@v1
+      # with:
+        # token: ${{ secrets.CODECOV_TOKEN }}
