@@ -49,7 +49,7 @@ class FileResolution(Resolution):
         # integral over all elements in the energy domain (with a factor for normalisation).
         # Setting this to one for all Q enforces that the static structure factor (the integral of
         # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = self.resolution_function(Q, t)
+        window = self.resolution_function(t, Q)
         norm = self.resolution_function([0], Q)
         return window / norm
 
