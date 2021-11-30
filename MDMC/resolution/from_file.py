@@ -35,9 +35,9 @@ class FileResolution(Resolution):
         Parameters
         ----------
         Q : np.array
-            energy for FQt
+            the points in energy at which FQt is calculated
         t : np.array
-             time for FQt
+             the points in time at which FQt is calculated
 
         Returns
         -------
