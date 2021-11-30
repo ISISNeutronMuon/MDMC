@@ -202,8 +202,8 @@ def test_FQt_incoh(FQt_incoh_ref, FQt_incoh_obs):
     section, so this factor is included.
     """
 
-    assert np.all(np.shape(FQt_incoh_obs.FQt) == np.shape(FQt_incoh_ref))
-    assert_allclose(FQt_incoh_obs.FQt / B_FACTOR, FQt_incoh_ref, atol=ATOL)
+    assert np.all(np.shape(FQt_incoh_obs.FQt[0]) == np.shape(FQt_incoh_ref))
+    assert_allclose(FQt_incoh_obs.FQt[0] / B_FACTOR, FQt_incoh_ref, atol=ATOL)
 
 def test_FQt_coh(FQt_coh_ref, FQt_coh_obs):
 
@@ -212,8 +212,8 @@ def test_FQt_coh(FQt_coh_ref, FQt_coh_obs):
     against nMOLDYN
     """
 
-    assert np.all(np.shape(FQt_coh_obs.FQt) == np.shape(FQt_coh_ref))
-    assert_allclose(FQt_coh_obs.FQt, FQt_coh_ref, atol=ATOL)
+    assert np.all(np.shape(FQt_coh_obs.FQt[0]) == np.shape(FQt_coh_ref))
+    assert_allclose(FQt_coh_obs.FQt[0], FQt_coh_ref, atol=ATOL)
 
 def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, FQt_obs):
 
@@ -223,7 +223,7 @@ def test_FQt_total(FQt_incoh_ref, FQt_coh_ref, FQt_obs):
     calculated by MOLDYN
     """
 
-    assert np.all(np.shape(FQt_obs.FQt) == np.shape(FQt_incoh_ref))
+    assert np.all(np.shape(FQt_obs.FQt[0]) == np.shape(FQt_incoh_ref))
     # Coherent reference is already normalised - do the same for incoherent
     FQt_ref = FQt_incoh_ref * B_FACTOR + FQt_coh_ref
-    assert_allclose(FQt_obs.FQt, FQt_ref, atol=ATOL)
+    assert_allclose(FQt_obs.FQt[0], FQt_ref, atol=ATOL)

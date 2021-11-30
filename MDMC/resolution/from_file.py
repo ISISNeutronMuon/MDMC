@@ -1,9 +1,12 @@
+from scipy import signal
+
 from MDMC.resolution.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 import numpy as np
 from os import getcwd
 from os.path import join
+
 
 class FileResolution(Resolution):
     """
@@ -16,36 +19,39 @@ class FileResolution(Resolution):
         self.file_name = file_name
         self.dt = dt
 
-    def apply(self, array, x, frequency_space=False):
-        # has an extra line to get array shape,
-        # then runs original apply function
-        self.N_Q, self.N_x = np.shape(array)
-        super(FileResolution, self).apply(array, x)
+    def apply(self, array, x, Q, frequency_space=False):
+        # file resolution windows are calculated differently, so we override the regular apply
+        N_Q, N_x = np.shape(array)
+        window = self._calculate_resolution_window(x, Q, frequency_space)
+        # the window is broadcast to be the same shape as the array
+        broadcast_window = np.broadcast_to(window, (N_Q, N_x))
+
+        if frequency_space:
+            return signal.convolve(array, broadcast_window, mode="same")
+        else:
+            return broadcast_window * array
 
     # ignored=None is here as apply() must have a number of parameters matching that of the abstract method;
     # however, file resolution requires fewer parameters than numerical resolution.
-    def _calculate_resolution_window(self, ignored, frequency_space=False) -> np.ndarray:
+    def _calculate_resolution_window(self, x, Q, frequency_space=False) -> np.ndarray:
         """
         Calculate the resolution window in time from a self.resolution_function in the time
         domain. Normalise this window so that the sum over energy for each Q
         value is the same (this enforces that the static structure factor is constant for all Q).
         """
 
-        self.resolution_function = _read_resolution_from_file(self.file_type,
-                                                              self.file_reader,
-                                                              self.file_name,
-                                                              self.dt)['SQw']
+        resolution_function = _read_resolution_from_file(self.file_type,
+                                                         self.file_reader,
+                                                         self.file_name,
+                                                         self.dt)['SQw']
 
-        if frequency_space:
-            return self.resolution_function
-        else:
-            # By definition, the value of the resolution function in the time domain at t=0 is the
-            # integral over all elements in the energy domain (with a factor for normalisation).
-            # Setting this to one for all Q enforces that the static structure factor (the integral of
-            # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-            window = self.resolution_function(self.N_Q, self.N_x)
-            norm = self.resolution_function([0], self.N_Q)
-            return window / norm
+        # By definition, the value of the resolution function in the time domain at t=0 is the
+        # integral over all elements in the energy domain (with a factor for normalisation).
+        # Setting this to one for all Q enforces that the static structure factor (the integral of
+        # S(Q,w) over all w) is the same for all Q values in the resolution sample.
+        window = resolution_function(x, Q)
+        norm = resolution_function([0], Q)
+        return window / norm
 
     def __repr__(self):
         """

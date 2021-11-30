@@ -11,7 +11,7 @@ class LorentzianResolution(Resolution):
     def __init__(self, e_res):
         self.e_res = e_res / 1000
 
-    def _calculate_resolution_window(self, x, frequency_space=False):
+    def _calculate_resolution_window(self, x, Q, frequency_space=False):
         if frequency_space:
             return self._window_in_w(x)
         else:

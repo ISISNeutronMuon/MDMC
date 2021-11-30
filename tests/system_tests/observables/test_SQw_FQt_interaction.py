@@ -22,10 +22,12 @@ def SQw_obs():
     return SQw
 
 
-def test_fourier_transforms(SQw_obs):
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_fourier_transforms(SQw_obs, use_FFT):
     """
     Tests whether FQt.calculate_SQw and SQw.calculate_FQt are inverse to each other.
     """
+    SQw_obs.use_FFT = use_FFT
 
     FQt = SQw_obs.calculate_FQt()
     SQw_transformed = FQt.calculate_SQw()
@@ -56,14 +58,18 @@ def test_apply_resolution(SQw_obs, res_type):
         resolution = res_type(data.RESOLUTION_DATA['LAMPSQw'],
                               'SQw', 'LAMPSQw', 1055.8303421611213)
     else:
-        resolution = res_type(84.0)
+        resolution = res_type(100.0)
+
+    SQw_convolved = SQw_obs
 
     FQt = SQw_obs.calculate_FQt()
     FQt.apply_resolution(resolution)
     SQw_multiplied = FQt.calculate_SQw()
 
-    SQw_obs.apply_resolution(resolution)
+    SQw_convolved.apply_resolution(resolution)
+    # we convolve the array back and forth to sort out any potential format quirks;
+    # see test_fourier_transform to see that this doesn't affect the actual array
+    FQt_convolved = SQw_convolved.calculate_FQt()
+    SQw_convolved = FQt_convolved.calculate_SQw()
 
-    assert_allclose(SQw_multiplied.SQw, SQw_obs.SQw, atol=1e-07)
-
-
+    assert_allclose(SQw_multiplied.SQw, SQw_convolved.SQw, atol=1e-07)

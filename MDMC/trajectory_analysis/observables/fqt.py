@@ -579,7 +579,7 @@ class AbstractFQt(SQwMixins, Observable):
         FQt_real_list = []
 
         for FQt_array in self.FQt:
-            FQt_real_list.append(resolution.apply(FQt_array, self.t, frequency_space=False))
+            FQt_real_list.append(resolution.apply(FQt_array, self.t, self.Q, frequency_space=False))
 
         self.FQt = FQt_real_list
         return self.FQt

@@ -9,7 +9,7 @@ class Resolution(ABC):
 	An abstract base class for resolution functions.
 	"""
 
-    def apply(self, array, x, frequency_space=False):
+    def apply(self, array, x, Q, frequency_space=False):
         """
 		Applies resolution to an array.
 
@@ -17,6 +17,7 @@ class Resolution(ABC):
 		----------
 		array: the array to which resolution is applied.
 		x: the variable to which resolution is applied.
+		Q: the Q-values for the array (only used by file resolution)
 		frequency_space: a bool which states whether
 			the resolution is convolved (if True) or
 			multiplied (if False) with the array.
@@ -37,7 +38,7 @@ class Resolution(ABC):
             return broadcast_window * array
 
     @abstractmethod
-    def _calculate_resolution_window(self, x, frequency_space=False):
+    def _calculate_resolution_window(self, x, Q, frequency_space=False):
         """
 		Calculate the resolution window to be applied.
 		"""

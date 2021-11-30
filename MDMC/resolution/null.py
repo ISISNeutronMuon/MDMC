@@ -14,11 +14,11 @@ class NullResolution(Resolution):
         pass
 
     # overrides default apply
-    def apply(self, array, x, frequency_space=False):
+    def apply(self, array, x, Q, frequency_space=False):
         # does not apply resolution
         return array
 
-    def _calculate_resolution_window(self, x, frequency_space=False):
+    def _calculate_resolution_window(self, x, Q, frequency_space=False):
         pass
 
     def __repr__(self):

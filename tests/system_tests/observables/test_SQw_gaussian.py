@@ -279,10 +279,13 @@ def test_SQw_total(SQw_incoh_ref, SQw_coh_ref, SQw_obs, SQw_obs_no_FFT):
     assert_allclose(SQw_obs.SQw[0], SQw_obs_no_FFT.SQw[0], atol=ATOL)
 
 
-def test_calculate_FQt(SQw_obs_nores, FQt_incoh_ref, FQt_coh_ref):
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_calculate_FQt(SQw_obs_nores, FQt_incoh_ref, FQt_coh_ref, use_FFT):
     """
     Tests that SQw.calculate_FQt returns the correct FQt object
     """
+    SQw_obs_nores.use_FFT = use_FFT
+
     FQt_ref = FQt_incoh_ref * B_FACTOR + FQt_coh_ref
     FQt_obs = SQw_obs_nores.calculate_FQt()
 
