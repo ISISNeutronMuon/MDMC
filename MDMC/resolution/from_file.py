@@ -5,6 +5,7 @@ import numpy as np
 from os import getcwd
 from os.path import join
 
+
 class FileResolution(Resolution):
     """
     A `Resolution` subclass for applying resolution from file.
@@ -19,13 +20,13 @@ class FileResolution(Resolution):
 
     # ignored=None is here as apply() must have a number of parameters matching that of the abstract method;
     # however, file resolution requires fewer parameters than numerical resolution.
-    def apply(self, fqt, ignored=None):
+    def apply(self, fqt, t, Q):
         N_Q, N_T = np.shape(fqt)
-        window = self._calculate_resolution_window(N_Q, N_T)
+        window = self._calculate_resolution_window(Q, t)
 
         return np.broadcast_to(window, (N_Q, N_T)) * fqt
 
-    def _calculate_resolution_window(self, N_Q, N_T) -> np.ndarray:
+    def _calculate_resolution_window(self, Q, t) -> np.ndarray:
         """
         Calculate the resolution window in time from a self.resolution_function in the time
         domain. Normalise this window so that the sum over energy for each Q
@@ -33,10 +34,10 @@ class FileResolution(Resolution):
 
         Parameters
         ----------
-        N_Q : int
-            The number of points in energy for FQt
-        N_T : int
-            The number of points in time for FQt
+        Q : int
+            energy for FQt
+        t : int
+             time for FQt
 
         Returns
         -------
@@ -48,8 +49,8 @@ class FileResolution(Resolution):
         # integral over all elements in the energy domain (with a factor for normalisation).
         # Setting this to one for all Q enforces that the static structure factor (the integral of
         # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = self.resolution_function(N_Q, N_T)
-        norm = self.resolution_function([0], N_Q)
+        window = self.resolution_function(Q, t)
+        norm = self.resolution_function([0], Q)
         return window / norm
 
     def __repr__(self):

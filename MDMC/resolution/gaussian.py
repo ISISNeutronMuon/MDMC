@@ -13,7 +13,7 @@ class GaussianResolution(Resolution):
         # converts energy resolution from user-friendly ueV to system unit meV
         self.e_res = e_res / 1000
 
-    def apply(self, fqt, t):
+    def apply(self, fqt, t, Q):
         N_Q, N_T = np.shape(fqt)
         window = self.window_in_t(t[:N_T])
 
