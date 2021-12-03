@@ -28,6 +28,7 @@ class VerboseManager:
             cls._instance.subprocesses = 0
             cls._instance.prev_message_len = 0
             cls._instance.timings_list = []
+            cls._instance.subprocess_start_times = []
         return cls._instance
 
     def start(self, maximum: int, verbose: int = 0):
@@ -46,13 +47,15 @@ class VerboseManager:
             Verbose level 2 gives final time and also a progress bar.
             Verbose level 3 gives final time, a progress bar, and time per step.
         """
-        if verbose > 0:
+        # activate features based on verbosity level
+        if verbose >= 1:
             self.times = True
-        if verbose > 1:
+        if verbose >= 2:
             self.bar = True
-        if verbose > 2:
+        if verbose >= 3:
             self.step_times = True
 
+        # if not in progress, initialise process
         if not self._in_progress:
             self._in_progress = True
             self.progress = 0
@@ -68,6 +71,7 @@ class VerboseManager:
         else:
             # else, a subprocess called this method; account for it
             self.subprocesses += 1
+            self.subprocess_start_times.append(time())
 
     def step(self, message: str):
         """
@@ -80,6 +84,7 @@ class VerboseManager:
         """
         self.progress += 1
 
+        # if verbosity is 3, give step time with message and record it for final result
         if self.step_times:
             if self.progress == 1:
                 message_time = time() - self.start_time
@@ -87,17 +92,20 @@ class VerboseManager:
                 message_time = time() - self.step_time
             # append previous step to timings list
             self.timings_list.append((self.prev_message, np.round_(message_time, 2)))
-            self.prev_message = message
+            # vertical bar denotes subprocesses in final list
+            self.prev_message = "|" * self.subprocesses + message
             message += f"; previous step took {np.round_(message_time, 2)} seconds."
             self.step_time = time()
 
+        # if verbosity is >= 2, print progress bar
         if self.bar:
             self._print_progress(self.progress, self.maximum, message)
             if self.progress == self.maximum:
                 self._print_progress(self.progress, self.maximum, "Complete")
 
             # keep track of previous string; if we do not add blankspace to the end of the message,
-            # it will show older messages under new ones
+            # it will show older messages under new ones.
+            # this isn't len(self.prev_message) as self.prev_message doesn't include prev step timings
             self.prev_message_len = len(message)
 
     def finish(self, process_name: str):
@@ -108,6 +116,7 @@ class VerboseManager:
         process_name: str
             a message which gives the name of the process being managed.
         """
+        # if all processes are finished, finalise verbose printing
         if self._in_progress and self.subprocesses == 0:
             # give warning to developer if self.maximum is set incorrectly
             if self.progress != self.maximum:
@@ -115,6 +124,7 @@ class VerboseManager:
                               f" it is equal to {self.maximum}, but the process took {self.progress} steps.",
                               stacklevel=2)
 
+            # print final results
             if self.times:
                 timings = time()
                 # the newline spaces are nice if the bar is there, but too spacious without it.
@@ -147,10 +157,13 @@ class VerboseManager:
 
         elif self._in_progress:
             # else, a subprocess called this method; account for it
+            # but also return whole subprocess timing
             self.subprocesses -= 1
+            timings = time() - self.subprocess_start_times[-1]
+            self.subprocess_start_times.pop()
+            return timings
         else:
             warnings.warn("VerboseManager.finish() was called, but no management process was running.")
-
 
     def _print_progress(self, i, maximum, message):
         """

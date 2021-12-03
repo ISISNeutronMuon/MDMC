@@ -372,10 +372,7 @@ class AbstractSQw(SQwMixins, Observable):
             MD_input = [MD_input]
 
         # calculate verbosity steps and initialise verbose manager
-        fqt_calculate_sqw_steps = 2
-        if self.resolution is None or type(self.resolution) == NullResolution:
-            fqt_calculate_sqw_steps = 1
-        verbose_steps = (len(MD_input) * (4 + 3 + fqt_calculate_sqw_steps)) + 1
+        verbose_steps = len(MD_input) * 4
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(verbose_steps, verbose=verbose)
 
@@ -393,7 +390,6 @@ class AbstractSQw(SQwMixins, Observable):
                                      ' attribute or dimensions must be passed'
                                      ' when calling calculate_from_MD')
 
-        verbose_manager.step("Validating independent variables")
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
@@ -412,7 +408,6 @@ class AbstractSQw(SQwMixins, Observable):
         for trajectory in MD_input:
             self.trajectory = trajectory
 
-            verbose_manager.step("Validating trajectory")
             # Assert that the times and dimensions are consistent with original trajectory
             try:
                 assert_allclose(self.trajectory.times - self.trajectory.times[0], t)

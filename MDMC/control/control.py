@@ -1,5 +1,5 @@
 """A module for performing the refinement"""
-
+import statistics
 from copy import deepcopy
 from time import time
 import warnings
@@ -13,9 +13,11 @@ from typing import Dict
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
+from MDMC.common.verbose_manager import VerboseManager
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.resolution import NullResolution
 from MDMC.resolution.resolution_factory import ResolutionFactory
 
 from MDMC.refinement import FoM
@@ -119,10 +121,11 @@ class Control:
         The minimum number of refinement steps before the refinement process can stop if all parameters and the
         Figure of Merit have converged. Default value is 2.
     verbose: int, optional
-        If 2, timings are printed for every step of the refinement. If 1,
-        timings are printed at the end of the refinement. If 0, no timings
-        are printed. In all cases information about the FoM and parameter
-        values will still be printed. Default is 0.
+        The level of verbosity:
+        Verbose level 0 gives no information.
+        Verbose level 1 gives final time for the whole method.
+        Verbose level 2 gives final time and also a progress bar.
+        Verbose level 3 gives final time, a progress bar, and time per step.
 
     Example
     -------
@@ -320,26 +323,29 @@ class Control:
             control.refine(100)
         """
 
+        # calculate verbose steps
+        # each self.step has self.calculate_verbose_steps() verbosity steps, self.equilibrate has 1 verbosity step,
+        # and self.refine itself has 1 extra verbosity step so one step has
+        # 2 + self.calculate_verbose_steps() verbosity steps, multiply by (n_steps + 1) as we start at 0
+        verbose_steps = (n_steps + 1) * (2 + self.calculate_verbose_steps())
+        # initialise step timings list for average step timings at end
+        self.step_timings = []
+
         count = -1
 
         self._print_header()  # creates stdout header
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(verbose_steps, verbose=self.verbose)
         while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
                                                                    min_steps=self.min_refine_steps):
-            if self.verbose > 0:
-                time_0 = time()
             if count >= 0 and self.equilibration_steps > 0:
                 self.equilibrate()
-                if self. verbose == 1:
-                    self.timings['equilibrate'].append(time() - time_0)
-                if self.verbose == 2:
-                    print('         equilibrate: {} s'.format(round(time() - time_0, 3)))
 
+            verbose_manager.step(f"Initialising step {count + 1}")
             self.step()  # advance the refinement by one step
             count += 1
-            if self.verbose == 1:
-                self.timings['TOTAL STEP'].append(time() - time_0)
-            elif self.verbose == 2:
-                print('          TOTAL STEP: {} s'.format(round(time() - time_0, 3)))
+            if self.verbose >= 2:  # if progress bar is there, ensure data is on new line
+                print("")
             self._print_data()
 
         # Try/except accounts for n_steps <= -1
@@ -371,22 +377,11 @@ class Control:
             print('\nAutomatic Scale Factors\n{}'
                   ''.format(scaling_df.to_string(index=True, header=False)))
 
-        # Average timings
-        if self.verbose == 1:
-            timing_keys = ['  ' + key for key in self.timings]
-            timing_values = [round(np.mean(values), 3)
-                             for values in self.timings.values()]
-            # Our first 6 timed operations are well defined in __init__, with the first 3 taking
-            # place before calculate_from_MD and the second 3 taking place after. We add
-            # additional entries to self.timings during calculate_from_MD, but as this depends on
-            # the observable we do not know how many, or what keys, beforehand. To preserve the
-            # chronological order of the timed operations, move keys/values 3:6 to the end of the
-            # lists.
-            timing_keys = timing_keys[:3] + timing_keys[6:] + timing_keys[3:6]
-            timing_values = timing_values[:3] + timing_values[6:] + timing_values[3:6]
-            timing_df = pd.DataFrame(timing_values, index=timing_keys)
-            print('\nAverage Timings (s)\n{}'
-                  ''.format(timing_df.to_string(index=True, header=False)))
+        if self.verbose >= 1:
+            average_timing = statistics.mean(self.step_timings)
+            print(f"Average time per step was {np.round_(average_timing, 2)} seconds.")
+
+        timings = verbose_manager.finish("Refinement")
 
     def equilibrate(self):
 
@@ -404,12 +399,13 @@ class Control:
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
         """
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(self.calculate_verbose_steps(), verbose=self.verbose)
 
         # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
 
-        if self.verbose > 0:
-            time_0 = time()
+        verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
@@ -424,12 +420,11 @@ class Control:
             else:
                 # Set MD engine to reset to old config
                 self.simulation.engine.reset_config()
-        if self.verbose == 1:
-            self.timings['minimizer'].append(time() - time_0)
-        elif self.verbose == 2:
-            print('           minimizer: {} s'.format(round(time() - time_0, 3)))
 
         self.minimizer.write_history('results.csv')
+
+        step_timings = verbose_manager.finish("Refinement step")
+        self.step_timings.append(step_timings)
 
     def _print_data(self):
 
@@ -457,31 +452,17 @@ class Control:
 
         """
         Run the MD for an iteration/step, calculate observable, compare with
-        observed observed and return the FoM
+        observed and return the FoM
 
         Returns
         -------
         `float`
             Non-negative `float` FoM
         """
-
-        if self.verbose > 0:
-            time_0 = time()
         self._run_MD()
-        if self.verbose == 1:
-            self.timings['_run_MD'].append(time() - time_0)
-        elif self.verbose == 2:
-            print('             _run_MD: {} s'.format(round(time() - time_0, 3)))
-
         self._calculate_observables(self.simulation, self.observable_pairs)
 
-        if self.verbose > 0:
-            time_1 = time()
         FoM_value = self.FoM_calculator.calculate()
-        if self.verbose == 1:
-            self.timings['FoM_calculator'].append(time() - time_1)
-        elif self.verbose == 2:
-            print('      FoM_calculator: {} s'.format(round(round(time() - time_1, 3), 3)))
 
         return FoM_value
 
@@ -565,15 +546,14 @@ class Control:
             ``ObservablesPairs`` for which the MD ``Observable`` will be
             calculated
         """
+        verbose_manager = VerboseManager.instance()
+        # this is a subprocess, so we don't bother giving maximum steps since it won't be used
+        verbose_manager.start(0, verbose=self.verbose)
 
-        if self.verbose > 0:
-            time_0 = time()
+        verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
-        if self.verbose == 1:
-            self.timings['convert_trajectory'].append(time() - time_0)
-        elif self.verbose == 2:
-            print('  convert_trajectory: {} s'.format(round(time() - time_0, 3)))
 
+        verbose_manager.step("Calculating MD")
         for pair in observable_pairs:
             maximum_frames = pair.MD_obs.maximum_frames()
             if maximum_frames:
@@ -593,11 +573,7 @@ class Control:
                                                             verbose=self.verbose,
                                                             **self.settings)
 
-            if self.verbose == 1 and obs_timings is not None:
-                for key, value in obs_timings.items():
-                    if key not in self.timings:
-                        self.timings[key] = []
-                    self.timings[key] += value
+        verbose_manager.finish("Calculating observables")
 
     def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair):
 
@@ -843,3 +819,25 @@ class Control:
             obs.validate_energy(dt)
         except AttributeError:
             pass
+
+    def calculate_verbose_steps(self):
+        """
+        Calculates the verbose steps needed in a step of refinement.
+
+        The steps are, by part:
+        1 in self.step itself
+            +0 in _generate_FoM
+                +1 in _run_MD
+                +2 in calculate_observables
+                    +then the number in calculate_from_MD varies based on Observable
+        """
+
+        steps_dict = {'SQw': 4,
+                      'FQt': 2,
+                      'PDF': 0}
+
+        verbose_steps = 4
+        for dset in self.exp_datasets:
+            verbose_steps += steps_dict[dset['type']]
+
+        return verbose_steps

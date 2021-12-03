@@ -20,6 +20,7 @@ from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structural_units import StructuralUnit, parse_structural_unit_IDs
 from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
+from MDMC.common.verbose_manager import VerboseManager
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -1423,7 +1424,7 @@ class Simulation:
             Maximum number of steps to run the minimization
         verbose: bool, optional
             Whether to print statements when the minimization has been started and completed
-            (including the number minimizatin steps and time taken). Default is `False`.
+            (including the number minimization steps and time taken). Default is `False`.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1436,15 +1437,14 @@ class Simulation:
                 on engine used.
         """
 
+        verbose_manager = VerboseManager.instance()
+        # int(verbose) converts bool to int; VerboseManager verbosity level 1 if True, 0 if False
+        verbose_manager.start(1, verbose=int(verbose))
 
-        if verbose:
-            print('Starting minimization for {} steps'.format(n_steps))
-            time_0 = time()
-
+        verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, **settings)
 
-        if verbose:
-            print('Minimization complete in {} s'.format(round(time() - time_0, 3)))
+        verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
 
@@ -1472,14 +1472,14 @@ class Simulation:
         else:
             process = 'simulation'
 
-        if verbose:
-            print('Starting {0} for {1} steps'.format(process, n_steps))
-            time_0 = time()
+        verbose_manager = VerboseManager.instance()
+        # int(verbose) converts bool to int; VerboseManager verbosity level 1 if True, 0 if False
+        verbose_manager.start(1, verbose=int(verbose))
 
+        verbose_manager.step(f"Running {process} for {n_steps} steps")
         self.engine.run(n_steps, equilibration)
 
-        if verbose:
-            print('{0} complete in {1} s'.format(process.capitalize(), round(time() - time_0, 3)))
+        verbose_manager.finish("process.capitalize()")
 
     @property
     def trajectory(self):
