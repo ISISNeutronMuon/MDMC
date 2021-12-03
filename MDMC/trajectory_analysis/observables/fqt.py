@@ -520,7 +520,7 @@ class AbstractFQt(SQwMixins, Observable):
         The FQt object with resolution applied.
         """
 
-        self.FQt = resolution.apply(self.FQt, self.t)
+        self.FQt = resolution.apply(self.FQt, self.t, self.Q)
 
         return self.FQt
 
