@@ -11,7 +11,8 @@ from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.resolution import Resolution
+from MDMC.common.verbose_manager import VerboseManager
+from MDMC.resolution import Resolution, NullResolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
@@ -133,7 +134,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory,  **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings):
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -145,9 +146,11 @@ class AbstractFQt(SQwMixins, Observable):
         MD_input : Trajectory
             a single ``Trajectory`` object.
         verbose: int, optional
-            If 2, timings are printed for each calculation of FQt and SQw. If 1,
-            timings are collected so they can be printed at the end of the refinement.
-            If 0, no timings are collected. Default is 0.
+            The level of verbosity:
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -159,6 +162,9 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         self._origin = "MD"
+
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(3, verbose=verbose)
 
         # if Q_values are specified, set Q to them
         try:
@@ -183,6 +189,7 @@ class AbstractFQt(SQwMixins, Observable):
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
                                  * UNIT_VECTOR)
 
+        verbose_manager.step("Calculating Q-vectors")
         # calculate Q vectors from Q
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if not hasattr(self, 'Q_vectors'):
@@ -229,6 +236,7 @@ class AbstractFQt(SQwMixins, Observable):
         Q_vectors = np.split(Q_vectors, comm.size)
         # Scatter the Q vector arrays to all processors
         Q_vectors = comm.scatter(Q_vectors, root=0)
+        verbose_manager.step("Calculating FQt for each Q-vector")
         # Calculate FQt for each Q vector for all processors
         FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                         in Q_vectors])
@@ -236,6 +244,7 @@ class AbstractFQt(SQwMixins, Observable):
         # Gather the calculated FQt's together on every processor. This ensures
         # that all other calculations can be performed on every processor, so
         # no other methods in SQw need to be made MPI compliant.
+        verbose_manager.step("Gathering FQt")
         FQt = np.array(comm.allgather(FQt))
         # Reshape FQt as gather doesn't join the arrays but just collects them
         # as arrays within an array. This is equivalent to flattening the first
@@ -246,6 +255,8 @@ class AbstractFQt(SQwMixins, Observable):
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
         self.FQt = FQt[:shape[0] - axis_0]
+
+        verbose_manager.finish("Calculating FQt from MD")
 
     def _calculate_Q_vectors(self, Q_values):
 
@@ -427,7 +438,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         pass
 
-    def calculate_SQw(self, energy, resolution: Resolution = None):
+    def calculate_SQw(self, energy, resolution: Resolution = None, verbose: int = 0):
 
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
@@ -449,12 +460,25 @@ class AbstractFQt(SQwMixins, Observable):
             the list of energy (E) points at which S(Q, w) will be calculated.
         resolution: Resolution (default None)
             The instrument resolution object which will be applied to FQt.
+        verbose: int, optional
+            The level of verbosity:
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
 
         Returns
         -------
         numpy.ndarray
             The S(Q, w) calculated from F(Q, t)
         """
+        # verbose printing has a different number of steps depending on if resolution is applied
+        verbose_steps = 2
+        if resolution is None or type(resolution) == NullResolution:
+            verbose_steps = 1
+
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(verbose_steps, verbose=verbose)
 
         nE = len(energy)
         if self.use_FFT:
@@ -465,6 +489,7 @@ class AbstractFQt(SQwMixins, Observable):
             self.FQt = self.FQt[:, :nE + 1]
 
         if resolution is not None:
+            verbose_manager.step("Applying resolution to FQt")
             self.apply_resolution(resolution)
 
         # Reflect F(t) [except for both end points] for each Q value and append
@@ -472,9 +497,11 @@ class AbstractFQt(SQwMixins, Observable):
         FQt_mirror = np.append(self.FQt, self.FQt[:, -2:0:-1], axis=1)
 
         if self.use_FFT:
+            verbose_manager.step("Performing Fast Fourier Transform on FQt")
             # FFT and reduce the energy dimension to positive energies
             SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
         else:
+            verbose_manager.step("Performing slow Fourier Transform on FQt")
             SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
             for i, energy in enumerate(energy):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
@@ -493,6 +520,7 @@ class AbstractFQt(SQwMixins, Observable):
         # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
+        verbose_manager.finish("Calculating SQw from FQt")
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
     def apply_resolution(self, resolution: Resolution):

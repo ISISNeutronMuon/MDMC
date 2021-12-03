@@ -11,6 +11,8 @@ from typing import Dict, List, Union
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.verbose_manager import VerboseManager
+from MDMC.resolution import NullResolution
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -327,9 +329,11 @@ class AbstractSQw(SQwMixins, Observable):
         MD_input : Trajectory or list of Trajectory
             Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
         verbose: int, optional
-            If 2, timings are printed for each calculation of FQt and SQw. If 1,
-            timings are collected so they can be printed at the end of the refinement.
-            If 0, no timings are collected. Default is 0.
+            The level of verbosity:
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -350,7 +354,6 @@ class AbstractSQw(SQwMixins, Observable):
         self._origin = 'MD'
         SQw_list = []
         errors_list = []
-        obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
 
         # adds resolution attribute if it doesn't already exist
         if not hasattr(self, 'resolution'):
@@ -368,6 +371,14 @@ class AbstractSQw(SQwMixins, Observable):
         if isinstance(MD_input, Trajectory):
             MD_input = [MD_input]
 
+        # calculate verbosity steps and initialise verbose manager
+        fqt_calculate_sqw_steps = 2
+        if self.resolution is None or type(self.resolution) == NullResolution:
+            fqt_calculate_sqw_steps = 1
+        verbose_steps = (len(MD_input) * (4 + 3 + fqt_calculate_sqw_steps)) + 1
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(verbose_steps, verbose=verbose)
+
         # Extract information that should be constant from the first Trajectory
         t = MD_input[0].times - MD_input[0].times[0]
         dt = t[1] - t[0]
@@ -382,6 +393,7 @@ class AbstractSQw(SQwMixins, Observable):
                                      ' attribute or dimensions must be passed'
                                      ' when calling calculate_from_MD')
 
+        verbose_manager.step("Validating independent variables")
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
@@ -400,6 +412,7 @@ class AbstractSQw(SQwMixins, Observable):
         for trajectory in MD_input:
             self.trajectory = trajectory
 
+            verbose_manager.step("Validating trajectory")
             # Assert that the times and dimensions are consistent with original trajectory
             try:
                 assert_allclose(self.trajectory.times - self.trajectory.times[0], t)
@@ -417,8 +430,7 @@ class AbstractSQw(SQwMixins, Observable):
                        'consistent with the first `Trajectory` passed')
                 raise AssertionError(msg) from AssertionError
 
-            if verbose > 0:
-                time_0 = time()
+            verbose_manager.step("Calculating FQt")
             fqt_type = self._get_fqt_type()
             # instantiate an FQt object for FQt calculations
             FQt = ObservableFactory.create_observable(fqt_type)
@@ -426,18 +438,9 @@ class AbstractSQw(SQwMixins, Observable):
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
 
-            if verbose == 2:
-                print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
-            if verbose > 0:
-                time_1 = time()
+            verbose_manager.step("Calculating SQw from FQt")
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
             errors_list.append(np.zeros(np.shape(SQw_list[-1])))
-            if verbose == 2:
-                print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
-
-            if verbose > 0:
-                obs_timings['calculate_FQt'].append(time_1 - time_0)
-                obs_timings['_calculate_SQw'].append(time() - time_1)
 
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
@@ -445,6 +448,7 @@ class AbstractSQw(SQwMixins, Observable):
         self._dependent_variables = {'SQw': SQw_list}
         self._errors = {'SQw': errors_list}
 
+        obs_timings = verbose_manager.finish("Calculating SQw from MD")
         return obs_timings
 
     def _get_fqt_type(self):

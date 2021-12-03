@@ -27,6 +27,7 @@ class VerboseManager:
             cls._instance._in_progress = False
             cls._instance.subprocesses = 0
             cls._instance.prev_message_len = 0
+            cls._instance.timings_list = []
         return cls._instance
 
     def start(self, maximum: int, verbose: int = 0):
@@ -62,13 +63,16 @@ class VerboseManager:
             if self.bar:
                 sys.stdout.write('\n')
                 self._print_progress(0, self.maximum, "Initialising")
+            if self.step_times:
+                self.prev_message = "Initialising"
         else:
-            #else, a subprocess called this method; account for it
+            # else, a subprocess called this method; account for it
             self.subprocesses += 1
 
     def step(self, message: str):
         """
         Increases progress by one 'step' towards maximum, updating progress bar if necessary.
+
         Parameters
         ----------
         message: str
@@ -81,6 +85,9 @@ class VerboseManager:
                 message_time = time() - self.start_time
             else:
                 message_time = time() - self.step_time
+            # append previous step to timings list
+            self.timings_list.append((self.prev_message, np.round_(message_time, 2)))
+            self.prev_message = message
             message += f"; previous step took {np.round_(message_time, 2)} seconds."
             self.step_time = time()
 
@@ -109,24 +116,41 @@ class VerboseManager:
                               stacklevel=2)
 
             if self.times:
-                finish_time = time()
+                timings = time()
                 # the newline spaces are nice if the bar is there, but too spacious without it.
                 if self.bar:
                     sys.stdout.write('\n')
-                print(f"{process_name} complete in {np.round_(finish_time - self.start_time, 2)} seconds.")
+                print(f"{process_name} complete in {np.round_(timings - self.start_time, 2)} seconds.")
+                if self.step_times:
+                    # append final step to timings list and then print timings per step
+                    self.timings_list.append((self.prev_message, np.round_(time() - self.step_time, 2)))
+                    print("Timings per step:")
+                    for step_timing in self.timings_list:
+                        print(f"{step_timing[0]}: {step_timing[1]}")
 
-            # reset parameters
-            self._in_progress = False
+                    # save timings list for return after we reset it
+                    timings = self.timings_list
+
+            # reset parameters to how they were when VerboseManager was initialised
             self.times = False
             self.bar = False
             self.step_times = False
-            self.progress = 0
+            self._in_progress = False
+            self.subprocesses = 0
+            self.prev_message_len = 0
+            self.timings_list = []
+
+            try:
+                return timings
+            except NameError:
+                return None
 
         elif self._in_progress:
             # else, a subprocess called this method; account for it
             self.subprocesses -= 1
         else:
             warnings.warn("VerboseManager.finish() was called, but no management process was running.")
+
 
     def _print_progress(self, i, maximum, message):
         """
