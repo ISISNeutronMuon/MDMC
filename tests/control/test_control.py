@@ -36,7 +36,7 @@ class MockSimulation(Simulation):
     """
 
     def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., engine: str = "mmtk", **settings):
+                 time_step: float = 1., engine: str = "lammps", **settings):
         self.universe = universe
         self.settings = settings
         self.traj_step = traj_step

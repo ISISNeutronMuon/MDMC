@@ -1370,9 +1370,9 @@ class Rattle(ConstraintAlgorithm):
 class Simulation:
 
     """
-    Molecular dynamics engine for any ensemble
+    Sets up the molecular dynamics engine and parameters for how it should run
 
-    Ensemble is defined by whether a thermostat or barostat are present
+    An ensemble is defined by whether a thermostat or barostat are present
 
     Parameters
     ----------
@@ -1385,7 +1385,7 @@ class Simulation:
     time_step : float, optional
         Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
-        The ``MDEngine`` used for the simulation. Default is ``'mmtk'``.
+        The ``MDEngine`` used for the simulation. Default is ``'lammps'``.
     **settings
         ``temperature`` (`float`)
             Simulation temperature in ``K``. Note that velocities of atoms in
@@ -1420,7 +1420,7 @@ class Simulation:
         separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
-        library.
+        library. Default is ``'lammps'``.
     settings : dict
         The settings passed to the ``Simulation``.  See the Parameters section
         for details.
@@ -1428,7 +1428,7 @@ class Simulation:
 
     # TODO: Potentially separate out universe and simulation setup
     def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., engine: str = "mmtk", **settings):
+                 time_step: float = 1., engine: str = "lammps", **settings):
 
         self.universe = universe
         self.traj_step = traj_step

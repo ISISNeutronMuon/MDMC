@@ -47,9 +47,7 @@ class MDEngineFacadeFactory:
         Converts an ``alias`` into a module name
         """
 
-        if alias.upper() == 'MMTK':
-            module_name = 'mmtk'
-        elif alias.upper() == 'LAMMPS' or alias.lower() == 'lammps_engine':
+        if alias.upper() == 'LAMMPS' or alias.lower() == 'lammps_engine':
             module_name = 'lammps_engine'
         elif alias.upper() == 'DLPOLY' or alias.lower() == 'dlpoly_engine':
             module_name = 'dlpoly_engine'
