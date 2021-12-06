@@ -1405,7 +1405,7 @@ class Simulation:
                                      time_step=self.time_step,
                                      **self.settings)
 
-    def minimize(self, n_steps: int, verbose: bool=False, **settings):
+    def minimize(self, n_steps: int, verbose: bool = False, **settings):
 
         """
         Minimizes the total potential energy of the simulated system by
@@ -1440,7 +1440,7 @@ class Simulation:
 
         verbose_manager.finish("Minimization")
 
-    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
+    def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False):
 
         """
         Runs the MD simulation for the specified number of steps. Trajectories
@@ -1473,7 +1473,7 @@ class Simulation:
         verbose_manager.step(f"Running {process} for {n_steps} steps")
         self.engine.run(n_steps, equilibration)
 
-        verbose_manager.finish("process.capitalize()")
+        verbose_manager.finish(f"{process.capitalize()}")
 
     @property
     def trajectory(self):

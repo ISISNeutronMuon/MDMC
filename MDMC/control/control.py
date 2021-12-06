@@ -334,10 +334,9 @@ class Control:
         """
 
         # calculate verbose steps
-        # each self.step has self.calculate_verbose_steps() verbosity steps, self.equilibrate has 1 verbosity step,
-        # and self.refine itself has 1 extra verbosity step so one step has
-        # 2 + self.calculate_verbose_steps() verbosity steps, multiply by (n_steps + 1) as we start at 0
-        verbose_steps = (n_steps + 1) * (2 + self.calculate_verbose_steps())
+        # self.calculate_verbose_steps() calculates verbosity steps for 1 step; self.refine has 1 verbosity
+        # step per refinement step, so multiply by n_steps + 1 (as we start at step 0)
+        verbose_steps = (n_steps + 1) * (1 + self.calculate_verbose_steps())
         # initialise step timings list for average step timings at end
         self.step_timings = []
 
@@ -354,7 +353,7 @@ class Control:
             verbose_manager.step(f"Initialising step {count + 1}")
             self.step()  # advance the refinement by one step
             count += 1
-            if self.verbose >= 2:  # if progress bar is there, ensure data is on new line
+            if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                 print("")
             self._print_data()
 
@@ -389,7 +388,7 @@ class Control:
 
         if self.verbose >= 1:
             average_timing = statistics.mean(self.step_timings)
-            print(f"Average time per step was {np.round_(average_timing, 2)} seconds.")
+            print(f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
 
         timings = verbose_manager.finish("Refinement")
 
