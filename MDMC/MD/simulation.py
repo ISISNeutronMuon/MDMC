@@ -1313,7 +1313,7 @@ class Rattle(ConstraintAlgorithm):
 class Simulation:
 
     """
-    Setting up the molecular dynamics engine and how to run it
+    Sets up the molecular dynamics engine and parameters for how it should run
 
     An ensemble is defined by whether a thermostat or barostat are present
 
