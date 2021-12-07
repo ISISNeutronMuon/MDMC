@@ -31,13 +31,24 @@ class FileResolution(Resolution):
         else:
             return broadcast_window * array
 
-    # ignored=None is here as apply() must have a number of parameters matching that of the abstract method;
-    # however, file resolution requires fewer parameters than numerical resolution.
     def _calculate_resolution_window(self, x, Q, frequency_space=False) -> np.ndarray:
+
         """
         Calculate the resolution window in time from a self.resolution_function in the time
         domain. Normalise this window so that the sum over energy for each Q
         value is the same (this enforces that the static structure factor is constant for all Q).
+
+        Parameters
+        ----------
+        Q : np.array
+            the points in energy at which the array is calculated
+        x : np.array
+             the points in time/frequency at which the array is calculated
+
+        Returns
+        -------
+        numpy.ndarray
+            An ``array`` with the shape ``(N_Q, N_T)``
         """
 
         resolution_function = _read_resolution_from_file(self.file_type,

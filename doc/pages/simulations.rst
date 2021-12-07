@@ -25,8 +25,8 @@ conditions are. It is then possible to
 :py:meth:`~MDMC.MD.simulation.Simulation.minimize` and
 :py:meth:`~MDMC.MD.simulation.Simulation.run` the
 :class:`~MDMC.MD.simulation.Simulation`.  The results of the simulation can then
-be accessed through :class:`~MDMC.MD.simulation.Simulation`, for example the
-:py:meth:`~MDMC.MD.simulation.Simulation.trajectory`.
+be accessed through :class:`~MDMC.MD.simulation.Simulation`, for example via the
+property :py:attr:`~MDMC.MD.simulation.Simulation.trajectory`.
 
 For in-depth examples of these please see the related tutorials, particularly
 `Building a Universe <../tutorials/building-a-universe.ipynb>`_ and

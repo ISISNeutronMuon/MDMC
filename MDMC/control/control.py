@@ -271,6 +271,16 @@ class Control:
         for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
             resolution_factory = ResolutionFactory()
             dt = self.simulation.time_step * self.simulation.traj_step
+
+            if 'resolution' not in dset.keys():
+                # create list of user keys for resolutions to add to the error
+                userkeys = []
+                for key in resolution_factory.resolutions:
+                    userkeys.append(key.lower().replace('resolution', ''))
+                raise KeyError("A resolution function must be added. Recognised functions are " +
+                               str(userkeys) + ". If you meant to apply no resolution,"
+                               " then specify resolution as None for the exp_dataset parameters.")
+
             resolution = resolution_factory.create_instance(dset['resolution'], dset['type'], dset['reader'], dt)
 
             self.observable_pairs[i].exp_obs.resolution = resolution
