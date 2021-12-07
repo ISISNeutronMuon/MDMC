@@ -334,9 +334,9 @@ class Control:
         """
 
         # calculate verbose steps
-        # self.calculate_verbose_steps() calculates verbosity steps for 1 step; self.refine has 1 verbosity
-        # step per refinement step, so multiply by n_steps + 1 (as we start at step 0)
-        verbose_steps = (n_steps + 1) * (1 + self.calculate_verbose_steps())
+        # self.calculate_verbose_steps() calculates verbosity steps for 1 step;
+        # so multiply by n_steps + 1 (as we start at step 0)
+        verbose_steps = (n_steps + 1) * (self.calculate_verbose_steps())
         # initialise step timings list for average step timings at end
         self.step_timings = []
 
@@ -350,7 +350,7 @@ class Control:
             if count >= 0 and self.equilibration_steps > 0:
                 self.equilibrate()
 
-            verbose_manager.step(f"Initialising step {count + 1}")
+            verbose_manager.header(f"Step {count + 1}")
             self.step()  # advance the refinement by one step
             count += 1
             if self.verbose == 3:  # if progress bar is there, ensure data is on new line
@@ -841,7 +841,7 @@ class Control:
                     +then the number in calculate_from_MD varies based on Observable
         """
 
-        steps_dict = {'SQw': 4,
+        steps_dict = {'SQw': 2,
                       'FQt': 2,
                       'PDF': 0}
 

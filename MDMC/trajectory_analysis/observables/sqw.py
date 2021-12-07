@@ -425,7 +425,7 @@ class AbstractSQw(SQwMixins, Observable):
                        'consistent with the first `Trajectory` passed')
                 raise AssertionError(msg) from AssertionError
 
-            verbose_manager.step("Calculating FQt")
+            verbose_manager.header("Calculating FQt")
             fqt_type = self._get_fqt_type()
             # instantiate an FQt object for FQt calculations
             FQt = ObservableFactory.create_observable(fqt_type)
@@ -433,7 +433,6 @@ class AbstractSQw(SQwMixins, Observable):
             # calculate FQt
             FQt.calculate_from_MD(trajectory, **settings)
 
-            verbose_manager.step("Calculating SQw from FQt")
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
             errors_list.append(np.zeros(np.shape(SQw_list[-1])))
 

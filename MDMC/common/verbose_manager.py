@@ -34,6 +34,7 @@ class VerboseManager:
         self.prev_message_len = 0
         self.timings_list = []
         self.subprocess_start_times = []
+        self.buffer = None
 
     def start(self, n_steps: int, verbose: int = 0):
         """
@@ -94,6 +95,10 @@ class VerboseManager:
             message_time = time() - self.step_time
             # append previous step to timings list
             self.timings_list.append((self.prev_message, round(message_time, 2)))
+            # if a header is buffered, add it now so it's in the right place
+            if self.buffer is not None:
+                self.timings_list.append(self.buffer)
+                self.buffer = None
             # add vertical bars to denote nesting level in final list
             # and add previous timing to progress bar message
             self.prev_message = f"{'|' * self.subprocesses}{message}"
@@ -108,6 +113,21 @@ class VerboseManager:
             # it will show older messages under new ones.
             # this isn't len(self.prev_message) as self.prev_message doesn't include prev step timings
             self.prev_message_len = len(message)
+
+    def header(self, message: str):
+        """
+        Adds a line to final step timings print without affecting step progress or advancement.
+
+        Parameters
+        ----------
+        message: str
+            The header message that will be printed.
+        """
+
+        # since a step isn't added to the timings list until it is finished,
+        # this will print one step too early unless we buffer it and add
+        # it after the current step completes
+        self.buffer = ('|' * self.subprocesses + message, "")
 
     def finish(self, process_name: str) -> Union[None, float, list]:
         """
@@ -130,7 +150,7 @@ class VerboseManager:
         if self._in_progress and self.subprocesses == 0:
             # give warning to developer if self.maximum is set incorrectly
             if self.progress != self.maximum:
-                warnings.warn(f"maximum steps for process \"{process_name}\" is set incorrectly:"
+                warnings.warn(f"verbose steps for process \"{process_name}\" is set incorrectly:"
                               f" it is equal to {self.maximum}, but the process took {self.progress} steps.",
                               stacklevel=2)
 
