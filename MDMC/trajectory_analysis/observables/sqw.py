@@ -541,13 +541,18 @@ class AbstractSQw(SQwMixins, Observable):
         # create `nE+1` values, each of which are `dt` apart
         time = np.arange(0, ((nE + 1) * dt), dt)
 
-        if self.use_FFT:
-            # inverse FFT the SQw array to get the FQt array
-            FQt_array = np.real(np.fft.ifft(self.SQw, (nE + 1)))
-        else:
-            # perform a slow inverse Fourier transform
-            exp = np.exp(1j * np.outer(time, self.E) / (h_bar * 1e18))
-            FQt_array = np.real(np.dot(self.SQw, np.transpose(exp)))
+        FQt_list = []
+        for i in range(len(self.SQw)):
+            if self.use_FFT:
+                # inverse FFT the SQw array to get the FQt array
+                # we mirror and then crop the array
+                # so that arrays without negative w-values transform correctly
+                FQt_array = np.real(np.fft.ifft(np.hstack([self.SQw[i], self.SQw[i][:, -1:0:-1]])))
+                FQt_array = FQt_array[:, :nE + 1]
+            else:
+                # perform a slow inverse Fourier transform
+                raise NotImplementedError
+            FQt_list.append(FQt_array)
 
         # create FQt object with the variables that have been calculated
         FQt_object = ObservableFactory.create_observable('FQt')
@@ -556,7 +561,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             pass
         FQt_object.independent_variables['t'] = time
-        FQt_object.dependent_variables['FQt'] = FQt_array
+        FQt_object.dependent_variables['FQt'] = FQt_list
         FQt_object._ideal = self._ideal
 
         return FQt_object

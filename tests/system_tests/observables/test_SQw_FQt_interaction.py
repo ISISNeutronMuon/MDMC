@@ -33,7 +33,7 @@ def test_fourier_transforms(SQw_obs, use_FFT):
     SQw_transformed = FQt.calculate_SQw()
 
     assert SQw_transformed.Q.all() == SQw_obs.Q.all()
-    assert SQw_transformed.SQw.all() == SQw_obs.SQw.all()
+    assert_allclose(SQw_transformed.SQw.all(), SQw_obs.SQw.all(), atol=1e-07)
     assert_allclose(SQw_transformed.E, SQw_obs.E, atol=1e-07)
 
 

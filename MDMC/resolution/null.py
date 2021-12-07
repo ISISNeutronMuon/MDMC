@@ -15,6 +15,7 @@ class NullResolution(Resolution):
 
     # overrides default apply
     def apply(self, array, x, Q, frequency_space=False):
+        return array
 
     def _calculate_resolution_window(self, x, Q, frequency_space=False):
         pass
