@@ -153,12 +153,12 @@ def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
 
 
 @pytest.mark.parametrize('verbosity, output_type, prints',
-                         [(0, None, False), (1, float, True), (2, float, True), (3, list, True)])
+                         [(0, None, False), (1, float, True), (2, list, True), (3, list, True)])
 def test_verbose(SQw_from_MD, trajectory, verbosity, output_type, prints, capsys):
 
     """
-    Test that we return nothing on verbose 0, a single timings float on verbose 1 and 2,
-    and a list of timings on verbose 3. Also test that print to stdout is done for verbosity >0,
+    Test that we return nothing on verbose 0, a single timings float on verbose 1,
+    and a list of timings on verbose 3 and 4. Also test that print to stdout is done for verbosity >0,
     and that the number of verbosity steps is correct.
 
     The pytest parameter ``verbose_tuple`` has the value of ``verbose`` as the
@@ -168,13 +168,8 @@ def test_verbose(SQw_from_MD, trajectory, verbosity, output_type, prints, capsys
 
     SQw_obj = SQw_from_MD()
     # record warnings to ensure no user warning over steps is given
-    with pytest.warns(None) as warnings:
-        timings = SQw_obj.calculate_from_MD(trajectory,
-                                            verbose=verbosity)
-    if len(warnings) > 0:
-        for warning in warnings:
-            if type(warning.message) == UserWarning:
-                raise AssertionError(f"UserWarning: {warning.message}")
+    timings = SQw_obj.calculate_from_MD(trajectory,
+                                        verbose=verbosity)
 
     # workaround as Python doesn't just let you say 'NoneType'
     if verbosity == 0:
@@ -184,3 +179,15 @@ def test_verbose(SQw_from_MD, trajectory, verbosity, output_type, prints, capsys
 
     stdout = capsys.readouterr().out
     assert (len(stdout) > 0) == prints
+
+
+def test_sqw_verbose_steps(SQw_from_MD):
+    """Test that the number of verbosity steps for SQw.calculate_from_MD is correct."""
+    SQw_obj = SQw_from_MD()
+    with pytest.warns(None) as warnings:
+        timings = SQw_obj.calculate_from_MD(trajectory,
+                                            verbose=0)
+    if len(warnings) > 0:
+        for warning in warnings:
+            if type(warning.message) == UserWarning:
+                raise AssertionError(f"UserWarning: {warning.message}")

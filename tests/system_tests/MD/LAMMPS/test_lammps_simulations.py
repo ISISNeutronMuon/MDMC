@@ -269,11 +269,11 @@ def test_simulation_stdout(universe, verbose, capsys):
                 '  barostat         nose\n'
                 '  p_damp            100\n'
                 '\n')
-    minimize_msg = ('Starting minimization for 0 steps\n'
+    minimize_msg = ('Running minimization for 0 steps \n'
                     'Minimization complete in ')
-    equilibration_msg = ('Starting equilibration for 0 steps\n'
+    equilibration_msg = ('Running equilibration for 0 steps \n'
                          'Equilibration complete in ')
-    run_msg = ('Starting simulation for 0 steps\n'
+    run_msg = ('Running simulation for 0 steps \n'
                'Simulation complete in ')
 
     if verbose:

@@ -372,7 +372,7 @@ class AbstractSQw(SQwMixins, Observable):
             MD_input = [MD_input]
 
         # calculate verbosity steps and initialise verbose manager
-        verbose_steps = len(MD_input) * 4
+        verbose_steps = len(MD_input) * 2
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(verbose_steps, verbose=verbose)
 
