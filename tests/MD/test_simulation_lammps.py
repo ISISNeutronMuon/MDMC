@@ -1612,23 +1612,6 @@ def test_minimize(args, lammps_engine):
     assert lammps_engine.lmp.eval('pe') < start_energy
 
 
-@pytest.mark.parametrize('verbose', [False, True])
-def test_minimize_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling minimize with different verbose arguments results in the
-    expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps')
-    sim.minimize(0, verbose=verbose)
-
-    verbose_msg = ('Starting minimization for 0 steps\n'
-                   'Minimization complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
-
-
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
                           ('nose', None, {}),
@@ -1655,40 +1638,6 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # Test that the largest step number in the LAMMPS wrapper runs attribute
     # (which records ThermoData from the previous run) is correct
     assert max(lammps_engine.lmp.runs[0][0].Step) == n_steps
-
-
-@pytest.mark.parametrize('verbose', [False, True])
-def test_run_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with different verbose arguments results in the
-    expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps')
-    sim.run(0, verbose=verbose)
-
-    verbose_msg = ('Starting simulation for 0 steps\n'
-                   'Simulation complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
-
-
-@pytest.mark.parametrize('verbose', [False, True])
-def test_equilibration_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with ``equilibration=True`` and different verbose
-    arguments results in the expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps', temperature=1)
-    sim.run(0, equilibration=True, verbose=verbose)
-
-    verbose_msg = ('Starting equilibration for 0 steps\n'
-                   'Equilibration complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
 
 
 @pytest.mark.parametrize("value", [1., 5, -100, -13.])

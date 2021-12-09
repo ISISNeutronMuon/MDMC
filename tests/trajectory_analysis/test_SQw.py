@@ -152,7 +152,7 @@ def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
         SQw_obj.calculate_from_MD(MD_input)
 
 
-def test_sqw_verbose_steps(SQw_from_MD):
+def test_sqw_verbose_steps(SQw_from_MD, trajectory):
     """Test that the number of verbosity steps for SQw.calculate_from_MD is correct."""
     SQw_obj = SQw_from_MD()
     with pytest.warns(None) as warnings:
