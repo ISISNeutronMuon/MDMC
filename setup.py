@@ -23,10 +23,11 @@ if sys.version_info[:2] < (3, 0):
     print('MDMC requires Python 3.0 or better. Python {0:d}.{1:d}'
           ' detected'.format(*sys.version_info[:2]))
 
+packages_test=find_packages()
 setup(
     name="MDMC",
     version="0.2",
-    desription=('A package for optimising classical molecular dynamics'
+    description=('A package for optimising classical molecular dynamics'
                 ' parameters by refining against experimental data.'),
     packages=find_packages(),
     author="MDMC developers",
