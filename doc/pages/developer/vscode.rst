@@ -22,7 +22,7 @@ Next, install `Visual Studio Code <https://code.visualstudio.com/>`_ and then in
 
 Finally, simply start VSCode within the MDMC repo using `code .` or open the
 MDMC repo in VSCode, after a moment, a box in the bottom right-hand corner
-pops up saying "Folder contains a Dev Container configuration file..." then click
+pops up saying "Folder contains a Dev Container configuration file...". Then, click
 "Reopen in Container". If this box does not pop up then open the Command Palette
 (by pressing F1) and run the command **Remote-Containers: Open Folder in
 Container...** toopen the MDMC project inside the MDMC container.
