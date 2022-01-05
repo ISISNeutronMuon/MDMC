@@ -19,3 +19,7 @@ __pycache__
 log.lammps
 
 .idea/
+
+doc/_build/
+
+build/lib/

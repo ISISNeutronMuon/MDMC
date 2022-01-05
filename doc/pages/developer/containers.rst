@@ -45,3 +45,13 @@ If you need to rebuild the Docker image manually, go to the main directory for t
 which will build the image and give it the tag mdmc/mdmc:experimental. Note that to push it to Docker hub, you need to be logged in as the mdmc user.
 
 Please do not rebuild the Docker container using command line arguments (add them to the Dockerfile instead) or rebuild the container without updating the Dockerfile in the repository. This can cause issues and unintended behaviour, as well as making the container non-reproducible by others.
+
+To push the Dockerhub experimental image to latest, do the following:
+
+.. code-block:: bash
+
+  docker pull mdmc/mdmc:experimental
+  docker tag mdmc/mdmc:experimental mdmc/mdmc:latest
+  docker push mdmc/mdmc:latest
+
+and the same with mdmc/mdmc:travis to push the Travis image.
