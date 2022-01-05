@@ -7,3 +7,4 @@ ase==3.22.1
 mpi4py==3.1.3
 ipython==7.30.0
 ipykernel==5.5.5
+verbosemanager==1.0.0

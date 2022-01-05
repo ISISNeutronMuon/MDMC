@@ -5,13 +5,13 @@ from typing import Dict
 import numpy as np
 from mpi4py import MPI
 from numba import jit
+from verbosemanager import VerboseManager
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.common.verbose_manager import VerboseManager
 from MDMC.resolution import Resolution, NullResolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory

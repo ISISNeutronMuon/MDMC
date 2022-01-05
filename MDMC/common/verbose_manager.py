@@ -31,7 +31,6 @@ class VerboseManager:
         self.step_times = False
         self._in_progress = False
         self.subprocesses = 0
-        self.prev_message_len = 0
         self.timings_list = []
         self.subprocess_start_times = []
         self.buffer = None
@@ -108,11 +107,6 @@ class VerboseManager:
         # if verbosity is 3, print progress bar
         if self.bar:
             self._print_progress(self.progress, self.maximum, message)
-
-            # keep track of previous string; if we do not add blankspace to the end of the message,
-            # it will show older messages under new ones.
-            # this isn't len(self.prev_message) as self.prev_message doesn't include prev step timings
-            self.prev_message_len = len(message)
 
     def header(self, message: str):
         """
@@ -194,14 +188,18 @@ class VerboseManager:
 
         # calculate how much trailing whitespace is needed
         # to avoid previous message being visible under new one
-        eraser_diff = self.prev_message_len - len(message)
+        prev_message_len = len(self.prev_message)
+        if self.step_times:
+            # account for "; previous step took x.xx seconds." added
+            prev_message_len += 34
+        eraser_diff = prev_message_len - len(message)
         if eraser_diff <= 0:
             eraser_diff = 0
         eraser = f'{" " * eraser_diff}'
 
         # we use sys.stdout.write() instead of print() because print() creates a new line at the end;
-        # we don't want this, we want to stay on the same line so we can use \r to overwrite the bar.
-        # \r is 'carriage return' - it returns to the start of line so it can be overwritten.
+        # we don't want this, we want to stay on the same line, so we can use \r to overwrite the bar.
+        # \r is 'carriage return' - it returns to the start of line for overwriting.
         sys.stdout.write('\r')
         sys.stdout.write(f"[{'=' * int(bar_size * progress):{bar_size}s}] {int(100 * progress)}%  {message} {eraser}")
 

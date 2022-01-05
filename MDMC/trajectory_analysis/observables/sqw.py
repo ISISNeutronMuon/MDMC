@@ -7,11 +7,11 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
 from typing import Dict, List, Union
+from verbosemanager import VerboseManager
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-from MDMC.common.verbose_manager import VerboseManager
 from MDMC.resolution import NullResolution
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable

@@ -9,6 +9,7 @@ from time import time
 
 import numpy as np
 import pandas as pd
+from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     mod_docstring, repr_decorator
@@ -20,7 +21,6 @@ from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structural_units import StructuralUnit
 from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
-from MDMC.common.verbose_manager import VerboseManager
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 

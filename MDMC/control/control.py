@@ -9,11 +9,11 @@ import pandas as pd
 from typing import List
 from scipy.interpolate import interp1d, interp2d
 from typing import Dict
+from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
-from MDMC.common.verbose_manager import VerboseManager
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
