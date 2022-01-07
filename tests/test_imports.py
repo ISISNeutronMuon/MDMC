@@ -9,6 +9,7 @@ import pytest
 
 import MDMC
 
+pytestmark = [pytest.mark.lammps]
 
 def get_paths(modules=True):
 

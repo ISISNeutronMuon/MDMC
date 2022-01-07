@@ -17,7 +17,7 @@ from MDMC.common.atom_properties import B_INCOH
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
-pytestmark = pytest.mark.mpi
+pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)

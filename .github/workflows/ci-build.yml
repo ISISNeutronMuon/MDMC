@@ -9,7 +9,7 @@ on:
 
 jobs:
   engine_tests:
-    name: Docker and including MD tests
+    name: Docker MD tests
     runs-on: ubuntu-20.04
     steps:
     - name: Setup Python
@@ -34,6 +34,44 @@ jobs:
       env: 
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
+        TESTSET: lammps
+      run: source .github/scripts/docker_testing.sh
+    - name: Copy coverage
+      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  tests:
+    name: Docker non-MD tests
+    needs: engine_tests # so it can use new docker image if docker image has changed
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: apt-get
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
+      
+    - name: fetch  # grabs other branches to check if Docker files changed
+      run: |
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git fetch --unshallow --tags
+
+    - name: Run script
+      env: 
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ github.head_ref }} 
+        TESTSET: "not lammps"
       run: source .github/scripts/docker_testing.sh
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml

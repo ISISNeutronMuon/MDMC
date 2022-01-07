@@ -30,7 +30,7 @@ jobs:
         pip3 install -r .dev_requirements.txt
 
     - name: Run tests
-      run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
+      run: python3 -m pytest -s $(pwd)/tests/ -m "not lammps"
 
     - name: Uninstall
       run: pip3 uninstall -y MDMC
