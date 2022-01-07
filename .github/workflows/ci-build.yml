@@ -8,8 +8,26 @@ on:
     - master
 
 jobs:
+  build:
+    name: Build docker container
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: fetch  # grabs other branches to check if Docker files changed
+      run: |
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git fetch --unshallow --tags
+
+    - name: Check and build container
+      env: 
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ github.head_ref }} 
+      run: source .github/scripts/build_container.sh
+      
   engine_tests:
     name: Docker MD tests
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
     - name: Setup Python
@@ -24,18 +42,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenmpi-dev openmpi-bin
-      
-    - name: fetch  # grabs other branches to check if Docker files changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
-        git fetch --unshallow --tags
-
+        
     - name: Run script
       env: 
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
-        TESTSET: lammps
-      run: source .github/scripts/docker_testing.sh
+        # read this run block as 'attempt to pull the built docker container and test on it; if it fails (i.e. no container was built) then just test on latest instead
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m lammps || docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m lammps
+      
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
 
@@ -46,7 +62,7 @@ jobs:
 
   tests:
     name: Docker non-MD tests
-    needs: engine_tests # so it can use new docker image if docker image has changed
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
     - name: Setup Python
@@ -61,18 +77,16 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenmpi-dev openmpi-bin
-      
-    - name: fetch  # grabs other branches to check if Docker files changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
-        git fetch --unshallow --tags
-
+        
     - name: Run script
       env: 
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
-        TESTSET: "not lammps"
-      run: source .github/scripts/docker_testing.sh
+        # read this run block as 'attempt to pull the built docker container and test on it; if it fails (i.e. no container was built) then just test on latest instead
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "not lammps" || docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "not lammps"
+      
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
 
@@ -83,7 +97,7 @@ jobs:
 
   documentation:
     name: Documentation
-    needs: engine_tests # so it can use new docker image if docker image has changed
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout repo
