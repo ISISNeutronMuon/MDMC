@@ -15,7 +15,7 @@ export SVER="3.8.1" #SVER is Singularity VERsion
 sudo mkdir -p "${GOPATH}/src/github.com/sylabs"
 cd "${GOPATH}/src/github.com/sylabs"
 
-wget https://github.com/hpcng/singularity/releases/download/v${SVER}/singularity-${SVER}.tar.gz
+sudo wget https://github.com/hpcng/singularity/releases/download/v${SVER}/singularity-${SVER}.tar.gz
 sudo tar -xzf singularity-${SVER}.tar.gz
 cd singularity-${SVER}
 ./mconfig -v -p /usr/local
