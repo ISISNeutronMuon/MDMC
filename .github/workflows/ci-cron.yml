@@ -148,7 +148,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git clone https://github.com/MDMCproject/MDMCproject.github.io
-	cd ./MDMCproject.github.io
+        cd ./MDMCproject.github.io
         git checkout ci
         cp -r  ../doc/_build/html/* ./MDMCproject.github.io/
         git push https://$(github-token)@github.com/MDMCproject.github.io
