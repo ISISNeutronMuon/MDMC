@@ -2,10 +2,6 @@ name: CI
 # contains jobs which run on every pull request
 on: 
   pull_request:
-  schedule:
-  - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays alongside jobs in ci-cron.yml
-    branches:
-    - master
 
 jobs:
   build:
