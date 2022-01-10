@@ -52,11 +52,13 @@ jobs:
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+      continue-on-error: true
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
 
   tests:
     name: Docker non-MD tests
@@ -84,12 +86,14 @@ jobs:
       run: source .github/scripts/docker_testing.sh
       
     - name: Copy coverage
-      run: docker ps -l && docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+      continue-on-error: true
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
 
   documentation:
     name: Documentation
