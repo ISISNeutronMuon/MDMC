@@ -105,5 +105,4 @@ jobs:
     - name: Run script
       env:
         BRANCH: ${{ github.head_ref }} 
-        EVENT_TYPE: ${{ env.GITHUB_EVENT_NAME }}
       run: source .github/scripts/documentation_testing.sh
