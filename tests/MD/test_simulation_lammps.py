@@ -4,7 +4,6 @@ from collections import Counter
 
 import numpy as np
 import pytest
-pytestmark = [pytest.mark.lammps]
 
 from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp_eng
@@ -16,6 +15,8 @@ from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
 from MDMC.MD.structural_units import (Atom)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Trajectory
+
+pytestmark = [pytest.mark.lammps]
 
 CUTOFF = 3.14
 COUL_CUTOFF = 8.0
