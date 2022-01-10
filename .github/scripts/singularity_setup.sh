@@ -18,6 +18,6 @@ cd "${GOPATH}/src/github.com/sylabs"
 sudo wget https://github.com/hpcng/singularity/releases/download/v${SVER}/singularity-${SVER}.tar.gz
 sudo tar -xzf singularity-${SVER}.tar.gz
 cd singularity-${SVER}
-./mconfig -v -p /usr/local
+sudo ./mconfig -v -p /usr/local
 sudo make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
 sudo make -C ./builddir install
