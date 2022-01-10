@@ -84,7 +84,9 @@ jobs:
       run: source .github/scripts/docker_testing.sh
       
     - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+      run: |
+      	docker ps -l
+      	docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
