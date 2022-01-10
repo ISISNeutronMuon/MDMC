@@ -54,4 +54,4 @@ To push the Dockerhub experimental image to latest, do the following:
   docker tag mdmc/mdmc:experimental mdmc/mdmc:latest
   docker push mdmc/mdmc:latest
 
-and the same with mdmc/mdmc:travis to push the Travis image.
+and the same with mdmc/mdmc:ci-[branch] tags to push a CI image.
