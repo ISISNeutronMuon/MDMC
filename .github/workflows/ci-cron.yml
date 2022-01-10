@@ -28,9 +28,7 @@ jobs:
       run: |
         docker pull mdmc/mdmc:latest
         docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ]
-        
-    - name: Uninstall
-      run: pip3 uninstall -y MDMC
+
   basic_tests:
     name: Non-container and not inc MD tests
     runs-on: ubuntu-20.04
@@ -95,7 +93,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Singularity
-        run: sudo source .github/scripts/singularity_setup.sh 
+        run: source .github/scripts/singularity_setup.sh 
         
       - name: Run tests
         run: |

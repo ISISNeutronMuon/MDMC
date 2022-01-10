@@ -6,10 +6,9 @@ from importlib import import_module
 from pkgutil import walk_packages
 
 import pytest
+pytestmark = [pytest.mark.lammps]
 
 import MDMC
-
-pytestmark = [pytest.mark.lammps]
 
 def get_paths(modules=True):
 

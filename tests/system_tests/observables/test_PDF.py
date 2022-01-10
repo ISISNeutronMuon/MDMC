@@ -7,12 +7,11 @@ scaling, so this is not tested here."""
 from netCDF4 import Dataset
 import numpy as np
 import pytest
+pytestmark = [pytest.mark.lammps]
 
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory
-
-pytestmark = [pytest.mark.lammps]
 
 ATOL = 1e-10
 RTOL = 5e-4
