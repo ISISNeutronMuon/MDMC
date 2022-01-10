@@ -134,3 +134,21 @@ jobs:
       # uses: codecov/codecov-action@v1
       # with:
         # token: ${{ secrets.CODECOV_TOKEN }}
+        
+  doc-deploy:
+    name: Documentation
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Build documentation
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+    - name: Deploy
+      env:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git clone https://github.com/MDMCproject/MDMCproject.github.io
+	cd ./MDMCproject.github.io
+        git checkout ci
+        cp -r  ../doc/_build/html/* ./MDMCproject.github.io/
+        git push https://$(github-token)@github.com/MDMCproject.github.io
