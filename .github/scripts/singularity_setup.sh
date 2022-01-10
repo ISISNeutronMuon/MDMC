@@ -12,7 +12,7 @@ SINGULARITY_BASE="${GOPATH}/src/github.com/sylabs/singularity"
 export PATH="${GOPATH}/bin:${PATH}"
 export SVER="3.8.1" #SVER is Singularity VERsion
 
-mkdir -p "${GOPATH}/src/github.com/sylabs"
+sudo mkdir -p "${GOPATH}/src/github.com/sylabs"
 cd "${GOPATH}/src/github.com/sylabs"
 
 wget https://github.com/hpcng/singularity/releases/download/v${SVER}/singularity-${SVER}.tar.gz

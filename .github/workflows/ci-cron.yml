@@ -1,12 +1,36 @@
 name: cron
 # contains jobs which run on a schedule rather than on a pull-request
 on: 
+  pull_request:
   schedule:
   - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
     branches:
       - master
   
 jobs:
+  docker_tests:
+    name: Docker including MD tests
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: apt-get
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
+        
+    - name: Run tests
+      run: |
+        docker pull mdmc/mdmc:latest
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ]
+        
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
   basic_tests:
     name: Non-container and not inc MD tests
     runs-on: ubuntu-20.04
@@ -63,7 +87,6 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.13'
-          architecture: x64
       - name: Get Singularity requirements
         run: |
           sudo apt-get update
