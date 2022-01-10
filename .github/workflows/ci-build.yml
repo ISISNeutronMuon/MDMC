@@ -48,7 +48,7 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
         TESTSET: lammps
-      run: source docker_testing.sh
+      run: source .github/scripts/docker_testing.sh
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
@@ -81,7 +81,7 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
         TESTSET: "not lammps"
-      run: source docker_testing.sh
+      run: source .github/scripts/docker_testing.sh
       
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
