@@ -95,7 +95,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Setup Singularity
-        run: source .github/scripts/singularity_setup.sh 
+        run: sudo source .github/scripts/singularity_setup.sh 
         
       - name: Run tests
         run: |
