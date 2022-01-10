@@ -11,12 +11,11 @@ PARAMETERIZED TO TEST OTHER OBSERVABLES"""
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
 from MDMC.common.constants import h
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.system_tests.observables.data_manager import trajectory
-
-pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
 
 ATOL = 1e-7

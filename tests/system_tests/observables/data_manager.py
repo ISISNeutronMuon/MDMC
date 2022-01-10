@@ -8,10 +8,9 @@ except ImportError:
 import zlib
 
 import pytest
+pytestmark = [pytest.mark.lammps]
 
 from tests.test_data import data
-
-pytestmark = [pytest.mark.lammps]
 
 @pytest.fixture(scope="session")
 def trajectory():
