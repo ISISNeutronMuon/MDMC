@@ -1,7 +1,7 @@
 """MDMC is a Python 3 package for optimising classical molecular dynamics (MD)
 potential parameters by refining against experimental data, particularly
 dynamical data such as the dynamic structure factor. The refinement uses
-derivative free optimisation algorithms, e.g. Monte Carlo (MC).
+derivative free optimisation algorithms, e.g. Monte Carlo (MC). test change
 
 Documentation
 -------------
