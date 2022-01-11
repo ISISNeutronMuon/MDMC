@@ -151,5 +151,6 @@ jobs:
         cd ./MDMCproject.github.io
         git checkout ci
         cp -r  ../doc/_build/html/* ../MDMCproject.github.io/
+        git config --global user.name "Github Actions"
         git commit -a -m "CI deployment"
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
