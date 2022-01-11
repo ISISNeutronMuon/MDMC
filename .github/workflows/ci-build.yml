@@ -33,6 +33,10 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
+      - name: fetch  # grabs other branches to check if source code changed
+      run: |
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git fetch --unshallow --tags
 
     - name: apt-get
       run: |
@@ -68,6 +72,10 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
+      - name: fetch  # grabs other branches to check if source code changed
+      run: |
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git fetch --unshallow --tags
 
     - name: apt-get
       run: |
