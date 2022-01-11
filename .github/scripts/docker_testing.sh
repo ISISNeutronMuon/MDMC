@@ -11,7 +11,7 @@
 # $TESTSET is defined in CI so we only need one script for both lammps and non-lammps tests in parallel
 
 echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
-if ! git diff master --name-only | grep 'MDMC/\|requirements.txt'
+if ! git diff remotes/origin/master remotes/origin/"$BRANCH" --name-only | grep 'MDMC/\|requirements.txt'
 then
   echo "Source code does not require testing."
   exit 0 
