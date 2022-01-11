@@ -2,4 +2,4 @@
 .. code-block:: bash
 
   UNAME:JaneDoe
-  PWORD:321password123
+  TOKEN:321password123

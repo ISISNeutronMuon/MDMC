@@ -23,6 +23,18 @@ tutorial. Instructions on how to enable X11 forwarding are in
 :ref:`x11-forwarding-label`.  X11 forwarding occurs by default on Linux, so
 on that platform no additional steps are required.
 
+As MDMC is currently private, your Github details are required to access the repository. This is your username, and a personal access token that you can generate on Github.com. `Instructions are here <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`, or short instructions are the following:
+
+ * Log into Github.com.
+ * Go to `https://github.com/settings/tokens <https://github.com/settings/tokens>`.
+ * Click 'Generate new token' and enter your password.
+ * In the 'note' field, enter "MDMC access"
+ * Let the expiration time be whatever you want (although we highly advise against making it permanent, for user security)
+ * Check the 'repo' box in the 'select scopes' section.
+ * Scroll to the bottom and click 'generate token'.
+ * Copy your personal access token and save it somewhere secure.
+ 
+You now have a personal access token!
 
 Windows
 -------
