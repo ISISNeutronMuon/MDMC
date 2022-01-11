@@ -1432,7 +1432,9 @@ class Simulation:
         """
 
         verbose_manager = VerboseManager.instance()
-        # int(verbose) converts bool to int; VerboseManager verbosity level 1 if True, 0 if False
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
 
         verbose_manager.step(f"Running minimization for {n_steps} steps")
