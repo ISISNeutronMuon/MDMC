@@ -1,11 +1,8 @@
 name: cron
 # contains jobs which run on a schedule rather than on a pull-request
 on: 
-  pull_request:
   schedule:
   - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
-    branches:
-      - master
   
 jobs:
   docker_tests:
