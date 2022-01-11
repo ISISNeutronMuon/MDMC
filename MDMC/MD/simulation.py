@@ -1417,8 +1417,8 @@ class Simulation:
         n_steps : int
             Maximum number of steps to run the minimization
         verbose: bool, optional
-            Whether to print statements when the minimization has been started and completed
-            (including the number minimization steps and time taken). Default is `False`.
+            If true, prints time taken for the minimization when complete.
+            If false (default), does nothing.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1459,8 +1459,8 @@ class Simulation:
             If the run is for equilibration (`True`) or production (`False`).
             Default is `False`.
         verbose: bool, optional
-            Whether to print statements upon starting and completing the run.
-            Default is `False`.
+            If true, prints time taken for the run when complete.
+            If false (default), does nothing.
         """
 
         if equilibration:
