@@ -11,15 +11,14 @@
 # $TESTSET is defined in CI so we only need one script for both lammps and non-lammps tests in parallel
 
 echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
-if ! git diff remotes/origin/master remotes/origin/"$BRANCH" --name-only | grep 'MDMC/\|requirements.txt'
+if ! git diff master --name-only | grep 'MDMC/\|requirements.txt'
 then
   echo "Source code does not require testing."
   exit 0 
 else
-  echo "Docker file requires rebuilding."
+  echo "Source code requires testing."
   # read this run block as 'attempt to pull the built docker container and test on it; if it fails (i.e. no container was built) then just test on latest instead'.
   docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ] || docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ] || exit 1
-  docker push mdmc/mdmc:ci # pushes docker image if test was successful
 fi
 docker logout
 exit 0
