@@ -10,9 +10,9 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs other branches to check if Docker files changed
+    - name: fetch  # grabs master to compare if Docker build files changed
       run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
         git fetch --unshallow --tags
 
     - name: Check and build container
@@ -33,15 +33,10 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs other branches to check if source code changed
+    - name: fetch  # grabs master to compare if source code changed
       run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
         git fetch --unshallow --tags
-
-    - name: apt-get
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
         
     - name: Run tests
       env: 
@@ -72,15 +67,10 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs other branches to check if source code changed
+    - name: fetch  # grabs master to compare if source code changed
       run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
         git fetch --unshallow --tags
-
-    - name: apt-get
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
         
     - name: Run tests
       env: 
@@ -106,9 +96,9 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs other branches to check if doc files changed
+    - name: fetch  # grabs master to compare if doc files changed
       run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
+        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
         git fetch --unshallow --tags
     - name: Run script
       env:
