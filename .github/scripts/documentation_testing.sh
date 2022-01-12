@@ -3,8 +3,8 @@
 # build the documentation, which includes testing that the code in the tutorials runs
 
 # tests if there is a change to doc but not to ipython
-if git diff remotes/origin/master remotes/origin/"$BRANCH" --name-only -- ./doc | read REPLY && \
-! git diff remotes/origin/master remotes/origin/"$BRANCH" -- requirements.txt | grep  '+ipython\|+ipykernel' 
+if git diff master --name-only -- ./doc | read REPLY && \
+! git diff master -- requirements.txt | grep  '+ipython\|+ipykernel' 
 then
   echo; echo "Documentation requires testing."
   docker pull mdmc/mdmc:latest
