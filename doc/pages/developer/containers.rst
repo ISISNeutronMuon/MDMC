@@ -34,7 +34,7 @@ Our Docker image is on Docker Hub as ``mdmc/mdmc``. We use three tags for develo
 Building the Docker image
 -------------------------
 
-As just mentioned, Github Actions automatically builds and tests new images. It does so ONLY IF files in the ``/build/Docker`` directory are changed, or if ``requirements.txt`` is changed. In this case, the pull request testing will automatically detect these changes, rebuild the image from the Dockerfile, test it, and then push it to ``mdmc/mdmc:ci-[branch]`` where [branch] is the name of the branch the image was built on. The mdmc/mdmc:travis image can then be pushed to the mdmc/mdmc:latest when required.
+As just mentioned, Github Actions automatically builds and tests new images. It does so ONLY IF files in the ``/build/Docker`` directory are changed, or if ``requirements.txt`` is changed. In this case, the pull request testing will automatically detect these changes, rebuild the image from the Dockerfile, test it, and then push it to ``mdmc/mdmc:ci-[branch]`` where [branch] is the name of the branch the image was built on.
 
 If you need to rebuild the Docker image manually, go to the main directory for the source code then execute the command:
 
