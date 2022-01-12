@@ -11,7 +11,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if Docker build files changed
-      run: git fetch remotes/origin/master
+      run: git fetch origin master
 
     - name: Check and build container
       env: 
@@ -32,7 +32,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
-      run: git fetch remotes/origin/master
+      run: git fetch origin master
         
     - name: Run tests
       env: 
@@ -64,7 +64,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
-      run: git fetch remotes/origin/master
+      run: git fetch origin master
         
     - name: Run tests
       env: 
@@ -91,7 +91,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if doc files changed
-      run: git fetch remotes/origin/master
+      run: git fetch origin master
       
     - name: Run script
       env:
