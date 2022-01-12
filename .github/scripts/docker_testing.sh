@@ -5,7 +5,7 @@
 
 # the workflow of this script is the following:
 # 1. check if the PR branch has a different requirements.txt or MDMC folder to the master branch
-# 2. if it does, test MDMC in mdmc/mdmc:latest.
+# 2. if it does, test MDMC in mdmc/mdmc:ci-[branch] if it exists or mdmc/mdmc:latest.
 # 3. if it doesn't, exit.
 
 # $TESTSET is defined in the main CI .yml script
