@@ -11,9 +11,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if Docker build files changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
-        git fetch --unshallow --tags
+      run: git fetch remotes/origin/master
 
     - name: Check and build container
       env: 
@@ -34,9 +32,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
-        git fetch --unshallow --tags
+      run: git fetch remotes/origin/master
         
     - name: Run tests
       env: 
@@ -68,9 +64,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
-        git fetch --unshallow --tags
+      run: git fetch remotes/origin/master
         
     - name: Run tests
       env: 
@@ -97,9 +91,8 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if doc files changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/master
-        git fetch --unshallow --tags
+      run: git fetch remotes/origin/master
+      
     - name: Run script
       env:
         BRANCH: ${{ github.head_ref }} 
