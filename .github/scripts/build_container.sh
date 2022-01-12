@@ -3,7 +3,7 @@
 # this script detects if a new docker container needs building, and if so, builds it.
 
 echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
-if ! git diff master --name-only | grep 'build/\|requirements.txt'
+if ! git diff remotes/origin/master --name-only | grep 'build/\|requirements.txt'
 then
   echo "Docker file does not require rebuilding." 
 else
