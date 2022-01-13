@@ -19,7 +19,7 @@ jobs:
         BRANCH: ${{ github.head_ref }} 
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
-        # exit as a success if fails to pull, as no branch exists to be pulled which is okay
+        # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/mdmc:ci-$BRANCH || exit 0  
         docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
         docker push mdmc/mdmc:latest
