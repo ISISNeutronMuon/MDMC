@@ -10,6 +10,7 @@ jobs:
   update-latest-image:
     name: Update Docker image
     if: github.event.pull_request.merged == true
+    # just need an env that include docker, here picked:
     runs-on: ubuntu-latest
     steps:
     - name: Update image
