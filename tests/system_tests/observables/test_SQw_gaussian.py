@@ -16,7 +16,7 @@ from tests.system_tests.observables.test_FQt import FQt_incoh_ref, FQt_coh_ref, 
     FQt_coh_OO_ref
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
-pytestmark = pytest.mark.mpi
+pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
 # Values are equivalent to those used by nMOLDYN to generate the test data
 DIMENSIONS = (39.4221067, 39.4221067, 39.4221067)
