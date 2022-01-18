@@ -13,5 +13,7 @@ from MDMC.trajectory_analysis.observables import sqw
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 
+pytestmark = [pytest.mark.lammps]
+
 # TODO
 # see https://github.com/MDMCproject/MDMCv0.2_pilot/issues/737
