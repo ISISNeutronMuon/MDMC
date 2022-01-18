@@ -45,7 +45,7 @@ Windows
 .. include:: docker/docker-compose-env-osx-windows.rst
 
 At the command line, in the directory where the docker-compose.yml and the .env
-files are located, do the following:
+files are located, do the following (please ensure that Docker Desktop is running):
 
 .. include:: docker/docker-compose-run.rst
 
@@ -58,7 +58,7 @@ Mac OS X
 .. include:: docker/docker-compose-env-osx-windows.rst
 
 Then in a terminal, in the directory where the docker-compose.yml and the .env
-files are located, do the following:
+files are located, do the following (please ensure that Docker Desktop is running):
 
 .. include:: docker/docker-compose-run.rst
 
