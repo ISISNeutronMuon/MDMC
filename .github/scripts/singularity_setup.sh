@@ -1,4 +1,4 @@
-####### This script builds Singularity for Travis.
+####### This script builds Singularity for Github Actions.
 ####### Originally from https://github.com/singularityhub/travis-ci
 
 #!/bin/bash -ex
