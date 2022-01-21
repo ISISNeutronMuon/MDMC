@@ -7,66 +7,26 @@ on:
     branches:
       - master
 
-jobs:
-  basic_tests:
-    name: Non-container and not inc MD tests
-    runs-on: ubuntu-18.04
+  jobs:
+  build:
+    name: Build docker container
+    runs-on: ubuntu-20.04
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.6'
-        architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
+    - name: fetch  # grabs master to compare if Docker build files changed
+      run: git fetch origin master
 
-    - name: apt-get
-      run: sudo apt-get install -y libopenmpi-dev openmpi-bin
-    - name: pip install
+    - name: Check and build container
+      env: 
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ github.head_ref }} 
       run: |
-        pip3 install --upgrade pip
-        pip3 install -r requirements.txt
-        pip3 install .
-        pip3 install pytest==3.10.0
-        pip3 install ase==3.20.1
-
-    - name: Run tests
-      run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py
-
-    - name: Uninstall
-      run: pip3 uninstall -y MDMC
-
-
-  engine_tests:
-    name: Docker and including MD tests
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.6'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v2
-
-    - name: apt-get
-      run: sudo apt-get install -y libopenmpi-dev openmpi-bin
-
-    - name: Docker pull
-      run: docker pull mdmc/mdmc:latest
-    - name: Run tests
-      run: mpirun -np 2 docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest python3 -m pytest -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-
-
+          docker build -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile . || exit 1 
+          docker push mdmc/mdmc:ci-$BRANCH
   parallel_system_tests:
     name: Docker MPI tests
+    needs: build
     runs-on: ubuntu-18.04
     steps:
     - name: Setup Python
@@ -78,52 +38,18 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Docker pull
-      run: docker pull mdmc/mdmc:latest
+      env: 
+        BRANCH: ${{ github.head_ref }} 
+      run: docker pull mdmc/mdmc:ci-$BRANCH
 
     - name: Run tests
+      env: 
+        BRANCH: ${{ github.head_ref }} 
       # To avoid issues with both processes accessing the coverage report
       # simultaneously, first create the coverage file without mpi using a fake
       # PyTest mark so we don't actually run any tests. Then use the
       # --cov-append option for the actual tests. Using --allow-run-as-root as
       # we are running inside a docker container, so root only affects the
       # container. Usually running with this flag is *strongly* discouraged.
-      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
-
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-
-  windows:
-    name: Python 3.8.0 on Windows
-    runs-on: windows-latest
-    steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v2
-
-    - name: Install
-      run: |
-        pip3 install --upgrade pip
-        pip3 install .
-
-    - name: Uninstall
-      run: pip3 uninstall -y MDMC
-
-  documentation:
-    name: Documentation
-    runs-on: ubuntu-18.04
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v2
-
-    - name: Docker pull
-      run: docker pull mdmc/mdmc:latest
-    
-    - name: Build documentation
-      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+      run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:ci-$BRANCH /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
 
