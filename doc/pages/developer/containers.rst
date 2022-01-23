@@ -27,7 +27,7 @@ Our Docker image is on Docker Hub as ``mdmc/mdmc``. We use three tags for develo
 
 * ``mdmc/mdmc:latest``; the version is used by e.g. docker-compose to install MDMC. This is the 'production' image.
 
-* ``mdmc/mdmc:experimental``; if you are making manual changes to the image, it's useful to push it to this tag so you can swap it in and out vs other images, as well as let other developers and Travis use it.
+* ``mdmc/mdmc:experimental``; if you are testing manual changes to the image, it's useful to push it to this tag so you can swap it in and out vs other images, as well as let other developers use it.
 
 * ``mdmc/mdmc:ci-[branch]``; when Github Actions automatically builds a new image (see below), it is pushed to this tag, where [branch] is the name of the branch the image was built on. When the branch is merged, this image will automatically be pushed to mdmc/mdmc:latest.
 
