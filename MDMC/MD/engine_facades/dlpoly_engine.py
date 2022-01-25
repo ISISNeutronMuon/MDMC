@@ -370,10 +370,63 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             The MDMC ``Trajectory`` from the most recent production simulation
 
         """
-        frames = iread(self.dlpoly.control['io_file_history'],index=slice(start,stop,step),format='dlp-history')
-        for frame in frames:
 
-        return Trajectory(**settings)
+        def read_cell(f):
+            cell = np.zeros((3,3))
+            for i in range(3):
+                cell[i,:]= np.array([ float(x) for x in  f.readline().split() ])
+            return cell
+
+
+        def create_atom(f,lvl):
+
+            symbol, d1, d2, *_  = f.readline().split()
+            mass = float(d2)
+            aid = int(d1)
+            pos = [ float(x) for x in f.readline().split() ]
+            vel = None
+            force = None
+            if lvl > 0:
+                vel = [ float(x) for x in f.readline().split() ]
+            if lvl > 1:
+                force = [ float(x) for x in f.readline().split() ]
+
+
+            atom_type = 1
+            atom = Atom(symbol, position=pos, mass=mass)
+            atom.atom_type = atom_type
+            if self.universe:
+                atom.universe = self.universe
+            if i_vel is not None:
+                atom.velocity = vel
+            return atom
+
+        atom_IDs = settings.get('atom_IDs')
+        print('selected ids',atom_IDs)
+        f = open(self.dlpoly.control['io_file_history'],"r")
+        title = f.readline()
+        lvl, imcon, n_atoms, frames,  _ = [ int(i) for i in f.readline().split() ]
+        if self.universe:
+            assert n_atoms == len(self.universe.atoms)
+        confis = []
+        k = 0
+        end = stop
+        if stop is None:
+            end = frames + 1
+        for frame in range(frames):
+            time = float(f.readline().split()[-1])
+            cell = read_cell(f)
+            atoms = []
+            for a in range(n_atoms):
+                atom  = create_atom(f,lvl)
+                if not atom_ids or atom.ID in atom_ids:
+                    atoms.append(atom)
+            if ((k >= start) and mod(k - start,step)) and (k < end):
+                configs.append(TemporalConfiguration(time,*atoms))
+            k = k + 1
+        f.close()
+
+        return Trajectory(*config)
 
     def update_parameters(self):
 
