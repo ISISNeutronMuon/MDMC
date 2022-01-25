@@ -52,22 +52,22 @@ simulation = Simulation(universe,
 # Energy Minimization and equilibration
 #simulation.minimize(n_steps=100)
 #simulation.run(n_steps=100, equilibration=True)
-simulation.run(n_steps=100, equilibration=False)
-print(simulation.trajectory)
+simulation.run(n_steps=1000, equilibration=False)
+#print(simulation.trajectory)
 ## dataset
-#exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
-#                 'type':'SQw',
-#                 'reader':'xml_SQw',
-#                 'weight':1.}]
+exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+                 'type':'SQw',
+                 'reader':'xml_SQw',
+                 'weight':1.}]
 
-#fit_parameters = universe.parameters
+fit_parameters = universe.parameters
 
 # Specify how the refinement is going to be controlled
-#control = Control(simulation=simulation,
-#                  exp_datasets=exp_datasets,
-#                  fit_parameters=fit_parameters,
-#                  MD_steps=570)
+control = Control(simulation=simulation,
+                  exp_datasets=exp_datasets,
+                  fit_parameters=fit_parameters,
+                  MD_steps=570)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-#control.refine(n_steps=3)
+control.refine(n_steps=3)

@@ -14,6 +14,7 @@ from itertools import tee
 import logging
 from ase import Atoms,Atom
 from ase.io import write,iread
+from MDMC.MD.structural_units import Atom as  MAtom
 
 from dlpoly import DLPoly
 from dlpoly.field import Field
@@ -23,7 +24,7 @@ import numpy as np
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.trajectory import Trajectory, TemporalConfiguration
 
 
 LOGGER = logging.getLogger(__name__)
@@ -392,17 +393,15 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 force = [ float(x) for x in f.readline().split() ]
 
             atom_type = 1
-            atom = Atom(symbol, position=pos, mass=mass)
-            print("kk 0",atom)
+            atom = MAtom(symbol, position=pos, mass=mass)
             atom.atom_type = atom_type
             if self.universe:
                 atom.universe = self.universe
             if vel is not None:
                 atom.velocity = vel
-            print("kk 1",atom)
             return atom
 
-        atom_IDs = settings.get('atom_IDs')
+        atom_ids = settings.get('atom_IDs')
         f = open(self.dlpoly.control['io_file_history'],"r")
         title = f.readline()
         lvl, imcon, n_atoms, frames,  _ = [ int(i) for i in f.readline().split() ]
@@ -422,7 +421,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 atom  = create_atom(f,lvl)
                 if not atom_ids or atom.ID in atom_ids:
                     atoms.append(atom)
-            if ((k >= start) and mod(k - start,step)) and (k < end):
+            if ((k >= start) and ((k - start)%step == 0) and (k < end)):
                 configs.append(TemporalConfiguration(time,*atoms))
                 print("add frame",k)
         f.close()
