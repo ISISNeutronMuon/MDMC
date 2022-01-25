@@ -58,7 +58,8 @@ simulation.run(n_steps=1000, equilibration=False)
 exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
-                 'weight':1.}]
+                 'weight':1.,
+                 'resolution':None}]
 
 fit_parameters = universe.parameters
 

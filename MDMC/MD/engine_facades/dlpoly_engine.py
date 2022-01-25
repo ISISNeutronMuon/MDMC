@@ -411,19 +411,16 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         end = stop
         if stop is None:
             end = frames + 1
-        print("frames to process", frames)
         for k in range(frames):
             time = float(f.readline().split()[-1])
             cell = read_cell(f)
             atoms = []
-            print("process frame",k)
             for a in range(n_atoms):
                 atom  = create_atom(f,lvl)
                 if not atom_ids or atom.ID in atom_ids:
                     atoms.append(atom)
             if ((k >= start) and ((k - start)%step == 0) and (k < end)):
                 configs.append(TemporalConfiguration(time,*atoms))
-                print("add frame",k)
         f.close()
 
         return Trajectory(*configs)
