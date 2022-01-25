@@ -13,7 +13,7 @@ from copy import copy
 from itertools import tee
 import logging
 from ase import Atoms,Atom
-from ase.io import write
+from ase.io import write,iread
 
 from dlpoly import DLPoly
 from dlpoly.field import Field
@@ -370,6 +370,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             The MDMC ``Trajectory`` from the most recent production simulation
 
         """
+        frames = iread(self.dlpoly.control['io_file_history'],index=slice(start,stop,step),format='dlp-history')
+        for frame in frames:
 
         return Trajectory(**settings)
 
@@ -390,6 +392,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         Must be implemented (abstract method in MDEngine ABC)
         """
+
+        for atom in self.universe.atoms:
+            pass
+
         self._saved_config = saved_config
 
     def reset_config(self):
@@ -527,6 +533,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.bonds = bonds
         self.angles = angles
 
+
         if bonds:
             LOGGER.debug('%s Add bonds to DL_POLY', self.__class__)
             self.dlpoly.create_bonds(bonds)
@@ -537,8 +544,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             # to be (and in fact cannot) be passed to DL_POLY hybrid angle_style
             self.dlpoly.create_angles(angles)
         self.dlpoly.load_field('Ar.field')
-        mx = np.max([i.cutoff for i in self.universe.nonbonded_interactions])
-        print(mx)
         self.dlpoly.control['cutoff'] = (np.max([i.cutoff for i in self.universe.nonbonded_interactions]),'Ang')
 
     def _update_charges(self):

@@ -26,7 +26,7 @@ density = 0.0176
 # 30.7553 A will contain 512 Ar atoms
 # 38.4441 A will contain 1000 Ar atoms
 universe = Universe(dimensions=38.4441)
-Ar = Atom('Ar', charge=0.)
+Ar = Atom('Ar')
 # Calculating number of Ar atoms needed to obtain density
 n_ar_atoms = int(density * np.product(universe.dimensions))
 print(n_ar_atoms)
@@ -53,7 +53,7 @@ simulation = Simulation(universe,
 #simulation.minimize(n_steps=100)
 #simulation.run(n_steps=100, equilibration=True)
 simulation.run(n_steps=100, equilibration=False)
-
+print(simulation.trajectory)
 ## dataset
 #exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
 #                 'type':'SQw',
