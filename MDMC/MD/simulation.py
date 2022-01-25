@@ -1525,7 +1525,7 @@ class Simulation:
         verbose_manager.step(f"Running {process} for {n_steps} steps")
         self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
                         work_dir=work_dir)
-        
+
         verbose_manager.finish(f"{process.capitalize()}")
 
     @property

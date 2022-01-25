@@ -546,7 +546,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` used to create the region and simulation box.
         """
 
-<<<<<<< HEAD
         self.dlpoly.control = Control()
         self.dlpoly.control['title'] = 'my simulation title'
         self.dlpoly.control['time_job'] = (10000, 's')
@@ -565,19 +564,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             self.dlpoly.control['coul_method'] = 'off'
 
 
-=======
-        self.dlpoly.control=Control()
-        self.dlpoly.control['title'] = 'my simulation title'
-        self.dlpoly.control['time_job'] = (10000,'s')
-        self.dlpoly.control['time_close'] = (10,'s')
-        self.dlpoly.control['data_dump_frequency'] = (5000,'steps')
-        self.dlpoly.control['stats_frequency'] = (100,'steps')
-        self.dlpoly.control['print_frequency'] = (100,'steps')
-        self.dlpoly.control['stack_size'] = (10,'steps')
-        self.dlpoly.control['padding'] = (0.5, 'Ang')
-        self.dlpoly.control['vdw_method'] = 'direct'
->>>>>>> 809c5739 (initial support for dlpoly... still needs a field in the working folder to run)
-
     def _build_config(self, universe):
 
         """
@@ -588,17 +574,10 @@ class DLPOLYUniverse(DLPOLYAttribute):
         universe : Universe
             The MDMC ``Universe`` used to fill the DL_POLY box with atoms.
         """
-<<<<<<< HEAD
         # assume the dimensions are in angstrom
         a = Atoms(cell=universe.dimensions, pbc=True)
         for atom in universe.atoms:
             a.append(Atom(atom.name, atom.position))
-=======
-# assume the dimensions are in angstrom
-        a = Atoms(cell = universe.dimensions,pbc = True)
-        for atom in universe.atoms:
-            a.append(Atom(atom.name,atom.position))
->>>>>>> 809c5739 (initial support for dlpoly... still needs a field in the working folder to run)
         write('test.config', a, format='dlp4')
         self.dlpoly.load_config('test.config')
 
@@ -858,16 +837,8 @@ class DLPOLYSimulation(DLPOLYAttribute):
     def time_step(self, value):
 
         self._time_step = value
-<<<<<<< HEAD
         self.dlpoly.control['timestep'] = (
                 convert_unit(self._time_step), str(SYSTEM['TIME']) )
-=======
-        try:
-            # Set the timestep in DL_POLY wrapper
-            self.dlpoly.control['timestep'] = (convert_unit(self._time_step),'fs')
-        except ValueError:
-            pass
->>>>>>> 809c5739 (initial support for dlpoly... still needs a field in the working folder to run)
 
     @property
     def temperature(self):
@@ -890,12 +861,8 @@ class DLPOLYSimulation(DLPOLYAttribute):
         self._temperature = value
         try:
             # Set the initial temperature in the DL_POLY wrapper
-<<<<<<< HEAD
             self.dlpoly.control['temperature'] = (
                 convert_unit(self._temperature), 'K')
-=======
-            self.dlpoly.control['temperature'] = (convert_unit(self._temperature), 'K')
->>>>>>> 809c5739 (initial support for dlpoly... still needs a field in the working folder to run)
         except ValueError:
             pass
 
@@ -1084,10 +1051,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 
         self._barostat = value
         # Set the thermostat and barostat in DL_POLY wrapper
-<<<<<<< HEAD
 
-=======
->>>>>>> 809c5739 (initial support for dlpoly... still needs a field in the working folder to run)
 
 # Define the unit system used in DL_POLY
 SYSTEM = {
