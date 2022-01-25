@@ -50,9 +50,9 @@ simulation = Simulation(universe,
                         traj_step=15)
 
 # Energy Minimization and equilibration
-#simulation.minimize(n_steps=100)
-#simulation.run(n_steps=100, equilibration=True)
-simulation.run(n_steps=1000, equilibration=False)
+simulation.minimize(n_steps=100)
+simulation.run(n_steps=100, equilibration=True)
+simulation.run(n_steps=10000, equilibration=False)
 #print(simulation.trajectory)
 ## dataset
 exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
