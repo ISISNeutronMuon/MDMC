@@ -17,7 +17,8 @@ from ase.io import write
 from MDMC.MD.structural_units import Atom as  MAtom
 
 from dlpoly import DLPoly
-from dlpoly.field import Field
+from dlpoly.species import Species
+from dlpoly.field import Field, Bond, Potential, Molecule
 from dlpoly.new_control import NewControl as Control
 import numpy as np
 
@@ -569,8 +570,19 @@ class DLPOLYUniverse(DLPOLYAttribute):
         LOGGER.info('%s Add topology to DL_POLY',
                     self.__class__)
 
-        #example methods
-        bonds, angles, dihedrals, disps, couls, others = partition_interactions(
+        self.dlpoly.field = self._create_field(universe)
+        self.dlpoly.field.write('FIELD')
+
+        mx = np.max([i.cutoff for i in self.universe.nonbonded_interactions])
+        self.dlpoly.control['cutoff'] = (np.max([i.cutoff for i in self.universe.nonbonded_interactions]),'Ang')
+
+
+    def _create_field(self, universe) -> Field:
+        """
+        Creates a dlpoly Field object
+        """
+
+        self.bonds, self.angles, self.dihedrals, self.disps, self.couls, others = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
@@ -580,21 +592,38 @@ class DLPOLYUniverse(DLPOLYAttribute):
             raise NotImplementedError('This interaction type has not been'
                                       ' implemented in the DL_POLY facade')
 
-        self.bonds = bonds
-        self.angles = angles
+        out = Field()
+        out.header = 'MDMC Generated Field File'
+        out.units = 'kJ'
 
+        spec = universe.element_lookup
+        mols = {}
 
-        if bonds:
-            LOGGER.debug('%s Add bonds to DL_POLY', self.__class__)
-            self.dlpoly.create_bonds(bonds)
+        for ind, species in enumerate(spec.values()):
+            MDMC_spec = universe.element_dict[species]
+            newSpec = Species(species, ind, charge=MDMC_spec.charge, mass=MDMC_spec.mass)
+            newMol = Molecule()
+            newMol.name = species
+            newMol.nAtoms = 1
+            newMol.species = {ind:newSpec}
+            mols[species] = newMol
 
-        if angles:
-            LOGGER.debug('%s Add angles to DL_POLY', self.__class__)
-            # Set used to remove duplicate angle styles, which are not required
-            # to be (and in fact cannot) be passed to DL_POLY hybrid angle_style
-            self.dlpoly.create_angles(angles)
-        self.dlpoly.load_field('Ar.field')
-        self.dlpoly.control['cutoff'] = (np.max([i.cutoff for i in self.universe.nonbonded_interactions]),'Ang')
+        for atom in universe.atoms:
+            out.add_molecule(mols[atom.name])
+
+        for molecule in universe.molecule_list:
+            raise NotImplementedError('This interaction type has not been'
+                                      ' implemented in the DL_POLY facade')
+
+        for disp in self.disps:
+            currAtm = [spec[atm] for parm in disp.atom_types for atm in parm]
+            pot = Potential('vdw', [*currAtm, 'lj',
+                                 str(disp.parameters[0].value.real),
+                                 str(disp.parameters[1].value.real)])
+            out.add_potential(spec, pot)
+
+        return out
+
 
     def _update_charges(self):
 

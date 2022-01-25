@@ -389,6 +389,26 @@ class Universe(AtomContainer):
         return {atom.element:atom for atom in self.atoms}
 
     @property
+    def element_lookup(self):
+
+        """
+        Get the elements by ID in the ``Universe``
+
+        This is required for MD engines which assign the same potential
+        parameters for all identical element names.
+
+        Returns
+        -------
+        dict
+            ``element:atom pairs``, where ``atom`` is a single ``Atom`` of the
+            specified ``element``.
+
+        """
+
+        return {atom.atom_type:atom.element for atom in self.atoms}
+
+
+    @property
     def atoms(self):
 
         """
@@ -900,14 +920,14 @@ class Universe(AtomContainer):
         *nonbonded_interactions
             Nonbonded interactions to be added to the ``Universe``.
             Can take any number of non-bonded interactions:
-                ``Dispersion()``: 
+                ``Dispersion()``:
                     either Lennard-Jones or Buckingham dispersion
                 ``Coulombic()``:
                     normal or modified Coulomb interaction
             with appropriate parameters for the interaction.
             See http://mdmcproject.org/tutorials/building-a-universe.html?highlight=interaction#Create-non-bonded-interactions
             for more details on non-bonded interactions.
-                
+
         """
 
         # Check if interactions already exists in Universe
