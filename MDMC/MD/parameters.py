@@ -269,6 +269,10 @@ class Parameter:
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
+    # comparison operator so parameters are always in the same order on refinement headings
+    def __lt__(self, other):
+        return self.name < other.name
+
 
 class Parameters(list):
 

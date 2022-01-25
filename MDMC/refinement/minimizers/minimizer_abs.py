@@ -70,7 +70,7 @@ class Minimizer(ABC):
         # History of minimization
         self._history = []
 
-        parameters = np.array(list(parameters))
+        parameters = np.array(sorted(list(parameters)))
         self._check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters
