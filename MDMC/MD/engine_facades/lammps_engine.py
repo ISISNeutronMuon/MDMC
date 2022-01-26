@@ -430,7 +430,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                lmp=self.lmp,
                                                **settings)
 
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps, output_log: str=None, work_dir: str=None, **settings):
 
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
@@ -462,7 +462,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.ensemble.apply_ensemble_fixes()
 
 
-    def run(self, n_steps, equilibration=False):
+    def run(self, n_steps, equilibration=False, output_log: str=None, work_dir: str=None):
         if not equilibration:
             # Remove previous dumps if they exist
             if 'traj1' in [dump['name'] for dump in self.dumps]:

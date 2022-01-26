@@ -102,7 +102,7 @@ class Universe(AtomContainer):
         self.kspace_solver = settings.get('kspace_solver')
         self.electrostatic_solver = settings.get('electrostatic_solver')
         self.dispersive_solver = settings.get('dispersive_solver')
-        # kspace_solver is mutually excusive with the other two solver
+        # kspace_solver is mutually exclusive with the other two solver
         # attributes
         if self.kspace_solver and (self.electrostatic_solver or
                                    self.dispersive_solver):
@@ -1481,7 +1481,8 @@ class Simulation:
                                      time_step=self.time_step,
                                      **self.settings)
 
-    def minimize(self, n_steps: int, verbose: bool=False, **settings):
+    def minimize(self, n_steps: int, verbose: bool=False, output_log: str=None,
+                 work_dir: str=None, **settings):
 
         """
         Minimizes the total potential energy of the simulated system by
@@ -1495,6 +1496,10 @@ class Simulation:
         verbose: bool, optional
             Whether to print statements when the minimization has been started and completed
             (including the number minimizatin steps and time taken). Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1512,12 +1517,14 @@ class Simulation:
             print('Starting minimization for {} steps'.format(n_steps))
             time_0 = time()
 
-        self.engine.minimize(n_steps, **settings)
+        self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
+                             **settings)
 
         if verbose:
             print('Minimization complete in {} s'.format(round(time() - time_0, 3)))
 
-    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False):
+    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False,
+            output_log: str=None, work_dir: str=None):
 
         """
         Runs the MD simulation for the specified number of steps. Trajectories
@@ -1536,6 +1543,10 @@ class Simulation:
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
         """
 
         if equilibration:
@@ -1547,7 +1558,7 @@ class Simulation:
             print('Starting {0} for {1} steps'.format(process, n_steps))
             time_0 = time()
 
-        self.engine.run(n_steps, equilibration)
+        self.engine.run(n_steps, equilibration, output_log=output_log, work_dir=work_dir)
 
         if verbose:
             print('{0} complete in {1} s'.format(process.capitalize(), round(time() - time_0, 3)))

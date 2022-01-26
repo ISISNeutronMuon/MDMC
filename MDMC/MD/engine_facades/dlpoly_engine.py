@@ -294,7 +294,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly_simulation = DLPOLYSimulation(self.universe, self.dlpoly,
                                                   **settings)
 
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps, output_log: str=None, work_dir: str=None, **settings):
         """
         Minimizes the simulation energy
 
@@ -323,9 +323,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
             self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
-        self.run(n_steps, equilibration=True)
+        self.dlpoly.workdir = work_dir
+        self.run(n_steps, equilibration=True, outputFile=output_log)
 
-    def run(self, n_steps, equilibration=False):
+    def run(self, n_steps, output_log: str=None, work_dir: str=None, equilibration=False):
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
@@ -352,7 +353,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['traj_key'] = 'pos'
 
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
-        self.dlpoly.run(numProcs=1, outputFile='test.log')
+        self.dlpoly.workdir = work_dir
+        self.dlpoly.run(numProcs=1, outputFile=output_log)
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
