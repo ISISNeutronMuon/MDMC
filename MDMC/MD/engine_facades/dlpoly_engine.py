@@ -11,7 +11,7 @@ Notes
 
 from copy import copy
 import logging
-from ase import Atoms,Atom
+from ase import Atoms, Atom
 from ase.io import write
 from MDMC.MD.structural_units import Atom as  MAtom
 
@@ -345,7 +345,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['traj_key'] ='pos'
 
         self.dlpoly.control['time_run'] = (n_steps,'steps')
-        self.dlpoly.run(executable = '/home/drFaustroll/lavello/build-dlpoly-alin/bin/DLPOLY.Z',numProcs = 1, outputFile='test.log')
+        self.dlpoly.run(numProcs = 1, outputFile='test.log')
 
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
@@ -445,13 +445,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         self._saved_config = Config(source=self.dlpoly.control['io_file_revcon'])
 
-    def set_config(self,config):
-        """
-
-        """
-        self.dlpoly.config = config
-
-
     def reset_config(self):
 
         """
@@ -499,7 +492,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.update_parameters()
 
     def update_parameters(self):
-
         """
         Updates the DL_POLY force field parameters from the MDMC universe
             self.workdir
@@ -510,9 +502,9 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self._update_charges()
         self._update_bonded_interactions('bond', self.bonds)
         self._update_dispersions(self.universe)
+        self.dlpoly.field.write(self.dlpoly.control['io_file_field'])
 
     def _define_simulation_box(self, universe):
-
         """
         Defines a region and creates a simulation box that fills this region
 
@@ -579,7 +571,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
         mx = np.max([i.cutoff for i in self.universe.nonbonded_interactions])
         self.dlpoly.control['cutoff'] = (np.max([i.cutoff for i in self.universe.nonbonded_interactions]),'Ang')
 
-
     def _create_field(self, universe) -> Field:
         """
         Creates a dlpoly Field object
@@ -638,7 +629,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         return out
 
-
     def _update_charges(self):
 
         """
@@ -664,7 +654,19 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` containing ``NonBondedInteractions``.
         """
 
-        print("commands: ",pair_coeff_cmds)
+        self.disps, *_ = partition_interactions(
+            set(universe.interactions),
+            ['Dispersion'],
+            unpartitioned=True,
+            lst=True)
+
+        spec = universe.element_lookup
+
+        for disp in self.disps:
+            currAtm = [spec[atm] for parm in disp.atom_types for atm in parm]
+            currPot = next(self.dlpoly.field.get_pot(species=currAtm, potType='lj'))
+            currPot.params = [str(disp.parameters[0].value.real),
+                             str(disp.parameters[1].value.real)]
 
     def _update_bonded_interactions(self, dlpoly_name, bonded_interactions):
 
@@ -691,7 +693,11 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
         pass
 
+    def set_config(self,config):
+        """
 
+        """
+        self.dlpoly.config = config
 
 
 @repr_decorator('universe', 'time_step', 'traj_step', 'ensemble')
