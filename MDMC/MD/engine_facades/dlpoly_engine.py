@@ -311,7 +311,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
-        etol = settings.get('etol', 1.e-4)
+        etol = settings.get('etol', 1.e-3)
         ftol = settings.get('ftol', 0.)
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
                     self.__class__, n_steps, ftol)
@@ -323,8 +323,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
             self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
-        self.dlpoly.workdir = work_dir
-        self.run(n_steps, equilibration=True, outputFile=output_log)
+        self.run(n_steps, equilibration=True, work_dir=work_dir, output_log=output_log)
 
     def run(self, n_steps, output_log: str=None, work_dir: str=None, equilibration=False):
         """
@@ -401,7 +400,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             if lvl > 1:
                 force = [float(x) for x in f.readline().split()]
 
-            atom_type = 1
+            atom_type = self.universe.element_dict[symbol].atom_type
             atom = MAtom(symbol, position=pos, mass=mass)
             atom.atom_type = atom_type
             if self.universe:
