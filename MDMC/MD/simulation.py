@@ -1558,7 +1558,8 @@ class Simulation:
             print('Starting {0} for {1} steps'.format(process, n_steps))
             time_0 = time()
 
-        self.engine.run(n_steps, equilibration, output_log=output_log, work_dir=work_dir)
+        self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
+                        work_dir=work_dir)
 
         if verbose:
             print('{0} complete in {1} s'.format(process.capitalize(), round(time() - time_0, 3)))

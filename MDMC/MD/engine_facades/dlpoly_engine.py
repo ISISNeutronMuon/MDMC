@@ -323,9 +323,11 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
             self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
-        self.run(n_steps, output_log=output_log, work_dir=work_dir, equilibration=True,**settings)
+        self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
+                 **settings)
 
-    def run(self, n_steps, output_log: str=None, work_dir: str=None, equilibration=False,**settings):
+    def run(self, n_steps, equilibration=False, output_log: str=None, work_dir: str=None,
+            **settings):
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
