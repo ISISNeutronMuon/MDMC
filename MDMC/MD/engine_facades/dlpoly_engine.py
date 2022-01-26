@@ -430,7 +430,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 if not atom_ids or atom.ID in atom_ids:
                     atoms.append(atom)
             if ((k >= start) and ((k - start)%step == 0) and (k < end)):
-                configs.append(TemporalConfiguration(convert_unit(time,unit=SYSTEM['TIME'],to_dlpoly=False),*atoms))
+                configs.append(TemporalConfiguration(convert_unit(time,unit=units.Unit('ps'),to_dlpoly=False),*atoms))
         f.close()
 
         return Trajectory(*configs)
@@ -785,12 +785,8 @@ class DLPOLYSimulation(DLPOLYAttribute):
     def time_step(self, value):
 
         self._time_step = value
-        try:
-            # Set the timestep in DL_POLY wrapper
-            self.dlpoly.control['timestep'] = (
-                convert_unit(self._time_step), 'fs')
-        except ValueError:
-            pass
+        self.dlpoly.control['timestep'] = (
+                convert_unit(self._time_step), str(SYSTEM['TIME']) )
 
     @property
     def temperature(self):
