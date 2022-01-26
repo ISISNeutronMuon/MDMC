@@ -429,7 +429,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 if not atom_ids or atom.ID in atom_ids:
                     atoms.append(atom)
             if ((k >= start) and ((k - start)%step == 0) and (k < end)):
-                configs.append(TemporalConfiguration(convert_unit(time,unit=SYSTEM.TIME,to_dlpoly=False),*atoms))
+                configs.append(TemporalConfiguration(convert_unit(time,unit=SYSTEM['TIME'],to_dlpoly=False),*atoms))
         f.close()
 
         return Trajectory(*configs)
@@ -536,8 +536,11 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.control['vdw_method'] = 'direct'
 
         if self.universe.electrostatic_solver:
-            self.dlpoly.control['coul_method'] = 'spme'
-            self.dlpoly.control['coul_precision'] = self.universe.electrostatic_solver.accuracy
+            self.dlpoly.control['coul_method'] = 'ewald'
+            self.dlpoly.control['ewald_precision'] = self.universe.electrostatic_solver.accuracy
+        else:
+            self.dlpoly.control['coul_method'] = 'off'
+
 
 
     def _build_config(self, universe):
@@ -1004,7 +1007,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 # Define the unit system used in DL_POLY
 SYSTEM = {
     'LENGTH': units.Unit('Ang'),
-    'TIME': units.Unit('fs'),
+    'TIME': units.Unit('ps'),
     'MASS': units.Unit('g') / units.Unit('mol'),
     'CHARGE': units.Unit('e'),
     'ANGLE': units.Unit('deg'),
