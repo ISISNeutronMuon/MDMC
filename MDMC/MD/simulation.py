@@ -1484,8 +1484,11 @@ class Simulation:
                 on engine used.
         """
 
+        verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
                              **settings)
+
+        verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
             output_log: str = None, work_dir: str = None):
