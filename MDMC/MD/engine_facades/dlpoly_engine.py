@@ -426,8 +426,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 atom = create_atom(f, lvl)
                 if not atom_ids or atom.ID in atom_ids:
                     atoms.append(atom)
-            if ((k >= start) and ((k - start) % step == 0) and (k < end)):
-                configs.append(TemporalConfiguration(time*1000, *atoms))
+            if ((k >= start) and ((k - start)%step == 0) and (k < end)):
+                configs.append(TemporalConfiguration(convert_unit(time,unit=SYSTEM.TIME,to_dlpoly=False),*atoms))
         f.close()
 
         return Trajectory(*configs)
@@ -532,6 +532,11 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.control['stack_size'] = (10, 'steps')
         self.dlpoly.control['padding'] = (0.5, 'Ang')
         self.dlpoly.control['vdw_method'] = 'direct'
+
+        if self.universe.electrostatic_solver:
+            self.dlpoly.control['coul_method'] = 'spme'
+            self.dlpoly.control['coul_precision'] = self.universe.electrostatic_solver.accuracy
+
 
     def _build_config(self, universe):
 
