@@ -19,6 +19,7 @@ from dlpoly import DLPoly
 from dlpoly.species import Species
 from dlpoly.field import Field, Bond, Potential, Molecule
 from dlpoly.new_control import NewControl as Control
+from dlpoly.config import Config
 import numpy as np
 
 from MDMC.common import units
@@ -340,7 +341,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['time_equilibration'] = (0,'steps')
             self.dlpoly.control['traj_calculate'] ='On'
             self.dlpoly.control['traj_start'] =(0,'steps')
-            self.dlpoly.control['traj_interval'] =(10,'steps')
+            self.dlpoly.control['traj_interval'] =(self.traj_step,'steps')
             self.dlpoly.control['traj_key'] ='pos'
 
         self.dlpoly.control['time_run'] = (n_steps,'steps')
@@ -378,7 +379,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             for i in range(3):
                 cell[i,:]= np.array([ float(x) for x in  f.readline().split() ])
             return cell
-
 
         def create_atom(f,lvl):
 
@@ -421,7 +421,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 if not atom_ids or atom.ID in atom_ids:
                     atoms.append(atom)
             if ((k >= start) and ((k - start)%step == 0) and (k < end)):
-                configs.append(TemporalConfiguration(time,*atoms))
+                configs.append(TemporalConfiguration(time*1000,*atoms))
         f.close()
 
         return Trajectory(*configs)
@@ -443,11 +443,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         Must be implemented (abstract method in MDEngine ABC)
         """
+        self._saved_config = Config(source=self.dlpoly.control['io_file_revcon'])
 
-        for atom in self.universe.atoms:
-            pass
+    def set_config(self,config):
+        """
 
-        self._saved_config = saved_config
+        """
+        self.dlpoly.config = config
+
 
     def reset_config(self):
 
@@ -661,7 +664,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` containing ``NonBondedInteractions``.
         """
 
-        pass
+        print("commands: ",pair_coeff_cmds)
 
     def _update_bonded_interactions(self, dlpoly_name, bonded_interactions):
 
@@ -687,6 +690,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
         are constrained
         """
         pass
+
+
 
 
 @repr_decorator('universe', 'time_step', 'traj_step', 'ensemble')
