@@ -317,15 +317,15 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     self.__class__, n_steps, ftol)
         if ftol == 0.0:
             self.dlpoly.control['minimisation_criterion'] = 'energy'
-            self.dlpoly.control['minimisation_tolerance'] = (etol, 'e.V/mol')
+            self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
             self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
         else:
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
             self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
-        self.run(n_steps, equilibration=True, work_dir=work_dir, output_log=output_log)
+        self.run(n_steps, output_log=output_log, work_dir=work_dir, equilibration=True,**settings)
 
-    def run(self, n_steps, output_log: str=None, work_dir: str=None, equilibration=False):
+    def run(self, n_steps, output_log: str=None, work_dir: str=None, equilibration=False,**settings):
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
