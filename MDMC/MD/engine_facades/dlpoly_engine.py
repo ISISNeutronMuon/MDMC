@@ -10,7 +10,6 @@ Notes
 """
 
 from copy import copy
-from itertools import tee
 import logging
 from ase import Atoms,Atom
 from ase.io import write
@@ -26,6 +25,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.trajectory_analysis.trajectory import Trajectory, TemporalConfiguration
+from MDMC.utilities.partitioning import partition, partition_interactions
 
 
 LOGGER = logging.getLogger(__name__)
@@ -580,6 +580,17 @@ class DLPOLYUniverse(DLPOLYAttribute):
     def _create_field(self, universe) -> Field:
         """
         Creates a dlpoly Field object
+
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC ``Universe`` used to define the topology.
+
+        Raises
+        ------
+        NotImplementedError
+            If ``universe`` contains an interaction type that has not been
+            implemented in the DL_POLY facade
         """
 
         self.bonds, self.angles, self.dihedrals, self.disps, self.couls, others = partition_interactions(
@@ -1155,86 +1166,3 @@ def convert_unit(value, unit=None, to_dlpoly=True):
         value *= getattr(units, component)
 
     return value
-
-
-def partition(items, predicate):
-
-    """
-    Partitions an ``iterable`` using a predicate
-
-    Parameters
-    ----------
-    items : iterable
-        An ``interable`` to be partitioned.
-    predicate : function
-        A predicate that can be applied to items to returned `True` or `False`.
-
-    Returns
-    -------
-    `tuple`
-        A `tuple` of (``gen_true``, ``gen_false``), where ``gen_true`` is a
-        generator of all items for which the ``predicate`` returned `True`, and
-        ``gen_false is a generator of all items for which the ``predicate``
-        returned `False`
-    """
-
-    iter_a, iter_b = tee((predicate(item), item) for item in items)
-    return ((item for pred, item in iter_a if pred),
-            (item for pred, item in iter_b if not pred))
-
-
-def partition_interactions(interactions, names, unpartitioned=False, lst=False):
-
-    """
-    Partitions an ``iterable`` of ``Interaction`` objects using a `list` of
-    ``Interaction`` ``names``
-
-    This occurs by using ``partition`` to filter out one ``Interaction`` type
-    for each loop, so previously identified ``Interactions`` are no longer
-    considered.
-
-    Parameters
-    ----------
-    interactions : iterable of Interactions
-        An ``interable`` of ``Interaction`` objects to be partitioned.
-    names : list of str
-        Names of ``Interaction`` classes.
-    unpartitioned : bool, optional
-        If `True`, then a generator containing any ``Interaction`` objects that
-        did not have a name in ``names`` is returned as an additional item in
-        the `tuple`. Default is `False`.
-    lst : bool, optional
-        If `True`, then the returned `tuple` contains `list` rather than
-        generators. ``Interaction`` objects which have the name specified by
-        ``names[n]``. Default is `False`.
-
-    Returns
-    -------
-    `tuple`
-        A `tuple` of length ``len(names)`` where ``index`` ``n`` is a generator
-        of all of the ``Interaction`` objects which have the name specified by
-        ``names[n]``. If ``unpartitioned`` is `True`, `tuple` is length ``n+1``.
-        If ``lst`` is `True`, the generators are replaced by `list`.
-
-    Example
-    -------
-    Partion ``interactions`` into ``Bonds`` and ``BondAngles``:
-
-        .. highlight:: python
-        .. code-block:: python
-
-            bonds, angles = partition_interactions(interactions,
-                                                   ['Bond, BondAngle'])
-    """
-
-    interaction_lst = [None] * len(names)
-    i = 0
-    for name in names:
-        predicate = lambda x, n=name: x.name == n
-        interaction_lst[i], interactions = partition(interactions, predicate)
-        i += 1
-    if unpartitioned:
-        interaction_lst += [interactions]
-    if lst:
-        interaction_lst = [list(i) for i in interaction_lst]
-    return tuple(interaction_lst)
