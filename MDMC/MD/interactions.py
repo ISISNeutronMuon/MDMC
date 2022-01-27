@@ -475,7 +475,7 @@ class Dispersion(NonBondedInteraction):
         return [self.universe.atom_types[atom_type][0].element
                 for tpl in self.atom_types
                 for atom_type in tpl]
-    
+
     def is_equivalent(self, other) -> bool:
 
         """
