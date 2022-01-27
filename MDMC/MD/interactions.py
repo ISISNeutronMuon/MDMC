@@ -420,7 +420,7 @@ class Dispersion(NonBondedInteraction):
 
     def __init__(self, universe, *atom_types, **settings):
 
-        #Ignore pylint warning for inner function docstring
+        # Ignore pylint warning for inner function docstring
         #pylint: disable=missing-docstring
         def validate_atom_type_pair(atom_type_pair):
             try:
@@ -495,7 +495,7 @@ class Dispersion(NonBondedInteraction):
         return [self.universe.atom_types[atom_type][0].element
                 for tpl in self.atom_types
                 for atom_type in tpl]
-    
+
     def is_equivalent(self, other) -> bool:
 
         """

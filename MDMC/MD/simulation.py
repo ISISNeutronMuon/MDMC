@@ -154,7 +154,6 @@ class Universe(AtomContainer):
             return True
         return False
 
-
     # Unit decorator on getter due to operations in setter
     @property
     @unit_decorator_getter(unit=units.LENGTH)
@@ -386,7 +385,7 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.element:atom for atom in self.atoms}
+        return {atom.element: atom for atom in self.atoms}
 
     @property
     def element_lookup(self):
@@ -405,8 +404,7 @@ class Universe(AtomContainer):
 
         """
 
-        return {atom.atom_type:atom.element for atom in self.atoms}
-
+        return {atom.atom_type: atom.element for atom in self.atoms}
 
     @property
     def atoms(self):
@@ -651,12 +649,11 @@ class Universe(AtomContainer):
             An ``Atom`` to add to the ``atom_types`` `dict`
         """
 
-
         if atom.name:
             inter_key = (atom.element, atom.name)
         else:
-        # Sorting is just to ensure consistent order. As interactions will have
-        # different types, sort by id
+            # Sorting is just to ensure consistent order. As interactions will have
+            # different types, sort by id
             inter_key = (atom.element, ) + tuple(sorted(atom.interactions,
                                                         k=id))
 
@@ -675,7 +672,6 @@ class Universe(AtomContainer):
                 self._update_atom_type_interactions(inter_key, atom_type)
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
-
 
     def _update_atom_type_interactions(self, key, atom_type):
 
@@ -745,8 +741,8 @@ class Universe(AtomContainer):
             self.add_force_field(force_field, *structural_unit.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
-    def fill(self, structural_unit: StructuralUnit, force_field: str=None,
-             num_density: float=None, num_struc_units: int=None):
+    def fill(self, structural_unit: StructuralUnit, force_field: str = None,
+             num_density: float = None, num_struc_units: int = None):
 
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
@@ -792,20 +788,20 @@ class Universe(AtomContainer):
             num_density = num_struc_units / np.prod(self.dimensions)
         elif num_density is not None and num_struc_units is not None:
             msg = ('Cannot pass both num_density and num_struc_units to'
-                    ' fill the universe with.')
+                   ' fill the universe with.')
             LOGGER.error('%s: {num_density: %s, num_struc_units: %s}'
-                            ' %s',
-                            self.__class__,
-                            num_density,
-                            num_struc_units,
-                            msg)
+                         ' %s',
+                         self.__class__,
+                         num_density,
+                         num_struc_units,
+                         msg)
             raise ValueError(msg)
         elif num_density is None and num_struc_units is None:
             msg = ('The fill method takes either num_density or'
-                    ' num_struc_units as a parameter.')
+                   ' num_struc_units as a parameter.')
             LOGGER.error('%s %s',
-                            self.__class__,
-                            msg)
+                         self.__class__,
+                         msg)
             raise ValueError(msg)
 
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
@@ -1001,7 +997,7 @@ class Universe(AtomContainer):
 
         return any(position > self.dimensions) or any(position < [0, 0, 0])
 
-    @mod_docstring({'DYNAMIC_SOLVENT_LIST':', '.join(get_solvent_names())})
+    @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
     def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
 
         """
@@ -1074,7 +1070,6 @@ class Universe(AtomContainer):
 
         while abs(difference * 100) >= abs(tolerance):
 
-
             counter += 1
             dim_scaling *= 1 + scale_factor
             box_dimensions = orig_box_dimensions * dim_scaling
@@ -1133,7 +1128,6 @@ class Universe(AtomContainer):
         for molecule in mols:
             self.add_structural_unit(molecule)
             bonded_interactions += molecule.interactions
-
 
         # Get nonbonded interactions from atom types
         # Add interaction if any of its atom types are in atom_types
@@ -1481,8 +1475,8 @@ class Simulation:
                                      time_step=self.time_step,
                                      **self.settings)
 
-    def minimize(self, n_steps: int, verbose: bool=False, output_log: str=None,
-                 work_dir: str=None, **settings):
+    def minimize(self, n_steps: int, verbose: bool = False, output_log: str = None,
+                 work_dir: str = None, **settings):
 
         """
         Minimizes the total potential energy of the simulated system by
@@ -1512,7 +1506,6 @@ class Simulation:
                 on engine used.
         """
 
-
         if verbose:
             print('Starting minimization for {} steps'.format(n_steps))
             time_0 = time()
@@ -1523,8 +1516,8 @@ class Simulation:
         if verbose:
             print('Minimization complete in {} s'.format(round(time() - time_0, 3)))
 
-    def run(self, n_steps: int, equilibration: bool=False, verbose: bool=False,
-            output_log: str=None, work_dir: str=None):
+    def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
+            output_log: str = None, work_dir: str = None):
 
         """
         Runs the MD simulation for the specified number of steps. Trajectories

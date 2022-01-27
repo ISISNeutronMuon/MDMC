@@ -15,11 +15,12 @@ from copy import copy
 import logging
 from ase import Atoms, Atom
 from ase.io import write
-from MDMC.MD.structural_units import Atom as MAtom
+from MDMC.MD.structural_units import (Atom as MAtom,
+                                      Molecule as MMolecule)
 
 from dlpoly import DLPoly
 from dlpoly.species import Species
-from dlpoly.field import Field, Potential, Molecule
+from dlpoly.field import Field, Bond, Potential, Molecule
 from dlpoly.new_control import NewControl as Control
 from dlpoly.config import Config
 import numpy as np
@@ -33,6 +34,15 @@ from MDMC.utilities.partitioning import partition_interactions
 
 
 LOGGER = logging.getLogger(__name__)
+
+POTENTIAL_REF = {
+    'LennardJones': 'lj',
+    'HarmonicPotential': 'harm'
+    }
+BOND_CLASS_REF = {
+    'Bond': 'bonds',
+    'BondAngle': 'angles'
+    }
 
 
 class DLPOLYAttribute:
@@ -509,10 +519,18 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         """
 
+        (self.bonds, self.angles, self.dihedrals,
+         self.disps, self.couls, others) = partition_interactions(
+            set(self.universe.interactions),
+            ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
+            unpartitioned=True,
+            lst=True)
+
+
         # example methods
         self._update_charges()
-        self._update_bonded_interactions('bond', self.bonds)
-        self._update_dispersions(self.universe)
+        self._update_bonded_interactions()
+        self._update_dispersions()
         self.dlpoly.field.write(self.dlpoly.control['io_file_field'])
 
     def _define_simulation_box(self, universe):
@@ -625,29 +643,51 @@ class DLPOLYUniverse(DLPOLYAttribute):
         spec = universe.element_lookup
         mols = {}
 
-        for ind, species in enumerate(spec.values()):
-            MDMC_spec = universe.element_dict[species]
-            newSpec = Species(species, ind,
-                              charge=MDMC_spec.charge, mass=MDMC_spec.mass)
-            newMol = Molecule()
-            newMol.name = species
-            newMol.nAtoms = 1
-            newMol.species = {ind: newSpec}
-            mols[species] = newMol
+        for structure in universe.top_level_structure_list:
+            if structure.name not in mols:
+                newMol = Molecule()
+                newMol.name = structure.name
 
-        for atom in universe.atoms:
-            out.add_molecule(mols[atom.name])
+                if isinstance(structure, MAtom):
+                    species = structure.name
+                    MDMC_spec = universe.element_dict[species]
+                    newSpec = Species(species, 0,
+                                      charge=MDMC_spec.charge, mass=MDMC_spec.mass)
+                    newMol.nAtoms = 1
+                    newMol.species = {1: newSpec}
+                    mols[newMol.name] = newMol
 
-        for molecule in universe.molecule_list:
-            raise NotImplementedError('This interaction type has not been'
-                                      ' implemented in the DL_POLY facade')
+                elif isinstance(structure, MMolecule):
+                    mapping = {}
+                    for ind, atm in enumerate(structure.atoms, 1):
+                        MDMC_spec = universe.element_dict[atm.element]
+                        newSpec = Species(atm.element, ind,
+                                          MDMC_spec.charge, MDMC_spec.mass)
+                        newMol.species[ind] = newSpec
+                        newMol.nAtoms += 1
+                        mapping[atm.ID] = ind
+
+                    for bond, atms in structure.bonded_interaction_pairs:
+                        currAtm = [mapping[atm.ID] for atm in atms]
+                        pot = Bond(BOND_CLASS_REF[type(bond).__name__],
+                                   [*map(str, currAtm),
+                                    POTENTIAL_REF[bond.function.name],
+                                    *map(lambda x: str(x.value.real), bond.parameters)
+                                    ])
+                        newMol.add_potential(currAtm, pot)
+                    mols[newMol.name] = newMol
+
+                else:
+                    raise TypeError(f'Unknown species type: {type(structure).__name__}')
+            out.add_molecule(mols[structure.name])
 
         for disp in self.disps:
             currAtm = [spec[atm] for parm in disp.atom_types for atm in parm]
-            pot = Potential('vdw', [*currAtm, 'lj',
-                                    str(disp.parameters[0].value.real),
-                                    str(disp.parameters[1].value.real)])
-            out.add_potential(spec, pot)
+            pot = Potential('vdw', [*currAtm,
+                                    POTENTIAL_REF[disp.function.name],
+                                    *map(lambda x: str(x.value.real), disp.parameters)
+                                    ])
+            out.add_potential(currAtm, pot)
 
         return out
 
@@ -663,9 +703,11 @@ class DLPOLYUniverse(DLPOLYAttribute):
             ``charge is None``)
         """
 
-        pass
+        for atom in self.universe.top_level_structure_list:
+            currAtom = self.dlpoly.field.molecules[atom.name]
+            currAtom.charge = atom.charge
 
-    def _update_dispersions(self, universe, pair_coeff_cmds=None):
+    def _update_dispersions(self, pair_coeff_cmds=None):
 
         """
         Updates ``Dispersion`` interactions in DL_POLY
@@ -676,13 +718,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` containing ``NonBondedInteractions``.
         """
 
-        self.disps, *_ = partition_interactions(
-            set(universe.interactions),
-            ['Dispersion'],
-            unpartitioned=True,
-            lst=True)
-
-        spec = universe.element_lookup
+        spec = self.universe.element_lookup
 
         for disp in self.disps:
             currAtm = [spec[atm]
@@ -693,7 +729,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             currPot.params = [str(disp.parameters[0].value.real),
                               str(disp.parameters[1].value.real)]
 
-    def _update_bonded_interactions(self, dlpoly_name, bonded_interactions):
+    def _update_bonded_interactions(self):
 
         """
         Updates the bonded interaction coefficients, which are then applied to
@@ -707,6 +743,9 @@ class DLPOLYUniverse(DLPOLYAttribute):
         bonded_interactions : list of BondedInteractions
             ``BondedInteractions`` which will be updated in DL_POLY.
         """
+
+        # print(self.bonds)
+        # self.dlpoly.field.get_pot(species=currAtm, potClass='bonds')
 
         pass
 

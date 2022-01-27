@@ -19,6 +19,7 @@ universe = Universe(dimensions=21.75)
 H1 = Atom('H')
 H2 = Atom('H', position=(0., 1.63298, 0.))
 O = Atom('O', position=(0., 0.81649, 0.57736))
+#print(*map(repr, [H1, H2, O]))
 H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
 O_coulombic = Coulombic(atoms=O, cutoff=10.)
 water_mol = Molecule(position=(0, 0, 0),
