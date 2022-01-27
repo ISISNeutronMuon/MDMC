@@ -37,11 +37,15 @@ LOGGER = logging.getLogger(__name__)
 
 POTENTIAL_REF = {
     'LennardJones': 'lj',
-    'HarmonicPotential': 'harm'
+    'HarmonicPotential': 'harm',
+    'Buckingham': 'buck',
+    'Coulomb': 'coul',
+    'Periodic': 'cos'
     }
 BOND_CLASS_REF = {
     'Bond': 'bonds',
-    'BondAngle': 'angles'
+    'BondAngle': 'angles',
+    'DihedralAngle': 'dihedrals'
     }
 
 
