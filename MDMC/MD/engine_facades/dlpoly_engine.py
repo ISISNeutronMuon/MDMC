@@ -670,8 +670,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     for bond, atms in structure.bonded_interaction_pairs:
                         currAtm = [mapping[atm.ID] for atm in atms]
                         pot = Bond(BOND_CLASS_REF[type(bond).__name__],
-                                   [*map(str, currAtm),
-                                    POTENTIAL_REF[bond.function.name],
+                                   [POTENTIAL_REF[bond.function.name],
+                                    *map(str, currAtm),
                                     *map(lambda x: str(x.value.real), bond.parameters)
                                     ])
                         newMol.add_potential(currAtm, pot)
