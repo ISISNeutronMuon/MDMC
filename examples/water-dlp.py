@@ -45,8 +45,8 @@ simulation = Simulation(universe,
                         traj_step=1000)
 
 # Energy Minimization and equilibration
-simulation.minimize(n_steps=5000)
-simulation.run(n_steps=25000, equilibration=True)
+simulation.minimize(n_steps=5000,output_log='water-min.log',work_dir='minim-water')
+simulation.run(n_steps=25000, equilibration=True,output_log='eq-water.log',work_dir='eq-water')
 
 # Setup refinement
 
