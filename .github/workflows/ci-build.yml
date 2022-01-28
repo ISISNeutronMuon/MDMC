@@ -97,3 +97,12 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }} 
       run: source .github/scripts/documentation_testing.sh
+      
+  linting:
+    name: Pylint
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Run pylint
+      run: pylint MDMC/**/*.py 
