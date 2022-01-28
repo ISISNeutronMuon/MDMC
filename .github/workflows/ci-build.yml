@@ -104,5 +104,10 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
+    - name: Install dependencies and pylint
+      run: |
+        pip3 install --upgrade pip
+        pip install -r dependencies.txt
+        pip install pylint
     - name: Run pylint
       run: pylint MDMC/**/*.py 
