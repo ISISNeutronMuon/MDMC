@@ -97,3 +97,21 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }} 
       run: source .github/scripts/documentation_testing.sh
+      
+  linting:
+    name: Pylint
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: apt get
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
+    - name: pip install
+      run: |
+        pip3 install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint
+    - name: Run pylint
+      run: pylint MDMC || exit 0
