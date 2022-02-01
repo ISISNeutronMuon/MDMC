@@ -114,4 +114,4 @@ jobs:
         pip install -r requirements.txt
         pip install pylint
     - name: Run pylint
-      run: pylint MDMC/**/*.py || exit 0
+      run: pylint MDMC || exit 0
