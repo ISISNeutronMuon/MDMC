@@ -7,6 +7,8 @@ jobs:
   build:
     name: Build docker container
     runs-on: ubuntu-20.04
+    # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
+    if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
