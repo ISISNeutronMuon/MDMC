@@ -15,8 +15,6 @@ from copy import copy
 import logging
 from ase import Atoms, Atom
 from ase.io import write
-from MDMC.MD.structural_units import (Atom as MAtom,
-                                      Molecule as MMolecule)
 
 from dlpoly import DLPoly
 from dlpoly.species import Species
@@ -28,6 +26,8 @@ import numpy as np
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
+from MDMC.MD.structural_units import (Atom as MAtom,
+                                      Molecule as MMolecule)
 from MDMC.trajectory_analysis.trajectory import (Trajectory,
                                                  TemporalConfiguration)
 from MDMC.utilities.partitioning import partition_interactions
@@ -673,11 +673,22 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
                     for bond, atms in structure.bonded_interaction_pairs:
                         currAtm = [mapping[atm.ID] for atm in atms]
-                        pot = Bond(BOND_CLASS_REF[type(bond).__name__],
-                                   [POTENTIAL_REF[bond.function.name],
-                                    *map(str, currAtm),
-                                    *map(lambda x: str(x.value.real), bond.parameters)
-                                    ])
+                        if bond.constrained:
+                            if not type(bond).__name__ == 'Bond':
+                                raise NotImplementedError(f'{type(bond).__name__} constraints '
+                                                          'not supported in DLPOLY')
+
+                            pot = Bond('constraints',
+                                       ['',
+                                        *map(str, currAtm),
+                                        str(bond.parameters[0].value.real)
+                                        ])
+                        else:
+                            pot = Bond(BOND_CLASS_REF[type(bond).__name__],
+                                       [POTENTIAL_REF[bond.function.name],
+                                        *map(str, currAtm),
+                                        *map(lambda x: str(x.value.real), bond.parameters)
+                                        ])
                         newMol.add_potential(currAtm, pot)
                     mols[newMol.name] = newMol
 
@@ -715,11 +726,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         """
         Updates ``Dispersion`` interactions in DL_POLY
-
-        Parameters
-        ----------
-        universe : Universe
-            The MDMC ``Universe`` containing ``NonBondedInteractions``.
         """
 
         spec = self.universe.element_lookup
@@ -730,28 +736,33 @@ class DLPOLYUniverse(DLPOLYAttribute):
                        for atm in parm]
             currPot = next(self.dlpoly.field.get_pot(species=currAtm,
                                                      potType='lj'))
-            currPot.params = [str(disp.parameters[0].value.real),
-                              str(disp.parameters[1].value.real)]
+            currPot.params = [*map(lambda x: str(x.value.real), disp.parameters)]
 
     def _update_bonded_interactions(self):
 
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
-
-        Parameters
-        ----------
-        dlpoly_name : str
-            The name of the bonded interaction type used for setting coeffs in
-            DL_POLY.
-        bonded_interactions : list of BondedInteractions
-            ``BondedInteractions`` which will be updated in DL_POLY.
         """
 
-        # print(self.bonds)
-        # self.dlpoly.field.get_pot(species=currAtm, potClass='bonds')
+        mols = self.dlpoly.field.molecules
 
-        pass
+        for structure in (x for x in self.universe.top_level_structure_list
+                          if isinstance(x, MMolecule)):
+            mapping = {atm.ID: str(ind) for ind, atm in enumerate(structure.atoms, 1)}
+            mol = mols[structure.name]
+
+            for bond, atms in structure.bonded_interaction_pairs:
+                currAtm = [mapping[atm.ID] for atm in atms]
+                if bond.constrained:
+                    pot = next(mol.get_pot(species=currAtm))
+                    pot.params = str(bond.parameters[0].value.real)
+
+                else:
+                    pot = next(mol.get_pot(species=currAtm,
+                                           potClass=BOND_CLASS_REF[type(bond).__name__],
+                                           potType=POTENTIAL_REF[bond.function.name]))
+                    pot.params = [*map(lambda x: str(x.value.real), bond.parameters)]
 
     def apply_constraints(self):
 

@@ -26,7 +26,7 @@ water_mol = Molecule(position=(0, 0, 0),
                      velocity=(0, 0, 0),
                      atoms=[H1, H2, O],
                      interactions=[Bond((H1, O), (H2, O), constrained=True),
-                                   BondAngle(H1, O, H2, constrained=True)],
+                                   BondAngle(H1, O, H2, constrained=False)],
                      name='water')
 shake = Shake(1e-4, 100)
 universe.constraint_algorithm = shake
