@@ -18,4 +18,4 @@ jobs:
     - name: Run tests
       env:
         BRANCH: ${{ github.head_ref }} 
-      run: docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -s $(pwd)/tests/; [ $? -eq 0 ]
+      run: docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
