@@ -1,0 +1,21 @@
+name: Dependabot CI
+# separate workflow for Dependabot that avoids using secrets
+# as Dependabot does not have access to secrets
+on:
+  pull-request:
+  
+jobs:
+  tests:
+    name: Dependabot workflow
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Build Docker container
+      env:
+        BRANCH: ${{ github.head_ref }} 
+      run: docker build -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile . || exit 1 
+    - name: Run tests
+      env:
+        BRANCH: ${{ github.head_ref }} 
+      run: docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
