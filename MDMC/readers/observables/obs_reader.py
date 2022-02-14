@@ -2,6 +2,8 @@
 
 from abc import abstractmethod
 
+import numpy as np
+
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
