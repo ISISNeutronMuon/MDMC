@@ -342,7 +342,8 @@ class Unit(str):
 
         return components
 
-    def _calculate_string(self, components):
+    @staticmethod
+    def _calculate_string(components):
 
         """
         Calculates the `str` for a new ``Unit`` generated from an operation
@@ -391,7 +392,8 @@ class Unit(str):
             else:
                 return numerator + ' / ' + denominator
 
-    def _parse_unit_string(self, unit_string):
+    @staticmethod
+    def _parse_unit_string(unit_string):
 
         """
         Converts a ``Unit`` `str` into ``Unit`` objects

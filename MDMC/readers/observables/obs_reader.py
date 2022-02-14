@@ -77,3 +77,25 @@ class ObservableReader(Reader):
         """
 
         raise NotImplementedError
+
+    @staticmethod
+    def _make_float(i):
+
+        """
+        Casts the input to a `float`, or passes if the input cannot be cast
+
+        Parameters
+        ----------
+        i : numeric
+            Input to be cast to `float`
+
+        Returns
+        -------
+        float
+            A non-negative `float`, if the input can be converted to a `float`.
+        """
+
+        try:
+            return np.float64(i)
+        except ValueError:
+            pass

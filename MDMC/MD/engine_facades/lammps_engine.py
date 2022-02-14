@@ -460,7 +460,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.lmp_universe.apply_constraints()
             self.ensemble.apply_ensemble_fixes()
 
-
     def run(self, n_steps, equilibration=False):
         if not equilibration:
             # Remove previous dumps if they exist
@@ -1024,7 +1023,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 self.lmp.set('atom', id_offset+1, component,
                              config[id_offset][index])
 
-    def _max_n_interaction(self, atoms, name):
+    @staticmethod
+    def _max_n_interaction(atoms, name):
 
         """
         Parameters
@@ -1147,7 +1147,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         if self.universe.constraint_algorithm:
             self.apply_constraints()
 
-    def _pair_commands(self, universe):
+    @staticmethod
+    def _pair_commands(universe):
 
         """
         Parses all the ``NonBondedInteractions`` for every appropriate
@@ -2837,6 +2838,7 @@ def parse_kspace_solver(solver):
     lmp_str.append(solver.accuracy)
 
     return lmp_str
+
 
 def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
                      angles=None, angle_ID_dict=None):

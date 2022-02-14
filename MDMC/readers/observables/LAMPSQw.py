@@ -210,27 +210,6 @@ class LAMPSQw(ObservableReader):
         dep = self._get_data(file_split, self._Y_dim, self._X_dim)
         return dep
 
-    def _make_float(self, i):
-
-        """
-        Casts the input to a `float`, or passes if the input cannot be cast
-
-        Parameters
-        ----------
-        i : numeric
-            Input to be cast to `float`
-
-        Returns
-        -------
-        float
-            A non-negative `float`, if the input can be converted to a `float`.
-        """
-
-        try:
-            return np.float64(i)
-        except ValueError:
-            pass
-
     def _get_data(self, str_iter, *dimensions):
 
         """

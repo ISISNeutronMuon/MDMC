@@ -560,7 +560,8 @@ class Trajectory(AtomCollection):
             else:
                 self.validate_config(datum['configuration'], validator=config0)
 
-    def validate_config(self, config, validator):
+    @staticmethod
+    def validate_config(config, validator):
 
         """
         Validates that a ``Configuration`` has the same number of ``Atom``

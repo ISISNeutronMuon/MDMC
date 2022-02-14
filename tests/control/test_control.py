@@ -8,6 +8,7 @@ import re
 from typing import List
 
 from MDMC.control import control
+from MDMC.control.control import _is_data_uniform, _make_data_uniform
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 from MDMC.MD.parameters import Parameter
@@ -601,8 +602,8 @@ def test_control_is_data_uniform(mock_observable):
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
-    cont = control.Control.__new__(control.Control)
-    observed = cont._is_data_uniform(mock_observable['obs'])
+    cont = control.Control
+    observed = _is_data_uniform(mock_observable['obs'])
     assert expected == observed
 
 @pytest.mark.parametrize('mock_observable',
@@ -615,7 +616,7 @@ def test_control_make_data_uniform(mock_observable):
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
     cont = control.Control.__new__(control.Control)
-    observed = cont._make_data_uniform(mock_observable['obs'])
+    observed = _make_data_uniform(mock_observable['obs'])
     for var_key in observed.independent_variables:
         assert np.allclose(expected.independent_variables[var_key], observed.independent_variables[var_key], atol=1e-5)
     for var_key in observed.dependent_variables:

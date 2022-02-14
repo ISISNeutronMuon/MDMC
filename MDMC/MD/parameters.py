@@ -249,7 +249,8 @@ class Parameter:
 
         self.__setattr__(key, value)
 
-    def validate_value(self, value, constraints):
+    @staticmethod
+    def validate_value(value, constraints):
 
         """
         Validates the ``Parameter.value`` by testing if it is within the
@@ -307,7 +308,6 @@ class Parameters(list):
 
         return Parameters(filter(predicate, self))
 
-
     def filter_name(self, name):
 
         """
@@ -325,7 +325,6 @@ class Parameters(list):
         """
 
         return Parameters(filter(lambda p: p.name == name, self))
-
 
     def filter_value(self, comparison, value):
 
@@ -357,7 +356,6 @@ class Parameters(list):
 
         return Parameters(filter(lambda p: ops[comparison](p.value, value), self))
 
-
     def filter_interaction(self, interaction_name):
 
         """
@@ -379,7 +377,6 @@ class Parameters(list):
         return Parameters(filter(lambda p: p.interactions_name == interaction_name,
                                  self))
 
-
     def filter_function(self, function_name):
 
         """
@@ -400,7 +397,6 @@ class Parameters(list):
         """
 
         return Parameters(filter(lambda p: p.functions_name == function_name, self))
-
 
     def filter_atom_attribute(self, attribute, value):
 
@@ -438,7 +434,6 @@ class Parameters(list):
                                            in flatten(int.atoms)],
                                  self))
 
-
     def filter_structure(self, structure_name):
 
         """
@@ -471,6 +466,7 @@ class Parameters(list):
             # Recursively add structure.name to structure_names set until the
             # structure is the top level structure
             structure_names = set()
+
             def add_name(structure):
                 structure_names.add(structure.name)
                 if structure.top_level_structure == structure:

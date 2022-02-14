@@ -293,7 +293,7 @@ class AbstractSQw(SQwMixins, Observable):
                    "`Simulation`. For the experimental data provided, the "
                    f"product of `time_step` and `traj_step` must be {dt_required}, "
                    f"but it was {dt}")
-            assert_allclose(self.calculate_E(len(energy), dt),
+            assert_allclose(calculate_E(len(energy), dt),
                             energy,
                             rtol=1e-5,
                             err_msg=msg)
@@ -387,9 +387,9 @@ class AbstractSQw(SQwMixins, Observable):
         if self.E is not None:
             self.validate_energy(dt)
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
+            self.independent_variables['E'] = calculate_E(len(t) - 1, dt)
         else:
-            self.independent_variables = {'E':self.calculate_E(len(t) - 1, dt)}
+            self.independent_variables = {'E': calculate_E(len(t) - 1, dt)}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])
@@ -455,37 +455,6 @@ class AbstractSQw(SQwMixins, Observable):
                      'SQwCoherent': 'FQt_coh',
                      'SQwIncoherent': 'FQt_incoh'}
         return fqt_types[self.__class__.__name__]
-
-    def calculate_E(self, nE: int, dt: float):
-
-        r"""
-        Calculates an array of ``nE`` uniformly spaced energy values from the
-        time separation of the ``Trajectory`` frames, ``dt``. The frequencies
-        are determined by the Fast Fourier Transform, as implemented by numpy,
-        for ``2 * nE`` points in time which we then crop to only include ``nE``
-        positive frequencies. As we are dealing with frequency rather than
-        angular frequency here, the relation to between energy is given by:
-
-        .. math::
-
-            E = h \nu
-
-        Parameters
-        ----------
-        nE : int
-            The number of energy values to be calculated
-        dt : float
-            The step size between frames in ``fs``
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` of `float` specifying the energy in units of ``meV``
-        """
-
-        # h is in units of eV s whereas system units are meV fs, so apply a
-        # factor of 1e3 * 1e15 to convert it
-        return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
     def calculate_dt(self):
 
@@ -672,3 +641,36 @@ class SQwIncoherent(AbstractSQw):
     """
     A class for the incoherent dynamic structure factor
     """
+
+
+def calculate_E(nE: int, dt: float):
+
+    r"""
+    Calculates an array of ``nE`` uniformly spaced energy values from the
+    time separation of the ``Trajectory`` frames, ``dt``. The frequencies
+    are determined by the Fast Fourier Transform, as implemented by numpy,
+    for ``2 * nE`` points in time which we then crop to only include ``nE``
+    positive frequencies. As we are dealing with frequency rather than
+    angular frequency here, the relation to between energy is given by:
+
+    .. math::
+
+        E = h \nu
+
+    Parameters
+    ----------
+    nE : int
+        The number of energy values to be calculated
+    dt : float
+        The step size between frames in ``fs``
+
+    Returns
+    -------
+    numpy.ndarray
+        An ``array`` of `float` specifying the energy in units of ``meV``
+    """
+
+    # h is in units of eV s whereas system units are meV fs, so apply a
+    # factor of 1e3 * 1e15 to convert it
+    return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
+

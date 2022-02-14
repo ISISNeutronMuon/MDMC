@@ -183,7 +183,8 @@ class XML_SQw(ObservableReader):
 
         self._Q = value
 
-    def dict_from_element(self, element):
+    @staticmethod
+    def dict_from_element(element):
 
         """
         Creates a dictionary from an XML element

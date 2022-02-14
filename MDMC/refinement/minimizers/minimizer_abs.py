@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from MDMC.common.decorators import repr_decorator
 
+
 @repr_decorator('comm', 'FoM', 'FoM_old', 'MC_norm', 'distribution',
                 'state_changed', 'parameters', 'parameters_old_values',
                 'max_parameter_change')
@@ -71,7 +72,7 @@ class Minimizer(ABC):
         self._history = []
 
         parameters = np.array(sorted(list(parameters)))
-        self._check_parameters(parameters)
+        _check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters
         self.MC_norm = MC_norm
@@ -214,29 +215,6 @@ class Minimizer(ABC):
 
         return converged
 
-    def _check_parameters(self, parameters):
-
-        """
-        Checks the validity of the parameters on input
-
-        Parameters
-        ----------
-        parameters : list
-            All ``Parameter`` objects to validate
-
-        Raises
-        ------
-        ValueError
-            If any ``Parameter`` is fixed
-        """
-
-        for parameter in parameters:
-            if parameter.fixed is True:
-                raise ValueError(f'Parameter {parameter.name} is fixed, and so cannot be refined')
-            if parameter.tied is True:
-                raise ValueError(f'Parameter {parameter.name} is tied to the value of '
-                                 'another parameter and so cannot be refined')
-
     def write_history(self, filename):
 
         """
@@ -249,3 +227,27 @@ class Minimizer(ABC):
         """
 
         self.history.to_csv(filename)
+
+
+def _check_parameters(parameters):
+
+    """
+    Checks the validity of the parameters on input
+
+    Parameters
+    ----------
+    parameters : list
+        All ``Parameter`` objects to validate
+
+    Raises
+    ------
+    ValueError
+        If any ``Parameter`` is fixed
+    """
+
+    for parameter in parameters:
+        if parameter.fixed is True:
+            raise ValueError(f'Parameter {parameter.name} is fixed, and so cannot be refined')
+        if parameter.tied is True:
+            raise ValueError(f'Parameter {parameter.name} is tied to the value of '
+                             'another parameter and so cannot be refined')

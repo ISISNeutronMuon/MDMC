@@ -237,24 +237,3 @@ class MantidSQw(ObservableReader):
                 Q[self.detector_IDs.index(spectrum_no)] = self._make_float(Q_value)
 
         return Q
-
-    def _make_float(self, i):
-
-        """
-        Casts the input to a `float`, or passes if the input cannot be cast
-
-        Parameters
-        ----------
-        i : numeric
-            Input to be cast to `float`
-
-        Returns
-        -------
-        float
-            A non-negative `float`, if the input can be converted to a `float`.
-        """
-
-        try:
-            return np.float64(i)
-        except ValueError:
-            pass

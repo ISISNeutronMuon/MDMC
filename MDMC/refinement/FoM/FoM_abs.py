@@ -223,7 +223,8 @@ class ObservablePair:
             assert isinstance(obs, type(other_obs)), ('Observables are not of'
                                                       ' the same type')
 
-    def validate_weight(self, weight):
+    @staticmethod
+    def validate_weight(weight):
 
         """
         Performs checks to test the validity of the ``weight``

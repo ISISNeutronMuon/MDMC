@@ -855,7 +855,8 @@ class BondedInteraction(Interaction):
         except (AttributeError, IndexError):
             return None
 
-    def _validate_atoms(self, atoms, n_atoms):
+    @staticmethod
+    def _validate_atoms(atoms, n_atoms):
 
         """
         Validates that the correct number of atoms have been passed to the
