@@ -402,8 +402,8 @@ class Dispersion(NonBondedInteraction):
                 raise ValueError('Dispersion interactions should only be'
                                  ' specified as existing between pairs of'
                                  ' atom types')
-            if not all([isinstance(atom_type, (int, np.integer)) for atom_type
-                        in atom_type_pair]):
+            if not all(isinstance(atom_type, (int, np.integer)) for atom_type
+                       in atom_type_pair):
                 raise TypeError('Each atom type must be int')
             return atom_type_pair
 

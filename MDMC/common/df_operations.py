@@ -121,10 +121,10 @@ def filter_ordered_dataframe(values, dataframe, column_names=None,
 
     # Whether all elements of each row have the same order as values (including
     # wildcard)
-    bool_rows = dataframe[column_names].agg(lambda x: all([x[i] in
-                                                           [values[i], wildcard]
-                                                           for i
-                                                           in range(len(x))]),
+    bool_rows = dataframe[column_names].agg(lambda x: all(x[i] in
+                                                          [values[i], wildcard]
+                                                          for i
+                                                          in range(len(x))),
                                             axis="columns")
     filtered_dataframe = dataframe.loc[bool_rows]
 

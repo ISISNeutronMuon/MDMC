@@ -182,13 +182,13 @@ class Control:
                         'TOTAL STEP':[]}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
-        fit_parameters = set([p for p in fit_parameters if (not (p.fixed or p.tied)
-                                                            and p.value != 0)])
+        fit_parameters = {p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)}
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, MC_norm,
-                                                             self.fit_parameters, max_parameter_change=max_parameter_change)
+                                                           self.fit_parameters,
+                                                           max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol

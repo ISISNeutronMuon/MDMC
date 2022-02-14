@@ -684,8 +684,8 @@ class FileForceField(ForceField):
             # signature agree with the order of the parameter names in the file.
             # If this is the case, assume file parameter names are correctly
             # ordered and use these, otherwise raise a ValueError
-            if any([parameter_names[i] != file_parameter_names[i] for i
-                    in range(len(parameter_names))]):
+            if any(parameter_names[i] != file_parameter_names[i] for i
+                    in range(len(parameter_names))):
                 msg = (f'The force field data file has incorrectly ordered {parameter_names}'
                        ' parameters')
                 LOGGER.error('FileForceField: %s',
