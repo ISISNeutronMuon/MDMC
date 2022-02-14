@@ -2,11 +2,12 @@ name: Dependabot CI
 # separate workflow for Dependabot that avoids using secrets
 # as Dependabot does not have access to secrets
 on:
-  pull-request:
+  pull_request:
   
 jobs:
   tests:
     name: Dependabot workflow
+    runs-on: ubuntu-20.04
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
     - name: Checkout repo
