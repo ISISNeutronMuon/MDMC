@@ -97,11 +97,14 @@ def ase_read_cif(file, **settings):
     try:
         ase_atoms = list(images)[0]
     except Exception as error:
-        msg = (f'MDMC uses the ASE (Atomic Simulation Environment) module for reading your CIF file ({file.name}), '
-               'which failed. Please see the ASE CIF documentation for help with the CIF format ASE requires.'
-               ' Please note that the ASE CIF reader cannot parse CIF files with user defined text sections so these '
-               'must be stripped out before reading. The full Python stack error message should be shown '
-               'above.')
+        msg = ('MDMC uses the ASE (Atomic Simulation Environment) module '
+               f'for reading your CIF file ({file.name}), '
+               'which failed. Please see the ASE CIF documentation for help '
+               'with the CIF format ASE requires.'
+               ' Please note that the ASE CIF reader cannot parse CIF files '
+               'with user defined text sections so these '
+               'must be stripped out before reading. '
+               'The full Python stack error message should be shown above.')
         raise Exception(msg).with_traceback(error.__traceback__)
 
     ase_atoms = _reduce_ase_unit_cell(ase_atoms)

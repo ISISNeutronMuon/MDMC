@@ -478,7 +478,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         """
 
         name = self.name + ' ' if self.name else ''
-        return f'{name}{self.__class__.__name__}  formula: {self.formula}  position: {self.position}'
+        return (f'{name}{self.__class__.__name__}  formula: {self.formula}  '
+                f' position: {self.position}')
 
     @property
     @abstractmethod
@@ -806,7 +807,8 @@ class Atom(StructuralUnit):
             The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
-        return f'{self.element} {self.__class__.__name__}  charge: {self.charge}  position: {self.position}'
+        return (f'{self.element} {self.__class__.__name__}  charge: {self.charge}  ' 
+                f' position: {self.position}')
 
     @property
     def atoms(self):
@@ -1308,7 +1310,8 @@ class BoundingBox:
 
     def __init__(self, atoms: List):
         if not atoms:
-            raise ValueError("Empty atoms passed; it must contain at least one atom to create a BoundingBox object.")
+            raise ValueError("Empty atoms passed; "
+                             "it must contain at least one atom to create a BoundingBox object.")
 
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list

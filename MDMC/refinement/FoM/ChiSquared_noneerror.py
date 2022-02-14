@@ -31,7 +31,8 @@ class ChiSquaredNoError(FigureOfMerit):
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
-
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         r"""
         Performs the square difference for an ``ObservablePair``. If ``obs_pair.auto_scale`` is
         `True`, then this will also set ``obs_pair.rescale`` to the value which minimizes the FoM.

@@ -344,7 +344,8 @@ class AbstractFQt(SQwMixins, Observable):
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
-
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         r"""
         Calculates the F(Q, t) from an array of vectors corresponding to a
         single value of Q.
@@ -517,12 +518,13 @@ class AbstractFQt(SQwMixins, Observable):
     def dependent_variables_structure(self) -> Dict[str, list]:
         """
         The order in which the 'FQt' dependent variable is indexed in terms of 'Q' and 't'.
-        Explicitly: we have that self.FQt[Q_index, t_index] is the data point for given indices of self.Q and self.t
+        Explicitly: we have that self.FQt[Q_index, t_index] is the data point
+        for given indices of self.Q and self.t
         It also means that:
         np.shape(self.FQt)=(np.size(self.Q), np.size(self.t))
 
-        The purpose of this method is to ensure consistency between different readers/methods which create ``FQt``
-        objects.
+        The purpose of this method is to ensure consistency between
+        different readers/methods which create ``FQt`` objects.
 
         Return
         ------

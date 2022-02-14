@@ -3,7 +3,8 @@ import numpy as np
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
 class ChiSquaredExpError(FigureOfMerit):
-
+    # ignore line too long linting as it is necessary for LaTeX formatting
+    # pylint: disable=line-too-long
     r"""
     Calculates the weighted sum of the Figure of Merits for a number of datasets:
 
@@ -33,7 +34,8 @@ class ChiSquaredExpError(FigureOfMerit):
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
-
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         r"""
         Performs the error normalised square difference for an ``ObservablePair``. If
         ``obs_pair.auto_scale`` is `True`, then this will also set ``obs_pair.rescale`` to the

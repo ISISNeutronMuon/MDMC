@@ -130,8 +130,8 @@ class Universe(AtomContainer):
 
     def __str__(self):
 
-        return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, {self.n_nonbonded} '
-                f'nonbonded interactions, and dimensions of {self.dimensions}')
+        return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
+                f'{self.n_nonbonded} nonbonded interactions, and dimensions of {self.dimensions}')
 
     def __eq__(self, other):
         if id(other) == id(self):
@@ -176,7 +176,7 @@ class Universe(AtomContainer):
 
         if isinstance(dimensions, float):
             if dimensions <= 0:
-                msg = ('Only positive values for the Universe dimensions are currently supported.')
+                msg = 'Only positive values for the Universe dimensions are currently supported.'
                 LOGGER.error('%s: {dimensions: %s} %s',
                              self.__class__,
                              dimensions,
@@ -186,7 +186,8 @@ class Universe(AtomContainer):
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
                 if any(dim <= 0 for dim in np.array(dimensions)):
-                    msg = ('Only positive values for the Universe dimensions are currently supported.')
+                    msg = ('Only positive values for the Universe dimensions '
+                           'are currently supported.')
                     LOGGER.error('%s: {dimensions: %s} %s',
                                  self.__class__,
                                  dimensions,
@@ -194,14 +195,14 @@ class Universe(AtomContainer):
                     raise ValueError(msg)
                 self._dimensions = np.array(dimensions)
             else:
-                msg = ('3 dimensions must be specified')
+                msg = '3 dimensions must be specified'
                 LOGGER.error('%s: {dimensions: %s} %s',
                              self.__class__,
                              dimensions,
                              msg)
                 raise ValueError(msg)
         else:
-            msg = ('dimensions must be a float or 3 element list of floats.')
+            msg = 'dimensions must be a float or 3 element list of floats.'
             LOGGER.error('%s: {dimensions: %s} %s',
                          self.__class__,
                          dimensions,
@@ -330,7 +331,8 @@ class Universe(AtomContainer):
             The ``Parameters`` objects defined within ``Universe``
         """
 
-        return Parameters({parameter for interaction in self.interactions for parameter in interaction.parameters})
+        return Parameters({parameter for interaction in self.interactions
+                           for parameter in interaction.parameters})
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
@@ -828,7 +830,8 @@ class Universe(AtomContainer):
         self._bonded_interaction_pairs.update(bonded_interaction_pairs)
 
     def add_nonbonded_interaction(self, *nonbonded_interactions):
-
+        # ignore line too long linting as it is necessary for URL formatting
+        # pylint: disable=line-too-long
         """
         Adds one or more nonbonded interactions to the ``Universe``
 

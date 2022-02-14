@@ -289,7 +289,8 @@ class NonBondedInteraction(Interaction):
             ``NonBondedInteraction``
         """
 
-        return f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  cutoff: {self.cutoff}'
+        return (f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  ' 
+                f' cutoff: {self.cutoff}')
 
     @property
     @abstractmethod

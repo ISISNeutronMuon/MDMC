@@ -364,7 +364,8 @@ class FileForceField(ForceField):
                                                               atom.element)])
                 except KeyError as error:
                     raise KeyError(f'Unable to find atom of element "{atom.element}" recorded with'
-                                   f' the name "{atom.name}" in the specified force field file.') from error
+                                   f' the name "{atom.name}" '
+                                   'in the specified force field file.') from error
 
             groups.add(tuple(tuple_groups))
 
@@ -468,8 +469,8 @@ class FileForceField(ForceField):
 
         # Check we have atoms to apply interaction to
         if len(coulombic.atoms) == 0:
-            raise ValueError(f'Unable to find any atoms of types {coulombic.atom_types} in the Universe to '
-                             'apply the Coulombic interaction to')
+            raise ValueError(f'Unable to find any atoms of types {coulombic.atom_types} '
+                             'in the Universe to apply the Coulombic interaction to')
 
         # Different atom names could be defined within the same coulombic
         # Both atom name and element are required to uniquely identify the atom
@@ -530,8 +531,9 @@ class FileForceField(ForceField):
                     for (key, value) in dispersion.universe.atom_types.items():
                         if len(value) > 0:
                             existing_types.append(key)
-                    raise ValueError(f'No atoms of type "{dispersion.atom_types[0][i]}" found, the Universe '
-                                     'contains only the types {existing_types}')
+                    raise ValueError(f'No atoms of type "{dispersion.atom_types[0][i]}" '
+                                     'found, the Universe contains only the types '
+                                     f'{existing_types}')
 
                 atom_pair.append(atom_type_pair[0])
 

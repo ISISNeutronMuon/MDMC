@@ -178,18 +178,21 @@ class Minimizer(ABC):
     def has_converged(self, conv_tol: float=1e-5, min_steps: int=2) -> bool:
 
         """
-        Checks if the refinement process has converged on a stable solution. Specifically, it checks if
-        the Figure of Merit and the parameters being refined have all changed less than the relative conversion
-        tolerance (`conv_tol`) between the last two accepted refinement steps. It also allows specifying a minimum
-        number of refinement steps (`min_steps`) that must have been accepted before checking for convergence.
+        Checks if the refinement process has converged on a stable solution.
+        Specifically, it checks if the Figure of Merit and the parameters being refined have all
+        changed less than the relative conversion tolerance (`conv_tol`) between the
+        last two accepted refinement steps. It also allows specifying a minimum
+        number of refinement steps (`min_steps`) that must have been accepted
+        before checking for convergence.
 
         Parameters
         ----------
         conv_tol : float, optional
             The relative tolerance of the convergence check. Defaults to `1e-5`
         min_steps : int, optional
-            The number of refinement steps with an accepted state change after which convergence is checked. If the
-            number of accepted state changes is less than this number then the refinement is deemed as not converged.
+            The number of refinement steps with an accepted state change after which
+            convergence is checked. If the number of accepted state changes is less than this,
+            then the refinement is deemed as not converged.
             Defaults to `2`.
 
         Returns
@@ -202,7 +205,8 @@ class Minimizer(ABC):
         accepted_history = (self.history['Change state'] == 'Accepted')
         accepted_history = self.history[accepted_history]
         if len(accepted_history) >= min_steps:
-            # drop 'Change state' column to select only parameters; turn to np.array for easy slicing
+            # drop 'Change state' column to select only parameters;
+            # turn to np.array for easy slicing
             param_history = np.array(accepted_history.drop('Change state', axis=1))
             converged = np.allclose(param_history[-1], param_history[-2], rtol=conv_tol)
         else:

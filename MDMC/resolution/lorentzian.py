@@ -29,7 +29,8 @@ class LorentzianResolution(Resolution):
     def window_in_t(self, t):
         """
         The Lorentzian window in time space (i.e. the Fourier transform centred around zero)
-        The Fourier transform of the Lorentzian is F(k) = e^((2 * pi * i) * k * x_0) - Gamma * pi * |k|
+        The Fourier transform of the Lorentzian is
+        F(k) = e^((2 * pi * i) * k * x_0) - Gamma * pi * |k|
         where x_0 is the offset and Gamma the FWHM.
         thus as the instrument resolution function is centred around x_0, this simplifies to
         e^(-Gamma * pi * |k|).

@@ -383,7 +383,8 @@ class HarmonicPotential(InteractionFunction):
         # irrelevant, as the original decorator will be the last called. So
         # cls._init is used as it will always be equivalent to the undecorated
         # __init__ visible below.
-        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit), ('potential_strength', pot_unit))(cls._init)
+        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit),
+                                            ('potential_strength', pot_unit))(cls._init)
         return h_pot
 
     def __init__(self, equilibrium_state, potential_strength, **settings):

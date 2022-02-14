@@ -57,8 +57,9 @@ class Control:
             If just a string is given, it is assumed to be a filename.
             If just a float is given, it is assumed to be Gaussian.
             The float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
-            If you have already accounted for instrument resolution in your dataset, this field can
-            be set to None, and resolution application will be skipped. This must be done explicitly.
+            If you have already accounted for instrument resolution in your dataset,
+            this field can be set to None, and resolution application will be skipped.
+            This must be done explicitly.
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -112,12 +113,13 @@ class Control:
         general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
         is 0.
     convergence_tol : float, optional
-        The relative tolerance used to determine if a refinement has converged. If the Figure of Merit and all
-        ``Parameters`` change less than this tolerance between two accepted refinement steps the refinement stops.
+        The relative tolerance used to determine if a refinement has converged.
+        If the Figure of Merit and all ``Parameters`` change less than this
+        tolerance between two accepted refinement steps, the refinement stops.
         Default value is 1e-5.
     min_refinement_steps : int, optional
-        The minimum number of refinement steps before the refinement process can stop if all parameters and the
-        Figure of Merit have converged. Default value is 2.
+        The minimum number of refinement steps before the refinement process can stop
+         if all parameters and the Figure of Merit have converged. Default value is 2.
     verbose: int, optional
         If 2, timings are printed for every step of the refinement. If 1,
         timings are printed at the end of the refinement. If 0, no timings
@@ -188,7 +190,8 @@ class Control:
         # step (i.e. the setup) is always accepted.
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, MC_norm,
                                                            self.fit_parameters,
-                                                           max_parameter_change=max_parameter_change)
+                                                           max_parameter_change=
+                                                           max_parameter_change)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
@@ -267,7 +270,7 @@ class Control:
         else:
             self.MD_steps = minimum_MD_steps
 
-        for i, dset in enumerate(exp_datasets):  # read in resolutions for the experimental datasets
+        for i, dset in enumerate(exp_datasets):  # read in resolutions for experimental datasets
             resolution_factory = ResolutionFactory()
             dt = self.simulation.time_step * self.simulation.traj_step
 
@@ -280,7 +283,8 @@ class Control:
                                str(userkeys) + ". If you meant to apply no resolution,"
                                " then specify resolution as None for the exp_dataset parameters.")
 
-            resolution = resolution_factory.create_instance(dset['resolution'], dset['type'], dset['reader'], dt)
+            resolution = resolution_factory.create_instance(dset['resolution'], dset['type'],
+                                                            dset['reader'], dt)
 
             self.observable_pairs[i].exp_obs.resolution = resolution
             self.observable_pairs[i].MD_obs.resolution = resolution
@@ -330,8 +334,10 @@ class Control:
         count = -1
 
         self._print_header()  # creates stdout header
-        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
-                                                                   min_steps=self.min_refine_steps):
+        while count < n_steps and not self.minimizer.has_converged(conv_tol=
+                                                                   self.convergence_tol,
+                                                                   min_steps=
+                                                                   self.min_refine_steps):
             if self.verbose > 0:
                 time_0 = time()
             if count >= 0 and self.equilibration_steps > 0:
@@ -706,22 +712,26 @@ class Control:
 
     def _make_data_uniform(self, observable: Observable) -> Observable:
         """
-        Takes an ``Observable``, checks the requirements for its ``independent_variables`` to be uniform or start at
-        zero, creates uniform grids for the variables that do not satisfy their requirement, interpolates the
-        ``dependent_variables`` as needed, and returns an ``Observable`` with the uniform/interpolated variables.
-        Currently limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
+        Takes an ``Observable``, checks the requirements for its ``independent_variables``
+        to be uniform or start at zero, creates uniform grids for the variables that do not
+        satisfy their requirement, interpolates the ``dependent_variables`` as needed,
+        and returns an ``Observable`` with the uniform/interpolated variables.
+        Limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
+        This may change in future.
 
         Parameters
         ----------
         observable : Observable
-            An ``Observable`` for which the independent variables need to be made uniform / to start at zero. Currently
+            An ``Observable`` for which the independent variables
+            need to be made uniform / to start at zero. Currently
             limited to ``Observables`` for which the ``dependent_variables`` are two-dimensional.
 
         Returns
         -------
         ``Observable``
-            Returns a copy of the passed ``Observable`` with the independent variables put onto uniform grid (for the
-            variables where that is necessary) and the dependent variables interpolated onto the same grid
+            Returns a copy of the passed ``Observable`` with the independent variables put onto
+            uniform grid (for the variables where that is necessary)
+            and the dependent variables interpolated onto the same grid
         """
         # get the uniformity requirements from the Observable
         uniformity_required = observable.uniformity_requirements
@@ -735,13 +745,15 @@ class Control:
         # loop through requirements
         for var_key, var_required in uniformity_required.items():
             var_state = uniformity_state[var_key]
-            # if the variable has a requirement AND it is not satisfied (for either uniformity OR zero-start)
+            # if the variable has a requirement AND it is not satisfied
+            # (for either uniformity OR zero-start)
             # then add it to the list of variables that need to be changed
             if (var_required['uniform'] and not var_state['uniform']) or \
                     (var_required['zeroed'] and not var_state['zeroed']):
                 indep_vars_to_be_changed.append(var_key)
 
-        # if all uniformity requirements are already satisfied simply return the original observable
+        # if all uniformity requirements are already satisfied
+        # simply return the original observable
         if not indep_vars_to_be_changed:
             return observable
 
@@ -758,7 +770,8 @@ class Control:
                     minimum = min(data)
                 uniform_data = np.linspace(minimum, max(data), num=len(data))
                 indep_var_uniform[var_key] = uniform_data
-            # if uniformity requirements are satisfied already, add the data points to the helper dictionary
+            # if uniformity requirements are satisfied already,
+            # add the data points to the helper dictionary
             else:
                 indep_var_uniform[var_key] = observable.independent_variables[var_key]
 
@@ -773,7 +786,8 @@ class Control:
                 data = data_list[0]
             except AssertionError as error:
                 raise AssertionError('Expected experimental dataset to only have one dependent '
-                                     f'variable entry for {var_key}, but found {len(data_list)} instead') from error
+                                     f'variable entry for {var_key}, '
+                                     f'but found {len(data_list)} instead') from error
 
             # determine the dimension of the dependent variable
             var_dimension = data.ndim
@@ -795,13 +809,14 @@ class Control:
                 # interp2d(x, y, z)
                 # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
                 # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
-                # Because Observable.dependent_variables_structure gives the order in which the independent variables
-                # are represented in the np.shape of the data, we have to reverse the order of the x and y arrays
-                # for interp2d:
+                # Because Observable.dependent_variables_structure gives the order in which
+                # the independent variables are represented in the np.shape of the data,
+                # we have to reverse the order of the x and y arrays for interp2d:
                 x_data = observable.independent_variables[var_indexing[var_key][1]]
                 y_data = observable.independent_variables[var_indexing[var_key][0]]
                 data_interpol = interp2d(x_data, y_data, data)
-                # get the independent_variables that satisfy the uniformity requirements as created earlier
+                # get the independent_variables that satisfy the uniformity requirements
+                # as created earlier
                 x_uniform = indep_var_uniform[var_indexing[var_key][1]]
                 y_uniform = indep_var_uniform[var_indexing[var_key][0]]
                 uniform_data = data_interpol(x_uniform, y_uniform)

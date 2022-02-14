@@ -196,8 +196,8 @@ def write_data(fname, atoms, path=None, **settings):
                                                               'data/')
     full_fname = path + fname + '.dat'
     # First line describes number of each data type
-    description = (f'Atoms={len(atoms)} Dispersions={len(disps)} Bonds={len(bonds)} BondAngles={len(angles)}'
-                   f' Propers={len(propers)} Impropers={len(impropers)}\n')
+    description = (f'Atoms={len(atoms)} Dispersions={len(disps)} Bonds={len(bonds)} '
+                   f'BondAngles={len(angles)} Propers={len(propers)} Impropers={len(impropers)}\n')
     # Second line describes types of interactions
     inter_functions = ('Dispersion={0} Bond={1} BondAngle={2} Proper={3}'
                        ' Improper={4}\n'.format(*inter_functions))

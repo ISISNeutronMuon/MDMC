@@ -17,7 +17,8 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name, MC_norm, parameter, distribution='uniform', max_parameter_change: float=0.01):
+    def create_minimizer(module_name, MC_norm, parameter, distribution='uniform',
+                         max_parameter_change: float = 0.01):
 
         """
         Returns

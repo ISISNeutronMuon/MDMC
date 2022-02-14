@@ -344,7 +344,7 @@ class AbstractSQw(SQwMixins, Observable):
                 is the resolution function and `value` is the desired `FWHM`.
                 e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
                 Currently accepted functions are 'gaussian' and 'lorentzian'
-                Can also be 'lazily' given as a `float`, in which case it is assumed to be Gaussian.
+                Can also be 'lazily' given as `float`, in which case it is assumed to be Gaussian.
         """
 
         self._origin = 'MD'
@@ -540,8 +540,10 @@ class AbstractSQw(SQwMixins, Observable):
             resolution.
         """
 
-        # NB: this function is only used by methods in the FileResolution object (see MDMC.resolution.from_file)
-        # but it hasn't been moved to that file because it relies so heavily on the SQw object's attributes
+        # NB: this function is only used by methods in the FileResolution object
+        # (see MDMC.resolution.from_file)
+        # but it hasn't been moved to that file
+        # because it relies so heavily on the SQw object's attributes
         # that moving it over is a nightmare
 
         # Remove any momentum values with infinite error, and the corresponding values from SQw
@@ -601,12 +603,13 @@ class AbstractSQw(SQwMixins, Observable):
     def dependent_variables_structure(self) -> Dict[str, list]:
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
-        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for given indices of self.Q and self.E
+        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for
+        given indices of self.Q and self.E
         It also means that:
         np.shape(self.SQw)=(np.size(self.Q), np.size(self.E))
 
-        The purpose of this method is to ensure consistency between different readers/methods which create ``SQw``
-        objects.
+        The purpose of this method is to ensure consistency
+        between different readers/methods which create ``SQw`` objects.
 
         Return
         ------

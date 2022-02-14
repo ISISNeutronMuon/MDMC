@@ -742,8 +742,9 @@ class PairDistributionFunction(Observable):
     @property
     def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
-        # Defines the current limitations on the atomc separation distance 'r' of the ``PairDistributionFunction``
-        # ``Observable. The requirement is that 'r' must be uniform, but it does not have to start at zero.
+        # Defines the current limitations on the atomic separation distance 'r'
+        of the ``PairDistributionFunction`` ``Observable.
+        The requirement is that 'r' must be uniform, but it does not have to start at zero.
 
         Return
         ------

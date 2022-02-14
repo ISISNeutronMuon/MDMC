@@ -65,7 +65,8 @@ def _standardise_input(resolution):
     elif type(resolution) in [float, int]:
         warnings.warn("Assuming energy resolution is Gaussian. To change this,"
                       " input energy resolution as {'function': 'value'}, where"
-                      " 'function' is your desired resolution approximation function.", SyntaxWarning)
+                      " 'function' is your desired resolution approximation function.",
+                      SyntaxWarning)
         res = {'gaussian': float(resolution)}
     elif resolution is None:
         res = {'null': 0}
