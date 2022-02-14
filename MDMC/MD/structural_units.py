@@ -807,7 +807,7 @@ class Atom(StructuralUnit):
             The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
-        return (f'{self.element} {self.__class__.__name__}  charge: {self.charge}  ' 
+        return (f'{self.element} {self.__class__.__name__}  charge: {self.charge}  '
                 f' position: {self.position}')
 
     @property
@@ -1500,4 +1500,3 @@ def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
                                    in reduced_symbols_count.items()])
 
     return reduced_formula
-

@@ -135,7 +135,7 @@ def inter_func_decorator(*parameter_units):
     ----------
     *parameter_units : tuple
         One or more `tuple` where the first element is a `str` giving the
-        keyword name of an expected parameter. The second element is a       
+        keyword name of an expected parameter. The second element is a
         `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
         which is applied to the corresponding value passed to the decorated
         method. If one of the values is unitless, pass `None` at the

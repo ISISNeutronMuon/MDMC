@@ -1,7 +1,8 @@
 """XML reader for SQw data"""
 
-import numpy as np
 import xml.etree.ElementTree as ET
+
+import numpy as np
 
 from MDMC.common import units
 from MDMC.common.constants import h_bar

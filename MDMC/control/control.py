@@ -2,13 +2,12 @@
 
 from copy import deepcopy
 from time import time
+from typing import List, Dict
 import warnings
 
 import numpy as np
 import pandas as pd
-from typing import List
 from scipy.interpolate import interp1d, interp2d
-from typing import Dict
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters

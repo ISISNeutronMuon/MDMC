@@ -1,3 +1,4 @@
+"""The Resolution abstract base class."""
 from abc import ABC, abstractmethod
 
 
@@ -20,6 +21,5 @@ class Resolution(ABC):
 		-------
 		The array with the resolution function applied to it.
 		"""
-	
-		raise NotImplementedError
 
+		raise NotImplementedError

@@ -1,3 +1,4 @@
+"""The class for Chi Squared figure of merit calculation with no errors"""
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
@@ -73,4 +74,3 @@ class ChiSquaredNoError(FigureOfMerit):
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
-

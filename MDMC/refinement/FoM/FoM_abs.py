@@ -111,8 +111,8 @@ class ObservablePair:
 
         try:
             weight = float(weight)
-        except ValueError:
-            raise TypeError('weight must be a float')
+        except ValueError as error:
+            raise TypeError('weight must be a float') from error
         self.validate_weight(weight)
         self._weight = weight
 
@@ -458,4 +458,3 @@ class FigureOfMerit(ABC):
         """
 
         raise NotImplementedError
-

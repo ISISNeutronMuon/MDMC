@@ -175,10 +175,10 @@ class AbstractFQt(SQwMixins, Observable):
         except AttributeError:
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
-            except KeyError:
+            except KeyError as error:
                 raise AttributeError('Either trajectory requires a dimensions'
                                      ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD')
+                                     ' when calling calculate_from_MD') from error
 
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
                                  * UNIT_VECTOR)

@@ -181,6 +181,11 @@ def write_force_field_module(fname, atoms, *interactions, path=None,
 
 
 def write_data(fname, atoms, path=None, **settings):
+    """
+    Writes force field data to a .dat file.
+
+    TODO: parameters and returns of this
+    """
 
     inter_types = ['disps', 'bonds', 'angles', 'propers', 'impropers']
     disps, bonds, angles, propers, impropers = [settings.get(inter_type, []) for

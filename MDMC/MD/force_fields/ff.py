@@ -88,9 +88,9 @@ class ForceField(ABC):
             interaction.function = self.interaction_dictionary[
                 (type(interaction), elements)]
             interaction.function.set_parameters_interactions(interaction)
-        except KeyError:
+        except KeyError as error:
             raise KeyError("This force field does not have defined interactions"
-                           " for these element types")
+                           " for these element types") from error
 
 
 @repr_decorator('interaction_dictionary', 'n_body')

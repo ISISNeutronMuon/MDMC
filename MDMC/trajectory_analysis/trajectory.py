@@ -277,8 +277,8 @@ class Configuration(AtomCollection):
         # Test that all structural units are from the same universe
         try:
             assert structure.universe is self.universe
-        except AssertionError:
-            raise AssertionError('Atoms are not all from same universe')
+        except AssertionError as error:
+            raise AssertionError('Atoms are not all from same universe') from error
 
     def __add__(self, configuration):
 
@@ -581,9 +581,9 @@ class Trajectory(AtomCollection):
 
         try:
             assert len(config.atoms) == len(validator.atoms)
-        except AssertionError:
+        except AssertionError as error:
             raise AssertionError('Configurations do not contain the same number'
-                                 ' of atoms')
+                                 ' of atoms') from error
 
     def __getitem__(self, item):
 
@@ -754,8 +754,8 @@ class Trajectory(AtomCollection):
             try:
                 return self.__class__(*self.configurations[
                     (self.times == start)])
-            except IndexError:
-                raise ValueError("Start is not in self.times")
+            except IndexError as error:
+                raise ValueError("Start is not in self.times") from error
         return self.__class__(*self.configurations[
             (self.times >= start) & (self.times < end)])
 

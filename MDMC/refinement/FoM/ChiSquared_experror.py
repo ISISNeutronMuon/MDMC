@@ -1,3 +1,4 @@
+"""The class for Chi Squared figure of merit calculation with errors"""
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
@@ -80,4 +81,3 @@ class ChiSquaredExpError(FigureOfMerit):
         value_unreduced = np.sum((obs_pair.calculate_difference()
                                   / obs_pair.calculate_exp_errors()) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
-

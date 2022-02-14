@@ -1,3 +1,4 @@
+"""A class for the null object for Resolution classes."""
 from MDMC.resolution.resolution import Resolution
 
 
@@ -15,6 +16,7 @@ class NullResolution(Resolution):
         pass
 
     def apply(self, array, x, y):
+        # pylint: disable=arguments-renamed
         # does not apply resolution
         return array
 

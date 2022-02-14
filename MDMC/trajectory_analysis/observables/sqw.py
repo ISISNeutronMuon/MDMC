@@ -2,11 +2,11 @@
 
 from abc import abstractmethod
 from time import time
+from typing import Dict, List, Union
 
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
-from typing import Dict, List, Union
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -377,10 +377,10 @@ class AbstractSQw(SQwMixins, Observable):
         except AttributeError:
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
-            except KeyError:
+            except KeyError as error:
                 raise AttributeError('Either trajectory requires a dimensions'
                                      ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD')
+                                     ' when calling calculate_from_MD') from error
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times

@@ -29,8 +29,8 @@ class MinimizerFactory:
 
         try:
             module = import_module('.' + module_name, __package__)
-        except ImportError:
-            raise ValueError(f'{module_name} is not a supported minimizer')
+        except ImportError as error:
+            raise ValueError(f'{module_name} is not a supported minimizer') from error
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
@@ -61,6 +61,3 @@ class MinimizerFactory:
                     minimizer_names.append(module_name.replace('.py', ''))
 
         return minimizer_names
-
-
-

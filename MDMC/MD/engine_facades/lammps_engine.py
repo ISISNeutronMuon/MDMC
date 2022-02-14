@@ -1110,8 +1110,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
             self.lmp.bond_style('hybrid',
-                                *set(tuple([parse_bonded_styles(b)
-                                            for b in bonds])))
+                                *set(tuple(parse_bonded_styles(b)
+                                            for b in bonds)))
             self._create_bonded_interactions('bond', bonds)
 
         if angles:
@@ -1120,8 +1120,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
             self.lmp.angle_style('hybrid',
-                                 *set(tuple([parse_bonded_styles(a)
-                                             for a in angles])))
+                                 *set(tuple(parse_bonded_styles(a)
+                                             for a in angles)))
             self._create_bonded_interactions('angle', angles)
 
         if dihedrals:
@@ -1133,10 +1133,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # Set used to remove duplicate dihedral styles, which are not
             # required to be (and in fact cannot) be passed to LAMMPS hybrid
             # dihedral_style or improper_style
-            proper_styles = set(tuple([parse_bonded_styles(p) for p
-                                       in self.propers]))
-            improper_styles = set(tuple([parse_bonded_styles(i) for i
-                                         in self.impropers]))
+            proper_styles = set(tuple(parse_bonded_styles(p) for p
+                                       in self.propers))
+            improper_styles = set(tuple(parse_bonded_styles(i) for i
+                                         in self.impropers))
             if proper_styles:
                 self.lmp.dihedral_style('hybrid', *proper_styles)
                 self._create_bonded_interactions('dihedral', self.propers)
@@ -1227,9 +1227,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              lmp_atom_id,
                              'charge',
                              convert_unit(atom.charge))
-            except ValueError:
+            except ValueError as error:
                 raise AttributeError('LAMMPS requires all atoms in the universe'
-                                     ' to have a charge.')
+                                     ' to have a charge.') from error
 
     def _update_dispersions(self, universe, pair_coeff_cmds=None):
 
@@ -1903,12 +1903,12 @@ class Ensemble(PyLammpsAttribute):
             # more natural to give it in units of steps - convert between them
             # here
             self._t_damp = value * self.time_step
-        except TypeError:
+        except TypeError as error:
             if value is None:
                 self._t_damp = value
             else:
                 raise AttributeError('the time_step attribute must be set'
-                                     ' before t_damp')
+                                     ' before t_damp') from error
 
     # Unit has to be applied to getter due to operation in setter
     @property
@@ -1948,12 +1948,12 @@ class Ensemble(PyLammpsAttribute):
             # more natural to give it in units of steps - convert between them
             # here
             self._p_damp = value * self.time_step
-        except TypeError:
+        except TypeError as error:
             if value is None:
                 self._p_damp = value
             else:
                 raise AttributeError('the time_step attribute must be set'
-                                     ' before p_damp')
+                                     ' before p_damp') from error
 
     @property
     def t_fraction(self):
@@ -2331,9 +2331,9 @@ def convert_unit(value, unit=None, to_lammps=True):
         # If value is unitless, no conversion is required
         try:
             unit = value.unit
-        except AttributeError:
+        except AttributeError as error:
             if value is None:
-                raise ValueError('Cannot convert NoneType value')
+                raise ValueError('Cannot convert NoneType value') from error
             return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
@@ -2775,9 +2775,9 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
                               parameters['C']]
             try:
                 assert ordered_parameters[1] > 0
-            except AssertionError:
+            except AssertionError as error:
                 raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B)'
-                                 ' must be greater than 0')
+                                 ' must be greater than 0') from error
             coeff_cmd = (pair_style + ' '
                          + ' '.join(str(p) for p in ordered_parameters) + ' '
                          + cutoffs)

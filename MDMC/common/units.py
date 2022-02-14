@@ -158,8 +158,8 @@ class Unit(str):
 
         try:
             components = self._calculate_components(other, 'mul')
-        except AttributeError:
-            raise TypeError('A Unit can only be multipled by another Unit')
+        except AttributeError as error:
+            raise TypeError('A Unit can only be multipled by another Unit') from error
         return self.__class__(self._calculate_string(components), components)
 
     def __truediv__(self, other):
@@ -180,8 +180,8 @@ class Unit(str):
 
         try:
             components = self._calculate_components(other, 'div')
-        except AttributeError:
-            raise TypeError('A Unit can only be divided by another Unit')
+        except AttributeError as error:
+            raise TypeError('A Unit can only be divided by another Unit') from error
         return self.__class__(self._calculate_string(components), components)
 
     def __pow__(self, other):
@@ -203,9 +203,9 @@ class Unit(str):
         if not isinstance(other, Number):
             try:
                 other = float(other)
-            except (TypeError, ValueError) as _:
+            except (TypeError, ValueError) as error:
                 raise TypeError('Only numeric types can be used as a power for'
-                                ' Units')
+                                ' Units') from error
 
         components = self._calculate_components(other, 'pow')
         return self.__class__(self._calculate_string(components), components)
@@ -480,7 +480,7 @@ class Unit(str):
         num, inverse_num = parse_powers(num_string)
 
         # Combine the numerator with elements from the denominator that had
-        # negative powers, and vice versa 
+        # negative powers, and vice versa
         return num + inverse_denom, denom + inverse_num
 
 # Define the unit system used in MDMC

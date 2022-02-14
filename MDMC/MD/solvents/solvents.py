@@ -135,9 +135,9 @@ def get_solvent_config(name):
     if s_config is None:
         try:
             s_config = WATER_MODELS[name]
-        except KeyError:
+        except KeyError as error:
             raise ValueError(f"{name} is not an inbuilt solvent. The inbuilt"
-                             f" solvents are: {get_solvent_names()}")
+                             f" solvents are: {get_solvent_names()}") from error
 
     return s_config()
 

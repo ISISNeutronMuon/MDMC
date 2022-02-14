@@ -1,3 +1,4 @@
+"""The Metropolis-Hastings minimizer class"""
 import numpy as np
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 

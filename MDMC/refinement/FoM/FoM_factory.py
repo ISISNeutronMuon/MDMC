@@ -37,10 +37,10 @@ class FoMFactory:
         except ImportError:
             try:
                 module = import_module('.' + module_name, __package__)
-            except ImportError:
-                raise ValueError(f'{module_name} is not a supported Figure of Merits')
-        
-        
+            except ImportError as error:
+                raise ValueError(f'{module_name} is not a supported Figure of Merits') from error
+
+
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, FigureOfMerit)))
@@ -70,4 +70,3 @@ class FoMFactory:
                     FoM_names.append(module_name.replace('.py', ''))
 
         return FoM_names
-

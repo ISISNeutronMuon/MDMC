@@ -12,9 +12,9 @@ import warnings
 try:
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
-except ModuleNotFoundError:
+except ModuleNotFoundError as error:
     raise ModuleNotFoundError('MDMC plotting utilities require matplotlib to be'
-                              ' installed.')
+                              ' installed.') from error
 
 from MDMC.common.df_operations import filter_dataframe
 

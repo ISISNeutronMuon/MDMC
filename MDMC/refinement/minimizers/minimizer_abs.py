@@ -249,4 +249,3 @@ class Minimizer(ABC):
         """
 
         self.history.to_csv(filename)
-

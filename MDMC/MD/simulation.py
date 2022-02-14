@@ -840,14 +840,13 @@ class Universe(AtomContainer):
         *nonbonded_interactions
             Nonbonded interactions to be added to the ``Universe``.
             Can take any number of non-bonded interactions:
-                ``Dispersion()``: 
+                ``Dispersion()``:
                     either Lennard-Jones or Buckingham dispersion
                 ``Coulombic()``:
                     normal or modified Coulomb interaction
             with appropriate parameters for the interaction.
             See http://mdmcproject.org/tutorials/building-a-universe.html?highlight=interaction#Create-non-bonded-interactions
             for more details on non-bonded interactions.
-                
         """
 
         # Check if interactions already exists in Universe

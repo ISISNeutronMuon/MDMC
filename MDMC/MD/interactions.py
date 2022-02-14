@@ -289,7 +289,7 @@ class NonBondedInteraction(Interaction):
             ``NonBondedInteraction``
         """
 
-        return (f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  ' 
+        return (f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  '
                 f' cutoff: {self.cutoff}')
 
     @property
@@ -569,9 +569,9 @@ class Coulombic(NonBondedInteraction):
             self.add_atoms = MethodType(_add_atoms, self)
             try:
                 atoms = settings['atoms']
-            except KeyError:
+            except KeyError as error:
                 raise TypeError('Coulombic takes either atom_types or atoms '
-                                'as parameters')
+                                'as parameters') from error
             # Account for init argument atoms=atom rather than atoms=[atom]
             if is_atom(atoms):
                 atoms = [atoms]
@@ -800,11 +800,11 @@ class BondedInteraction(Interaction):
                 self._check_duplicates(tpl)
         # try/except accounts for single atom passed rather than (atom,) tuple
         # e.g. if atom_tuples = [atom] instead of atom_tuples = [(atom,)]
-        except TypeError:
+        except TypeError as error:
             if len(atom_tuples) == 1 and is_atom(atom_tuples[0]):
                 atom_tuples = [(atom_tuples[0],)]
             else:
-                raise TypeError('atom_tuples must be [(atom, ...), ...]')
+                raise TypeError('atom_tuples must be [(atom, ...), ...]') from error
 
         # Only assign interaction to atoms after these validation steps
         self._atoms = []

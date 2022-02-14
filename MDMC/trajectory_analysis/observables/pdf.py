@@ -3,11 +3,11 @@
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement,
                        product)
+from typing import Dict, List, Union
 import warnings
 
 from numba import jit
 import numpy as np
-from typing import Dict, List, Union
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
@@ -753,4 +753,3 @@ class PairDistributionFunction(Observable):
         """
 
         return {'r': {'uniform': True, 'zeroed': False}}
-

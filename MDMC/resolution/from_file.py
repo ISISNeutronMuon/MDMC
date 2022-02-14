@@ -1,9 +1,11 @@
-from MDMC.resolution.resolution import Resolution
-from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-
-import numpy as np
+"""A Resolution subclass for vanadium run resolutions from file."""
 from os import getcwd
 from os.path import join
+
+import numpy as np
+
+from MDMC.resolution.resolution import Resolution
+from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
 class FileResolution(Resolution):
@@ -21,11 +23,11 @@ class FileResolution(Resolution):
     # ignored=None is here as apply() must have a number of parameters matching
     # that of the abstract method; however, file resolution requires fewer parameters
     # than numerical resolution.
-    def apply(self, fqt, t, Q):
-        N_Q, N_T = np.shape(fqt)
+    def apply(self, FQt, t, Q):
+        N_Q, N_T = np.shape(FQt)
         window = self._calculate_resolution_window(Q, t)
 
-        return np.broadcast_to(window, (N_Q, N_T)) * fqt
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
     def _calculate_resolution_window(self, Q, t) -> np.ndarray:
         """
@@ -97,4 +99,3 @@ def _read_resolution_from_file(file_type, file_reader, file_name, dt):
     except FileNotFoundError:
         resolution_obs.read_from_file(reader=file_reader, file_name=join(getcwd(), file_name))
     return resolution_obs.calculate_resolution_functions(dt)
-

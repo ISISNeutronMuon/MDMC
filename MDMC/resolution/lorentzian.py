@@ -1,6 +1,8 @@
+"""The Lorentzian resolution subclass"""
+import numpy as np
+
 from MDMC.resolution.resolution import Resolution
 from MDMC.common.resolution_functions import lorentzian
-import numpy as np
 
 
 class LorentzianResolution(Resolution):

@@ -1,10 +1,11 @@
-import MDMC.resolution
-
+"""A factory pattern for instantiating Resolution objects."""
 from inspect import getmembers, isclass, isabstract
 import warnings
 
+import MDMC.resolution
 
-class ResolutionFactory(object):
+
+class ResolutionFactory:
     """
     Factory class for resolution window functions.
     Any function in resolution_windows.py can be instantiated using this factory.
@@ -24,6 +25,7 @@ class ResolutionFactory(object):
 
     # users will input e.g. 'gaussian' and this will provide a GaussianResolution object
     def create_instance(self, resolution: dict, *args):
+        """Creates a Resolution object from a dictionary."""
         resolution = _standardise_input(resolution)
         function_name = list(resolution.keys())[0].title() + 'Resolution'
         function_res = list(resolution.values())[0]
@@ -32,8 +34,7 @@ class ResolutionFactory(object):
             # *args are only required by some resolution types, e.g. file resolution
             if function_name == 'FileResolution':
                 return self.resolutions[function_name](function_res, *args)
-            else:
-                return self.resolutions[function_name](function_res)
+            return self.resolutions[function_name](function_res)
         else:
             # error if unrecognised function is used
             # the userkeys line is to convert class names to the user equivalents
@@ -51,7 +52,7 @@ def _standardise_input(resolution):
     was input as a string or number.
     """
 
-    if type(resolution) == dict:
+    if isinstance(resolution, dict):
         if len(resolution) > 1:
             warnings.warn("The resolution dict should only have one line; ignoring"
                           " all lines except the first."
@@ -60,9 +61,9 @@ def _standardise_input(resolution):
             res = {list(resolution.keys())[0]: list(resolution.values())[0]}
         else:
             res = resolution
-    elif type(resolution) == str:
+    elif isinstance(resolution, str):
         res = {'file': resolution}
-    elif type(resolution) in [float, int]:
+    elif isinstance(resolution, (float, int)):
         warnings.warn("Assuming energy resolution is Gaussian. To change this,"
                       " input energy resolution as {'function': 'value'}, where"
                       " 'function' is your desired resolution approximation function.",
