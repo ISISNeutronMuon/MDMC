@@ -53,7 +53,7 @@ class InteractionFunction:
 
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
                            for p in self.parameters]).strip(',')
-        return '{0} {1}'.format(self.__class__.__name__, parameters)
+        return f'{self.__class__.__name__} {parameters}'
 
     @property
     def parameters(self):

@@ -1304,7 +1304,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         special = 'no'
         ID_attr = getattr(self, '{0}_ID'.format(lmp_name)
                           if lmp_name != 'dihedral' else 'proper_ID')
-        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
+        coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # If bonds already exist, new bond IDs are generated from lowest unused
         # integer
         if ID_attr:
@@ -1327,7 +1327,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
             # LAMMPS create_bonds is used for creating all types of bonded
             # interactions, by appending the lmp_name to 'single/'
-            c_b_type = 'single/{0}'.format(lmp_name)
+            c_b_type = f'single/{lmp_name}'
             for atom_tpl in b_i.atoms:
                 atom_IDs = [self.atom_dict[atom] for atom in atom_tpl]
                 self.lmp.create_bonds(c_b_type,
@@ -1357,7 +1357,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         # Get LAMMPS function for setting bonded interaction attributes (e.g.
         # bond_coeff)
-        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
+        coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # Get ID dict attribute from self (e.g. bond_ID)
         b_i_IDs = getattr(self, '{0}_ID'.format(lmp_name)
                           if lmp_name != 'dihedral' else 'proper_ID')
@@ -2627,7 +2627,7 @@ def parse_all_nonbonded_styles(interactions):
                 else:
                     d_cut, c_cut = ((int1[1], int2[1]) if int1[0] == d_style
                                     else (int2[1], int1[1]))
-                    cutoffs = '{0} {1}'.format(d_cut, c_cut)
+                    cutoffs = f'{d_cut} {c_cut}'
 
                 # Add indiv_cmd to parsed_interactions dict instead. Use
                 # modifier from parsed_interactions as value. set is used to

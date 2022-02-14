@@ -451,8 +451,8 @@ def repr_decorator(attribute, *attributes):
             attributes_str = ''.join([key + ': ' + repr(value) +',\n  '
                                       for key, value in repr_dict.items()])
             attributes_str = attributes_str.strip(',\n ')
-            return ('<{0}\n'
-                    ' {{{1}}}>').format(self.__class__.__name__, attributes_str)
+            return (f'<{self.__class__.__name__}\n'
+                    f' {{{attributes_str}}}>')
 
         cls.__repr__ = __repr__
 

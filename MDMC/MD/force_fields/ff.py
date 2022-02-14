@@ -363,10 +363,8 @@ class FileForceField(ForceField):
                     tuple_groups.append(self.atom_name_group[(atom.name,
                                                               atom.element)])
                 except KeyError as error:
-                    msg = ('Unable to find atom of element "{0}" recorded with'
-                           ' the name "{1}" in the specified force field file.'
-                           ''.format(atom.element, atom.name))
-                    raise KeyError(msg) from error
+                    raise KeyError(f'Unable to find atom of element "{atom.element}" recorded with'
+                                   f' the name "{atom.name}" in the specified force field file.') from error
 
             groups.add(tuple(tuple_groups))
 
@@ -378,9 +376,9 @@ class FileForceField(ForceField):
         # same regardless of the different atom groups, however this is not
         # implemented.
         if len(groups) != 1:
-            msg = ('The atom groups of this interaction are not consistent {0}.'
+            msg = (f'The atom groups of this interaction are not consistent {groups}.'
                    ' Atom tuples should have the same groups in the same'
-                   ' order.'.format(groups))
+                   ' order.')
             LOGGER.error('%s: %s',
                          self.__class__,
                          msg)
@@ -434,9 +432,7 @@ class FileForceField(ForceField):
             # If there are no matches in the file, then raise an error
             msg = 'Unable to find bond information for specified atoms: '
             for i, atom_type in enumerate(groups):
-                msg += ('atom_group{0} - {1} ({2}), '
-                        ''.format(i, atom_type,
-                                  self.atom_type_name[atom_type]))
+                msg += f'atom_group{i} - {atom_type} ({self.atom_type_name[atom_type]}), '
             raise ValueError(msg[:-2])
 
         # Get the parameter names for the InteractionFunction. This means that
@@ -472,10 +468,8 @@ class FileForceField(ForceField):
 
         # Check we have atoms to apply interaction to
         if len(coulombic.atoms) == 0:
-            msg = ('Unable to find any atoms of types {} in the Universe to '
-                   'apply the Coulombic interaction to'
-                   ''.format(coulombic.atom_types))
-            raise ValueError(msg)
+            raise ValueError(f'Unable to find any atoms of types {coulombic.atom_types} in the Universe to '
+                             'apply the Coulombic interaction to')
 
         # Different atom names could be defined within the same coulombic
         # Both atom name and element are required to uniquely identify the atom
@@ -496,7 +490,7 @@ class FileForceField(ForceField):
         if len(unique_charges) != 1:
             # If not, show the corresponding atom rows in the error message
             msg = ('All atoms of the Coulombic interaction must have the same'
-                   ' OPLS charge ({0})'.format(matching_atoms))
+                   f' OPLS charge ({matching_atoms})')
             LOGGER.error('%s %s',
                          self.__class__,
                          msg)
@@ -536,11 +530,8 @@ class FileForceField(ForceField):
                     for (key, value) in dispersion.universe.atom_types.items():
                         if len(value) > 0:
                             existing_types.append(key)
-                    msg = ('No atoms of type "{0}" found, the Universe '
-                           'contains only the types {1}'
-                           ''.format(dispersion.atom_types[0][i],
-                                     existing_types))
-                    raise ValueError(msg)
+                    raise ValueError(f'No atoms of type "{dispersion.atom_types[0][i]}" found, the Universe '
+                                     'contains only the types {existing_types}')
 
                 atom_pair.append(atom_type_pair[0])
 
@@ -638,8 +629,8 @@ class FileForceField(ForceField):
             if filter_dataframe([atom.name], self.atoms,
                                 column_names=['name']).empty:
                 msg = ('All atom names must be an OPLS atom type or an OPLS'
-                       ' atom name. {0} is not an OPLS atom type of atom'
-                       ' name.'.format(atom.name))
+                       f' atom name. {atom.name} is not an OPLS atom type of atom'
+                       ' name.')
                 LOGGER.error('%s %s',
                              self.__class__,
                              msg,
@@ -695,8 +686,8 @@ class FileForceField(ForceField):
             # ordered and use these, otherwise raise a ValueError
             if any([parameter_names[i] != file_parameter_names[i] for i
                     in range(len(parameter_names))]):
-                msg = ('The force field data file has incorrectly ordered {0}'
-                       ' parameters'.format(parameter_names))
+                msg = (f'The force field data file has incorrectly ordered {parameter_names}'
+                       ' parameters')
                 LOGGER.error('FileForceField: %s',
                              msg)
                 raise ValueError(msg)
@@ -734,7 +725,7 @@ class FileForceField(ForceField):
 
         if len(function_parameters) != len(function_parameter_names):
             msg = ('All atoms of the interaction must have the same OPLS'
-                   ' parameters ({0})'.format(matching_inters))
+                   f' parameters ({matching_inters})')
             LOGGER.error('FileForceField: %s',
                          msg)
             raise ValueError(msg)

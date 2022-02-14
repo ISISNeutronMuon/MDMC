@@ -38,7 +38,7 @@ class FoMFactory:
             try:
                 module = import_module('.' + module_name, __package__)
             except ImportError:
-                raise ValueError('{0} is not a supported Figure of Merits'.format(module_name))
+                raise ValueError(f'{module_name} is not a supported Figure of Merits')
         
         
         classes = getmembers(module, lambda m: (isclass(m)

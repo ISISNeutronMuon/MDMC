@@ -101,8 +101,7 @@ def plot_progress(inst, ynames):
         from IPython import display
         from ipywidgets import Output, VBox
     except ModuleNotFoundError as err:
-        warnings.warn('plot_progress requires {}. No plots will be'
-                      ' displayed.'.format(err.name))
+        warnings.warn(f'plot_progress requires {err.name}. No plots will be displayed.')
         return inst
 
     # This font size and linewidth were suitable for OSX dev environment
@@ -129,8 +128,7 @@ def plot_progress(inst, ynames):
         raise ValueError('ynames must contain at least one str')
     for yname in inst._ynames:
         if yname not in inst.minimizer.history:
-            raise ValueError('{0} is not a variable in the minimizer'
-                             ' history'.format(yname))
+            raise ValueError(f'{yname} is not a variable in the minimizer history')
 
     # Redefined refine so that figure plotting is set, and the vbox containing
     # the text is displayed after the header

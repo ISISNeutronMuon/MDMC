@@ -47,8 +47,8 @@ def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
     # Raise an error if there are more values than columns (as every value must
     # be found in a column)
     if len(column_names) < len(values):
-        raise ValueError('There must be at least as many columns ({0}) as'
-                         ' values ({1})'.format(len(column_names), len(values)))
+        raise ValueError(f'There must be at least as many columns ({len(column_names)}) as'
+                         f' values ({len(values)})')
 
     # Filter all columns of dataframe which match column_regex for the first
     # value in values
@@ -116,8 +116,8 @@ def filter_ordered_dataframe(values, dataframe, column_names=None,
     # Raise an error if there are more values than columns (as every value must
     # be found in a column)
     if len(column_names) < len(values):
-        raise ValueError('There must be at least as many columns ({0}) as'
-                         ' values ({1})'.format(len(column_names), len(values)))
+        raise ValueError(f'There must be at least as many columns ({len(column_names)}) as'
+                         f' values ({len(values)})')
 
     # Whether all elements of each row have the same order as values (including
     # wildcard)

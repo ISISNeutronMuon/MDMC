@@ -59,5 +59,4 @@ class ConfigurationReaderFactory(ReaderFactory):
                 if classes and classes[0][1].extension == extension:
                     return classes[0][1]()
 
-        raise NotImplementedError('No implemented reader is compatible with {}'
-                                  ' extension'.format(extension))
+        raise NotImplementedError(f'No implemented reader is compatible with {extension} extension')

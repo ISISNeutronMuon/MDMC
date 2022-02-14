@@ -48,7 +48,7 @@ def start_logging(logfile: str = "MDMC.log",
         if rank in ranks:
             # Prepends rank in front of .log extension if it exists, otherwise
             # appends to logfile
-            add = '_{0}_{1}'.format(platform.node(), rank)
+            add = f'_{platform.node()}_{rank}'
             logfile = ('{0}{1}'.format(logfile, add)).replace(
                 '.log{}'.format(add), '{}.log'.format(add))
             logger = _start_single_logger(logfile, level=level)

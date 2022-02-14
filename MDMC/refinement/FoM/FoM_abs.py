@@ -386,7 +386,7 @@ class FigureOfMerit(ABC):
         else:
             raise ValueError('Unrecognised value for `norm` passed, should be '
                              'one of "data_points", "dof", "none", but it was '
-                             '"{}"'.format(norm))
+                             f'"{norm}"')
 
     def calculate(self):
 

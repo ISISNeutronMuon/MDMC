@@ -264,8 +264,8 @@ class Unit(str):
                     factor /= factors_dict[str(unit)]
 
         except KeyError as error:
-            raise KeyError('Unknown unit {} provided, cannot convert to system'
-                           ' units'.format(str(unit))) from error
+            raise KeyError(f'Unknown unit {str(unit)} provided, cannot convert to system'
+                           ' units') from error
 
         return factor
 
@@ -288,9 +288,8 @@ class Unit(str):
         try:
             return properties_dict[str(self)]
         except KeyError as error:
-            raise KeyError('Unknown unit {} provided, cannot determine the '
-                           'physical property it measures '
-                           ''.format(str(self))) from error
+            raise KeyError(f'Unknown unit {str(self)} provided, cannot determine the '
+                           'physical property it measures ') from error
 
     def _calculate_components(self, other, op):
 
@@ -795,7 +794,7 @@ def unit_array(obj, unit, dtype=None):
         return None
 
     if not isinstance(unit, str):
-        raise TypeError('unit must be a string, but was {}'.format(unit))
+        raise TypeError(f'unit must be a string, but was {unit}')
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):

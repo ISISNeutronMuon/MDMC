@@ -480,8 +480,7 @@ class Trajectory(AtomCollection):
         for configuration in configurations[1:]:
             if configuration.universe != universe:
                 raise ValueError('The universes of all TemporalConfigurations'
-                                 'are not equivalent:\n{0}\n{1}'
-                                 ''.format(universe, configuration.universe))
+                                 f'are not equivalent:\n{universe}\n{configuration.universe}')
 
         self.data = configurations
 

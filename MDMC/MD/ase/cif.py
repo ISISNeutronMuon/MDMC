@@ -97,11 +97,11 @@ def ase_read_cif(file, **settings):
     try:
         ase_atoms = list(images)[0]
     except Exception as error:
-        msg = ('MDMC uses the ASE (Atomic Simulation Environment) module for reading your CIF file ({0}), '
+        msg = (f'MDMC uses the ASE (Atomic Simulation Environment) module for reading your CIF file ({file.name}), '
                'which failed. Please see the ASE CIF documentation for help with the CIF format ASE requires.'
                ' Please note that the ASE CIF reader cannot parse CIF files with user defined text sections so these '
                'must be stripped out before reading. The full Python stack error message should be shown '
-               'above.').format(file.name)
+               'above.')
         raise Exception(msg).with_traceback(error.__traceback__)
 
     ase_atoms = _reduce_ase_unit_cell(ase_atoms)
@@ -272,8 +272,8 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
     elif n_inter_atoms == 4:
         bond_type = DihedralAngle
     else:
-        raise TypeError('{} is not a valid number of atoms for a bonded'
-                        ' interaction'.format(n_inter_atoms))
+        raise TypeError(f'{n_inter_atoms} is not a valid number of atoms for a bonded'
+                        ' interaction')
 
     # If no key is passed, group by id - this will result in each tuple of atoms
     # being in its own group (i.e. no tuples of atoms are grouped together).

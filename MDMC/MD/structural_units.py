@@ -366,7 +366,7 @@ class StructuralUnit(ABC):
                     np.any(position > self.universe.dimensions)):
                 return False
             elif np.any(position == float('nan')):
-                raise ValueError('position of {0} is undefined'.format(self))
+                raise ValueError(f'position of {self} is undefined')
             else:
                 return True
         except AttributeError:
@@ -478,11 +478,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         """
 
         name = self.name + ' ' if self.name else ''
-        return ('{0}{1}  formula: {2}  position: {3}'.format(
-            name,
-            self.__class__.__name__,
-            self.formula,
-            self.position))
+        return f'{name}{self.__class__.__name__}  formula: {self.formula}  position: {self.position}'
 
     @property
     @abstractmethod
@@ -796,14 +792,10 @@ class Atom(StructuralUnit):
             ``Atom``
         """
 
-        return ('{0} atom,'
-                '  ID: {1}'
-                '  charge: {2},'
-                '  interactions: {3}'.format(self.element,
-                                             self.ID,
-                                             self.charge,
-                                             [i.name for i
-                                              in self.interactions]))
+        return (f'{self.element} atom,'
+                f'  ID: {self.ID}'
+                f'  charge: {self.charge},'
+                f'  interactions: {[i.name for i in self.interactions]}')
 
     def __str__(self):
 
@@ -814,11 +806,7 @@ class Atom(StructuralUnit):
             The ``element``, ``charge`` and ``position`` of the ``Atom``
         """
 
-        return ('{0} {1}  charge: {2}  position: {3}'.format(
-            self.element,
-            self.__class__.__name__,
-            self.charge,
-            self.position))
+        return f'{self.element} {self.__class__.__name__}  charge: {self.charge}  position: {self.position}'
 
     @property
     def atoms(self):
@@ -1480,8 +1468,8 @@ def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
 
     n_symbols = len(symbols)
     if n_symbols % factor != 0:
-        raise ValueError('factor ({0}) must be a factor of the number of'
-                         ' symbols {1}'.format(factor, n_symbols))
+        raise ValueError(f'factor ({factor}) must be a factor of the number of'
+                         f' symbols {n_symbols}')
 
     n_reduced_atoms = n_symbols // factor
     reduced_symbols = symbols[::n_symbols // n_reduced_atoms]

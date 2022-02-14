@@ -291,8 +291,8 @@ class AbstractSQw(SQwMixins, Observable):
             energy = self.E
             msg = ("Experimental E values are not consistent with the "
                    "`Simulation`. For the experimental data provided, the "
-                   "product of `time_step` and `traj_step` must be {0}, "
-                   "but it was {1}".format(dt_required, dt))
+                   f"product of `time_step` and `traj_step` must be {dt_required}, "
+                   f"but it was {dt}")
             assert_allclose(self.calculate_E(len(energy), dt),
                             energy,
                             rtol=1e-5,
@@ -305,8 +305,8 @@ class AbstractSQw(SQwMixins, Observable):
                    "(frequency) value, the frame separation must be at least "
                    "as small as the time period for oscillations at that "
                    "frequency. The frame separation is given by the product of"
-                   " `time_step` and `traj_step` and must be less than {0}, "
-                   "but it was {1}".format(dt_required, dt))
+                   f" `time_step` and `traj_step` and must be less than {dt_required}, "
+                   f"but it was {dt}")
             # Allow for rounding errors by using isclose
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg

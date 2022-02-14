@@ -289,10 +289,7 @@ class NonBondedInteraction(Interaction):
             ``NonBondedInteraction``
         """
 
-        return ('{0} interaction  atom_types: {1}  cutoff: {2}'.format(
-            self.__class__.__name__,
-            self.atom_types,
-            self.cutoff))
+        return f'{self.__class__.__name__} interaction  atom_types: {self.atom_types}  cutoff: {self.cutoff}'
 
     @property
     @abstractmethod
@@ -767,9 +764,7 @@ class BondedInteraction(Interaction):
             The type, and number of atoms of the ``BondedInteraction``
         """
 
-        return ('{0} interaction applied to {1} atom tuples'.format(
-            self.__class__.__name__,
-            len(self.atoms)))
+        return f'{self.__class__.__name__} interaction applied to {len(self.atoms)} atom tuples'
 
     @property
     def atoms(self):
@@ -880,8 +875,7 @@ class BondedInteraction(Interaction):
         """
 
         if len(atoms) not in n_atoms:
-            raise TypeError("This interaction only accepts {0} atoms".format(
-                n_atoms))
+            raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
     def add_atoms(self, *atoms, **settings):
 

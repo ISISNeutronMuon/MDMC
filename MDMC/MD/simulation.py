@@ -126,17 +126,12 @@ class Universe(AtomContainer):
                                           '  Force field',
                                           '  Number of atoms'])
 
-        print('Universe created with:\n{}\n'
-              ''.format(setup_frame.to_string(index=True, header=False)))
+        print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self):
 
-        return ('Universe with {0} atoms, {1} bonded interactions, {2} '
-                'nonbonded interactions, and dimensions of {3}'
-                ''.format(self.n_atoms,
-                          self.n_bonded,
-                          self.n_nonbonded,
-                          self.dimensions))
+        return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, {self.n_nonbonded} '
+                f'nonbonded interactions, and dimensions of {self.dimensions}')
 
     def __eq__(self, other):
         if id(other) == id(self):
@@ -1076,7 +1071,7 @@ class Universe(AtomContainer):
                 self.constraint_algorithm = settings.get('constraint_algorithm',
                                                          Shake(1e-4, 100))
 
-            print('Force field created by solvent {}'.format(solvent))
+            print(f'Force field created by solvent {solvent}')
 
         except ImportError:
             pass
@@ -1380,14 +1375,12 @@ class Simulation:
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self._setup()
 
-        setup_msg = 'Simulation created with {} engine'.format(engine)
+        setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
             setup_values = [[value] for value in self.settings.values()]
             setup_keys = ['  {}'.format(key) for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
-            setup_msg += (' and settings:\n{}\n'
-                          ''.format(setup_frame.to_string(index=True,
-                                                          header=False)))
+            setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
 
         print(setup_msg)
 

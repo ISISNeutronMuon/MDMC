@@ -123,8 +123,8 @@ def limit_atoms(atoms, max_atoms):
 
     if len(atoms) < max_atoms:
         return atoms
-    warnings.warn('The number of atoms visualized has been capped to {}. To'
-                  ' increase this, pass a larger `max_atoms`'.format(max_atoms))
+    warnings.warn(f'The number of atoms visualized has been capped to {max_atoms}. To'
+                  ' increase this, pass a larger `max_atoms`')
     return atoms[:max_atoms]
 
 def get_bonds(atoms):

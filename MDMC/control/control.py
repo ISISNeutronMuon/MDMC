@@ -262,9 +262,8 @@ class Control:
                 self.MD_steps = maximum_MD_steps
             except AssertionError as error:
                 raise ValueError('Experimental datasets provided require a '
-                                 'minimum MD_steps value of {} in order to '
-                                 'calculate observables'.format(minimum_MD_steps)
-                                 ) from error
+                                 f'minimum MD_steps value of {minimum_MD_steps} in order to '
+                                 'calculate observables') from error
         else:
             self.MD_steps = minimum_MD_steps
 
@@ -298,17 +297,15 @@ class Control:
                                           '  Number of observables',
                                           '  Number of parameters'])
 
-        print('Control created with:\n{}\n'
-              ''.format(setup_frame.to_string(index=True, header=False)))
+        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self):
-
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
-        return "{0} refining {1} {2} using {3} data types".format(
-            self.__class__.__name__,
-            len(self.fit_parameters),
-            'parameter' if len(self.fit_parameters) == 1 else 'parameters',
-            exp_dataset_types)
+
+        # plural adds "s" to end of "parameter" if there is more than one parameter
+        plural = ("" if len(self.fit_parameters) == 1 else "s")
+        return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
+                f"using {exp_dataset_types} data types")
 
     def refine(self, n_steps: int):
 
@@ -378,8 +375,7 @@ class Control:
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
-            print('\nAutomatic Scale Factors\n{}'
-                  ''.format(scaling_df.to_string(index=True, header=False)))
+            print(f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
 
         # Average timings
         if self.verbose == 1:
@@ -776,10 +772,8 @@ class Control:
                 assert len(data_list) == 1
                 data = data_list[0]
             except AssertionError as error:
-                msg = ('Expected experimental dataset to only have one dependent '
-                       'variable entry for {0}, but found {1} instead'
-                       ''.format(var_key, len(data_list)))
-                raise AssertionError(msg) from error
+                raise AssertionError('Expected experimental dataset to only have one dependent '
+                                     f'variable entry for {var_key}, but found {len(data_list)} instead') from error
 
             # determine the dimension of the dependent variable
             var_dimension = data.ndim

@@ -228,12 +228,10 @@ class Minimizer(ABC):
 
         for parameter in parameters:
             if parameter.fixed is True:
-                raise ValueError('Parameter {0} is fixed, and so cannot be '
-                                 'refined'.format(parameter.name))
+                raise ValueError(f'Parameter {parameter.name} is fixed, and so cannot be refined')
             if parameter.tied is True:
-                raise ValueError('Parameter {0} is tied to the value of '
-                                 'another parameter and so cannot be refined'
-                                 ''.format(parameter.name))
+                raise ValueError(f'Parameter {parameter.name} is tied to the value of '
+                                 'another parameter and so cannot be refined')
 
     def write_history(self, filename):
 

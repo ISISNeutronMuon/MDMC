@@ -220,15 +220,13 @@ class MantidSQw(ObservableReader):
                     ID_header = 'Spectrum No'
                     spectrum_index = headings.index(ID_header)
                 except ValueError as error:
-                    raise ValueError('Detector file must have the heading "{0}"'
-                                        ''.format(ID_header)) from error
+                    raise ValueError(f'Detector file must have the heading "{ID_header}"') from error
 
                 try:
                     Q_header = 'Q'
                     Q_index = headings.index(Q_header)
                 except ValueError as error:
-                    raise ValueError('Detector file must have the heading "{0}"'
-                                     ''.format(Q_header)) from error
+                    raise ValueError(f'Detector file must have the heading "{Q_header}"') from error
             else:
                 values = line.split()
                 spectrum_no = values[spectrum_index]
