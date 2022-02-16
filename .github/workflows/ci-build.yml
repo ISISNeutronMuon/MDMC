@@ -122,6 +122,7 @@ jobs:
         name: pylint-cron-report
         latest: true
     - name: Get master score and run pylint
-      run: export CRON_SCORE=$(tail -n -2 pylint_cron.txt | sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p')
-      run: pylint --fail-under=$CRON_SCORE MDMC 
+      run: |
+        export CRON_SCORE=$(tail -n -2 pylint_cron.txt | sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p')
+        pylint --fail-under=$CRON_SCORE MDMC 
 
