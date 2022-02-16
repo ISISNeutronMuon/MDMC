@@ -117,6 +117,6 @@ jobs:
         pip install pylint pylint-exit
     - name: pylint
       run: |
-        pylint fitbenchmarking || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
+        pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
         exit $?
 

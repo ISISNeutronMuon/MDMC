@@ -3,6 +3,7 @@ name: cron
 on: 
   schedule:
   - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
+  workflow_dispatch:
   
 jobs:
   docker_tests:
