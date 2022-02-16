@@ -121,6 +121,7 @@ jobs:
         github_token: ${{secrets.GITHUB_TOKEN}}
         name: pylint-cron-report
         latest: true
-    - name: Run pylint script
-      run: source .github/scripts/pylint.sh
+    - name: Get master score and run pylint
+      run: export CRON_SCORE=$(tail -n -2 pylint_cron.txt | sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p')
+      run: pylint --fail-under=$CRON_SCORE MDMC 
 
