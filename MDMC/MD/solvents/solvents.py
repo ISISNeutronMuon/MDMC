@@ -18,7 +18,6 @@ from MDMC.MD.solvents.SPC_config import SPCConfig
 
 
 def _get_water_models():
-
     """
     Gets a `list` of ``WaterModel`` force fields that exist
 
@@ -43,7 +42,7 @@ def _get_water_models():
                                                   and not isabstract(m)
                                                   and issubclass(m,
                                                                  WaterModel)
-                                                 ))[0][1])
+                                                  ))[0][1])
         except IndexError:
             pass
 
@@ -51,7 +50,6 @@ def _get_water_models():
 
 
 def _get_water_model_configs():
-
     """
     Gets the ``SolventConfig`` for each ``WaterModel``
 
@@ -80,7 +78,6 @@ def _get_water_model_configs():
 
 
 def _get_solvent_configs():
-
     """
     Gets a `dict` of the names of ``SolventConfig`` and their classes
 
@@ -108,14 +105,13 @@ def _get_solvent_configs():
                                                    and not isabstract(m)
                                                    and issubclass(m,
                                                                   SolventConfig)
-                                                  ))[0][1])
+                                                   ))[0][1])
         except IndexError:
             pass
-    return {s_config.__name__:s_config for s_config in s_configs}
+    return {s_config.__name__: s_config for s_config in s_configs}
 
 
 def get_solvent_config(name):
-
     """
     Gets the ``solvent_config`` for a solvent
 
@@ -143,7 +139,6 @@ def get_solvent_config(name):
 
 
 def get_solvent_names():
-
     """
     Get the names of the inbuilt solvents which can be passed as parameters to
     ``get_solvent_config``
@@ -157,6 +152,7 @@ def get_solvent_names():
     return list(set(list(WATER_MODELS.keys())
                     + [name.replace('Config', '') for name
                        in _get_solvent_configs().keys()]))
+
 
 SOLVENT_CONFIGS = _get_solvent_configs()
 WATER_MODELS = _get_water_model_configs()

@@ -17,7 +17,6 @@ class XML_SQw(ObservableReader):
     """
 
     def parse(self, **settings):
-
         """
         Parses the xml file
 
@@ -78,11 +77,11 @@ class XML_SQw(ObservableReader):
         # with our approach of calculating SQw from MD. The resulting arrays must satisfy:
         # np.shape(SQw) == (np.size(Q), np.size(E))
         self.SQw = np.transpose(np.reshape(np.array(self.SQw), [n_w, n_Q]))
-        self.SQw_err = np.transpose(np.reshape(np.array(self.SQw_err), [n_w, n_Q]))
+        self.SQw_err = np.transpose(np.reshape(
+            np.array(self.SQw_err), [n_w, n_Q]))
 
     @property
     def independent_variables(self):
-
         """
         Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
@@ -92,11 +91,10 @@ class XML_SQw(ObservableReader):
             The independent variables Q and E
         """
 
-        return {"Q":self.Q, "E":self.E}
+        return {"Q": self.Q, "E": self.E}
 
     @property
     def dependent_variables(self):
-
         """
         Get the dependent variables, SQw (in ``arb``)
 
@@ -110,7 +108,6 @@ class XML_SQw(ObservableReader):
 
     @property
     def errors(self):
-
         """
         Get the errors on the dependent variables
 
@@ -124,7 +121,6 @@ class XML_SQw(ObservableReader):
 
     @property
     def w(self):
-
         """
         Get or set the energy transfer expressed in angular frequency, w, in
         ``1 / ps``
@@ -145,7 +141,6 @@ class XML_SQw(ObservableReader):
 
     @property
     def E(self):
-
         """
         Get or set the energy transfer, E, in ``meV``
 
@@ -165,7 +160,6 @@ class XML_SQw(ObservableReader):
 
     @property
     def Q(self):
-
         """
         Get or set the momentum transfer, Q, in ``Ang^-1``
 
@@ -185,7 +179,6 @@ class XML_SQw(ObservableReader):
 
     @staticmethod
     def dict_from_element(element):
-
         """
         Creates a dictionary from an XML element
 
@@ -202,4 +195,4 @@ class XML_SQw(ObservableReader):
             the second element is the value.
         """
 
-        return {item[0]:item[1] for item in element.items()}
+        return {item[0]: item[1] for item in element.items()}

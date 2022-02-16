@@ -17,7 +17,6 @@ from MDMC.MD import force_fields
 
 
 def read_prm(fname, ncols=14):
-
     """
     Reads a TINKER prm (force field) file
 
@@ -46,7 +45,6 @@ def read_prm(fname, ncols=14):
 
 
 def parse_prm(dataframe):
-
     """
     Parses a prm file into DataFrames
 
@@ -102,7 +100,7 @@ def parse_prm(dataframe):
     # Change atomic number to element
     atoms['atomic_num'] = \
         atoms['atomic_num'].apply(lambda x: ATOMIC_NUMBER[int(x)])
-    atoms.rename(columns={'atomic_num':'element'}, inplace=True)
+    atoms.rename(columns={'atomic_num': 'element'}, inplace=True)
 
     # Rearrange order of proper and improper dihedrals
     # For proper dihedrals, just the parameters need to be rearranged, as the
@@ -131,7 +129,6 @@ def parse_prm(dataframe):
 def write_force_field_module(fname, atoms, *interactions, path=None,
                              module_docstring=None, class_docstring=None,
                              **settings):
-
     """
     atoms : pandas.DataFrame
     *interactions
@@ -156,7 +153,8 @@ def write_force_field_module(fname, atoms, *interactions, path=None,
     imports = ('from MDMC.MD.force_fields.ff import FileForceField\n')
 
     if path is None:
-        path = os.path.abspath(force_fields.__file__).replace('__init__.py', '')
+        path = os.path.abspath(
+            force_fields.__file__).replace('__init__.py', '')
     if module_docstring is None:
         module_docstring = (f'"""A module for defining the {fname} force field. This'
                             ' was generated from the corresponding TINKER'
@@ -230,7 +228,6 @@ def write_data(fname, atoms, path=None, **settings):
 
 
 def dummy_headers(start, end):
-
     """
     Generates dummy headers c0, c1, c2, ... until end (exclusive)
 
@@ -251,7 +248,6 @@ def dummy_headers(start, end):
 
 
 def parse_dataframe(dataframe, drop, names):
-
     """
     Parses a dataframe containing single datatype (e.g. atom or angles) by
     dropping any unnecessary columns and setting correct header names
@@ -283,7 +279,6 @@ def parse_dataframe(dataframe, drop, names):
 
 
 def convert_units(series):
-
     """
     Converts from TINKER units (kcal) to kJ
 

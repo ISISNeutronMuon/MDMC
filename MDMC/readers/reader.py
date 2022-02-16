@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 from MDMC.common.decorators import repr_decorator
 
+
 @repr_decorator('file')
 class Reader(ABC):
 
@@ -16,7 +17,6 @@ class Reader(ABC):
         self.file = None
 
     def open(self, file_name):
-
         """
         Provides a generic implementation of file opening using inbuilt python
         open
@@ -33,7 +33,6 @@ class Reader(ABC):
 
     @abstractmethod
     def parse(self, **settings):
-
         """
         Parses the file data so that it is in a format expected by the class
         calling the data reader

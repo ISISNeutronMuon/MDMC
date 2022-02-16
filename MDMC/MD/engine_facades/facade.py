@@ -24,7 +24,6 @@ class MDEngine(ABC):
     @property
     @abstractmethod
     def saved_config(self):
-
         """
         Get the saved configuration of the atomic positions
 
@@ -38,7 +37,6 @@ class MDEngine(ABC):
 
     @abstractmethod
     def setup_universe(self, universe, **settings):
-
         """
         Creates a ``Universe.configuration`` and populates with
         ``StructuralUnit``
@@ -57,7 +55,6 @@ class MDEngine(ABC):
 
     @abstractmethod
     def setup_simulation(self, traj_step: int, time_step: float, **settings):
-
         """
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
@@ -81,7 +78,6 @@ class MDEngine(ABC):
 
     @abstractmethod
     def minimize(self, n_steps, **settings):
-
         """
         Minimizes the simulation energy
 
@@ -95,7 +91,6 @@ class MDEngine(ABC):
 
     @abstractmethod
     def run(self, n_steps, equilibration):
-
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
@@ -113,7 +108,6 @@ class MDEngine(ABC):
 
     @abstractmethod
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
-
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
@@ -145,7 +139,6 @@ class MDEngine(ABC):
 
     @abstractmethod
     def update_parameters(self):
-
         """
         Updates the ``MDEngine`` force field ``Parameter`` objects from the
         ``Universe``
@@ -155,14 +148,12 @@ class MDEngine(ABC):
 
     @abstractmethod
     def save_config(self):
-
         """
         Sets ``self.saved_config`` to the current configuration
         """
 
     @abstractmethod
     def reset_config(self):
-
         """
         Resets the configuration of the simulation to that in ``saved_config``
         """

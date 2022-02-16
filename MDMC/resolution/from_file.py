@@ -97,5 +97,6 @@ def _read_resolution_from_file(file_type, file_reader, file_name, dt):
         resolution_obs.read_from_file(reader=file_reader, file_name=file_name)
     # if file not found, check if it is in pwd (i.e. user put in filename rather than path)
     except FileNotFoundError:
-        resolution_obs.read_from_file(reader=file_reader, file_name=join(getcwd(), file_name))
+        resolution_obs.read_from_file(
+            reader=file_reader, file_name=join(getcwd(), file_name))
     return resolution_obs.calculate_resolution_functions(dt)

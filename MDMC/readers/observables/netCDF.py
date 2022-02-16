@@ -21,7 +21,6 @@ class netCDF(ObservableReader):
     """
 
     def open(self, file_name):
-
         """
         Opens the file for parsing
 
@@ -34,7 +33,6 @@ class netCDF(ObservableReader):
         self.file = Dataset(file_name, 'r')
 
     def parse(self, **settings):
-
         """
         Parse into SQw format
 
@@ -46,7 +44,7 @@ class netCDF(ObservableReader):
                   * h_bar)
         Q = self.file.variables['q']
         if 'nm' in Q.units:
-            Q =  np.array(Q) * 0.1
+            Q = np.array(Q) * 0.1
         self.Q = np.array(Q)
 
         self.SQw = np.abs(np.array(self.file.variables['Sqw-total']))
@@ -54,7 +52,6 @@ class netCDF(ObservableReader):
 
     @property
     def independent_variables(self):
-
         """
         Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
@@ -64,11 +61,10 @@ class netCDF(ObservableReader):
             The independent variables Q and E
         """
 
-        return {"Q":self.Q, "E":self.E}
+        return {"Q": self.Q, "E": self.E}
 
     @property
     def dependent_variables(self):
-
         """
         Get the dependent variables, SQw (in ``arb``)
 
@@ -82,7 +78,6 @@ class netCDF(ObservableReader):
 
     @property
     def errors(self):
-
         """
         Get the errors on the dependent variables
 
@@ -96,7 +91,6 @@ class netCDF(ObservableReader):
 
     @property
     def E(self):
-
         """
         Get or set the energy transfer, E, in ``meV``
 
@@ -116,7 +110,6 @@ class netCDF(ObservableReader):
 
     @property
     def Q(self):
-
         """
         Get or set the momentum transfer, Q, in ``Ang^-1``
 

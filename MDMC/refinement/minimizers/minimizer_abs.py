@@ -49,10 +49,10 @@ class Minimizer(ABC):
         refinement. Defaults to `0.01`
     """
 
-    DISTRIBUTION = {'uniform':np.random.uniform}
+    DISTRIBUTION = {'uniform': np.random.uniform}
 
     def __init__(self, MC_norm, parameters, distribution='uniform',
-                 max_parameter_change: float=0.01):
+                 max_parameter_change: float = 0.01):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
@@ -83,7 +83,6 @@ class Minimizer(ABC):
 
     @abstractmethod
     def step(self):
-
         """
         Increments the minimization by a step
         """
@@ -92,7 +91,6 @@ class Minimizer(ABC):
 
     @property
     def max_parameter_change(self):
-
         """
         Maximum factor by which a Parameter can change
 
@@ -111,7 +109,6 @@ class Minimizer(ABC):
 
     @property
     def history(self):
-
         """
         Get the history of the minimizer, with a single entry for each step of
         the minimizer
@@ -129,7 +126,6 @@ class Minimizer(ABC):
     @property
     @abstractmethod
     def history_columns(self):
-
         """
         Get the column titles for the minimizer history
 
@@ -144,7 +140,6 @@ class Minimizer(ABC):
 
     @abstractmethod
     def change_state(self):
-
         """
         Stochastic determination of whether the state should change based on the
         FOM
@@ -159,7 +154,6 @@ class Minimizer(ABC):
 
     @abstractmethod
     def change_parameters(self, parameters):
-
         """
         Selects a new value for each ``Parameter`` from a distribution centered
         around the current value
@@ -176,8 +170,7 @@ class Minimizer(ABC):
 
         raise NotImplementedError
 
-    def has_converged(self, conv_tol: float=1e-5, min_steps: int=2) -> bool:
-
+    def has_converged(self, conv_tol: float = 1e-5, min_steps: int = 2) -> bool:
         """
         Checks if the refinement process has converged on a stable solution.
         Specifically, it checks if the Figure of Merit and the parameters being refined have all
@@ -208,15 +201,16 @@ class Minimizer(ABC):
         if len(accepted_history) >= min_steps:
             # drop 'Change state' column to select only parameters;
             # turn to np.array for easy slicing
-            param_history = np.array(accepted_history.drop('Change state', axis=1))
-            converged = np.allclose(param_history[-1], param_history[-2], rtol=conv_tol)
+            param_history = np.array(
+                accepted_history.drop('Change state', axis=1))
+            converged = np.allclose(
+                param_history[-1], param_history[-2], rtol=conv_tol)
         else:
             converged = False
 
         return converged
 
     def write_history(self, filename):
-
         """
         Write the minimizer history to a csv file
 
@@ -230,7 +224,6 @@ class Minimizer(ABC):
 
 
 def _check_parameters(parameters):
-
     """
     Checks the validity of the parameters on input
 
@@ -247,7 +240,8 @@ def _check_parameters(parameters):
 
     for parameter in parameters:
         if parameter.fixed is True:
-            raise ValueError(f'Parameter {parameter.name} is fixed, and so cannot be refined')
+            raise ValueError(
+                f'Parameter {parameter.name} is fixed, and so cannot be refined')
         if parameter.tied is True:
             raise ValueError(f'Parameter {parameter.name} is tied to the value of '
                              'another parameter and so cannot be refined')

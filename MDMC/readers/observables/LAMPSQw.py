@@ -28,7 +28,6 @@ class LAMPSQw(ObservableReader):
     """
 
     def open(self, file_name):
-
         """
         Open the files for independent variables, dependent variables and errors
         on the dependent variables
@@ -45,7 +44,6 @@ class LAMPSQw(ObservableReader):
         self.file_dep_err = open(file_name + 'ascii_e')
 
     def parse(self, **settings):
-
         """
         Parse into SQw format
 
@@ -64,7 +62,6 @@ class LAMPSQw(ObservableReader):
 
     @property
     def independent_variables(self):
-
         """
         Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
@@ -74,11 +71,10 @@ class LAMPSQw(ObservableReader):
             The independent variables Q and E
         """
 
-        return {"Q":self.Q, "E":self.E}
+        return {"Q": self.Q, "E": self.E}
 
     @property
     def dependent_variables(self):
-
         """
         Get the dependent variables, SQw (in ``arb``)
 
@@ -92,7 +88,6 @@ class LAMPSQw(ObservableReader):
 
     @property
     def errors(self):
-
         """
         Get the errors on the dependent variables
 
@@ -106,7 +101,6 @@ class LAMPSQw(ObservableReader):
 
     @property
     def E(self):
-
         """
         Get or set the energy transfer, E, in meV
 
@@ -126,7 +120,6 @@ class LAMPSQw(ObservableReader):
 
     @property
     def Q(self):
-
         """
         Get or set the momentum transfer, Q, in ``Ang^-1``
 
@@ -145,7 +138,6 @@ class LAMPSQw(ObservableReader):
         self._Q = value
 
     def parse_indep_var(self, file):
-
         """
         Parses the independent variables
 
@@ -183,7 +175,7 @@ class LAMPSQw(ObservableReader):
                 break
 
         file_split = iter([str for line in file for str in line.split(" ")
-            if "Y_COORDINATES" not in line])
+                           if "Y_COORDINATES" not in line])
 
         X = self._get_data(file_split, self._X_dim)
         Y = self._get_data(file_split, self._Y_dim)
@@ -191,7 +183,6 @@ class LAMPSQw(ObservableReader):
         return X, Y
 
     def parse_dep_var(self, file):
-
         """
         Parses the dependent variables or their errors.
 
@@ -211,7 +202,6 @@ class LAMPSQw(ObservableReader):
         return dep
 
     def _get_data(self, str_iter, *dimensions):
-
         """
         Iterates over an iterator from a file and extracts the numerical values
         as data.

@@ -8,8 +8,8 @@ UNIT_VECTOR = np.array([[1., 0., 0.],
                         [0., 1., 0.],
                         [0., 0., 1.]])
 
-def correlation(input1, input2=None, normalise=False):
 
+def correlation(input1, input2=None, normalise=False):
     """
     The correlation of two vectors
 
@@ -63,7 +63,6 @@ def correlation(input1, input2=None, normalise=False):
 
 
 def _convolution(input1, input2):
-
     """
     The convolution of two inputs
 

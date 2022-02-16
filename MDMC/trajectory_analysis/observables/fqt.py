@@ -36,7 +36,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def independent_variables(self):
-
         """
         Get or set the independent variables: these are
         the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
@@ -56,7 +55,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def dependent_variables(self):
-
         """
         Get or set the dependent variables: this is
         FQt, the intermediate scattering function (in ``arb``)
@@ -71,7 +69,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def errors(self):
-
         """
         Get or set the errors on the dependent variables, the intermediate
         scattering function (in ``arb``)
@@ -91,7 +88,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def t(self):
-
         """
         Get or set the times of the intermediate scattering function in units of
         ``fs``
@@ -113,7 +109,6 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def FQt(self):
-
         """
         Get the dynamic structure factor, F(Q, t), in arb
 
@@ -248,7 +243,6 @@ class AbstractFQt(SQwMixins, Observable):
         self.FQt = FQt[:shape[0] - axis_0]
 
     def _calculate_Q_vectors(self, Q_values):
-
         """
         For each value of Q in ``Q_values`` calculates a number of Q vectors
         (points in reciprocal space) that lie close to that Q value.
@@ -295,7 +289,6 @@ class AbstractFQt(SQwMixins, Observable):
         return np.array(Q_vectors)
 
     def _calculate_vectors_single_Q(self, Q_min, Q_max):
-
         """
         Calculates a number of Q vectors that have a magnitude between
         ``Q_min`` and ``Q_max``.
@@ -421,7 +414,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @abstractmethod
     def _set_weights(self):
-
         """
         Calculate the neutron weighting
         """
@@ -429,7 +421,6 @@ class AbstractFQt(SQwMixins, Observable):
         pass
 
     def calculate_SQw(self, energy, resolution: Resolution = None):
-
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
 
@@ -484,7 +475,8 @@ class AbstractFQt(SQwMixins, Observable):
                 # h_bar is in units of eV s whereas system units are meV fs, so
                 # apply a factor of 1e3 * 1e15 to convert it
                 exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
-                exp_neg = np.exp(1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
+                exp_neg = np.exp(
+                    1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
                 exp_mirror = np.append(exp, exp_neg)
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
@@ -564,13 +556,12 @@ class FQt(AbstractFQt):
     """
 
     def _set_weights(self):
-
         """
         Calculate the neutron weighting for coherent and incoherent scattering
         """
 
-        self.weights = {element:{'coh':B_COH[element],
-                                 'incoh':B_INCOH[element]}
+        self.weights = {element: {'coh': B_COH[element],
+                                  'incoh': B_INCOH[element]}
                         for element in self._trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors):
@@ -623,10 +614,10 @@ class FQt(AbstractFQt):
             for element2 in elements:
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1]['coh'] \
-                                * self.weights[element2]['coh'] \
-                                * correlation(rho_element[element1],
-                                              rho_element[element2],
-                                              normalise=True)[:n_t]
+                    * self.weights[element2]['coh'] \
+                    * correlation(rho_element[element1],
+                                  rho_element[element2],
+                                  normalise=True)[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:
@@ -639,7 +630,6 @@ class FQt(AbstractFQt):
 
 @jit('float64[:,:], float64[:,:]', nopython=True)
 def calculate_rho(positions, Q_vector):
-
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors

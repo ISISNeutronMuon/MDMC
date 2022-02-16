@@ -162,35 +162,35 @@ class Control:
     """
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
-                 fit_parameters: Parameters, MC_norm: float=1.,
-                 minimizer_type: str='MMC', FoM_options: dict = None,
-                 reset_config: bool=True, MD_steps: int=None,
+                 fit_parameters: Parameters, MC_norm: float = 1.,
+                 minimizer_type: str = 'MMC', FoM_options: dict = None,
+                 reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
                  convergence_tol: float = 1e-5,
                  min_refinement_steps: int = 2,
-                 max_parameter_change: float=0.01,
-                 verbose: int=0,
+                 max_parameter_change: float = 0.01,
+                 verbose: int = 0,
                  **settings: dict):
 
         self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.verbose = verbose
-        self.timings = {'equilibrate':[],
-                        '_run_MD':[],
-                        'convert_trajectory':[],
-                        'FoM_calculator':[],
-                        'minimizer':[],
-                        'TOTAL STEP':[]}
+        self.timings = {'equilibrate': [],
+                        '_run_MD': [],
+                        'convert_trajectory': [],
+                        'FoM_calculator': [],
+                        'minimizer': [],
+                        'TOTAL STEP': []}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
-        fit_parameters = {p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)}
+        fit_parameters = {p for p in fit_parameters if (
+            not (p.fixed or p.tied) and p.value != 0)}
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, MC_norm,
                                                            self.fit_parameters,
-                                                           max_parameter_change=
-                                                           max_parameter_change)
+                                                           max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
@@ -204,8 +204,8 @@ class Control:
         for dset in exp_datasets:
             use_FFT = dset.get('use_FFT', True)
             exp_observable = _read_observable_from_file(dset['type'],
-                                                             dset['reader'],
-                                                             dset['file_name'])
+                                                        dset['reader'],
+                                                        dset['file_name'])
             exp_observable.use_FFT = use_FFT
 
             if exp_observable.uniformity_requirements:
@@ -234,7 +234,8 @@ class Control:
             self.observable_pairs.append(observable_pair)
 
             # Take the largest minimum number of MD_steps needed by any dataset
-            min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
+            min_MD_steps_dset = self._calculate_minimum_MD_steps(
+                observable_pair)
             minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
         if FoM_options is None or FoM_options.get('error') is None:
@@ -248,8 +249,8 @@ class Control:
             FoM_norm = FoM_options.get('norm')
 
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
-                                        norm=FoM_norm,
-                                        n_parameters=len(self.fit_parameters))
+                                                    norm=FoM_norm,
+                                                    n_parameters=len(self.fit_parameters))
 
         # Use specified MD_steps if supplied, else calculate
         if MD_steps:
@@ -259,7 +260,8 @@ class Control:
                 # our observable pairs
                 maximum_MD_steps = minimum_MD_steps
                 for pair in self.observable_pairs:
-                    max_MD_steps_pair = self._calculate_maximum_MD_steps(MD_steps, pair)
+                    max_MD_steps_pair = self._calculate_maximum_MD_steps(
+                        MD_steps, pair)
                     maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
                 self.MD_steps = maximum_MD_steps
             except AssertionError as error:
@@ -269,7 +271,8 @@ class Control:
         else:
             self.MD_steps = minimum_MD_steps
 
-        for i, dset in enumerate(exp_datasets):  # read in resolutions for experimental datasets
+        # read in resolutions for experimental datasets
+        for i, dset in enumerate(exp_datasets):
             resolution_factory = ResolutionFactory()
             dt = self.simulation.time_step * self.simulation.traj_step
 
@@ -279,7 +282,8 @@ class Control:
                 for key in resolution_factory.resolutions:
                     userkeys.append(key.lower().replace('resolution', ''))
                 raise KeyError("A resolution function must be added. Recognised functions are " +
-                               str(userkeys) + ". If you meant to apply no resolution,"
+                               str(userkeys) +
+                               ". If you meant to apply no resolution,"
                                " then specify resolution as None for the exp_dataset parameters.")
 
             resolution = resolution_factory.create_instance(dset['resolution'], dset['type'],
@@ -300,7 +304,8 @@ class Control:
                                           '  Number of observables',
                                           '  Number of parameters'])
 
-        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        print(
+            f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self):
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
@@ -311,7 +316,6 @@ class Control:
                 f"using {exp_dataset_types} data types")
 
     def refine(self, n_steps: int):
-
         """
         Refines the specified potential parameters
 
@@ -333,10 +337,8 @@ class Control:
         count = -1
 
         self._print_header()  # creates stdout header
-        while count < n_steps and not self.minimizer.has_converged(conv_tol=
-                                                                   self.convergence_tol,
-                                                                   min_steps=
-                                                                   self.min_refine_steps):
+        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
+                                                                   min_steps=self.min_refine_steps):
             if self.verbose > 0:
                 time_0 = time()
             if count >= 0 and self.equilibration_steps > 0:
@@ -344,14 +346,16 @@ class Control:
                 if self. verbose == 1:
                     self.timings['equilibrate'].append(time() - time_0)
                 if self.verbose == 2:
-                    print('         equilibrate: {} s'.format(round(time() - time_0, 3)))
+                    print('         equilibrate: {} s'.format(
+                        round(time() - time_0, 3)))
 
             self.step()  # advance the refinement by one step
             count += 1
             if self.verbose == 1:
                 self.timings['TOTAL STEP'].append(time() - time_0)
             elif self.verbose == 2:
-                print('          TOTAL STEP: {} s'.format(round(time() - time_0, 3)))
+                print('          TOTAL STEP: {} s'.format(
+                    round(time() - time_0, 3)))
             self._print_data()
 
         # Try/except accounts for n_steps <= -1
@@ -364,7 +368,7 @@ class Control:
             pass
 
         # print values of final parameters
-        parameter_df = pd.DataFrame({p.name:p.value for p in self.minimizer.parameters},
+        parameter_df = pd.DataFrame({p.name: p.value for p in self.minimizer.parameters},
                                     index=[0])
         print('\nFinal Parameters\n{}'
               ''.format(parameter_df.to_string(index=False)))
@@ -380,7 +384,8 @@ class Control:
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
-            print(f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
+            print(
+                f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
 
         # Average timings
         if self.verbose == 1:
@@ -394,13 +399,13 @@ class Control:
             # chronological order of the timed operations, move keys/values 3:6 to the end of the
             # lists.
             timing_keys = timing_keys[:3] + timing_keys[6:] + timing_keys[3:6]
-            timing_values = timing_values[:3] + timing_values[6:] + timing_values[3:6]
+            timing_values = timing_values[:3] + \
+                timing_values[6:] + timing_values[3:6]
             timing_df = pd.DataFrame(timing_values, index=timing_keys)
             print('\nAverage Timings (s)\n{}'
                   ''.format(timing_df.to_string(index=True, header=False)))
 
     def equilibrate(self):
-
         """
         Run molecular dynamics to equilibrate the ``Universe``.
         """
@@ -409,7 +414,6 @@ class Control:
                             verbose=False)
 
     def step(self):
-
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
@@ -438,7 +442,8 @@ class Control:
         if self.verbose == 1:
             self.timings['minimizer'].append(time() - time_0)
         elif self.verbose == 2:
-            print('           minimizer: {} s'.format(round(time() - time_0, 3)))
+            print('           minimizer: {} s'.format(
+                round(time() - time_0, 3)))
 
         self.minimizer.write_history('results.csv')
 
@@ -465,7 +470,6 @@ class Control:
         print(header)
 
     def _generate_FoM(self):
-
         """
         Run the MD for an iteration/step, calculate observable, compare with
         observed observed and return the FoM
@@ -482,7 +486,8 @@ class Control:
         if self.verbose == 1:
             self.timings['_run_MD'].append(time() - time_0)
         elif self.verbose == 2:
-            print('             _run_MD: {} s'.format(round(time() - time_0, 3)))
+            print('             _run_MD: {} s'.format(
+                round(time() - time_0, 3)))
 
         self._calculate_observables(self.simulation, self.observable_pairs)
 
@@ -492,12 +497,12 @@ class Control:
         if self.verbose == 1:
             self.timings['FoM_calculator'].append(time() - time_1)
         elif self.verbose == 2:
-            print('      FoM_calculator: {} s'.format(round(round(time() - time_1, 3), 3)))
+            print('      FoM_calculator: {} s'.format(
+                round(round(time() - time_1, 3), 3)))
 
         return FoM_value
 
     def _run_MD(self):
-
         """
         Run a molecular dynamics simulation
         """
@@ -505,7 +510,6 @@ class Control:
         self.simulation.run(self.MD_steps, verbose=False)
 
     def _update_engine_parameters(self):
-
         """
         Update the force field parameters of the MD engine
         """
@@ -513,7 +517,6 @@ class Control:
         self.simulation.engine.update_parameters()
 
     def _calculate_observables(self, simulation, observable_pairs):
-
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
@@ -533,7 +536,8 @@ class Control:
         if self.verbose == 1:
             self.timings['convert_trajectory'].append(time() - time_0)
         elif self.verbose == 2:
-            print('  convert_trajectory: {} s'.format(round(time() - time_0, 3)))
+            print('  convert_trajectory: {} s'.format(
+                round(time() - time_0, 3)))
 
         for pair in observable_pairs:
             maximum_frames = pair.MD_obs.maximum_frames()
@@ -544,7 +548,8 @@ class Control:
                 sub_trj = []
                 n_averages = len(trj) // maximum_frames
                 for i in range(n_averages):
-                    sub_trj.append(trj[i * maximum_frames : (i + 1) * maximum_frames])
+                    sub_trj.append(
+                        trj[i * maximum_frames: (i + 1) * maximum_frames])
                 obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
                                                             verbose=self.verbose,
                                                             **self.settings)
@@ -561,7 +566,6 @@ class Control:
                     self.timings[key] += value
 
     def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair):
-
         """
         Calculates the minimum number of steps required for the MD engine in
         order to calculate MD ``Observables`` objects with the same independent
@@ -590,7 +594,6 @@ class Control:
 
     def _calculate_maximum_MD_steps(self, MD_steps: int,
                                     observable_pair: ObservablePair):
-
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
         able to use when calculating dependent variables whilst still being
@@ -629,7 +632,6 @@ class Control:
         return maximum_steps * (MD_steps // (maximum_steps))
 
     def _validate_energy(self, obs: Observable):
-
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
         it does not have a ``validate_energy`` function itself
@@ -658,7 +660,6 @@ class Control:
 
 
 def _create_empty_observable(exp_observable):
-
     """
     Creates a ``Observable`` without data but with independent variables
     specified from another ``Observable``.  This is a placeholder in which
@@ -685,7 +686,6 @@ def _create_empty_observable(exp_observable):
 
 def _read_observable_from_file(obstype: str, reader: str, file_name: str,
                                resolution_file_name: str = None):
-
     """
     Creates an Observable of the specified type and reads in data from file
 
@@ -735,9 +735,11 @@ def _is_data_uniform(observable: Observable) -> Dict[str, Dict[str, bool]]:
     """
     uniformity_dict = {}
     for var_key, var_data in observable.independent_variables.items():
-        uniform_data = np.linspace(min(var_data), max(var_data), num=len(var_data))
+        uniform_data = np.linspace(
+            min(var_data), max(var_data), num=len(var_data))
         is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-        uniformity_dict[var_key] = {'uniform': is_uniform, 'zeroed': var_data[0] == 0}
+        uniformity_dict[var_key] = {
+            'uniform': is_uniform, 'zeroed': var_data[0] == 0}
     return uniformity_dict
 
 
@@ -858,7 +860,8 @@ def _make_data_uniform(observable: Observable) -> Observable:
             err_uniform = err_interpol(x_uniform, y_uniform)
             err_uniform[err_uniform == 0.] = float('inf')
         else:
-            raise NotImplementedError('Only 1D and 2D data can currently be made uniform')
+            raise NotImplementedError(
+                'Only 1D and 2D data can currently be made uniform')
         # save the uniform data and errors back into the Observable
         observable._dependent_variables[var_key] = [uniform_data]
         observable._errors[var_key] = [err_uniform]

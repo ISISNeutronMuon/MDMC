@@ -12,7 +12,6 @@ def start_logging(logfile: str = "MDMC.log",
                   level: int = logging.INFO,
                   ranks: Union[int, List[int]] = 0,
                   capture_warnings: bool = True):
-
     """
     Start one or more loggers to capture log information from MDMC
 
@@ -81,7 +80,6 @@ def _capture_warnings(logger: logging.Logger):
 def create_logger(name: str = "MDMC",
                   logfile: str = "MDMC.log",
                   level: int = logging.INFO) -> logging.Logger:
-
     """
     Create a formatter logger which outputs to a log file
 

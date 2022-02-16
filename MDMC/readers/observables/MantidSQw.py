@@ -27,7 +27,6 @@ class MantidSQw(ObservableReader):
     """
 
     def open(self, file_name):
-
         """
         Open the files for variables and detector momenta
 
@@ -42,7 +41,6 @@ class MantidSQw(ObservableReader):
         self.file_detectors = open(file_name + '_detectors')
 
     def parse(self, **settings):
-
         """
         Parse into SQw format
 
@@ -50,7 +48,8 @@ class MantidSQw(ObservableReader):
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.E, self.SQw, self.SQw_err = self.parse_variables(self.file_variables)
+        self.E, self.SQw, self.SQw_err = self.parse_variables(
+            self.file_variables)
         self.Q = self.parse_detectors(self.file_detectors)
 
         # Explicitly sort data
@@ -69,7 +68,6 @@ class MantidSQw(ObservableReader):
 
     @property
     def independent_variables(self):
-
         """
         Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
@@ -79,11 +77,10 @@ class MantidSQw(ObservableReader):
             The independent variables Q and E
         """
 
-        return {"Q":self.Q, "E":self.E}
+        return {"Q": self.Q, "E": self.E}
 
     @property
     def dependent_variables(self):
-
         """
         Get the dependent variables, SQw (in ``arb``)
 
@@ -97,7 +94,6 @@ class MantidSQw(ObservableReader):
 
     @property
     def errors(self):
-
         """
         Get the errors on the dependent variables
 
@@ -111,7 +107,6 @@ class MantidSQw(ObservableReader):
 
     @property
     def E(self):
-
         """
         Get or set the energy transfer, E, in meV
 
@@ -131,7 +126,6 @@ class MantidSQw(ObservableReader):
 
     @property
     def Q(self):
-
         """
         Get or set the momentum transfer, Q, in ``Ang^-1``
 
@@ -150,7 +144,6 @@ class MantidSQw(ObservableReader):
         self._Q = value
 
     def parse_variables(self, file):
-
         """
         Parses the values for energy, SQw and its error for each detector, but not the momentum of
         that detector.
@@ -178,7 +171,7 @@ class MantidSQw(ObservableReader):
             strings = line.split(',')
             if len(strings) == 1:
                 self.detector_IDs.append(strings[0])
-                data.append({'X':[], 'Y':[], 'E':[]})
+                data.append({'X': [], 'Y': [], 'E': []})
             else:
                 data[-1]['X'].append(self._make_float(strings[0]))
                 data[-1]['Y'].append(self._make_float(strings[1]))
@@ -196,7 +189,6 @@ class MantidSQw(ObservableReader):
         return X, Y, E
 
     def parse_detectors(self, file):
-
         """
         Parses the detector momenta values.
 
@@ -234,6 +226,7 @@ class MantidSQw(ObservableReader):
                 spectrum_no = values[spectrum_index]
                 Q_value = values[Q_index]
                 # Ensure that we assign Q values in the same order as detector_IDs
-                Q[self.detector_IDs.index(spectrum_no)] = self._make_float(Q_value)
+                Q[self.detector_IDs.index(
+                    spectrum_no)] = self._make_float(Q_value)
 
         return Q

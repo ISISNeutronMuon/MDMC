@@ -52,12 +52,11 @@ class InteractionFunction:
     def __str__(self):
 
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
-                           for p in self.parameters]).strip(',')
+                               for p in self.parameters]).strip(',')
         return f'{self.__class__.__name__} {parameters}'
 
     @property
     def parameters(self):
-
         """
         Get or set the ``array`` of ``Parameter`` objects
 
@@ -79,7 +78,6 @@ class InteractionFunction:
 
     @property
     def parameters_values(self):
-
         """
         Get the values for all ``Parameters`` objects
 
@@ -93,7 +91,6 @@ class InteractionFunction:
 
     @property
     def name(self):
-
         """
         Get the name of the class of the ``InteractionFunction``
 
@@ -106,7 +103,6 @@ class InteractionFunction:
         return self.__class__.__name__
 
     def set_parameters_interactions(self, interaction):
-
         """
         Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
 
@@ -123,7 +119,6 @@ class InteractionFunction:
 
 
 def inter_func_decorator(*parameter_units):
-
     """
     Decorates a method to add units to all positional and any relevant keyword
     arguments
@@ -515,6 +510,6 @@ class LennardJones(InteractionFunction):
     @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
     def __init__(self, epsilon, sigma, **settings):
 
-        super().__init__({'epsilon':epsilon, 'sigma':sigma})
+        super().__init__({'epsilon': epsilon, 'sigma': sigma})
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)

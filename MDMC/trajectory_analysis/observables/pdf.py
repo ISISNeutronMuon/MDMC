@@ -33,7 +33,6 @@ class PairDistributionFunction(Observable):
 
     @property
     def independent_variables(self):
-
         """
         Get or set the independent variable: this is
         the atomic separation distance r (in ``Ang``)
@@ -53,7 +52,6 @@ class PairDistributionFunction(Observable):
 
     @property
     def dependent_variables(self):
-
         """
         Get or set the dependent variables: these are
         PDF, the pair distribution function (in ``arb``)
@@ -68,7 +66,6 @@ class PairDistributionFunction(Observable):
 
     @property
     def errors(self):
-
         """
         Get or set the errors on the dependent variables, the pair distribution
         function (in ``arb``)
@@ -87,7 +84,6 @@ class PairDistributionFunction(Observable):
         self._errors = value
 
     def minimum_frames(self, dt: float = None):
-
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` is 1
@@ -107,7 +103,6 @@ class PairDistributionFunction(Observable):
         return 1
 
     def maximum_frames(self):
-
         """
         There is no hard limit on the number of frames that can be used, so
         return None
@@ -121,7 +116,6 @@ class PairDistributionFunction(Observable):
 
     @property
     def r(self):
-
         """
         Get or set the value of the atomc separation distance (in ``Ang``)
         """
@@ -139,12 +133,11 @@ class PairDistributionFunction(Observable):
                 and self._independent_variables):
             self._independent_variables['r'] = value
         else:
-            self._independent_variables = {'r':value}
+            self._independent_variables = {'r': value}
 
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
     def PDF(self):
-
         """
         Get the value of the total pair distribution function (in ``barn``)
         """
@@ -156,7 +149,6 @@ class PairDistributionFunction(Observable):
 
     def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
                           **settings):
-
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``
@@ -281,7 +273,6 @@ class PairDistributionFunction(Observable):
         self._sum_partial_pairs()
 
     def _sum_partial_pairs(self):
-
         """
         Normalize the partial pairs and sum them to get the total PDF
         """
@@ -312,7 +303,6 @@ class PairDistributionFunction(Observable):
                                                     * weights * concentration)
 
     def _parse_calc_MD_settings(self, trajectory, settings):
-
         """
         Parses the MD settings
 
@@ -362,9 +352,9 @@ class PairDistributionFunction(Observable):
         # that all possible partials will be calculated. The element set is
         # sorted so that partial pair strings will always be ordered
         # alphabetically.
-        self.partial_strings = settings.get('subset', \
-            list(combinations_with_replacement(sorted(trajectory.element_set),
-                                               2)))
+        self.partial_strings = settings.get('subset',
+                                            list(combinations_with_replacement(sorted(trajectory.element_set),
+                                                                               2)))
 
         # Create element set from elements in partials. The weights are then
         # determined from these.
@@ -382,7 +372,7 @@ class PairDistributionFunction(Observable):
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
-            self.independent_variables = ({'r':settings['r']} if 'r' in settings
+            self.independent_variables = ({'r': settings['r']} if 'r' in settings
                                           else {})
 
         # If rmin, rmax and rstep are in settings, overwrite existing values for
@@ -405,7 +395,8 @@ class PairDistributionFunction(Observable):
         self.r_step = self.r[1] - self.r[0]
 
         self.partial_pdfs = {partial_string:
-                             np.zeros(np.shape(self.independent_variables['r']))
+                             np.zeros(
+                                 np.shape(self.independent_variables['r']))
                              for partial_string in self.partial_strings}
 
         self._dependent_variables = {}
@@ -413,14 +404,12 @@ class PairDistributionFunction(Observable):
         del trajectory
 
     def _calculate_histogram(self, configuration):
-
         """
         Partitions the atomic positions into regions where they are within
         ``r_max`` from all other atoms
         """
 
         def get_component_lengths(universe_dim):
-
             """
             Use ``r`` values for each component that are at least as big as
             ``r_max``, but that are a factor of the dimensions
@@ -455,7 +444,8 @@ class PairDistributionFunction(Observable):
             for part_i in partition_indexes:
                 if like_elems:
                     # combinations avoids an atom and itself being an atom pair
-                    pos_pairs.append(combinations(partitions[elem1][part_i], 2))
+                    pos_pairs.append(combinations(
+                        partitions[elem1][part_i], 2))
                 else:
                     # atom and itself as an atom pair not an issue for unlike
                     # elements
@@ -487,7 +477,7 @@ class PairDistributionFunction(Observable):
                 # combination
                 if not like_elems:
                     try:
-                        pos_pairs.append(product(partitions[elem2][part1] -wrap,
+                        pos_pairs.append(product(partitions[elem2][part1] - wrap,
                                                  partitions[elem1][part2]))
                     except ValueError:
                         pass
@@ -498,7 +488,6 @@ class PairDistributionFunction(Observable):
                 self._calculate_histogram_from_position_pairs(pos_pairs)
 
     def _partition(self, positions, element_list, part_comps):
-
         """
         Partitions the atomic positions into paritions of dimensions specified
         by ``part_comps``
@@ -530,7 +519,7 @@ class PairDistributionFunction(Observable):
         """
 
         # Set up a partitions dictionary separated by element
-        partitions = {element:defaultdict(list) for element
+        partitions = {element: defaultdict(list) for element
                       in self.elements}
 
         # Add empty lists for all possible partition indexes. This will allow
@@ -554,12 +543,11 @@ class PairDistributionFunction(Observable):
             partitions[elem][tuple(partition_index)].append(position)
         # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
         # of positions from list to array)
-        return {elem:{partition_index:np.array(positions)
-                      for partition_index, positions in elem_partitions.items()}
+        return {elem: {partition_index: np.array(positions)
+                       for partition_index, positions in elem_partitions.items()}
                 for elem, elem_partitions in partitions.items()}
 
     def _get_partition_pairs(self, partition_components):
-
         """
         Calculates which partitions are neighbours and pairs them. This includes
         partitions that are neighbours due to periodic boundary conditions.
@@ -602,10 +590,9 @@ class PairDistributionFunction(Observable):
 
         return product(*map(np.arange, (self.universe_dimensions
                                         / partition_components).astype('int32'))
-                      )
+                       )
 
     def _calculate_histogram_from_position_pairs(self, position_pairs):
-
         """
         Returns a histogram of pair separations calculated from
         ``position_pairs``
@@ -660,7 +647,6 @@ class PairDistributionFunction(Observable):
     @staticmethod
     @jit('float64(float64[:])', nopython=True)
     def _calculate_euclidean_norm(vector):
-
         """
         Calculates the Euclidean norm of a vector
 
@@ -677,7 +663,6 @@ class PairDistributionFunction(Observable):
 
     @staticmethod
     def _set_weights(unique_elements, b_coh):
-
         """
         Sets the weights for each element
 
@@ -700,12 +685,11 @@ class PairDistributionFunction(Observable):
             the corresponding weight
         """
 
-        return {element:b_coh.get(element, B_COH[element]) for element
+        return {element: b_coh.get(element, B_COH[element]) for element
                 in unique_elements}
 
     @staticmethod
     def _set_numbers(unique_elements, element_list):
-
         """
         Sets the number of atoms of each element
 
@@ -723,7 +707,7 @@ class PairDistributionFunction(Observable):
             the number of atoms of the that element in the ``element_list``
         """
 
-        return {element:element_list.count(element) for element
+        return {element: element_list.count(element) for element
                 in unique_elements}
 
     @property

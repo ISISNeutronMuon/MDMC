@@ -45,7 +45,6 @@ class ObservablePair:
 
     @property
     def exp_obs(self):
-
         """
         Get or set the experimental ``Observable``
 
@@ -67,7 +66,6 @@ class ObservablePair:
 
     @property
     def MD_obs(self):
-
         """
         Get or set the MD ``Observable``
 
@@ -89,7 +87,6 @@ class ObservablePair:
 
     @property
     def weight(self):
-
         """
         Get or set the relative weight of this pair on a total FoM
 
@@ -118,7 +115,6 @@ class ObservablePair:
 
     @property
     def n_averages(self) -> Dict[str, int]:
-
         """
         The number of separate, complete dependent variable calculations we
         have been able to perform for the ``Observable``
@@ -137,7 +133,6 @@ class ObservablePair:
         return n_averages
 
     def validate_obs(self, obs, origin):
-
         """
         Performs checks to test the validity of an ``Observable``
 
@@ -210,7 +205,7 @@ class ObservablePair:
                 for k in obs.dependent_variables:
                     assert (np.shape(obs.dependent_variables[k]) ==
                             np.shape(other_obs.dependent_variables[k])), \
-                            dep_e_mess
+                        dep_e_mess
 
                 err_e_mess = 'Errors must have the same shape'
                 assert obs.errors.keys() == other_obs.errors.keys(), err_e_mess
@@ -225,7 +220,6 @@ class ObservablePair:
 
     @staticmethod
     def validate_weight(weight):
-
         """
         Performs checks to test the validity of the ``weight``
 
@@ -241,11 +235,10 @@ class ObservablePair:
         """
 
         assert weight > 0. and weight != float('inf'), ('Weight must be a'
-                                                           ' finite positive'
-                                                           ' float')
+                                                        ' finite positive'
+                                                        ' float')
 
     def check_types(self):
-
         """
         Checks that ``Observable`` objects are of the same type
         """
@@ -253,7 +246,6 @@ class ObservablePair:
         raise NotImplementedError
 
     def check_indep_var(self):
-
         """
         Checks that ``Observable`` objects have the same
         ``independent_variables`` and that are finite
@@ -262,7 +254,6 @@ class ObservablePair:
         raise NotImplementedError
 
     def check_dep_var(self):
-
         """
         Checks that ``Observable`` objects have the same ``dependent_variables``
         and that are finite
@@ -271,7 +262,6 @@ class ObservablePair:
         raise NotImplementedError
 
     def check_errors(self):
-
         """
         Checks that an ``Observable`` has errors on the ``dependent_variable``
         and that these are `float` and not `NaN`
@@ -280,7 +270,6 @@ class ObservablePair:
         raise NotImplementedError
 
     def check_origin(self, origin):
-
         """
         Checks that the ``Observable.origin`` (``'experiment'`` or ``'MD'``) is
         correct
@@ -289,7 +278,6 @@ class ObservablePair:
         raise NotImplementedError
 
     def calculate_difference(self):
-
         """
         Assumes a single dependent variable for each ``Observable``
 
@@ -309,7 +297,6 @@ class ObservablePair:
         return diff
 
     def calculate_errors(self):
-
         """
         Assumes a single dependent variable error for each ``Observable``
 
@@ -328,7 +315,6 @@ class ObservablePair:
         return errors
 
     def calculate_exp_errors(self):
-
         """
         Assumes a single dependent variable error for each ``Observable``.
         Calculates only the experimental errors.
@@ -341,6 +327,7 @@ class ObservablePair:
         """
 
         return np.array(*self.exp_obs.errors.values()) * self.rescale_factor
+
 
 @repr_decorator('value', 'obs_pairs')
 class FigureOfMerit(ABC):
@@ -390,7 +377,6 @@ class FigureOfMerit(ABC):
                              f'"{norm}"')
 
     def calculate(self):
-
         """
         Calculates the FoM value by calculating the FoM for every
         ``ObservablePair``
@@ -415,7 +401,6 @@ class FigureOfMerit(ABC):
         return self.value
 
     def data_norm_factor(self, obs_pair: ObservablePair):
-
         """
         Calculates the normalisation factor for ``obs_pair``. If ``self.norm`` is `True`, then
         returns the number of data points less the number of refinement parameters if `'dof'`
@@ -434,7 +419,8 @@ class FigureOfMerit(ABC):
         """
 
         if self.norm:
-            norm_factor = np.size(*obs_pair.MD_obs.dependent_variables.values())
+            norm_factor = np.size(
+                *obs_pair.MD_obs.dependent_variables.values())
             norm_factor -= self.n_parameters
         else:
             norm_factor = 1
@@ -443,7 +429,6 @@ class FigureOfMerit(ABC):
 
     @abstractmethod
     def calculate_single_FoM(self, obs_pair):
-
         """
         Performs the FoM calculation specific to each FoM
 

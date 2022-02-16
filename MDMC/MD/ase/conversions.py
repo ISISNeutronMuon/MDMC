@@ -43,7 +43,6 @@ class ASEAtoms(ase.atoms.Atoms):
         self.IDs = IDs
 
     def __getitem__(self, i):
-
         """
         Extends ``ase.atoms.Atoms._getitem__`` so that ``bonds`` are dealt with
         correctly. This means that any bond between two atoms in the subset
@@ -82,7 +81,6 @@ class ASEAtoms(ase.atoms.Atoms):
     # class
     #pylint: disable=redefined-builtin
     def write(self, filename, format=None, **kwargs):
-
         """
         Override ase.atoms.Atoms.write so that writing to X3D uses custom X3D
         class
@@ -105,7 +103,6 @@ class ASEAtoms(ase.atoms.Atoms):
 
 
 def convert_to_ase_atom(atom, index=None):
-
     """
     Converts an MDMC ``Atom`` to an ``ase.atom.Atom``
 
@@ -132,7 +129,6 @@ def convert_to_ase_atom(atom, index=None):
 
 
 def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
-
     """
     Converts an ``ase.atom.Atom`` to an MDMC ``Atom``.
 
@@ -161,7 +157,8 @@ def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
     """
 
     name = name if name else ase_atom.symbol
-    kwargs = {'position':ase_atom.position, 'mass':ase_atom.mass, 'name':name}
+    kwargs = {'position': ase_atom.position,
+              'mass': ase_atom.mass, 'name': name}
     if set_charge:
         kwargs['charge'] = ase_atom.charge
     if atom_type:
@@ -170,7 +167,6 @@ def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
 
 
 def get_ase_atoms(atoms, cell=None):
-
     """
     Gets an ``ASEAtoms`` object equivalent to ``atoms``, including the bonding
 
@@ -194,7 +190,7 @@ def get_ase_atoms(atoms, cell=None):
     # any ase.atom.Atom objects which belong to it (so Atoms[i].index == i,
     # regardless of the index of the Atom at that index). This means that the
     # atom IDs used for the bond atom pairs need to be converted.
-    index_conv = {atom.ID:index for index, atom in enumerate(atoms)}
+    index_conv = {atom.ID: index for index, atom in enumerate(atoms)}
     bonds = set(chain.from_iterable([convert_bonds(atom.bonded_interactions,
                                                    index_conv)
                                      for atom in atoms]))
@@ -207,7 +203,6 @@ def get_ase_atoms(atoms, cell=None):
 
 
 def convert_bond(bond, index_conv=None):
-
     """
     Converts ``Bond`` objects into the form required by the ASE GUI
 
@@ -234,7 +229,6 @@ def convert_bond(bond, index_conv=None):
 
 
 def convert_bonds(bonds, index_conv=None):
-
     """
     Converts ``Bond`` objects into the form required by the ASE GUI
 
@@ -286,7 +280,6 @@ class X3D(x3d.X3D):
         self.reduce_memory = len(self._atoms) > 3000
 
     def write(self, filename, datatype='X3DOM'):
-
         """
         Writes output to an 'X3DOM' (html) or 'X3D' file
 
@@ -358,7 +351,6 @@ class X3D(x3d.X3D):
             w(0, '</X3D>')
 
     def atom_lines(self, atom):
-
         """
         Generates a segment of X3D lines representing an atom
 
@@ -384,7 +376,6 @@ class X3D(x3d.X3D):
         else:
             sphere_subdivision = ''
 
-
         lines = [(0, '<Transform translation="{0:.2f} {1:.2f} {2:.2f}">'.format(
             *atom.position))]
         lines += [(1, '<Shape>')]
@@ -403,7 +394,6 @@ class X3D(x3d.X3D):
         return lines
 
     def bond_lines(self, bond):
-
         """
         Generates a cylinder representing a bond
 
@@ -435,7 +425,7 @@ class X3D(x3d.X3D):
         # All cylinders (bonds) are oriented along y axis by default
         # Calculate axis-angle representation in order to set bond rotation
         cylinder = np.array([0., np.abs(separation), 0.])
-        normalise = lambda x: x / np.linalg.norm(x)
+        def normalise(x): return x / np.linalg.norm(x)
         uvec1, uvec2 = normalise(cylinder), normalise(sub)
         axis = np.cross(uvec1, uvec2)
         angle = np.linalg.norm(np.arccos(np.dot(uvec1, uvec2)))
@@ -462,7 +452,6 @@ class X3D(x3d.X3D):
         return lines
 
     def get_center_of_rotation(self):
-
         """
         Get the center of rotation for the viewpoint
 
@@ -474,7 +463,7 @@ class X3D(x3d.X3D):
         """
 
         atoms = self._atoms\
-        # As ASE always has a defined cell for atoms (it is just
+            # As ASE always has a defined cell for atoms (it is just
         # Cell([0., 0., 0.]) if it has not been set), cannot simply test for
         # existence
         # Currently only consider orthorhombic cell
@@ -485,7 +474,6 @@ class X3D(x3d.X3D):
                              axis=0))
 
     def get_viewpoint_z(self):
-
         """
         Get the z position of the viewpoint which will display all of the
         `atoms`

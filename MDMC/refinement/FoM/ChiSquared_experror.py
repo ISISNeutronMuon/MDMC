@@ -3,6 +3,7 @@ import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
+
 class ChiSquaredExpError(FigureOfMerit):
     # ignore line too long linting as it is necessary for LaTeX formatting
     # pylint: disable=line-too-long
@@ -71,7 +72,8 @@ class ChiSquaredExpError(FigureOfMerit):
 
         if obs_pair.auto_scale:
             exp_errors = np.array(*obs_pair.exp_obs.errors.values())
-            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+            exp_values = np.array(
+                *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
             obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2)
                                        / np.sum(MD_values * exp_values

@@ -13,7 +13,6 @@ from os.path import basename, dirname, join, isfile
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit
 
 
-
 class FoMFactory:
 
     """
@@ -24,7 +23,6 @@ class FoMFactory:
 
     @staticmethod
     def create_FoM(module_name, obs_pairs, norm: str = 'data_points', n_parameters: int = None):
-
         """
         Returns
         -------
@@ -33,13 +31,14 @@ class FoMFactory:
         """
 
         try:
-            module = import_module('.ChiSquared_' + module_name+'error', __package__)
+            module = import_module(
+                '.ChiSquared_' + module_name+'error', __package__)
         except ImportError:
             try:
                 module = import_module('.' + module_name, __package__)
             except ImportError as error:
-                raise ValueError(f'{module_name} is not a supported Figure of Merits') from error
-
+                raise ValueError(
+                    f'{module_name} is not a supported Figure of Merits') from error
 
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
@@ -48,7 +47,6 @@ class FoMFactory:
 
     @staticmethod
     def get_FoM_names():
-
         """
         Get the names of available Figure of Merits(FoM)
 

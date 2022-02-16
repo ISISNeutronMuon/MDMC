@@ -41,7 +41,6 @@ class ForceField(ABC):
     @property
     @abstractmethod
     def interaction_dictionary(self):
-
         """
         The `dict` of interactions that exist within the ``ForceField``
 
@@ -57,7 +56,6 @@ class ForceField(ABC):
         raise NotImplementedError
 
     def parameterize_interactions(self, interactions):
-
         """
         Parameterizes the interactions with the parameters speicifed in the
         ``interaction`` `dict`
@@ -72,7 +70,6 @@ class ForceField(ABC):
             self._parameterize_interaction(interaction)
 
     def _parameterize_interaction(self, interaction):
-
         """
         Parameterizes the interaction with the parameters specified in the
         ``interaction`` `dict`
@@ -103,7 +100,6 @@ class WaterModel(ForceField):
     @property
     @abstractmethod
     def n_body(self):
-
         """
         This is the number of bodies in the water model.
 
@@ -154,7 +150,6 @@ class FileForceField(ForceField):
 
     @property
     def absolute_path(self):
-
         """
         Get the absolute path of the data
 
@@ -176,7 +171,6 @@ class FileForceField(ForceField):
     @property
     @abstractmethod
     def file_name(self):
-
         """
         Get the file name of the data
         """
@@ -185,7 +179,6 @@ class FileForceField(ForceField):
 
     @property
     def atoms(self):
-
         """
         Get file parameters for the atoms defined within the force field
 
@@ -204,7 +197,6 @@ class FileForceField(ForceField):
 
     @property
     def bonds(self):
-
         """
         Get file parameters for the bonds of the force field
 
@@ -219,7 +211,6 @@ class FileForceField(ForceField):
 
     @property
     def bond_angles(self):
-
         """
         Get file parameters for the bond angles of the force field
 
@@ -234,7 +225,6 @@ class FileForceField(ForceField):
 
     @property
     def propers(self):
-
         """
         Get file parameters for the proper dihedrals of the force field
 
@@ -249,7 +239,6 @@ class FileForceField(ForceField):
 
     @property
     def impropers(self):
-
         """
         Get file parameters for the improper dihedrals of the force field
 
@@ -264,7 +253,6 @@ class FileForceField(ForceField):
 
     @property
     def dispersions(self):
-
         """
         Get file parameters for the dispersion interactions of the force field
 
@@ -288,7 +276,6 @@ class FileForceField(ForceField):
             return self._interaction_dictionary
 
     def filter_element(self, element):
-
         """
         Filters the atoms in the ``FileForceField`` by element
 
@@ -308,7 +295,6 @@ class FileForceField(ForceField):
         return filter_dataframe([element], self.atoms, column_names=['element'])
 
     def set_atom_mass(self, atom):
-
         """
         Sets ``Atom.mass`` to the mass defined in the force field for that atom
         type
@@ -325,7 +311,6 @@ class FileForceField(ForceField):
         atom.mass = ff_atom.mass
 
     def _parameterize_interaction(self, interaction):
-
         """
         Parameterizes the interaction with the parameters specified in the
         ``interaction`` `dict`
@@ -343,7 +328,6 @@ class FileForceField(ForceField):
             self._parametrize_dispersion(interaction)
 
     def _parametrize_bonded(self, bonded):
-
         """
         Parametrizes a ``BondedInteraction``
 
@@ -457,7 +441,6 @@ class FileForceField(ForceField):
                                        settings)
 
     def _parametrize_coulombic(self, coulombic):
-
         """
         Assumes that all force fields have a ``Coulomb`` ``InteractionFunction``
 
@@ -501,7 +484,6 @@ class FileForceField(ForceField):
                                        unique_charges)
 
     def _parametrize_dispersion(self, dispersion):
-
         """
         While dispersion interactions can be defined between unlike atom types,
         this is not the case for any major force field implementation (e.g.
@@ -568,14 +550,13 @@ class FileForceField(ForceField):
 
         unique_parameters = list(chain.from_iterable([matching_disps[n].unique()
                                                       for n in parameter_names])
-                                )
+                                 )
         self._check_nonbonded_parameters(unique_parameters, parameter_names,
                                          matching_disps)
         self._set_interaction_function(dispersion, function_type,
                                        unique_parameters)
 
     def _get_interaction_function(self, interaction_type):
-
         """
         Gets the ``InteractionFunction`` for the corresponding ``Interaction``
 
@@ -595,10 +576,8 @@ class FileForceField(ForceField):
         function_name = self.inter_functions[interaction_type.lower()]
         return getattr(interaction_functions, function_name)
 
-
     @lru_cache(maxsize=None)
     def _convert_atom_type_name(self, atom):
-
         """
         Converts all ``Atom`` objects with ``Atom.name`` that are a valid force
         field type (i.e. can be cast to an `int`) into the corresponding force
@@ -641,7 +620,6 @@ class FileForceField(ForceField):
 
     @staticmethod
     def _get_parameter_names(function, file_parameter_names=None):
-
         """
         Gets the names of the parameters of function, excluding ``self`` and
         ``**settings``
@@ -701,7 +679,6 @@ class FileForceField(ForceField):
     def _check_nonbonded_parameters(function_parameters,
                                     function_parameter_names,
                                     matching_inters):
-
         """
         Checks that the parameters for an ``InteractionFunction`` for a
         ``NonBondedInteraction`` are valid
@@ -735,7 +712,6 @@ class FileForceField(ForceField):
     @staticmethod
     def _set_interaction_function(interaction, function_type,
                                   function_parameters, function_settings=None):
-
         """
         Initialises an ``InteractionFunction`` with specified parameters and
         settings and sets it for an ``Interaction``
@@ -762,7 +738,6 @@ class FileForceField(ForceField):
 
     @staticmethod
     def _parse_header(header, dtype):
-
         """
         Parses a force field file header line
 
@@ -788,7 +763,6 @@ class FileForceField(ForceField):
 
     @staticmethod
     def _set_col_type(column):
-
         """
         Sets the type of a ``DataFrame`` column to either a `float` or an `int`,
         if possible

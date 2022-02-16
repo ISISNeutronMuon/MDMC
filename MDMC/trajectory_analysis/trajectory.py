@@ -18,7 +18,6 @@ class AtomCollection(object):
 
     @property
     def universe(self):
-
         """
         Get or set the ``Universe`` in which the ``AtomCollection`` exists
 
@@ -50,7 +49,6 @@ class AtomCollection(object):
 
     @property
     def dimensions(self):
-
         """
         Get the ``dimensions`` of the ``Universe`` in which the
         ``AtomCollection`` exists
@@ -124,7 +122,6 @@ class Configuration(AtomCollection):
 
     @property
     def atoms(self):
-
         """
         Get the `list` of ``Atom`` which belong to the ``Configuration``
 
@@ -138,7 +135,6 @@ class Configuration(AtomCollection):
 
     @property
     def atom_positions(self):
-
         """
         Get the `list` of ``Atom.position`` which belong to the
         ``Configuration``
@@ -152,7 +148,6 @@ class Configuration(AtomCollection):
 
     @property
     def atom_velocities(self):
-
         """
         Get the `list` of ``Atom.velocity`` which belong to the
         ``Configuration``
@@ -167,7 +162,6 @@ class Configuration(AtomCollection):
 
     @property
     def element_list(self):
-
         """
         Get the `list` of ``Atom.element`` which belong to the ``Configuration``
 
@@ -181,7 +175,6 @@ class Configuration(AtomCollection):
 
     @property
     def molecule_list(self):
-
         """
         Get the `list` of ``Molecule`` which belong to the ``Configuration``
 
@@ -195,7 +188,6 @@ class Configuration(AtomCollection):
 
     @property
     def structure_list(self):
-
         """
         Get the `list` of ``StructuralUnit`` which belong to the ``Configuration``
 
@@ -212,7 +204,6 @@ class Configuration(AtomCollection):
 
     @property
     def data(self):
-
         """
         Get or set the ``Atom``, ``Atom.position``, and ``Atom.velocity`` which
         belong to the ``Configuration``
@@ -239,7 +230,6 @@ class Configuration(AtomCollection):
             self.add_structural_unit(unit)
 
     def add_structural_unit(self, structural_unit):
-
         """
         Adds the ``Atom`` objects from a ``StructuralUnit`` to the data
 
@@ -257,7 +247,6 @@ class Configuration(AtomCollection):
         self._data.extend([atom for atom in structural_unit.atoms])
 
     def validate_structure(self, structure):
-
         """
         Validates the structure by testing that it belongs to the same
         ``Universe`` as the ``Configuration``
@@ -278,10 +267,10 @@ class Configuration(AtomCollection):
         try:
             assert structure.universe is self.universe
         except AssertionError as error:
-            raise AssertionError('Atoms are not all from same universe') from error
+            raise AssertionError(
+                'Atoms are not all from same universe') from error
 
     def __add__(self, configuration):
-
         """
         Returns
         -------
@@ -295,7 +284,6 @@ class Configuration(AtomCollection):
         return self.__class__(*structure_list)
 
     def __sub__(self, configuration):
-
         """
         Returns
         -------
@@ -312,7 +300,6 @@ class Configuration(AtomCollection):
         raise NotImplementedError
 
     def __len__(self):
-
         """
         Returns
         -------
@@ -323,7 +310,6 @@ class Configuration(AtomCollection):
         return len(self.atoms)
 
     def __getitem__(self, item):
-
         """
         Returns
         -------
@@ -335,7 +321,6 @@ class Configuration(AtomCollection):
         return self.data[item]
 
     def filter_structures(self, predicate):
-
         """
         Filters the `list` of ``StructuralUnits`` using the predicate
 
@@ -354,7 +339,6 @@ class Configuration(AtomCollection):
         return list(filter(predicate, self.structure_list))
 
     def filter_atoms(self, predicate):
-
         """
         Filters the `list` of ``Atom`` using the predicate
 
@@ -372,7 +356,6 @@ class Configuration(AtomCollection):
         return list(filter(predicate, self.atoms))
 
     def filter_by_element(self, element):
-
         """
         Filter the ``Configuration`` using an ``element``
 
@@ -391,7 +374,6 @@ class Configuration(AtomCollection):
         return self.filter_atoms(lambda x: x.element == element)
 
     def scale(self, factor, vectors='positions'):
-
         """
         Scales either ``atom_positions`` or ``atom_velocities`` by a factor
 
@@ -433,7 +415,6 @@ class TemporalConfiguration(Configuration):
         self.time = time
 
     def __add__(self, configuration):
-
         """
         Returns
         -------
@@ -485,7 +466,6 @@ class Trajectory(AtomCollection):
         self.data = configurations
 
     def __getstate__(self) -> dict:
-
         """
         Gets the state of the Trajectory so that it can be pickled. The ``_structure_list``
         attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
@@ -508,7 +488,6 @@ class Trajectory(AtomCollection):
                 'structures': structures}
 
     def __setstate__(self, d: dict):
-
         """
         Sets the state of the Trajectory when it is being  unpickled. The ``_structure_list``
         attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
@@ -531,7 +510,6 @@ class Trajectory(AtomCollection):
 
     @property
     def data(self):
-
         """
         Get or set the data of the ``Trajectory``
 
@@ -562,7 +540,6 @@ class Trajectory(AtomCollection):
 
     @staticmethod
     def validate_config(config, validator):
-
         """
         Validates that a ``Configuration`` has the same number of ``Atom``
         objects as the validator
@@ -587,7 +564,6 @@ class Trajectory(AtomCollection):
                                  ' of atoms') from error
 
     def __getitem__(self, item):
-
         """
         Indexing and slicing is relative to ``frames``
         """
@@ -599,7 +575,6 @@ class Trajectory(AtomCollection):
 
     @property
     def frames(self):
-
         """
         Get frames of the ``Trajectory``
 
@@ -614,7 +589,6 @@ class Trajectory(AtomCollection):
 
     @property
     def times(self):
-
         """
         Get the times of the ``Trajectory``
 
@@ -628,7 +602,6 @@ class Trajectory(AtomCollection):
 
     @property
     def atoms(self):
-
         """
         Get the atoms from the start of the ``Trajectory``
 
@@ -642,7 +615,6 @@ class Trajectory(AtomCollection):
 
     @property
     def element_set(self):
-
         """
         Get the unique elements from the start of the ``Trajectory``
 
@@ -656,7 +628,6 @@ class Trajectory(AtomCollection):
 
     @property
     def element_list(self):
-
         """
         Get the elements from the start of the ``Trajectory``
 
@@ -670,7 +641,6 @@ class Trajectory(AtomCollection):
 
     @property
     def configurations(self):
-
         """
         Get the ``Configuration`` objects of the ``Trajectory``
 
@@ -684,7 +654,6 @@ class Trajectory(AtomCollection):
 
     @property
     def universe(self):
-
         """
         Get the ``Universe`` of the first ``Configuration`` object (the
         ``Universe`` is assumed to be the same for all ``Configuration``s).
@@ -697,10 +666,8 @@ class Trajectory(AtomCollection):
 
         return self.configurations[0].universe
 
-
     @property
     def positions(self):
-
         """
         Get the positions of the ``Atom`` objects in the ``Trajectory``
 
@@ -712,11 +679,10 @@ class Trajectory(AtomCollection):
         """
 
         return np.array([position for config in self.configurations
-            for position in config.atom_positions])
+                         for position in config.atom_positions])
 
     @property
     def velocities(self):
-
         """
         Get the velocities of the ``Atom`` objects in the ``Trajectory``
 
@@ -728,10 +694,9 @@ class Trajectory(AtomCollection):
         """
 
         return np.array([velocity for config in self.configurations
-            for velocity in config.atom_velocities])
+                         for velocity in config.atom_velocities])
 
     def filter_by_time(self, start, end=None):
-
         """
         Filter the ``Trajectory`` by time
 
@@ -761,7 +726,6 @@ class Trajectory(AtomCollection):
             (self.times >= start) & (self.times < end)])
 
     def __len__(self):
-
         """
         Returns
         -------

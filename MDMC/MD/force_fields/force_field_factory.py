@@ -7,6 +7,7 @@ from os.path import basename, dirname, join, isfile
 
 from MDMC.MD.force_fields.ff import ForceField
 
+
 class ForceFieldFactory:
 
     """
@@ -17,7 +18,6 @@ class ForceFieldFactory:
 
     @staticmethod
     def create_force_field(module_name):
-
         """
         Returns
         -------
@@ -28,7 +28,8 @@ class ForceFieldFactory:
         try:
             module = import_module('.' + module_name, __package__)
         except ImportError as error:
-            raise ValueError(f'{module_name} is not a supported force field') from error
+            raise ValueError(
+                f'{module_name} is not a supported force field') from error
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, ForceField)))
@@ -36,7 +37,6 @@ class ForceFieldFactory:
 
     @staticmethod
     def get_force_field_names():
-
         """
         Get the names of available force fields
 

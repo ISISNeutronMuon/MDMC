@@ -23,7 +23,6 @@ class SQwMixins:
     """
 
     def minimum_frames(self, dt: float = None):
-
         r"""
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` depends on ``self.use_FFT``.
@@ -75,7 +74,6 @@ class SQwMixins:
         return int(np.ceil(required_time / (2 * dt) + 1))
 
     def maximum_frames(self):
-
         """
         The maximum number of ``Trajectory`` frames that can be used to
         calculate the ``dependent_variables`` depends on ``self.use_FFT``.
@@ -100,7 +98,6 @@ class SQwMixins:
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
-
         """
         Get the momentum transfers
 
@@ -139,7 +136,6 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     def independent_variables(self):
-
         """
         Get or set the independent variables: these are
         the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
@@ -159,7 +155,6 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     def dependent_variables(self):
-
         """
         Get or set the dependent variables: this is
         SQw, the dynamic structure factor (in ``arb``)
@@ -174,7 +169,6 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     def errors(self):
-
         """
         Get or set the errors on the dependent variables, the dynamic
         structure factor (in ``arb``)
@@ -195,7 +189,6 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
     def E(self):
-
         """
         Get the energies
 
@@ -215,7 +208,6 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self):
-
         """
         Get the angular frequencies
 
@@ -230,7 +222,6 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw(self):
-
         """
         Get the dynamic structure factor, S(Q, w), in arb
 
@@ -248,7 +239,6 @@ class AbstractSQw(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw_err(self):
-
         """
         Get the errors on the dynamic structure factor in arb
 
@@ -264,7 +254,6 @@ class AbstractSQw(SQwMixins, Observable):
             return None
 
     def validate_energy(self, dt):
-
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -313,7 +302,6 @@ class AbstractSQw(SQwMixins, Observable):
 
     def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
                           verbose: int = 0, **settings):
-
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
 
@@ -350,13 +338,14 @@ class AbstractSQw(SQwMixins, Observable):
         self._origin = 'MD'
         SQw_list = []
         errors_list = []
-        obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
+        obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
 
         # adds resolution attribute if it doesn't already exist
         if not hasattr(self, 'resolution'):
             resolution_factory = ResolutionFactory()
             if 'energy_resolution' in settings:
-                self.resolution = resolution_factory.create_instance(settings['energy_resolution'])
+                self.resolution = resolution_factory.create_instance(
+                    settings['energy_resolution'])
             else:
                 # if no resolution supplied, give the object null resolution
                 self.resolution = resolution_factory.create_instance(None)
@@ -402,13 +391,15 @@ class AbstractSQw(SQwMixins, Observable):
 
             # Assert that the times and dimensions are consistent with original trajectory
             try:
-                assert_allclose(self.trajectory.times - self.trajectory.times[0], t)
+                assert_allclose(self.trajectory.times -
+                                self.trajectory.times[0], t)
             except AssertionError as error:
                 msg = ('The `times` of the current `Trajectory` were not '
                        'consistent with the first `Trajectory` passed')
                 raise AssertionError(msg) from AssertionError
             try:
-                assert_allclose(self.universe_dimensions, self.trajectory.dimensions)
+                assert_allclose(self.universe_dimensions,
+                                self.trajectory.dimensions)
             except AttributeError:
                 # May not have dimensions set, in which case pass
                 pass
@@ -427,13 +418,15 @@ class AbstractSQw(SQwMixins, Observable):
             FQt.calculate_from_MD(trajectory, **settings)
 
             if verbose == 2:
-                print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
+                print('       calculate_FQt: {} s'.format(
+                    round(time() - time_0, 3)))
             if verbose > 0:
                 time_1 = time()
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
             errors_list.append(np.zeros(np.shape(SQw_list[-1])))
             if verbose == 2:
-                print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
+                print('      _calculate_SQw: {} s'.format(
+                    round(time() - time_1, 3)))
 
             if verbose > 0:
                 obs_timings['calculate_FQt'].append(time_1 - time_0)
@@ -457,7 +450,6 @@ class AbstractSQw(SQwMixins, Observable):
         return fqt_types[self.__class__.__name__]
 
     def calculate_dt(self):
-
         r"""
         Calculates the time separation of frames required by the experimental
         dataset, assuming uniform spacing. Note that this may be different from
@@ -542,14 +534,15 @@ class AbstractSQw(SQwMixins, Observable):
         # h is in units of eV s whereas system units are meV fs, so
         # apply a factor of 1e3 * 1e15 to convert it
         max_energy_separation = np.amax(np.diff(E_sorted))
-        t_max = h  * 1e18 / (2 * max_energy_separation)
+        t_max = h * 1e18 / (2 * max_energy_separation)
         N_T = int(t_max / dt)
         t_array = np.linspace(- dt * N_T, dt * N_T, N_T)
         SQw_ift = np.zeros((len(SQw_sorted), N_T), dtype='complex')
 
         # In general we do not have equal energy spacing, multiply the exponential factor by this
         # before transposing and dotting to sum over the energy domain
-        exp = np.exp(1j * np.outer(t_array, E_sorted) / (h_bar * 1e18)) * widths
+        exp = np.exp(1j * np.outer(t_array, E_sorted) /
+                     (h_bar * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 
         # note: the interp2d interpolation function requires input of the form
@@ -644,7 +637,6 @@ class SQwIncoherent(AbstractSQw):
 
 
 def calculate_E(nE: int, dt: float):
-
     r"""
     Calculates an array of ``nE`` uniformly spaced energy values from the
     time separation of the ``Trajectory`` frames, ``dt``. The frequencies
@@ -673,4 +665,3 @@ def calculate_E(nE: int, dt: float):
     # h is in units of eV s whereas system units are meV fs, so apply a
     # factor of 1e3 * 1e15 to convert it
     return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
-

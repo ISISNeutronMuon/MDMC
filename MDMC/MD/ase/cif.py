@@ -13,13 +13,13 @@ from ase.io.cif import read_cif
 import numpy as np
 
 from MDMC.MD.ase.conversions import ASEAtoms, convert_from_ase_atom
-from MDMC.MD.structural_units import (BoundingBox, get_reduced_chemical_formula)
+from MDMC.MD.structural_units import (
+    BoundingBox, get_reduced_chemical_formula)
 from MDMC.MD.interactions import Coulombic, Bond, BondAngle, DihedralAngle
 from MDMC.MD.interaction_functions import Coulomb
 
 
 def ase_read_cif(file, **settings):
-
     """
     Reads a configuration file and returns a list of ``Atom`` objects.
 
@@ -114,10 +114,10 @@ def ase_read_cif(file, **settings):
     atom_types = settings.get('atom_types', [None] * len(ase_atoms))
 
     # dict of CIF atom label to MDMC atom
-    atoms_labels = {label:convert_from_ase_atom(atom,
-                                                name=name,
-                                                atom_type=atom_type,
-                                                set_charge=False)
+    atoms_labels = {label: convert_from_ase_atom(atom,
+                                                 name=name,
+                                                 atom_type=atom_type,
+                                                 set_charge=False)
                     for label, atom, name, atom_type
                     in zip(ase_atoms.info['_atom_site_label'],
                            ase_atoms,
@@ -130,11 +130,11 @@ def ase_read_cif(file, **settings):
     # used, a single Coulombic interaction will be created for all atoms with
     # atom_type 1.
     if atom_types[0]:
-        coulombic_key = lambda atom: atom.atom_type
-        bonded_key = lambda atom_arr: [atom.atom_type for atom in atom_arr]
+        def coulombic_key(atom): return atom.atom_type
+        def bonded_key(atom_arr): return [atom.atom_type for atom in atom_arr]
     elif names[0]:
-        coulombic_key = lambda atom: atom.name
-        bonded_key = lambda atom_arr: [atom.name for atom in atom_arr]
+        def coulombic_key(atom): return atom.name
+        def bonded_key(atom_arr): return [atom.name for atom in atom_arr]
     else:
         coulombic_key = bonded_key = None
 
@@ -167,7 +167,6 @@ def ase_read_cif(file, **settings):
 
 
 def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
-
     """
     Gets the atoms for each bonded interaction
 
@@ -211,7 +210,6 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
 
 
 def _create_coulombic_interactions(atoms, cutoff, key=None):
-
     """
     Creates ``Coulombic`` interactions
 
@@ -234,7 +232,6 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
 
 
 def _create_bonded_interactions(interactions_atoms, key=None, **settings):
-
     """
     Creates ``BondedInteraction`` objects
 
@@ -293,7 +290,6 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
 
 
 def _group_atoms(atoms, key):
-
     """
     Groups atoms based on a key
 
@@ -316,7 +312,6 @@ def _group_atoms(atoms, key):
 
 
 def _reduce_ase_unit_cell(ase_atoms):
-
     """
     Reduces an ``ase.atoms.Atoms`` object from a unit cell of molecules to a
     single molecule
@@ -356,7 +351,6 @@ def _reduce_ase_unit_cell(ase_atoms):
 
 
 def _make_atom_positions_valid(atoms):
-
     """
     Sets the positions of all atoms are positive (including 0.)
 

@@ -19,7 +19,6 @@ class ObservableReader(Reader):
 
     @property
     def data(self):
-
         """
         A dictionary of dictionaries containing the independent variables,
         dependent variables and the associated errors.
@@ -31,14 +30,13 @@ class ObservableReader(Reader):
             the dependent variables
         """
 
-        return {"independent":self.independent_variables,
-                "dependent":self.dependent_variables,
-                "errors":self.errors}
+        return {"independent": self.independent_variables,
+                "dependent": self.dependent_variables,
+                "errors": self.errors}
 
     @property
     @abstractmethod
     def independent_variables(self):
-
         """
         The independent variables
 
@@ -53,7 +51,6 @@ class ObservableReader(Reader):
     @property
     @abstractmethod
     def dependent_variables(self):
-
         """
         The dependent variables
 
@@ -68,7 +65,6 @@ class ObservableReader(Reader):
     @property
     @abstractmethod
     def errors(self):
-
         """
         The errors on the dependent variables
 
@@ -82,7 +78,6 @@ class ObservableReader(Reader):
 
     @staticmethod
     def _make_float(i):
-
         """
         Casts the input to a `float`, or passes if the input cannot be cast
 

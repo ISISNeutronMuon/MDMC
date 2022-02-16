@@ -18,6 +18,7 @@ from MDMC.common.decorators import repr_decorator, unit_decorator
 
 LOGGER = logging.getLogger(__name__)
 
+
 @repr_decorator('function')
 class Interaction(ABC):
 
@@ -44,7 +45,6 @@ class Interaction(ABC):
     """
 
     def __init__(self, **settings):
-
         """
         Arguments:
         atom_tuples - One or more tuples consisting of one or more Atom objects.
@@ -82,7 +82,6 @@ class Interaction(ABC):
         self.name = self.__class__.__name__
 
     def __deepcopy__(self, memo={}):
-
         """
         Interactions cannot be copied
         """
@@ -90,7 +89,6 @@ class Interaction(ABC):
         raise AttributeError('Interactions cannot be copied')
 
     def __copy__(self):
-
         """
         Interactions cannot be copied
         """
@@ -100,7 +98,6 @@ class Interaction(ABC):
     @property
     @abstractmethod
     def atoms(self):
-
         """
         Get the atoms on which the ``Interaction`` is applied
         """
@@ -109,7 +106,6 @@ class Interaction(ABC):
 
     @property
     def parameters(self):
-
         """
         Get the ``Parameter`` objects belonging to the ``InteractionFunction``
         belonging to the ``Interaction``
@@ -124,7 +120,6 @@ class Interaction(ABC):
 
     @property
     def function(self):
-
         """
         Get or set the ``InteractionFunction`` of the ``Interaction``
 
@@ -143,7 +138,6 @@ class Interaction(ABC):
 
     @property
     def function_name(self):
-
         """
         Get the name of the ``InteractionFunction`` belonging to the
         ``Interaction``
@@ -163,7 +157,6 @@ class Interaction(ABC):
     @property
     @abstractmethod
     def universe(self):
-
         """
         Get the ``Universe`` to which the ``Interaction`` belongs
 
@@ -178,7 +171,6 @@ class Interaction(ABC):
     @property
     @abstractmethod
     def element_list(self):
-
         """
         Get a `list` of the elements for which the ``Interaction`` applies
 
@@ -191,7 +183,6 @@ class Interaction(ABC):
         raise NotImplementedError
 
     def sorted_element_list(self):
-
         """
         Sort the list of elements for which the ``Interaction`` applies
 
@@ -205,7 +196,6 @@ class Interaction(ABC):
         return sorted(self.element_list())
 
     def element_tuple(self):
-
         """
         A `tuple` of elements for which the ``Interaction`` applies
 
@@ -218,7 +208,6 @@ class Interaction(ABC):
         return tuple(self.element_list())
 
     def _add_interaction_atoms(self, atoms):
-
         """
         Add the ``Interaction`` to atoms for which the ``Interaction`` has been
         applied
@@ -280,7 +269,6 @@ class NonBondedInteraction(Interaction):
         return id(self) // 8
 
     def __str__(self):
-
         """
         Returns
         -------
@@ -295,7 +283,6 @@ class NonBondedInteraction(Interaction):
     @property
     @abstractmethod
     def atom_types(self):
-
         """
         Get the atom types for which the ``NonBondedInteraction`` applies
 
@@ -309,7 +296,6 @@ class NonBondedInteraction(Interaction):
 
     @property
     def universe(self):
-
         """
         Get or set the ``Universe`` to which the ``NonBondedInteraction``
         belongs
@@ -336,7 +322,6 @@ class NonBondedInteraction(Interaction):
 
     @property
     def cutoff(self):
-
         """
         Get or set the distance in ``Ang`` at which the interaction potential is
         truncated
@@ -392,7 +377,7 @@ class Dispersion(NonBondedInteraction):
 
     def __init__(self, universe, *atom_types, **settings):
 
-        #Ignore pylint warning for inner function docstring
+        # Ignore pylint warning for inner function docstring
         #pylint: disable=missing-docstring
         def validate_atom_type_pair(atom_type_pair):
             try:
@@ -432,7 +417,6 @@ class Dispersion(NonBondedInteraction):
 
     @property
     def atoms(self):
-
         """
         Get the atoms on which the ``Dispersion`` is applied
 
@@ -451,7 +435,6 @@ class Dispersion(NonBondedInteraction):
                 in self.atom_types]
 
     def element_list(self):
-
         """
         Get a list of the elements for which the ``Interaction`` applies
 
@@ -593,7 +576,6 @@ class Coulombic(NonBondedInteraction):
                            self.__class__)
 
     def __len__(self):
-
         """
         Returns
         -------
@@ -604,7 +586,6 @@ class Coulombic(NonBondedInteraction):
         return len(self.atoms)
 
     def __getitem__(self, key):
-
         """
         Returns
         -------
@@ -623,7 +604,6 @@ class Coulombic(NonBondedInteraction):
 
     @property
     def atoms(self):
-
         """
         Get the atoms on which the ``Coulombic`` interaction is applied
 
@@ -637,7 +617,6 @@ class Coulombic(NonBondedInteraction):
 
     @property
     def atom_types(self):
-
         """
         Get the atom types for which the ``Coulombic`` applies
 
@@ -654,7 +633,6 @@ class Coulombic(NonBondedInteraction):
         return self._atom_types
 
     def element_list(self):
-
         """
         Get a list of the elements for which the ``Coulombic`` interaction applies
 
@@ -733,7 +711,6 @@ class BondedInteraction(Interaction):
                     [tuple(map(lambda a: a.ID, tpl)) for tpl in self.atoms])
 
     def __len__(self):
-
         """
         Returns
         -------
@@ -744,7 +721,6 @@ class BondedInteraction(Interaction):
         return len(self.atoms)
 
     def __getitem__(self, key):
-
         """
         Returns
         -------
@@ -757,7 +733,6 @@ class BondedInteraction(Interaction):
         return self.atoms[key]
 
     def __str__(self):
-
         """
         Returns
         -------
@@ -769,7 +744,6 @@ class BondedInteraction(Interaction):
 
     @property
     def atoms(self):
-
         """
         Get or set the atoms on which the ``Coulombic`` interaction is applied
 
@@ -804,7 +778,8 @@ class BondedInteraction(Interaction):
             if len(atom_tuples) == 1 and is_atom(atom_tuples[0]):
                 atom_tuples = [(atom_tuples[0],)]
             else:
-                raise TypeError('atom_tuples must be [(atom, ...), ...]') from error
+                raise TypeError(
+                    'atom_tuples must be [(atom, ...), ...]') from error
 
         # Only assign interaction to atoms after these validation steps
         self._atoms = []
@@ -822,7 +797,6 @@ class BondedInteraction(Interaction):
 
     @property
     def universe(self):
-
         """
         Get the ``Universe`` to which the ``BondedInteraction`` belongs
 
@@ -839,7 +813,6 @@ class BondedInteraction(Interaction):
             return None
 
     def element_list(self):
-
         """
         Get a `list` of the elements for which the ``BondedInteraction`` applies
 
@@ -857,7 +830,6 @@ class BondedInteraction(Interaction):
 
     @staticmethod
     def _validate_atoms(atoms, n_atoms):
-
         """
         Validates that the correct number of atoms have been passed to the
         interaction
@@ -880,7 +852,6 @@ class BondedInteraction(Interaction):
             raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
     def add_atoms(self, *atoms, **settings):
-
         """
         Add atoms which are all involved in one example of this interaction
 
@@ -914,7 +885,6 @@ class BondedInteraction(Interaction):
             self._add_to_universe(self.universe, atoms)
 
     def _check_duplicates(self, structs):
-
         """
         Checks for duplicates ``StructuralUnit``
 
@@ -947,7 +917,6 @@ class BondedInteraction(Interaction):
     # DihedralAngle
     #pylint: disable=R0201
     def _get_equivalent_structures(self, structs):
-
         """
         Returns
         -------
@@ -958,7 +927,6 @@ class BondedInteraction(Interaction):
         return structs + [tuple(reversed(atom_tuple)) for atom_tuple in structs]
 
     def _add_to_universe(self, universe, tpl):
-
         """
         Adds interaction and atom tuple to ``universe``
 
@@ -1111,7 +1079,6 @@ class DihedralAngle(BondedInteraction):
         super().__init__(*atom_tuples, **settings)
 
     def _get_equivalent_structures(self, structs):
-
         """
         Returns
         -------
@@ -1133,7 +1100,6 @@ class DihedralAngle(BondedInteraction):
 
 
 def _add_atom_types(self, *atom_types):
-
     """
     Function for dynamically creating an ``add_atom_types`` method in
     ``Coulombic``
@@ -1149,7 +1115,6 @@ def _add_atom_types(self, *atom_types):
 
 
 def _add_atoms(self, *atoms):
-
     """
     Function for dynamically creating an ``add_atoms`` method in ``Coulombic``
 

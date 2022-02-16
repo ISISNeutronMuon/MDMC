@@ -4,8 +4,8 @@ functions
 
 import pandas as pd
 
-def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
 
+def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
     """
 
 
@@ -69,7 +69,6 @@ def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
 
 def filter_ordered_dataframe(values, dataframe, column_names=None,
                              column_regex=None, wildcard=None):
-
     """
     Filters a ``pd.DataFrame`` with an iterable of ordered values. The values
     must occur in columns in the correct order, with the order specified by

@@ -27,7 +27,6 @@ class Observable(ABC):
 
     @property
     def name(self):
-
         """
         Get or set the module name that was used for factory instantiation
 
@@ -46,7 +45,6 @@ class Observable(ABC):
 
     @property
     def origin(self):
-
         """
         Get or set the origin of the observable
 
@@ -66,7 +64,6 @@ class Observable(ABC):
 
     @property
     def data(self):
-
         """
         Get the independent, dependent and error data
 
@@ -76,14 +73,13 @@ class Observable(ABC):
             The independent, dependent and error data
         """
 
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
+        return {'independent': self.independent_variables,
+                'dependent': self.dependent_variables,
+                'errors': self.errors}
 
     @property
     @abstractmethod
     def independent_variables(self):
-
         """
         The independent variables
 
@@ -98,7 +94,6 @@ class Observable(ABC):
     @property
     @abstractmethod
     def dependent_variables(self):
-
         """
         The dependent variables
 
@@ -113,7 +108,6 @@ class Observable(ABC):
     @property
     @abstractmethod
     def errors(self):
-
         """
         The errors on the dependent variables
 
@@ -127,7 +121,6 @@ class Observable(ABC):
 
     @abstractmethod
     def minimum_frames(self, dt: float = None):
-
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables``
@@ -147,7 +140,6 @@ class Observable(ABC):
 
     @abstractmethod
     def maximum_frames(self):
-
         """
         The maximum number of ``Trajectory`` frames that can be used to
         calculate the ``dependent_variables``
@@ -162,7 +154,6 @@ class Observable(ABC):
 
     @property
     def use_FFT(self):
-
         """
         Get or set whether to use FFT when calculating from MD
 
@@ -180,7 +171,6 @@ class Observable(ABC):
         self._use_FFT = use_FFT
 
     def read_from_file(self, reader, file_name):
-
         """
         Reads in experimental data from a file using a specified reader
 
@@ -202,7 +192,6 @@ class Observable(ABC):
 
     @abstractmethod
     def calculate_from_MD(self, MD_input, **parameters):
-
         """
         Calculates the obseravable using input from an MD simulation
 
