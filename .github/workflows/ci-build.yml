@@ -114,14 +114,9 @@ jobs:
       run: |
         pip3 install --upgrade pip
         pip install -r requirements.txt
-        pip install pylint
-    - name: Download and unzip master report
-      uses: aochmann/actions-download-artifact@1.0.0
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        name: pylint-cron-report
-        latest: true
-    - name: Get master score and run pylint
-      run: export CRON_SCORE=$(tail -n -2 pylint_cron.txt | sed -n 's/^Your code has been rated at \([-0-9.]*\)\/.*/\1/p')
-      run: pylint --fail-under=$CRON_SCORE MDMC 
+        pip install pylint pylint-exit
+    - name: pylint
+      run: |
+        pylint fitbenchmarking || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
+        exit $?
 

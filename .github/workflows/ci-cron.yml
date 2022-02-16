@@ -155,27 +155,4 @@ jobs:
         git commit -a -m "CI deployment"
         git merge -X ours master
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
-        
-  linting:
-    name: Master linting
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: apt get
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
-    - name: pip install
-      run: |
-        pip3 install --upgrade pip
-        pip install -r requirements.txt
-        pip install pylint
-    - name: Lint and tee to file
-      run: pylint MDMC | tee pylint_cron.txt
-    - name: Save linting results as artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: pylint-cron-report
-        path: pylint_cron.txt
-        retention-days: 8
+
