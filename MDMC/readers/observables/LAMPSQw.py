@@ -27,24 +27,18 @@ class LAMPSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
-    def open(self, file_name):
+    def __enter__(self):
 
         """
         Open the files for independent variables, dependent variables and errors
         on the dependent variables
-
-        Parameters
-        ----------
-        file_name : str
-            The independent file name, which is the base file name for the three
-            files.
         """
 
-        self.file_indep = open(file_name)
-        self.file_dep = open(file_name + 'ascii')
-        self.file_dep_err = open(file_name + 'ascii_e')
+        self.file_indep = open(self.file_name)
+        self.file_dep = open(self.file_name + 'ascii')
+        self.file_dep_err = open(self.file_name + 'ascii_e')
 
-    def _close(self):
+    def __exit__(self, exception_type, exception_value, traceback):
         """Closes all three files after parsing"""
 
         self.file_indep.close()
@@ -68,8 +62,6 @@ class LAMPSQw(ObservableReader):
         # inf so that error calculations can still be performed on them but
         # result in inf.
         self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
-
-        self._close()
 
     @property
     def independent_variables(self):

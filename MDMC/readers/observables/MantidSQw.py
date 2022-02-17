@@ -26,22 +26,16 @@ class MantidSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
-    def open(self, file_name):
+    def __enter__(self):
 
         """
         Open the files for variables and detector momenta
-
-        Parameters
-        ----------
-        file_name : str
-            The variables file name, which contains the SQw, error, and energy values for each
-            detector ID
         """
 
-        self.file_variables = open(file_name)
-        self.file_detectors = open(file_name + '_detectors')
+        self.file_variables = open(self.file_name)
+        self.file_detectors = open(self.file_name + '_detectors')
 
-    def _close(self):
+    def __exit__(self, exception_type, exception_value, traceback):
         """Closes variable and detector files after parsing"""
 
         self.file_variables.close()
@@ -72,8 +66,6 @@ class MantidSQw(ObservableReader):
         # Mantid sets errors to 0 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them.
         self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-
-        self._close()
 
     @property
     def independent_variables(self):

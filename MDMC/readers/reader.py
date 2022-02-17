@@ -11,27 +11,23 @@ class Reader(ABC):
     Abstract class that defines methods common to all readers
     """
 
-    def __init__(self):
+    def __init__(self, file_name):
 
         self.file = None
+        self.file_name = file_name
 
-    def open(self, file_name):
+    def __enter__(self):
 
         """
         Provides a generic implementation of file opening using inbuilt python
         open
 
-        Should be overriden if necessary for specific file types.
-
-        Parameters
-        ----------
-        file_name : str
-            The name of the input file
+        Should be overridden if necessary for specific file types.
         """
 
-        self.file = open(file_name, 'r')
+        self.file = open(self.file_name, 'r', encoding='UTF-8')
 
-    def _close(self):
+    def __exit__(self, exception_type, exception_value, traceback):
         """Closes the open file after parsing"""
 
         self.file.close()

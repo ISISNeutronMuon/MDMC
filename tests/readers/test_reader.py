@@ -37,24 +37,10 @@ def reader_info(request):
     Dictionary of data contained in reader test info
     """
 
-    return {'reader':ObservableReaderFactory.create_reader(request.param[0]),
+    return {'reader':request.param[0],
             'indep_datatypes':request.param[1],
             'dep_datatype':request.param[2]}
 
-def test_open(reader_info):
-
-    """
-    Tests if the reader has opened the file in read only mode
-    """
-
-    # TODO: Add test for read only
-
-    reader = reader_info['reader']
-
-    try:
-        reader.open(data.READER_DATA[reader.__class__.__name__])
-    except KeyError:
-        raise KeyError("The test data must have the same name as the reader")
 
 def test_parse(reader_info):
 
@@ -67,12 +53,13 @@ def test_parse(reader_info):
     - All data are floats
     """
 
-    reader = reader_info['reader']
+    reader = ObservableReaderFactory.create_reader(reader_info['reader'],
+                                                   data.READER_DATA[reader_info['reader']])
     indep_datatypes = reader_info['indep_datatypes']
     dep_datatype = reader_info['dep_datatype']
 
-    reader.open(data.READER_DATA[reader.__class__.__name__])
-    reader.parse()
+    with reader:
+        reader.parse()
     for indep_datatype in indep_datatypes:
         assert indep_datatype in reader.independent_variables
     assert dep_datatype in reader.dependent_variables

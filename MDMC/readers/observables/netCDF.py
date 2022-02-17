@@ -20,20 +20,15 @@ class netCDF(ObservableReader):
         The netCDF input file
     """
 
-    def open(self, file_name):
+    def __enter__(self):
 
         """
         Opens the file for parsing
-
-        Parameters
-        ----------
-        file_name : str
-            The name of the netCDF file
         """
 
-        self.file = Dataset(file_name, 'r')
+        self.file = Dataset(self.file_name, 'r', encoding='UTF-8')
 
-    def _close(self):
+    def __exit__(self, exception_type, exception_value, traceback):
         """Closes the file after parsing"""
 
         self.file.close()
@@ -56,8 +51,6 @@ class netCDF(ObservableReader):
 
         self.SQw = np.abs(np.array(self.file.variables['Sqw-total']))
         self.SQw_err = np.power(np.abs(self.SQw), 0.5)
-
-        self._close()
 
     @property
     def independent_variables(self):
