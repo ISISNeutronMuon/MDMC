@@ -28,8 +28,10 @@ class Reader(ABC):
         file_name : str
             The name of the input file
         """
+        # pylint: disable=consider-using-with
+        # as this is an abstracted open method
 
-        self.file = open(file_name, 'r')
+        self.file = open(file_name, 'r', encoding='UTF-8')
 
     @abstractmethod
     def parse(self, **settings):

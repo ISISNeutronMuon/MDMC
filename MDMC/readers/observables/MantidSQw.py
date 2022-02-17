@@ -2,12 +2,10 @@
 
 import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
-from MDMC.readers.observables.obs_reader import ObservableReader
+from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class MantidSQw(ObservableReader):
+class MantidSQw(SQwReader):
 
     """
     A class for reading SQw files from Mantid
@@ -26,6 +24,12 @@ class MantidSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
+    def __init__(self):
+        super().__init__()
+        self.detector_IDs = None
+        self.file_detectors = None
+        self.file_variables = None
+
     def open(self, file_name):
         """
         Open the files for variables and detector momenta
@@ -36,9 +40,11 @@ class MantidSQw(ObservableReader):
             The variables file name, which contains the SQw, error, and energy values for each
             detector ID
         """
+        # pylint: disable=consider-using-with
+        # as this is an abstracted open method
 
-        self.file_variables = open(file_name)
-        self.file_detectors = open(file_name + '_detectors')
+        self.file_variables = open(file_name, encoding='UTF-8')
+        self.file_detectors = open(file_name + '_detectors', encoding='UTF-8')
 
     def parse(self, **settings):
         """
@@ -65,83 +71,6 @@ class MantidSQw(ObservableReader):
         # Mantid sets errors to 0 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them.
         self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
-
-    @property
-    def independent_variables(self):
-        """
-        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables Q and E
-        """
-
-        return {"Q": self.Q, "E": self.E}
-
-    @property
-    def dependent_variables(self):
-        """
-        Get the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables, SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw]}
-
-    @property
-    def errors(self):
-        """
-        Get the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The error on SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw_err]}
-
-    @property
-    def E(self):
-        """
-        Get or set the energy transfer, E, in meV
-
-        Returns
-        -------
-        numpy.ndarray
-            Energy transfer, E, in ``meV``
-        """
-
-        return self._E
-
-    @E.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def E(self, value):
-
-        self._E = value
-
-    @property
-    def Q(self):
-        """
-        Get or set the momentum transfer, Q, in ``Ang^-1``
-
-        Returns
-        -------
-        numpy.ndarray
-            Momentum transfer, Q, in ``Ang^-1``
-        """
-
-        return self._Q
-
-    @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
-
-        self._Q = value
 
     def parse_variables(self, file):
         """
@@ -204,7 +133,6 @@ class MantidSQw(ObservableReader):
         """
 
         Q = np.zeros(len(self.detector_IDs))
-        data = {}
         for i, line in enumerate(file):
             if i == 0:
                 headings = line.split(', ')

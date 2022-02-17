@@ -3,7 +3,6 @@
 from copy import deepcopy
 from time import time
 from typing import List, Dict
-import warnings
 
 import numpy as np
 import pandas as pd
@@ -17,7 +16,6 @@ from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.resolution.resolution_factory import ResolutionFactory
 
-from MDMC.refinement import FoM
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -188,6 +186,8 @@ class Control:
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
+        # pylint: disable=line-too-long
+        # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, MC_norm,
                                                            self.fit_parameters,
                                                            max_parameter_change=max_parameter_change)
@@ -863,8 +863,8 @@ def _make_data_uniform(observable: Observable) -> Observable:
             raise NotImplementedError(
                 'Only 1D and 2D data can currently be made uniform')
         # save the uniform data and errors back into the Observable
-        observable._dependent_variables[var_key] = [uniform_data]
-        observable._errors[var_key] = [err_uniform]
+        observable.dependent_variables[var_key] = [uniform_data]
+        observable.errors[var_key] = [err_uniform]
     # finally, set the independent variables of the ``Observable`` to the uniform ones
     observable.independent_variables = indep_var_uniform
     return observable

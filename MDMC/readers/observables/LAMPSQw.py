@@ -2,12 +2,10 @@
 
 import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
-from MDMC.readers.observables.obs_reader import ObservableReader
+from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class LAMPSQw(ObservableReader):
+class LAMPSQw(SQwReader):
 
     """
     A class for reading SQw files from LAMP
@@ -27,6 +25,14 @@ class LAMPSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
+    def __init__(self):
+        super().__init__()
+        self._Y_dim = None
+        self._X_dim = None
+        self.file_dep_err = None
+        self.file_dep = None
+        self.file_indep = None
+
     def open(self, file_name):
         """
         Open the files for independent variables, dependent variables and errors
@@ -38,10 +44,12 @@ class LAMPSQw(ObservableReader):
             The independent file name, which is the base file name for the three
             files.
         """
+        # pylint: disable=consider-using-with
+        # as this is an abstracted open method
 
-        self.file_indep = open(file_name)
-        self.file_dep = open(file_name + 'ascii')
-        self.file_dep_err = open(file_name + 'ascii_e')
+        self.file_indep = open(file_name, encoding='UTF-8')
+        self.file_dep = open(file_name + 'ascii', encoding='UTF-8')
+        self.file_dep_err = open(file_name + 'ascii_e', encoding='UTF-8')
 
     def parse(self, **settings):
         """
@@ -59,83 +67,6 @@ class LAMPSQw(ObservableReader):
         # inf so that error calculations can still be performed on them but
         # result in inf.
         self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
-
-    @property
-    def independent_variables(self):
-        """
-        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables Q and E
-        """
-
-        return {"Q": self.Q, "E": self.E}
-
-    @property
-    def dependent_variables(self):
-        """
-        Get the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables, SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw]}
-
-    @property
-    def errors(self):
-        """
-        Get the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The error on SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw_err]}
-
-    @property
-    def E(self):
-        """
-        Get or set the energy transfer, E, in meV
-
-        Returns
-        -------
-        numpy.ndarray
-            Energy transfer, E, in ``meV``
-        """
-
-        return self._E
-
-    @E.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def E(self, value):
-
-        self._E = value
-
-    @property
-    def Q(self):
-        """
-        Get or set the momentum transfer, Q, in ``Ang^-1``
-
-        Returns
-        -------
-        numpy.ndarray
-            Momentum transfer, Q, in ``Ang^-1``
-        """
-
-        return self._Q
-
-    @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
-
-        self._Q = value
 
     def parse_indep_var(self, file):
         """
@@ -155,6 +86,8 @@ class LAMPSQw(ObservableReader):
             (X, Y) where X and Y are arrays of the two independent variables
         """
 
+        # pylint: disable=inconsistent-return-statements
+        # as it breaks the function when changed to return None
         def get_n_elements(line):
             for i in line.split(" "):
                 try:
