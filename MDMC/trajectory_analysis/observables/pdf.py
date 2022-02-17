@@ -27,9 +27,18 @@ class PairDistributionFunction(Observable):
 
     def __init__(self):
 
+        super().__init__()
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
+        self.partial_strings = None
+        self.elements = None
+        self.weights = None
+        self.numbers = None
+        self.universe_volume = None
+        self.n_atoms = None
+        self.r_step = None
+        self.partial_pdfs = None
 
     @property
     def independent_variables(self):
@@ -147,7 +156,7 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
+    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]], verbose=0,
                           **settings):
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
@@ -185,6 +194,8 @@ class PairDistributionFunction(Observable):
         ----------
         MD_input : Trajectory or list of Trajectory
             Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        verbose: int
+            Verbose print settings. Not currently implemented for PDF.
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
@@ -353,8 +364,8 @@ class PairDistributionFunction(Observable):
         # sorted so that partial pair strings will always be ordered
         # alphabetically.
         self.partial_strings = settings.get('subset',
-                                            list(combinations_with_replacement(sorted(trajectory.element_set),
-                                                                               2)))
+                                            list(combinations_with_replacement(
+                                                sorted(trajectory.element_set), 2)))
 
         # Create element set from elements in partials. The weights are then
         # determined from these.

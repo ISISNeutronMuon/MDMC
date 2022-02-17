@@ -1,6 +1,5 @@
 """Module for AbstractSQw and total SQw class"""
 
-from abc import abstractmethod
 from time import time
 from typing import Dict, List, Union
 
@@ -10,7 +9,7 @@ from scipy.interpolate import interp2d
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -128,9 +127,11 @@ class AbstractSQw(SQwMixins, Observable):
     """
 
     def __init__(self):
+        super().__init__()
         self._independent_variables = None
         self._dependent_variables = None
         self._errors = None
+        self.resolution = None
         # Use FFT by default
         self._use_FFT = True
 
@@ -341,7 +342,7 @@ class AbstractSQw(SQwMixins, Observable):
         obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
 
         # adds resolution attribute if it doesn't already exist
-        if not hasattr(self, 'resolution'):
+        if self.resolution is None:
             resolution_factory = ResolutionFactory()
             if 'energy_resolution' in settings:
                 self.resolution = resolution_factory.create_instance(
@@ -396,7 +397,7 @@ class AbstractSQw(SQwMixins, Observable):
             except AssertionError as error:
                 msg = ('The `times` of the current `Trajectory` were not '
                        'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from AssertionError
+                raise AssertionError(msg) from error
             try:
                 assert_allclose(self.universe_dimensions,
                                 self.trajectory.dimensions)
@@ -406,7 +407,7 @@ class AbstractSQw(SQwMixins, Observable):
             except AssertionError as error:
                 msg = ('The `dimensions` of the current `Trajectory` were not '
                        'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from AssertionError
+                raise AssertionError(msg) from error
 
             if verbose > 0:
                 time_0 = time()

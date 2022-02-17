@@ -144,7 +144,8 @@ disable=print-statement,
         too-many-arguments,
         too-many-nested-blocks,
         too-many-public-methods,
-        consider-using-f-string # this should be removed when VerboseManager is added
+        consider-using-f-string, # this should be removed when VerboseManager is added
+        duplicate-code # unfortunately disabled as observables have duplicate dependent/independent variables (that cannot be merged due to docstrings), and duplicate-code cannot be disabled with a comment currently
         
 
 # Enable the message, report, category or checker with the given id(s). You can

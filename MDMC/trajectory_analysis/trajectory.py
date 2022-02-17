@@ -7,8 +7,11 @@ import numpy as np
 
 from MDMC.common.decorators import repr_decorator
 
+# pylint: disable=abstract-method
+# as __sub__ and scale() are not implemented
 
-class AtomCollection(object):
+
+class AtomCollection:
 
     """
     Base class for shared attributes for ``Configurations`` and ``Trajectories``
@@ -244,7 +247,7 @@ class Configuration(AtomCollection):
         # use of weakref causes issues with prematurely garbage collecting the
         # structural_units, revert this change to not use weakref.
         self._structure_list.append(weakref.ref(structural_unit))
-        self._data.extend([atom for atom in structural_unit.atoms])
+        self._data.extend(list(structural_unit.atoms))
 
     def validate_structure(self, structure):
         """
@@ -568,10 +571,9 @@ class Trajectory(AtomCollection):
         Indexing and slicing is relative to ``frames``
         """
 
-        if type(item) == int:
+        if isinstance(item, int):
             return self.__class__(self.configurations[item])
-        else:
-            return self.__class__(*self.configurations[item])
+        return self.__class__(*self.configurations[item])
 
     @property
     def frames(self):

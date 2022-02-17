@@ -8,7 +8,7 @@ from numba import jit
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
-from MDMC.common.constants import h, h_bar
+from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.resolution import Resolution
@@ -17,6 +17,8 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
+# pylint: disable=c-extension-no-member
+# to avoid MPI warnings
 
 class AbstractFQt(SQwMixins, Observable):
     """
@@ -28,11 +30,20 @@ class AbstractFQt(SQwMixins, Observable):
     """
 
     def __init__(self):
+        super().__init__()
+        self._trajectory = None
         self._independent_variables = {}
         self._dependent_variables = {}
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
+
+        self.reciprocal_basis = None
+        self.Q_vectors = None
+        self.n_Q_vectors = None
+        self.Q_values = None
+        self.weights = None
+
 
     @property
     def independent_variables(self):
@@ -128,7 +139,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory,  **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose=0, **settings):
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -180,7 +191,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # calculate Q vectors from Q
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
-        if not hasattr(self, 'Q_vectors'):
+        if self.Q_vectors is None:
             try:
                 self.Q_vectors = np.array(settings['Q_vectors'])
             except KeyError:
@@ -225,22 +236,22 @@ class AbstractFQt(SQwMixins, Observable):
         # Scatter the Q vector arrays to all processors
         Q_vectors = comm.scatter(Q_vectors, root=0)
         # Calculate FQt for each Q vector for all processors
-        FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
+        FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                         in Q_vectors])
 
         # Gather the calculated FQt's together on every processor. This ensures
         # that all other calculations can be performed on every processor, so
         # no other methods in SQw need to be made MPI compliant.
-        FQt = np.array(comm.allgather(FQt))
+        FQt_array = np.array(comm.allgather(FQt_array))
         # Reshape FQt as gather doesn't join the arrays but just collects them
         # as arrays within an array. This is equivalent to flattening the first
         # index.
-        FQt_shape = np.shape(FQt)
-        FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
+        FQt_shape = np.shape(FQt_array)
+        FQt_array = FQt_array.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
-        self.FQt = FQt[:shape[0] - axis_0]
+        self.FQt = FQt_array[:shape[0] - axis_0]
 
     def _calculate_Q_vectors(self, Q_values):
         """
@@ -418,7 +429,7 @@ class AbstractFQt(SQwMixins, Observable):
         Calculate the neutron weighting
         """
 
-        pass
+        raise NotImplementedError
 
     def calculate_SQw(self, energy, resolution: Resolution = None):
         """
@@ -468,15 +479,15 @@ class AbstractFQt(SQwMixins, Observable):
             SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
         else:
             SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
-            for i, energy in enumerate(energy):
+            for i, E in enumerate(energy):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
                 # sums over the time/energy dimension as required for a
                 # discrete Fourier transform
                 # h_bar is in units of eV s whereas system units are meV fs, so
                 # apply a factor of 1e3 * 1e15 to convert it
-                exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
+                exp = np.exp(-1j * E * self.t[:-1] / (h_bar * 1e18))
                 exp_neg = np.exp(
-                    1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
+                    1j * E * self.t[-1:0:-1] / (h_bar * 1e18))
                 exp_mirror = np.append(exp, exp_neg)
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 

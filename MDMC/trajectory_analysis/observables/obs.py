@@ -25,6 +25,15 @@ class Observable(ABC):
         The file reader for reading experimental data
     """
 
+    def __init__(self):
+        self.reader = None
+        self._errors = None
+        self._dependent_variables = None
+        self._independent_variables = None
+        self._origin = None
+        self.trajectory = None
+        self.universe_dimensions = None
+
     @property
     def name(self):
         """
@@ -191,7 +200,7 @@ class Observable(ABC):
         self._errors = self.reader.errors
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input, **parameters):
+    def calculate_from_MD(self, MD_input, verbose=0, **parameters):
         """
         Calculates the obseravable using input from an MD simulation
 
@@ -199,6 +208,8 @@ class Observable(ABC):
         ----------
         MD_input : Object
             Some input from an MD simulation, commonly a ``Trajectory``
+        verbose : int
+            Enables verbose printing of the calculation
         **parameters
             Additional parameters required for calculation specific
             ``Observable`` objects
