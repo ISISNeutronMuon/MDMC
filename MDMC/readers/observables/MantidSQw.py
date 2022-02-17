@@ -41,6 +41,12 @@ class MantidSQw(ObservableReader):
         self.file_variables = open(file_name)
         self.file_detectors = open(file_name + '_detectors')
 
+    def _close(self):
+        """Closes variable and detector files after parsing"""
+
+        self.file_variables.close()
+        self.file_detectors.close()
+
     def parse(self, **settings):
 
         """
@@ -66,6 +72,8 @@ class MantidSQw(ObservableReader):
         # Mantid sets errors to 0 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them.
         self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+
+        self._close()
 
     @property
     def independent_variables(self):

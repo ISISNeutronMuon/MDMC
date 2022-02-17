@@ -33,6 +33,11 @@ class netCDF(ObservableReader):
 
         self.file = Dataset(file_name, 'r')
 
+    def _close(self):
+        """Closes the file after parsing"""
+
+        self.file.close()
+
     def parse(self, **settings):
 
         """
@@ -51,6 +56,8 @@ class netCDF(ObservableReader):
 
         self.SQw = np.abs(np.array(self.file.variables['Sqw-total']))
         self.SQw_err = np.power(np.abs(self.SQw), 0.5)
+
+        self._close()
 
     @property
     def independent_variables(self):

@@ -31,6 +31,11 @@ class Reader(ABC):
 
         self.file = open(file_name, 'r')
 
+    def _close(self):
+        """Closes the open file after parsing"""
+
+        self.file.close()
+
     @abstractmethod
     def parse(self, **settings):
 

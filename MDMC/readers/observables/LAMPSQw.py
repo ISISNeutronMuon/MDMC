@@ -44,6 +44,13 @@ class LAMPSQw(ObservableReader):
         self.file_dep = open(file_name + 'ascii')
         self.file_dep_err = open(file_name + 'ascii_e')
 
+    def _close(self):
+        """Closes all three files after parsing"""
+
+        self.file_indep.close()
+        self.file_dep.close()
+        self.file_dep_err.close()
+
     def parse(self, **settings):
 
         """
@@ -61,6 +68,8 @@ class LAMPSQw(ObservableReader):
         # inf so that error calculations can still be performed on them but
         # result in inf.
         self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
+
+        self._close()
 
     @property
     def independent_variables(self):

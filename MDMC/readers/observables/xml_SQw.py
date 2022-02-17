@@ -77,6 +77,8 @@ class XML_SQw(ObservableReader):
         self.SQw = np.transpose(np.reshape(np.array(self.SQw), [n_w, n_Q]))
         self.SQw_err = np.transpose(np.reshape(np.array(self.SQw_err), [n_w, n_Q]))
 
+        self._close()
+
     @property
     def independent_variables(self):
 
