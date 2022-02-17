@@ -8,6 +8,7 @@ from MDMC.readers.configurations.cif import CIF
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.conf_reader_factory import \
     ConfigurationReaderFactory
+from tests.test_data import data
 
 
 def test_configuration_reader_extension_error():
@@ -40,7 +41,7 @@ def test_create_reader_from_ext():
     """
 
     cif_ext = CIF.extension
-    reader = ConfigurationReaderFactory.create_reader_from_ext(cif_ext)
+    reader = ConfigurationReaderFactory.create_reader_from_ext(cif_ext, data.CONFIG_DATA['cif'])
     assert isinstance(reader, CIF)
 
 
@@ -53,4 +54,4 @@ def test_create_reader_from_ext_unimplemented():
 
     unknown_ext = 'unknown'
     with pytest.raises(NotImplementedError):
-        ConfigurationReaderFactory.create_reader_from_ext(unknown_ext)
+        ConfigurationReaderFactory.create_reader_from_ext(unknown_ext, 'file_name.ext')

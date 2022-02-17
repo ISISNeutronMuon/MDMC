@@ -6,7 +6,6 @@ Molecule, BoundingBox, Parameter, LAMPSQW, MantidSQw, netCDF, xml_SQw, SQw"""
 import numpy as np
 import pytest
 
-
 from MDMC.common import units
 from MDMC.MD.interaction_functions import Parameter
 from MDMC.MD.structural_units import Atom, Molecule, BoundingBox
@@ -14,7 +13,7 @@ from MDMC.MD.interactions import Bond, Coulombic
 from MDMC.MD.simulation import Universe
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from MDMC.trajectory_analysis.observables.sqw import SQw
-
+from tests.test_data import data
 
 FLOAT = 50.0
 LIST = [FLOAT, FLOAT, FLOAT]
@@ -24,26 +23,22 @@ ERROR_MESSAGE = 'One or more {} properties has invalid values or units'
 
 @pytest.fixture
 def atom():
-
     return Atom('H', position=LIST, velocity=LIST, mass=FLOAT)
 
 
 @pytest.fixture
 def universe():
-
     return Universe(dimensions=LIST)
 
 
 @pytest.fixture
 def molecule(atom):
-
     atom2 = atom.copy(atom.position)
     return Molecule(position=LIST, atoms=[atom, atom2], name='Test',
                     interactions=[Bond(atom, atom2)])
 
 
 def test_Atom_units(atom, universe):
-
     """
     Test the units of:
 
@@ -72,7 +67,6 @@ def test_Atom_units(atom, universe):
 
 
 def test_Molecule_units(molecule):
-
     """
     Test the units of:
 
@@ -86,7 +80,6 @@ def test_Molecule_units(molecule):
 
 
 def test_BoundingBox_units(molecule):
-
     """
     Test the units of:
 
@@ -104,7 +97,6 @@ def test_BoundingBox_units(molecule):
 
 
 def test_Parameter_units():
-
     """
     Test the units of:
 
@@ -113,11 +105,11 @@ def test_Parameter_units():
     """
 
     # Values passed to Parameter must have units
-    UNIT = units.ENERGY / units.ANGLE**2
-    CONSTRAINTS = [FLOAT-1, FLOAT+1]
+    UNIT = units.ENERGY / units.ANGLE ** 2
+    CONSTRAINTS = [FLOAT - 1, FLOAT + 1]
     parameter1 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test')
     parameter2 = Parameter(units.UnitFloat(FLOAT, UNIT), 'test',
-                       constraints=CONSTRAINTS)
+                           constraints=CONSTRAINTS)
 
     def check_Parameter_properties(parameter, value, constraints):
         try:
@@ -136,22 +128,19 @@ def test_Parameter_units():
 
 Q_UNIT = units.LENGTH ** -1
 E_UNIT = units.ENERGY_TRANSFER
-READERS_TEST_INFO = [('LAMPSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
-                                  {'name':'E', 'value':LIST, 'unit':E_UNIT}]
-                     ),
-                     ('MantidSQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
-                                    {'name':'E', 'value':LIST, 'unit':E_UNIT}]
-                     ),
-                     ('netCDF', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
-                                 {'name':'E', 'value':LIST, 'unit':E_UNIT}]
-                     ),
-                     ('xml_SQw', [{'name':'Q', 'value':LIST, 'unit':Q_UNIT},
-                                  {'name':'E', 'value':LIST, 'unit':E_UNIT}]
-                     )]
+READERS_TEST_INFO = [('LAMPSQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+                                  {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                      ),
+                     ('MantidSQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+                                    {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                      ),
+                     ('xml_SQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+                                  {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                      )]
+
 
 @pytest.fixture(params=READERS_TEST_INFO)
 def reader_info(request):
-
     """
     Parameterized reader instantiation
 
@@ -160,17 +149,17 @@ def reader_info(request):
     and the names, values and units of the properties for testing
     """
 
-    reader = ObservableReaderFactory.create_reader(request.param[0])
+    reader = ObservableReaderFactory.create_reader(request.param[0],
+                                                   data.READER_DATA[request.param[0]])
     for prop in request.param[1]:
         setattr(reader, prop['name'], prop['value'])
 
-    return {'reader_name':request.param[0],
-            'reader':reader,
-            'properties':request.param[1]}
+    return {'reader_name': request.param[0],
+            'reader': reader,
+            'properties': request.param[1]}
 
 
 def test_Reader_units(reader_info):
-
     """
     Test the units for all Readers:
     """
@@ -186,7 +175,6 @@ def test_Reader_units(reader_info):
 
 
 def test_SQw_units():
-
     """
     Test the units of:
 
@@ -197,9 +185,9 @@ def test_SQw_units():
     """
 
     sqw = SQw()
-    sqw.independent_variables = {'E':LIST,'Q':LIST}
-    sqw._dependent_variables = {'SQw':[LIST, LIST, LIST]}
-    sqw._errors = {'SQw':[LIST, LIST, LIST]}
+    sqw.independent_variables = {'E': LIST, 'Q': LIST}
+    sqw._dependent_variables = {'SQw': [LIST, LIST, LIST]}
+    sqw._errors = {'SQw': [LIST, LIST, LIST]}
 
     try:
         check_property(sqw.E, LIST, units.ENERGY_TRANSFER, units.unit_array)
@@ -213,7 +201,6 @@ def test_SQw_units():
 
 
 def check_property(prop, value, unit, cls):
-
     """
     Checks if the property is a float or array with the correct representation
     and value
