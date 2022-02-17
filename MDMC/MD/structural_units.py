@@ -3,22 +3,21 @@
 ``Atom`` is the fundamental structural unit in terms of which all others must be
 defined.  All shared behaviour is included within the ``StructuralUnit`` base
 class."""
-
+import math
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
 from copy import deepcopy
 from functools import lru_cache, reduce
-from itertools import count, permutations
+from itertools import count
 import logging
 from math import gcd
-from types import MethodType
 from typing import List
 import weakref
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-import MDMC.common.atom_properties as atom_properties
+from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
@@ -58,6 +57,8 @@ class StructuralUnit(ABC):
     parent : StructuralUnit
         ``StructuralUnit`` to which this unit belongs, or ``self``
     """
+    # pylint: disable=no-member
+    # as some members are MD-engine related
 
     # ID exists to facilitate a 1 to 1 association with structural units within
     # MD engines.  It may not be required or may only be required for atoms.
@@ -70,6 +71,8 @@ class StructuralUnit(ABC):
         self.velocity = velocity
         self.name = name
         self.parent = self
+
+        self._position_in_parent = None
 
         LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
                     self.__class__,
@@ -252,8 +255,7 @@ class StructuralUnit(ABC):
         if issubclass(type(self.parent), StructuralUnit) \
                 and self.parent is not self:
             return self.parent.top_level_structure
-        else:
-            return self
+        return self
 
     def copy(self, position):
         """
@@ -306,8 +308,7 @@ class StructuralUnit(ABC):
 
         if self.top_level_structure is self:
             raise AttributeError("This structure has no parent")
-        else:
-            return self.position - self.parent._get_center_of_mass()
+        return self.position - self.parent.get_center_of_mass()
 
     def _added_to_structure(self):
         """
@@ -349,10 +350,9 @@ class StructuralUnit(ABC):
             if (np.any(position < np.array([0., 0., 0])) or
                     np.any(position > self.universe.dimensions)):
                 return False
-            elif np.any(position == float('nan')):
+            if np.any(math.isnan(position)):
                 raise ValueError(f'position of {self} is undefined')
-            else:
-                return True
+            return True
         except AttributeError:
             # Not a member of a universe
             return True
@@ -406,8 +406,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(unit, k, self._generate_ID())
-            elif (k == '_bonded_interaction_pairs'
-                  or k == '_nonbonded_interactions'):
+            elif k in ('_bonded_interaction_pairs', '_nonbonded_interactions'):
                 pass
             elif k == '_structure_list':
                 # Separate structures into atoms and composites
@@ -592,6 +591,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         Sets the position of all subunits in the global frame in units of
         ``Ang``
         """
+        # pylint: disable=attribute-defined-outside-init
+        # for _CoM_frame_positions
 
         for atom in self.atoms:
             atom.position = self.position + self._CoM_frame_positions[atom]
@@ -617,6 +618,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         Calculate the position of all subunits in the
         ``CompositeStructuralUnit`` CoM frame in units of ``Ang``
         """
+        # pylint: disable=attribute-defined-outside-init
+        # for _CoM_frame_positions
 
         self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
@@ -642,6 +645,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
             The angle of rotation around the z-axis in ``deg``. The default is
             0.
         """
+        # pylint: disable=attribute-defined-outside-init
+        # for _CoM_frame_positions
 
         rotation = Rotation.from_euler('xyz', [x, y, z], degrees=True)
         CoM = self.position
@@ -946,7 +951,7 @@ class Atom(StructuralUnit):
         # Update atom_types in Coulombic interactions
         for inter in self.nonbonded_interactions:
             if isinstance(inter, Coulombic) and value not in inter.atom_types:
-                inter._atom_types.append(value)
+                inter.atom_types.append(value)
 
     @property
     def nonbonded_interactions(self):
@@ -1071,7 +1076,7 @@ class Atom(StructuralUnit):
             if interaction not in self.nonbonded_interactions:
                 self._nonbonded_interactions.append(interaction)
 
-    def copy_interactions(self, atom, memo={}):
+    def copy_interactions(self, atom, memo=None):
         """
         This replicates the interactions from ``self`` for ``Atom``, but with
         ``self`` substituted by ``atom`` in the ``Interaction.atoms``. These
@@ -1087,6 +1092,10 @@ class Atom(StructuralUnit):
         memo : dict, optional
             The memoization `dict`
         """
+        # pylint: disable=protected-access
+
+        if memo is None:
+            memo = {}
 
         # if/else required for deepcopy (where _bonded_interaction_pairs attribute
         # doesn't exist). try/except not valid due to order of operations in
@@ -1116,8 +1125,10 @@ class _Group(CompositeStructuralUnit):
     NotImplementedError
         THIS CLASS HAS NOT BEEN IMPLEMENTED
     """
+    # pylint: disable-all
+    # as this has not been implemented
 
-    def __init__(self):
+    def __init__(self, position, velocity, name):
 
         raise NotImplementedError
 
@@ -1227,8 +1238,7 @@ class Molecule(CompositeStructuralUnit):
             # bonded_interaction_pairs on different ranks (if using MPI)
             used = set()
             return [pair for atom in atoms for pair
-                    in atom.bonded_interaction_pairs if pair not in used
-                    and (used.add(pair) or True)]
+                    in atom.bonded_interaction_pairs if pair not in used]
 
         # Cast to tuple required so that it is hashable for lru_cache
         return get_bonded_interaction_pairs(tuple(self.atoms))

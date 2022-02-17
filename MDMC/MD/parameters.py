@@ -58,6 +58,7 @@ class Parameter:
         self.functions_name = None
         self._interactions = []
         self._tie = None
+        self._tie_parameter = None
 
     @property
     def value(self):
@@ -182,11 +183,13 @@ class Parameter:
         float
             The ``value`` of the ``tied`` ``Parameter``
         """
+        # pylint: disable=eval-used
+        # eval use is generally bad
+        # but the safe alternative (ast.literal_eval) creates malformed nodes
 
         if self._tie is None:
             return None
-        else:
-            return eval(compile(self._tie, '', 'eval'))
+        return eval(compile(self._tie, '', 'eval'))
 
     @property
     def tied(self):
@@ -200,10 +203,7 @@ class Parameter:
             `False`
         """
 
-        if hasattr(self, 'tie') and self.tie is not None:
-            return True
-        else:
-            return False
+        return bool(hasattr(self, 'tie') and self.tie is not None)
 
     def set_tie(self, parameter, expr):
         """

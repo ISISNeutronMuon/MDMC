@@ -186,7 +186,7 @@ def inter_func_decorator(*parameter_units):
             # decorator)
             values = list(values)
             for name, unit in parameter_units:
-                if name in settings.keys():
+                if name in settings:
                     settings[name] = unit_creator(settings[name], unit)
                 else:
                     settings[name] = unit_creator(values.pop(0), unit)

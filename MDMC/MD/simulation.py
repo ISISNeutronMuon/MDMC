@@ -10,7 +10,7 @@ from time import time
 import numpy as np
 import pandas as pd
 
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
+from MDMC.common.decorators import unit_decorator_getter, \
     mod_docstring, repr_decorator
 from MDMC.common import units
 from MDMC.MD.container import AtomContainer
@@ -19,13 +19,16 @@ from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structural_units import StructuralUnit
-from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
+from MDMC.MD.interactions import Dispersion, Coulombic
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
 LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                  ', '.join(ForceFieldFactory.get_force_field_names())}
+
+# pylint: disable=too-few-public-methods
+# as many classes here are small MD engine compatibility
 
 
 @repr_decorator('dimensions', 'kspace_solver', 'electrostatic_solver',
@@ -1073,7 +1076,6 @@ def _liquid_structure():
 
 
 class KSpaceSolver:
-
     """
     Class describing the k-space solver that is applied to electrostatic and/or
     dispersion interactions
@@ -1112,7 +1114,6 @@ class KSpaceSolver:
 
 
 class Ewald(KSpaceSolver):
-
     """
     Holds the parameters that are required for the Ewald solver to be applied to
     both/either the electrostatic and/or dispersion interactions
@@ -1124,13 +1125,8 @@ class Ewald(KSpaceSolver):
             The relative RMS error in per-atom forces
     """
 
-    def __init__(self, **settings):
-
-        super().__init__(**settings)
-
 
 class PPPM(KSpaceSolver):
-
     """
     Holds the parameters that are required for the PPPM solver to be applied to
     both/either the electrostatic and/or dispersion interactions
@@ -1141,10 +1137,6 @@ class PPPM(KSpaceSolver):
         ``accuracy`` (`float`)
             The relative RMS error in per-atom forces
     """
-
-    def __init__(self, **settings):
-
-        super().__init__(**settings)
 
     def __eq__(self, other):
         """
@@ -1239,13 +1231,8 @@ class Shake(ConstraintAlgorithm):
         constraints on the bonded interactions
     """
 
-    def __init__(self, accuracy, max_iterations):
-
-        super().__init__(accuracy, max_iterations)
-
 
 class Rattle(ConstraintAlgorithm):
-
     """
     Holds the parameters which are required for the RATTLE algorithm to be
     applied to the constrained interactions
@@ -1259,10 +1246,6 @@ class Rattle(ConstraintAlgorithm):
         additional force that is required to constrain the atoms to satisfy the
         constraints on the bonded interactions
     """
-
-    def __init__(self, accuracy, max_iterations):
-
-        super().__init__(accuracy, max_iterations)
 
 
 @repr_decorator('universe', 'engine', 'settings')

@@ -142,6 +142,8 @@ disable=print-statement,
         too-many-locals,
         too-many-branches,
         too-many-arguments,
+        too-many-nested-blocks,
+        too-many-public-methods,
         consider-using-f-string # this should be removed when VerboseManager is added
         
 
@@ -221,7 +223,6 @@ spelling-store-unknown-words=no
 # List of note tags to take in consideration, separated by a comma.
 notes=FIXME,
       XXX,
-      TODO
 
 
 [SIMILARITIES]

@@ -81,7 +81,7 @@ class Interaction(ABC):
         self.function = settings.get('function', None)
         self.name = self.__class__.__name__
 
-    def __deepcopy__(self, memo={}):
+    def __deepcopy__(self, memo=None):
         """
         Interactions cannot be copied
         """
@@ -168,7 +168,6 @@ class Interaction(ABC):
 
         raise NotImplementedError
 
-    @property
     @abstractmethod
     def element_list(self):
         """
@@ -526,6 +525,8 @@ class Coulombic(NonBondedInteraction):
     __hash__ = NonBondedInteraction.__hash__
 
     def __init__(self, universe=None, **settings):
+        # pylint: disable=not-callable
+        # as it raises a false positive on self.add_atoms
 
         try:
             atom_types = settings['atom_types']
@@ -942,7 +943,9 @@ class BondedInteraction(Interaction):
 
 
 @repr_decorator('constrained')
-class Constrainable:
+class ConstrainableMixin:
+    # pylint: disable=too-few-public-methods
+    # as this is a mixin class
 
     """
     A mixin class enabling classes inheriting from ``BondedInteraction`` to be
@@ -973,7 +976,7 @@ class Constrainable:
 
 
 @repr_decorator('function', 'constrained')
-class Bond(Constrainable, BondedInteraction):
+class Bond(ConstrainableMixin, BondedInteraction):
 
     """
     A bond between any two atoms. Requires exactly two atoms in each
@@ -994,7 +997,7 @@ class Bond(Constrainable, BondedInteraction):
 
 
 @repr_decorator('function', 'constrained')
-class BondAngle(Constrainable, BondedInteraction):
+class BondAngle(ConstrainableMixin, BondedInteraction):
 
     """
     A bond angle between any two bonds
@@ -1111,7 +1114,7 @@ def _add_atom_types(self, *atom_types):
         of the ``Coulombic``
     """
 
-    self._atom_types.append(*atom_types)
+    self.atom_types.append(*atom_types)
 
 
 def _add_atoms(self, *atoms):
@@ -1129,9 +1132,9 @@ def _add_atoms(self, *atoms):
 
     for atom in atoms:
         # Add atom to interaction
-        self._atoms.append(atom)
+        self.atoms.append(atom)
         # Add interaction to atom
         atom.add_interaction(self, from_interaction=True)
         # Add atom_type to interaction.atom_types
         if atom.atom_type and atom.atom_type not in self.atom_types:
-            self._atom_types.append(atom.atom_type)
+            self.atom_types.append(atom.atom_type)
