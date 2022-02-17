@@ -15,6 +15,9 @@ from numbers import Number
 import numpy as np
 
 
+# pylint: disable=no-member
+# as it raises a false positive for components
+
 CODATA_VERSION = '2014'
 
 
@@ -367,7 +370,7 @@ class Unit(str):
             # List used rather than string so that sorting can be implemented
             component_list = []
             for comp, power in component_powers.items():
-                if power is 1:
+                if power == 1:
                     component_list.append(comp)
                 else:
                     component_list.append(comp + ' ^ ' + str(power))
@@ -380,11 +383,9 @@ class Unit(str):
         # denominator, and both
         if not components['numerator']:
             return '1 / ' + denominator
-        else:
-            if not components['denominator']:
-                return numerator
-            else:
-                return numerator + ' / ' + denominator
+        if not components['denominator']:
+            return numerator
+        return numerator + ' / ' + denominator
 
     @staticmethod
     def _parse_unit_string(unit_string):

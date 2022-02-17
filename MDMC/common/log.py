@@ -7,6 +7,9 @@ from typing import List, Union
 
 from mpi4py import MPI
 
+# pylint: disable=c-extension-no-member
+# to avoid MPI warnings
+
 
 def start_logging(logfile: str = "MDMC.log",
                   level: int = logging.INFO,

@@ -20,6 +20,7 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
 
+
 class AbstractFQt(SQwMixins, Observable):
     """
     An abstract class for total, coherent, and incoherent intermediate scattering functions.

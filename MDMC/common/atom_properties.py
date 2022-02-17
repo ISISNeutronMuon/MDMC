@@ -1,10 +1,11 @@
-"""Module for storing properties related to atoms"""
-
 """
+Module for storing properties related to atoms
+
 Atomic masses are taken from IUPAC 2013.  In instances where IUPAC specifies a
 range of accepted values rather than a single value, the mean is taken.  All
 values are in amu.
 """
+
 
 MASS = {
     'H': 1.00798,
