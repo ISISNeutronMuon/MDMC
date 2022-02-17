@@ -13,11 +13,11 @@ class LorentzianResolution(Resolution):
     def __init__(self, e_res):
         self.e_res = e_res / 1000
 
-    def apply(self, fqt, t, Q):
-        N_Q, N_T = np.shape(fqt)
+    def apply(self, FQt, t, Q):
+        N_Q, N_T = np.shape(FQt)
         window = self.window_in_t(t[:N_T])
 
-        return np.broadcast_to(window, (N_Q, N_T)) * fqt
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
     def window_in_w(self, w):
         """

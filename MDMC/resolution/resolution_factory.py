@@ -1,4 +1,8 @@
 """A factory pattern for instantiating Resolution objects."""
+# pylint: disable=too-few-public-methods
+# pylint: disable=cyclic-import
+# as this is a factory class
+
 from inspect import getmembers, isclass, isabstract
 import warnings
 
@@ -35,15 +39,15 @@ class ResolutionFactory:
             if function_name == 'FileResolution':
                 return self.resolutions[function_name](function_res, *args)
             return self.resolutions[function_name](function_res)
-        else:
-            # error if unrecognised function is used
-            # the userkeys line is to convert class names to the user equivalents
-            userkeys = []
-            for key in self.resolutions:
-                userkeys.append(key.lower().replace('resolution', ''))
-            raise NotImplementedError("Resolution function " + list(resolution.keys())[0] +
-                                      " not recognised. Recognised functions are: " +
-                                      str(userkeys))
+
+        # else, error if unrecognised function is used
+        # the userkeys line is to convert class names to the user equivalents
+        userkeys = []
+        for key in self.resolutions:
+            userkeys.append(key.lower().replace('resolution', ''))
+        raise NotImplementedError("Resolution function " + list(resolution.keys())[0] +
+                                  " not recognised. Recognised functions are: " +
+                                  str(userkeys))
 
 
 def _standardise_input(resolution):

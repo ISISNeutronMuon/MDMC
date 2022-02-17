@@ -6,6 +6,7 @@ class Resolution(ABC):
     """
     An abstract base class for resolution functions.
     """
+    # pylint: disable=too-few-public-methods
 
     @abstractmethod
     def apply(self, FQt, t, Q):
