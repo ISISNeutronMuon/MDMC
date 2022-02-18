@@ -32,8 +32,6 @@ class LAMPSQw(SQwReader):
         self.file_dep_err = None
         self.file_dep = None
         self.file_indep = None
-        self.SQw = None
-        self.SQw_err = None
 
     def __enter__(self):
         """
@@ -174,104 +172,7 @@ class LAMPSQw(SQwReader):
         else:
             for k in range(dimensions[0]):
                 var[k] = get_row_data(dimensions[1])
-        # For the 263K05Awat_LAMP data file the outpout is SQw structured such that:
+        # For the 263K05Awat_LAMP data file the output is SQw structured such that:
         # np.shape(SQw) == (np.shape(Q), np.shape(E))
         # this is consistent with SQw as we currently calculate it from MD
         return var
-
-    @property
-    def independent_variables(self):
-        """
-        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables Q and E
-        """
-
-        return {"Q": self.Q, "E": self.E}
-
-    @property
-    def dependent_variables(self):
-        """
-        Get the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables, SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw]}
-
-    @property
-    def errors(self):
-        """
-        Get the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The error on SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw_err]}
-
-    @property
-    def w(self):
-        """
-        Get or set the energy transfer expressed in angular frequency, w, in
-        ``1 / ps``
-
-        Returns
-        -------
-        array
-            Energy transfer as angular frequency, w, in ``1 / ps``
-        """
-
-        return self._w
-
-    @w.setter
-    @unit_decorator(unit=units.Unit('ps') ** -1)
-    def w(self, value):
-
-        self._w = value
-
-    @property
-    def E(self):
-        """
-        Get or set the energy transfer, E, in ``meV``
-
-        Returns
-        -------
-        array
-            Energy transfer, E, in ``meV``
-        """
-
-        return self._E
-
-    @E.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def E(self, value):
-
-        self._E = value
-
-    @property
-    def Q(self):
-        """
-        Get or set the momentum transfer, Q, in ``Ang^-1``
-
-        Returns
-        -------
-        array
-            Momentum transfer, Q, in ``Ang^-1``
-        """
-
-        return self._Q
-
-    @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
-
-        self._Q = value

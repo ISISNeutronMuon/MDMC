@@ -15,11 +15,6 @@ class XML_SQw(SQwReader):
     An XML reader for SQw data
     """
 
-    def __init__(self, file_name):
-        super().__init__(file_name)
-        self.SQw = None
-        self.SQw_err = None
-
     def parse(self, **settings):
         """
         Parses the xml file

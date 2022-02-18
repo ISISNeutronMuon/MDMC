@@ -19,11 +19,6 @@ class netCDF(SQwReader):
         The netCDF input file
     """
 
-    def __init__(self, file_name):
-        super().__init__(file_name)
-        self.SQw = None
-        self.SQw_err = None
-        
     def __enter__(self):
         """
         Opens the file for parsing
