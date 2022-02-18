@@ -1137,8 +1137,11 @@ class Atom(StructuralUnit):
             The memoization `dict`
         """
         # pylint: disable=protected-access
-        # because _bonded_interaction_pairs behaves weirdly
+        # because bonded_interaction_pairs is not designed to be set directly
 
+        # default arguments are set at definition time (and not at call time)
+        # so setting memo={} as the default value is dangerous, because the
+        # dict will not be reset between calls of copy_interactions()
         if memo is None:
             memo = {}
 

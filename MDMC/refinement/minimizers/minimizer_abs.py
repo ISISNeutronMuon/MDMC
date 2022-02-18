@@ -72,7 +72,7 @@ class Minimizer(ABC):
         self._history = []
 
         parameters = np.array(sorted(list(parameters)))
-        _check_parameters(parameters)
+        self._check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters
         self.MC_norm = MC_norm
@@ -210,6 +210,30 @@ class Minimizer(ABC):
 
         return converged
 
+    @staticmethod
+    def _check_parameters(parameters):
+        """
+        Checks the validity of the parameters on input
+
+        Parameters
+        ----------
+        parameters : list
+            All ``Parameter`` objects to validate
+
+        Raises
+        ------
+        ValueError
+            If any ``Parameter`` is fixed
+        """
+
+        for parameter in parameters:
+            if parameter.fixed is True:
+                raise ValueError(
+                    f'Parameter {parameter.name} is fixed, and so cannot be refined')
+            if parameter.tied is True:
+                raise ValueError(f'Parameter {parameter.name} is tied to the value of '
+                                 'another parameter and so cannot be refined')
+
     def write_history(self, filename):
         """
         Write the minimizer history to a csv file
@@ -221,27 +245,3 @@ class Minimizer(ABC):
         """
 
         self.history.to_csv(filename)
-
-
-def _check_parameters(parameters):
-    """
-    Checks the validity of the parameters on input
-
-    Parameters
-    ----------
-    parameters : list
-        All ``Parameter`` objects to validate
-
-    Raises
-    ------
-    ValueError
-        If any ``Parameter`` is fixed
-    """
-
-    for parameter in parameters:
-        if parameter.fixed is True:
-            raise ValueError(
-                f'Parameter {parameter.name} is fixed, and so cannot be refined')
-        if parameter.tied is True:
-            raise ValueError(f'Parameter {parameter.name} is tied to the value of '
-                             'another parameter and so cannot be refined')

@@ -85,8 +85,6 @@ class Interaction(ABC):
         """
         Interactions cannot be copied
         """
-        if memo is None:
-            memo = {}
 
         raise AttributeError('Interactions cannot be copied')
 
