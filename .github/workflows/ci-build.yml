@@ -20,7 +20,7 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
       run: source .github/scripts/build_container.sh
-      
+
   engine_tests:
     name: Docker MD tests
     needs: build # so it can use new docker image if docker image has changed
@@ -35,7 +35,7 @@ jobs:
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
       run: git fetch origin master
-        
+
     - name: Run tests
       env: 
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
@@ -99,7 +99,7 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }} 
       run: source .github/scripts/documentation_testing.sh
-      
+
   linting:
     name: Pylint
     runs-on: ubuntu-20.04
@@ -114,6 +114,9 @@ jobs:
       run: |
         pip3 install --upgrade pip
         pip install -r requirements.txt
-        pip install pylint
-    - name: Run pylint
-      run: pylint MDMC || exit 0
+        pip install pylint pylint-exit
+    - name: pylint
+      run: |
+        pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
+        exit $?
+
