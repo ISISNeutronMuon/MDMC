@@ -2,12 +2,10 @@
 
 import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
-from MDMC.readers.observables.obs_reader import ObservableReader
+from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class MantidSQw(ObservableReader):
+class MantidSQw(SQwReader):
 
     """
     A class for reading SQw files from Mantid
@@ -26,29 +24,29 @@ class MantidSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, file_name):
+        super().__init__(file_name)
         self.detector_IDs = None
         self.file_detectors = None
         self.file_variables = None
         self.SQw = None
         self.SQw_err = None
 
-    def open(self, file_name):
+    def __enter__(self):
         """
         Open the files for variables and detector momenta
-
-        Parameters
-        ----------
-        file_name : str
-            The variables file name, which contains the SQw, error, and energy values for each
-            detector ID
         """
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file_variables = open(file_name, encoding='UTF-8')
-        self.file_detectors = open(file_name + '_detectors', encoding='UTF-8')
+        self.file_variables = open(self.file_name)
+        self.file_detectors = open(self.file_name + '_detectors')
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Closes variable and detector files after parsing"""
+
+        self.file_variables.close()
+        self.file_detectors.close()
 
     def parse(self, **settings):
         """

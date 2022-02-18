@@ -23,13 +23,16 @@ class ConfigurationReaderFactory(ReaderFactory):
         return ConfigurationReader
 
     @classmethod
-    def create_reader_from_ext(cls, extension):
+    def create_reader_from_ext(cls, extension, file_name):
+
         """
         Parameters
         ----------
         extension : str
             The file extension from which to initialize a subclass of
             ``ConfigurationReader``
+        file_name : str
+            The name of the file that you want to read.
 
         Returns
         -------
@@ -56,7 +59,7 @@ class ConfigurationReaderFactory(ReaderFactory):
                                                 ))
                 # First condition ensures some matching classes have been found
                 if classes and classes[0][1].extension == extension:
-                    return classes[0][1]()
+                    return classes[0][1](file_name)
 
         raise NotImplementedError(
             f'No implemented reader is compatible with {extension} extension')

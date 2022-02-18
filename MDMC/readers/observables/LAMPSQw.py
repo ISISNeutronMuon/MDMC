@@ -2,12 +2,10 @@
 
 import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
-from MDMC.readers.observables.obs_reader import ObservableReader
+from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class LAMPSQw(ObservableReader):
+class LAMPSQw(SQwReader):
 
     """
     A class for reading SQw files from LAMP
@@ -27,8 +25,8 @@ class LAMPSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, file_name):
+        super().__init__(file_name)
         self._Y_dim = None
         self._X_dim = None
         self.file_dep_err = None
@@ -37,23 +35,24 @@ class LAMPSQw(ObservableReader):
         self.SQw = None
         self.SQw_err = None
 
-    def open(self, file_name):
+    def __enter__(self):
         """
         Open the files for independent variables, dependent variables and errors
         on the dependent variables
-
-        Parameters
-        ----------
-        file_name : str
-            The independent file name, which is the base file name for the three
-            files.
         """
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file_indep = open(file_name, encoding='UTF-8')
-        self.file_dep = open(file_name + 'ascii', encoding='UTF-8')
-        self.file_dep_err = open(file_name + 'ascii_e', encoding='UTF-8')
+        self.file_indep = open(self.file_name, encoding='UTF-8')
+        self.file_dep = open(self.file_name + 'ascii', encoding='UTF-8')
+        self.file_dep_err = open(self.file_name + 'ascii_e', encoding='UTF-8')
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Closes all three files after parsing"""
+
+        self.file_indep.close()
+        self.file_dep.close()
+        self.file_dep_err.close()
 
     def parse(self, **settings):
         """

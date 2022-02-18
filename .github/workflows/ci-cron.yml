@@ -3,6 +3,7 @@ name: cron
 on: 
   schedule:
   - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
+  workflow_dispatch:
   
 jobs:
   docker_tests:
@@ -155,3 +156,4 @@ jobs:
         git commit -a -m "CI deployment"
         git merge -X ours master
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
+

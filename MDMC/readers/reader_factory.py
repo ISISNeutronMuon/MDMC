@@ -13,7 +13,7 @@ class ReaderFactory(ABC):
     """
 
     @classmethod
-    def create_reader(cls, module_name):
+    def create_reader(cls, module_name, file_name):
         """
         Creates a reader object from a module name
 
@@ -24,6 +24,8 @@ class ReaderFactory(ABC):
         ----------
         module_name : str
             The name of the module where the reader is the first class
+        file_name : str
+            The name of the file that the Reader will read
 
         Returns
         -------
@@ -44,7 +46,7 @@ class ReaderFactory(ABC):
                                                                cls.base_class()
                                                                )))
 
-        return classes[0][1]()
+        return classes[0][1](file_name)
 
     @staticmethod
     @abstractmethod
