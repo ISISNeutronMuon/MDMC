@@ -3,8 +3,6 @@
 import numpy as np
 from netCDF4 import Dataset
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
 from MDMC.common.constants import h_bar
 from MDMC.readers.observables.obs_reader import SQwReader
 
