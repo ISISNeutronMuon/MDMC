@@ -56,6 +56,9 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
 
 LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=c-extension-no-member, too-many-lines
+# to avoid MPI warnings
+
 
 class PyLammpsAttribute:
 
@@ -216,6 +219,14 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     coefficients that also need to be passed when the coefficients of this pair
     style are set.
     """
+
+    def __init__(self):
+        super().__init__()
+        self.universe = None
+        self.lmp_universe = None
+        self._saved_config = None
+        self.trajectory_file = None
+        self.lmp_simulation = None
 
     @property
     def saved_config(self):
@@ -458,7 +469,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 f_name = None
             f_name = self.comm.bcast(f_name, root=0)
             if self.comm.rank != 0:
-                self.trajectory_file = open(f_name)
+                self.trajectory_file = open(f_name, encoding='UTF-8')
             # Custom trajectory output just saves the atom ID, type and
             # positions
             LOGGER.debug('%s set trajectory dump output to %s',
@@ -574,7 +585,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         frame_indexes = count(start, step)
         # next_frame_n next attribute is assigned dynamically
         next_frame_n = next(frame_indexes)  # pylint: disable=no-member
-        with open(self.trajectory_file.name, 'r') as file_handler:
+        with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
             line = file_handler.readline()
             while line:
 
@@ -687,9 +698,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             atoms = np.zeros([n_atoms, 5])
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = ([component for component
-                                        in atom.position]
-                                       + [atom.mass, atom.charge])
+                atoms[atom.id-1, :] = (list(atom.position) + [atom.mass, atom.charge])
             saved_config = atoms
         else:
             saved_config = None
@@ -779,6 +788,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = []
         self.angles = []
+        self.dihedrals = []
+        self.disps = []
+        self.couls = []
         self.propers = []
         self.impropers = []
         # ID is an acronym
@@ -863,6 +875,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # level
         dihedrals = partition_interactions(set(universe.interactions),
                                            ['DihedralAngle'])[0]
+        # pylint: disable=not-an-iterable
+        # pylint thinks tuples are not iterable
         dihedral_types = [dihedral.improper for dihedral in dihedrals]
         n_bond_types = bonded_interaction_types.count('Bond')
         n_angle_types = bonded_interaction_types.count('BondAngle')
@@ -1050,6 +1064,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         LOGGER.info('%s Add topology to LAMMPS',
                     self.__class__)
+        # pylint: disable=unbalanced-tuple-unpacking
+        # pylint does not know whether the two sides have the same number of values
         bonds, angles, dihedrals, disps, couls, others = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
@@ -1062,6 +1078,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = bonds
         self.angles = angles
+        self.dihedrals = dihedrals
+        self.disps = disps
+        self.couls = couls
 
         pair_styles, pair_mods, pair_coeff_cmds = self._pair_commands(universe)
         if pair_styles:
@@ -1084,6 +1103,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                          self.__class__)
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
+            # pylint: disable=not-an-iterable
+            # pylint does not recognise bonds as an interable
             self.lmp.bond_style('hybrid',
                                 *set(tuple(parse_bonded_styles(b)
                                            for b in bonds)))
@@ -1343,6 +1364,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # Sort bonded interactions in the Universe which are constrained into
         # bonds and angles
         b_inters = set(self.universe.bonded_interactions)
+        # pylint: disable=unbalanced-tuple-unpacking
+        # pylint does not know whether the two sides have the same number of values
         bonds, angles = partition_interactions([inter for inter
                                                 in b_inters
                                                 if inter.constrained],
@@ -2930,7 +2953,8 @@ def partition_interactions(interactions, names, unpartitioned=False, lst=False):
     interaction_lst = [None] * len(names)
     i = 0
     for name in names:
-        def predicate(x, n=name): return x.name == n
+        def predicate(x, n=name):
+            return x.name == n
         interaction_lst[i], interactions = partition(interactions, predicate)
         i += 1
     if unpartitioned:
