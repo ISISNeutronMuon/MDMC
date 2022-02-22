@@ -6,6 +6,7 @@ ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
 ENV LD_LIBRARY_PATH /lammps/build/
 ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
+ENV PYTHONUNBUFFERED 1
 
 # Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
 # scipy), and cmake for LAMMPS

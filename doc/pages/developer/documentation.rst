@@ -42,4 +42,4 @@ Sphinx
   
 Adding to documentation
 -----------------------
-Currently, MDMC uses Travis CI to deploy documentation to the website, `MDMCproject.org <http://mdmcproject.org/>`_. This means to add to the documentation, do not directly merge or pull request to the MDMCproject.github.io repository. Rather, make your changes to the .rst files in the main source code's 'doc' folder, and then once they have been merged a cron job will deploy them to the website every Sunday evening.
+Currently, MDMC uses Github Actions to deploy documentation to the website, `MDMCproject.org <http://mdmcproject.org/>`_. This means to add to the documentation, do not directly merge or pull request to the MDMCproject.github.io repository. Rather, make your changes to the .rst files in the main source code's 'doc' folder, and then once they have been merged a cron job will deploy them to the website every Sunday evening.

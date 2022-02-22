@@ -19,7 +19,6 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import MDMC.common.atom_properties as atom_properties
-from MDMC.utilities.structural_units import parse_structural_unit_IDs
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
@@ -63,12 +62,10 @@ class StructuralUnit(ABC):
     # ID exists to facilitate a 1 to 1 association with structural units within
     # MD engines.  It may not be required or may only be required for atoms.
     _ID_generator = count(start=1, step=1)
-    _ID_dict = {}
 
     def __init__(self, position, velocity, name):
 
         self.ID = self._generate_ID()
-        self._ID_dict[self.ID] = self
         self.position = position
         self.velocity = velocity
         self.name = name
@@ -765,7 +762,6 @@ class Atom(StructuralUnit):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(atom, k, self._generate_ID())
-                self._ID_dict[atom.ID] = atom
             elif k == '_bonded_interaction_pairs':
                 self.copy_interactions(atom, memo)
             elif k == '_nonbonded_interactions':
@@ -1195,8 +1191,7 @@ class Molecule(CompositeStructuralUnit):
         The name of the structure. The default is `None`.
     **settings
         ``atoms`` (`list`)
-            A `list` of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``) which will be
-            included in the ``Molecule``
+            A `list` of ``Atom``  which will be included in the ``Molecule``
         ``interactions`` (`list`)
             A `list` of ``Interaction`` acting on atoms within the ``Molecule``.
             The ``interactions`` provides a convenience for declaring
@@ -1208,8 +1203,7 @@ class Molecule(CompositeStructuralUnit):
     def __init__(self, position=None, velocity=(0, 0, 0), name=None,
                  **settings):
 
-        parsed_atoms = parse_structural_unit_IDs(settings['atoms'])
-        self._structure_list = parsed_atoms
+        self._structure_list = settings['atoms']
         for structure in self._structure_list:
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
@@ -1320,19 +1314,18 @@ class BoundingBox:
     Parameters
     ----------
     atoms : list
-        ``Atom`` objects (or ``int`` corresponding to an ``Atom.ID``) for which the minimum and
-        maximum extents are determined
+        ``Atom`` objects for which the minimum and maximum extents are
+        determined
     """
 
     def __init__(self, atoms: List):
         if not atoms:
             raise ValueError("Empty atoms passed; it must contain at least one atom to create a BoundingBox object.")
 
-        parsed_atoms = parse_structural_unit_IDs(atoms)
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
-        self.min = self.max = parsed_atoms[0].position
-        for atom in parsed_atoms[1:]:
+        self.min = self.max = atoms[0].position
+        for atom in atoms[1:]:
             self.min = np.minimum(self.min, atom.position)
             self.max = np.maximum(self.max, atom.position)
 
@@ -1400,7 +1393,7 @@ def filter_atoms(atoms, predicate):
     Parameters
     ----------
     atoms : list
-        A `list` of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
+        A `list` of ``Atom``
     predicate : function
         A function that returns a `bool`
 
@@ -1410,8 +1403,7 @@ def filter_atoms(atoms, predicate):
         ``Atom`` objects in ``atoms`` which meet the condition of ``predicate``
     """
 
-    parsed_atoms = parse_structural_unit_IDs(atoms)
-    return list(filter(predicate, parsed_atoms))
+    return list(filter(predicate, atoms))
 
 
 def filter_atoms_element(atoms, element):
@@ -1422,7 +1414,7 @@ def filter_atoms_element(atoms, element):
     Parameters
     ----------
     atoms : list
-        A ``list`` of ``Atom`` (or ``int`` corresponding to an ``Atom.ID``)
+        A ``list`` of ``Atom``
     element : str
         The atomic element label
 
@@ -1432,8 +1424,7 @@ def filter_atoms_element(atoms, element):
         ``Atom`` objects of a specific element
     """
 
-    parsed_atoms = parse_structural_unit_IDs(atoms)
-    return list(filter(lambda a: a.element == element, parsed_atoms))
+    return list(filter(lambda a: a.element == element, atoms))
 
 
 def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):

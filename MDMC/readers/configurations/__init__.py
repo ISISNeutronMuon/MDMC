@@ -5,6 +5,7 @@ from . conf_reader_factory import ConfigurationReaderFactory
 from . import cif
 from . import conf_reader
 
+
 def read(file, docstring=False, **settings):
 
     """
@@ -48,14 +49,14 @@ def read(file, docstring=False, **settings):
     extension = file.split('.')[-1]
 
     try:
-        reader = ConfigurationReaderFactory.create_reader(extension)
+        reader = ConfigurationReaderFactory.create_reader(extension, file)
     except ImportError:
-        reader = ConfigurationReaderFactory.create_reader_from_ext(extension)
+        reader = ConfigurationReaderFactory.create_reader_from_ext(extension, file)
 
     if docstring:
         help(reader.parse)
         return None
 
-    reader.open(file)
-    reader.parse(**settings)
+    with reader:
+        reader.parse(**settings)
     return reader.atoms

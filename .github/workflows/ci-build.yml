@@ -2,14 +2,28 @@ name: CI
 # contains jobs which run on every pull request
 on: 
   pull_request:
-  schedule:
-  - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays alongside jobs in ci-cron.yml
-    branches:
-    - master
 
 jobs:
+  build:
+    name: Build docker container
+    runs-on: ubuntu-20.04
+    # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: fetch  # grabs master to compare if Docker build files changed
+      run: git fetch origin master
+
+    - name: Check and build container
+      env: 
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ github.head_ref }} 
+      run: source .github/scripts/build_container.sh
+
   engine_tests:
-    name: Docker and including MD tests
+    name: Docker MD tests
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
     - name: Setup Python
@@ -19,43 +33,90 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
+    - name: fetch  # grabs master to compare if source code changed
+      run: git fetch origin master
 
-    - name: apt-get
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
-      
-    - name: fetch  # grabs other branches to check if Docker files changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
-        git fetch --unshallow --tags
-
-    - name: Run script
+    - name: Run tests
       env: 
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }} 
+        TESTSET: lammps
       run: source .github/scripts/docker_testing.sh
+
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
+      continue-on-error: true
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
+
+  tests:
+    name: Docker non-MD tests
+    needs: build # so it can use new docker image if docker image has changed
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: fetch  # grabs master to compare if source code changed
+      run: git fetch origin master
+        
+    - name: Run tests
+      env: 
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ github.head_ref }} 
+        TESTSET: "not lammps"
+      run: source .github/scripts/docker_testing.sh
+      
+    - name: Copy coverage
+      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+      continue-on-error: true
+
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
 
   documentation:
     name: Documentation
-    needs: engine_tests # so it can use new docker image if docker image has changed
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs other branches to check if doc files changed
-      run: |
-        git config remote.origin.fetch +refs/heads/*:refs/remotes/origin/* 
-        git fetch --unshallow --tags
+    - name: fetch  # grabs master to compare if doc files changed
+      run: git fetch origin master
+      
     - name: Run script
       env:
         BRANCH: ${{ github.head_ref }} 
-        EVENT_TYPE: ${{ env.GITHUB_EVENT_NAME }}
       run: source .github/scripts/documentation_testing.sh
+
+  linting:
+    name: Pylint
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: apt get
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
+    - name: pip install
+      run: |
+        pip3 install --upgrade pip
+        pip install -r requirements.txt
+        pip install pylint pylint-exit
+    - name: pylint
+      run: |
+        pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
+        exit $?
+

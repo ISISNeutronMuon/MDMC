@@ -193,9 +193,9 @@ class Observable(ABC):
         """
 
         self._origin = 'experiment'
-        self.reader = ObservableReaderFactory.create_reader(reader)
-        self.reader.open(file_name)
-        self.reader.parse()
+        self.reader = ObservableReaderFactory.create_reader(reader, file_name)
+        with self.reader:
+            self.reader.parse()
         self._independent_variables = self.reader.independent_variables
         self._dependent_variables = self.reader.dependent_variables
         self._errors = self.reader.errors
