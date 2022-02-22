@@ -21,6 +21,9 @@ from typing import Callable, Dict, Optional
 
 LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=import-outside-toplevel, unused-import
+# these utilities explicitly test importing on purpose in this way
+
 
 class InstlTestBase(ABC):
 

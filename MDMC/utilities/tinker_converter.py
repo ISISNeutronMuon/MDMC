@@ -2,7 +2,6 @@
 force field python files."""
 
 from datetime import datetime
-from itertools import product
 import os
 import textwrap
 
@@ -164,7 +163,7 @@ def write_force_field_module(fname, atoms, *interactions, path=None,
                            f'{fname} force field, with defined atoms and'
                            ' interactions\n')
     data_fname = path + 'data/' + data_fname + '.dat'
-    with open(path + fname + '.py', 'w') as module:
+    with open(path + fname + '.py', 'w', encoding='UTF-8') as module:
         module.write(wrap_docstring(module_docstring, line_length) + '\n' * 2)
         module.write(imports + '\n' * 2)
         module.write(f'class {fname}(FileForceField):\n\n')
@@ -211,7 +210,7 @@ def write_data(fname, atoms, path=None, **settings):
     metadata = wrap_docstring(f'\nThis file contains the {fname} force field. It was'
                               f' created on {date}.'
                               + original_file_str, 80)
-    with open(full_fname, 'w') as out_datafile:
+    with open(full_fname, 'w', encoding='UTF-8') as out_datafile:
         out_datafile.write(description)
         out_datafile.write(inter_functions)
         out_datafile.write(metadata)
@@ -222,7 +221,7 @@ def write_data(fname, atoms, path=None, **settings):
                        ('Bond Angles', angles),
                        ('Proper Dihedrals', propers),
                        ('Improper Dihedrals', impropers)]:
-        with open(full_fname, 'a') as out_datafile:
+        with open(full_fname, 'a', encoding='UTF-8') as out_datafile:
             out_datafile.write('\n' + name + '\n')
             data.to_csv(out_datafile, sep='\t', index=False)
 

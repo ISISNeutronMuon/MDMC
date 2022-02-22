@@ -1,5 +1,5 @@
 """Structural unit utility functions"""
-
+from MDMC.MD.structural_units import Atom
 
 def is_atom(atom: object) -> bool:
     """
@@ -13,5 +13,4 @@ def is_atom(atom: object) -> bool:
     bool
         Boolean if the passed Object is an ``Atom`` or not.
     """
-    from MDMC.MD.structural_units import Atom
     return isinstance(atom, Atom)
