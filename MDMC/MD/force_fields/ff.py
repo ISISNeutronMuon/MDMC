@@ -125,7 +125,8 @@ class FileForceField(ForceField):
     def __init__(self):
 
         self.data = {}
-        with open(self.absolute_path) as file:
+        self._interaction_dictionary = None
+        with open(self.absolute_path, encoding='UTF-8') as file:
             n_datatypes = self._parse_header(file.readline(), int)
             self.inter_functions = dict(self._parse_header(file.readline(),
                                                            str))

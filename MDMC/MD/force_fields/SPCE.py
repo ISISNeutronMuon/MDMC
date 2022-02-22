@@ -19,8 +19,6 @@ The strengths provided are the same as those used for SPC, from:
 Note that different values for bond strengths are given in the OPLSAA data
 file, namely 2510.4 and 313.8 respectively."""
 
-from MDMC.common import units
-from MDMC.common.units import UnitFloat
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
                                            LennardJones)

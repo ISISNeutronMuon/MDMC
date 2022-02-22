@@ -875,9 +875,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # level
         dihedrals = partition_interactions(set(universe.interactions),
                                            ['DihedralAngle'])[0]
-        # pylint: disable=not-an-iterable
-        # pylint thinks tuples are not iterable
-        dihedral_types = [dihedral.improper for dihedral in dihedrals]
+        dihedral_types = [dihedral.improper for dihedral in list(dihedrals)]
         n_bond_types = bonded_interaction_types.count('Bond')
         n_angle_types = bonded_interaction_types.count('BondAngle')
         n_dihedral_types = dihedral_types.count(False)
@@ -1034,9 +1032,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for atom in atoms:
             # Filter interactions by name
             if name in ['proper', 'improper']:
-                improper = bool(name == 'improper')
                 inters = filter(lambda i: i.name == 'DihedralAngle' and
-                                i.improper == improper, atom.interactions)
+                                i.improper == bool(name == 'improper'), atom.interactions)
             else:
                 inters = filter(lambda i: i.name == name, atom.interactions)
             n_inters = len(list(inters))
@@ -1064,9 +1061,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         LOGGER.info('%s Add topology to LAMMPS',
                     self.__class__)
-        # pylint: disable=unbalanced-tuple-unpacking
-        # pylint does not know whether the two sides have the same number of values
-        bonds, angles, dihedrals, disps, couls, others = partition_interactions(
+        # *_ is for pylint as it does not know about the output of partition_interactions
+        bonds, angles, dihedrals, disps, couls, others, *_ = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
@@ -1103,11 +1099,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
                          self.__class__)
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
-            # pylint: disable=not-an-iterable
-            # pylint does not recognise bonds as an interable
             self.lmp.bond_style('hybrid',
                                 *set(tuple(parse_bonded_styles(b)
-                                           for b in bonds)))
+                                           for b in list(bonds))))
             self._create_bonded_interactions('bond', bonds)
 
         if angles:
@@ -1364,9 +1358,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # Sort bonded interactions in the Universe which are constrained into
         # bonds and angles
         b_inters = set(self.universe.bonded_interactions)
-        # pylint: disable=unbalanced-tuple-unpacking
-        # pylint does not know whether the two sides have the same number of values
-        bonds, angles = partition_interactions([inter for inter
+        # *_ is for pylint as it does not know about the output of partition_interactions
+        bonds, angles, *_ = partition_interactions([inter for inter
                                                 in b_inters
                                                 if inter.constrained],
                                                ['Bond', 'BondAngle'], lst=True)
