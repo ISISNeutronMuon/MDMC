@@ -12,7 +12,7 @@ def is_atom(atom: object) -> bool:
     bool
         Boolean if the passed Object is an ``Atom`` or not.
     """
-    # pylint: disable=import-outside-toplevel
-    # to avoid circular importing
+    # pylint: disable=import-outside-toplevel, cyclic-import
+    # we are importing here on purpose to avoid circular importing
     from MDMC.MD.structural_units import Atom
     return isinstance(atom, Atom)
