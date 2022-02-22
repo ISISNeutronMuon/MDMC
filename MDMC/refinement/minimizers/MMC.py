@@ -14,6 +14,8 @@ class MMC(Minimizer):
 
         return ['FoM', 'Change state'] + [p.name for p in self.parameters]
 
+    # pylint: disable=arguments-differ
+    # we allow implementations of the abstract method to have different arguments
     def step(self, FoM):
         """
         Increments the minimization by a step
@@ -53,7 +55,7 @@ class MMC(Minimizer):
         # Only determine if state will be changed on rank 0 process
         if self.comm.rank == 0:
             prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-            change_state = True if prob > np.random.random() else False
+            change_state = bool(prob > np.random.random())
         else:
             change_state = None
         # Broadcast to all processes whether or not the state will be changed
