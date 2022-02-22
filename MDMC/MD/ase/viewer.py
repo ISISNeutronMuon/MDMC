@@ -8,6 +8,8 @@ launched. This viewer allows the visualization of atomic positions and bonds.
 from functools import partial
 from io import StringIO
 import warnings
+from tkinter import TclError
+import numpy as np
 
 from ase.gui.gui import GUI
 from ase.gui.i18n import _
@@ -15,7 +17,6 @@ from ase.gui.images import Images
 from ase.gui.ui import MenuItem
 from ase.gui.view import get_cell_coordinates
 from IPython.display import HTML
-import numpy as np
 
 from MDMC.MD.ase.conversions import get_ase_atoms
 
@@ -61,7 +62,6 @@ def view_ase(atoms, **settings):
         ``max_atoms`` (`int`)
             Sets the maximum number of atoms that will be viewed
     """
-    from tkinter import TclError
     atoms = limit_atoms(atoms, settings.get('max_atoms', 8000))
 
     atom_images = Images()
@@ -156,6 +156,11 @@ class Viewer(GUI):
         # Override in order to set show bonds
         super().__init__(images=images, rotations=rotations, show_bonds=True,
                          expr=expr)
+        self.X = None
+        self.X_pos = None
+        self.X_cell = None
+        self.X_bonds = None
+        self.B = None
 
     def set_atoms(self, atoms):
         """

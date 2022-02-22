@@ -279,13 +279,13 @@ class X3D(x3d.X3D):
         # viewed on 2018 macbook pro (2.6GHz, 16GB DDR4, 4GB GDDR5)
         self.reduce_memory = len(self._atoms) > 3000
 
-    def write(self, filename, datatype='X3DOM'):
+    def write(self, fileobj, datatype='X3DOM'):
         """
         Writes output to an 'X3DOM' (html) or 'X3D' file
 
         Parameters
         ----------
-        filename : str or file-like
+        fileobj : str or file-like
             The file name to which the ``atoms`` are written
         datatype : str, optional
             The output format, which can be 'X3D' or 'X3DOM' (html). If `None`,
@@ -293,15 +293,15 @@ class X3D(x3d.X3D):
         """
 
         if datatype is None:
-            if filename.endswith('.x3d'):
+            if fileobj.endswith('.x3d'):
                 datatype = 'X3D'
-            elif filename.endswith('.html'):
+            elif fileobj.endswith('.html'):
                 datatype = 'X3DOM'
             else:
                 raise ValueError("filename must end in '.x3d' or '.html'.")
 
         # Write the header
-        w = x3d.WriteToFile(filename)
+        w = x3d.WriteToFile(fileobj)
         if datatype == 'X3DOM':
             w(0, '<html>')
             w(1, '<head>')
@@ -425,7 +425,8 @@ class X3D(x3d.X3D):
         # All cylinders (bonds) are oriented along y axis by default
         # Calculate axis-angle representation in order to set bond rotation
         cylinder = np.array([0., np.abs(separation), 0.])
-        def normalise(x): return x / np.linalg.norm(x)
+        def normalise(x):
+            return x / np.linalg.norm(x)
         uvec1, uvec2 = normalise(cylinder), normalise(sub)
         axis = np.cross(uvec1, uvec2)
         angle = np.linalg.norm(np.arccos(np.dot(uvec1, uvec2)))
