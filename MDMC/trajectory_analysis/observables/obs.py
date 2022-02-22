@@ -25,9 +25,17 @@ class Observable(ABC):
         The file reader for reading experimental data
     """
 
+    def __init__(self):
+        self.reader = None
+        self._errors = None
+        self._dependent_variables = None
+        self._independent_variables = None
+        self._origin = None
+        self.trajectory = None
+        self.universe_dimensions = None
+
     @property
     def name(self):
-
         """
         Get or set the module name that was used for factory instantiation
 
@@ -46,7 +54,6 @@ class Observable(ABC):
 
     @property
     def origin(self):
-
         """
         Get or set the origin of the observable
 
@@ -66,7 +73,6 @@ class Observable(ABC):
 
     @property
     def data(self):
-
         """
         Get the independent, dependent and error data
 
@@ -76,14 +82,13 @@ class Observable(ABC):
             The independent, dependent and error data
         """
 
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
+        return {'independent': self.independent_variables,
+                'dependent': self.dependent_variables,
+                'errors': self.errors}
 
     @property
     @abstractmethod
     def independent_variables(self):
-
         """
         The independent variables
 
@@ -98,7 +103,6 @@ class Observable(ABC):
     @property
     @abstractmethod
     def dependent_variables(self):
-
         """
         The dependent variables
 
@@ -113,7 +117,6 @@ class Observable(ABC):
     @property
     @abstractmethod
     def errors(self):
-
         """
         The errors on the dependent variables
 
@@ -127,7 +130,6 @@ class Observable(ABC):
 
     @abstractmethod
     def minimum_frames(self, dt: float = None):
-
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables``
@@ -147,7 +149,6 @@ class Observable(ABC):
 
     @abstractmethod
     def maximum_frames(self):
-
         """
         The maximum number of ``Trajectory`` frames that can be used to
         calculate the ``dependent_variables``
@@ -162,7 +163,6 @@ class Observable(ABC):
 
     @property
     def use_FFT(self):
-
         """
         Get or set whether to use FFT when calculating from MD
 
@@ -180,7 +180,6 @@ class Observable(ABC):
         self._use_FFT = use_FFT
 
     def read_from_file(self, reader, file_name):
-
         """
         Reads in experimental data from a file using a specified reader
 
@@ -201,8 +200,7 @@ class Observable(ABC):
         self._errors = self.reader.errors
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input, **parameters):
-
+    def calculate_from_MD(self, MD_input, verbose=0, **parameters):
         """
         Calculates the obseravable using input from an MD simulation
 
@@ -210,6 +208,8 @@ class Observable(ABC):
         ----------
         MD_input : Object
             Some input from an MD simulation, commonly a ``Trajectory``
+        verbose : int
+            Enables verbose printing of the calculation
         **parameters
             Additional parameters required for calculation specific
             ``Observable`` objects
@@ -220,18 +220,23 @@ class Observable(ABC):
     @property
     @abstractmethod
     def dependent_variables_structure(self):
+        # ignore line too long linting as it is necessary for python code formatting
+        # pylint: disable=line-too-long
         """
-        The structure of the dependent variables with respect to the independent variables. Specifically,
-        the order in which the dependent variables are indexed with regards to the independent variables.
+        The structure of the dependent variables with respect to the independent variables.
+        Specifically, the order in which the dependent variables are indexed
+        with regards to the independent variables.
         Example: if
-        dep_var1[indep_var1_index, indep_var2_index, ...] = data point for values of the independent_variables with
-        the stated indices then the relevant entry in the returned dict should be:
+        dep_var1[indep_var1_index, indep_var2_index, ...] = data point
+        for values of the independent_variables with the stated indices
+        then the relevant entry in the returned dict should be:
         {'dependent_variable1': [independent_variable1, independent_variable2, ...]}
         Note that this would also correspond to numpy.shape of the dependent variable being:
         np.shape(dependent_variable1)=(np.size(independent_variable1), np.size(independent_variable2), ...)
 
-        The purpose of this method is to ensure that all ``Observable``s of a particular type are created with
-         'dependent_variables' that are consistent regardless of how they were created (e.g. by different ``Reader``s).
+        The purpose of this method is to ensure that all ``Observable``s of a particular type
+        are created with 'dependent_variables' that are consistent
+        regardless of how they were created (e.g. by different ``Reader``s).
 
         Return
         ------
@@ -245,17 +250,19 @@ class Observable(ABC):
     @abstractmethod
     def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
         """
-        # Represents the current limitations on the ``independent_variables`` of the ``Observable``. It captures if the
-        # ``independent_variables`` are required to be uniform or to start at zero. The keys of the returned dictionary
-        # should be the variables that have such a restriction, with the associated values being a dictionary
-        # with booleans if the variables are 'uniform' or 'zeroed'.
-        # Variables without any requirements do not need to be included, but can be included.
-        # If there are no uniformity requirements it is okay to return 'None'.
+        Represents the current limitations on ``independent_variables`` of the ``Observable``.
+        It captures if the ``independent_variables`` are required to be uniform or to start at zero
+        The keys of the returned dictionary should be the variables that have such a restriction,
+        with the associated values being a dictionary with booleans
+        if the variables are 'uniform' or 'zeroed'.
+        Variables without any requirements do not need to be included, but can be included.
+        If there are no uniformity requirements it is okay to return 'None'.
 
         Return
         ------
         Dict[str, Dict[str, bool]]
-            Dictionary of independent variables with their uniformity restrictions represented as booleans
+            Dictionary of independent variables
+            with their uniformity restrictions represented as booleans
         """
 
         raise NotImplementedError

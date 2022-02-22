@@ -40,7 +40,6 @@ class InstlTestBase(ABC):
 
     @property
     def success(self) -> str:
-
         """
         Get whether or not the test has PASSED, FAILED or is INCOMPLETE
         """
@@ -55,7 +54,6 @@ class InstlTestBase(ABC):
                          ' set. Please run the test again.')
 
     def log_test_passed(self):
-
         """
         Logs that the test passed
         """
@@ -66,7 +64,6 @@ class InstlTestBase(ABC):
 
     @abstractmethod
     def run(self):
-
         """
         Runs the test and sets the value of ''self.success''
         """
@@ -85,7 +82,6 @@ class InstlTestFactory:
 
     @classmethod
     def register(cls, name: str) -> Callable:
-
         """
         A class level decorator for registering installation test classes
 
@@ -117,7 +113,6 @@ class InstlTestFactory:
 
     @classmethod
     def create_instl_test(cls, name: str) -> InstlTestBase:
-
         """
         Creates an instance of the installation test for the class which
         corresponds to the passed ``name``
@@ -134,7 +129,6 @@ class InstlTestFactory:
 
 
 def run_installation_tests():
-
     """
     A helper function for running all installation tests and printing the
     result for each test
@@ -258,6 +252,7 @@ class InstlTestLAMMPS(InstlTestBase):
             self._success = True
             self.log_test_passed()
             lmp.close()
+
 
 @InstlTestFactory.register('X11 forwarding')
 class InstlTestX11Forwarding(InstlTestBase):

@@ -1,5 +1,7 @@
+"""The Metropolis-Hastings minimizer class"""
 import numpy as np
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
 
 class MMC(Minimizer):
 
@@ -13,7 +15,6 @@ class MMC(Minimizer):
         return ['FoM', 'Change state'] + [p.name for p in self.parameters]
 
     def step(self, FoM):
-
         """
         Increments the minimization by a step
         """
@@ -39,7 +40,6 @@ class MMC(Minimizer):
         self.change_parameters(self.parameters)
 
     def change_state(self):
-
         """
         Stochastic determination of whether the state should change based on the
         FoM
@@ -62,7 +62,6 @@ class MMC(Minimizer):
         return change_state
 
     def change_parameters(self, parameters):
-
         """
         Selects a new value for each parameter from a distribution centered
         around the current value.
@@ -101,7 +100,6 @@ class MMC(Minimizer):
             parameter.value = new_value
 
     def reset_parameters(self):
-
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """

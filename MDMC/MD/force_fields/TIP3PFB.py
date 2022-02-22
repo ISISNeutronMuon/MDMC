@@ -60,11 +60,11 @@ class TIP3PFB(WaterModel):
         f_HOH = 230.12      # kJ mol^-1 rad^-2
 
         return {
-            (Coulombic, ('O',)):Coulomb(q_O),
-            (Coulombic, ('H',)):Coulomb(q_H),
-            (Dispersion, ('O', 'O')):LennardJones(epsilon, sigma),
+            (Coulombic, ('O',)): Coulomb(q_O),
+            (Coulombic, ('H',)): Coulomb(q_H),
+            (Dispersion, ('O', 'O')): LennardJones(epsilon, sigma),
             (Bond,
-             ('H', 'O')):HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
+             ('H', 'O')): HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
             (BondAngle,
-             ('H', 'O', 'H')):HarmonicPotential(a_HOH, f_HOH,
-                                                interaction_type='angle')}
+             ('H', 'O', 'H')): HarmonicPotential(a_HOH, f_HOH,
+                                                 interaction_type='angle')}

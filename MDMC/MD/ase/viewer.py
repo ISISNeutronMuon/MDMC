@@ -21,7 +21,6 @@ from MDMC.MD.ase.conversions import get_ase_atoms
 
 
 def view(atoms, viewer='X3DOM', cell=None, **settings):
-
     """
     Launches the ASE ``GUI`` for a collection of atoms
 
@@ -51,7 +50,6 @@ def view(atoms, viewer='X3DOM', cell=None, **settings):
 
 
 def view_ase(atoms, **settings):
-
     """
     View atom using the ASE viewer
 
@@ -79,7 +77,6 @@ def view_ase(atoms, **settings):
 
 
 def view_x3dom(atoms, **settings):
-
     """
     View atoms using the X3D viewer, which enables inline visualization within
     a IPython/Jupyter notebook
@@ -103,7 +100,6 @@ def view_x3dom(atoms, **settings):
 
 
 def limit_atoms(atoms, max_atoms):
-
     """
     Limits the number of atoms that are passed to a visualizer
 
@@ -123,12 +119,12 @@ def limit_atoms(atoms, max_atoms):
 
     if len(atoms) < max_atoms:
         return atoms
-    warnings.warn('The number of atoms visualized has been capped to {}. To'
-                  ' increase this, pass a larger `max_atoms`'.format(max_atoms))
+    warnings.warn(f'The number of atoms visualized has been capped to {max_atoms}. To'
+                  ' increase this, pass a larger `max_atoms`')
     return atoms[:max_atoms]
 
-def get_bonds(atoms):
 
+def get_bonds(atoms):
     """
     Adds ``(0, 0, 0,)`` to each bonded atom pair defined within an ``ASEAtoms``
     object
@@ -161,9 +157,7 @@ class Viewer(GUI):
         super().__init__(images=images, rotations=rotations, show_bonds=True,
                          expr=expr)
 
-
     def set_atoms(self, atoms):
-
         """
         Almost an exact copy from ASE
 
@@ -240,7 +234,6 @@ class Viewer(GUI):
             self.labels = self.atoms.get_chemical_symbols()
 
     def get_menu_data(self):
-
         """
         Subset of default ASE ``GUI`` menu options which are applicable to MDMC
         """

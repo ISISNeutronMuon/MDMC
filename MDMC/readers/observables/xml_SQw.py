@@ -1,7 +1,8 @@
 """XML reader for SQw data"""
 
-import numpy as np
 import xml.etree.ElementTree as ET
+
+import numpy as np
 
 from MDMC.common import units
 from MDMC.common.constants import h_bar
@@ -15,7 +16,6 @@ class XML_SQw(SQwReader):
     """
 
     def parse(self, **settings):
-
         """
         Parses the xml file
 
@@ -25,15 +25,15 @@ class XML_SQw(SQwReader):
         Q is wavevector transfer (in ``Ang^-1``)
         """
 
-        self._tree = ET.parse(self.file)
-        self._root = self._tree.getroot()
-        self._root_dict = self.dict_from_element(self._root)
+        _tree = ET.parse(self.file)
+        _root = _tree.getroot()
+        _root_dict = self.dict_from_element(_root)
 
-        n_Q = int(self._root_dict['n-q-points'])
-        n_w = int(self._root_dict['n-omega-points'])
+        n_Q = int(_root_dict['n-q-points'])
+        n_w = int(_root_dict['n-omega-points'])
 
-        Q_unit = units.Unit(self._root_dict['q-unit'])
-        w_unit = units.Unit(self._root_dict['omega-unit'])
+        Q_unit = units.Unit(_root_dict['q-unit'])
+        w_unit = units.Unit(_root_dict['omega-unit'])
 
         # Local variable Q is used for setting self.Q after all children of
         # self._root have been parsed. This is required because a set cannot be
@@ -45,7 +45,7 @@ class XML_SQw(SQwReader):
         self.SQw = []
         self.SQw_err = []
 
-        for child in self._root:
+        for child in _root:
             if child.tag == 'SQomega':
                 child_dict = self.dict_from_element(child)
                 Q.add(float(child_dict['q']))
@@ -76,10 +76,11 @@ class XML_SQw(SQwReader):
         # with our approach of calculating SQw from MD. The resulting arrays must satisfy:
         # np.shape(SQw) == (np.size(Q), np.size(E))
         self.SQw = np.transpose(np.reshape(np.array(self.SQw), [n_w, n_Q]))
-        self.SQw_err = np.transpose(np.reshape(np.array(self.SQw_err), [n_w, n_Q]))
+        self.SQw_err = np.transpose(np.reshape(
+            np.array(self.SQw_err), [n_w, n_Q]))
 
-    def dict_from_element(self, element):
-
+    @staticmethod
+    def dict_from_element(element):
         """
         Creates a dictionary from an XML element
 
@@ -96,4 +97,4 @@ class XML_SQw(SQwReader):
             the second element is the value.
         """
 
-        return {item[0]:item[1] for item in element.items()}
+        return {item[0]: item[1] for item in element.items()}

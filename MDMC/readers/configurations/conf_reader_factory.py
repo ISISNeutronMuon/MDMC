@@ -56,10 +56,10 @@ class ConfigurationReaderFactory(ReaderFactory):
                                                 and not isabstract(m)
                                                 and issubclass(m,
                                                                cls.base_class())
-                                               ))
+                                                ))
                 # First condition ensures some matching classes have been found
                 if classes and classes[0][1].extension == extension:
                     return classes[0][1](file_name)
 
-        raise NotImplementedError('No implemented reader is compatible with {}'
-                                  ' extension'.format(extension))
+        raise NotImplementedError(
+            f'No implemented reader is compatible with {extension} extension')

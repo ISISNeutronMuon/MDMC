@@ -7,7 +7,6 @@ from . import conf_reader
 
 
 def read(file, docstring=False, **settings):
-
     """
     Reads a configuration file and returns a list of atoms corresponding to the
     atoms in the file

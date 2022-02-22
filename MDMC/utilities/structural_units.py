@@ -1,3 +1,5 @@
+"""Structural unit utility functions"""
+
 
 def is_atom(atom: object) -> bool:
     """

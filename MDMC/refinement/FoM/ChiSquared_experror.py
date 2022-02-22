@@ -1,9 +1,12 @@
+"""The class for Chi Squared figure of merit calculation with errors"""
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
-class ChiSquaredExpError(FigureOfMerit):
 
+class ChiSquaredExpError(FigureOfMerit):
+    # ignore line too long linting as it is necessary for LaTeX formatting
+    # pylint: disable=line-too-long
     r"""
     Calculates the weighted sum of the Figure of Merits for a number of datasets:
 
@@ -33,7 +36,8 @@ class ChiSquaredExpError(FigureOfMerit):
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
-
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         r"""
         Performs the error normalised square difference for an ``ObservablePair``. If
         ``obs_pair.auto_scale`` is `True`, then this will also set ``obs_pair.rescale`` to the
@@ -68,7 +72,8 @@ class ChiSquaredExpError(FigureOfMerit):
 
         if obs_pair.auto_scale:
             exp_errors = np.array(*obs_pair.exp_obs.errors.values())
-            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+            exp_values = np.array(
+                *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
             obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2)
                                        / np.sum(MD_values * exp_values
@@ -78,4 +83,3 @@ class ChiSquaredExpError(FigureOfMerit):
         value_unreduced = np.sum((obs_pair.calculate_difference()
                                   / obs_pair.calculate_exp_errors()) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
-

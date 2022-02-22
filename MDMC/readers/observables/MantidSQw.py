@@ -24,14 +24,21 @@ class MantidSQw(SQwReader):
         File containing the errors on the dependent variables
     """
 
-    def __enter__(self):
+    def __init__(self, file_name):
+        super().__init__(file_name)
+        self.detector_IDs = None
+        self.file_detectors = None
+        self.file_variables = None
 
+    def __enter__(self):
         """
         Open the files for variables and detector momenta
         """
+        # pylint: disable=consider-using-with
+        # as this is an abstracted open method
 
-        self.file_variables = open(self.file_name)
-        self.file_detectors = open(self.file_name + '_detectors')
+        self.file_variables = open(self.file_name, encoding='UTF-8')
+        self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback):
         """Closes variable and detector files after parsing"""
@@ -40,7 +47,6 @@ class MantidSQw(SQwReader):
         self.file_detectors.close()
 
     def parse(self, **settings):
-
         """
         Parse into SQw format
 
@@ -48,7 +54,8 @@ class MantidSQw(SQwReader):
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.E, self.SQw, self.SQw_err = self.parse_variables(self.file_variables)
+        self.E, self.SQw, self.SQw_err = self.parse_variables(
+            self.file_variables)
         self.Q = self.parse_detectors(self.file_detectors)
 
         # Explicitly sort data
@@ -66,7 +73,6 @@ class MantidSQw(SQwReader):
         self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
 
     def parse_variables(self, file):
-
         """
         Parses the values for energy, SQw and its error for each detector, but not the momentum of
         that detector.
@@ -94,7 +100,7 @@ class MantidSQw(SQwReader):
             strings = line.split(',')
             if len(strings) == 1:
                 self.detector_IDs.append(strings[0])
-                data.append({'X':[], 'Y':[], 'E':[]})
+                data.append({'X': [], 'Y': [], 'E': []})
             else:
                 data[-1]['X'].append(self._make_float(strings[0]))
                 data[-1]['Y'].append(self._make_float(strings[1]))
@@ -112,7 +118,6 @@ class MantidSQw(SQwReader):
         return X, Y, E
 
     def parse_detectors(self, file):
-
         """
         Parses the detector momenta values.
 
@@ -128,7 +133,6 @@ class MantidSQw(SQwReader):
         """
 
         Q = np.zeros(len(self.detector_IDs))
-        data = {}
         for i, line in enumerate(file):
             if i == 0:
                 headings = line.split(', ')
@@ -136,41 +140,21 @@ class MantidSQw(SQwReader):
                     ID_header = 'Spectrum No'
                     spectrum_index = headings.index(ID_header)
                 except ValueError as error:
-                    raise ValueError('Detector file must have the heading "{0}"'
-                                        ''.format(ID_header)) from error
+                    raise ValueError(f'Detector file must have the heading "{ID_header}"') \
+                        from error
 
                 try:
                     Q_header = 'Q'
                     Q_index = headings.index(Q_header)
                 except ValueError as error:
-                    raise ValueError('Detector file must have the heading "{0}"'
-                                     ''.format(Q_header)) from error
+                    raise ValueError(f'Detector file must have the heading "{Q_header}"') \
+                        from error
             else:
                 values = line.split()
                 spectrum_no = values[spectrum_index]
                 Q_value = values[Q_index]
                 # Ensure that we assign Q values in the same order as detector_IDs
-                Q[self.detector_IDs.index(spectrum_no)] = self._make_float(Q_value)
+                Q[self.detector_IDs.index(
+                    spectrum_no)] = self._make_float(Q_value)
 
         return Q
-
-    def _make_float(self, i):
-
-        """
-        Casts the input to a `float`, or passes if the input cannot be cast
-
-        Parameters
-        ----------
-        i : numeric
-            Input to be cast to `float`
-
-        Returns
-        -------
-        float
-            A non-negative `float`, if the input can be converted to a `float`.
-        """
-
-        try:
-            return np.float64(i)
-        except ValueError:
-            pass
