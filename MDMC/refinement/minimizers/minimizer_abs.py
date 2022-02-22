@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 from MDMC.common.decorators import repr_decorator
 
+# pylint: disable=c-extension-no-member
+# to avoid MPI warnings
+
 
 @repr_decorator('comm', 'FoM', 'FoM_old', 'MC_norm', 'distribution',
                 'state_changed', 'parameters', 'parameters_old_values',
