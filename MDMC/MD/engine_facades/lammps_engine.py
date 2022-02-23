@@ -463,15 +463,17 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
             if self.comm.rank == 0:
-                with NamedTemporaryFile() as temp_file:
-                    self.trajectory_file = temp_file
+                # pylint: disable=consider-using-with
+                # the file has to persist outside out of this method
+                self.trajectory_file = NamedTemporaryFile()
                 f_name = self.trajectory_file.name
             else:
                 f_name = None
             f_name = self.comm.bcast(f_name, root=0)
             if self.comm.rank != 0:
-                with open(f_name, encoding='UTF-8') as temp_file:
-                    self.trajectory_file = temp_file
+                # pylint: disable=consider-using-with
+                # the file has to persist outside out of this method
+                self.trajectory_file = open(f_name, encoding='UTF-8')
             # Custom trajectory output just saves the atom ID, type and
             # positions
             LOGGER.debug('%s set trajectory dump output to %s',
