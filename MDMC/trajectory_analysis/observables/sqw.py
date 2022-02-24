@@ -334,11 +334,15 @@ class AbstractSQw(SQwMixins, Observable):
                 e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
                 Currently accepted functions are 'gaussian' and 'lorentzian'
                 Can also be 'lazily' given as `float`, in which case it is assumed to be Gaussian.
+            ``use_average`` (`bool`)
+                Optional parameter if a list of more than one ``Trajectory`` is used. If set to
+                True (default) then the mean value for S(Q, w) is calculated. Also, the errors
+                are set to the standard deviation calculated over the list of ``Trajectory``
+                objects.
         """
 
         self._origin = 'MD'
         SQw_list = []
-        errors_list = []
         obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
 
         # adds resolution attribute if it doesn't already exist
@@ -424,7 +428,6 @@ class AbstractSQw(SQwMixins, Observable):
             if verbose > 0:
                 time_1 = time()
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
-            errors_list.append(np.zeros(np.shape(SQw_list[-1])))
             if verbose == 2:
                 print('      _calculate_SQw: {} s'.format(
                     round(time() - time_1, 3)))
@@ -436,8 +439,15 @@ class AbstractSQw(SQwMixins, Observable):
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
 
-        self._dependent_variables = {'SQw': SQw_list}
-        self._errors = {'SQw': errors_list}
+        if settings.get('use_average', True):
+            SQw_output = np.mean(SQw_list, axis=0)
+            errors_output = np.std(SQw_list, axis=0)
+        else:
+            SQw_output = SQw_list
+            errors_output = np.zeros(np.shape(SQw_list))
+
+        self._dependent_variables = {'SQw': SQw_output}
+        self._errors = {'SQw': errors_output}
 
         return obs_timings
 
