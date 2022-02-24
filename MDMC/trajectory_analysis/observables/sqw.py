@@ -306,7 +306,9 @@ class AbstractSQw(SQwMixins, Observable):
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
 
-        Currently sets all errors to 0 when S(Q, w) is calculated from MD
+        If a single ``Trajectory`` is passed or the ``use_average`` setting is ``False`` it
+        sets all errors to 0. Otherwise, it will use the standard deviation of S(Q, w)
+        obtained from the list of ``Trajectory``s as the error
 
         ``independent_variables`` can either be set previously or defined within
         ``**settings``.
