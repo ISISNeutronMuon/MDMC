@@ -1,6 +1,5 @@
 """Utility for slicing a ``Trajectory`` object into sub-trajectories"""
 
-import numpy as np
 from typing import List
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
