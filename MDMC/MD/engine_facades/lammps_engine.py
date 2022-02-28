@@ -336,7 +336,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         Returns
         -------
-        Ensemble
+        LAMMPSEnsemble
             The simulation thermodynamic ensemble
         """
 
@@ -1419,7 +1419,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
     traj_step : int
         Number of simulation steps that elapse between the ``Trajectory`` being
         stored.
-    ensemble : Ensemble
+    ensemble : LAMMPSEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
 
@@ -1427,7 +1427,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
-        self.ensemble = Ensemble(self.lmp, **settings)
+        self.ensemble = LAMMPSEnsemble(self.lmp, **settings)
         self.temperature = settings.get('temperature')
         self.traj_step = traj_step
         self.time_step = time_step
@@ -1735,7 +1735,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
 
 @repr_decorator('temperature', 'pressure', 'thermostat', 'barostat')
-class Ensemble(PyLammpsAttribute):
+class LAMMPSEnsemble(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
     #pylint: disable=too-many-instance-attributes
@@ -2106,10 +2106,17 @@ class Ensemble(PyLammpsAttribute):
                              self.rescale_step, temp, temp, t_window,
                              self.t_fraction)
 
+            def csvr():
+                # csvr does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('csvr', 'all', 'temp/csvr',
+                             *thermo_parameters + [randint(0, 9999)])
+
             thermostat = {'nose': nose,
                           'berendsen': berendsen,
                           'langevin': langevin,
-                          'rescale': rescale}
+                          'rescale': rescale,
+                          'csvr': csvr}
 
             try:
                 thermostat[self.thermostat]()

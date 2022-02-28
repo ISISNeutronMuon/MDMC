@@ -317,8 +317,8 @@ def ensemble(populated_lammps_simulation):
     """
 
     populated_lammps_simulation.lin_momentum_steps = None
-    return lmp_eng.Ensemble(populated_lammps_simulation.lmp,
-                            time_step=1.)
+    return lmp_eng.LAMMPSEnsemble(populated_lammps_simulation.lmp,
+                                  time_step=1.)
 
 @pytest.fixture
 def lammps_engine(universe):
@@ -1424,7 +1424,10 @@ def test_remove_momentum(populated_lammps_simulation, momentum_steps,
                            {'temperature':400., 't_damp':100}),
                           ('rescale', ['nve', 'temp/rescale'],
                            {'temperature':100., 't_fraction':0.5,
-                            't_window':10., 'rescale_step':100})])
+                            't_window':10., 'rescale_step':100}),
+                          ('langevin', ['nve', 'langevin'],
+                           {'temperature': 400., 't_damp': 100})
+                          ])
 def test_apply_thermostat(ensemble, thermostat, styles, attributes):
 
     """
