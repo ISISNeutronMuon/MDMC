@@ -25,6 +25,8 @@ PLOT_HEIGHT = 360
 CNVS_WIDTH = 800
 
 
+# pylint: disable=import-outside-toplevel, protected-access
+# we are importing things out-of-order and copying variables on purpose here
 def plot_progress(inst, ynames):
     """
     Modifies an instance of ``MDMC.control.Control`` so that the progress of 1

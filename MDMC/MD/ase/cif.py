@@ -130,11 +130,15 @@ def ase_read_cif(file, **settings):
     # used, a single Coulombic interaction will be created for all atoms with
     # atom_type 1.
     if atom_types[0]:
-        def coulombic_key(atom): return atom.atom_type
-        def bonded_key(atom_arr): return [atom.atom_type for atom in atom_arr]
+        def coulombic_key(atom):
+            return atom.atom_type
+        def bonded_key(atom_arr):
+            return [atom.atom_type for atom in atom_arr]
     elif names[0]:
-        def coulombic_key(atom): return atom.name
-        def bonded_key(atom_arr): return [atom.name for atom in atom_arr]
+        def coulombic_key(atom):
+            return atom.name
+        def bonded_key(atom_arr):
+            return [atom.name for atom in atom_arr]
     else:
         coulombic_key = bonded_key = None
 

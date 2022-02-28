@@ -32,7 +32,7 @@ class MDEngineFacadeFactory:
         try:
             module = import_module('.' + module_name, __package__)
         except ImportError:
-            module = MDEngineFacadeFactory._import_from_alias(module_name)
+            module = MDEngineFacadeFactory.import_from_alias(module_name)
 
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
@@ -41,7 +41,7 @@ class MDEngineFacadeFactory:
         return classes[0][1]()
 
     @staticmethod
-    def _import_from_alias(alias):
+    def import_from_alias(alias):
         """
         Converts an ``alias`` into a module name
         """

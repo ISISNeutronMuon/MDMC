@@ -33,7 +33,7 @@ class MDEngine(ABC):
             The atomic positions
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def setup_universe(self, universe, **settings):
@@ -51,7 +51,7 @@ class MDEngine(ABC):
             ``MDEngine`` that is being used.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def setup_simulation(self, traj_step: int, time_step: float, **settings):
@@ -74,7 +74,7 @@ class MDEngine(ABC):
             ``MDEngine`` that is being used.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def minimize(self, n_steps, **settings):
@@ -87,7 +87,7 @@ class MDEngine(ABC):
             Maximum number of steps for the energy minimization.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def run(self, n_steps, equilibration):
@@ -104,7 +104,7 @@ class MDEngine(ABC):
             ``trajectory``. Otherwise run is prodution.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
@@ -135,7 +135,7 @@ class MDEngine(ABC):
         # convert_trajectory has no range function as it is assumed that the
         # trajectory that is calculated by MD is exactly what is required
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def update_parameters(self):
@@ -144,7 +144,7 @@ class MDEngine(ABC):
         ``Universe``
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def save_config(self):
@@ -152,10 +152,12 @@ class MDEngine(ABC):
         Sets ``self.saved_config`` to the current configuration
         """
 
+        raise NotImplementedError
+
     @abstractmethod
     def reset_config(self):
         """
         Resets the configuration of the simulation to that in ``saved_config``
         """
 
-        pass
+        raise NotImplementedError
