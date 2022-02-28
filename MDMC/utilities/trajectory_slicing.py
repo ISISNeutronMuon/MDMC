@@ -1,4 +1,4 @@
-"""Module for slicing a ``Trajectory`` object into sub-trajectories"""
+"""Utility for slicing a ``Trajectory`` object into sub-trajectories"""
 
 import numpy as np
 from typing import List
@@ -40,7 +40,7 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
         A list of sub-trajectories of the same length.
     """
     subtrj_list = []
-    trj_len = len(Trajectory)
+    trj_len = len(trj)
     if cont_slicing:
         first_frame = 0
         slice_step = 1
