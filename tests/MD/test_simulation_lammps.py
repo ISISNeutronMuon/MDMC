@@ -1425,7 +1425,7 @@ def test_remove_momentum(populated_lammps_simulation, momentum_steps,
                           ('rescale', ['nve', 'temp/rescale'],
                            {'temperature':100., 't_fraction':0.5,
                             't_window':10., 'rescale_step':100}),
-                          ('csvr', ['nve', 'csvr'],
+                          ('csvr', ['nve', 'temp/csvr'],
                            {'temperature': 400., 't_damp': 100})
                           ])
 def test_apply_thermostat(ensemble, thermostat, styles, attributes):
