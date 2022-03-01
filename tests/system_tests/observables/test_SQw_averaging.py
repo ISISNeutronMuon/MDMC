@@ -25,5 +25,5 @@ def test_SQw_averaging(trajectory, Q_vectors):
     SQw_mean.use_FFT = True
     SQw_mean.calculate_from_MD(subtrj_list, Q_vectors=Q_vectors, dimensions=DIMENSIONS,
                                energy_resolution=E_RESOLUTION)
-    np.testing.assert_allclose(SQw_full_trj.SQw[0], SQw_mean.SQw[0], rtol=1e-2)
+    np.testing.assert_allclose(SQw_full_trj.SQw[0], SQw_mean.SQw[0], rtol=3e-2)
     assert np.any(np.not_equal(SQw_full_trj.errors, SQw_mean.errors))
