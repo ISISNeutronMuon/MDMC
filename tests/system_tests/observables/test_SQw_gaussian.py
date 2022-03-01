@@ -143,8 +143,7 @@ def SQw_incoh_obs(monkeymodule, trajectory, Q_vectors):
     SQw_incoh.calculate_from_MD(trajectory,
                                 Q_vectors=Q_vectors,
                                 dimensions=DIMENSIONS,
-                                energy_resolution=E_RESOLUTION,
-                                )
+                                energy_resolution=E_RESOLUTION)
     return SQw_incoh
 
 @pytest.fixture(scope="module")
