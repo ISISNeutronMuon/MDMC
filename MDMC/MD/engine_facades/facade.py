@@ -62,7 +62,7 @@ class MDEngine(ABC):
     @property
     def time_step(self):
         """
-        Get or set the simulation time step in ``fs``
+        Get the simulation time step in ``fs`` from the parent simulation
 
         Returns
         -------
@@ -75,8 +75,8 @@ class MDEngine(ABC):
     @property
     def traj_step(self):
         """
-        Get or set the number of simulation steps between saving the
-        ``Trajectory``
+        Get the number of simulation steps between saving the
+        ``Trajectory`` from the parent simulation
 
         Returns
         -------
