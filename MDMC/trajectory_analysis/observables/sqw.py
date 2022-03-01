@@ -441,9 +441,10 @@ class AbstractSQw(SQwMixins, Observable):
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
 
-        if settings.get('use_average', True):
-            SQw_output = np.mean(SQw_list, axis=0)
-            errors_output = np.std(SQw_list, axis=0)
+        # average over the list of SQw from the subtrajectories as needed
+        if settings.get('use_average', True) and len(MD_input) > 1:
+            SQw_output = [np.mean(SQw_list, axis=0)]
+            errors_output = [np.std(SQw_list, axis=0)]
         else:
             SQw_output = SQw_list
             errors_output = np.zeros(np.shape(SQw_list))

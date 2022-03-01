@@ -8,12 +8,6 @@ tests ensure that SQw is the same (within uncertainty) independent of the
 trajectory length, it the same energies are specified.  THIS MODULE COULD BE
 PARAMETERIZED TO TEST OTHER OBSERVABLES"""
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-import zlib
-
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
