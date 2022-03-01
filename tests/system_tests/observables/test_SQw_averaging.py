@@ -1,6 +1,7 @@
 """System test for averaging ``SQw`` from multiple ``Trajectory`` objects """
 
 import numpy as np
+from numpy.testing import assert_allclose
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
@@ -25,5 +26,6 @@ def test_SQw_averaging(trajectory, Q_vectors):
     SQw_mean.use_FFT = True
     SQw_mean.calculate_from_MD(subtrj_list, Q_vectors=Q_vectors, dimensions=DIMENSIONS,
                                energy_resolution=E_RESOLUTION)
-    np.testing.assert_allclose(SQw_full_trj.SQw[0], SQw_mean.SQw[0], rtol=3e-2)
-    assert np.any(np.not_equal(SQw_full_trj.errors, SQw_mean.errors))
+    assert_allclose(SQw_full_trj.SQw[0], SQw_mean.SQw[0], rtol=3e-2)
+    assert np.shape(SQw_mean.errors['SQw']) == np.shape(SQw_mean.errors['SQw'])
+    assert np.any(np.not_equal(SQw_full_trj.errors['SQw'], SQw_mean.errors['SQw']))
