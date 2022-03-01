@@ -246,51 +246,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return self._saved_config
 
     @property
-    def time_step(self):
-        """
-        Get or set the simulation time step in ``fs``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``fs``
-        """
-
-        try:
-            return self.lmp_simulation.time_step
-        except AttributeError:
-            return None
-
-    @time_step.setter
-    @unit_decorator(unit=units.TIME)
-    def time_step(self, value):
-
-        self.lmp_simulation.time_step = value
-
-    @property
-    def traj_step(self):
-        """
-        Get or set the number of simulation steps between saving the
-        ``Trajectory``
-
-        Returns
-        -------
-        `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
-        """
-
-        try:
-            return self.lmp_simulation.traj_step
-        except AttributeError:
-            return None
-
-    @traj_step.setter
-    def traj_step(self, value):
-
-        self.lmp_simulation.traj_step = value
-
-    @property
     def temperature(self):
         """
         Get or set the temperature of the simulation in ``K``
@@ -403,25 +358,19 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe = LAMMPSUniverse(self.universe, self.lmp, **settings)
         self._saved_config = None
 
-    def setup_simulation(self, traj_step: int, time_step: float, **settings):
+    def setup_simulation(self, **settings):
         """
         Sets simulation parameters in LAMMPS, such as the thermodynamic
         variables, thermostat/barostat parameters and trajectory settings
 
         Parameters
         ----------
-        traj_step : int
-            How many steps the simulation should take between dumping each
-            ``Trajectory`` frame
-        time_step : float
-            Simulation timestep in ``fs``
         **settings
             Passed to ``LAMMPSSimulation``
         """
-
         self.lmp_simulation = LAMMPSSimulation(universe=self.universe,
-                                               time_step=time_step,
-                                               traj_step=traj_step,
+                                               time_step=self.time_step,
+                                               traj_step=self.traj_step,
                                                lmp=self.lmp,
                                                **settings)
 

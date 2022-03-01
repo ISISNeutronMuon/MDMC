@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from MDMC.common.decorators import unit_decorator_getter, \
-    mod_docstring, repr_decorator
+    mod_docstring, repr_decorator, unit_decorator
 from MDMC.common import units
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
@@ -1317,6 +1317,7 @@ class Simulation:
         self.time_step = time_step
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
+        self.engine.parent_simulation = self
         self._setup()
 
         setup_msg = f'Simulation created with {engine} engine'
@@ -1328,6 +1329,41 @@ class Simulation:
 
         print(setup_msg)
 
+    @property
+    def time_step(self):
+        """
+        Get or set the simulation time step in ``fs``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``fs``
+        """
+
+        return self._time_step
+
+    @time_step.setter
+    @unit_decorator(unit=units.TIME)
+    def time_step(self, value):
+        self._time_step = value
+
+    @property
+    def traj_step(self):
+        """
+        Get or set the simulation time step in ``fs``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``fs``
+        """
+
+        return self._traj_step
+
+    @traj_step.setter
+    def traj_step(self, value):
+        self._traj_step = value
+
     def _setup(self):
         """
         Creates a universe within the ``MDEngine`` with the equivalent
@@ -1336,9 +1372,7 @@ class Simulation:
         """
 
         self.engine.setup_universe(self.universe, **self.settings)
-        self.engine.setup_simulation(traj_step=self.traj_step,
-                                     time_step=self.time_step,
-                                     **self.settings)
+        self.engine.setup_simulation(**self.settings)
 
     def minimize(self, n_steps: int, verbose: bool = False, **settings):
         """

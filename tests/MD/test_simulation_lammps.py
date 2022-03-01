@@ -321,7 +321,14 @@ def ensemble(populated_lammps_simulation):
                             time_step=1.)
 
 @pytest.fixture
-def lammps_engine(universe):
+def simulation(universe):
+    """
+    A mock simulation to give the engine facade its necessary 'parent simulation'
+    """
+    return Simulation(universe, traj_step=1, time_step=1., engine='lammps')
+
+@pytest.fixture
+def lammps_engine(universe, simulation):
 
     """
     Returns:
@@ -330,8 +337,9 @@ def lammps_engine(universe):
     """
 
     lammps_engine = lmp_eng.LAMMPSEngine()
+    lammps_engine.parent_simulation = simulation
     lammps_engine.setup_universe(universe)
-    lammps_engine.setup_simulation(traj_step=1, time_step=1.)
+    lammps_engine.setup_simulation()
     return lammps_engine
 
 
@@ -1646,9 +1654,8 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # it is not being used in this test
     # add_args is a dictionary of additional arguments that are required for the
     # specific ensemble
-    lammps_engine.setup_simulation(traj_step=1, time_step=1., temperature=300.,
-                                   thermostat=thermostat, barostat=barostat,
-                                   **add_args)
+    lammps_engine.setup_simulation(temperature=300., thermostat=thermostat,
+                                   barostat=barostat, **add_args)
 
     n_steps = 20
     lammps_engine.lmp.run(n_steps)
