@@ -82,7 +82,8 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
 
     SQw_observable.calculate_from_MD([trajectory[:n], trajectory[n:]],
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_1_array = SQw_observable.SQw[0]
     SQw_2_array = SQw_observable.SQw[1]
 
