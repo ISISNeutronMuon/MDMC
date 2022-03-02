@@ -1350,12 +1350,14 @@ class Simulation:
     @property
     def traj_step(self):
         """
-        Get or set the simulation time step in ``fs``
-
+        Get or set the number of simulation steps between saving the
+        ``Trajectory``
+        
         Returns
         -------
-        `float`
-            Simulation time step in ``fs``
+        `int`
+            Number of simulation steps that elapse between the ``Trajectory``
+            being stored
         """
 
         return self._traj_step
