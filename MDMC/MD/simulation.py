@@ -1352,7 +1352,7 @@ class Simulation:
         """
         Get or set the number of simulation steps between saving the
         ``Trajectory``
-        
+
         Returns
         -------
         `int`
