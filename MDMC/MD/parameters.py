@@ -58,10 +58,10 @@ class Parameter:
         self.functions_name = None
         self._interactions = []
         self._tie = None
+        self._tie_parameter = None
 
     @property
     def value(self):
-
         """
         Get or set the value of the ``Parameter``
 
@@ -102,7 +102,6 @@ class Parameter:
     @property
     @unit_decorator_getter(unit=None)
     def constraints(self):
-
         """
         Get or set the constraint of the ``Parameter``
 
@@ -122,9 +121,9 @@ class Parameter:
     @constraints.setter
     def constraints(self, constraints):
 
-        ### Checks if constraints are a 2 element tuple of floats, that the
-        ### zeroeth element is less than or equal to the first, and that
-        ### self.value is within them, if it exists
+        # Checks if constraints are a 2 element tuple of floats, that the
+        # zeroeth element is less than or equal to the first, and that
+        # self.value is within them, if it exists
         if constraints is not None:
             if constraints[0] > constraints[1]:
                 raise ValueError("Constaints must be (lower, upper)")
@@ -134,7 +133,6 @@ class Parameter:
 
     @property
     def interactions(self):
-
         """
         Get or append to the parent ``Interaction`` objects for this
         ``Parameter``
@@ -176,7 +174,6 @@ class Parameter:
 
     @property
     def tie(self):
-
         """
         Get the ``value`` of a the ``Parameter`` that this ``Parameter`` is tied
         to
@@ -186,15 +183,16 @@ class Parameter:
         float
             The ``value`` of the ``tied`` ``Parameter``
         """
+        # pylint: disable=eval-used
+        # eval use is generally bad
+        # but the safe alternative (ast.literal_eval) creates malformed nodes
 
         if self._tie is None:
             return None
-        else:
-            return eval(compile(self._tie, '', 'eval'))
+        return eval(compile(self._tie, '', 'eval'))
 
     @property
     def tied(self):
-
         """
         Get whether this ``Parameter`` is tied
 
@@ -205,13 +203,9 @@ class Parameter:
             `False`
         """
 
-        if hasattr(self, 'tie') and self.tie is not None:
-            return True
-        else:
-            return False
+        return bool(hasattr(self, 'tie') and self.tie is not None)
 
     def set_tie(self, parameter, expr):
-
         """
         This ``ties`` the ``Parameter.value`` to the ``value`` of another
         ``Parameter``
@@ -231,7 +225,8 @@ class Parameter:
         """
 
         self._tie_parameter = weakref.ref(parameter)
-        self._tie = ast.parse('self._tie_parameter().value' + expr, mode='eval')
+        self._tie = ast.parse(
+            'self._tie_parameter().value' + expr, mode='eval')
 
     def __str__(self):
 
@@ -249,8 +244,8 @@ class Parameter:
 
         self.__setattr__(key, value)
 
-    def validate_value(self, value, constraints):
-
+    @staticmethod
+    def validate_value(value, constraints):
         """
         Validates the ``Parameter.value`` by testing if it is within the
         ``constraints``
@@ -269,6 +264,10 @@ class Parameter:
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
+    # comparison operator so parameters are always in the same order on refinement headings
+    def __lt__(self, other):
+        return self.name < other.name
+
 
 class Parameters(list):
 
@@ -285,7 +284,6 @@ class Parameters(list):
         return item
 
     def filter(self, predicate):
-
         """
         Filters using a predicate
 
@@ -303,9 +301,7 @@ class Parameters(list):
 
         return Parameters(filter(predicate, self))
 
-
     def filter_name(self, name):
-
         """
         Filters by ``name``
 
@@ -322,9 +318,7 @@ class Parameters(list):
 
         return Parameters(filter(lambda p: p.name == name, self))
 
-
     def filter_value(self, comparison, value):
-
         """
         Filters by ``value``
 
@@ -344,18 +338,16 @@ class Parameters(list):
             are compared with ``value`` using the ``comparison`` operator
         """
 
-        ops = {'>':operator.gt,
-               '<':operator.lt,
-               '>=':operator.ge,
-               '<=':operator.le,
-               '==':operator.eq,
-               '!=':operator.ne}
+        ops = {'>': operator.gt,
+               '<': operator.lt,
+               '>=': operator.ge,
+               '<=': operator.le,
+               '==': operator.eq,
+               '!=': operator.ne}
 
         return Parameters(filter(lambda p: ops[comparison](p.value, value), self))
 
-
     def filter_interaction(self, interaction_name):
-
         """
         Filters based on the name of the ``Interaction`` of each ``Parameter``
 
@@ -375,9 +367,7 @@ class Parameters(list):
         return Parameters(filter(lambda p: p.interactions_name == interaction_name,
                                  self))
 
-
     def filter_function(self, function_name):
-
         """
         Filters based on the name of the ``InteractionFunction`` of each
         ``Parameter``
@@ -397,9 +387,7 @@ class Parameters(list):
 
         return Parameters(filter(lambda p: p.functions_name == function_name, self))
 
-
     def filter_atom_attribute(self, attribute, value):
-
         """
         Filters based on the attribute of ``Atom`` objects which have each
         ``Parameter`` applied to them
@@ -434,9 +422,7 @@ class Parameters(list):
                                            in flatten(int.atoms)],
                                  self))
 
-
     def filter_structure(self, structure_name):
-
         """
         Filters based on the name of the ``StructuralUnit`` to which each
         ``Parameter`` applies
@@ -454,7 +440,6 @@ class Parameters(list):
         """
 
         def check_structure_name(parameter):
-
             """
             Checks the name of all structures
 
@@ -467,6 +452,7 @@ class Parameters(list):
             # Recursively add structure.name to structure_names set until the
             # structure is the top level structure
             structure_names = set()
+
             def add_name(structure):
                 structure_names.add(structure.name)
                 if structure.top_level_structure == structure:

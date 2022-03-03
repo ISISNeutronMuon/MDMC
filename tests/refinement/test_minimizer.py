@@ -26,15 +26,18 @@ def parameters():
         `value` attributes
     """
 
-    return([Parameter(name='charge', value=1.),
-            Parameter(name='charge', value=.5),
-            Parameter(name='sigma', value=3.3),
-            Parameter(name='epsilon', value=.2),
-            Parameter(name='potential_strength', value=1234.),
-            Parameter(name='equilibrium_state', value=1.2),
-            Parameter(name='A', value=1.),
+    # note these parameters are listed in alphabetical order
+    # as that is the order in which they are sorted when added to a Minimizer object
+    return([Parameter(name='A', value=1.),
             Parameter(name='B', value=2.),
-            Parameter(name='C', value=3.)])
+            Parameter(name='C', value=3.),
+            Parameter(name='charge', value=1.),
+            Parameter(name='charge', value=.5),
+            Parameter(name='epsilon', value=.2),
+            Parameter(name='equilibrium_state', value=1.2),
+            Parameter(name='potential_strength', value=1234.),
+            Parameter(name='sigma', value=3.3)])
+
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init(parameters):
@@ -95,9 +98,9 @@ def test_minimizer_write_history(parameters):
 
 @pytest.mark.parametrize('p_slice, columns',
                          [([0, 4, 1],
-                           ['charge', 'charge', 'sigma', 'epsilon']),
+                           ['A', 'B', 'C', 'charge']),
                           ([0, 9, 2],
-                           ['charge', 'sigma', 'potential_strength', 'A', 'C'])
+                           ['A', 'C', 'charge', 'equilibrium_state', 'sigma'])
                          ])
 def test_minimizer_history_columns(parameters, p_slice, columns):
 

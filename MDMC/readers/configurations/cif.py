@@ -35,9 +35,9 @@ class CIF(ConfigurationReader):
 
     extension = 'cif'
 
-    def __init__(self):
+    def __init__(self, file_name):
 
-        super().__init__()
+        super().__init__(file_name)
         self._atoms = None
 
     # Dynamically set docstring

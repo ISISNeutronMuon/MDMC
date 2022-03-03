@@ -8,6 +8,7 @@ from os.path import basename, dirname, join, isfile
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
+
 class MinimizerFactory:
 
     """
@@ -17,8 +18,8 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name, MC_norm, parameter, distribution='uniform', max_parameter_change: float=0.01):
-
+    def create_minimizer(module_name, MC_norm, parameter, distribution='uniform',
+                         max_parameter_change: float = 0.01):
         """
         Returns
         -------
@@ -28,17 +29,17 @@ class MinimizerFactory:
 
         try:
             module = import_module('.' + module_name, __package__)
-        except ImportError:
-            raise ValueError('{0} is not a supported minimizer'.format(module_name))
+        except ImportError as error:
+            raise ValueError(
+                f'{module_name} is not a supported minimizer') from error
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](MC_norm, parameter,distribution,
-                 max_parameter_change)
+        return classes[0][1](MC_norm, parameter, distribution,
+                             max_parameter_change)
 
     @staticmethod
     def get_minimizer_names():
-
         """
         Get the names of available minimizer
 
@@ -60,6 +61,3 @@ class MinimizerFactory:
                     minimizer_names.append(module_name.replace('.py', ''))
 
         return minimizer_names
-
-
-

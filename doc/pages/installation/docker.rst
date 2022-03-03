@@ -23,7 +23,7 @@ tutorial. Instructions on how to enable X11 forwarding are in
 :ref:`x11-forwarding-label`.  X11 forwarding occurs by default on Linux, so
 on that platform no additional steps are required.
 
-As MDMC is currently private, your Github details are required to access the repository. This is your username, and a personal access token that you can generate on Github.com. `Instructions are here <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`, or short instructions are the following:
+As MDMC is currently private, Github credentials are required for access. This is via a personal access token that you can generate on Github.com. `Instructions are here <https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token>`, or short instructions are the following:
 
  * Log into Github.com.
  * Go to `https://github.com/settings/tokens <https://github.com/settings/tokens>`.
@@ -38,28 +38,27 @@ You now have a personal access token!
 
 Windows
 -------
-.. include:: docker/docker-compose-files.rst
+.. include:: docker/docker-compose-files-osx-windows.rst
 
 :download:`Download mdmc docker-compose zip <../../_static/files/osx-windows/mdmc.zip>`
 
-.. include:: docker/docker-compose-env-osx-windows.rst
+Then, open the empty file 'token.txt' and paste your personal access token into it.
 
-At the command line, in the directory where the docker-compose.yml and the .env
-files are located, do the following (please ensure that Docker Desktop is running, test
+At the command line, in the directory where the docker-compose.yml and the token
+file is located, do the following (please ensure that Docker Desktop is running, test
 this e.g. by running :code:`docker run hello-world`):
 
 .. include:: docker/docker-compose-run.rst
 
 Mac OS X
 --------
-.. include:: docker/docker-compose-files.rst
+.. include:: docker/docker-compose-files-osx-windows.rst
 
 :download:`Download mdmc docker-compose zip <../../_static/files/osx-windows/mdmc.zip>`
 
-.. include:: docker/docker-compose-env-osx-windows.rst
+Then, open the empty file 'token.txt' and paste your personal access token into it.
 
-Then in a terminal, in the directory where the docker-compose.yml and the .env
-files are located, do the following (please ensure that Docker Desktop is running, test
+Then in a terminal, in the directory where the docker-compose.yml and the token file is located, do the following (please ensure that Docker Desktop is running, test
 this e.g. by running :code:`docker run hello-world`):
 
 .. include:: docker/docker-compose-run.rst
@@ -79,10 +78,10 @@ Alternatively, there are `other methods for installing docker-compose <https://d
 
 :download:`Download mdmc docker-compose tar <../../_static/files/linux/mdmc.tar.gz>`
 
-.. include:: docker/docker-compose-env-linux.rst
+Then, open the empty file 'token' and paste your personal access token into it.
 
-Then in a terminal, in the directory where the docker-compose.yml and the .env
-files are located, do the following:
+Then in a terminal, in the directory where the docker-compose.yml and the token
+file is located, do the following:
 
 .. include:: docker/docker-compose-run.rst
 

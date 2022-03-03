@@ -44,7 +44,6 @@ class SolventConfig(ABC):
     @property
     @abstractmethod
     def _solvent_config_dict(self):
-
         """
         Returns
         -------
@@ -58,7 +57,6 @@ class SolventConfig(ABC):
 
     @property
     def description(self):
-
         """
         Get a description of the solvent configuration
 
@@ -72,7 +70,6 @@ class SolventConfig(ABC):
 
     @property
     def box_dimensions(self):
-
         """
         Get or set the box dimensions in Ang
 
@@ -93,7 +90,6 @@ class SolventConfig(ABC):
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
-
         """
         Get the volume of the box in Ang^3
 
@@ -107,7 +103,6 @@ class SolventConfig(ABC):
 
     @property
     def atom_types(self):
-
         """
         Get or set the element: atom_type pairs in the SolventConfig
 
@@ -127,7 +122,6 @@ class SolventConfig(ABC):
 
     @property
     def bonded_interactions(self):
-
         """
         Get a dictionary of the bonded interactions that must be instantiated
         when solvating using the SolventConfig
@@ -144,7 +138,6 @@ class SolventConfig(ABC):
 
     @property
     def nonbonded_interactions(self):
-
         """
         Get or set a dictionary of the nonbonded interactions that must be
         instantiated when solvating using the SolventConfig
@@ -167,7 +160,6 @@ class SolventConfig(ABC):
 
     @property
     def constrained(self):
-
         """
         Get whether or not the bonded interactions must be constrained when
         sovlating with this SolventConfig
@@ -182,7 +174,6 @@ class SolventConfig(ABC):
 
     @property
     def molecule_name(self):
-
         """
         Get the name of the solvent molecule
 
@@ -196,7 +187,6 @@ class SolventConfig(ABC):
 
     @property
     def molecules(self):
-
         """
         Get or set the specifications of the molecules that must be added to the
         Universe when solvating with this SolventConfig
@@ -219,7 +209,6 @@ class SolventConfig(ABC):
 
     @property
     def n_molecules(self):
-
         """
         Get the number of molecules in the SolventConfig
 
@@ -234,7 +223,6 @@ class SolventConfig(ABC):
     @property
     @unit_decorator_getter(unit=units.MASS)
     def mass(self):
-
         """
         Get the mass of a solvent molecule in amu
 
@@ -249,7 +237,6 @@ class SolventConfig(ABC):
     @property
     @unit_decorator_getter(unit=units.MASS / (units.LENGTH ** 3))
     def density(self):
-
         """
         Get the density of the SolventConfig in
 
@@ -262,7 +249,6 @@ class SolventConfig(ABC):
         return self.mass * self.n_molecules / self.volume
 
     def reset_molecules(self):
-
         """
         Resets the molecules dict to the original inbuilt dict
         """
@@ -270,7 +256,6 @@ class SolventConfig(ABC):
         self.molecules = deepcopy(self._solvent_config_dict['molecules'])
 
     def offset_atom_types(self, offset):
-
         """
         Increments all atom_types (both in self.atom_types and
         self.nonbonded_interactions) by the offset
@@ -291,7 +276,6 @@ class SolventConfig(ABC):
 
     def molec_from_dict(self, mol_dict, bonded_interactions=None,
                         universe=None):
-
         """
         Creates a Molecule object from a dictionaries containing atoms and
         atom_types
@@ -333,7 +317,6 @@ class SolventConfig(ABC):
         return structural_units.Molecule(atoms=list(atoms.values()))
 
     def molecules_from_coords(self, coords, universe=None):
-
         """
         Creates Molecules from atomic coordinates and atom_types
 
@@ -379,7 +362,8 @@ class SolventConfig(ABC):
                 # Different __init__ for Coulombic than other
                 # NonBondedInteractions
                 if nb_i[0] == 'Coulombic':
-                    dummy = interactions.Coulombic(universe=universe, atom_types=nb_i[1])
+                    dummy = interactions.Coulombic(
+                        universe=universe, atom_types=nb_i[1])
                 else:
                     dummy = getattr(interactions, nb_i[0])(universe, *nb_i[1:])
         return molecules

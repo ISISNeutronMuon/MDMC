@@ -511,7 +511,7 @@ def test_control_is_data_uniform(mock_observable):
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
-    cont = control.Control.__new__(control.Control)
+    cont = control.Control
     observed = cont._is_data_uniform(mock_observable['obs'])
     assert expected == observed
 

@@ -20,7 +20,6 @@ class ConfigurationReader(Reader):
     @staticmethod
     @abstractmethod
     def extension():
-
         """
         The expected file extension for the ``ConfigurationReader``
         """
@@ -30,7 +29,6 @@ class ConfigurationReader(Reader):
     @property
     @abstractmethod
     def atoms(self):
-
         """
         All subclasses must implement atoms, which returns a list of ``Atom``
         objects from the data read from the file

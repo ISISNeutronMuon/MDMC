@@ -13,8 +13,7 @@ class ReaderFactory(ABC):
     """
 
     @classmethod
-    def create_reader(cls, module_name):
-
+    def create_reader(cls, module_name, file_name):
         """
         Creates a reader object from a module name
 
@@ -25,6 +24,8 @@ class ReaderFactory(ABC):
         ----------
         module_name : str
             The name of the module where the reader is the first class
+        file_name : str
+            The name of the file that the Reader will read
 
         Returns
         -------
@@ -43,14 +44,13 @@ class ReaderFactory(ABC):
                                                 and not isabstract(m)
                                                 and issubclass(m,
                                                                cls.base_class()
-                                                              )))
+                                                               )))
 
-        return classes[0][1]()
+        return classes[0][1](file_name)
 
     @staticmethod
     @abstractmethod
     def base_class():
-
         """
         This should be implemented to return the base class of objects returned
         by the ``ReaderFactory``
@@ -60,7 +60,6 @@ class ReaderFactory(ABC):
 
     @staticmethod
     def _name_from_alias(alias):
-
         """
         Converts an ``alias`` into a module name
         """

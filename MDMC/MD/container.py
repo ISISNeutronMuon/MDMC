@@ -21,7 +21,6 @@ class AtomContainer(ABC):
     @property
     @abstractmethod
     def atoms(self):
-
         """
         Returns
         -------
@@ -32,7 +31,6 @@ class AtomContainer(ABC):
         raise NotImplementedError
 
     def __getitem__(self, index):
-
         """
         Returns
         -------

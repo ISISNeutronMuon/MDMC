@@ -9,7 +9,7 @@ from verbosemanager import VerboseManager
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
-from MDMC.common.constants import h, h_bar
+from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.resolution import Resolution, NullResolution
@@ -17,6 +17,9 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.trajectory import Trajectory
+
+# pylint: disable=c-extension-no-member
+# to avoid MPI warnings
 
 
 class AbstractFQt(SQwMixins, Observable):
@@ -29,15 +32,23 @@ class AbstractFQt(SQwMixins, Observable):
     """
 
     def __init__(self):
+        super().__init__()
+        self._trajectory = None
         self._independent_variables = {}
         self._dependent_variables = {}
         self._errors = None
         # Use FFT by default
         self._use_FFT = True
 
+        self.reciprocal_basis = None
+        self.Q_vectors = None
+        self.n_Q_vectors = None
+        self.Q_values = None
+        self.weights = None
+
+
     @property
     def independent_variables(self):
-
         """
         Get or set the independent variables: these are
         the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
@@ -57,7 +68,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def dependent_variables(self):
-
         """
         Get or set the dependent variables: this is
         FQt, the intermediate scattering function (in ``arb``)
@@ -72,7 +82,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def errors(self):
-
         """
         Get or set the errors on the dependent variables, the intermediate
         scattering function (in ``arb``)
@@ -92,7 +101,6 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     def t(self):
-
         """
         Get or set the times of the intermediate scattering function in units of
         ``fs``
@@ -114,7 +122,6 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def FQt(self):
-
         """
         Get the dynamic structure factor, F(Q, t), in arb
 
@@ -181,10 +188,10 @@ class AbstractFQt(SQwMixins, Observable):
         except AttributeError:
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
-            except KeyError:
+            except KeyError as error:
                 raise AttributeError('Either trajectory requires a dimensions'
                                      ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD')
+                                     ' when calling calculate_from_MD') from error
 
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
                                  * UNIT_VECTOR)
@@ -192,7 +199,7 @@ class AbstractFQt(SQwMixins, Observable):
         verbose_manager.step("Calculating Q-vectors")
         # calculate Q vectors from Q
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
-        if not hasattr(self, 'Q_vectors'):
+        if self.Q_vectors is None:
             try:
                 self.Q_vectors = np.array(settings['Q_vectors'])
             except KeyError:
@@ -238,27 +245,26 @@ class AbstractFQt(SQwMixins, Observable):
         Q_vectors = comm.scatter(Q_vectors, root=0)
         verbose_manager.step("Calculating FQt for each Q-vector")
         # Calculate FQt for each Q vector for all processors
-        FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
+        FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                         in Q_vectors])
 
         # Gather the calculated FQt's together on every processor. This ensures
         # that all other calculations can be performed on every processor, so
         # no other methods in SQw need to be made MPI compliant.
-        FQt = np.array(comm.allgather(FQt))
+        FQt_array = np.array(comm.allgather(FQt_array))
         # Reshape FQt as gather doesn't join the arrays but just collects them
         # as arrays within an array. This is equivalent to flattening the first
         # index.
-        FQt_shape = np.shape(FQt)
-        FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
+        FQt_shape = np.shape(FQt_array)
+        FQt_array = FQt_array.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
-        self.FQt = FQt[:shape[0] - axis_0]
+        self.FQt = FQt_array[:shape[0] - axis_0]
 
         verbose_manager.finish("Calculating FQt from MD")
 
     def _calculate_Q_vectors(self, Q_values):
-
         """
         For each value of Q in ``Q_values`` calculates a number of Q vectors
         (points in reciprocal space) that lie close to that Q value.
@@ -305,7 +311,6 @@ class AbstractFQt(SQwMixins, Observable):
         return np.array(Q_vectors)
 
     def _calculate_vectors_single_Q(self, Q_min, Q_max):
-
         """
         Calculates a number of Q vectors that have a magnitude between
         ``Q_min`` and ``Q_max``.
@@ -354,7 +359,8 @@ class AbstractFQt(SQwMixins, Observable):
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
-
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         r"""
         Calculates the F(Q, t) from an array of vectors corresponding to a
         single value of Q.
@@ -430,15 +436,13 @@ class AbstractFQt(SQwMixins, Observable):
 
     @abstractmethod
     def _set_weights(self):
-
         """
         Calculate the neutron weighting
         """
 
-        pass
+        raise NotImplementedError
 
     def calculate_SQw(self, energy, resolution: Resolution = None):
-
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
 
@@ -487,14 +491,15 @@ class AbstractFQt(SQwMixins, Observable):
             SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
         else:
             SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
-            for i, energy in enumerate(energy):
+            for i, E in enumerate(energy):
                 # Create 1D array of exponential factors. Dotting with F(Q,t)
                 # sums over the time/energy dimension as required for a
                 # discrete Fourier transform
                 # h_bar is in units of eV s whereas system units are meV fs, so
                 # apply a factor of 1e3 * 1e15 to convert it
-                exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
-                exp_neg = np.exp(1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
+                exp = np.exp(-1j * E * self.t[:-1] / (h_bar * 1e18))
+                exp_neg = np.exp(
+                    1j * E * self.t[-1:0:-1] / (h_bar * 1e18))
                 exp_mirror = np.append(exp, exp_neg)
                 SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
 
@@ -528,12 +533,13 @@ class AbstractFQt(SQwMixins, Observable):
     def dependent_variables_structure(self) -> Dict[str, list]:
         """
         The order in which the 'FQt' dependent variable is indexed in terms of 'Q' and 't'.
-        Explicitly: we have that self.FQt[Q_index, t_index] is the data point for given indices of self.Q and self.t
+        Explicitly: we have that self.FQt[Q_index, t_index] is the data point
+        for given indices of self.Q and self.t
         It also means that:
         np.shape(self.FQt)=(np.size(self.Q), np.size(self.t))
 
-        The purpose of this method is to ensure consistency between different readers/methods which create ``FQt``
-        objects.
+        The purpose of this method is to ensure consistency between
+        different readers/methods which create ``FQt`` objects.
 
         Return
         ------
@@ -573,13 +579,12 @@ class FQt(AbstractFQt):
     """
 
     def _set_weights(self):
-
         """
         Calculate the neutron weighting for coherent and incoherent scattering
         """
 
-        self.weights = {element:{'coh':B_COH[element],
-                                 'incoh':B_INCOH[element]}
+        self.weights = {element: {'coh': B_COH[element],
+                                  'incoh': B_INCOH[element]}
                         for element in self._trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors):
@@ -632,10 +637,10 @@ class FQt(AbstractFQt):
             for element2 in elements:
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1]['coh'] \
-                                * self.weights[element2]['coh'] \
-                                * correlation(rho_element[element1],
-                                              rho_element[element2],
-                                              normalise=True)[:n_t]
+                    * self.weights[element2]['coh'] \
+                    * correlation(rho_element[element1],
+                                  rho_element[element2],
+                                  normalise=True)[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:
@@ -648,7 +653,6 @@ class FQt(AbstractFQt):
 
 @jit('float64[:,:], float64[:,:]', nopython=True)
 def calculate_rho(positions, Q_vector):
-
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors
