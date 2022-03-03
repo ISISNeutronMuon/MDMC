@@ -1,11 +1,11 @@
 """Utility for slicing a ``Trajectory`` object into sub-trajectories"""
 
-from typing import List, Generator
+from typing import Iterable
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = False) \
-        -> Generator[List[Trajectory]]:
+        -> Iterable[Trajectory]:
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
     of the same length.
@@ -35,7 +35,7 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
 
     Returns
     -------
-    Generator[List[Trajectory]]
+    Iterable[Trajectory]
         A generator function for the list of sub-trajectories of length ``subtrj_len``.
     """
     trj_len = len(trj)
