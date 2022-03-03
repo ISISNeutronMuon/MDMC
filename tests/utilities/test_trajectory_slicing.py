@@ -1,6 +1,7 @@
 """Tests the slice_trajectory method
 """
 import numpy as np
+
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 from tests.system_tests.observables.data_manager import trajectory
 
@@ -14,11 +15,9 @@ def test_slice_trajectory(trajectory):
                     (48, True, [trj[0:47], trj[1:48], trj[2:49]]))
     for subtrj_len, cont_slicing, expected_slices in tests_to_run:
         actual_slices = slice_trajectory(trj, subtrj_len, cont_slicing)
-        # we cannot compare the subtrajectories directly as ``Trajectory`` has no __eq__
-        # method. instead we compare the content of the subtrajectories
-        for i in range(len(expected_slices)):
-            assert np.all(expected_slices[i].times == actual_slices[i].times)
-            assert np.all((expected_slices[i].positions == actual_slices[i].positions))
-            assert np.all((expected_slices[i].velocities == actual_slices[i].velocities))
-            assert np.all((expected_slices[i].data == actual_slices[i].data))
+        for i, slice in enumerate(actual_slices):
+            assert np.all(expected_slices[i].times == slice.times)
+            assert np.all((expected_slices[i].positions == slice.positions))
+            assert np.all((expected_slices[i].velocities == slice.velocities))
+            assert np.all((expected_slices[i].data == slice.data))
 

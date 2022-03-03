@@ -2,8 +2,10 @@
 
 import numpy as np
 from numpy.testing import assert_allclose
+
 from tests.system_tests.observables.data_manager import trajectory, Q_vectors
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+
 
 def test_SQw_averaging(trajectory, Q_vectors):
     """
