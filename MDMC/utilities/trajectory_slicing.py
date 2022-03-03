@@ -4,8 +4,8 @@ from typing import List, Generator
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
-def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = False) -> List[
-    Trajectory]:
+def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = False) \
+        -> Generator[List[Trajectory]]:
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
     of the same length.
