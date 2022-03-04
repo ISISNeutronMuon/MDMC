@@ -18,9 +18,25 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name, MC_norm, parameter, distribution='uniform',
-                         max_parameter_change: float = 0.01):
+    def create_minimizer(module_name, parameter, distribution='uniform',
+                         max_parameter_change: float = 0.01, **settings: dict):
         """
+        Checks that the module is a supported minimzer and instantiates it as a minimizer.
+
+        Parameters
+        ----------
+        module_name: str
+            The name of the module to be used as the minimizer, e.g. 'MMC'
+        parameter: list[str]
+            List of parameters to be refined
+        distribution: str, optional
+            Name of distribution to be used, defaults to 'uniform' 
+        max_parameter_change: float, optional
+            Maximum factor by which a Parameter can change each step of the
+            refinement. Defaults to `0.01`
+        **settings: dict, optional
+            Dictionary of settings to be passed to the created minimiser, e.g. {'MC_norm': 1.0}
+
         Returns
         -------
         Minimizer
@@ -35,8 +51,8 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](MC_norm, parameter, distribution,
-                             max_parameter_change)
+        return classes[0][1](parameter, distribution,
+                             max_parameter_change , settings = settings)
 
     @staticmethod
     def get_minimizer_names():

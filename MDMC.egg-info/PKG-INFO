@@ -1,0 +1,14 @@
+Metadata-Version: 2.1
+Name: MDMC
+Version: 0.2
+Summary: A package for optimising classical molecular dynamics parameters by refining against experimental data.
+Home-page: https://mdmcproject.org/
+Download-URL: https://github.com/MDMCproject
+Author: MDMC developers
+Author-email: support@mdmcproject.org
+License: UNKNOWN
+Platform: UNKNOWN
+Provides-Extra: LAMMPS
+
+UNKNOWN
+

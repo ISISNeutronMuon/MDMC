@@ -1,0 +1,11 @@
+numpy
+scipy
+netCDF4
+pandas
+ase>=3.19
+numba
+mpi4py
+ipython
+
+[LAMMPS]
+lammps

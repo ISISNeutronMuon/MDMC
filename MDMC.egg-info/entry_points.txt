@@ -1,0 +1,3 @@
+[console_scripts]
+MDMC = MDMC.utilities.cli:main
+

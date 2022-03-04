@@ -67,7 +67,8 @@ control = Control(simulation=simulation,
                   MC_norm=1,
                   minimizer_type="MMC",
                   MD_steps=208000,
-                  energy_resolution=13.6)
+                  energy_resolution=13.6,
+                  settings={'MC_norm': 1})
 
 # Bertil Halle water data is non-symmetric. Consider only a subset of the
 # data in this example.
