@@ -12,7 +12,7 @@ from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.resolution import Resolution, NullResolution
+from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
@@ -469,8 +469,6 @@ class AbstractFQt(SQwMixins, Observable):
         numpy.ndarray
             The S(Q, w) calculated from F(Q, t)
         """
-        # verbose printing has a different number of steps depending on if resolution is applied
-
         nE = len(energy)
         if self.use_FFT:
             # Ensure that if we recorded a longer trajectory than required by

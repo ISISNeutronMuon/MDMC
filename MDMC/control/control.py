@@ -1,13 +1,11 @@
 """A module for performing the refinement"""
 import statistics
 from copy import deepcopy
-from time import time
 from typing import List, Dict
 
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
-from typing import Dict
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
@@ -16,7 +14,6 @@ from MDMC.MD.simulation import Simulation
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
-from MDMC.resolution import NullResolution
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
@@ -352,7 +349,7 @@ class Control:
         # calculate verbose steps
         # self.calculate_verbose_steps() calculates verbosity steps for 1 step;
         # so multiply by n_steps + 1 (as we start at step 0)
-        verbose_steps = (n_steps + 1) * (self.calculate_verbose_steps())
+        verbose_steps = (n_steps + 1) * (self._calculate_verbose_steps())
         # initialise step timings list for average step timings at end
         self.step_timings = []
 
@@ -423,7 +420,7 @@ class Control:
         if previous step was rejected and reset_config = true
         """
         verbose_manager = VerboseManager.instance()
-        verbose_manager.start(self.calculate_verbose_steps(), verbose=self.verbose)
+        verbose_manager.start(self._calculate_verbose_steps(), verbose=self.verbose)
 
         # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
@@ -572,7 +569,7 @@ class Control:
         verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
 
-        verbose_manager.step("Calculating MD")
+        verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             maximum_frames = pair.MD_obs.maximum_frames()
             if maximum_frames:
@@ -581,6 +578,13 @@ class Control:
                 # subsets of this length as we can
                 subtrj_list = slice_trajectory(trj, maximum_frames, self.settings.get(
                     'cont_slicing', False))
+                # get number of subtrajectories to calculate verbose steps for observable
+                if self.settings.get('cont_slicing', False):
+                    _num_trajectories = len(trj) // maximum_frames
+                else:
+                    _num_trajectories = len(trj) - maximum_frames
+                # add this to settings to pass to the observable
+                self.settings['_num_trajectories'] = _num_trajectories
                 obs_timings = pair.MD_obs.calculate_from_MD(subtrj_list,
                                                             verbose=self.verbose,
                                                             **self.settings)
@@ -845,7 +849,7 @@ class Control:
         except AttributeError:
             pass
 
-    def calculate_verbose_steps(self):
+    def _calculate_verbose_steps(self):
         """
         Calculates the verbose steps needed in a step of refinement.
 

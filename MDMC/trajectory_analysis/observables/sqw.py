@@ -1,18 +1,15 @@
 """Module for AbstractSQw and total SQw class"""
 
-from time import time
 from typing import Dict, List, Union
 
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
-from typing import Dict, List, Union
 from verbosemanager import VerboseManager
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-from MDMC.resolution import NullResolution
+from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -350,7 +347,6 @@ class AbstractSQw(SQwMixins, Observable):
 
         self._origin = 'MD'
         SQw_list = []
-        errors_list = []
 
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
@@ -370,7 +366,11 @@ class AbstractSQw(SQwMixins, Observable):
             MD_input = [MD_input]
 
         # calculate verbosity steps and initialise verbose manager
-        verbose_steps = len(MD_input) * 2
+        try:
+            verbose_steps = len(MD_input) * 2
+        except TypeError:  # if MD_input is a sliced subtrajectory generator
+            verbose_steps = settings['_num_trajectories'] * 2
+
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(verbose_steps, verbose=verbose)
 
@@ -434,7 +434,6 @@ class AbstractSQw(SQwMixins, Observable):
             FQt.calculate_from_MD(trajectory, **settings)
 
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
-            errors_list.append(np.zeros(np.shape(SQw_list[-1])))
 
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None

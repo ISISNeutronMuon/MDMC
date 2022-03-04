@@ -5,7 +5,6 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from time import time
 
 import numpy as np
 import pandas as pd
