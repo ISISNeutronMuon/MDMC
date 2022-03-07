@@ -120,6 +120,8 @@ class Control:
         timings are printed at the end of the refinement. If 0, no timings
         are printed. In all cases information about the FoM and parameter
         values will still be printed. Default is 0.
+    **settings: dict, optional
+        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser.
 
     Example
     -------
@@ -187,7 +189,7 @@ class Control:
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters, 
                                                            max_parameter_change=max_parameter_change, 
-                                                           settings=self.settings)
+                                                          **self.settings)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol

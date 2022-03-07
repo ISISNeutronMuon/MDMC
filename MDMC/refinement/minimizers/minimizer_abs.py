@@ -53,7 +53,7 @@ class Minimizer(ABC):
     DISTRIBUTION = {'uniform': np.random.uniform}
 
     def __init__(self, parameters, distribution='uniform',
-                 max_parameter_change: float = 0.01):
+                 max_parameter_change: float = 0.01,  **settings):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD

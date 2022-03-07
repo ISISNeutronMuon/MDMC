@@ -35,7 +35,7 @@ class MinimizerFactory:
             Maximum factor by which a Parameter can change each step of the
             refinement. Defaults to `0.01`
         **settings: dict, optional
-            Dictionary of settings to be passed to the created minimiser, e.g. {'MC_norm': 1.0}
+            Settings to be passed to the created minimiser, e.g. MC_norm=1.0
 
         Returns
         -------
@@ -51,8 +51,9 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
+        # The ** here is dictionary unpacking not passing directly the settings kwargs
         return classes[0][1](parameter, distribution,
-                             max_parameter_change , **settings)
+                             max_parameter_change , **settings)  
 
     @staticmethod
     def get_minimizer_names():
