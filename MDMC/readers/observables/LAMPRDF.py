@@ -50,7 +50,7 @@ class LAMPRDF(ObservableReader):
 
         return self._r
 
-    @Dist.setter
+    @r.setter
     @unit_decorator(unit=units.LENGTH)
     def r(self, value):
 
@@ -108,7 +108,7 @@ class LAMPRDF(ObservableReader):
 
         return {"PDF": [self.PDF]}
 
-    def parse_indep_var(self, ffile):
+    def parse_indep_var(self, file):
 
         """
         Parses the independent variables
@@ -120,7 +120,7 @@ class LAMPRDF(ObservableReader):
 
         Parameters
         ----------
-        ffile : file
+        file : file
             Open file containing independent data
             Generally, the file is the same fo rboth dependent and independent parameters
 
@@ -129,8 +129,7 @@ class LAMPRDF(ObservableReader):
         array
             r -  distance
         """
-        ffile1=open(ffile, 'r')  
-        k=0
+        ffile1=open(file, 'r')  
         for i, line in enumerate(ffile1):
            if i==3:
              line=line.strip()
@@ -145,15 +144,15 @@ class LAMPRDF(ObservableReader):
              column=line.split()
              # c_number or the column[0] represents the counter for the number of rows,
              # this counter is not interesting for the data analysis.
-             c_number[k]=int(column[0])
-             # distance[k] or column[1] is the distance for which the rdfs were calculated.
-             distance[k]=float(column[1])
+             c_number[i-3]=int(column[0])
+             # distance[i-3] or column[1] is the distance for which the rdfs were calculated.
+             distance[i-3]=float(column[1])
            k=i-3
         self.dist=distance
         ffile1.close()
         return self.dist
 
-    def parse_dep_var(self, numrdf, ffile):
+    def parse_dep_var(self, numrdf, file):
 
         """
         Parses the dependent variables (radial distribution functions)
@@ -173,7 +172,7 @@ class LAMPRDF(ObservableReader):
 
         # Give the number of radial distribution functions
         num_rdf=numrdf
-        ffile2=open(ffile,'r')
+        ffile2=open(file,'r')
         for i, line in enumerate(ffile2):
         # The 3rd line is interesting since it is containing the important information for the initialization
         # of the arrays, like distances and rdfs. Particularly, the second parameter in the second column is of the interest.
@@ -192,7 +191,7 @@ class LAMPRDF(ObservableReader):
         c_number=np.zeros(num_rows)
         distance=np.zeros(num_rows) 
 
-        ffile2=open(ffile, 'r')
+        ffile2=open(file, 'r')
         k=0
         for i, line in enumerate(ffile2):
            # First 2 lines are comments on what rdfs were computed
