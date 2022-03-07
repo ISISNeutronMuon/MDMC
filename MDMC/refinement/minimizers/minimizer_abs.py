@@ -48,14 +48,12 @@ class Minimizer(ABC):
     max_parameter_change : float, optional
         Maximum factor by which a Parameter can change each step of the
         refinement. Defaults to `0.01`
-    **settings: dict, optional
-        Dictionary of settings to be passed to the created minimizer e.g.: {'MC_norm': 1.0}
     """
 
     DISTRIBUTION = {'uniform': np.random.uniform}
 
     def __init__(self, parameters, distribution='uniform',
-                 max_parameter_change: float = 0.01, **settings: dict):
+                 max_parameter_change: float = 0.01):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD

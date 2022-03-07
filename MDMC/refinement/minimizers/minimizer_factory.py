@@ -52,7 +52,7 @@ class MinimizerFactory:
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
         return classes[0][1](parameter, distribution,
-                             max_parameter_change , settings = settings)
+                             max_parameter_change , **settings)
 
     @staticmethod
     def get_minimizer_names():

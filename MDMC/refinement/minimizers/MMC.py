@@ -19,8 +19,8 @@ class MMC(Minimizer):
         list of the column titles for the minimizer history
     """
 
-    def __init__(self, MC_norm: float = 1.0):
-        self.MC_norm = MC_norm
+    def __init__(self, **settings):
+        self.MC_norm = settings.get('MC_norm', 1.0)
 
     @property
     def history_columns(self):
