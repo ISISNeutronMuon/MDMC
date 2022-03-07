@@ -12,11 +12,8 @@ class LAMPRDF(ObservableReader):
 
     """
     A class for reading RDF files from LAMP
-
     LAMP's ascii output uses one file
-
-    The file's structure is the following:
-   
+    The file's structure is the following:   
     Row-Number  Distance  rdf1  rdf2  ...  rdfN 
    
     Attributes
@@ -31,37 +28,36 @@ class LAMPRDF(ObservableReader):
 
         """
         Parse into RDF format
-
         Dist is the energy transfer (in nm)
         RDF is wavevector transfer (in barn)
         """
 
-        self.Dist = self.parse_indep_var(self.Distt)
-        self.rdf = self.parse_dep_var(self.rdff)
+        self.r = self.parse_indep_var(self.Distt)
+        self.PDF = self.parse_dep_var(self.rdff)
 
 
     @property
-    def Dist(self):
+    def r(self):
 
         """
-        Get or set the distance between pairs, Dist, in ``nm``
+        Get or set the distance between pairs, r, in ``Å``
 
         Returns
         -------
         numpy.ndarray
-            Distance between pairs, Dist, in ``nm``
+            Distance between pairs, r, in ``Å``
         """
 
-        return self._Dist
+        return self._r
 
     @Dist.setter
     @unit_decorator(unit=units.LENGTH)
-    def Dist(self, value):
+    def r(self, value):
 
-        self._Dist = value
+        self._r = value
 
     @property
-    def rdf(self):
+    def PDF(self):
 
         """
         Get or set the RDF between pairs, in ``barn``
@@ -72,31 +68,31 @@ class LAMPRDF(ObservableReader):
             RDF between pairs, RDF, in ``barn``
         """
 
-        return self._rdf
+        return self._PDF
 
     @rdf.setter
     @unit_decorator(unit=units.Unit('barn'))
-    def rdf(self, value):
+    def PDF(self, value):
         """ 
         Get or set the value of the radial distribution function (in ``barn``)
         """
 
-        self._rdf = value
+        self._PDF = value
 
 
     @property
     def independent_variables(self):
 
         """
-        Get the independent variable, Dist (in ``nm``)
+        Get the independent variable, r (in ``Å``)
 
         Returns
         -------
         dict
-            The independent variables Dist
+            The independent variables r
         """
 
-        return {"Dist":self.Dist}
+        return {"r":self.r}
 
     @property
     def dependent_variables(self):
@@ -110,21 +106,16 @@ class LAMPRDF(ObservableReader):
             The dependent variables, rdf (in ``barn``)
         """
 
-        return {"rdf": [self.rdf]}
+        return {"PDF": [self.PDF]}
 
     def parse_indep_var(self, ffile):
 
         """
         Parses the independent variables
-
         Splits the file so that the data can be extracted into a ``array`` 
-   
-        Since the the output file contains both the independent and dependent variables,
-        
-        the parsing procedure for the same file is separated into two steps.
-     
-        The file is basically the same for both dependent and independent variables, 
-        
+        Since the the output file contains both the independent and dependent variables,        
+        the parsing procedure for the same file is separated into two steps.     
+        The file is basically the same for both dependent and independent variables,         
         but the procedure is separated into 2 steps for the clarity.
 
         Parameters
@@ -166,9 +157,7 @@ class LAMPRDF(ObservableReader):
 
         """
         Parses the dependent variables (radial distribution functions)
-
-        Since the the output file contains both the independent and dependent variables,
-        
+        Since the the output file contains both the independent and dependent variables,        
         the parsing procedure for the same file is separated into two steps.
 
         Parameters
