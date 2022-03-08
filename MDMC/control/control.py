@@ -15,10 +15,10 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.resolution.resolution_factory import ResolutionFactory
-
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -102,7 +102,7 @@ class Control:
         When not provided, the minimum number of steps needed for successful
         calculation of the observables is used. If provided, the actual number
         of steps may be reduced to prevent running MD that won't be used when
-        calculting dependent variables. Default is `None`.
+        calculating dependent variables. Default is `None`.
     equilibration_steps : int, optional
         Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
         refinement step. When changes to the ``Parameters`` are small, this equilibration can be
@@ -117,6 +117,17 @@ class Control:
     min_refinement_steps : int, optional
         The minimum number of refinement steps before the refinement process can stop
          if all parameters and the Figure of Merit have converged. Default value is 2.
+     cont_slicing : bool, optional
+        Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+        larger than the minimum required to calculate the observables. If ``False`` (default) then
+        the ``Trajectory`` is sliced into non-overlapping sub-``Trajectory`` blocks for each of
+        which the observable is calculated. If ``True``, then the ``Trajectory`` is sliced into
+        as many non-identical sub-``Trajectory`` blocks as possible (with overlap allowed).
+    use_average : bool, optional
+        Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
+        and the MD ``Trajectory`` is sliced into sub-``Trajectory`` blocks. If ``True`` (
+        default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
+        they are not averaged.
     verbose: int, optional
         If 2, timings are printed for every step of the refinement. If 1,
         timings are printed at the end of the refinement. If 0, no timings
@@ -595,12 +606,9 @@ class Control:
                 # If there is a limit on the number of frames the observable
                 # can use in calculations, split the trajectory into as many
                 # subsets of this length as we can
-                sub_trj = []
-                n_averages = len(trj) // maximum_frames
-                for i in range(n_averages):
-                    sub_trj.append(
-                        trj[i * maximum_frames: (i + 1) * maximum_frames])
-                obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
+                subtrj_list = slice_trajectory(trj, maximum_frames, self.settings.get(
+                    'cont_slicing', False))
+                obs_timings = pair.MD_obs.calculate_from_MD(subtrj_list,
                                                             verbose=self.verbose,
                                                             **self.settings)
             else:

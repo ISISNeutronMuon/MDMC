@@ -35,6 +35,61 @@ class MDEngine(ABC):
 
         raise NotImplementedError
 
+    @property
+    def parent_simulation(self):
+        """
+        Get or set the simulation that created this engine facade
+
+        Returns
+        -------
+        `Simulation`
+            The Simulation object that created this engine facade
+        """
+
+        try:
+            return self._parent_simulation
+        except AttributeError as error:
+            raise AttributeError("This MD engine does not belong to a simulation. "
+                                 "MD engines should be created through initialising Simulations."
+                                 "") from error
+
+    @parent_simulation.setter
+    def parent_simulation(self, value):
+        # pylint: disable=attribute-defined-outside-init
+        # as this is internal and abstract
+        self._parent_simulation = value
+
+    @property
+    def time_step(self):
+        """
+        Get the simulation time step in ``fs`` from the parent simulation
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``fs``
+        """
+
+        return self.parent_simulation.time_step
+
+    @property
+    def traj_step(self):
+        """
+        Get the number of simulation steps between saving the
+        ``Trajectory`` from the parent simulation
+
+        Returns
+        -------
+        `int`
+            Number of simulation steps that elapse between the ``Trajectory``
+            being stored
+        """
+
+        try:
+            return self.parent_simulation.traj_step
+        except AttributeError:
+            return None
+
     @abstractmethod
     def setup_universe(self, universe, **settings):
         """
@@ -54,7 +109,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def setup_simulation(self, traj_step: int, time_step: float, **settings):
+    def setup_simulation(self, **settings):
         """
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
@@ -64,11 +119,6 @@ class MDEngine(ABC):
         universe : Universe
             A molecular dynamics ``Universe`` which will be simulated in the
             ``MDEngine``.
-        traj_step : int
-            How many steps the simulation should take between dumping each
-            ``Trajectory`` frame
-        time_step : float
-            Simulation timestep in ``fs``
         settings**
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
