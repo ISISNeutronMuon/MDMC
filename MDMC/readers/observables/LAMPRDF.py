@@ -116,13 +116,13 @@ class LAMPRDF(ObservableReader):
         Since the the output file contains both the independent and dependent variables,        
         the parsing procedure for the same file is separated into two steps.     
         The file is basically the same for both dependent and independent variables,         
-        but the procedure is separated into 2 steps for the clarity.
+        but the procedure is separated into 2 steps for clarity.
 
         Parameters
         ----------
         file : file
             Open file containing independent data
-            Generally, the file is the same fo rboth dependent and independent parameters
+            Generally, the file is the same for both dependent and independent parameters
 
         Returns
         -------
