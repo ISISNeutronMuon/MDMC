@@ -30,7 +30,7 @@ class MinimizerFactory:
         parameter: list[str]
             List of parameters to be refined
         distribution: str, optional
-            Name of distribution to be used, defaults to 'uniform' 
+            Name of distribution to be used, defaults to 'uniform'
         max_parameter_change: float, optional
             Maximum factor by which a Parameter can change each step of the
             refinement. Defaults to `0.01`
@@ -53,7 +53,7 @@ class MinimizerFactory:
                                                 and issubclass(m, Minimizer)))
         # The ** here is dictionary unpacking not passing directly the settings kwargs
         return classes[0][1](parameter, distribution,
-                             max_parameter_change , **settings)  
+                             max_parameter_change , **settings)
 
     @staticmethod
     def get_minimizer_names():
