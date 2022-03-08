@@ -14,6 +14,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
 class SQwMixins:
@@ -301,8 +302,7 @@ class AbstractSQw(SQwMixins, Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
-                          verbose: int = 0, **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
 
@@ -315,8 +315,8 @@ class AbstractSQw(SQwMixins, Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory or list of Trajectory
-            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        MD_input : Trajectory
+            An MDMC ``Trajectory`` from which to calculate ``SQw``
         verbose: int, optional
             If 2, timings are printed for each calculation of FQt and SQw. If 1,
             timings are collected so they can be printed at the end of the refinement.
@@ -341,11 +341,18 @@ class AbstractSQw(SQwMixins, Observable):
                 True (default) then the mean value for S(Q, w) is calculated. Also, the errors
                 are set to the standard deviation calculated over the list of ``Trajectory``
                 objects.
+             ``cont_slicing`` (`bool`)
+                Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+                larger than the minimum required to calculate the observables. If ``False``
+                (default) then the ``Trajectory`` is sliced into non-overlapping
+                sub-``Trajectory`` blocks for each of which the observable is calculated. If
+                ``True``, then the ``Trajectory`` is sliced into as many non-identical
+                sub-``Trajectory`` blocks as possible (with overlap allowed).
         """
 
         self._origin = 'MD'
-        SQw_list = []
         obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
+        trj_len = len(MD_input)
 
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
@@ -361,11 +368,12 @@ class AbstractSQw(SQwMixins, Observable):
         if not hasattr(self, 'independent_variables'):
             self.independent_variables = {}
 
-        if isinstance(MD_input, Trajectory):
-            MD_input = [MD_input]
-
-        # Extract information that should be constant from the first Trajectory
-        t = MD_input[0].times - MD_input[0].times[0]
+        # Extract information that should be constant throughout the Trajectory and hence the
+        # subtrajectories (if there are any)
+        if self.maximum_frames():
+            t = MD_input.times[0:self.maximum_frames()] - MD_input.times[0]
+        else:
+            t = MD_input.times - MD_input.times[0]
         dt = t[1] - t[0]
 
         try:
@@ -391,6 +399,13 @@ class AbstractSQw(SQwMixins, Observable):
             self.independent_variables['Q'] = np.array(settings['Q_values'])
         except KeyError:
             pass
+
+        #slice trajectory up if possible and requested by user:
+        if self.maximum_frames() and settings.get('use_average'):
+            trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
+                                            cont_slicing=settings.get('cont_slicing', False))
+        else:
+            trajectories = [MD_input]
 
         # Perform calculations for each Trajectory
         for trajectory in MD_input:

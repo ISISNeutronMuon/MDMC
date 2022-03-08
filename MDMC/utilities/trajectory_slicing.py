@@ -39,6 +39,11 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
         A generator function for the list of sub-trajectories of length ``subtrj_len``.
     """
     trj_len = len(trj)
+
+    msg = (f'The sub-trajectory length of {subtrj_len} was larger than the length of the '
+               f'parent trajectory of {trj_len}.')
+    assert trj_len >= subtrj_len, msg
+
     if cont_slicing:
         first_frame = 0
         slice_step = 1
