@@ -189,7 +189,7 @@ class Control:
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters, 
                                                            max_parameter_change=max_parameter_change, 
-                                                          **self.settings)
+                                                          **settings)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
@@ -300,9 +300,6 @@ class Control:
                                           '  FoM type',
                                           '  Number of observables',
                                           '  Number of parameters'])
-        if 'MC_norm' in self.settings.keys:
-            MC_norm_df = pd.DataFrame([self.settings['MC_norm']], index=['  MC_norm'])
-            setup_frame.join(MC_norm_df) 
 
         print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
