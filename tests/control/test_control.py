@@ -22,10 +22,10 @@ from tests.test_data import data
 DATASET_INFO = {
     'use_FFT': {
         '263K05Awat_LAMP': {'dt': 1055.8303421611213, 'n_frames': 374},
-        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 38}},
+        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 38, 'use_FFT': False}},
     'no_FFT': {
         '263K05Awat_LAMP': {'dt': 208.08701470659403, 'n_frames': 2042},
-        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 104}}}
+        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 104, 'use_FFT': False}}}
 
 
 class MockSimulation(Simulation):
@@ -154,7 +154,7 @@ def exp_datasets() -> callable:
 
     return _exp_datasets
 
-
+'''
 @pytest.mark.parametrize('error', 
                          [['exp',
                            ('Control created with:\n'
@@ -484,7 +484,7 @@ def test_control_use_FFT_default(simulation, exp_datasets, file_name):
         assert pair.exp_obs.use_FFT
         assert pair.MD_obs.use_FFT
 
-
+'''
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_use_FFT(simulation, exp_datasets, file_name):
@@ -498,10 +498,11 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
+        #print(f' Pair is {pair}')
         assert not pair.exp_obs.use_FFT
         assert not pair.MD_obs.use_FFT
 
-
+'''
 def test_control_max_parameter_change():
 
     """
@@ -664,9 +665,11 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
         key = 'use_FFT'
         max_steps = traj_step * DATASET_INFO[key][file_name]['n_frames']
         expected_steps = max_steps * (user_MD_steps // max_steps)
+        print('Im in the use_FFT option')
     else:
         key = 'no_FFT'
         expected_steps = user_MD_steps
+        print(f'Im in the no_FFT option expected_steps = {expected_steps}, user steps = {user_MD_steps}')
 
     dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
@@ -771,4 +774,8 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
+'''
 
+
+if __name__ == '__main__':
+    pytest.main(['-v', 'tests/control/test_control.py'])
