@@ -215,10 +215,10 @@ class Control:
         minimum_MD_steps = 0
         for dset in exp_datasets:
             try:
-              use_FFT = dset['use_FFT']
+                use_FFT = dset['use_FFT']
             except KeyError:
-              use_FFT = True
-            
+                use_FFT = True
+
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
