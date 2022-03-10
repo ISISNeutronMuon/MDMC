@@ -158,6 +158,7 @@ class LAMPRDF(ObservableReader):
         Parses the dependent variables (radial distribution functions)
         Since the the output file contains both the independent and dependent variables,        
         the parsing procedure for the same file is separated into two steps.
+        numrdf is the number of radial distribution functions in the file
 
         Parameters
         ----------
@@ -171,7 +172,6 @@ class LAMPRDF(ObservableReader):
         """
 
         # Give the number of radial distribution functions
-        num_rdf=numrdf
         ffile2=open(file,'r')
         for i, line in enumerate(ffile2):
         # The 3rd line is interesting since it is containing the important information for the initialization
@@ -185,7 +185,7 @@ class LAMPRDF(ObservableReader):
              NR=num_rows
         # Closing the file after obtaining the right number for the initialization of arrays.
         ffile2.close()
-        ar=(NR, num_rdf) 
+        ar=(NR, numrdf) 
         # Initialization of the arrays by allocating the space and setting all numbers to zero.                         
         rdf_ar=np.zeros(ar)
         c_number=np.zeros(num_rows)
@@ -208,7 +208,7 @@ class LAMPRDF(ObservableReader):
              l=0
          # Since the actual rdfs are starting from the 3rd column, labeled as number 2 in python,
          # and the counter starts from zero, we take that column as a column for rdf, which will be counted as l+2.
-             for l in range(num_rdf):
+             for l in range(numrdf):
                rdf_ar[k][l]=float(column[l+2])
            k=i-3 
         # RDF then will be an array with the size (number of rows x number of rdfs) 
