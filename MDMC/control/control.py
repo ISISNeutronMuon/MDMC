@@ -215,7 +215,7 @@ class Control:
         minimum_MD_steps = 0
         for dset in exp_datasets:
 
-            use_FFT = not bool('use_FFT' in dset and dset['use_FFT'] is False)
+            use_FFT = False if('use_FFT' in dset and dset['use_FFT'] is False) else True
 
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
@@ -544,7 +544,7 @@ class Control:
         file_name : str
             The absolute or relative path and the file name.
         use_FFT: bool, optional
-            boolian determining if the FFT should be used, default is True
+            boolean determining if the FFT should be used, default is True
 
         Returns
         -------
@@ -569,7 +569,7 @@ class Control:
         exp_observable : Observable
             An ``Observable`` with defined independent variables.
         use_FFT: bool, optional
-            boolian determining if the FFT should be used, default is True
+            boolean determining if the FFT should be used, default is True
 
         Returns
         -------

@@ -498,7 +498,6 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
-        #print(f' Pair is {pair}')
         assert not pair.exp_obs.use_FFT
         assert not pair.MD_obs.use_FFT
 
@@ -774,8 +773,3 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
-
-
-
-if __name__ == '__main__':
-    pytest.main(['-v', 'tests/control/test_control.py'])
