@@ -664,11 +664,9 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
         key = 'use_FFT'
         max_steps = traj_step * DATASET_INFO[key][file_name]['n_frames']
         expected_steps = max_steps * (user_MD_steps // max_steps)
-        print('Im in the use_FFT option')
     else:
         key = 'no_FFT'
         expected_steps = user_MD_steps
-        print(f'Im in the no_FFT option expected_steps = {expected_steps}, user steps = {user_MD_steps}')
 
     dt = DATASET_INFO[key][file_name]['dt']
     time_step = dt / traj_step
