@@ -32,8 +32,8 @@ class LAMPRDF(ObservableReader):
         RDF is wavevector transfer (in barn)
         """
 
-        self.r = self.parse_indep_var(self.Distt)
-        self.PDF = self.parse_dep_var(self.rdff)
+        self.r = self.parse_indep_var(self.r)
+        self.PDF = self.parse_dep_var(self.PDF)
 
 
     @property
@@ -92,7 +92,7 @@ class LAMPRDF(ObservableReader):
             The independent variables r
         """
 
-        return {"r":self.r}
+        return {"r":self.r}rdff
 
     @property
     def dependent_variables(self):
@@ -182,10 +182,9 @@ class LAMPRDF(ObservableReader):
              column=line.split()
              time_step=int(column[0])
              num_rows=int(column[1]) 
-             NR=num_rows
         # Closing the file after obtaining the right number for the initialization of arrays.
         ffile2.close()
-        ar=(NR, numrdf) 
+        ar=(num_rows, numrdf) 
         # Initialization of the arrays by allocating the space and setting all numbers to zero.                         
         rdf_ar=np.zeros(ar)
         c_number=np.zeros(num_rows)
