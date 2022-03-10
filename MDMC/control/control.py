@@ -215,12 +215,12 @@ class Control:
         minimum_MD_steps = 0
         for dset in exp_datasets:
 
-            using_FFT = False if ('use_FFT' in dset and dset['use_FFT'] == False) else True
-            
+            use_FFT = not bool('use_FFT' in dset and dset['use_FFT'] is False)
+
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
-                                                        dset['file_name'], 
-                                                        using_FFT)
+                                                        dset['file_name'],
+                                                        use_FFT)
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
@@ -531,7 +531,6 @@ class Control:
 
     @staticmethod
     def _read_observable_from_file(obstype: str, reader: str, file_name: str,
-                                   resolution_file_name: str = None, 
                                    use_FFT: bool = True):
         """
         Creates an Observable of the specified type and reads in data from file
@@ -569,7 +568,7 @@ class Control:
         ----------
         exp_observable : Observable
             An ``Observable`` with defined independent variables.
-        use_FFT: bool, optional 
+        use_FFT: bool, optional
             boolian determining if the FFT should be used, default is True
 
         Returns
@@ -878,4 +877,3 @@ class Control:
         dt = self.simulation.traj_step * self.simulation.time_step
         with suppress(AttributeError):
             obs.validate_energy(dt)
-

@@ -154,7 +154,7 @@ def exp_datasets() -> callable:
 
     return _exp_datasets
 
-'''
+
 @pytest.mark.parametrize('error', 
                          [['exp',
                            ('Control created with:\n'
@@ -484,7 +484,7 @@ def test_control_use_FFT_default(simulation, exp_datasets, file_name):
         assert pair.exp_obs.use_FFT
         assert pair.MD_obs.use_FFT
 
-'''
+
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_use_FFT(simulation, exp_datasets, file_name):
@@ -502,7 +502,7 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
         assert not pair.exp_obs.use_FFT
         assert not pair.MD_obs.use_FFT
 
-'''
+
 def test_control_max_parameter_change():
 
     """
@@ -774,7 +774,7 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
-'''
+
 
 
 if __name__ == '__main__':
