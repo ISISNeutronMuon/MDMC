@@ -22,10 +22,10 @@ from tests.test_data import data
 DATASET_INFO = {
     'use_FFT': {
         '263K05Awat_LAMP': {'dt': 1055.8303421611213, 'n_frames': 374},
-        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 38, 'use_FFT': False}},
+        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 38}},
     'no_FFT': {
         '263K05Awat_LAMP': {'dt': 208.08701470659403, 'n_frames': 2042},
-        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 104, 'use_FFT': False}}}
+        'Well_s_q_omega_Ar_data.xml': {'dt': 152.83423720166564, 'n_frames': 104}}}
 
 
 class MockSimulation(Simulation):
