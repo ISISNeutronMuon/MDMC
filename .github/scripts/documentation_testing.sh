@@ -2,9 +2,10 @@
 
 # build the documentation, which includes testing that the code in the tutorials runs
 
-# tests if there is a change to doc or ipython
+# tests if there is a change to doc or packages used to build doc
 if ! git diff remotes/origin/master --name-only -- ./doc | read REPLY && \
-! git diff remotes/originmaster -- requirements.txt | grep  '+ipython\|+ipykernel' 
+! git diff remotes/origin/master -- requirements.txt | grep  '+ipython\|+ipykernel' && \
+! git diff remotes/origin/master -- .dev_requirements.txt | grep '+sphinx\|+nbsphinx\|+sphinx-rtd-theme\|+docutils'
 then
   echo; echo "Documentation does not require testing."
   exit 0
