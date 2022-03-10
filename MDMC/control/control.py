@@ -214,9 +214,11 @@ class Control:
         self.observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
-
-            use_FFT = False if('use_FFT' in dset and dset['use_FFT'] is False) else True
-
+            try:
+              use_FFT = dset['use_FFT']
+            except KeyError:
+              use_FFT = True
+            
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
