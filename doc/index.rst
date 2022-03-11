@@ -83,6 +83,7 @@ Indices
   pages/developer/containers
   pages/developer/vscode
   pages/developer/recipes
+  pages/developer/known_bugs
 
 .. toctree::
   :maxdepth: 1
