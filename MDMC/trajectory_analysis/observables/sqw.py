@@ -352,7 +352,6 @@ class AbstractSQw(SQwMixins, Observable):
 
         self._origin = 'MD'
         obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
-        trj_len = len(MD_input)
 
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
@@ -408,7 +407,8 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
 
         # Perform calculations for each Trajectory
-        for trajectory in MD_input:
+        SQw_list = []
+        for trajectory in trajectories:
             self.trajectory = trajectory
 
             # Assert that the times and dimensions are consistent with original trajectory
@@ -456,13 +456,9 @@ class AbstractSQw(SQwMixins, Observable):
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
 
-        # average over the list of SQw from the subtrajectories as needed
-        if settings.get('use_average', True) and len(MD_input) > 1:
-            SQw_output = [np.mean(SQw_list, axis=0)]
-            errors_output = [np.std(SQw_list, axis=0)]
-        else:
-            SQw_output = SQw_list
-            errors_output = np.zeros(np.shape(SQw_list))
+        # calculate average and errors
+        SQw_output = [np.mean(SQw_list, axis=0)]
+        errors_output = [np.std(SQw_list, axis=0)]
 
         self._dependent_variables = {'SQw': SQw_output}
         self._errors = {'SQw': errors_output}
