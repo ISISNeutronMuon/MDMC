@@ -90,7 +90,7 @@ class SQwMixins:
             The maximum number of frames
         """
 
-        if self.use_FFT:
+        if self.use_FFT and (self.E is not None):
             return len(self.E) + 1
 
         return None
