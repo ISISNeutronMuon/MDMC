@@ -2,7 +2,6 @@
 
 from typing import Iterable
 
-# trj: Trajectory (cannot import Trajectory as it causes circular import error)
 def slice_trajectory(trj, subtrj_len: int, cont_slicing: bool = False) -> Iterable:
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
@@ -25,11 +24,11 @@ def slice_trajectory(trj, subtrj_len: int, cont_slicing: bool = False) -> Iterab
     -------
     If ``len(Trajectory)==10`` then the following examples would give:
         slice_trajectory(Trajectory, subtrj_len=5, cont_slicing=False):
-            [Trajectory[0:4], Trajectory[5:9]]
+            [Trajectory[0:5], Trajectory[5:10]]
         slice_trajectory(Trajectory, subtrj_len=4, cont_slicing=False):
-            [Trajectory[2:5], Trajectory[5:9]]
+            [Trajectory[2:6], Trajectory[6:10]]
         slice_trajectory(Trajectory, subtrj_len=8, cont_slicing=True):
-            [Trajectory[0:7], Trajectory[1:8],Trajectory[2:9]]
+            [Trajectory[0:8], Trajectory[1:9],Trajectory[2:10]]
 
     Returns
     -------

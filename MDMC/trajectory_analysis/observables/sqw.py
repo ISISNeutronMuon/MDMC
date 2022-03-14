@@ -1,7 +1,7 @@
 """Module for AbstractSQw and total SQw class"""
 
 from time import time
-from typing import Dict, List, Union
+from typing import Dict
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -304,13 +304,14 @@ class AbstractSQw(SQwMixins, Observable):
 
     def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
         """
-        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
+        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``.
 
-        If a single ``Trajectory`` is passed or the ``use_average`` setting is ``False`` it
-        sets all errors to 0. Otherwise, it will use the standard deviation of S(Q, w)
-        obtained from the list of ``Trajectory``s as the error
+        If the ``Trajectory`` has more frames than the ``self.maximum_frames()`` that can be
+        used to recreate the grid of energy points, it can slice the ``Trajectory`` into
+        sub-trajectories of length ``self.maximum_frames()``, with the slicing specified through
+        the settings ``use_average`` and ``cont_slicing``.
 
-        ``independent_variables`` can either be set previously or defined within
+        The ``independent_variable`` ``Q`` can either be set previously or defined within
         ``**settings``.
 
         Parameters
@@ -336,6 +337,8 @@ class AbstractSQw(SQwMixins, Observable):
                 e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
                 Currently accepted functions are 'gaussian' and 'lorentzian'
                 Can also be 'lazily' given as `float`, in which case it is assumed to be Gaussian.
+            ``Q_values`` (`array`)
+                1D array of Q `float` (in ``Ang^-1``). (optional)
             ``use_average`` (`bool`)
                 Optional parameter if a list of more than one ``Trajectory`` is used. If set to
                 True (default) then the mean value for S(Q, w) is calculated. Also, the errors
