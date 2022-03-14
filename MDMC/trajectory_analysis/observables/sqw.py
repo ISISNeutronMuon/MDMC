@@ -372,11 +372,10 @@ class AbstractSQw(SQwMixins, Observable):
 
         # Extract information that should be constant throughout the Trajectory and hence the
         # subtrajectories (if there are any)
-        if self.maximum_frames():
-            t = MD_input.times[0:self.maximum_frames()] - MD_input.times[0]
-        else:
-            t = MD_input.times - MD_input.times[0]
+        t = MD_input.times - MD_input.times[0]
         dt = t[1] - t[0]
+        if self.maximum_frames():
+            t = t[0:self.maximum_frames()]
 
         try:
             self.universe_dimensions = MD_input[0].dimensions
