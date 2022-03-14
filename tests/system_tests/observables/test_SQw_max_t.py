@@ -77,17 +77,20 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
 
     SQw_observable.calculate_from_MD(trajectory,
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_full_array = SQw_observable.SQw[0]
 
     SQw_observable.calculate_from_MD(trajectory[:n],
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_1_array = SQw_observable.SQw[0]
 
     SQw_observable.calculate_from_MD(trajectory[n:],
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_2_array = SQw_observable.SQw[0]
 
     # Calculate the total standard deviation for the two half runs and test that
@@ -107,17 +110,20 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
 
     SQw_observable.calculate_from_MD(trajectory,
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_full_array_no_FFT = SQw_observable.SQw[0]
 
     SQw_observable.calculate_from_MD(trajectory[:n],
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_1_array_no_FFT = SQw_observable.SQw[0]
 
     SQw_observable.calculate_from_MD(trajectory[n:],
                                      energy_resolution=E_RES,
-                                     dimensions=DIMENSIONS)
+                                     dimensions=DIMENSIONS,
+                                     use_average=False)
     SQw_2_array_no_FFT = SQw_observable.SQw[0]
 
     # Assert there is no difference between FFT and non-FFT calculation for
