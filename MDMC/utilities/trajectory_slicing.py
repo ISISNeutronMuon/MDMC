@@ -1,11 +1,9 @@
 """Utility for slicing a ``Trajectory`` object into sub-trajectories"""
 
 from typing import Iterable
-from MDMC.trajectory_analysis.trajectory import Trajectory
 
-
-def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = False) \
-        -> Iterable[Trajectory]:
+# trj: Trajectory (cannot import Trajectory as it causes circular import error)
+def slice_trajectory(trj, subtrj_len: int, cont_slicing: bool = False) -> Iterable:
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
     of the same length.
@@ -52,4 +50,4 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
         slice_step = subtrj_len
 
     for i in range(first_frame, trj_len-subtrj_len+1, slice_step):
-        yield trj[i: i+subtrj_len-1]
+        yield trj[i: i+subtrj_len]

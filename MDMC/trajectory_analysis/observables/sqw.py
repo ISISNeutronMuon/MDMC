@@ -400,7 +400,7 @@ class AbstractSQw(SQwMixins, Observable):
             pass
 
         #slice trajectory up if possible and requested by user:
-        if self.maximum_frames() and settings.get('use_average'):
+        if self.maximum_frames() and settings.get('use_average', True):
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
                                             cont_slicing=settings.get('cont_slicing', False))
         else:
