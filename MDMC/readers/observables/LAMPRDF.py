@@ -92,7 +92,7 @@ class LAMPRDF(ObservableReader):
             The independent variables r
         """
 
-        return {"r":self.r}rdff
+        return {"r":self.r}
 
     @property
     def dependent_variables(self):
