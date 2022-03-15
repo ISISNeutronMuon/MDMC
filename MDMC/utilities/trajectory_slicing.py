@@ -2,6 +2,8 @@
 
 from typing import Iterable
 
+# the type hint for trj should be trj: Trajectory, but importing `Trajectory` would currently
+# lead to a circular import
 def slice_trajectory(trj, subtrj_len: int, cont_slicing: bool = False) -> Iterable:
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
