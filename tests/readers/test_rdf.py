@@ -13,7 +13,7 @@ import numpy as np
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from tests.test_data import data
 
-READERS_TEST_INFO = [('LAMPRDF', ['Dist', 'rdf'], 'rdf')]
+READERS_TEST_INFO = [('LAMPRDF', ['r', 'PDF'], 'PDF')]
 
 @pytest.fixture(params=READERS_TEST_INFO)
 def reader_info(request):
