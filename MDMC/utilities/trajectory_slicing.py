@@ -1,10 +1,15 @@
 """Utility for slicing a ``Trajectory`` object into sub-trajectories"""
 
-from typing import Iterable
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Iterable
+    from MDMC.trajectory_analysis.trajectory import Trajectory
 
 # the type hint for trj should be trj: Trajectory, but importing `Trajectory` would currently
 # lead to a circular import
-def slice_trajectory(trj, subtrj_len: int, cont_slicing: bool = False) -> Iterable:
+def slice_trajectory(trj: "Trajectory", subtrj_len: int, cont_slicing: bool = False) \
+        -> "Iterable[Trajectory]":
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
     of the same length.
