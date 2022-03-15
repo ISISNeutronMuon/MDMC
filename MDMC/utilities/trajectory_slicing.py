@@ -1,11 +1,15 @@
 """Utility for slicing a ``Trajectory`` object into sub-trajectories"""
 
-from typing import Iterable
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from typing import Iterable
+    from MDMC.trajectory_analysis.trajectory import Trajectory
 
-def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = False) \
-        -> Iterable[Trajectory]:
+# the type hint for trj should be trj: Trajectory, but importing `Trajectory` would currently
+# lead to a circular import
+def slice_trajectory(trj: "Trajectory", subtrj_len: int, cont_slicing: bool = False) \
+        -> "Iterable[Trajectory]":
     """
     Takes a ``Trajectory`` objects and slices it into a list of shorter ``Trajectory`` objects
     of the same length.
@@ -27,11 +31,11 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
     -------
     If ``len(Trajectory)==10`` then the following examples would give:
         slice_trajectory(Trajectory, subtrj_len=5, cont_slicing=False):
-            [Trajectory[0:4], Trajectory[5:9]]
+            [Trajectory[0:5], Trajectory[5:10]]
         slice_trajectory(Trajectory, subtrj_len=4, cont_slicing=False):
-            [Trajectory[2:5], Trajectory[5:9]]
+            [Trajectory[2:6], Trajectory[6:10]]
         slice_trajectory(Trajectory, subtrj_len=8, cont_slicing=True):
-            [Trajectory[0:7], Trajectory[1:8],Trajectory[2:9]]
+            [Trajectory[0:8], Trajectory[1:9],Trajectory[2:10]]
 
     Returns
     -------
@@ -39,6 +43,11 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
         A generator function for the list of sub-trajectories of length ``subtrj_len``.
     """
     trj_len = len(trj)
+
+    msg = (f'The sub-trajectory length of {subtrj_len} was larger than the length of the '
+               f'parent trajectory of {trj_len}.')
+    assert trj_len >= subtrj_len, msg
+
     if cont_slicing:
         first_frame = 0
         slice_step = 1
@@ -47,4 +56,4 @@ def slice_trajectory(trj: Trajectory, subtrj_len: int, cont_slicing: bool = Fals
         slice_step = subtrj_len
 
     for i in range(first_frame, trj_len-subtrj_len+1, slice_step):
-        yield trj[i: i+subtrj_len-1]
+        yield trj[i: i+subtrj_len]
