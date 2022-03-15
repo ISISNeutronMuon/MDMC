@@ -13,9 +13,6 @@ import numpy as np
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from tests.test_data import data
 
-#write the filename which is an output for the radial distribution function calculation
-#test_file='rdf2.ref'
-
 READERS_TEST_INFO = [('LAMPRDF', ['Dist', 'rdf'], 'rdf')]
 
 @pytest.fixture(params=READERS_TEST_INFO)
