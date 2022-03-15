@@ -355,6 +355,8 @@ class AbstractSQw(SQwMixins, Observable):
 
         self._origin = 'MD'
         obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
+        use_average = settings.get('use_average', True)
+        cont_slicing = settings.get('cont_slicing', False)
 
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
@@ -402,11 +404,13 @@ class AbstractSQw(SQwMixins, Observable):
             pass
 
         #slice trajectory up if possible and requested by user:
-        if self.maximum_frames() and settings.get('use_average', True):
+        if self.maximum_frames() and use_average:
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
-                                            cont_slicing=settings.get('cont_slicing', False))
+                                            cont_slicing=cont_slicing)
+            trj_sliced = True
         else:
             trajectories = [MD_input]
+            trj_sliced = False
 
         # Perform calculations for each Trajectory
         SQw_list = []
@@ -414,13 +418,14 @@ class AbstractSQw(SQwMixins, Observable):
             self.trajectory = trajectory
 
             # Assert that the times and dimensions are consistent with original trajectory
-            try:
-                assert_allclose(self.trajectory.times -
-                                self.trajectory.times[0], t)
-            except AssertionError as error:
-                msg = ('The `times` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from error
+            if trj_sliced:
+                try:
+                    assert_allclose(self.trajectory.times -
+                                    self.trajectory.times[0], t)
+                except AssertionError as error:
+                    msg = ('The `times` of the current `Trajectory` were not '
+                           'consistent with the first `Trajectory` passed')
+                    raise AssertionError(msg) from error
             try:
                 assert_allclose(self.universe_dimensions,
                                 self.trajectory.dimensions)
