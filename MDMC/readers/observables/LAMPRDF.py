@@ -184,9 +184,8 @@ class LAMPRDF(ObservableReader):
              num_rows=int(column[1]) 
         # Closing the file after obtaining the right number for the initialization of arrays.
         ffile2.close()
-        ar=(num_rows, numrdf) 
         # Initialization of the arrays by allocating the space and setting all numbers to zero.                         
-        rdf_ar=np.zeros(ar)
+        rdf_ar=np.zeros(num_rows, numrdf)
         c_number=np.zeros(num_rows)
         distance=np.zeros(num_rows) 
 
@@ -196,7 +195,6 @@ class LAMPRDF(ObservableReader):
            # First 2 lines are comments on what rdfs were computed
            # The 3rd line contains the time-step which is not important for the current calculation
            # and the number of rows for rdf which is very important for the definition of the size of the array.
-           # The parameter is called as NR=num_rows
            if i>3:
              line=line.strip()
              column=line.split()
