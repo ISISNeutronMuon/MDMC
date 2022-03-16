@@ -1,7 +1,7 @@
 """Module for AbstractSQw and total SQw class"""
 
 from time import time
-from typing import Dict, List, Union
+from typing import Dict
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -14,6 +14,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
 class SQwMixins:
@@ -89,7 +90,7 @@ class SQwMixins:
             The maximum number of frames
         """
 
-        if self.use_FFT:
+        if self.use_FFT and (self.E is not None):
             return len(self.E) + 1
 
         return None
@@ -301,20 +302,22 @@ class AbstractSQw(SQwMixins, Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
-                          verbose: int = 0, **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
         """
-        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
+        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``.
 
-        Currently sets all errors to 0 when S(Q, w) is calculated from MD
+        If the ``Trajectory`` has more frames than the ``self.maximum_frames()`` that can be
+        used to recreate the grid of energy points, it can slice the ``Trajectory`` into
+        sub-trajectories of length ``self.maximum_frames()``, with the slicing specified through
+        the settings ``use_average`` and ``cont_slicing``.
 
-        ``independent_variables`` can either be set previously or defined within
+        The ``independent_variable`` ``Q`` can either be set previously or defined within
         ``**settings``.
 
         Parameters
         ----------
-        MD_input : Trajectory or list of Trajectory
-            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        MD_input : Trajectory
+            An MDMC ``Trajectory`` from which to calculate ``SQw``
         verbose: int, optional
             If 2, timings are printed for each calculation of FQt and SQw. If 1,
             timings are collected so they can be printed at the end of the refinement.
@@ -334,12 +337,26 @@ class AbstractSQw(SQwMixins, Observable):
                 e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
                 Currently accepted functions are 'gaussian' and 'lorentzian'
                 Can also be 'lazily' given as `float`, in which case it is assumed to be Gaussian.
+            ``Q_values`` (`array`)
+                1D array of Q `float` (in ``Ang^-1``). (optional)
+            ``use_average`` (`bool`)
+                Optional parameter if a list of more than one ``Trajectory`` is used. If set to
+                True (default) then the mean value for S(Q, w) is calculated. Also, the errors
+                are set to the standard deviation calculated over the list of ``Trajectory``
+                objects.
+             ``cont_slicing`` (`bool`)
+                Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+                larger than the minimum required to calculate the observables. If ``False``
+                (default) then the ``Trajectory`` is sliced into non-overlapping
+                sub-``Trajectory`` blocks for each of which the observable is calculated. If
+                ``True``, then the ``Trajectory`` is sliced into as many non-identical
+                sub-``Trajectory`` blocks as possible (with overlap allowed).
         """
 
         self._origin = 'MD'
-        SQw_list = []
-        errors_list = []
         obs_timings = {'calculate_FQt': [], '_calculate_SQw': []}
+        use_average = settings.get('use_average', True)
+        cont_slicing = settings.get('cont_slicing', False)
 
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
@@ -355,12 +372,12 @@ class AbstractSQw(SQwMixins, Observable):
         if not hasattr(self, 'independent_variables'):
             self.independent_variables = {}
 
-        if isinstance(MD_input, Trajectory):
-            MD_input = [MD_input]
-
-        # Extract information that should be constant from the first Trajectory
-        t = MD_input[0].times - MD_input[0].times[0]
+        # Extract information that should be constant throughout the Trajectory and hence the
+        # subtrajectories (if there are any)
+        t = MD_input.times - MD_input.times[0]
         dt = t[1] - t[0]
+        if self.maximum_frames():
+            t = t[0:self.maximum_frames()]
 
         try:
             self.universe_dimensions = MD_input[0].dimensions
@@ -386,18 +403,29 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             pass
 
+        #slice trajectory up if possible and requested by user:
+        if self.maximum_frames() and use_average:
+            trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
+                                            cont_slicing=cont_slicing)
+            trj_sliced = True
+        else:
+            trajectories = [MD_input]
+            trj_sliced = False
+
         # Perform calculations for each Trajectory
-        for trajectory in MD_input:
+        SQw_list = []
+        for trajectory in trajectories:
             self.trajectory = trajectory
 
             # Assert that the times and dimensions are consistent with original trajectory
-            try:
-                assert_allclose(self.trajectory.times -
-                                self.trajectory.times[0], t)
-            except AssertionError as error:
-                msg = ('The `times` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from error
+            if trj_sliced:
+                try:
+                    assert_allclose(self.trajectory.times -
+                                    self.trajectory.times[0], t)
+                except AssertionError as error:
+                    msg = ('The `times` of the current `Trajectory` were not '
+                           'consistent with the first `Trajectory` passed')
+                    raise AssertionError(msg) from error
             try:
                 assert_allclose(self.universe_dimensions,
                                 self.trajectory.dimensions)
@@ -424,7 +452,6 @@ class AbstractSQw(SQwMixins, Observable):
             if verbose > 0:
                 time_1 = time()
             SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
-            errors_list.append(np.zeros(np.shape(SQw_list[-1])))
             if verbose == 2:
                 print('      _calculate_SQw: {} s'.format(
                     round(time() - time_1, 3)))
@@ -436,8 +463,12 @@ class AbstractSQw(SQwMixins, Observable):
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
 
-        self._dependent_variables = {'SQw': SQw_list}
-        self._errors = {'SQw': errors_list}
+        # calculate average and errors
+        SQw_output = [np.mean(SQw_list, axis=0)]
+        errors_output = [np.std(SQw_list, axis=0)]
+
+        self._dependent_variables = {'SQw': SQw_output}
+        self._errors = {'SQw': errors_output}
 
         return obs_timings
 

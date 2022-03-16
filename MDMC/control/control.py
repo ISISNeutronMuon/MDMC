@@ -3,6 +3,7 @@
 from copy import deepcopy
 from time import time
 from typing import List, Dict
+from contextlib import suppress
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,6 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.FoM.FoM_factory import FoMFactory
 from MDMC.refinement.FoM.FoM_abs import ObservablePair
 from MDMC.resolution.resolution_factory import ResolutionFactory
-
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -100,7 +100,7 @@ class Control:
         When not provided, the minimum number of steps needed for successful
         calculation of the observables is used. If provided, the actual number
         of steps may be reduced to prevent running MD that won't be used when
-        calculting dependent variables. Default is `None`.
+        calculating dependent variables. Default is `None`.
     equilibration_steps : int, optional
         Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
         refinement step. When changes to the ``Parameters`` are small, this equilibration can be
@@ -115,6 +115,17 @@ class Control:
     min_refinement_steps : int, optional
         The minimum number of refinement steps before the refinement process can stop
          if all parameters and the Figure of Merit have converged. Default value is 2.
+     cont_slicing : bool, optional
+        Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+        larger than the minimum required to calculate the observables. If ``False`` (default) then
+        the ``Trajectory`` is sliced into non-overlapping sub-``Trajectory`` blocks for each of
+        which the observable is calculated. If ``True``, then the ``Trajectory`` is sliced into
+        as many non-identical sub-``Trajectory`` blocks as possible (with overlap allowed).
+    use_average : bool, optional
+        Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
+        and the MD ``Trajectory`` is sliced into sub-``Trajectory`` blocks. If ``True`` (
+        default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
+        they are not averaged.
     verbose: int, optional
         If 2, timings are printed for every step of the refinement. If 1,
         timings are printed at the end of the refinement. If 0, no timings
@@ -201,17 +212,20 @@ class Control:
         self.observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
-            use_FFT = dset.get('use_FFT', True)
+            try:
+                use_FFT = dset['use_FFT']
+            except KeyError:
+                use_FFT = True
+
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
-                                                        dset['file_name'])
-            exp_observable.use_FFT = use_FFT
+                                                        dset['file_name'],
+                                                        use_FFT)
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
 
-            MD_observable = self._create_empty_observable(exp_observable)
-            MD_observable.use_FFT = use_FFT
+            MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
 
             self._validate_energy(MD_observable)
 
@@ -514,7 +528,7 @@ class Control:
 
     @staticmethod
     def _read_observable_from_file(obstype: str, reader: str, file_name: str,
-                                   resolution_file_name: str = None):
+                                   use_FFT: bool = True):
         """
         Creates an Observable of the specified type and reads in data from file
 
@@ -526,6 +540,8 @@ class Control:
             The ``type`` of the ``Reader``.
         file_name : str
             The absolute or relative path and the file name.
+        use_FFT: bool, optional
+            boolean determining if the FFT should be used, default is True
 
         Returns
         -------
@@ -535,10 +551,11 @@ class Control:
 
         observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
+        observable.use_FFT = use_FFT
         return observable
 
     @staticmethod
-    def _create_empty_observable(exp_observable):
+    def _create_empty_observable(exp_observable, use_FFT: bool = True):
         """
         Creates a ``Observable`` without data but with independent variables
         specified from another ``Observable``.  This is a placeholder in which
@@ -548,6 +565,8 @@ class Control:
         ----------
         exp_observable : Observable
             An ``Observable`` with defined independent variables.
+        use_FFT: bool, optional
+            boolean determining if the FFT should be used, default is True
 
         Returns
         -------
@@ -560,6 +579,7 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
+        observable.use_FFT =  use_FFT
         return observable
 
     def _calculate_observables(self, simulation, observable_pairs):
@@ -586,25 +606,7 @@ class Control:
                 round(time() - time_0, 3)))
 
         for pair in observable_pairs:
-            maximum_frames = pair.MD_obs.maximum_frames()
-            if maximum_frames:
-                # If there is a limit on the number of frames the observable
-                # can use in calculations, split the trajectory into as many
-                # subsets of this length as we can
-                sub_trj = []
-                n_averages = len(trj) // maximum_frames
-                for i in range(n_averages):
-                    sub_trj.append(
-                        trj[i * maximum_frames: (i + 1) * maximum_frames])
-                obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
-                                                            verbose=self.verbose,
-                                                            **self.settings)
-            else:
-                # Otherwise, provide the whole trajectory
-                obs_timings = pair.MD_obs.calculate_from_MD([trj],
-                                                            verbose=self.verbose,
-                                                            **self.settings)
-
+            obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
@@ -850,16 +852,10 @@ class Control:
         Returns
         -------
         None
-
-        Raises
-        ------
-        AssertionError
         """
 
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
-        try:
+        with suppress(AttributeError):
             obs.validate_energy(dt)
-        except AttributeError:
-            pass

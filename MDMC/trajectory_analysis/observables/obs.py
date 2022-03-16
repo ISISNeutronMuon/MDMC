@@ -202,7 +202,7 @@ class Observable(ABC):
     @abstractmethod
     def calculate_from_MD(self, MD_input, verbose=0, **parameters):
         """
-        Calculates the obseravable using input from an MD simulation
+        Calculates the observable using input from an MD simulation
 
         Parameters
         ----------
