@@ -19,7 +19,6 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -611,22 +610,7 @@ class Control:
                 round(time() - time_0, 3)))
 
         for pair in observable_pairs:
-            maximum_frames = pair.MD_obs.maximum_frames()
-            if maximum_frames:
-                # If there is a limit on the number of frames the observable
-                # can use in calculations, split the trajectory into as many
-                # subsets of this length as we can
-                subtrj_list = slice_trajectory(trj, maximum_frames, self.settings.get(
-                    'cont_slicing', False))
-                obs_timings = pair.MD_obs.calculate_from_MD(subtrj_list,
-                                                            verbose=self.verbose,
-                                                            **self.settings)
-            else:
-                # Otherwise, provide the whole trajectory
-                obs_timings = pair.MD_obs.calculate_from_MD([trj],
-                                                            verbose=self.verbose,
-                                                            **self.settings)
-
+            obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
