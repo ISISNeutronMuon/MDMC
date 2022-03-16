@@ -338,6 +338,8 @@ class AbstractFQt(SQwMixins, Observable):
                                   + point[2] * self.reciprocal_basis[2])
                 if Q_min < np.linalg.norm(vector) <= Q_max:
                     vectors.append(vector)
+                if len(vectors) >= self.n_Q_vectors:
+                    break
 
         return np.array(vectors)
 
