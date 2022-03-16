@@ -1,5 +1,7 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
+from collections import deque
+from itertools import product
 from typing import Dict
 
 import numpy as np
@@ -323,27 +325,19 @@ class AbstractFQt(SQwMixins, Observable):
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
                                in self.reciprocal_basis)
 
+        # create a generator of all lattice points in this cube
+        cube = product(range(-x_max, x_max + 1),
+                       range(-y_max, y_max + 1),
+                       range(-z_max, z_max + 1))
+
         vectors = []
-        for l in range(-x_max, x_max + 1):
-            for m in range(-y_max, y_max + 1):
-                for n in range(-z_max, z_max + 1):
-                    # Within this cube, iterate over reciprocal lattice points
-
-                    if l == m == n == 0:
-                        continue
-
-                    vector = np.array(l * self.reciprocal_basis[0]
-                                      + m * self.reciprocal_basis[1]
-                                      + n * self.reciprocal_basis[2])
-
-                    # If a point satisfies the requirements, append it to the
-                    # list
-                    if Q_min < np.linalg.norm(vector) <= Q_max:
-                        vectors.append(vector)
-
-                    # Return early if we reach our upper limit ``n_Q_vectors``
-                    if len(vectors) >= self.n_Q_vectors:
-                        return np.array(vectors)
+        for point in cube:
+            if point != (0, 0, 0):
+                vector = np.array(point[0] * self.reciprocal_basis[0]
+                                  + point[1] * self.reciprocal_basis[1]
+                                  + point[2] * self.reciprocal_basis[2])
+                if Q_min < np.linalg.norm(vector) <= Q_max:
+                    vectors.append(vector)
 
         return np.array(vectors)
 
