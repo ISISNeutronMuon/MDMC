@@ -148,9 +148,9 @@ class LAMPRDF(ObservableReader):
              # distance[i-3] or column[1] is the distance for which the rdfs were calculated.
              distance[i-3]=float(column[1])
            k=i-3
-        self.dist=distance
+        self.r=distance
         ffile1.close()
-        return self.dist
+        return self.r
 
     def parse_dep_var(self, numrdf, file):
 
@@ -209,6 +209,6 @@ class LAMPRDF(ObservableReader):
                rdf_ar[k][l]=float(column[l+2])
            k=i-3 
         # RDF then will be an array with the size (number of rows x number of rdfs) 
-        self.rdf=rdf_ar
+        self.PDF=rdf_ar
         ffile2.close()
-        return self.rdf
+        return self.PDF
