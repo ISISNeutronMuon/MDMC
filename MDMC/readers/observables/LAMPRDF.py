@@ -207,7 +207,7 @@ class LAMPRDF(ObservableReader):
          # and the counter starts from zero, we take that column as a column for rdf, which will be counted as l+2.
              for l in range(numrdf):
                rdf_ar[k][l]=float(column[l+2])
-           k=i-3 
+           
         # RDF then will be an array with the size (number of rows x number of rdfs) 
         self.PDF=rdf_ar
         ffile2.close()
