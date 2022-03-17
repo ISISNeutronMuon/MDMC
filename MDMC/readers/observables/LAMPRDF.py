@@ -9,14 +9,10 @@ from MDMC.readers.observables.obs_reader import ObservableReader
 
 class LAMPRDF(ObservableReader):
 
-
     """
     A class for reading RDF files from LAMP
-
     LAMP's ascii output uses one file
-
-    The file's structure is the following:
-   
+    The file's structure is the following:   
     Row-Number  Distance  rdf1  rdf2  ...  rdfN 
    
     Attributes
@@ -31,12 +27,11 @@ class LAMPRDF(ObservableReader):
 
         """
         Parse into RDF format
-
         Dist is the energy transfer (in nm)
         RDF is wavevector transfer (in barn)
         """
 
-        self.Dist = self.parse_indep_var(self.Distt)
+        self.r = self.parse_indep_var(self.r)
         self.rdf = self.parse_dep_var(self.rdff)
 
 
