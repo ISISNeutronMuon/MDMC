@@ -325,23 +325,27 @@ class AbstractFQt(SQwMixins, Observable):
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
                                in self.reciprocal_basis)
 
-        # create a generator of all lattice points in this cube
-        cube = product(range(-x_max, x_max + 1),
-                       range(-y_max, y_max + 1),
-                       range(-z_max, z_max + 1))
+        # create an array of all lattice points in this cube
+        # we do not include the null vector
+        cube = np.array([x for x in product(range(-x_max, x_max + 1),
+                                            range(-y_max, y_max + 1),
+                                            range(-z_max, z_max + 1)) if x != (0, 0, 0)])
 
-        vectors = []
-        for point in cube:
-            if point != (0, 0, 0):
-                vector = np.array(point[0] * self.reciprocal_basis[0]
-                                  + point[1] * self.reciprocal_basis[1]
-                                  + point[2] * self.reciprocal_basis[2])
-                if Q_min < np.linalg.norm(vector) <= Q_max:
-                    vectors.append(vector)
-                if len(vectors) >= self.n_Q_vectors:
-                    break
+        # multiply coordinates for each axis by the reciprocal basis
+        # .reshape(-1, 1) reshapes each axis to a column vector
+        vectors = np.array(cube[:, 0].reshape(-1, 1) * self.reciprocal_basis[0]
+                           + cube[:, 1].reshape(-1, 1) * self.reciprocal_basis[1]
+                           + cube[:, 2].reshape(-1, 1) * self.reciprocal_basis[2])
 
-        return np.array(vectors)
+        Q_vectors = []
+        # get all rows that fit our requirements
+        for vector in vectors:
+            if Q_min < np.linalg.norm(vector) <= Q_max:
+                Q_vectors.append(vector)
+            if len(Q_vectors) >= self.n_Q_vectors:
+                break
+
+        return np.array(Q_vectors)
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
