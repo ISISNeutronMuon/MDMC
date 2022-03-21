@@ -147,7 +147,6 @@ class LAMPRDF(ObservableReader):
              c_number[i-3]=int(column[0])
              # distance[i-3] or column[1] is the distance for which the rdfs were calculated.
              distance[i-3]=float(column[1])
-           k=i-3
         self.r=distance
         ffile1.close()
         return self.r
@@ -201,13 +200,12 @@ class LAMPRDF(ObservableReader):
            # These numbers won't be used for the reader here. They kept for the clarity of the column count,
            # since the file is the same.
              c_number=int(column[0])
-             distance[k]=float(column[1])
+             distance[i-3]=float(column[1])
              l=0
          # Since the actual rdfs are starting from the 3rd column, labeled as number 2 in python,
          # and the counter starts from zero, we take that column as a column for rdf, which will be counted as l+2.
              for l in range(numrdf):
-               rdf_ar[k][l]=float(column[l+2])
-           
+               rdf_ar[i-3][l]=float(column[l+2])      
         # RDF then will be an array with the size (number of rows x number of rdfs) 
         self.PDF=rdf_ar
         ffile2.close()
