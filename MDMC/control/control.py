@@ -78,8 +78,6 @@ class Control:
         All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
         ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
         Those with ``constraints`` set are still passed.
-    MC_norm : float, optional
-        Determines the accept/reject ratio of the MC. Default is 1.
     minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'MMC'.
     FoM_options : dict of {str : str}, optional
@@ -133,6 +131,9 @@ class Control:
         timings are printed at the end of the refinement. If 0, no timings
         are printed. In all cases information about the FoM and parameter
         values will still be printed. Default is 0.
+    **settings: dict, optional
+        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC 
+        minimiser is used.
 
     Example
     -------
@@ -171,7 +172,7 @@ class Control:
     """
 
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
-                 fit_parameters: Parameters, MC_norm: float = 1.,
+                 fit_parameters: Parameters,
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
@@ -192,16 +193,15 @@ class Control:
                         'TOTAL STEP': []}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
-        fit_parameters = {p for p in fit_parameters if (
-            not (p.fixed or p.tied) and p.value != 0)}
+        fit_parameters = {p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)}
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, MC_norm,
-                                                           self.fit_parameters,
-                                                           max_parameter_change=max_parameter_change)
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
+                                                           max_parameter_change=max_parameter_change,
+                                                          **settings)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
@@ -308,18 +308,15 @@ class Control:
 
         # setup the dataframe for stdout
         setup_frame = pd.DataFrame([[minimizer_type],
-                                    [MC_norm],
                                     [self.FoM_calculator.__class__.__name__],
                                     [len(self.observable_pairs)],
                                     [len(self.fit_parameters)]],
                                    index=['  Minimizer',
-                                          '  MC norm',
                                           '  FoM type',
                                           '  Number of observables',
                                           '  Number of parameters'])
 
-        print(
-            f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self):
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]

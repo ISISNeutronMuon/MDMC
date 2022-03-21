@@ -159,14 +159,12 @@ def exp_datasets() -> callable:
                          [['exp',
                            ('Control created with:\n'
                             '  Minimizer                             MMC\n'
-                            '  MC norm                               1.0\n'
                             '  FoM type               ChiSquaredExpError\n'
                             '  Number of observables                   1\n'
                             '  Number of parameters                    0\n')],
                            ['none',
                             ('Control created with:\n'
                             '  Minimizer                            MMC\n'
-                            '  MC norm                              1.0\n'
                             '  FoM type               ChiSquaredNoError\n'
                             '  Number of observables                  1\n'
                             '  Number of parameters                   0\n')]])
@@ -357,7 +355,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     stdout = capsys.readouterr().out
     assert stdout == ('Control created with:\n'
                       '  Minimizer                             MMC\n'
-                      '  MC norm                               1.0\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
                       '  Number of parameters                    0\n'
@@ -460,7 +457,6 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                       '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
                       '  Minimizer                             MMC\n'
-                      '  MC norm                               1.0\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
                       '  Number of parameters                    0\n'
