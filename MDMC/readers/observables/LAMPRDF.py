@@ -189,7 +189,6 @@ class LAMPRDF(ObservableReader):
         distance=np.zeros(num_rows) 
 
         ffile2=open(file, 'r')
-        k=0
         for i, line in enumerate(ffile2):
            # First 2 lines are comments on what rdfs were computed
            # The 3rd line contains the time-step which is not important for the current calculation
