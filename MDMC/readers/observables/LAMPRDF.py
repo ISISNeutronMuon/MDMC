@@ -70,7 +70,7 @@ class LAMPRDF(ObservableReader):
 
         return self._PDF
 
-    @rdf.setter
+    @PDF.setter
     @unit_decorator(unit=units.Unit('barn'))
     def PDF(self, value):
         """ 
