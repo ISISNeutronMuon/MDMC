@@ -49,7 +49,6 @@ def test_minimizer_init(parameters):
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
     minim = Minimizer(parameters)
-    print(minim.parameters)
     assert np.all(minim.parameters == np.array(parameters))
 
 
@@ -270,7 +269,7 @@ def test_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
 
         return 0.999999
     for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters, MC_norm=1.0)
         minim.FoM_old = FoM_old
         minim.FoM = FoM
         monkeypatch.setattr(np.random, 'random', mock_random)

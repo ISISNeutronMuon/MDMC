@@ -13,7 +13,7 @@ from MDMC.common.decorators import repr_decorator
 
 @repr_decorator('comm', 'FoM', 'FoM_old', 'distribution',
                 'state_changed', 'parameters', 'parameters_old_values',
-                'max_parameter_change', 'settings')
+                'max_parameter_change')
 class Minimizer(ABC):
 
     """
@@ -53,7 +53,7 @@ class Minimizer(ABC):
     DISTRIBUTION = {'uniform': np.random.uniform}
 
     def __init__(self, parameters, distribution='uniform',
-                 max_parameter_change: float = 0.01,  **settings):
+                 max_parameter_change: float = 0.01):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
