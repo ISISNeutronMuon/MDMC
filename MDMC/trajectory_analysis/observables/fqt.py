@@ -1,6 +1,5 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
-from collections import deque
 from itertools import product
 from typing import Dict
 
