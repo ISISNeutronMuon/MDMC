@@ -132,7 +132,8 @@ class Control:
         are printed. In all cases information about the FoM and parameter
         values will still be printed. Default is 0.
     **settings: dict, optional
-        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC minimiser is used.
+        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC 
+        minimiser is used.
 
     Example
     -------

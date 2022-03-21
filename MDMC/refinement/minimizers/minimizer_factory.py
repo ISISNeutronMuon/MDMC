@@ -35,7 +35,8 @@ class MinimizerFactory:
             Maximum factor by which a Parameter can change each step of the
             refinement. Defaults to `0.01`
         **settings: dict, optional
-            Settings to be passed to the created minimiser, e.g. MC_norm=1.0 if MMC minimiser is used
+            Settings to be passed to the created minimiser, e.g. MC_norm=1.0 if MMC minimiser is
+            used.
 
         Returns
         -------
