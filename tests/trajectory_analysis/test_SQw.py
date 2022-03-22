@@ -129,4 +129,4 @@ def test_from_MD(SQw_from_MD):
                     2 * np.pi * np.arange(0.1, 1.1, 0.1))
 
     # Assert there is no difference between FFT and non-FFT calculation
-    assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5
+    assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5)
