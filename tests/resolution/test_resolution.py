@@ -34,4 +34,3 @@ def test_resolution_initialise(resolution):
     else:  # else, resolution is numeric
         resfunc = resolution(84.0)
         assert resfunc.e_res == 0.084  # unit conversion turns FWHM from ueV to meV
-
