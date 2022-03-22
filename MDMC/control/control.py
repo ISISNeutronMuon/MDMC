@@ -127,21 +127,14 @@ class Control:
         default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
         they are not averaged.
     verbose: int, optional
-<<<<<<< HEAD
         The level of verbosity:
         Verbose level 0 gives no information.
         Verbose level 1 gives final time for the whole method.
         Verbose level 2 gives final time and also a progress bar.
         Verbose level 3 gives final time, a progress bar, and time per step.
-=======
-        If 2, timings are printed for every step of the refinement. If 1,
-        timings are printed at the end of the refinement. If 0, no timings
-        are printed. In all cases information about the FoM and parameter
-        values will still be printed. Default is 0.
     **settings: dict, optional
-        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC 
+        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
         minimiser is used.
->>>>>>> master
 
     Example
     -------
@@ -409,8 +402,8 @@ class Control:
             average_timing = statistics.mean(self.step_timings)
             print(f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
 
-        timings = verbose_manager.finish("Refinement")
-        
+        verbose_manager.finish("Refinement")
+
     def equilibrate(self):
         """
         Run molecular dynamics to equilibrate the ``Universe``.

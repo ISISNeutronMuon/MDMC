@@ -1,6 +1,6 @@
 """Module for AbstractSQw and total SQw class"""
 
-from typing import Dict, List, Union
+from typing import Dict
 
 import numpy as np
 from numpy.testing import assert_allclose
