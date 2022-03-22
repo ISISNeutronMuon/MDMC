@@ -5,7 +5,6 @@ from typing import Dict
 import numpy as np
 from mpi4py import MPI
 from numba import jit
-from verbosemanager import VerboseManager
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
@@ -170,9 +169,6 @@ class AbstractFQt(SQwMixins, Observable):
 
         self._origin = "MD"
 
-        verbose_manager = VerboseManager.instance()
-        verbose_manager.start(2, verbose=verbose)
-
         # if Q_values are specified, set Q to them
         try:
             self.Q = np.array(settings['Q_values'])
@@ -196,7 +192,6 @@ class AbstractFQt(SQwMixins, Observable):
         self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
                                  * UNIT_VECTOR)
 
-        verbose_manager.step("Calculating Q-vectors")
         # calculate Q vectors from Q
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if self.Q_vectors is None:
@@ -243,7 +238,6 @@ class AbstractFQt(SQwMixins, Observable):
         Q_vectors = np.split(Q_vectors, comm.size)
         # Scatter the Q vector arrays to all processors
         Q_vectors = comm.scatter(Q_vectors, root=0)
-        verbose_manager.step("Calculating FQt for each Q-vector")
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                         in Q_vectors])
@@ -261,8 +255,6 @@ class AbstractFQt(SQwMixins, Observable):
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
         self.FQt = FQt_array[:shape[0] - axis_0]
-
-        verbose_manager.finish("Calculating FQt from MD")
 
     def _calculate_Q_vectors(self, Q_values):
         """

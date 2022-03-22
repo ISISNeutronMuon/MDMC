@@ -47,8 +47,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
     Returns
     -------
     callable
-        A function which optionally accepts ``use_FFT`` (defaults to `True`) and
-        ``use_traj_list`` (defaults to `False`).
+        A function which optionally accepts ``use_FFT`` (defaults to `True`)
         Returns an ``SQw`` ``Observable``.
     """
 
@@ -60,17 +59,12 @@ def SQw_from_MD(trajectory, universe) -> callable:
         n_Q = 10
         Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
 
-        if use_traj_list:
-            MD_input = [trajectory]
-        else:
-            MD_input = trajectory
-
         if energy_resolution is None:
-            _SQw.calculate_from_MD(MD_input,
+            _SQw.calculate_from_MD(trajectory,
                                    Q_values=Q_values,
                                    dimensions=dimensions)
         else:
-            _SQw.calculate_from_MD(MD_input,
+            _SQw.calculate_from_MD(trajectory,
                                    Q_values=Q_values,
                                    dimensions=dimensions,
                                    energy_resolution=energy_resolution)
@@ -122,8 +116,7 @@ def test_from_MD(SQw_from_MD):
     """
 
     SQw_FFT = SQw_from_MD(energy_resolution = 49.99998257)
-    SQw_no_FFT = SQw_from_MD(use_FFT=False, use_traj_list=True,
-                             energy_resolution = 49.99998257)
+    SQw_no_FFT = SQw_from_MD(use_FFT=False, energy_resolution = 49.99998257)
 
     assert SQw_FFT.origin == 'MD'
     assert 'Q' in SQw_FFT.independent_variables and \
@@ -151,14 +144,3 @@ def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
     with pytest.raises(AssertionError):
         SQw_obj.calculate_from_MD(MD_input)
 
-
-def test_sqw_verbose_steps(SQw_from_MD, trajectory):
-    """Test that the number of verbosity steps for SQw.calculate_from_MD is correct."""
-    SQw_obj = SQw_from_MD()
-    with pytest.warns(None) as warnings:
-        timings = SQw_obj.calculate_from_MD(trajectory,
-                                            verbose=0)
-    if len(warnings) > 0:
-        for warning in warnings:
-            if type(warning.message) == UserWarning:
-                raise AssertionError(f"UserWarning: {warning.message}")

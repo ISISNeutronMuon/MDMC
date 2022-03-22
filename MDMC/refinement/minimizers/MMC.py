@@ -7,7 +7,22 @@ class MMC(Minimizer):
 
     """
     ``Minimizer`` employing the Metropolis-Hastings algorithm
+
+    Parameters
+    ----------
+    MC_norm : float
+        Normalization parameter for MC which determines the accept/reject ratio, default is 1.0
+
+    Attributes
+    ----------
+    history_columns: list[str]
+        list of the column titles for the minimizer history
     """
+
+
+    def __init__(self, parameters, distribution, max_parameter_change, **settings):
+        super().__init__(parameters, distribution, max_parameter_change)
+        self.MC_norm = settings.get('MC_norm', 1.0)
 
     @property
     def history_columns(self):
@@ -16,6 +31,7 @@ class MMC(Minimizer):
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
+
     def step(self, FoM):
         """
         Increments the minimization by a step
