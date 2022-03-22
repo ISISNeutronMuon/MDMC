@@ -355,9 +355,7 @@ class Control:
         """
 
         # calculate verbose steps
-        # self.calculate_verbose_steps() calculates verbosity steps for 1 step;
-        # so multiply by n_steps + 1 (as we start at step 0)
-        verbose_steps = (n_steps + 1) * (self._calculate_verbose_steps())
+        verbose_steps = (n_steps + 1) * 4
         # initialise step timings list for average step timings at end
         self.step_timings = []
 
@@ -428,7 +426,7 @@ class Control:
         if previous step was rejected and reset_config = true
         """
         verbose_manager = VerboseManager.instance()
-        verbose_manager.start(self._calculate_verbose_steps(), verbose=self.verbose)
+        verbose_manager.start(4, verbose=self.verbose)
 
         # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
@@ -839,25 +837,3 @@ class Control:
         dt = self.simulation.traj_step * self.simulation.time_step
         with suppress(AttributeError):
             obs.validate_energy(dt)
-
-    def _calculate_verbose_steps(self):
-        """
-        Calculates the verbose steps needed in a step of refinement.
-
-        The steps are, by part:
-        1 in self.step itself
-            +0 in _generate_FoM
-                +1 in _run_MD
-                +2 in calculate_observables
-                    +then the number in calculate_from_MD varies based on Observable
-        """
-
-        steps_dict = {'SQw': 2,
-                      'FQt': 2,
-                      'PDF': 0}
-
-        verbose_steps = 4
-        for dset in self.exp_datasets:
-            verbose_steps += steps_dict[dset['type']]
-
-        return verbose_steps
