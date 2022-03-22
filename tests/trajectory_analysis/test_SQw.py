@@ -129,18 +129,4 @@ def test_from_MD(SQw_from_MD):
                     2 * np.pi * np.arange(0.1, 1.1, 0.1))
 
     # Assert there is no difference between FFT and non-FFT calculation
-    assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5)
-
-
-def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
-
-    """
-    Test that an ``AssertionError`` is raised when a list of trajectories that
-    have different times are given to ``calculate_from_MD()``
-    """
-
-    MD_input = [trajectory, altered_trajectory]
-    SQw_obj = SQw_from_MD()
-    with pytest.raises(AssertionError):
-        SQw_obj.calculate_from_MD(MD_input)
-
+    assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5
