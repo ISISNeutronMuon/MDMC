@@ -333,12 +333,6 @@ class AbstractFQt(SQwMixins, Observable):
         # combine to create overall vectors for each lattice point in the cube
         vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
 
-        # multiply coordinates for each axis by the reciprocal basis
-        # .reshape(-1, 1) reshapes each axis to a column vector
-        #vectors = np.array(cube[:, 0].reshape(-1, 1) * self.reciprocal_basis[0]
-                           #+ cube[:, 1].reshape(-1, 1) * self.reciprocal_basis[1]
-                           #+ cube[:, 2].reshape(-1, 1) * self.reciprocal_basis[2])
-
         Q_vectors = []
         # get all rows that fit our requirements
         for vector in vectors:
