@@ -11,7 +11,7 @@ from MDMC.common.decorators import repr_decorator
 # to avoid MPI warnings
 
 
-@repr_decorator('comm', 'FoM', 'FoM_old', 'MC_norm', 'distribution',
+@repr_decorator('comm', 'FoM', 'FoM_old', 'distribution',
                 'state_changed', 'parameters', 'parameters_old_values',
                 'max_parameter_change')
 class Minimizer(ABC):
@@ -21,8 +21,6 @@ class Minimizer(ABC):
 
     Parameters
     ----------
-    MC_norm : float
-        Normalization parameter for MC which determines the accept/reject ratio
     parameters : list
         A `list` of ``Parameter`` objects which will be fit
     distribution : str, optional
@@ -54,7 +52,7 @@ class Minimizer(ABC):
 
     DISTRIBUTION = {'uniform': np.random.uniform}
 
-    def __init__(self, MC_norm, parameters, distribution='uniform',
+    def __init__(self, parameters, distribution='uniform',
                  max_parameter_change: float = 0.01):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
@@ -78,7 +76,6 @@ class Minimizer(ABC):
         self._check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters
-        self.MC_norm = MC_norm
         self.max_parameter_change = max_parameter_change
 
         # Records if most recent step changed the state
