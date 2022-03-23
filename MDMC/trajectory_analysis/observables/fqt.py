@@ -324,22 +324,25 @@ class AbstractFQt(SQwMixins, Observable):
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
                                in self.reciprocal_basis)
 
-        # create an array of all lattice points in this cube
-        # we do not include the null vector
-        cube = np.array([x for x in product(range(-x_max, x_max + 1),
-                                            range(-y_max, y_max + 1),
-                                            range(-z_max, z_max + 1)) if x != (0, 0, 0)])
+        # create components of the Q vector for each axis on each lattice point in the cube
+        # .reshape(-1, 1) reshapes each axis to a column vector
+        vector_x = np.array(range(-x_max, x_max + 1)).reshape(-1, 1) * self.reciprocal_basis[0]
+        vector_y = np.array(range(-y_max, y_max + 1)).reshape(-1, 1) * self.reciprocal_basis[1]
+        vector_z = np.array(range(-z_max, z_max + 1)).reshape(-1, 1) * self.reciprocal_basis[2]
+
+        # combine to create overall vectors for each lattice point in the cube
+        vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
 
         # multiply coordinates for each axis by the reciprocal basis
         # .reshape(-1, 1) reshapes each axis to a column vector
-        vectors = np.array(cube[:, 0].reshape(-1, 1) * self.reciprocal_basis[0]
-                           + cube[:, 1].reshape(-1, 1) * self.reciprocal_basis[1]
-                           + cube[:, 2].reshape(-1, 1) * self.reciprocal_basis[2])
+        #vectors = np.array(cube[:, 0].reshape(-1, 1) * self.reciprocal_basis[0]
+                           #+ cube[:, 1].reshape(-1, 1) * self.reciprocal_basis[1]
+                           #+ cube[:, 2].reshape(-1, 1) * self.reciprocal_basis[2])
 
         Q_vectors = []
         # get all rows that fit our requirements
         for vector in vectors:
-            if Q_min < np.linalg.norm(vector) <= Q_max:
+            if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
                 Q_vectors.append(vector)
             if len(Q_vectors) >= self.n_Q_vectors:
                 break
