@@ -316,7 +316,7 @@ def test_minimizer_has_converged(mock_history, min_steps, expected):
     """
     Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
     """
-    parameter = [Parameter(name='A', value=None)]
+    parameter = [Parameter(name='A', value=1.)]
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameter=parameter)
         minim._history = mock_history
@@ -357,12 +357,17 @@ def test_GPR_parameter_point_array():
     """
     Test that the array of points to be simulated is created correctly
     """
-    parameters = [Parameter(name='parameter1', value=1., constraints=(0.5, 1.5)), 
-                    Parameter(name='parameter2', value=2., constraints=(0.5, 3.5))]
+    parameters = [Parameter(name='parameter1', value=1.), 
+                    Parameter(name='parameter2', value=2.)]
     gpr = MinimizerFactory.create_minimizer('GPR', parameters)
     points = gpr.create_parameter_point_array(parameters, points=2)
     assert np.allclose(points[0], (0.1,0.2), rtol=1e-5)
     assert np.allclose(points[1], (0.1,10.0), rtol=1e-5)
     assert np.allclose(points[2], (5.0,0.2), rtol=1e-5)
     assert np.allclose(points[3], (5.0,10.0), rtol=1e-5)
-    
+
+    constrained_parameters = [Parameter(name='parameter1', value=1., constraints=(0.5,2.0)), 
+                            Parameter(name='parameter2', value=2.,  constraints=(1.0,4.0))]
+    points = gpr.create_parameter_point_array(constrained_parameters, points=2)
+    assert np.allclose(points[0], [0.5, 1.0], rtol=1e-5)
+    assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
