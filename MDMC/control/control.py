@@ -348,6 +348,7 @@ class Control:
         """
 
         # calculate verbose steps
+        # 4 steps per refinement step, and n + 1 steps total
         verbose_steps = (n_steps + 1) * 4
         # initialise step timings list for average step timings at end
         self.step_timings = []
