@@ -5,10 +5,10 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from time import time
 
 import numpy as np
 import pandas as pd
+from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import unit_decorator_getter, \
     mod_docstring, repr_decorator, unit_decorator
@@ -1387,8 +1387,8 @@ class Simulation:
         n_steps : int
             Maximum number of steps to run the minimization
         verbose: bool, optional
-            Whether to print statements when the minimization has been started and completed
-            (including the number minimizatin steps and time taken). Default is `False`.
+            If true, prints time taken for the minimization when complete.
+            If false (default), does nothing.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1401,15 +1401,16 @@ class Simulation:
                 on engine used.
         """
 
-        if verbose:
-            print('Starting minimization for {} steps'.format(n_steps))
-            time_0 = time()
+        verbose_manager = VerboseManager.instance()
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
+        verbose_manager.start(1, verbose=int(verbose))
 
+        verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, **settings)
 
-        if verbose:
-            print('Minimization complete in {} s'.format(
-                round(time() - time_0, 3)))
+        verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False):
         """
@@ -1427,8 +1428,8 @@ class Simulation:
             If the run is for equilibration (`True`) or production (`False`).
             Default is `False`.
         verbose: bool, optional
-            Whether to print statements upon starting and completing the run.
-            Default is `False`.
+            If true, prints time taken for the run when complete.
+            If false (default), does nothing.
         """
 
         if equilibration:
@@ -1436,15 +1437,16 @@ class Simulation:
         else:
             process = 'simulation'
 
-        if verbose:
-            print('Starting {0} for {1} steps'.format(process, n_steps))
-            time_0 = time()
+        verbose_manager = VerboseManager.instance()
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
+        verbose_manager.start(1, verbose=int(verbose))
 
+        verbose_manager.step(f"Running {process} for {n_steps} steps")
         self.engine.run(n_steps, equilibration)
 
-        if verbose:
-            print('{0} complete in {1} s'.format(
-                process.capitalize(), round(time() - time_0, 3)))
+        verbose_manager.finish(f"{process.capitalize()}")
 
     @property
     def trajectory(self):
