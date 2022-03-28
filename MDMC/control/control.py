@@ -271,7 +271,7 @@ class Control:
         if MD_steps:
             try:
                 assert MD_steps >= minimum_MD_steps
-                if self.settings['cont_slicing']:
+                if self.settings.get('cont_slicing', False):
                     self.MD_steps = MD_steps
                 else:
                     # Set self.MD_steps to be the largest number required by any of
