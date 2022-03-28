@@ -414,7 +414,6 @@ class AbstractSQw(SQwMixins, Observable):
             trj_sliced = False
 
         # Perform calculations for each Trajectory
-        SQw_list = []
         for trajectory in trajectories:
             self.trajectory = trajectory
 
