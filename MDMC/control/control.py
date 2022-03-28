@@ -267,7 +267,8 @@ class Control:
                                                     n_parameters=len(self.fit_parameters))
 
         # Use specified MD_steps if supplied, else calculate
-        if MD_steps:
+        # cont_slicing produces small sub-trajectories, so calculation is unnecessary
+        if MD_steps and not settings['cont_slicing']:
             try:
                 assert MD_steps >= minimum_MD_steps
                 # Set self.MD_steps to be the largest number required by any of
