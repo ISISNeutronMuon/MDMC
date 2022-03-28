@@ -9,14 +9,15 @@ from types import MethodType
 import logging
 
 import numpy as np
+import pint
 
 from MDMC.utilities.structural_units import is_atom
 from MDMC.MD.interaction_functions import Coulomb
-from MDMC.common import units
-from MDMC.common.decorators import repr_decorator, unit_decorator
+from MDMC.common.decorators import repr_decorator
 
 
 LOGGER = logging.getLogger(__name__)
+UREG = pint.UnitRegistry()
 
 
 @repr_decorator('function')
@@ -330,10 +331,9 @@ class NonBondedInteraction(Interaction):
         float
             The distance in ``Ang`` of the ``cutoff``
         """
-        return self._cutoff
+        return self._cutoff * UREG.angstrom
 
     @cutoff.setter
-    @unit_decorator(unit=units.LENGTH)
     def cutoff(self, value):
 
         self._cutoff = value

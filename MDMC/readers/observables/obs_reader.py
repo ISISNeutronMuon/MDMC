@@ -3,11 +3,13 @@
 from abc import abstractmethod, ABC
 
 import numpy as np
+import pint
 
 from MDMC.common import units
-from MDMC.common.decorators import repr_decorator, unit_decorator
+from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
+UREG = pint.UnitRegistry()
 
 @repr_decorator('data')
 class ObservableReader(Reader):
@@ -160,10 +162,9 @@ class SQwReader(ObservableReader, ABC):
             Energy transfer as angular frequency, w, in ``1 / ps``
         """
 
-        return self._w
+        return self._w * (UREG.ps ** -1)
 
     @w.setter
-    @unit_decorator(unit=units.Unit('ps') ** -1)
     def w(self, value):
 
         self._w = value
@@ -179,10 +180,9 @@ class SQwReader(ObservableReader, ABC):
             Energy transfer, E, in ``meV``
         """
 
-        return self._E
+        return self._E * UREG.meV
 
     @E.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
     def E(self, value):
 
         self._E = value
@@ -198,10 +198,9 @@ class SQwReader(ObservableReader, ABC):
             Momentum transfer, Q, in ``Ang^-1``
         """
 
-        return self._Q
+        return self._Q * (UREG.angstrom ** -1)
 
     @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
     def Q(self, value):
 
         self._Q = value

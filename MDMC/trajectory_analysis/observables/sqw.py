@@ -3,18 +3,18 @@
 from typing import Dict
 
 import numpy as np
+import pint
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
 
-from MDMC.common import units
 from MDMC.common.constants import h, h_bar
-from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
+UREG = pint.UnitRegistry()
 
 class SQwMixins:
     """
@@ -95,7 +95,6 @@ class SQwMixins:
         return None
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
         """
         Get the momentum transfers
@@ -106,7 +105,7 @@ class SQwMixins:
             1D array of Q `float` (in ``Ang^-1``)
         """
         try:
-            return self.independent_variables['Q']
+            return self.independent_variables['Q'] * (UREG.angstrom ** -1)
         except KeyError:
             return None
 
@@ -188,7 +187,6 @@ class AbstractSQw(SQwMixins, Observable):
         self._errors = value
 
     @property
-    @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
     def E(self):
         """
         Get the energies
@@ -201,13 +199,12 @@ class AbstractSQw(SQwMixins, Observable):
 
         if self.independent_variables:
             try:
-                return self.independent_variables['E']
+                return self.independent_variables['E'] * UREG.meV
             except KeyError:
                 pass
         return None
 
     @property
-    @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self):
         """
         Get the angular frequencies
@@ -218,10 +215,9 @@ class AbstractSQw(SQwMixins, Observable):
             1D array of angular frequency `float` in units of ``1 / ps``
         """
 
-        return self.E / (h_bar * 1e15)
+        return self.E.to(UREG.ps ** -1)
 
     @property
-    @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw(self):
         """
         Get the dynamic structure factor, S(Q, w), in arb
@@ -238,7 +234,6 @@ class AbstractSQw(SQwMixins, Observable):
             return None
 
     @property
-    @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw_err(self):
         """
         Get the errors on the dynamic structure factor in arb

@@ -8,11 +8,10 @@ import logging
 
 import numpy as np
 import pandas as pd
+import pint
 from verbosemanager import VerboseManager
 
-from MDMC.common.decorators import unit_decorator_getter, \
-    mod_docstring, repr_decorator, unit_decorator
-from MDMC.common import units
+from MDMC.common.decorators import mod_docstring, repr_decorator
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
@@ -22,10 +21,11 @@ from MDMC.MD.structural_units import StructuralUnit
 from MDMC.MD.interactions import Dispersion, Coulombic
 from MDMC.trajectory_analysis.trajectory import Configuration
 
-
 LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
-                 ', '.join(ForceFieldFactory.get_force_field_names())}
+                     ', '.join(ForceFieldFactory.get_force_field_names())}
+UREG = pint.UnitRegistry()
+
 
 # pylint: disable=too-few-public-methods
 # as many classes here are small MD engine compatibility
@@ -35,7 +35,6 @@ _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                 'dispersive_solver', 'constraint_algorithm', 'parameters')
 @mod_docstring(_FF_DOCSTRING)
 class Universe(AtomContainer):
-
     """
     Class where the configuration and topology are defined
 
@@ -155,7 +154,6 @@ class Universe(AtomContainer):
     # Unit decorator on getter due to operations in setter
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH)
     def dimensions(self):
         """
         Get or set the dimensions of the ``Universe``
@@ -172,7 +170,7 @@ class Universe(AtomContainer):
             The dimensions of the ``Universe``
         """
 
-        return self._dimensions
+        return self._dimensions * UREG.angstrom
 
     @dimensions.setter
     def dimensions(self, dimensions):
@@ -330,7 +328,6 @@ class Universe(AtomContainer):
                            for parameter in interaction.parameters})
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
         """
         Get the volume of the ``Universe``
@@ -341,7 +338,7 @@ class Universe(AtomContainer):
             Volume in ``Ang^3``
         """
 
-        return np.prod(self.dimensions)
+        return np.prod(self.dimensions) * (UREG.angstrom ** 3)
 
     @property
     def element_list(self):
@@ -502,7 +499,6 @@ class Universe(AtomContainer):
         return self._atom_type_interactions
 
     @property
-    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
     def density(self):
         """
         Get the mass density of the ``Universe``
@@ -510,13 +506,13 @@ class Universe(AtomContainer):
         Returns
         -------
         float
-            The mass density of all of the atoms of the ``Universe``
+            The mass density of all of the atoms of the ``Universe`` in amu / Ang^3
         """
 
-        return np.sum([atom.mass for atom in self.atoms]) / self.volume
+        return (np.sum([atom.mass for atom in self.atoms]) / self.volume) \
+               * (UREG.amu / UREG.angstrom ** 3)
 
     @property
-    @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
     def solvent_density(self):
         """
         Get the mass density of a solvent added using ``solvate()``
@@ -524,10 +520,10 @@ class Universe(AtomContainer):
         Returns
         -------
         float
-            The mass density of a solvent added using sovlate
+            The mass density of a solvent added using solvate in amu / Ang^3
         """
 
-        return self._solvent_density
+        return self._solvent_density * (UREG.amu / UREG.angstrom ** 3)
 
     def _update_atom_types(self, atom):
         """
@@ -556,8 +552,8 @@ class Universe(AtomContainer):
         else:
             # Sorting is just to ensure consistent order. As interactions will have
             # different types, sort by id
-            inter_key = (atom.element, ) + tuple(sorted(atom.interactions,
-                                                        k=id))
+            inter_key = (atom.element,) + tuple(sorted(atom.interactions,
+                                                       k=id))
 
         if atom.atom_type:
             atom_type = atom.atom_type
@@ -570,7 +566,7 @@ class Universe(AtomContainer):
                 # Get lowest missing interger in self.atom_type_interactions
                 atom_type = next(filterfalse(set(
                     self.atom_type_interactions.values()).__contains__,
-                    count(1)))
+                                             count(1)))
                 self._update_atom_type_interactions(inter_key, atom_type)
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
@@ -1096,7 +1092,6 @@ class KSpaceSolver:
     """
 
     def __init__(self, **settings):
-
         self.accuracy = settings.get('accuracy')
 
     @property
@@ -1156,7 +1151,6 @@ class PPPM(KSpaceSolver):
 
 
 class ConstraintAlgorithm:
-
     """
     Class describing the algorithm and parameters which are applied to
     constrain ``BondedInteraction`` objects
@@ -1177,7 +1171,6 @@ class ConstraintAlgorithm:
     """
 
     def __init__(self, accuracy, max_iterations):
-
         self.accuracy = accuracy
         self.max_iterations = max_iterations
 
@@ -1211,12 +1204,10 @@ class ConstraintAlgorithm:
 
     @max_iterations.setter
     def max_iterations(self, value):
-
         self._max_iterations = int(value)
 
 
 class Shake(ConstraintAlgorithm):
-
     """
     Holds the parameters which are required for the SHAKE algorithm to be
     applied to the constrained interactions
@@ -1250,7 +1241,6 @@ class Rattle(ConstraintAlgorithm):
 
 @repr_decorator('universe', 'engine', 'settings')
 class Simulation:
-
     """
     Sets up the molecular dynamics engine and parameters for how it should run
 
@@ -1340,10 +1330,9 @@ class Simulation:
             Simulation time step in ``fs``
         """
 
-        return self._time_step
+        return self._time_step * UREG.fs
 
     @time_step.setter
-    @unit_decorator(unit=units.TIME)
     def time_step(self, value):
         self._time_step = value
 

@@ -14,9 +14,7 @@ import operator
 import warnings
 import weakref
 
-from MDMC.common.decorators import repr_decorator, unit_decorator, \
-    unit_decorator_getter
-
+from MDMC.common.decorators import repr_decorator
 
 @repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
@@ -87,7 +85,6 @@ class Parameter:
         return self._value
 
     @value.setter
-    @unit_decorator(unit=None)
     def value(self, value):
 
         if hasattr(self, 'fixed') and self.fixed:
@@ -100,7 +97,6 @@ class Parameter:
             self._value = value
 
     @property
-    @unit_decorator_getter(unit=None)
     def constraints(self):
         """
         Get or set the constraint of the ``Parameter``

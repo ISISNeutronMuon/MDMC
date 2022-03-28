@@ -8,14 +8,14 @@ import warnings
 
 from numba import jit
 import numpy as np
+import pint
 
 from MDMC.common.atom_properties import B_COH
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
+UREG = pint.UnitRegistry()
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -130,12 +130,11 @@ class PairDistributionFunction(Observable):
         """
 
         try:
-            return self.independent_variables['r']
+            return self.independent_variables['r'] * UREG.angstrom
         except KeyError:
             return None
 
     @r.setter
-    @unit_decorator(unit=units.Unit('Ang'))
     def r(self, value):
 
         if (hasattr(self, '_independent_variables')
@@ -145,14 +144,13 @@ class PairDistributionFunction(Observable):
             self._independent_variables = {'r': value}
 
     @property
-    @unit_decorator_getter(unit=units.Unit('barn'))
     def PDF(self):
         """
         Get the value of the total pair distribution function (in ``barn``)
         """
 
         try:
-            return self.dependent_variables['PDF']
+            return self.dependent_variables['PDF'] * UREG.barn
         except KeyError:
             return None
 

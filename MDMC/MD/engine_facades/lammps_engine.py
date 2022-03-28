@@ -43,10 +43,10 @@ except ModuleNotFoundError as err:
                               ).with_traceback(err.__traceback__)
 from mpi4py import MPI
 import numpy as np
+import pint
 
 from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    repr_decorator
+from MDMC.common.decorators import repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom
 from MDMC.MD.interactions import BondedInteraction
@@ -55,6 +55,7 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
 
 
 LOGGER = logging.getLogger(__name__)
+UREG = pint.UnitRegistry()
 
 # pylint: disable=c-extension-no-member, too-many-lines
 # to avoid MPI warnings
@@ -256,10 +257,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Temperature in ``K``
         """
 
-        return self.lmp_simulation.temperature
+        return self.lmp_simulation.temperature * UREG.kelvin
 
     @temperature.setter
-    @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value):
 
         self.lmp_simulation.temperature = value
@@ -275,10 +275,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Pressure in ``atm``
         """
 
-        return self.lmp_simulation.pressure
+        return self.lmp_simulation.pressure * UREG.atm
 
     @pressure.setter
-    @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value):
 
         self.lmp_simulation.pressure = value
@@ -1405,10 +1404,9 @@ class LAMMPSSimulation(PyLammpsAttribute):
             Simulation time step in ``fs``
         """
 
-        return self._time_step
+        return self._time_step * UREG.fs
 
     @time_step.setter
-    @unit_decorator(unit=units.TIME)
     def time_step(self, value):
 
         self._time_step = value
@@ -1429,10 +1427,9 @@ class LAMMPSSimulation(PyLammpsAttribute):
             Temperature in ``K``
         """
 
-        return self._temperature
+        return self._temperature * UREG.kelvin
 
     @temperature.setter
-    @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value):
 
         self._temperature = value
@@ -1473,10 +1470,9 @@ class LAMMPSSimulation(PyLammpsAttribute):
             Pressure in ``atm``
         """
 
-        return self.ensemble.pressure
+        return self.ensemble.pressure * UREG.atm
 
     @pressure.setter
-    @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value):
 
         self.ensemble.pressure = value
@@ -1530,10 +1526,9 @@ class LAMMPSSimulation(PyLammpsAttribute):
             neighbor list.
         """
 
-        return self._skin
+        return self._skin * UREG.angstrom
 
     @skin.setter
-    @unit_decorator(unit=units.LENGTH)
     def skin(self, value):
 
         self._skin = value
@@ -1750,10 +1745,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         Get or set the simulation time step in ``fs``
         """
 
-        return self._time_step
+        return self._time_step * UREG.fs
 
     @time_step.setter
-    @unit_decorator(unit=units.TIME)
     def time_step(self, value):
 
         self._time_step = value
@@ -1764,10 +1758,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         Get or set the temperature of the simulation in ``K``
         """
 
-        return self._temperature
+        return self._temperature * UREG.kelvin
 
     @temperature.setter
-    @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value):
 
         self._temperature = value
@@ -1779,10 +1772,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         Get or set the pressure of the simulation in ``atm``
         """
 
-        return self._pressure
+        return self._pressure * UREG.atm
 
     @pressure.setter
-    @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value):
 
         self._pressure = value
@@ -1790,7 +1782,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     # Unit has to be applied to getter due to operation in setter
     @property
-    @unit_decorator_getter(unit=units.TIME)
     def t_damp(self):
         """
         Get or set the number of time steps over which the ``temperature`` is
@@ -1813,9 +1804,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         # t_damp is stored in units of time - convert back to number of steps
         # here
         try:
-            return self._t_damp / self.time_step
+            return (self._t_damp / self.time_step) * UREG.fs
         except TypeError:
-            return self._t_damp
+            return self._t_damp * UREG.fs
 
     @t_damp.setter
     def t_damp(self, value):
@@ -1834,7 +1825,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
     # Unit has to be applied to getter due to operation in setter
     @property
-    @unit_decorator_getter(unit=units.TIME)
     def p_damp(self):
         """
         Get or set the number of time steps over which the ``pressure`` is
@@ -1857,9 +1847,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         # p_damp is stored in units of time - convert back to number of steps
         # here
         try:
-            return self._p_damp / self.time_step
+            return (self._p_damp / self.time_step) * UREG.fs
         except TypeError:
-            return self._p_damp
+            return self._p_damp * UREG.fs
 
     @p_damp.setter
     def p_damp(self, value):
@@ -1921,10 +1911,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
             temperature range in ``K``
         """
 
-        return self._t_window
+        return self._t_window * UREG.kelvin
 
     @t_window.setter
-    @unit_decorator(unit=units.TEMPERATURE)
     def t_window(self, value):
 
         self._t_window = value

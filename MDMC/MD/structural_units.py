@@ -15,19 +15,18 @@ from typing import List
 import weakref
 
 import numpy as np
+import pint
 from scipy.spatial.transform import Rotation
 
 from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
-from MDMC.common.decorators import repr_decorator, unit_decorator,\
-    unit_decorator_getter
-from MDMC.common import units
+from MDMC.common.decorators import repr_decorator
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
 
 
 LOGGER = logging.getLogger(__name__)
-
+UREG = pint.UnitRegistry()
 
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
                 'atoms')
@@ -91,10 +90,9 @@ class StructuralUnit(ABC):
         numpy.ndarray
         """
 
-        return self._position
+        return self._position * UREG.angstrom
 
     @position.setter
-    @unit_decorator(unit=units.LENGTH)
     def position(self, position):
 
         self._position = position
@@ -110,10 +108,9 @@ class StructuralUnit(ABC):
         numpy.ndarray
         """
 
-        return self._velocity
+        return self._velocity * (UREG.angstrom / UREG.fs)
 
     @velocity.setter
-    @unit_decorator(unit=units.LENGTH / units.TIME)
     def velocity(self, velocity):
 
         self._velocity = velocity
@@ -913,12 +910,11 @@ class Atom(StructuralUnit):
                     if charge_parameters == 0:
                         raise ValueError('Coulombic interaction does not have a'
                                          ' parameter "charge".')
-            return value
+            return value * UREG.e
         except AttributeError:
             return None
 
     @charge.setter
-    @unit_decorator(unit=units.CHARGE)
     def charge(self, value):
 
         for inter in self.interactions:
@@ -955,10 +951,9 @@ class Atom(StructuralUnit):
         float
             the atomic mass in ``amu``
         """
-        return self._mass
+        return self._mass * UREG.amu
 
     @mass.setter
-    @unit_decorator(unit=units.MASS)
     def mass(self, mass):
 
         self._mass = mass
@@ -1237,10 +1232,9 @@ class Molecule(CompositeStructuralUnit):
         numpy.ndarray
         """
 
-        return self._position
+        return self._position * UREG.angstrom
 
     @position.setter
-    @unit_decorator(unit=units.LENGTH)
     def position(self, position):
 
         self._position = position
@@ -1299,7 +1293,6 @@ class Molecule(CompositeStructuralUnit):
         return get_bonded_interaction_pairs(tuple(self.atoms))
 
     @property
-    @unit_decorator_getter(unit=units.MASS)
     def mass(self):
 
         """
@@ -1315,7 +1308,7 @@ class Molecule(CompositeStructuralUnit):
         for atom in self.atoms:
             mass += atom.mass
 
-        return mass
+        return mass * UREG.amu
 
 
 @repr_decorator('min', 'max', 'volume')
@@ -1356,10 +1349,9 @@ class BoundingBox:
             The minimum extent in ``Ang``
         """
 
-        return self._min
+        return self._min * UREG.angstrom
 
     @min.setter
-    @unit_decorator(unit=units.LENGTH)
     def min(self, value):
 
         self._min = value
@@ -1376,16 +1368,14 @@ class BoundingBox:
             The maximum extent in ``Ang``
         """
 
-        return self._max
+        return self._max * UREG.angstrom
 
     @max.setter
-    @unit_decorator(unit=units.LENGTH)
     def max(self, value):
 
         self._max = value
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
 
         """
@@ -1397,7 +1387,7 @@ class BoundingBox:
             The volume of the bounding box
         """
 
-        return abs(np.prod(self.max - self.min))
+        return abs(np.prod(self.max - self.min)) * (UREG.angstrom ** 3)
 
 
 def filter_atoms(atoms, predicate):

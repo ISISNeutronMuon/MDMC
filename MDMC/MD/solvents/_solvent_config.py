@@ -6,12 +6,12 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 
 import numpy as np
+import pint
 
-from MDMC.common.decorators import repr_decorator, unit_decorator,\
-    unit_decorator_getter
-from MDMC.common import units
+from MDMC.common.decorators import repr_decorator
 from MDMC.MD import structural_units, interactions
 
+UREG = pint.UnitRegistry()
 
 @repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
                 'n_molecules', 'bonded_interactions', 'nonbonded_interactions')
@@ -79,16 +79,14 @@ class SolventConfig(ABC):
             The dimensions of the SolventConfig box in Ang
         """
 
-        return self._box_dimensions
+        return self._box_dimensions * UREG.angstrom
 
     @box_dimensions.setter
-    @unit_decorator(unit=units.LENGTH)
     def box_dimensions(self, value):
 
         self._box_dimensions = value
 
     @property
-    @unit_decorator_getter(unit=units.LENGTH ** 3)
     def volume(self):
         """
         Get the volume of the box in Ang^3
@@ -99,7 +97,7 @@ class SolventConfig(ABC):
             The volume of the SolventConfig in Ang^3
         """
 
-        return np.prod(self.box_dimensions)
+        return np.prod(self.box_dimensions) * (UREG.angstrom ** 3)
 
     @property
     def atom_types(self):
@@ -218,10 +216,9 @@ class SolventConfig(ABC):
             The number of molecules in the SolventConfig
         """
 
-        return len(self.molecules)
+        return len(self.molecules) * UREG.amu
 
     @property
-    @unit_decorator_getter(unit=units.MASS)
     def mass(self):
         """
         Get the mass of a solvent molecule in amu
@@ -235,7 +232,6 @@ class SolventConfig(ABC):
         return self.molec_from_dict(list(self.molecules.values())[0]).mass
 
     @property
-    @unit_decorator_getter(unit=units.MASS / (units.LENGTH ** 3))
     def density(self):
         """
         Get the density of the SolventConfig in
@@ -246,7 +242,7 @@ class SolventConfig(ABC):
             The mass density of the SolventConfig in amu / Ang^3
         """
 
-        return self.mass * self.n_molecules / self.volume
+        return (self.mass * self.n_molecules / self.volume) * (UREG.amu / UREG.angstrom ** 3)
 
     def reset_molecules(self):
         """

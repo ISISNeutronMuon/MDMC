@@ -3,13 +3,12 @@ from abc import abstractmethod
 from typing import Dict
 
 import numpy as np
+import pint
 from mpi4py import MPI
 from numba import jit
 
-from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -20,6 +19,7 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
 
+UREG = pint.UnitRegistry()
 
 class AbstractFQt(SQwMixins, Observable):
     """
@@ -110,16 +110,14 @@ class AbstractFQt(SQwMixins, Observable):
             1D array of times in ``fs``
         """
 
-        return self.independent_variables['t']
+        return self.independent_variables['t'] * UREG.fs
 
     @t.setter
-    @unit_decorator(unit=units.TIME)
     def t(self, value):
 
         self.independent_variables['t'] = value
 
     @property
-    @unit_decorator_getter(unit=units.ARBITRARY)
     def FQt(self):
         """
         Get the dynamic structure factor, F(Q, t), in arb
