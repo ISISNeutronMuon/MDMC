@@ -110,12 +110,12 @@ class AbstractFQt(SQwMixins, Observable):
             1D array of times in ``fs``
         """
 
-        return self.independent_variables['t'] * UREG.fs
+        return self.independent_variables['t']
 
     @t.setter
     def t(self, value):
 
-        self.independent_variables['t'] = value
+        self.independent_variables['t'] = value * UREG.fs
 
     @property
     def FQt(self):

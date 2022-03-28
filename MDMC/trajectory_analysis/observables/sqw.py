@@ -105,14 +105,14 @@ class SQwMixins:
             1D array of Q `float` (in ``Ang^-1``)
         """
         try:
-            return self.independent_variables['Q'] * (UREG.angstrom ** -1)
+            return self.independent_variables['Q']
         except KeyError:
             return None
 
     @Q.setter
     def Q(self, value):
 
-        self.independent_variables['Q'] = value
+        self.independent_variables['Q'] = value * (UREG.angstrom ** -1)
 
 
 class AbstractSQw(SQwMixins, Observable):
@@ -199,7 +199,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         if self.independent_variables:
             try:
-                return self.independent_variables['E'] * UREG.meV
+                return self.independent_variables['E']
             except KeyError:
                 pass
         return None
@@ -390,9 +390,9 @@ class AbstractSQw(SQwMixins, Observable):
         if self.E is not None:
             self.validate_energy(dt)
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
+            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt) * UREG.meV
         else:
-            self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt)}
+            self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt) * UREG.meV}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])

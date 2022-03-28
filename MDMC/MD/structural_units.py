@@ -90,12 +90,17 @@ class StructuralUnit(ABC):
         numpy.ndarray
         """
 
-        return self._position * UREG.angstrom
+        return self._position
 
     @position.setter
     def position(self, position):
-
-        self._position = position
+        # due to molecule construction methods,
+        # sometimes the molecules have units and sometimes they do not: check for this
+        # else we will sometimes give a molecule the units Angstrom ** 2
+        if isinstance(position, pint.Quantity):
+            self._position = position
+        else:
+            self._position = position * UREG.angstrom
 
     @property
     def velocity(self):
@@ -108,12 +113,12 @@ class StructuralUnit(ABC):
         numpy.ndarray
         """
 
-        return self._velocity * (UREG.angstrom / UREG.fs)
+        return self._velocity
 
     @velocity.setter
     def velocity(self, velocity):
 
-        self._velocity = velocity
+        self._velocity = velocity * (UREG.angstrom / UREG.fs)
 
     @property
     def atoms(self):
@@ -951,12 +956,12 @@ class Atom(StructuralUnit):
         float
             the atomic mass in ``amu``
         """
-        return self._mass * UREG.amu
+        return self._mass
 
     @mass.setter
     def mass(self, mass):
 
-        self._mass = mass
+        self._mass = mass * UREG.amu
 
     @property
     def atom_type(self):
@@ -1232,7 +1237,7 @@ class Molecule(CompositeStructuralUnit):
         numpy.ndarray
         """
 
-        return self._position * UREG.angstrom
+        return self._position
 
     @position.setter
     def position(self, position):
@@ -1308,7 +1313,7 @@ class Molecule(CompositeStructuralUnit):
         for atom in self.atoms:
             mass += atom.mass
 
-        return mass * UREG.amu
+        return mass
 
 
 @repr_decorator('min', 'max', 'volume')
@@ -1349,12 +1354,12 @@ class BoundingBox:
             The minimum extent in ``Ang``
         """
 
-        return self._min * UREG.angstrom
+        return self._min
 
     @min.setter
     def min(self, value):
 
-        self._min = value
+        self._min = value * UREG.angstrom
 
     @property
     def max(self):
@@ -1368,12 +1373,12 @@ class BoundingBox:
             The maximum extent in ``Ang``
         """
 
-        return self._max * UREG.angstrom
+        return self._max
 
     @max.setter
     def max(self, value):
 
-        self._max = value
+        self._max = value * UREG.angstrom
 
     @property
     def volume(self):
@@ -1387,7 +1392,7 @@ class BoundingBox:
             The volume of the bounding box
         """
 
-        return abs(np.prod(self.max - self.min)) * (UREG.angstrom ** 3)
+        return abs(np.prod(self.max - self.min))
 
 
 def filter_atoms(atoms, predicate):

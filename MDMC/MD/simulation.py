@@ -170,7 +170,7 @@ class Universe(AtomContainer):
             The dimensions of the ``Universe``
         """
 
-        return self._dimensions * UREG.angstrom
+        return self._dimensions
 
     @dimensions.setter
     def dimensions(self, dimensions):
@@ -183,7 +183,7 @@ class Universe(AtomContainer):
                              dimensions,
                              msg)
                 raise ValueError(msg)
-            self._dimensions = np.array([dimensions] * 3)
+            self._dimensions = np.array([dimensions] * 3) * UREG.angstrom
         elif isinstance(dimensions, (list, tuple, np.ndarray)):
             if len(dimensions) == 3:
                 if any(dim <= 0 for dim in np.array(dimensions)):
@@ -194,7 +194,7 @@ class Universe(AtomContainer):
                                  dimensions,
                                  msg)
                     raise ValueError(msg)
-                self._dimensions = np.array(dimensions)
+                self._dimensions = np.array(dimensions) * UREG.angstrom
             else:
                 msg = '3 dimensions must be specified'
                 LOGGER.error('%s: {dimensions: %s} %s',
@@ -338,7 +338,7 @@ class Universe(AtomContainer):
             Volume in ``Ang^3``
         """
 
-        return np.prod(self.dimensions) * (UREG.angstrom ** 3)
+        return np.prod(self.dimensions)
 
     @property
     def element_list(self):
@@ -509,8 +509,7 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe`` in amu / Ang^3
         """
 
-        return (np.sum([atom.mass for atom in self.atoms]) / self.volume) \
-               * (UREG.amu / UREG.angstrom ** 3)
+        return np.sum([atom.mass for atom in self.atoms]) / self.volume
 
     @property
     def solvent_density(self):
@@ -1330,11 +1329,11 @@ class Simulation:
             Simulation time step in ``fs``
         """
 
-        return self._time_step * UREG.fs
+        return self._time_step
 
     @time_step.setter
     def time_step(self, value):
-        self._time_step = value
+        self._time_step = value * UREG.fs
 
     @property
     def traj_step(self):

@@ -257,12 +257,12 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Temperature in ``K``
         """
 
-        return self.lmp_simulation.temperature * UREG.kelvin
+        return self.lmp_simulation.temperature
 
     @temperature.setter
     def temperature(self, value):
 
-        self.lmp_simulation.temperature = value
+        self.lmp_simulation.temperature = value * UREG.kelvin
 
     @property
     def pressure(self):
@@ -275,12 +275,12 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             Pressure in ``atm``
         """
 
-        return self.lmp_simulation.pressure * UREG.atm
+        return self.lmp_simulation.pressure
 
     @pressure.setter
     def pressure(self, value):
 
-        self.lmp_simulation.pressure = value
+        self.lmp_simulation.pressure = value * UREG.atm
 
     @property
     def ensemble(self):
@@ -1404,12 +1404,12 @@ class LAMMPSSimulation(PyLammpsAttribute):
             Simulation time step in ``fs``
         """
 
-        return self._time_step * UREG.fs
+        return self._time_step
 
     @time_step.setter
     def time_step(self, value):
 
-        self._time_step = value
+        self._time_step = value * UREG.fs
         try:
             # Set the timestep in LAMMPS wrapper
             self.lmp.timestep(convert_unit(self._time_step))
@@ -1427,13 +1427,13 @@ class LAMMPSSimulation(PyLammpsAttribute):
             Temperature in ``K``
         """
 
-        return self._temperature * UREG.kelvin
+        return self._temperature
 
     @temperature.setter
     def temperature(self, value):
 
-        self._temperature = value
-        self.ensemble.temperature = value
+        self._temperature = value * UREG.kelvin
+        self.ensemble.temperature = value * UREG.kelvin
         try:
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
@@ -1470,12 +1470,12 @@ class LAMMPSSimulation(PyLammpsAttribute):
             Pressure in ``atm``
         """
 
-        return self.ensemble.pressure * UREG.atm
+        return self.ensemble.pressure
 
     @pressure.setter
     def pressure(self, value):
 
-        self.ensemble.pressure = value
+        self.ensemble.pressure = value * UREG.atm
 
     @property
     def thermostat(self):
@@ -1526,12 +1526,12 @@ class LAMMPSSimulation(PyLammpsAttribute):
             neighbor list.
         """
 
-        return self._skin * UREG.angstrom
+        return self._skin
 
     @skin.setter
     def skin(self, value):
 
-        self._skin = value
+        self._skin = value * UREG.angstrom
         # Set the neighor list parameters in the LAMMPS wrapper
         self.lmp.neighbor(convert_unit(self._skin), 'bin')
 
@@ -1745,12 +1745,12 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         Get or set the simulation time step in ``fs``
         """
 
-        return self._time_step * UREG.fs
+        return self._time_step
 
     @time_step.setter
     def time_step(self, value):
 
-        self._time_step = value
+        self._time_step = value * UREG.fs
 
     @property
     def temperature(self):
@@ -1758,12 +1758,12 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         Get or set the temperature of the simulation in ``K``
         """
 
-        return self._temperature * UREG.kelvin
+        return self._temperature
 
     @temperature.setter
     def temperature(self, value):
 
-        self._temperature = value
+        self._temperature = value * UREG.kelvin
         self.apply_ensemble_fixes()
 
     @property
@@ -1772,12 +1772,12 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         Get or set the pressure of the simulation in ``atm``
         """
 
-        return self._pressure * UREG.atm
+        return self._pressure
 
     @pressure.setter
     def pressure(self, value):
 
-        self._pressure = value
+        self._pressure = value * UREG.atm
         self.apply_ensemble_fixes()
 
     # Unit has to be applied to getter due to operation in setter
@@ -1804,9 +1804,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         # t_damp is stored in units of time - convert back to number of steps
         # here
         try:
-            return (self._t_damp / self.time_step) * UREG.fs
+            return (self._t_damp / self.time_step)
         except TypeError:
-            return self._t_damp * UREG.fs
+            return self._t_damp
 
     @t_damp.setter
     def t_damp(self, value):
@@ -1815,10 +1815,10 @@ class LAMMPSEnsemble(PyLammpsAttribute):
             # LAMMPS requires t_damp to be given in units of time, but it is
             # more natural to give it in units of steps - convert between them
             # here
-            self._t_damp = value * self.time_step
+            self._t_damp = value * self.time_step * UREG.fs
         except TypeError as error:
             if value is None:
-                self._t_damp = value
+                self._t_damp = None
             else:
                 raise AttributeError('the time_step attribute must be set'
                                      ' before t_damp') from error
@@ -1847,9 +1847,9 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         # p_damp is stored in units of time - convert back to number of steps
         # here
         try:
-            return (self._p_damp / self.time_step) * UREG.fs
+            return (self._p_damp / self.time_step)
         except TypeError:
-            return self._p_damp * UREG.fs
+            return self._p_damp
 
     @p_damp.setter
     def p_damp(self, value):
@@ -1858,10 +1858,10 @@ class LAMMPSEnsemble(PyLammpsAttribute):
             # LAMMPS requires p_damp to be given in units of time, but it is
             # more natural to give it in units of steps - convert between them
             # here
-            self._p_damp = value * self.time_step
+            self._p_damp = value * self.time_step * UREG.fs
         except TypeError as error:
             if value is None:
-                self._p_damp = value
+                self._p_damp = None
             else:
                 raise AttributeError('the time_step attribute must be set'
                                      ' before p_damp') from error
@@ -1911,12 +1911,12 @@ class LAMMPSEnsemble(PyLammpsAttribute):
             temperature range in ``K``
         """
 
-        return self._t_window * UREG.kelvin
+        return self._t_window
 
     @t_window.setter
     def t_window(self, value):
 
-        self._t_window = value
+        self._t_window = value * UREG.kelvin
 
     @property
     def thermostat(self):

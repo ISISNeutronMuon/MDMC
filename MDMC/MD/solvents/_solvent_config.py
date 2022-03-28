@@ -79,12 +79,12 @@ class SolventConfig(ABC):
             The dimensions of the SolventConfig box in Ang
         """
 
-        return self._box_dimensions * UREG.angstrom
+        return self._box_dimensions
 
     @box_dimensions.setter
     def box_dimensions(self, value):
 
-        self._box_dimensions = value
+        self._box_dimensions = value * UREG.angstrom
 
     @property
     def volume(self):
@@ -97,7 +97,7 @@ class SolventConfig(ABC):
             The volume of the SolventConfig in Ang^3
         """
 
-        return np.prod(self.box_dimensions) * (UREG.angstrom ** 3)
+        return np.prod(self.box_dimensions)
 
     @property
     def atom_types(self):
@@ -242,7 +242,7 @@ class SolventConfig(ABC):
             The mass density of the SolventConfig in amu / Ang^3
         """
 
-        return (self.mass * self.n_molecules / self.volume) * (UREG.amu / UREG.angstrom ** 3)
+        return (self.mass * self.n_molecules / self.volume)
 
     def reset_molecules(self):
         """

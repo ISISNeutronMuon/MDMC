@@ -7,6 +7,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 from typing import Optional
+import pint
 
 from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
@@ -18,6 +19,8 @@ from tests.test_data import data
 from tests.trajectory_analysis.test_histogram import trajectory
 from tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
     atom, universe
+
+UREG = pint.UnitRegistry()
 
 @pytest.fixture
 def altered_trajectory(water_SPCE_universe):
@@ -99,7 +102,7 @@ def test_from_data(SQw_from_data):
     # Cannot use assert_allclose as our UnitNDArray fails comparison with a
     # normal numpy array
     for i, Q in enumerate(SQw_from_data.independent_variables['Q']):
-        assert np.isclose(Q, i * 0.05)
+        assert np.isclose(Q, (i * 0.05 * (UREG.angstrom ** -1)))
 
 
 def test_from_MD(SQw_from_MD):

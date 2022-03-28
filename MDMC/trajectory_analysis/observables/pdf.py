@@ -130,7 +130,7 @@ class PairDistributionFunction(Observable):
         """
 
         try:
-            return self.independent_variables['r'] * UREG.angstrom
+            return self.independent_variables['r']
         except KeyError:
             return None
 
@@ -139,9 +139,9 @@ class PairDistributionFunction(Observable):
 
         if (hasattr(self, '_independent_variables')
                 and self._independent_variables):
-            self._independent_variables['r'] = value
+            self._independent_variables['r'] = value * UREG.angstrom
         else:
-            self._independent_variables = {'r': value}
+            self._independent_variables = {'r': value * UREG.angstrom}
 
     @property
     def PDF(self):

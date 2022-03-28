@@ -331,12 +331,14 @@ class NonBondedInteraction(Interaction):
         float
             The distance in ``Ang`` of the ``cutoff``
         """
-        return self._cutoff * UREG.angstrom
+        return self._cutoff
 
     @cutoff.setter
     def cutoff(self, value):
-
-        self._cutoff = value
+        if value is not None:
+            self._cutoff = value * UREG.angstrom
+        else:
+            self._cutoff = None
 
 
 class Dispersion(NonBondedInteraction):

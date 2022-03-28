@@ -162,12 +162,12 @@ class SQwReader(ObservableReader, ABC):
             Energy transfer as angular frequency, w, in ``1 / ps``
         """
 
-        return self._w * (UREG.ps ** -1)
+        return self._w
 
     @w.setter
     def w(self, value):
 
-        self._w = value
+        self._w = value * (UREG.ps ** -1)
 
     @property
     def E(self):
@@ -180,12 +180,12 @@ class SQwReader(ObservableReader, ABC):
             Energy transfer, E, in ``meV``
         """
 
-        return self._E * UREG.meV
+        return self._E
 
     @E.setter
     def E(self, value):
 
-        self._E = value
+        self._E = value * UREG.meV
 
     @property
     def Q(self):
@@ -198,9 +198,9 @@ class SQwReader(ObservableReader, ABC):
             Momentum transfer, Q, in ``Ang^-1``
         """
 
-        return self._Q * (UREG.angstrom ** -1)
+        return self._Q
 
     @Q.setter
     def Q(self, value):
 
-        self._Q = value
+        self._Q = value * (UREG.angstrom ** -1)
