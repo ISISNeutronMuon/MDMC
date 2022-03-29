@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
-from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
 pytestmark = [pytest.mark.mpi, pytest.mark.lammps]

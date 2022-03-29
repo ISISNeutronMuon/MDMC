@@ -1,4 +1,4 @@
-structural_units
+structures
 ================
-.. automodule:: MDMC.MD.structural_units
+.. automodule:: MDMC.MD.structures
     :members:

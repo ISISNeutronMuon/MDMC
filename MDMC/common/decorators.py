@@ -36,7 +36,7 @@ def unit_decorator(unit):
     -------
     Add a ``unit_decorator`` to the ``position`` ``property``::
 
-        >>> Class Atom(StructuralUnit):
+        >>> Class Atom(Structure):
         ...
         ...     @property
         ...     def position(self):
@@ -416,7 +416,7 @@ def repr_decorator(attribute, *attributes):
     attribute and the ``position`` property::
 
         >>> @repr_decorator('name', 'position')
-        ... Class Atom(StructuralUnit):
+        ... Class Atom(Structure):
         ...
         ...     def __init__(self, element, name, position):
         ...         self.element = element
