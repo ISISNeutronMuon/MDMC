@@ -16,6 +16,7 @@ import weakref
 
 import numpy as np
 import pint
+from MDMC.common.unit_registry import UREG
 from scipy.spatial.transform import Rotation
 
 from MDMC.common import atom_properties
@@ -26,7 +27,7 @@ from MDMC.MD.interaction_functions import Coulomb
 
 
 LOGGER = logging.getLogger(__name__)
-UREG = pint.UnitRegistry()
+
 
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
                 'atoms')
@@ -1241,8 +1242,11 @@ class Molecule(CompositeStructuralUnit):
 
     @position.setter
     def position(self, position):
-
-        self._position = position
+        # only set units if the molecule doesn't already have them
+        if isinstance(position, pint.Quantity):
+            self._position = position
+        else:
+            self._position = position * UREG.angstrom
         self._set_subunit_positions()
 
     @property
@@ -1358,8 +1362,11 @@ class BoundingBox:
 
     @min.setter
     def min(self, value):
-
-        self._min = value * UREG.angstrom
+        # only add units if it doesn't already have them
+        if isinstance(value, pint.Quantity):
+            self._min = value
+        else:
+            self._min = value * UREG.angstrom
 
     @property
     def max(self):
@@ -1377,8 +1384,11 @@ class BoundingBox:
 
     @max.setter
     def max(self, value):
-
-        self._max = value * UREG.angstrom
+        # only add units if it doesn't already have them
+        if isinstance(value, pint.Quantity):
+            self._max = value
+        else:
+            self._max = value * UREG.angstrom
 
     @property
     def volume(self):

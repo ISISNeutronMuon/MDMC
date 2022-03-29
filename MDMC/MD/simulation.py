@@ -8,7 +8,7 @@ import logging
 
 import numpy as np
 import pandas as pd
-import pint
+from MDMC.common.unit_registry import UREG
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import mod_docstring, repr_decorator
@@ -24,7 +24,7 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
                      ', '.join(ForceFieldFactory.get_force_field_names())}
-UREG = pint.UnitRegistry()
+
 
 
 # pylint: disable=too-few-public-methods
@@ -708,8 +708,9 @@ class Universe(AtomContainer):
         mn = np.array((0., 0., 0.)) - (bounds.min - structural_unit.position)
         mx = self.dimensions - (bounds.min - structural_unit.position)
         for i in range(len(self.dimensions)):
-            positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
-                                         endpoint=False))
+            # adding .magnitude because for some reason pint doesn't support linspace
+            positions.append(np.linspace(mn[i].magnitude, mx[i].magnitude,
+                                         n_units_xyz[i].magnitude, endpoint=False))
 
         positions = sorted(list(product(*positions)))
 

@@ -6,6 +6,7 @@ from itertools import combinations, combinations_with_replacement, product
 import numpy as np
 import pytest
 
+from MDMC.common.unit_registry import UREG
 from MDMC.MD.simulation import Universe
 from MDMC.trajectory_analysis.trajectory import Trajectory, \
     TemporalConfiguration
@@ -150,8 +151,8 @@ def test_r_set(PDF_setup, trajectory):
 
     r_values = np.arange(0., 10., 0.5)
     PDF_setup._parse_calc_MD_settings(trajectory, {'r':r_values})
-    assert np.all(PDF_setup.r == r_values)
-    assert PDF_setup.r_step == 0.5
+    assert np.all(PDF_setup.r == (r_values * UREG.angstrom))
+    assert PDF_setup.r_step == 0.5 * UREG.angstrom
 
 
 @pytest.mark.parametrize('r_parameter', ['r_min', 'r_max', 'r_step'])
@@ -181,8 +182,8 @@ def test_r_set_range(PDF_setup, trajectory, r_min, r_max, r_step):
     PDF_setup._parse_calc_MD_settings(trajectory, {'r_min':r_min,
                                                    'r_max':r_max,
                                                    'r_step':r_step})
-    assert np.all(PDF_setup.r == np.arange(r_min, r_max + r_step, r_step))
-    assert PDF_setup.r_step == r_step
+    assert np.all(PDF_setup.r == np.arange(r_min, r_max + r_step, r_step) * UREG.angstrom)
+    assert PDF_setup.r_step == r_step * UREG.angstrom
 
 
 def generate_positions(dimensions, number):
@@ -351,7 +352,7 @@ def test_calculate_histogram_entries(PDF, position_pairs, r_values, expected):
     """
 
     PDF.r = r_values
-    PDF.r_step = r_values[1] - r_values[0]
+    PDF.r_step = PDF.r[1] - PDF.r[0]
     assert np.all(PDF._calculate_histogram_from_position_pairs(position_pairs)
                   == expected)
 
@@ -431,7 +432,7 @@ def test_low_r_limit(PDF, weights, numbers, expected):
     PDF._dependent_variables = {}
     PDF._sum_partial_pairs()
     # Very small tolerance to account for FP differences
-    assert np.isclose(PDF.PDF[0, 0], expected, atol=1e-20, rtol=1e-12)
+    assert np.isclose(PDF.PDF[0, 0], expected * UREG.barn, atol=1e-20, rtol=1e-12)
 
 
 def get_expected_partition_pairs(x, y, z):

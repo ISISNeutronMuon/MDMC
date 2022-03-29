@@ -43,7 +43,7 @@ except ModuleNotFoundError as err:
                               ).with_traceback(err.__traceback__)
 from mpi4py import MPI
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator
@@ -55,7 +55,7 @@ from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
 
 
 LOGGER = logging.getLogger(__name__)
-UREG = pint.UnitRegistry()
+
 
 # pylint: disable=c-extension-no-member, too-many-lines
 # to avoid MPI warnings

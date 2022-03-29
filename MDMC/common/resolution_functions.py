@@ -2,7 +2,6 @@
 
 import numpy as np
 
-
 def gaussian(x, sigma, mu=0.0, norm=True):
     """
     Calculates the Gaussian distribution

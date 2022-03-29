@@ -3,13 +3,13 @@
 from abc import abstractmethod, ABC
 
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
-UREG = pint.UnitRegistry()
+
 
 @repr_decorator('data')
 class ObservableReader(Reader):

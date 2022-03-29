@@ -8,14 +8,14 @@ import warnings
 
 from numba import jit
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
-UREG = pint.UnitRegistry()
+
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -286,8 +286,8 @@ class PairDistributionFunction(Observable):
         Normalize the partial pairs and sum them to get the total PDF
         """
         # Partial independent prefactor (e.g. anything element independent)
-        prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
-                                            * self.r_step)
+        prefactor = (self.universe_volume / (4.0 * np.pi * self.r**2
+                                            * self.r_step)).magnitude
         self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
         concentration_norm = np.sum(list(self.numbers.values())) ** 2
         for partial_string, partial in self.partial_pdfs.items():
@@ -428,7 +428,7 @@ class PairDistributionFunction(Observable):
             ``> r_max``), however this is unavoidable
             """
 
-            r_max = np.max(self.independent_variables['r'])
+            r_max = np.max(self.independent_variables['r']).magnitude
             return universe_dim / (universe_dim // r_max)
 
         part_comps = np.array(list(map(get_component_lengths,
@@ -624,7 +624,7 @@ class PairDistributionFunction(Observable):
         # Assumes constant r step size
         r_min = np.min(self.r) - self.r_step / 2
         r_max = np.max(self.r) + self.r_step / 2
-        hist, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
+        hist, bin_edges = np.histogram([], len(self.r), range=(r_min.magnitude, r_max.magnitude))
 
         @jit('float64[:], float64[:]', nopython=True)
         def jit_histogram(separations, bin_edges):

@@ -6,12 +6,12 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD import structural_units, interactions
 
-UREG = pint.UnitRegistry()
+
 
 @repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
                 'n_molecules', 'bonded_interactions', 'nonbonded_interactions')

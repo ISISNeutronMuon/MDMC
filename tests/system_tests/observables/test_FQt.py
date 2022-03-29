@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
+from MDMC.common.unit_registry import UREG
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables import fqt
@@ -46,7 +47,7 @@ def Q_ref(incoh_file):
 
 @pytest.fixture(scope="module")
 def time_ref(incoh_file):
-    return np.array(incoh_file.variables['time'][:])
+    return np.array(incoh_file.variables['time'][:]) * UREG.fs
 
 @pytest.fixture(scope="module")
 def FQt_incoh_ref(incoh_file):

@@ -3,7 +3,7 @@
 from typing import Dict
 
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
 
@@ -14,7 +14,7 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
-UREG = pint.UnitRegistry()
+
 
 class SQwMixins:
     """
@@ -111,8 +111,10 @@ class SQwMixins:
 
     @Q.setter
     def Q(self, value):
-
-        self.independent_variables['Q'] = value * (UREG.angstrom ** -1)
+        if value is not None:
+            self.independent_variables['Q'] = value * (UREG.angstrom ** -1)
+        else:
+            self.independent_variables['Q'] = None
 
 
 class AbstractSQw(SQwMixins, Observable):
@@ -215,7 +217,7 @@ class AbstractSQw(SQwMixins, Observable):
             1D array of angular frequency `float` in units of ``1 / ps``
         """
 
-        return self.E.to(UREG.ps ** -1)
+        return (self.E.magnitude / (h_bar * 1e15)) * (UREG.ps ** -1)
 
     @property
     def SQw(self):
@@ -395,7 +397,7 @@ class AbstractSQw(SQwMixins, Observable):
             self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt) * UREG.meV}
         # Overwrite independent variable 'Q' if it already exists
         try:
-            self.independent_variables['Q'] = np.array(settings['Q_values'])
+            self.Q = np.array(settings['Q_values'])
         except KeyError:
             pass
 
@@ -553,12 +555,12 @@ class AbstractSQw(SQwMixins, Observable):
         error = self.SQw_err
         masking = np.where(np.any(error == float('inf'), axis=-1))
         SQw_cropped = np.delete(self.SQw[0], masking, axis=0)
-        Q_cropped = np.delete(self.Q, masking)
+        Q_cropped = np.delete(self.Q.magnitude, masking)
 
         # Enforce symmetry in the energy/time domain of the data. Note that if the original data
         # included both positive and negative values, we will end up with more densely spaced
         # values after this reflection.
-        E_reflected = np.append(self.E, -1 * self.E)
+        E_reflected = np.append(self.E.magnitude, -1 * self.E.magnitude)
         SQw_reflected = np.append(SQw_cropped, SQw_cropped, axis=-1)
 
         # Sort the data so the width of each bin can be calculated using argsort so we can apply

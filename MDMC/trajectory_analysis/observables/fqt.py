@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import Dict
 
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 from mpi4py import MPI
 from numba import jit
 
@@ -19,7 +19,7 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
 
-UREG = pint.UnitRegistry()
+
 
 class AbstractFQt(SQwMixins, Observable):
     """
@@ -120,12 +120,12 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     def FQt(self):
         """
-        Get the dynamic structure factor, F(Q, t), in arb
+        Get the dynamic structure factor, F(Q, t)
 
         Returns
         -------
         list of numpy.ndarray
-            `list` of 2D arrays of F(Q, t) `float` with arbitrary units
+            `list` of 2D arrays of F(Q, t) `float`
         """
 
         try:
@@ -196,7 +196,7 @@ class AbstractFQt(SQwMixins, Observable):
             try:
                 self.Q_vectors = np.array(settings['Q_vectors'])
             except KeyError:
-                self.Q_vectors = self._calculate_Q_vectors(self.Q)
+                self.Q_vectors = self._calculate_Q_vectors(self.Q.magnitude)
 
         comm = MPI.COMM_WORLD
         # Determine the shape of Q vectors array. If the number of processors
@@ -497,7 +497,7 @@ class AbstractFQt(SQwMixins, Observable):
         # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
         # By default numpy fft is unnormalized, so to have the same power as in
         # FQt the transform should be normalized to the length of the spectra
-        return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
+        return 0.5 * dt.magnitude * np.real(SQw_cropped) / len(FQt_mirror)
 
     def apply_resolution(self, resolution: Resolution):
         """
@@ -512,8 +512,11 @@ class AbstractFQt(SQwMixins, Observable):
         -------
         The FQt object with resolution applied.
         """
+        Q = None
+        if self.Q is not None:
+            Q = self.Q.magnitude
 
-        self.FQt = resolution.apply(self.FQt, self.t, self.Q)
+        self.FQt = resolution.apply(self.FQt, self.t.magnitude, Q)
 
         return self.FQt
 

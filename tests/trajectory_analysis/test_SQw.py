@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 from typing import Optional
-import pint
+from MDMC.common.unit_registry import UREG
 
 from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
@@ -20,7 +20,7 @@ from tests.trajectory_analysis.test_histogram import trajectory
 from tests.MD.test_simulation import water_SPCE_universe, water_molecule, \
     atom, universe
 
-UREG = pint.UnitRegistry()
+
 
 @pytest.fixture
 def altered_trajectory(water_SPCE_universe):
@@ -60,7 +60,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
         _SQw.use_FFT = use_FFT
         dimensions = universe.dimensions
         n_Q = 10
-        Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
+        Q_values = [2 * np.pi * i / dimensions[0].magnitude for i in range(1, n_Q+1)]
 
         if energy_resolution is None:
             _SQw.calculate_from_MD(trajectory,

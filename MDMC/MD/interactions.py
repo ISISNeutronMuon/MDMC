@@ -9,7 +9,7 @@ from types import MethodType
 import logging
 
 import numpy as np
-import pint
+from MDMC.common.unit_registry import UREG
 
 from MDMC.utilities.structural_units import is_atom
 from MDMC.MD.interaction_functions import Coulomb
@@ -17,7 +17,7 @@ from MDMC.common.decorators import repr_decorator
 
 
 LOGGER = logging.getLogger(__name__)
-UREG = pint.UnitRegistry()
+
 
 
 @repr_decorator('function')
