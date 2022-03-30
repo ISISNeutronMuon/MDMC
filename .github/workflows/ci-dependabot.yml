@@ -20,3 +20,7 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }} 
       run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+    - name: Push image
+      env:
+        BRANCH: ${{ github.head_ref }}
+      run: docker push mdmc/mdmc:ci-$BRANCH
