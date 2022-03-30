@@ -43,9 +43,8 @@ except ModuleNotFoundError as err:
                               ).with_traceback(err.__traceback__)
 from mpi4py import MPI
 import numpy as np
-from MDMC.common.unit_registry import UREG
 
-from MDMC.common import units
+from MDMC.common.unit_registry import UREG, convert_unit
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structural_units import Atom
@@ -1780,7 +1779,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         self._pressure = value * UREG.atm
         self.apply_ensemble_fixes()
 
-    # Unit has to be applied to getter due to operation in setter
     @property
     def t_damp(self):
         """
@@ -1823,7 +1821,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
                 raise AttributeError('the time_step attribute must be set'
                                      ' before t_damp') from error
 
-    # Unit has to be applied to getter due to operation in setter
     @property
     def p_damp(self):
         """
@@ -2075,218 +2072,6 @@ class LAMMPSEnsemble(PyLammpsAttribute):
                      ' {fixes: %s}',
                      self.__class__,
                      self.fixes)
-
-
-# Define the unit system used in LAMMPS
-# NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
-# e.g. harmonic angle potential strength is in kcal / mol radian ^ 2
-SYSTEM = {
-    'LENGTH': units.Unit('Ang'),
-    'TIME': units.Unit('fs'),
-    'MASS': units.Unit('g') / units.Unit('mol'),
-    'CHARGE': units.Unit('e'),
-    'ANGLE': units.Unit('deg'),
-    'TEMPERATURE': units.Unit('K'),
-    'ENERGY': units.Unit('kcal') / units.Unit('mol'),
-    'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('atm')
-}
-
-
-def convert_unit(value, unit=None, to_lammps=True):
-    """
-    Converts between MDMC units and LAMMPS real units
-
-    Parameters
-    ----------
-    value : array_like or float_like
-        The value of the physical property to be converted, in MDMC units.
-        Must derive from either ``ndarray`` or `float`.
-    unit : Unit, optional
-        The unit of the ``value``. If `None`, the ``value`` must possess a
-        ``unit`` attribute i.e. derive from ``UnitFloat`` or ``UnitArray``.
-        Default is `None`.
-    to_lammps : bool, optional
-        If `True` the conversion is from MDMC units to LAMMPS units. Default is
-        `True`.
-
-    Returns
-    -------
-    `float` or `numpy.ndarray`
-        Value in LAMMPS units if ``to_lammps`` is `True`, otherwise value in
-        MDMC units. Return type is same as ``value`` type.
-    """
-
-    def expand_components(unit, system):
-        """
-        Expands out the ``components`` of a ``Unit``, so that the ``Unit`` is
-        expressed purely in terms of ``base`` ``Unit`` objects. The only
-        exception to this is ``Unit`` objects which occur in ``System``: these
-        are kept in the `list` of ``components``.
-
-        Parameters
-        ----------
-        unit : Unit
-            The ``Unit`` to be expanded out
-        system : dict
-            A `dict` of {``Property``: ``Unit``} pairs, which is used to
-            substitute ``System`` ``Unit`` objects into the expanded
-            ``components``.
-
-        Returns
-        -------
-        `tuple`
-            A `tuple` of (``num``, ``denom``), where ``num`` is a `list` of all
-            ``base`` ``Unit`` objects in the numerator, and ``denom`` is a
-            `list` of all ``base`` ``Unit`` objects in the denominator
-        """
-
-        def is_sublist_of_list(sub, lst):
-            """
-            Determines if all of the elements in a sublist are in a `list`,
-            including ensuring that any duplicates in the sublist have at least
-            the same number of duplicates in the `list`
-
-            Parameters
-            ----------
-            sub : list
-                The sublist to be tested
-            lst : list
-                The `list` the ``sub`` is tested against
-
-            Returns
-            -------
-            `bool`
-                `True` if all of the elements of ``sub`` are in ``lst``, and
-                `False` if not
-            """
-
-            return all(sub.count(x) <= lst.count(x) for x in set(sub))
-
-        def remove_components(remove_comps, comps):
-            """
-            Removes all elements of a `list` of ``components`` from another
-            `list` of ``components``
-
-            Parameters
-            ----------
-            remove_comps : list
-                The ``components`` to be removed
-            comps : list
-                The ``components`` from which ``remove_comps`` is removed
-
-            Returns
-            -------
-            `list`
-                A `list` of ``components`` from which ``remove_comps`` have been
-                removed
-            """
-
-            for remove_comp in remove_comps:
-                comps.remove(remove_comp)
-
-            return comps
-
-        num, denom = [], []
-        # If unit is in system of units, don't break down to components, as
-        # a unit in the system of units always has a conversion, even if it is
-        # a compound unit.
-        if unit.base or unit in system.values():
-            num.append(unit)
-        else:
-            # tuple unpacking style below appends to num and denom lists
-            for comp in unit.components['numerator']:
-                num[len(num):], denom[len(denom):] = expand_components(comp,
-                                                                       system)
-            for comp in unit.components['denominator']:
-                denom[len(denom):], num[len(num):] = expand_components(comp,
-                                                                       system)
-
-            # Substitute in units rather than separated out components if a unit
-            # exists in the system of units.  This is because the conversion can
-            # always be determined for units in the system of units. Base units
-            # are filtered as they can only replace themselves (as they are
-            # their only component).
-            for sys_unit in (unit for unit in system.values() if not unit.base):
-                # while is required for powers of sys_unit, as otherwise only
-                # a single power will be removed
-                while True:
-                    sys_unit_num = sys_unit.components['numerator']
-                    sys_unit_denom = sys_unit.components['denominator']
-                    # Determine if all of the components of unit are in the
-                    # numerator and denominator lists. If so, remove them and
-                    # replace with the unit in the numerator.
-                    if (is_sublist_of_list(sys_unit_num, num) and
-                            is_sublist_of_list(sys_unit_denom, denom)):
-                        num = remove_components(sys_unit_num, num)
-                        denom = remove_components(sys_unit_denom, denom)
-                        num.append(sys_unit)
-                    # Do the same for the inverse (i.e. unit's numberator
-                    # components in the denominator list and vice versa). If so,
-                    # remove them and replace with the unit in the denominator.
-                    elif (is_sublist_of_list(sys_unit_num, denom) and
-                          is_sublist_of_list(sys_unit_denom, num)):
-                        denom = remove_components(sys_unit_num, denom)
-                        num = remove_components(sys_unit_denom, num)
-                        denom.append(sys_unit)
-                    # Breaks if the components of sys_unit are not found in num
-                    # and denom
-                    else:
-                        break
-        return num, denom
-
-    # If no unit argument is passed, the value must possess a unit
-    if not unit:
-        # If value is unitless, no conversion is required
-        try:
-            unit = value.unit
-        except AttributeError as error:
-            if value is None:
-                raise ValueError('Cannot convert NoneType value') from error
-            return value
-    # Expand the unit in terms of its base units (for numerator and denominator)
-    if to_lammps:
-        # SYSTEM represents the LAMMPS system units, units.SYSTEM the MDMC
-        # system units
-        l_sys = copy(SYSTEM)
-        mdmc_sys = copy(units.SYSTEM)
-
-        # For angular potential strength LAMMPS uses units derived from 'rad',
-        # namely 'kcal / mol rad^2', but uses 'deg' when measuring angles
-        # themselves. As a result 'deg' is recorded as their system unit. In
-        # order to prevent us from erroneously expressing potential strength in
-        # 'kcal / mol deg^2', we must override the LAMMPS system unit for angle
-        # ONLY in the case where we are dealing with angular potential, namely
-        # when the MDMC unit is measuring 'energy / angle^2'.
-        if (unit in (mdmc_sys['ENERGY'] / mdmc_sys['ANGLE'] ** 2,
-                     mdmc_sys['ENERGY'] / units.Unit('rad') ** 2)):
-            l_sys['ANGLE'] = units.Unit('rad')
-
-        expanded_unit = expand_components(unit, mdmc_sys)
-        # For each MDMC unit, determine the LAMMPS system unit that corresponds
-        # to that physical property (e.g. 'kJ / mol' -> 'ENERGY' -> 'kcal / mol')
-        l_unit_nums, l_unit_denoms = map(lambda unit_comps: [l_sys[comp.physical_property]
-                                                             for comp in unit_comps],
-                                         expanded_unit)
-
-        # In general we may have an MDMC measurement that is not wholly
-        # expressed in MDMC system units, for example 'kJ / mol rad^2' uses
-        # 'rad' rather than 'deg'. To account for this, multiply by the
-        # conversion_factor of the original MDMC unit to get the value in terms
-        # of MDMC system units only.
-        value *= unit.conversion_factor
-
-        # Then, for each component of the LAMMPS unit, divide by the
-        # conversion_factor to go from MDMC system units to LAMMPS system units.
-        for component in l_unit_nums:
-            value /= component.conversion_factor
-        for component in l_unit_denoms:
-            value *= component.conversion_factor
-
-    else:
-        value *= unit.conversion_factor
-
-    return value
 
 
 def parse_bonded_styles(interaction):

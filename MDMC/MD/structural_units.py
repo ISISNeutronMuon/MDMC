@@ -165,7 +165,7 @@ class StructuralUnit(ABC):
             A three element tuple or ``array`` of `float`
         """
 
-        self.position = self.position + np.array(displacement)
+        self.position = self.position + np.array(displacement) * UREG.angstrom
 
     @property
     def interactions(self):
@@ -682,7 +682,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         CoM = self.position
         for atom in self.atoms:
             atom.position = (CoM
-                             + rotation.apply(self._CoM_frame_positions[atom]))
+                             + rotation.apply(self._CoM_frame_positions[atom]) * UREG.angstrom)
 
 
 @repr_decorator('name', 'ID', 'element', 'position', 'velocity')
@@ -916,7 +916,7 @@ class Atom(StructuralUnit):
                     if charge_parameters == 0:
                         raise ValueError('Coulombic interaction does not have a'
                                          ' parameter "charge".')
-            return value * UREG.e
+            return value
         except AttributeError:
             return None
 
@@ -926,6 +926,7 @@ class Atom(StructuralUnit):
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
                 if value is not None:
+                    value *= UREG.e
                     try:
                         for parameter in inter.parameters:
                             if parameter.name == 'charge':

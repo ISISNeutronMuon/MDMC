@@ -16,7 +16,7 @@ import weakref
 
 from MDMC.common.decorators import repr_decorator
 
-@repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
+@repr_decorator('name', 'value', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
 class Parameter:
 
@@ -36,19 +36,11 @@ class Parameter:
     constraints : tuple
         The closed range of the ``Parameter.value``, (lower, upper).
         ``constraints`` must have the same units as ``value``.
-    **settings
-        ``unit`` (`str`)
-            The unit. If this is not provided then the unit will be taken from
-            the object passed as ``value``.
     """
 
-    def __init__(self, value, name, fixed=False, constraints=None, **settings):
+    def __init__(self, value, name, fixed=False, constraints=None):
 
         self.name = name
-        try:
-            self.unit = settings['unit'] if 'unit' in settings else value.unit
-        except AttributeError:
-            self.unit = None
         self.constraints = constraints
         self.value = value
         self.fixed = fixed

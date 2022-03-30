@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
+from MDMC.common.unit_registry import UREG
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential,
@@ -16,26 +17,26 @@ from MDMC.MD.simulation import Universe
 from MDMC.MD.interactions import Coulombic
 
 BUCK_A, BUCK_B, BUCK_C = 1., 2., 3.
-BUCK_A_UNIT = Unit('kJ') / Unit('mol')
-BUCK_B_UNIT = Unit('Ang') ** -1
-BUCK_C_UNIT = Unit('Ang') ** 6 * Unit('kJ') / Unit('mol')
+BUCK_A_UNIT = UREG.kJ / UREG.mol
+BUCK_B_UNIT = UREG.angstrom ** -1
+BUCK_C_UNIT = UREG.angstrom ** 6 * UREG.kJ / UREG.mol
 COULOMB_CHARGE = 5.0
-COULOMB_CHARGE_UNIT = Unit('e')
+COULOMB_CHARGE_UNIT = UREG.e
 HARMPOT_EQUIL_STATE, HARMPOT_POT_STREN = 10., 100.
-HARMPOT_EQUIL_STATE_BOND_UNIT = Unit('Ang')
-HARMPOT_POT_STREN_BOND_UNIT = Unit('kJ') / (Unit('mol') * Unit('Ang') ** 2)
-HARMPOT_EQUIL_STATE_ANGLE_UNIT = Unit('deg')
-HARMPOT_POT_STREN_ANGLE_UNIT = Unit('kJ') / (Unit('mol') * Unit('rad') ** 2)
+HARMPOT_EQUIL_STATE_BOND_UNIT = UREG.angstrom
+HARMPOT_POT_STREN_BOND_UNIT = UREG.kJ / (UREG.mol * UREG.angstrom ** 2)
+HARMPOT_EQUIL_STATE_ANGLE_UNIT = UREG.deg
+HARMPOT_POT_STREN_ANGLE_UNIT = UREG.kJ / (UREG.mol * UREG.rad ** 2)
 LJ_EPSILON, LJ_SIGMA = 15., 5.
-LJ_EPSILON_UNIT = Unit('kJ') / Unit('mol')
-LJ_SIGMA_UNIT = Unit('Ang')
+LJ_EPSILON_UNIT = UREG.kJ / UREG.mol
+LJ_SIGMA_UNIT = UREG.angstrom
 K1, K2, K3, K4 = 1., 2., 3., 4.
 N1, N2, N3, N4 = 5, 6, 7, 8
 D1, D2, D3, D4 = 9., 10., 11., 12.
-K_UNIT = Unit('kJ') / Unit('mol')
-D_UNIT = Unit('deg')
+K_UNIT = UREG.kJ / UREG.mol
+D_UNIT = UREG.deg
 NAME = 'length'
-UNIT = Unit('Ang')
+UNIT = UREG.angstrom
 VALUE = 1.0
 VAL_DICT = {'aa': UnitFloat(5, 'arb'),
             'bb': UnitFloat(7, 'arb'),
@@ -53,7 +54,7 @@ def parameters():
         each case the value is equal to the index of the parameter
     """
 
-    return Parameters([Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i
+    return Parameters([Parameter(VALUE * i * UNIT, NAME) for i
                        in range(10)])
 
 @pytest.fixture
@@ -225,7 +226,10 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     """
     
     for idx, parameter in enumerate(obj.parameters):
-        assert parameter.value == values[idx]
+        try:
+            assert parameter.value.magnitude == values[idx]
+        except AttributeError:  # as periodic nX does not have a unit
+            assert parameter.value == values[idx]
         assert parameter.name == names[idx]
 
 
@@ -254,7 +258,7 @@ def test_interaction_function_attributes(inter_func, parameters, request):
         assert getattr(inter_func, parameter).name == parameter
 
 
-@pytest.mark.parametrize("inter_func, units",
+@pytest.mark.parametrize("inter_func, func_units",
                          [(Buckingham(BUCK_A, BUCK_B, BUCK_C),
                            {'A':BUCK_A_UNIT,
                             'B':BUCK_B_UNIT,
@@ -284,7 +288,7 @@ def test_interaction_function_attributes(inter_func, parameters, request):
                           (LennardJones(LJ_EPSILON, sigma=LJ_SIGMA),
                            {'epsilon':LJ_EPSILON_UNIT,
                             'sigma':LJ_SIGMA_UNIT})])
-def test_interaction_function_units(inter_func, units):
+def test_interaction_function_units(inter_func, func_units):
 
     """
     Tests that the units of the parameters of all subclasses of
@@ -292,11 +296,8 @@ def test_interaction_function_units(inter_func, units):
     positional arguments, keyword arguments, and a mixture of the two
     """
 
-    for parameter_name, unit in units.items():
-        assert getattr(inter_func, parameter_name).unit == unit
-        # Test an incorrect unit
-        assert getattr(inter_func, parameter_name).unit != Unit('DOES_NOT_EXIST')
-
+    for parameter_name, unit in func_units.items():
+        assert getattr(inter_func, parameter_name).value.units == unit
 
 @pytest.mark.parametrize("inter_type, units",
                          [('bond', [HARMPOT_EQUIL_STATE_BOND_UNIT,
@@ -328,8 +329,8 @@ def test_harmonic_potential_units(inter_type, units):
     # potential_strength are created dynamically
     #pylint: disable=no-member
     for h_pot in h_pot_list:
-        assert h_pot.equilibrium_state.unit == units[0]
-        assert h_pot.potential_strength.unit == units[1]
+        assert h_pot.equilibrium_state.value.units == units[0]
+        assert h_pot.potential_strength.value.units == units[1]
 
 
 def test_harmonic_potential_invalid_inter_type():
@@ -388,15 +389,16 @@ def test_periodic_init(parameters):
         # index % 3 determines whether the parameter is K, n or d
         mod3_index = (index % 3)
         if mod3_index == 1:
-            assert getattr(period, 'K{0}'.format(order)).value == parameter
-            assert getattr(period, 'K{0}'.format(order)).unit == K_UNIT
+            assert getattr(period, 'K{0}'.format(order)).value.magnitude == parameter
+            assert getattr(period, 'K{0}'.format(order)).value.units == K_UNIT
         elif mod3_index == 2:
             assert getattr(period, 'n{0}'.format(order)).value == parameter
             # n is unitless
-            assert getattr(period, 'n{0}'.format(order)).unit is None
+            with pytest.raises(AttributeError):
+                getattr(period, 'n{0}'.format(order)).value.units
         elif mod3_index == 0:
-            assert getattr(period, 'd{0}'.format(order)).value == parameter
-            assert getattr(period, 'd{0}'.format(order)).unit == D_UNIT
+            assert getattr(period, 'd{0}'.format(order)).value.magnitude == parameter
+            assert getattr(period, 'd{0}'.format(order)).value.units == D_UNIT
 
 
 @pytest.mark.parametrize("parameters",

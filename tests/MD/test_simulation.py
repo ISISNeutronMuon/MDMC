@@ -8,6 +8,7 @@ import numpy.testing as npt
 import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
+from MDMC.common.unit_registry import UREG
 from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Parameter
@@ -124,9 +125,9 @@ def test_universe_stdout(capsys):
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     stdout = capsys.readouterr().out
     assert stdout == ('Universe created with:\n'
-                      '  Dimensions       [18.62, 18.62, 18.62]\n'
-                      '  Force field                       None\n'
-                      '  Number of atoms                      0\n'
+                      '  Dimensions       [18.62 Å, 18.62 Å, 18.62 Å]\n'
+                      '  Force field                             None\n'
+                      '  Number of atoms                            0\n'
                       '\n'
                       'Force field created by solvent SPCE\n')
 
@@ -136,7 +137,7 @@ def test_create_atom(atom):
     npt.assert_array_equal((0., 0., 0.), atom.position)
     npt.assert_array_equal((0., 0., 0.), atom.velocity)
     assert atom.element == 'H'
-    assert atom.mass == 1.008
+    assert atom.mass.magnitude == 1.008
 
 
 @parametrize("unit, changed_attr",
@@ -157,7 +158,7 @@ def test_copy_structural_unit(unit, changed_attr):
     units in this case) self.parent is self
     """
 
-    new_position = (5., 5., 5.)
+    new_position = (5., 5., 5.) * UREG.angstrom
     cpy_unit = unit.copy(position=new_position)
     for attr in unit.__dict__:
         if attr == '_position':
@@ -179,7 +180,7 @@ def test_copy_composite_rotation(water_molecule):
     cpy_unit = water_molecule.copy(position=(5., 5., 5.),
                                    rotation=(90., 0., 270.))
     water_molecule.rotate(x=90., z=270.)
-    position_diff = np.array([5., 5., 5.]) - np.array(WATER_POSITION)
+    position_diff = (np.array([5., 5., 5.]) - np.array(WATER_POSITION)) * UREG.angstrom
     for original, copied in zip(water_molecule.atoms, cpy_unit.atoms):
         assert np.allclose(original.position,
                            (copied.position - position_diff),
@@ -449,7 +450,7 @@ def test_translate(unit, universe):
     universe.add_structural_unit(unit)
     positions_in_universe(atom_positions, universe)
 
-    DISPLACEMENT = np.array([1.0, 1.5, -2.0])
+    DISPLACEMENT = np.array([1.0, 1.5, -2.0]) * UREG.angstrom
     unit.translate(DISPLACEMENT)
     atom_positions = [atom.position for atom in unit.atoms]
     assert np.all(unit.position == unit_position + DISPLACEMENT)
@@ -506,7 +507,7 @@ def test_molecule_position(position, expected):
                                                         mass=prop['mass'])
                                                 for element, prop
                                                 in element_properties.items()])
-    assert np.all(mol.position == expected)
+    assert np.all(mol.position.magnitude == expected)
 
 
 def test_molecule_subunit_positions(water_molecule):
@@ -715,7 +716,7 @@ def test_dispersion_cutoff(water_SPCE_universe):
     """
 
     cutoff_disp = interactions.Dispersion(water_SPCE_universe, (1, 1), cutoff=5.0)
-    assert cutoff_disp.cutoff == 5.0
+    assert cutoff_disp.cutoff.magnitude == 5.0
     infinite_disp = interactions.Dispersion(water_SPCE_universe, (1, 1))
     assert infinite_disp.cutoff is None
 
@@ -729,7 +730,7 @@ def test_charge_setting(water_SPCE_universe):
 
     atom = water_SPCE_universe.atoms[0]
     atom.charge = 5.0
-    assert atom.charge == 5.0
+    assert atom.charge.magnitude == 5.0
 
 
 def test_init_coulombic_atom_types():
@@ -904,7 +905,7 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
     # Define a tolerance to allow for rounding errors
     tolerance = 1e-16
     for atom in universe.atoms:
-        assert all(atom.position > [0, 0, 0] - np.array([tolerance] * 3))
+        assert all(atom.position.magnitude > [0, 0, 0] - np.array([tolerance] * 3))
         assert all(atom.position < universe.dimensions)
 
 
@@ -919,7 +920,7 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
     """
 
     num_strucs = num_density * np.prod(universe.dimensions)
-    num_strucs_rounded = int(np.cbrt(num_strucs)) ** 3
+    num_strucs_rounded = int(np.cbrt(num_strucs.magnitude)) ** 3
     universe_manual = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
     for i in range(num_strucs_rounded):
@@ -968,8 +969,8 @@ def test_solvate_spce_no_solute(uni):
 
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     actual_dens = len(uni.molecule_list) * SPCE_MASS / uni.volume
-    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
-    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens.magnitude
+    assert actual_dens.magnitude < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
 @parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
@@ -990,8 +991,8 @@ def test_solvate_spce_with_solute(molecule):
     for mol in univ.molecule_list:
         tot_mass += mol.mass
     actual_dens = tot_mass / univ.volume
-    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
-    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens.magnitude
+    assert actual_dens.magnitude < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
 
 def test_solvate_spce_no_out_of_bounds(solvated_universe):
@@ -1003,7 +1004,7 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
 
     for atom in solvated_universe.atoms:
         assert all(atom.position <= solvated_universe.dimensions)
-        assert all(atom.position >= [0, 0, 0])
+        assert all(atom.position >= [0, 0, 0] * UREG.angstrom)
 
 
 @parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
@@ -1045,9 +1046,10 @@ def test_solvate_spce_bond_lengths(dim_scalings):
 
     def _get_min_molecule(universe):
 
-        min_norm = float('inf')
+        min_norm = float('inf') * UREG.angstrom
         for mol in universe.molecule_list:
-            mol_norm = np.linalg.norm(mol.position)
+            # pint does not support linalg.norm so we take magnitude then re-add units
+            mol_norm = np.linalg.norm(mol.position.magnitude) * UREG.angstrom
             if mol_norm < min_norm:
                 min_mol = mol
                 min_norm = mol_norm
@@ -1058,7 +1060,8 @@ def test_solvate_spce_bond_lengths(dim_scalings):
         positions = [atom.position for atom in molecule.atoms]
         lengths = []
         for pair in combinations(positions, 2):
-            lengths.append(abs(np.linalg.norm(pair[1] - pair[0])))
+            lengths.append(abs(np.linalg.norm(pair[1].magnitude - pair[0].magnitude))
+                           * UREG.angstrom)
         lengths.sort()
         return lengths
 
@@ -1083,7 +1086,7 @@ def test_solvate_spce_density_perfect_dimensions(dim_scaling):
     total_mass = 0
     for atom in univ.atoms:
         total_mass += atom.mass
-    assert (abs(((total_mass / univ.volume) - SPCE_DENSITY) / SPCE_DENSITY)
+    assert (abs(((total_mass / univ.volume).magnitude - SPCE_DENSITY) / SPCE_DENSITY)
             < 1e-10)
 
 
@@ -1135,7 +1138,7 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     the solvent has been selected from inbuilt solvents
     """
 
-    test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
+    test_parameters = [Parameter(parameter[1], name=parameter[0])
                        for parameter in parameters]
     uni_parameters = list(solvated_universe.parameters)
 
@@ -1146,7 +1149,7 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     from copy import copy
     for test_p in test_parameters:
         for uni_p in copy(uni_parameters):
-            if (test_p.value == uni_p.value and test_p.name == uni_p.name):
+            if (test_p.value == uni_p.value.magnitude and test_p.name == uni_p.name):
                 uni_parameters.remove(uni_p)
                 break
     assert uni_parameters == []
@@ -1261,7 +1264,7 @@ def test_universe_density(structural_units, expected, universe):
     assert universe.density == 0.
     for structural_unit in structural_units:
         universe.add_structural_unit(structural_unit)
-    assert universe.density == expected
+    assert universe.density == expected * UREG.amu / UREG.angstrom ** 3
 
 @pytest.mark.parametrize("dimensions, expected",
                          [(-1., ValueError), ((-1., 1., 1.), ValueError), ([0., 1., 2.], ValueError),

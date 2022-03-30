@@ -8,6 +8,8 @@ import logging
 
 import numpy as np
 import pandas as pd
+import pint
+
 from MDMC.common.unit_registry import UREG
 from verbosemanager import VerboseManager
 
@@ -91,7 +93,7 @@ class Universe(AtomContainer):
             self.configuration = Configuration(structures)
         else:
             self.configuration = Configuration(universe=self)
-        self._solvent_density = 0.
+        self._solvent_density = 0. * (UREG.amu / UREG.angstrom ** 3)
         self._bonded_interaction_pairs = set()
         self._nonbonded_interactions = set()
         if force_field:
@@ -174,6 +176,8 @@ class Universe(AtomContainer):
 
     @dimensions.setter
     def dimensions(self, dimensions):
+        if isinstance(dimensions, pint.Quantity):
+            dimensions = dimensions.magnitude
 
         if isinstance(dimensions, float):
             if dimensions <= 0:
@@ -509,7 +513,8 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe`` in amu / Ang^3
         """
 
-        return np.sum([atom.mass for atom in self.atoms]) / self.volume
+        # np.sum doesn't like Pint so we take magnitude then re-add units
+        return np.sum([atom.mass.magnitude for atom in self.atoms]) * UREG.amu / self.volume
 
     @property
     def solvent_density(self):
@@ -522,7 +527,7 @@ class Universe(AtomContainer):
             The mass density of a solvent added using solvate in amu / Ang^3
         """
 
-        return self._solvent_density * (UREG.amu / UREG.angstrom ** 3)
+        return self._solvent_density
 
     def _update_atom_types(self, atom):
         """
@@ -886,7 +891,7 @@ class Universe(AtomContainer):
             `False` otherwise.
         """
 
-        return any(position > self.dimensions) or any(position < [0, 0, 0])
+        return any(position > self.dimensions.magnitude) or any(position < [0, 0, 0])
 
     @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
     def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
@@ -926,13 +931,14 @@ class Universe(AtomContainer):
         # Calculate useful properties from the original box
         solvent_mass = solvent_config.mass
         orig_box_dimensions = solvent_config.box_dimensions
-        # density is adjusted to account for density of solvent already in box
+        # density is given units and adjusted to account for density of solvent already in box
+        density *= (UREG.amu / UREG.angstrom ** 3)
         density = (density - self.solvent_density)
         # If this is already within the specified tolerance then return, as
         # calling solvate is redundant. Otherwise, raise an error, as solvate is
         # not designed to be applied multiple times to change the
         # solvent_density of a Universe.
-        if abs(density * 100) <= abs(tolerance):
+        if abs(density * 100).magnitude <= abs(tolerance):
             return
         if self.solvent_density != 0.:
             msg = ('The universe has already been solvated. The density of a'
@@ -943,7 +949,7 @@ class Universe(AtomContainer):
                          density, msg)
             raise ValueError(msg)
         # Get the prelim scaling of the orig box required to achieve density
-        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
+        dim_scaling = np.array([(solvent_config.density.magnitude / density.magnitude) ** (1. / 3)]
                                * 3)
 
         scale_factor = 0.
@@ -982,17 +988,18 @@ class Universe(AtomContainer):
 
                     remove = False
                     for pos in atom_positions:
-
+                        pos *= UREG.angstrom
                         pos += (dim_scaling
-                                * (CoM + trans_vect * orig_box_dimensions)
+                                * (CoM + trans_vect * orig_box_dimensions * UREG.angstrom)
                                 - CoM)
                         # Create binary list indicating the axes along
                         # which the atom is out of bounds.
                         axes = np.array([1 if i > j else 0
-                                         for i, j in zip(pos, self.dimensions)])
+                                         for i, j in zip(pos.magnitude,
+                                                         self.dimensions.magnitude)])
                         # Translates position if wrapping required.
-                        pos -= wrap * axes * num_tiles * box_dimensions
-                        remove = self._check_out_of_bounds(pos)
+                        pos -= (wrap * axes * num_tiles * box_dimensions) * UREG.angstrom
+                        remove = self._check_out_of_bounds(pos.magnitude)
                         # Check for overlap with solute molecules.
                         if not remove:
                             for solute in self.molecule_list:
@@ -1042,8 +1049,7 @@ class Universe(AtomContainer):
         except ImportError:
             pass
 
-        self._solvent_density += len(mols) * solvent_mass / self.volume
-
+        self._solvent_density += (len(mols) * solvent_mass / self.volume)
 
 def _primitive_cubic(dimensions, number):
     """

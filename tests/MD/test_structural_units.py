@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
+from MDMC.common.unit_registry import UREG
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import (Atom, BoundingBox, Molecule,
@@ -17,10 +18,12 @@ from MDMC.MD.structural_units import (Atom, BoundingBox, Molecule,
 from MDMC.MD.interactions import Coulombic
 
 ATOM_TYPES = [1, 2, 3]
-POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
-TEST_CHARGE_1 = 3.14
-TEST_CHARGE_2 = -2.71
-UNIVERSE_DIMENSIONS = (10., 10., 10.)
+POS_MASS = [((0, 0, 0) * UREG.angstrom, 1 * UREG.amu),
+            ((-1, 2, 1) * UREG.angstrom, 2 * UREG.amu),
+            ((2, 1, -2) * UREG.angstrom, 3 * UREG.amu)]
+TEST_CHARGE_1 = 3.14 * UREG.e
+TEST_CHARGE_2 = -2.71 * UREG.e
+UNIVERSE_DIMENSIONS = (10., 10., 10.) * UREG.angstrom
 
 
 @pytest.fixture
@@ -99,7 +102,7 @@ def test_charge():
     Ignores any warnings thrown.
     """
 
-    assert Atom('O', charge=TEST_CHARGE_1).charge == TEST_CHARGE_1
+    assert Atom('O', charge=TEST_CHARGE_1.magnitude).charge == TEST_CHARGE_1
 
 
 def test_charge_creates_coulombic(atom_charge):
@@ -122,7 +125,7 @@ def test_charge_after_init_creates_coulombic(atom):
     interaction.
     """
 
-    atom.charge = TEST_CHARGE_1
+    atom.charge = TEST_CHARGE_1.magnitude
     assert atom.interactions[0].name == 'Coulombic'
     assert len(atom.interactions) == 1
 
@@ -138,7 +141,7 @@ def test_charge_after_init(atom):
     Ignores any warnings thrown.
     """
 
-    atom.charge = TEST_CHARGE_1
+    atom.charge = TEST_CHARGE_1.magnitude
     assert atom.charge == TEST_CHARGE_1
 
 
@@ -153,8 +156,8 @@ def test_atom_charge_cutoff(atom):
     Ignores any warnings thrown.
     """
 
-    atom.charge = TEST_CHARGE_1
-    assert atom.interactions[0].cutoff == 10.
+    atom.charge = TEST_CHARGE_1.magnitude
+    assert atom.interactions[0].cutoff == 10. * UREG.angstrom
 
 
 @pytest.mark.filterwarnings("ignore:Coulombic interaction")
@@ -167,7 +170,7 @@ def test_charge_change_no_coulomb(atom_charge):
     Ignores any warnings thrown.
     """
 
-    atom_charge.charge = TEST_CHARGE_2
+    atom_charge.charge = TEST_CHARGE_2.magnitude
     assert atom_charge.charge == TEST_CHARGE_2
 
 
@@ -182,7 +185,7 @@ def test_charge_change_coulomb(atom):
     """
 
     Coulombic(atoms=atom, charge=TEST_CHARGE_1)
-    atom.charge = TEST_CHARGE_2
+    atom.charge = TEST_CHARGE_2.magnitude
     assert atom.charge == TEST_CHARGE_2
 
 
@@ -299,7 +302,7 @@ def test_init_coulombic_atoms_no_universe(atoms):
     atoms as a parameter.
     """
 
-    coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1)
+    coul = Coulombic(atoms=atoms, charge=TEST_CHARGE_1.magnitude)
     assert all(coul.atoms) == all(atoms)
     assert coul.parameters[0].value == TEST_CHARGE_1
 
@@ -341,7 +344,7 @@ def test_init_coulombic_atom_types_universe(atom_types_universe):
     """
 
     coul = Coulombic(atom_types_universe[1], atom_types=atom_types_universe[0],
-                     charge=TEST_CHARGE_1)
+                     charge=TEST_CHARGE_1.magnitude)
     assert isinstance(coul.universe, Universe)
     assert all(coul.atom_types) == all(atom_types_universe[0])
     assert coul.parameters[0].value == TEST_CHARGE_1
@@ -400,7 +403,7 @@ def test_molecule_rotation_preserves_CoM(position, water_molecule):
     water_molecule.position = position
     for x, y, z in permutations([0., 45., 90.]):
         water_molecule.rotate(x=x, y=y, z=z)
-        assert all(water_molecule.position == position)
+        assert all(water_molecule.position == position * UREG.angstrom)
 
 
 @pytest.mark.parametrize('angles', [(90., 0., 0.),
@@ -418,13 +421,13 @@ def test_molecule_rotation_preserves_distances(angles, water_molecule):
     def get_separations(atoms):
 
         # rounding is just to avoid floating point errors
-        return [round(np.linalg.norm(atom1.position - atom2.position), 5)
-                for atom1, atom2 in combinations(atoms, 2)]
+        return [round(np.linalg.norm(atom1.position.magnitude - atom2.position.magnitude), 5)
+                for atom1, atom2 in combinations(atoms, 2)] * UREG.angstrom
 
     initial_separations = get_separations(water_molecule.atoms)
     water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
     final_separations = get_separations(water_molecule.atoms)
-    assert initial_separations == final_separations
+    assert initial_separations.all() == final_separations.all()
 
 
 @pytest.mark.parametrize('angles, expected',
@@ -443,7 +446,7 @@ def test_molecule_rotation(angles, expected, water_molecule):
     """
 
     water_molecule.rotate(x=angles[0], y=angles[1], z=angles[2])
-    assert np.allclose(water_molecule.atoms[0].position, expected,
+    assert np.allclose(water_molecule.atoms[0].position, expected * UREG.angstrom,
                        atol=1e-5)
 
 

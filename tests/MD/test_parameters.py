@@ -2,6 +2,7 @@
 
 import pytest
 
+from MDMC.common.unit_registry import UREG
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import Coulomb, LennardJones
 from MDMC.MD.parameters import Parameter, Parameters
@@ -10,7 +11,7 @@ from MDMC.MD.structural_units import Atom, Molecule
 from MDMC.MD.interactions import Bond, Dispersion, Coulombic
 
 NAME = 'length'
-UNIT = Unit('Ang')
+UNIT = UREG.angstrom
 VALUE = 1.0
 COULOMB_CHARGE = 5.0
 
@@ -25,7 +26,7 @@ def parameter():
         A Parameter with a value and a name
     """
 
-    return Parameter(UnitFloat(VALUE, UNIT), NAME)
+    return Parameter(VALUE * UNIT, NAME)
 
 @pytest.fixture
 def scaled_parameter():

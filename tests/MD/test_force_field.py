@@ -4,6 +4,7 @@ Tests for force field parametrization
 
 import pytest
 
+from MDMC.common.unit_registry import UREG
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structural_units import (Atom, Molecule)
@@ -62,9 +63,9 @@ def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
 
     for atom in water_universe.atoms:
         if atom.element == 'H':
-            assert atom.charge == H_charge
+            assert atom.charge == H_charge * UREG.e
         else:
-            assert atom.charge == O_charge
+            assert atom.charge == O_charge * UREG.e
 
 
 @pytest.mark.parametrize('model', ['TIP3P', 'TIP4P', 'TIP3F', 'TIP4F', 'TIP5P',
@@ -88,9 +89,9 @@ def test_opls_water_model_masses(water_universe, model):
 
     for atom in water_universe.atoms:
         if atom.element == 'H':
-            assert atom.mass == 1.008
+            assert atom.mass == 1.008 * UREG.amu
         else:
-            assert atom.mass == 15.999
+            assert atom.mass == 15.999 * UREG.amu
 
 @pytest.mark.parametrize('model, sigma, epsilon',
                          [('TIP3P', 3.15061, 0.63639),
@@ -118,8 +119,8 @@ def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
     for interaction in water_universe.nonbonded_interactions:
         if isinstance(interaction, Dispersion):
             if 'O' in interaction.element_list():
-                assert interaction.function.sigma.value == sigma
-                assert interaction.function.epsilon.value == epsilon
+                assert interaction.function.sigma.value == sigma * UREG.angstrom
+                assert interaction.function.epsilon.value == epsilon * UREG.kJ / UREG.mol
             else:
                 assert interaction.function.sigma.value == 0.
                 assert interaction.function.epsilon.value == 0.
@@ -147,9 +148,9 @@ def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
 
     for interaction in water_universe.nonbonded_interactions:
         if isinstance(interaction, Bond):
-            assert interaction.function.sigma.equilibrium_state == eq_state
+            assert interaction.function.sigma.equilibrium_state == eq_state * UREG.angstrom
             assert (interaction.function.epsilon.potential_strength
-                    == pot_strength)
+                    == pot_strength * UREG.angstrom)
 
 
 @pytest.mark.parametrize('model, eq_state, pot_strength',
@@ -179,15 +180,16 @@ def test_opls_water_model_bond_angle_parameters(water_universe, model,
                     == pot_strength)
 
 
+b_pot_unit = (UREG.kJ / UREG.mol) / (UREG.angstrom ** 2)
 @pytest.mark.parametrize('atoms_info, parameters',
                          [([('F', 1), ('C', 2)],
-                           [1.38, 1535.528]),
+                           [1.38 * UREG.angstrom, 1535.528 * b_pot_unit]),
                           ([('C', 3), ('C', 3)],
-                           [1.51, 1464.4]),
+                           [1.51 * UREG.angstrom, 1464.4 * b_pot_unit]),
                           ([('S', 26), ('C', 90)],
-                           [1.76, 1046.0]),
+                           [1.76 * UREG.angstrom, 1046.0 * b_pot_unit]),
                           ([('C', 441), ('C', 602)],
-                           [1.352, 2284.464])
+                           [1.352 * UREG.angstrom, 2284.464 * b_pot_unit])
                          ])
 def test_ff_parametrize_bond(atoms_info, parameters):
 
@@ -208,15 +210,16 @@ def test_ff_parametrize_bond(atoms_info, parameters):
                                      parameters)
 
 
+ba_pot_unit = UREG.kJ / UREG.mol / UREG.rad ** 2
 @pytest.mark.parametrize('atoms_info, parameters',
                          [([('C', 15), ('C', 16), ('C', 16)],
-                           [118., 292.88]),
+                           [118. * UREG.degree, 292.88 * ba_pot_unit]),
                           ([('C', 2), ('C', 16), ('C', 2)],
-                           [124., 292.88]),
+                           [124. * UREG.degree, 292.88 * ba_pot_unit]),
                           ([('C', 90), ('N', 54), ('O', 702)],
-                           [121., 292.88]),
+                           [121. * UREG.degree, 292.88 * ba_pot_unit]),
                           ([('O', 5), ('S', 434), ('C', 279)],
-                           [96.4, 313.8])
+                           [96.4 * UREG.degree, 313.8 * ba_pot_unit])
                          ])
 def test_ff_parametrize_bond_angle(atoms_info, parameters):
 
@@ -237,15 +240,24 @@ def test_ff_parametrize_bond_angle(atoms_info, parameters):
                                      parameters)
 
 
+K_units = (UREG.kJ / UREG.mol)
 @pytest.mark.parametrize('atoms_info, parameters',
                          [([('C', 294), ('C', 277), ('N', 207), ('C', 294)],
-                           [9.6232, 25.47638, 0., 0., 180., 0., 1, 2, 3]),
+                           [9.6232 * K_units, 25.47638 * K_units, 0. * K_units,
+                            0. * UREG.deg, 180. * UREG.deg, 0. * UREG.deg,
+                            1, 2, 3]),
                           ([('H', 287), ('C', 277), ('C', 277), ('H', 287)],
-                           [0., 0., 1.2552, 0., 180., 0., 1, 2, 3]),
+                           [0. * K_units, 0. * K_units, 1.2552 * K_units,
+                            0. * UREG.deg, 180. * UREG.deg, 0. * UREG.deg,
+                            1, 2, 3]),
                           ([('O', 4), ('C', 3), ('C', 18), ('Cl', 45)],
-                           [-2.7196, 0., 0., 0., 180., 0., 1, 2, 3]),
+                           [-2.7196 * K_units, 0. * K_units, 0. * K_units,
+                            0. * UREG.deg, 180. * UREG.deg, 0. * UREG.deg,
+                            1, 2, 3]),
                           ([('O', 4), ('C', 3), ('O', 121), ('C', 100)],
-                           [0., 21.43882, 0., 0., 180., 0., 1, 2, 3])
+                           [0. * K_units, 21.43882 * K_units, 0. * K_units,
+                            0. * UREG.deg, 180. * UREG.deg, 0. * UREG.deg,
+                            1, 2, 3])
                          ])
 def test_ff_parametrize_proper_dihedral(atoms_info, parameters):
 
@@ -269,17 +281,17 @@ def test_ff_parametrize_proper_dihedral(atoms_info, parameters):
 
 @pytest.mark.parametrize('atoms_info, parameters',
                          [([('C', 3), ('C', 294), ('C', 277), ('O', 4)],
-                           [87.864, 180., 2]),
+                           [87.864 * K_units, 180. * UREG.deg, 2]),
                           ([('C', 3), ('H', 287), ('C', 277), ('O', 214)],
-                           [87.864, 180., 2]),
+                           [87.864 * K_units, 180. * UREG.deg, 2]),
                           ([('N', 54), ('C', 84), ('C', 3), ('Cl', 45)],
-                           [20.92, 180., 2]),
+                           [20.92 * K_units, 180. * UREG.deg, 2]),
                           ([('N', 54), ('H', 287), ('C', 294), ('C', 100)],
-                           [20.92, 180., 2]),
+                           [20.92 * K_units, 180. * UREG.deg, 2]),
                           ([('C', 86), ('C', 55), ('O', 53), ('O', 4)],
-                           [125.52, 180., 2.]),
+                           [125.52 * K_units, 180. * UREG.deg, 2.]),
                           ([('C', 86), ('O', 4), ('C', 55), ('O', 53)],
-                           [125.52, 180., 2.])
+                           [125.52 * K_units, 180. * UREG.deg, 2.])
                          ])
 def test_ff_parametrize_improper_dihedral(atoms_info, parameters):
 
@@ -311,10 +323,14 @@ def test_ff_parametrize_improper_dihedral(atoms_info, parameters):
 @pytest.mark.parametrize('atoms_info1, atoms_info2, expected',
                          [([('F', 1), ('C', 2), ('C', 2), ('C', 2)],
                            [('F', 106), ('C', 13), ('C', 23), ('C', 31)],
-                           [-8.368, 2.9288, 12.552, 0., 180., 0., 1, 2, 3]),
+                           [-8.368 * K_units, 2.9288 * K_units, 12.552 * K_units,
+                            0. * UREG.deg, 180. * UREG.deg, 0. * UREG.deg,
+                            1, 2, 3]),
                           ([('F', 1), ('C', 3), ('C', 18), ('H', 89)],
                            [('F', 106), ('C', 55), ('C', 40), ('H', 85)],
-                           [0., 0., 1.50624, 0., 180., 0., 1, 2, 3])
+                           [0. * K_units, 0. * K_units, 1.50624 * K_units,
+                            0. * UREG.deg, 180. * UREG.deg, 0. * UREG.deg,
+                            1, 2, 3])
                          ])
 def test_bonded_valid_atom_groups(atoms_info1, atoms_info2, expected):
 
@@ -375,7 +391,7 @@ def test_coulombic_valid_charges(atoms_info, expected):
     _validate_interaction_parameters(_parametrize_interaction(Coulombic,
                                                               'OPLSAA',
                                                               atoms=atoms),
-                                     [expected])
+                                     [expected] * UREG.e)
 
 
 @pytest.mark.parametrize('atoms_info',

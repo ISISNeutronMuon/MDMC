@@ -16,8 +16,8 @@ from itertools import zip_longest
 
 import numpy as np
 
+from MDMC.common.unit_registry import UREG
 from MDMC.common.decorators import repr_decorator
-from MDMC.common import units
 from MDMC.MD.parameters import Parameter, Parameters
 
 
@@ -118,84 +118,6 @@ class InteractionFunction:
             parameter.interactions = interaction
 
 
-def inter_func_decorator(*parameter_units):
-    """
-    Decorates a method to add units to all positional and any relevant keyword
-    arguments
-
-    Designed for adding units to parameters of ``__init__`` method for
-    subclasses of ``InteractionFunction``.
-
-    Parameters
-    ----------
-    *parameter_units : tuple
-        One or more `tuple` where the first element is a `str` giving the
-        keyword name of an expected parameter. The second element is a
-        `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
-        which is applied to the corresponding value passed to the decorated
-        method. If one of the values is unitless, pass `None` at the
-        corresponding index in ``parameter_units``.
-
-    Examples
-    --------
-    The following adds units of ``'Ang'`` to parameter ``alpha``, units of
-    ``'s'`` to the parameter ``beta``, and units of ``'atm'`` to the parameter
-    ``gamma``:
-
-        .. highlight:: python
-        .. code-block:: python
-
-            @inter_func_decorator(('alpha', 'Ang'), ('beta', 's'), ('gamma', 'Pa'))
-            def __init__(self, alpha, beta, gamma):
-                ...
-
-    If one of the parameters is unitless, this can be set with `None` (in which
-    case the returned type will be the same as the original value i.e. a
-    ``UnitFloat`` or ``UnitNDArray`` will not be created). So to set ``epsilon``
-    as unitless:
-
-        .. highlight:: python
-        .. code-block:: python
-
-            @inter_func_decorator(('delta', 'arb'), ('epsilon', None), ('gamma', 'deg'))
-            def __init__(self, delta, epsilon, gamma):
-                ...
-    """
-
-    # Ignore pylint warning for decorator inner function docstrings
-    #pylint: disable=missing-docstring
-    def decorator(func):
-        def unit_creator(value, unit):
-            # If no unit is provided, assume unitless and just return value
-            if unit is None:
-                return value
-            # try/except to determine whether value is float or array
-            try:
-                return units.UnitFloat(value, unit)
-            except TypeError:
-                return units.unit_array(value, unit)
-
-        @functools.wraps(func)
-        def wrapper(self, *values, **settings):
-            # If the name associated with a unit in parameter_units matches a
-            # keyword argument (in **settings), then associate that parameter
-            # with its unit. If not, then the parameter has been passed as a
-            # positional argument (in *values) and so we associate the next
-            # entry in *values with that unit (as we can rely on the order of
-            # the arguments being the same as the order of units in the
-            # decorator)
-            values = list(values)
-            for name, unit in parameter_units:
-                if name in settings:
-                    settings[name] = unit_creator(settings[name], unit)
-                else:
-                    settings[name] = unit_creator(values.pop(0), unit)
-
-            return func(self, **settings)
-        return wrapper
-    return decorator
-
-
 class Buckingham(InteractionFunction):
 
     r"""
@@ -231,11 +153,13 @@ class Buckingham(InteractionFunction):
         O_disp = Dispersion(universe, (O.atom_type, O.atom_type), function=buck)
     """
 
-    @inter_func_decorator(('A', units.ENERGY), ('B', units.LENGTH ** -1),
-                          ('C', units.LENGTH ** 6 * units.ENERGY))
     def __init__(self, A, B, C):
 
-        super().__init__(locals())
+        super().__init__({
+            'A': A * (UREG.kJ / UREG.mol),
+            'B': B * (UREG.angstrom ** -1),
+            'C': C * ((UREG.angstrom ** 6) * (UREG.kJ / UREG.mol))
+        })
 
 
 class Coulomb(InteractionFunction):
@@ -274,10 +198,9 @@ class Coulomb(InteractionFunction):
         O = Atom('O', charge=-0.8476)
     """
 
-    @inter_func_decorator(('charge', units.CHARGE))
     def __init__(self, charge):
 
-        super().__init__(locals())
+        super().__init__({'charge': charge * UREG.e})
 
 
 class HarmonicPotential(InteractionFunction):
@@ -345,49 +268,27 @@ class HarmonicPotential(InteractionFunction):
         hp = HarmonicPotential(180., 20.92, interaction_type='improper')
     """
 
-    def __new__(cls, equilibrium_state, potential_strength, **settings):
+    def __init__(self, equilibrium_state, potential_strength, **settings):
 
-        # interaction_type is a required keyword, but has to be passed through
-        # settings so that it can be correctly passed in inter_func_decorator
         try:
             if settings['interaction_type'].lower() == 'bond':
-                eq_unit = units.LENGTH
-                pot_unit = units.ENERGY / units.LENGTH ** 2
+                equilibrium_state *= UREG.angstrom
+                potential_strength *= (UREG.kJ / UREG.mol) / (UREG.angstrom ** 2)
             elif settings['interaction_type'].lower() in ('angle', 'bondangle',
                                                           'improper'):
-                eq_unit = units.ANGLE
+                equilibrium_state *= UREG.deg
                 # Use radians rather than system angle units (degrees)
-                pot_unit = units.ENERGY / units.Unit('rad') ** 2
+                potential_strength *= (UREG.kJ / UREG.mol) / UREG.rad ** 2
             else:
                 raise ValueError('The interaction_type must be "bond", "angle",'
                                  ' or "improper"')
         except KeyError as err:
             raise TypeError('An interaction_type of "bond", "angle" or improper"'
                             ' must be passed') from err
-        # Create a new (uninitialized) HarmonicPotential
-        h_pot = super().__new__(cls)
-        # Decorate __init__ with inter_func_decorator to apply to correct units
-        # (which are dependent on the interaction_type) to the equilibrium_state
-        # and potential_strength parameters. This decoration has to be done in
-        # new rather than directly on __init__ as it requires the dynamically
-        # defined interaction_type to determine the units. cls_init (which is a
-        # copy of the original cls.__init__) is required (rather than just
-        # applying the decorator directly to cls.__init__) because after the
-        # first HarmonicPotential is called, the cls.__init__ will be decorated.
-        # Therefore, after this if cls.__init__ is decorated again, it will be
-        # irrelevant, as the original decorator will be the last called. So
-        # cls._init is used as it will always be equivalent to the undecorated
-        # __init__ visible below.
-        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit),
-                                            ('potential_strength', pot_unit))(cls._init)
-        return h_pot
 
-    def __init__(self, equilibrium_state, potential_strength, **settings):
-
-        super().__init__(locals())
-
-    # Declare a class method equal to the __init__ method
-    _init = __init__
+        super().__init__({'equilibrium_state': equilibrium_state,
+                          'potential_strength': potential_strength,
+        })
 
 
 class Periodic(InteractionFunction):
@@ -462,11 +363,9 @@ class Periodic(InteractionFunction):
                 raise TypeError('All n values must be of type int')
             if order_parameters[1] < 0.:
                 raise ValueError('All n values must be non-negative ints')
-            val_dict['K{0}'.format(order)] = (units.UnitFloat(order_parameters[0],
-                                                              units.ENERGY))
+            val_dict['K{0}'.format(order)] = (order_parameters[0] * (UREG.kJ / UREG.mol))
             val_dict['n{0}'.format(order)] = order_parameters[1]
-            val_dict['d{0}'.format(order)] = (units.UnitFloat(order_parameters[2],
-                                                              units.ANGLE))
+            val_dict['d{0}'.format(order)] = (order_parameters[2] * UREG.deg)
 
         super().__init__(val_dict)
 
@@ -507,9 +406,9 @@ class LennardJones(InteractionFunction):
         O_disp = Disperion(universe, (O.atom_type, O.atom_type), function=lj)
     """
 
-    @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
     def __init__(self, epsilon, sigma, **settings):
 
-        super().__init__({'epsilon': epsilon, 'sigma': sigma})
+        super().__init__({'epsilon': epsilon * (UREG.kJ / UREG.mol),
+                          'sigma': sigma * UREG.angstrom})
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)
