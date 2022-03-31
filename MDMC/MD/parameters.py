@@ -57,6 +57,7 @@ class Parameter:
         self._interactions = []
         self._tie = None
         self._tie_parameter = None
+        self._tie_units = 1
         if settings.get('unit', False):
             self.unit = settings['unit']
 
@@ -239,7 +240,8 @@ class Parameter:
         """
 
         self._tie_parameter = weakref.ref(parameter)
-        self._tie_units = UREG.Unit(parameter.unit)
+        if parameter.unit is not None:
+            self._tie_units = UREG.Unit(parameter.unit)
         self._tie = ast.parse(
             'scrub_unit(self._tie_parameter().value)' + expr, mode='eval')
 

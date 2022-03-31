@@ -59,7 +59,7 @@ class GaussianResolution(Resolution):
         # rather than explicitly transforming it, then applying a factor
         # of 1e18 to convert from h / h_bar's units of eV s into system units.
 
-        sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
+        sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar.magnitude * 1e18) / self.e_res
         window = gaussian(t, sigma_t, norm=False)
 
         return window

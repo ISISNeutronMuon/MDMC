@@ -2,5 +2,7 @@
 
 from numpy import pi
 
-h = 4.135667696e-15  # eV s
-h_bar = h / (2 * pi)  # eV s
+from MDMC.common.unit_registry import UREG
+
+h = 4.135667696e-15 * UREG.eV * UREG.s
+h_bar = h / (2 * pi)

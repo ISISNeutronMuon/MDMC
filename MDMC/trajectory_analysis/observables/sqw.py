@@ -3,7 +3,7 @@
 from typing import Dict
 
 import numpy as np
-from MDMC.common.unit_registry import UREG
+from MDMC.common.unit_registry import UREG, scrub_unit
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
 
@@ -65,9 +65,8 @@ class SQwMixins:
         minimum_energy_separation = np.min(np.diff(np.sort(self.E)))
         limiting_energy = min(minimum_abs_energy, minimum_energy_separation)
 
-        # h is in units of eV s whereas system units are meV fs, so apply a
-        # factor of 1e3 * 1e15 to convert it
-        required_time = h * 1e18 / limiting_energy
+
+        required_time = (h / limiting_energy).to(UREG.fs)
         # We need an integer number of frames, so round up using np.ceil to
         # ensure we exceed the minimum number of frames needed
         return int(np.ceil(required_time / (2 * dt) + 1))
@@ -512,10 +511,8 @@ class AbstractSQw(SQwMixins, Observable):
             The time separation required by the current values of ``self.E``
         """
 
-        # h is in units of eV s whereas system units are meV fs, so apply a
-        # factor of 1e3 * 1e15 to convert it
         nE = len(self.E)
-        return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
+        return (h * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))).to(UREG.fs)
 
     def calculate_resolution_functions(self, dt):
         """
@@ -575,18 +572,16 @@ class AbstractSQw(SQwMixins, Observable):
         # Perform a (slow) inverse discrete Fourier transform now, with all available data, rather
         # than with potentially coarse time sampling during the SQw calculation
         # Create time array with the spacing dt, and a min/max value of the Nyquist limit.
-        # h is in units of eV s whereas system units are meV fs, so
-        # apply a factor of 1e3 * 1e15 to convert it
-        max_energy_separation = np.amax(np.diff(E_sorted))
-        t_max = h * 1e18 / (2 * max_energy_separation)
+        max_energy_separation = np.amax(np.diff(E_sorted)) * UREG.meV
+        t_max = (h / (2 * max_energy_separation)).to(UREG.fs)
         N_T = int(t_max / dt)
         t_array = np.linspace(- dt * N_T, dt * N_T, N_T)
         SQw_ift = np.zeros((len(SQw_sorted), N_T), dtype='complex')
 
         # In general we do not have equal energy spacing, multiply the exponential factor by this
         # before transposing and dotting to sum over the energy domain
-        exp = np.exp(1j * np.outer(t_array, E_sorted) /
-                     (h_bar * 1e18)) * widths
+        exp = np.exp(1j * np.outer(scrub_unit(t_array), scrub_unit(E_sorted)) /
+                     (h_bar.magnitude * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 
         # note: the interp2d interpolation function requires input of the form

@@ -59,9 +59,11 @@ class XML_SQw(SQwReader):
                     self.SQw_err.append(float(child_dict['error']))
 
         self.Q = np.sort(np.array(list(Q)))
-        self.w = np.sort(np.array(list(w)))
+        w = np.sort(np.array(list(w)))
 
-        self.E = self.w * 1e15 * h_bar
+        # FIXME: * 10 should be removed when unit conversion is added
+        #  (as w is 10x smaller than MDMC units in Van Well)
+        self.E = w * 1e15 * 10 * h_bar.magnitude
 
         # the way the Wells Ar data is structured and read in,
         # we need to reshape the self.SQw list with w points
