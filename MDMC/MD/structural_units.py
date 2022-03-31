@@ -16,7 +16,7 @@ import weakref
 
 import numpy as np
 import pint
-from MDMC.common.unit_registry import UREG
+from MDMC.common.unit_registry import UREG, scrub_unit
 from scipy.spatial.transform import Rotation
 
 from MDMC.common import atom_properties
@@ -98,10 +98,7 @@ class StructuralUnit(ABC):
         # due to molecule construction methods,
         # sometimes the molecules have units and sometimes they do not: check for this
         # else we will sometimes give a molecule the units Angstrom ** 2
-        if isinstance(position, pint.Quantity):
-            self._position = position
-        else:
-            self._position = position * UREG.angstrom
+        self._position = scrub_unit(position) * UREG.angstrom
 
     @property
     def velocity(self):
@@ -1243,11 +1240,7 @@ class Molecule(CompositeStructuralUnit):
 
     @position.setter
     def position(self, position):
-        # only set units if the molecule doesn't already have them
-        if isinstance(position, pint.Quantity):
-            self._position = position
-        else:
-            self._position = position * UREG.angstrom
+        self._position = scrub_unit(position) * UREG.angstrom
         self._set_subunit_positions()
 
     @property
@@ -1363,11 +1356,7 @@ class BoundingBox:
 
     @min.setter
     def min(self, value):
-        # only add units if it doesn't already have them
-        if isinstance(value, pint.Quantity):
-            self._min = value
-        else:
-            self._min = value * UREG.angstrom
+        self._min = scrub_unit(value) * UREG.angstrom
 
     @property
     def max(self):
@@ -1385,11 +1374,7 @@ class BoundingBox:
 
     @max.setter
     def max(self, value):
-        # only add units if it doesn't already have them
-        if isinstance(value, pint.Quantity):
-            self._max = value
-        else:
-            self._max = value * UREG.angstrom
+        self._max = scrub_unit(value) * UREG.angstrom
 
     @property
     def volume(self):

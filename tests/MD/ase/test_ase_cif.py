@@ -7,6 +7,7 @@ being defined.
 import numpy as np
 import pytest
 
+from MDMC.common.unit_registry import UREG
 from MDMC.MD.ase import cif
 
 
@@ -26,7 +27,10 @@ class MockAtom:
         self.atom_type = atom_type
         self.name = name
         self.ID = ID
-        self.position = position
+        try:
+            self.position = position * UREG.angstrom
+        except TypeError:
+            self.position = position
 
 
 class MockAtoms:
@@ -252,4 +256,4 @@ def test_make_atom_positions_valid(positions, expected):
     atoms = [MockAtom(position=np.array(position)) for position in positions]
     cif._make_atom_positions_valid(atoms)
     for atom, expected_atom_position in zip(atoms, expected):
-        assert np.allclose(atom.position, np.array(expected_atom_position))
+        assert np.allclose(atom.position.magnitude, np.array(expected_atom_position))

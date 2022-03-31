@@ -4,15 +4,16 @@
 import pytest
 
 from MDMC.MD.ase import conversions, viewer
+from MDMC.common.unit_registry import UREG
 
 
 class MockAtom:
 
     def __init__(self, ID):
         self.ID = ID
-        self.position = (0., 0., 0.)
+        self.position = (0., 0., 0.) * UREG.angstrom
         self.element = 'H'
-        self.mass = '1.'
+        self.mass = '1.' * UREG.amu
         self.charge = 0.
         self.bonded_interactions = []
 

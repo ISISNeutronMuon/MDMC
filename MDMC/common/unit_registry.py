@@ -1,5 +1,5 @@
-"""Contains the Pint unit registry for MDMC.
-Custom units etc. can be defined here."""
+"""Contains the Pint unit registry for MDMC, and functions that interact with it."""
+from typing import Any
 
 import pint
 
@@ -99,3 +99,20 @@ def convert_unit(quantity: pint.Quantity, target: str) -> pint.Quantity:
             quantity.to(target_system[quantity_type])
 
     return quantity
+
+
+def scrub_unit(obj: Any) -> Any:
+    """
+    Remove Pint units from a quantity if it has them, else do nothing.
+    Useful if an object can be a Quantity but can also be another data type
+    (as accessing .magnitude will then raise an AttributeError)
+
+    Parameters
+    ----------
+    obj: Any
+        The object that may or may not be a Quantity.
+    """
+
+    if isinstance(obj, pint.Quantity):
+        return obj.magnitude
+    return obj

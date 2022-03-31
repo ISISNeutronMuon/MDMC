@@ -7,6 +7,7 @@ import ase
 import numpy as np
 import pytest
 
+from MDMC.common.unit_registry import UREG
 from MDMC.MD.ase import conversions
 from MDMC.MD.structural_units import Atom
 

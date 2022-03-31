@@ -60,12 +60,8 @@ class XML_SQw(SQwReader):
                     self.SQw.append(float(SQw))
                     self.SQw_err.append(float(child_dict['error']))
 
-        # Account for unit conversion after creating the variables
         self.Q = np.sort(np.array(list(Q)))
-        self.Q *= Q_unit.conversion_factor / self.Q.unit.conversion_factor
-
         self.w = np.sort(np.array(list(w)))
-        self.w *= w_unit.conversion_factor / self.w.unit.conversion_factor
 
         self.E = self.w * 1e15 * h_bar
 
