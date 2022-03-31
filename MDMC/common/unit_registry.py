@@ -5,6 +5,7 @@ import pint
 
 UREG = pint.UnitRegistry()
 UREG.setup_matplotlib()
+UREG.define('@alias angstrom = ang = Ang = AA')
 UREG.default_format = '~D'
 
 MDMC_UNITS = {

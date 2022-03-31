@@ -5,7 +5,6 @@ from collections import Counter
 import numpy as np
 import pytest
 
-from MDMC.common import units
 import MDMC.MD.engine_facades.lammps_engine as lmp_eng
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential, LennardJones,
@@ -23,7 +22,6 @@ COUL_CUTOFF = 8.0
 DISP_CUTOFF = 10.0
 N_ATOMS = 10
 UNIVERSE_DIM = 50.0
-CONST = units.CODATA[units.CODATA_VERSION]
 CUTOFF = 3.14
 COUL_CUTOFF = 8.0
 DISP_CUTOFF = 10.0

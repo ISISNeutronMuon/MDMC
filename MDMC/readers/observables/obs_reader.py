@@ -5,7 +5,6 @@ from abc import abstractmethod, ABC
 import numpy as np
 from MDMC.common.unit_registry import UREG
 
-from MDMC.common import units
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 

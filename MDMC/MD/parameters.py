@@ -14,7 +14,11 @@ import operator
 import warnings
 import weakref
 
+import pint
+
 from MDMC.common.decorators import repr_decorator
+from MDMC.common.unit_registry import scrub_unit, UREG
+
 
 @repr_decorator('name', 'value', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
@@ -27,7 +31,7 @@ class Parameter:
 
     Parameters
     ----------
-    value : float
+    value : float, pint.Quantity
         The value of the parameter.
     name :  str
         The name of the parameter.
@@ -36,9 +40,13 @@ class Parameter:
     constraints : tuple
         The closed range of the ``Parameter.value``, (lower, upper).
         ``constraints`` must have the same units as ``value``.
+    **settings:
+        unit: str
+            The unit of the Parameter value. Will default to the units of the value
+            if the value is a pint Quantity
     """
 
-    def __init__(self, value, name, fixed=False, constraints=None):
+    def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
         self.name = name
         self.constraints = constraints
@@ -49,6 +57,8 @@ class Parameter:
         self._interactions = []
         self._tie = None
         self._tie_parameter = None
+        if settings.get('unit', False):
+            self.unit = settings['unit']
 
     @property
     def value(self):
@@ -60,7 +70,7 @@ class Parameter:
 
         Returns
         -------
-        float
+        float, pint.Quantity
             The value of the ``Parameter``, including if the ``Parameter`` is
             ``tied``
 
@@ -87,6 +97,22 @@ class Parameter:
             if self.constraints is not None:
                 self.validate_value(value, self.constraints)
             self._value = value
+
+    @property
+    def unit(self):
+        """Get or set the Pint units of `value`, as a string"""
+        if isinstance(self.value, pint.Quantity):
+            return str(self.value.units)
+        return None
+
+    @unit.setter
+    def unit(self, unit: str):
+        """Set the Pint units of a parameter Value as a string"""
+        if isinstance(self.value, pint.Quantity):
+            warnings.warn(f"Parameter {self.name} already has units of {self.unit}; "
+                          f"but they are now being set to {UREG.Unit(unit)}")
+
+        self.value = scrub_unit(self.value) * UREG.Unit(unit)
 
     @property
     def constraints(self):
@@ -177,7 +203,7 @@ class Parameter:
 
         if self._tie is None:
             return None
-        return eval(compile(self._tie, '', 'eval'))
+        return eval(compile(self._tie, '', 'eval')) * self._tie_units
 
     @property
     def tied(self):
@@ -213,8 +239,9 @@ class Parameter:
         """
 
         self._tie_parameter = weakref.ref(parameter)
+        self._tie_units = UREG.Unit(parameter.unit)
         self._tie = ast.parse(
-            'self._tie_parameter().value' + expr, mode='eval')
+            'scrub_unit(self._tie_parameter().value)' + expr, mode='eval')
 
     def __str__(self):
 
@@ -240,7 +267,7 @@ class Parameter:
 
         Parameters
         ----------
-        values : float
+        values : float, pint.Quantity
             The value of the ``Parameter``
 
         Raises
@@ -249,7 +276,7 @@ class Parameter:
             If the ``value`` is not within the ``constraints``
         """
 
-        if value < constraints[0] or value > constraints[1]:
+        if scrub_unit(value) < constraints[0] or scrub_unit(value) > constraints[1]:
             raise ValueError("Value must be within constraints")
 
     # comparison operator so parameters are always in the same order on refinement headings
@@ -333,7 +360,7 @@ class Parameters(list):
                '==': operator.eq,
                '!=': operator.ne}
 
-        return Parameters(filter(lambda p: ops[comparison](p.value, value), self))
+        return Parameters(filter(lambda p: ops[comparison](scrub_unit(p.value), value), self))
 
     def filter_interaction(self, interaction_name):
         """
@@ -404,7 +431,7 @@ class Parameters(list):
                     yield element
 
         return Parameters(filter(lambda p:
-                                 value in [getattr(atom, attribute)
+                                 value in [scrub_unit(getattr(atom, attribute))
                                            for int in p.interactions
                                            for atom
                                            in flatten(int.atoms)],

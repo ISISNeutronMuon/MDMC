@@ -12,9 +12,11 @@ fixed, has constraints or is tied.
 Contains filters for filtering list of parameters based on a predicate."""
 
 import functools
+import warnings
 from itertools import zip_longest
 
 import numpy as np
+import pint
 
 from MDMC.common.unit_registry import UREG
 from MDMC.common.decorators import repr_decorator
@@ -31,9 +33,7 @@ class InteractionFunction:
     ---------
     val_dict : dict
         ``name:value`` pairs. Currently this must be ordered alphabetically.
-        ``value`` must either be an object with a ``value`` and a ``unit`` (e.g.
-        a ``UnitFloat`` object), or a (`float`, `str`) `tuple`, where `float` is
-        the value and `str` is the unit.
+        ``value`` must either be a float, or a Pint quantity.
     """
 
     def __init__(self, val_dict):
@@ -43,6 +43,8 @@ class InteractionFunction:
         parameters = Parameters()
         for name, value in val_dict.items():
             if name not in excluded:
+                if not isinstance(value, pint.Quantity):
+                    warnings.warn(f"Parameter {name} has no units")
                 parameter = Parameter(value, name)
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
@@ -367,6 +369,7 @@ class Periodic(InteractionFunction):
             val_dict['n{0}'.format(order)] = order_parameters[1]
             val_dict['d{0}'.format(order)] = (order_parameters[2] * UREG.deg)
 
+        warnings.filterwarnings('ignore', message="Parameter n")
         super().__init__(val_dict)
 
 

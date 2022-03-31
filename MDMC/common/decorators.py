@@ -4,8 +4,6 @@ from functools import wraps
 import textwrap
 from types import FunctionType
 
-from MDMC.common.units import UnitFloat, unit_array
-
 
 def set_docstring(docstring):
     """

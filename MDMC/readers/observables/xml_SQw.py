@@ -4,7 +4,6 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from MDMC.common import units
 from MDMC.common.constants import h_bar
 from MDMC.readers.observables.obs_reader import SQwReader
 
@@ -32,8 +31,7 @@ class XML_SQw(SQwReader):
         n_Q = int(_root_dict['n-q-points'])
         n_w = int(_root_dict['n-omega-points'])
 
-        Q_unit = units.Unit(_root_dict['q-unit'])
-        w_unit = units.Unit(_root_dict['omega-unit'])
+        # TODO: add unit conversion (see issue #883)
 
         # Local variable Q is used for setting self.Q after all children of
         # self._root have been parsed. This is required because a set cannot be

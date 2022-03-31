@@ -11,8 +11,8 @@ import pandas as pd
 from MDMC.common.atom_properties import ATOMIC_NUMBER
 from MDMC.common.decorators import wrap_docstring
 from MDMC.common.df_operations import filter_dataframe
-from MDMC.common import units
 from MDMC.MD import force_fields
+from MDMC.common.unit_registry import UREG
 
 
 def read_prm(fname, ncols=14):
@@ -287,5 +287,5 @@ def convert_units(series):
         The ``Series`` for which the parameters will be converted
     """
 
-    return (series.astype(float) * units.kcal
-            / units.mol).round(decimals=5).astype(str)
+    return (series.astype(float) * UREG.kcal
+            / UREG.mol).round(decimals=5).astype(str)

@@ -3,7 +3,6 @@
 import pytest
 
 from MDMC.common.unit_registry import UREG
-from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import Coulomb, LennardJones
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
@@ -38,7 +37,7 @@ def scaled_parameter():
         A Parameter with a scaled value and a name
     """
 
-    return Parameter(UnitFloat(5 * VALUE, UNIT), NAME)
+    return Parameter(5 * VALUE * UNIT, NAME)
 
 @pytest.fixture
 def coulomb():
@@ -89,23 +88,8 @@ def parameters():
         each case the value is equal to the index of the parameter
     """
 
-    return Parameters([Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i
+    return Parameters([Parameter(VALUE * i * UNIT, NAME) for i
                        in range(10)])
-
-
-@pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
-                                         (UnitFloat(VALUE, UNIT), None)])
-def test_parameter_value_init(value, unit):
-
-    """
-    Tests that Parameters can be initialised by either passing a UnitFloat as
-    the value, or by passing a value and a unit
-    """
-
-    parameter = (Parameter(value, NAME, unit=unit) if unit
-             else Parameter(value, NAME))
-    assert parameter.value == VALUE
-    assert parameter.unit == UNIT
 
 
 def test_tied_parameters(parameter, scaled_parameter):
@@ -158,7 +142,7 @@ def test_fixed_parameter_change_warning(parameter):
     parameter.fixed = True
     with pytest.warns(UserWarning):
         parameter.value *= 5.
-    assert parameter.value == VALUE
+    assert parameter.value == VALUE * UREG.angstrom
 
 
 @pytest.mark.parametrize('constraints, value', [((0., 2.), 2.),
@@ -194,7 +178,7 @@ def test_value_setting_outside_constraints(constraints, value, parameter):
     parameter.constraints = constraints
     with pytest.raises(ValueError):
         parameter.value = value
-    assert parameter.value == VALUE
+    assert parameter.value == VALUE * UREG.angstrom
 
 
 def test_interaction_setting_name(parameter_inter, coulomb):
@@ -219,8 +203,7 @@ def test_interaction_setting_function_name(parameter_inter):
 
     with pytest.raises(ValueError):
         parameter_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
-                                             function=LennardJones((1., 'arb'),
-                                                                   (1., 'arb')))
+                                             function=LennardJones(1., 1.))
 
 
 @pytest.mark.parametrize('expression, expected', [('*2.', VALUE * 2.),
@@ -234,7 +217,7 @@ def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
     """
 
     scaled_parameter.set_tie(parameter, expression)
-    assert scaled_parameter.value == expected
+    assert scaled_parameter.value == expected * UREG.angstrom
 
 
 @pytest.mark.parametrize('pred, attr, val', [(lambda p: p.fixed is True,
@@ -256,7 +239,7 @@ def test_filter_parameters(pred, attr, val):
 
     parameters = Parameters()
     for index in range(10):
-        parameter = Parameter(VALUE * index, NAME, unit=UNIT)
+        parameter = Parameter(VALUE * index * UNIT, NAME)
         if index % 2:
             setattr(parameter, attr, val)
         parameters.append(parameter)
@@ -274,9 +257,9 @@ def test_filter_parameters_name(name, number):
     parameters which have the correct name
     """
 
-    parameters = Parameters([Parameter(VALUE * index, 'charge', unit=UNIT)
+    parameters = Parameters([Parameter(VALUE * index * UNIT, 'charge')
                          if index < 3
-                         else Parameter(VALUE * index, 'epsilon', unit=UNIT)
+                         else Parameter(VALUE * index * UNIT, 'epsilon')
                          for index in range(5)])
 
     filtered = parameters.filter_name(name)
@@ -325,8 +308,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
             parameter.interactions = coulombic
         else:
             parameter.interactions = Dispersion(Universe(1.0), [1, 1],
-                                            function=LennardJones((1., 'arb'),
-                                                                  (1., 'arb')))
+                                            function=LennardJones(1., 1.,))
 
     assert (parameters.filter_interaction(int_name)
             == parameters[slice(*expected_slice)])
@@ -348,7 +330,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
 
     for index, parameter in enumerate(parameters):
         if index % 2:
-            function = LennardJones((1., 'arb'), (1., 'arb'))
+            function = LennardJones(1., 1.)
         else:
             function = coulomb
         parameter.interactions = Dispersion(Universe(1.0), [1, 1],

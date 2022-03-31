@@ -7,7 +7,6 @@ import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.common.unit_registry import UREG
-from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            HarmonicPotential,
                                            InteractionFunction, LennardJones,
@@ -38,9 +37,9 @@ D_UNIT = UREG.deg
 NAME = 'length'
 UNIT = UREG.angstrom
 VALUE = 1.0
-VAL_DICT = {'aa': UnitFloat(5, 'arb'),
-            'bb': UnitFloat(7, 'arb'),
-            'cc': UnitFloat(9, 'arb')}
+VAL_DICT = {'aa': 5,
+            'bb': 7,
+            'cc': 9}
 
 
 @pytest.fixture
