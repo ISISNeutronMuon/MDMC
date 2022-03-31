@@ -269,17 +269,21 @@ class Control:
                                                     n_parameters=len(self.fit_parameters))
 
         # Use specified MD_steps if supplied, else calculate
+        # cont_slicing produces small sub-trajectories, so calculation is unnecessary
         if MD_steps:
             try:
                 assert MD_steps >= minimum_MD_steps
-                # Set self.MD_steps to be the largest number required by any of
-                # our observable pairs
-                maximum_MD_steps = minimum_MD_steps
-                for pair in self.observable_pairs:
-                    max_MD_steps_pair = self._calculate_maximum_MD_steps(
-                        MD_steps, pair)
-                    maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
-                self.MD_steps = maximum_MD_steps
+                if self.settings.get('cont_slicing', False):
+                    self.MD_steps = MD_steps
+                else:
+                    # Set self.MD_steps to be the largest number required by any of
+                    # our observable pairs
+                    maximum_MD_steps = minimum_MD_steps
+                    for pair in self.observable_pairs:
+                        max_MD_steps_pair = self._calculate_maximum_MD_steps(
+                            MD_steps, pair)
+                        maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
+                    self.MD_steps = maximum_MD_steps
             except AssertionError as error:
                 raise ValueError('Experimental datasets provided require a '
                                  f'minimum MD_steps value of {minimum_MD_steps} in order to '
