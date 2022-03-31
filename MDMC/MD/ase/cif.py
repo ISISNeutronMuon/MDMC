@@ -132,11 +132,13 @@ def ase_read_cif(file, **settings):
     if atom_types[0]:
         def coulombic_key(atom):
             return atom.atom_type
+
         def bonded_key(atom_arr):
             return [atom.atom_type for atom in atom_arr]
     elif names[0]:
         def coulombic_key(atom):
             return atom.name
+
         def bonded_key(atom_arr):
             return [atom.name for atom in atom_arr]
     else:

@@ -24,7 +24,6 @@ class ConfigurationReaderFactory(ReaderFactory):
 
     @classmethod
     def create_reader_from_ext(cls, extension, file_name):
-
         """
         Parameters
         ----------

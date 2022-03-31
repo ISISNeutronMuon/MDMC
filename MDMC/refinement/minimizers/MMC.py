@@ -19,7 +19,6 @@ class MMC(Minimizer):
         list of the column titles for the minimizer history
     """
 
-
     def __init__(self, parameters, distribution, max_parameter_change, **settings):
         super().__init__(parameters, distribution, max_parameter_change)
         self.MC_norm = settings.get('MC_norm', 1.0)

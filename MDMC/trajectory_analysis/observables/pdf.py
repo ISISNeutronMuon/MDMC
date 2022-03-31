@@ -16,7 +16,6 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
-
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
 
@@ -287,7 +286,7 @@ class PairDistributionFunction(Observable):
         """
         # Partial independent prefactor (e.g. anything element independent)
         prefactor = (self.universe_volume / (4.0 * np.pi * self.r**2
-                                            * self.r_step)).magnitude
+                                             * self.r_step)).magnitude
         self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
         concentration_norm = np.sum(list(self.numbers.values())) ** 2
         for partial_string, partial in self.partial_pdfs.items():
@@ -624,7 +623,8 @@ class PairDistributionFunction(Observable):
         # Assumes constant r step size
         r_min = np.min(self.r) - self.r_step / 2
         r_max = np.max(self.r) + self.r_step / 2
-        hist, bin_edges = np.histogram([], len(self.r), range=(r_min.magnitude, r_max.magnitude))
+        hist, bin_edges = np.histogram(
+            [], len(self.r), range=(r_min.magnitude, r_max.magnitude))
 
         @jit('float64[:], float64[:]', nopython=True)
         def jit_histogram(separations, bin_edges):

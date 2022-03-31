@@ -12,7 +12,6 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.MD import structural_units, interactions
 
 
-
 @repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
                 'n_molecules', 'bonded_interactions', 'nonbonded_interactions')
 class SolventConfig(ABC):
@@ -238,11 +237,11 @@ class SolventConfig(ABC):
 
         Returns
         -------
-        float
+        pint.Quantity
             The mass density of the SolventConfig in amu / Ang^3
         """
 
-        return (self.mass * self.n_molecules / self.volume)
+        return self.mass * self.n_molecules / self.volume
 
     def reset_molecules(self):
         """

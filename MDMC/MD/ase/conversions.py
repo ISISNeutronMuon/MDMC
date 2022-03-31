@@ -426,6 +426,7 @@ class X3D(x3d.X3D):
         # All cylinders (bonds) are oriented along y axis by default
         # Calculate axis-angle representation in order to set bond rotation
         cylinder = np.array([0., np.abs(separation), 0.])
+
         def normalise(x):
             return x / np.linalg.norm(x)
         uvec1, uvec2 = normalise(cylinder), normalise(sub)

@@ -61,7 +61,7 @@ class XML_SQw(SQwReader):
         self.Q = np.sort(np.array(list(Q)))
         w = np.sort(np.array(list(w)))
 
-        # FIXME: * 10 should be removed when unit conversion is added
+        # TODO: * 10 should be removed when unit conversion is added
         #  (as w is 10x smaller than MDMC units in Van Well)
         self.E = w * 1e15 * 10 * h_bar.magnitude
 

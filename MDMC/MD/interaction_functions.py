@@ -11,7 +11,6 @@ fixed, has constraints or is tied.
 
 Contains filters for filtering list of parameters based on a predicate."""
 
-import functools
 import warnings
 from itertools import zip_longest
 
@@ -275,7 +274,8 @@ class HarmonicPotential(InteractionFunction):
         try:
             if settings['interaction_type'].lower() == 'bond':
                 equilibrium_state *= UREG.angstrom
-                potential_strength *= (UREG.kJ / UREG.mol) / (UREG.angstrom ** 2)
+                potential_strength *= (UREG.kJ / UREG.mol) / \
+                    (UREG.angstrom ** 2)
             elif settings['interaction_type'].lower() in ('angle', 'bondangle',
                                                           'improper'):
                 equilibrium_state *= UREG.deg
@@ -290,7 +290,7 @@ class HarmonicPotential(InteractionFunction):
 
         super().__init__({'equilibrium_state': equilibrium_state,
                           'potential_strength': potential_strength,
-        })
+                          })
 
 
 class Periodic(InteractionFunction):
@@ -365,7 +365,8 @@ class Periodic(InteractionFunction):
                 raise TypeError('All n values must be of type int')
             if order_parameters[1] < 0.:
                 raise ValueError('All n values must be non-negative ints')
-            val_dict['K{0}'.format(order)] = (order_parameters[0] * (UREG.kJ / UREG.mol))
+            val_dict['K{0}'.format(order)] = (
+                order_parameters[0] * (UREG.kJ / UREG.mol))
             val_dict['n{0}'.format(order)] = order_parameters[1]
             val_dict['d{0}'.format(order)] = (order_parameters[2] * UREG.deg)
 

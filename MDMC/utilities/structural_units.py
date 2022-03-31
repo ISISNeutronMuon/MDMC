@@ -1,5 +1,6 @@
 """Structural unit utility functions"""
 
+
 def is_atom(atom: object) -> bool:
     """
     Checks if the passed object is an instance of the ``Atom`` class.

@@ -195,7 +195,8 @@ class Control:
                         'TOTAL STEP': []}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
-        fit_parameters = {p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)}
+        fit_parameters = {p for p in fit_parameters if (
+            not (p.fixed or p.tied) and p.value != 0)}
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
@@ -203,7 +204,7 @@ class Control:
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
                                                            max_parameter_change=max_parameter_change,
-                                                          **settings)
+                                                           **settings)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
@@ -221,14 +222,15 @@ class Control:
                 use_FFT = True
 
             exp_observable = self._read_observable_from_file(dset['type'],
-                                                        dset['reader'],
-                                                        dset['file_name'],
-                                                        use_FFT)
+                                                             dset['reader'],
+                                                             dset['file_name'],
+                                                             use_FFT)
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
 
-            MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
+            MD_observable = self._create_empty_observable(
+                exp_observable, exp_observable.use_FFT)
 
             self._validate_energy(MD_observable)
 
@@ -282,7 +284,8 @@ class Control:
                     for pair in self.observable_pairs:
                         max_MD_steps_pair = self._calculate_maximum_MD_steps(
                             MD_steps, pair)
-                        maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
+                        maximum_MD_steps = max(
+                            maximum_MD_steps, max_MD_steps_pair)
                     self.MD_steps = maximum_MD_steps
             except AssertionError as error:
                 raise ValueError('Experimental datasets provided require a '
@@ -322,7 +325,8 @@ class Control:
                                           '  Number of observables',
                                           '  Number of parameters'])
 
-        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        print(
+            f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self):
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
@@ -405,7 +409,8 @@ class Control:
 
         if self.verbose >= 1:
             average_timing = statistics.mean(self.step_timings)
-            print(f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
+            print(
+                f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
 
         verbose_manager.finish("Refinement")
 
@@ -556,7 +561,7 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
-        observable.use_FFT =  use_FFT
+        observable.use_FFT = use_FFT
         return observable
 
     def _calculate_observables(self, simulation, observable_pairs):
@@ -581,7 +586,8 @@ class Control:
 
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
-            obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
+            obs_timings = pair.MD_obs.calculate_from_MD(
+                trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:

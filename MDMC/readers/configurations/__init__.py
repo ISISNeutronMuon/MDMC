@@ -50,7 +50,8 @@ def read(file, docstring=False, **settings):
     try:
         reader = ConfigurationReaderFactory.create_reader(extension, file)
     except ImportError:
-        reader = ConfigurationReaderFactory.create_reader_from_ext(extension, file)
+        reader = ConfigurationReaderFactory.create_reader_from_ext(
+            extension, file)
 
     if docstring:
         help(reader.parse)

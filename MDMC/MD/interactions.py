@@ -19,7 +19,6 @@ from MDMC.common.decorators import repr_decorator
 LOGGER = logging.getLogger(__name__)
 
 
-
 @repr_decorator('function')
 class Interaction(ABC):
 

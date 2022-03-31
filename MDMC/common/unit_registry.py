@@ -94,9 +94,11 @@ def convert_unit(quantity: pint.Quantity, target: str) -> pint.Quantity:
     except pint.DimensionalityError:
         if quantity_type == 'MASS':  # amu <-> g/mol conversion is not currently supported by pint
             if dict(quantity.dimensionality) == {'[mass]': 1}:
-                quantity = quantity.to(UREG.amu).magnitude * (UREG.g / UREG.mol)
+                quantity = quantity.to(
+                    UREG.amu).magnitude * (UREG.g / UREG.mol)
             if dict(quantity.dimensionality) == {'[mass]': 1, '[substance]': -1}:
-                quantity = quantity.to((UREG.g / UREG.mol)).magnitude * UREG.amu
+                quantity = quantity.to(
+                    (UREG.g / UREG.mol)).magnitude * UREG.amu
             quantity.to(target_system[quantity_type])
 
     return quantity

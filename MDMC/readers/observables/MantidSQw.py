@@ -38,7 +38,8 @@ class MantidSQw(SQwReader):
         # as this is an abstracted open method
 
         self.file_variables = open(self.file_name, encoding='UTF-8')
-        self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
+        self.file_detectors = open(
+            self.file_name + '_detectors', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback):
         """Closes variable and detector files after parsing"""

@@ -569,7 +569,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             assert dmin == 0.0
                             # unit is taken from universe dimensions (which is a
                             # UnitArray)
-                            assert dmax == convert_unit(self.universe.dimensions[i], 'LAMMPS')
+                            assert dmax == convert_unit(
+                                self.universe.dimensions[i], 'LAMMPS')
 
                 if 'ITEM: ATOMS' in line:
                     if frame_n == start:
@@ -648,7 +649,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             atoms = np.zeros([n_atoms, 5])
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = (list(atom.position) + [atom.mass, atom.charge])
+                atoms[atom.id-1, :] = (list(atom.position) +
+                                       [atom.mass, atom.charge])
             saved_config = atoms
         else:
             saved_config = None
@@ -1310,9 +1312,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
         b_inters = set(self.universe.bonded_interactions)
         # *_ is for pylint as it does not know about the output of partition_interactions
         bonds, angles, *_ = partition_interactions([inter for inter
-                                                in b_inters
-                                                if inter.constrained],
-                                               ['Bond', 'BondAngle'], lst=True)
+                                                    in b_inters
+                                                    if inter.constrained],
+                                                   ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
                                      angles=angles, angle_ID_dict=self.angle_ID)
@@ -1441,7 +1443,8 @@ class LAMMPSSimulation(PyLammpsAttribute):
                     # If we have not set any velocities (they are all the default value of zero)
                     # then "create" a velocity for each atom
                     self.lmp.velocity('all', 'create',
-                                      convert_unit(self._temperature, 'LAMMPS'),
+                                      convert_unit(
+                                          self._temperature, 'LAMMPS'),
                                       randint(1, 9999))
                 else:
                     if any(zero_velocity):
@@ -1801,7 +1804,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         # t_damp is stored in units of time - convert back to number of steps
         # here
         try:
-            return (self._t_damp / self.time_step)
+            return self._t_damp / self.time_step
         except TypeError:
             return self._t_damp
 
@@ -1843,7 +1846,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
         # p_damp is stored in units of time - convert back to number of steps
         # here
         try:
-            return (self._p_damp / self.time_step)
+            return self._p_damp / self.time_step
         except TypeError:
             return self._p_damp
 

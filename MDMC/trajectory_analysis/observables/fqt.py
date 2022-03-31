@@ -3,10 +3,10 @@ from abc import abstractmethod
 from typing import Dict
 
 import numpy as np
-from MDMC.common.unit_registry import UREG
 from mpi4py import MPI
 from numba import jit
 
+from MDMC.common.unit_registry import UREG
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
@@ -16,9 +16,8 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
-# pylint: disable=c-extension-no-member
-# to avoid MPI warnings
-
+# pylint: disable=c-extension-no-member, no-member
+# to avoid MPI warnings & as it creates a false positive for Q magnitude
 
 
 class AbstractFQt(SQwMixins, Observable):
@@ -44,7 +43,6 @@ class AbstractFQt(SQwMixins, Observable):
         self.n_Q_vectors = None
         self.Q_values = None
         self.weights = None
-
 
     @property
     def independent_variables(self):
@@ -106,7 +104,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         Returns
         -------
-        array
+        pint.Quantity
             1D array of times in ``fs``
         """
 
@@ -238,7 +236,7 @@ class AbstractFQt(SQwMixins, Observable):
         Q_vectors = comm.scatter(Q_vectors, root=0)
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
-                        in Q_vectors])
+                              in Q_vectors])
 
         # Gather the calculated FQt's together on every processor. This ensures
         # that all other calculations can be performed on every processor, so
@@ -248,7 +246,8 @@ class AbstractFQt(SQwMixins, Observable):
         # as arrays within an array. This is equivalent to flattening the first
         # index.
         FQt_shape = np.shape(FQt_array)
-        FQt_array = FQt_array.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
+        FQt_array = FQt_array.reshape(
+            [FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's

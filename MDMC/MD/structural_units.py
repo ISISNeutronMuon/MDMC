@@ -15,10 +15,9 @@ from typing import List
 import weakref
 
 import numpy as np
-import pint
-from MDMC.common.unit_registry import UREG, scrub_unit
 from scipy.spatial.transform import Rotation
 
+from MDMC.common.unit_registry import UREG, scrub_unit
 from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator
@@ -48,9 +47,9 @@ class StructuralUnit(ABC):
     name : str
         The name of the structure.
 
- 	Attributes
+        Attributes
     ----------
- 	ID : int
+        ID : int
         A unique identifier for each ``StructuralUnit``.
     universe : Universe
         The ``Universe`` to which the ``StructuralUnit`` belongs.
@@ -81,7 +80,6 @@ class StructuralUnit(ABC):
 
     @property
     def position(self):
-
         """
         Get or set the position of the center of mass of the ``StructuralUnit``
         in ``Ang``
@@ -102,7 +100,6 @@ class StructuralUnit(ABC):
 
     @property
     def velocity(self):
-
         """
         Get or set the velocity of the ``StructuralUnit`` in ``Ang/fs``
 
@@ -120,7 +117,6 @@ class StructuralUnit(ABC):
 
     @property
     def atoms(self):
-
         """
         Get a `list` of all of the `Atom` objects in the structure by
         recursively calling ``atoms`` for all substructures
@@ -139,7 +135,6 @@ class StructuralUnit(ABC):
     @property
     @abstractmethod
     def universe(self):
-
         """
         Get the ``Universe`` to which the ``StructuralUnit`` belongs
 
@@ -152,7 +147,6 @@ class StructuralUnit(ABC):
         raise NotImplementedError
 
     def translate(self, displacement):
-
         """
         Translate the structural unit by the specified displacement
 
@@ -166,7 +160,6 @@ class StructuralUnit(ABC):
 
     @property
     def interactions(self):
-
         """
         Get a list of the interactions acting on the ``StructuralUnit``
 
@@ -180,7 +173,6 @@ class StructuralUnit(ABC):
 
     @property
     def bonded_interactions(self):
-
         """
         Get a list of the bonded interactions acting on the ``StructuralUnit``
 
@@ -195,7 +187,6 @@ class StructuralUnit(ABC):
     @property
     @abstractmethod
     def nonbonded_interactions(self):
-
         """
         Get a list of the nonbonded interactions acting on the
         ``StructuralUnit``
@@ -211,7 +202,6 @@ class StructuralUnit(ABC):
     @property
     @abstractmethod
     def bonded_interaction_pairs(self):
-
         """
         Get bonded interactions acting on the ``StructuralUnit`` and the other
         atoms to which the atom is bonded
@@ -237,7 +227,6 @@ class StructuralUnit(ABC):
 
     @property
     def structure_type(self):
-
         """
         Get the class of the ``StructuralUnit``.
 
@@ -251,7 +240,6 @@ class StructuralUnit(ABC):
 
     @property
     def top_level_structure(self):
-
         """
         Get the top level structure (i.e. ``StructuralUnit`` which has no
         ``parent``) of the ``StructuralUnit``
@@ -263,12 +251,11 @@ class StructuralUnit(ABC):
         """
 
         if issubclass(type(self.parent), StructuralUnit) \
-        and self.parent is not self:
+                and self.parent is not self:
             return self.parent.top_level_structure
         return self
 
     def copy(self, position):
-
         """
         Copies the structural unit and sets the ``position``
 
@@ -290,7 +277,6 @@ class StructuralUnit(ABC):
         return structural_unit
 
     def _generate_ID(self):
-
         """
         Uses class attribute to generate a unique ``ID`` for each
         ``StructuralUnit``
@@ -304,7 +290,6 @@ class StructuralUnit(ABC):
         return next(self._ID_generator)
 
     def _position_in_parent_CoM_frame(self):
-
         """
         Get the position in the ``parent`` center of mass frame
 
@@ -324,7 +309,6 @@ class StructuralUnit(ABC):
         return self.position - self.parent.get_center_of_mass()
 
     def _added_to_structure(self):
-
         """
         Method is called if it becomes subunit of another ``StructuralUnit``
         """
@@ -332,7 +316,6 @@ class StructuralUnit(ABC):
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
     def valid_position(self, position=None):
-
         """
         Checks if the specified ``position`` is within the bounds of the
         ``StructuralUnit.universe``, if it has one
@@ -376,7 +359,6 @@ class StructuralUnit(ABC):
 
     @property
     def bounding_box(self):
-
         """
         Returns
         -------
@@ -401,7 +383,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         self.universe = None
 
     def __deepcopy__(self, memo):
-
         """
         Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
         which is generated
@@ -468,7 +449,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         return unit
 
     def __str__(self):
-
         """
         Returns
         -------
@@ -498,7 +478,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     @property
     def formula(self):
-
         """
         Get the chemical formula of the ``CompositeStructuralUnit``
 
@@ -513,7 +492,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     @property
     def universe(self):
-
         """
         Get or set the ``Universe`` to which the ``CompositeStructuralUnit``
         belongs
@@ -545,7 +523,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
     @property
     def structure_list(self):
-
         """
         Get or set the ``StructuralUnit`` objects that are subunits of this
         ``CompositeStructuralUnit``
@@ -565,10 +542,9 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         self._structure_list = value
 
     def copy(self, position, rotation=None):
-    # pylint:disable=arguments-differ
-    # CompositeStructuralUnit's can be rotated, which is meaningless for
-    # StructuralUnits in general
-
+        # pylint:disable=arguments-differ
+        # CompositeStructuralUnit's can be rotated, which is meaningless for
+        # StructuralUnits in general
         """
         Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
         which is generated
@@ -614,7 +590,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         return composite
 
     def _set_subunit_positions(self):
-
         """
         Sets the position of all subunits in the global frame in units of
         ``Ang``
@@ -624,7 +599,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
             atom.position = self.position + self._CoM_frame_positions[atom]
 
     def _calc_CoM(self):
-
         """
         Returns
         -------
@@ -641,7 +615,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         return weighted_positions / mass
 
     def _calc_subunit_position_in_CoM_frame(self):
-
         """
         Calculate the position of all subunits in the
         ``CompositeStructuralUnit`` CoM frame in units of ``Ang``
@@ -655,7 +628,6 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
             self._CoM_frame_positions[atom] = atom.position - CoM
 
     def rotate(self, x=0., y=0., z=0.):
-
         """
         Rotates the ``CompositeStructuralUnit`` around its center of mass
 
@@ -729,7 +701,7 @@ class Atom(StructuralUnit):
                  charge=None, **settings):
 
         self.universe = None
-        #the syntax for optional keyword arguments is: kwargs.get(str, default_value)
+        # the syntax for optional keyword arguments is: kwargs.get(str, default_value)
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
@@ -742,7 +714,6 @@ class Atom(StructuralUnit):
         self.charge = charge
 
     def __deepcopy__(self, memo):
-
         """
         Copies the Atom and all attributes, except ``ID`` which is generated
 
@@ -788,7 +759,6 @@ class Atom(StructuralUnit):
         return atom
 
     def __repr__(self):
-
         """
         Returns
         -------
@@ -808,7 +778,6 @@ class Atom(StructuralUnit):
                                               in self.interactions]))
 
     def __str__(self):
-
         """
         Returns
         -------
@@ -824,7 +793,6 @@ class Atom(StructuralUnit):
 
     @property
     def atoms(self):
-
         """
         Get a `list` of the atoms, just consisting of the ``Atom``
 
@@ -838,7 +806,6 @@ class Atom(StructuralUnit):
 
     @property
     def universe(self):
-
         """
         Get the ``Universe`` to which the ``Atomm`` belongs
 
@@ -869,7 +836,6 @@ class Atom(StructuralUnit):
 
     @property
     def charge(self):
-
         """
         Get or set the charge in ``e`` if one has been applied to the ``Atom``
 
@@ -946,7 +912,6 @@ class Atom(StructuralUnit):
 
     @property
     def mass(self):
-
         """
         Get or set the atomic mass in ``amu``
 
@@ -964,7 +929,6 @@ class Atom(StructuralUnit):
 
     @property
     def atom_type(self):
-
         """
         Get or set the atom type of the ``Atom``
 
@@ -985,7 +949,8 @@ class Atom(StructuralUnit):
     def atom_type(self, value):
 
         if self._atom_type:
-            raise AttributeError('Can\'t change atom_type once it has been set')
+            raise AttributeError(
+                'Can\'t change atom_type once it has been set')
         self._atom_type = value
 
         # Update atom_types in Coulombic interactions
@@ -995,7 +960,6 @@ class Atom(StructuralUnit):
 
     @property
     def nonbonded_interactions(self):
-
         """
         Get a `list` of the nonbonded interactions acting on the ``Atom``
 
@@ -1009,7 +973,6 @@ class Atom(StructuralUnit):
 
     @property
     def bonded_interaction_pairs(self):
-
         """
         Get bonded interactions acting on the ``Atom`` and the other atoms
         to which the ``Atom`` is bonded
@@ -1033,8 +996,8 @@ class Atom(StructuralUnit):
         return self._bonded_interaction_pairs
 
     def copy(self, position):
-    # pylint:disable=useless-super-delegation
-    # Docstring specific to Atom
+        # pylint:disable=useless-super-delegation
+        # Docstring specific to Atom
         """
         Copies the ``Atom`` and all attributes, except ``ID`` which is generated
 
@@ -1086,7 +1049,6 @@ class Atom(StructuralUnit):
         return super().copy(position)
 
     def add_interaction(self, interaction, from_interaction=False):
-
         """
         Adds an interaction to the ``Atom``
 
@@ -1113,13 +1075,13 @@ class Atom(StructuralUnit):
                 interaction.add_atoms(self, from_structure=True)
             pair = (interaction, interaction.atoms[-1])
             if pair not in self.bonded_interaction_pairs:
-                self._bonded_interaction_pairs.append((interaction, interaction.atoms[-1]))
+                self._bonded_interaction_pairs.append(
+                    (interaction, interaction.atoms[-1]))
         else:
             if interaction not in self.nonbonded_interactions:
                 self._nonbonded_interactions.append(interaction)
 
     def copy_interactions(self, atom, memo=None):
-
         """
         This replicates the interactions from ``self`` for ``Atom``, but with
         ``self`` substituted by ``atom`` in the ``Interaction.atoms``. These
@@ -1180,7 +1142,6 @@ class _Group(CompositeStructuralUnit):
         raise NotImplementedError
 
 
-
 class Molecule(CompositeStructuralUnit):
 
     """
@@ -1224,7 +1185,6 @@ class Molecule(CompositeStructuralUnit):
 
     @property
     def position(self):
-
         """
         Get or set the position of the center of mass of the ``Molecule`` in
         ``Ang``
@@ -1245,7 +1205,6 @@ class Molecule(CompositeStructuralUnit):
 
     @property
     def nonbonded_interactions(self):
-
         """
         Get a list of the nonbonded interactions acting on the ``Molecule``
 
@@ -1260,7 +1219,6 @@ class Molecule(CompositeStructuralUnit):
 
     @property
     def bonded_interaction_pairs(self):
-
         """
         Get bonded interactions acting on the ``Molecule``
 
@@ -1297,7 +1255,6 @@ class Molecule(CompositeStructuralUnit):
 
     @property
     def mass(self):
-
         """
         Get the molecular mass of the ``Molecule`` in ``amu``
 
@@ -1342,7 +1299,6 @@ class BoundingBox:
 
     @property
     def min(self):
-
         """
         Get or set the minimum extent of the positions of a collection of atoms
 
@@ -1360,7 +1316,6 @@ class BoundingBox:
 
     @property
     def max(self):
-
         """
         Get or set the maximum extent of the positions of a collection of atoms
 
@@ -1378,7 +1333,6 @@ class BoundingBox:
 
     @property
     def volume(self):
-
         """
         Get the volume of the bounding box, in units of ``Ang ^ 3``
 
@@ -1392,7 +1346,6 @@ class BoundingBox:
 
 
 def filter_atoms(atoms, predicate):
-
     """
     Filters a list of Atoms with a given predicate
 
@@ -1413,7 +1366,6 @@ def filter_atoms(atoms, predicate):
 
 
 def filter_atoms_element(atoms, element):
-
     """
     Filters a list of atoms based on the atomic element
 
@@ -1434,7 +1386,6 @@ def filter_atoms_element(atoms, element):
 
 
 def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
-
     """
     Get the reduced chemical formula
 

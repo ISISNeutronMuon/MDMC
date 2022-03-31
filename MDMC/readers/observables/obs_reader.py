@@ -9,7 +9,6 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
 
-
 @repr_decorator('data')
 class ObservableReader(Reader):
 

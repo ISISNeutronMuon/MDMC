@@ -9,10 +9,9 @@ import logging
 import numpy as np
 import pandas as pd
 import pint
-
-from MDMC.common.unit_registry import UREG
 from verbosemanager import VerboseManager
 
+from MDMC.common.unit_registry import UREG
 from MDMC.common.decorators import mod_docstring, repr_decorator
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
@@ -25,8 +24,7 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 
 LOGGER = logging.getLogger(__name__)
 _FF_DOCSTRING = {'DYNAMIC_FORCE_FIELD_LIST':
-                     ', '.join(ForceFieldFactory.get_force_field_names())}
-
+                 ', '.join(ForceFieldFactory.get_force_field_names())}
 
 
 # pylint: disable=too-few-public-methods
@@ -570,7 +568,7 @@ class Universe(AtomContainer):
                 # Get lowest missing interger in self.atom_type_interactions
                 atom_type = next(filterfalse(set(
                     self.atom_type_interactions.values()).__contains__,
-                                             count(1)))
+                    count(1)))
                 self._update_atom_type_interactions(inter_key, atom_type)
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
@@ -998,7 +996,8 @@ class Universe(AtomContainer):
                                          for i, j in zip(pos.magnitude,
                                                          self.dimensions.magnitude)])
                         # Translates position if wrapping required.
-                        pos -= (wrap * axes * num_tiles * box_dimensions) * UREG.angstrom
+                        pos -= (wrap * axes * num_tiles *
+                                box_dimensions) * UREG.angstrom
                         remove = self._check_out_of_bounds(pos.magnitude)
                         # Check for overlap with solute molecules.
                         if not remove:
@@ -1050,6 +1049,7 @@ class Universe(AtomContainer):
             pass
 
         self._solvent_density += (len(mols) * solvent_mass / self.volume)
+
 
 def _primitive_cubic(dimensions, number):
     """

@@ -8,6 +8,8 @@ if TYPE_CHECKING:
 
 # the type hint for trj should be trj: Trajectory, but importing `Trajectory` would currently
 # lead to a circular import
+
+
 def slice_trajectory(trj: "Trajectory", subtrj_len: int, cont_slicing: bool = False) \
         -> "Iterable[Trajectory]":
     """
@@ -45,7 +47,7 @@ def slice_trajectory(trj: "Trajectory", subtrj_len: int, cont_slicing: bool = Fa
     trj_len = len(trj)
 
     msg = (f'The sub-trajectory length of {subtrj_len} was larger than the length of the '
-               f'parent trajectory of {trj_len}.')
+           f'parent trajectory of {trj_len}.')
     assert trj_len >= subtrj_len, msg
 
     if cont_slicing:

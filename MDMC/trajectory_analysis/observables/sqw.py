@@ -3,10 +3,10 @@
 from typing import Dict
 
 import numpy as np
-from MDMC.common.unit_registry import UREG, scrub_unit
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
 
+from MDMC.common.unit_registry import UREG, scrub_unit
 from MDMC.common.constants import h, h_bar
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -14,7 +14,8 @@ from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
-
+# pylint: disable=no-member
+# as it creates a false positive for Q magnitude
 
 class SQwMixins:
     """
@@ -65,7 +66,6 @@ class SQwMixins:
         minimum_energy_separation = np.min(np.diff(np.sort(self.E)))
         limiting_energy = min(minimum_abs_energy, minimum_energy_separation)
 
-
         required_time = (h / limiting_energy).to(UREG.fs)
         # We need an integer number of frames, so round up using np.ceil to
         # ensure we exceed the minimum number of frames needed
@@ -100,7 +100,7 @@ class SQwMixins:
 
         Returns
         -------
-        array
+        pint.Quantity
             1D array of Q `float` (in ``Ang^-1``)
         """
         try:
@@ -194,7 +194,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         Returns
         -------
-        array
+        pint.Quantity
             1D array of energy `float` (in ``meV``)
         """
 
@@ -212,7 +212,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         Returns
         -------
-        array
+        pint.Quantity
             1D array of angular frequency `float` in units of ``1 / ps``
         """
 
@@ -391,16 +391,18 @@ class AbstractSQw(SQwMixins, Observable):
         if self.E is not None:
             self.validate_energy(dt)
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt) * UREG.meV
+            self.independent_variables['E'] = self.calculate_E(
+                len(t) - 1, dt) * UREG.meV
         else:
-            self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt) * UREG.meV}
+            self.independent_variables = {
+                'E': self.calculate_E(len(t) - 1, dt) * UREG.meV}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.Q = np.array(settings['Q_values'])
         except KeyError:
             pass
 
-        #slice trajectory up if possible and requested by user:
+        # slice trajectory up if possible and requested by user:
         if self.maximum_frames() and use_average:
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
                                             cont_slicing=cont_slicing)
