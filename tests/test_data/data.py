@@ -29,7 +29,7 @@ _CONFIG_PATH = '/configurations'
 READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
                'MantidSQw':'/iris70429_graphite002_red',
                'XML_SQw':'/Well_s_q_omega_Ar_data.xml',
-               'LAMPRDF':'/rdf2.ref'}
+               'LAMPRDF':'/RDF2.ref'}
                'xml_SQw':'/Well_s_q_omega_Ar_data.xml'}
 
 CONFIG_DATA = {'cif':'/Paracetamol.cif'}
