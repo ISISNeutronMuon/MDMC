@@ -63,7 +63,7 @@ class PairDistributionFunction(Observable):
     def dependent_variables(self):
         """
         Get or set the dependent variables: these are
-        PDF, the pair distribution function (in ``arb``)
+        PDF, the pair distribution function (in ``barn``)
 
         Returns
         -------
@@ -153,6 +153,18 @@ class PairDistributionFunction(Observable):
 
         try:
             return self.dependent_variables['PDF']
+        except KeyError:
+            return None
+
+    @property
+    @unit_decorator_getter(unit=units.Unit('barn'))
+    def PDF_err(self):
+        """
+        Get the errors on the total pair distribution function (in ``barn``)
+        """
+
+        try:
+            return self.errors['PDF']
         except KeyError:
             return None
 

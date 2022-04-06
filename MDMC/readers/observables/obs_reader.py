@@ -205,3 +205,103 @@ class SQwReader(ObservableReader, ABC):
     def Q(self, value):
 
         self._Q = value
+
+
+class PDFReader(ObservableReader, ABC):
+    """Abstract base subclass that adds attributes & methods common to all PDF readers"""
+
+    def __init__(self, file_name):
+        super().__init__(file_name)
+        self.PDF = None
+        self.PDF_err = None
+
+    @property
+    def independent_variables(self):
+        """
+        Get the independent variable r (in ``Ang^-1``)
+
+        Returns
+        -------
+        dict
+            The independent variable r (in ``Ang^-1``)
+        """
+
+        return {"r": self.r}
+
+    @property
+    def dependent_variables(self):
+        """
+        Get the dependent variable PDF, the pair distribution function (in ``barn``)
+
+        Returns
+        -------
+        dict
+            The dependent variable, PDF (in ``barn``)
+        """
+
+        return {"PDF": [self.PDF]}
+
+    @property
+    def errors(self):
+        """
+        Get the errors on the dependent variable
+
+        Returns
+        -------
+        dict
+            The error on PDF (in ``barn``)
+        """
+
+        return {"PDF": [self.PDF_err]}
+
+    @property
+    def r(self):
+        """
+        Get or set the value of the atomic separation distance (in ``Ang``)
+        """
+
+        return self._r
+
+    @r.setter
+    @unit_decorator(unit=units.Unit('Ang'))
+    def r(self, value):
+
+        self._r = value
+
+    @property
+    def PDF(self):
+
+        """
+        Get or set the pair/radial distribution function between pairs (in ``barn``)
+        Returns
+        -------
+        numpy.ndarray
+            pair/radial distribution function (in ``barn``)
+        """
+
+        return self._PDF
+
+    @PDF.setter
+    @unit_decorator(unit=units.Unit('barn'))
+    def PDF(self, value):
+
+        self._PDF = value
+
+    @property
+    def PDF_err(self):
+
+        """
+        Get or set the error on the pair/radial distribution function between pairs (in ``barn``)
+        Returns
+        -------
+        numpy.ndarray
+            error on the pair/radial distribution function (in ``barn``)
+        """
+
+        return self._PDF_err
+
+    @PDF.setter
+    @unit_decorator(unit=units.Unit('barn'))
+    def PDF_err(self, value):
+
+        self._PDF_err = value
