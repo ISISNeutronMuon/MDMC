@@ -136,7 +136,17 @@ disable=print-statement,
         comprehension-escape,
         invalid-name,
         c-extension-no-member,
-        unused-argument
+        unused-argument,
+        too-many-instance-attributes,  # these should be assessed at a later date
+        too-many-statements,
+        too-many-locals,
+        too-many-branches,
+        too-many-arguments,
+        too-many-nested-blocks,
+        too-many-public-methods,
+        consider-using-f-string, # this should be removed when VerboseManager is added
+        duplicate-code # unfortunately disabled as observables have duplicate dependent/independent variables (that cannot be merged due to docstrings), and duplicate-code cannot be disabled with a comment currently
+        
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -214,7 +224,6 @@ spelling-store-unknown-words=no
 # List of note tags to take in consideration, separated by a comma.
 notes=FIXME,
       XXX,
-      TODO
 
 
 [SIMILARITIES]

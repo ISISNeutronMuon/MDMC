@@ -7,8 +7,8 @@ view
 
 from MDMC import MD
 
-def view(atom_container, viewer='X3DOM'):
 
+def view(atom_container, viewer='X3DOM'):
     """
     Launches a GUI for viewing collections of ``Atom`` objects
 

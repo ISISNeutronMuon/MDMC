@@ -8,17 +8,16 @@ from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
 from copy import deepcopy
 from functools import lru_cache, reduce
-from itertools import count, permutations
+from itertools import count
 import logging
 from math import gcd
-from types import MethodType
 from typing import List
 import weakref
 
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-import MDMC.common.atom_properties as atom_properties
+from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
@@ -33,6 +32,8 @@ LOGGER = logging.getLogger(__name__)
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
                 'atoms')
 class StructuralUnit(ABC):
+    # pylint: disable=no-member
+    # to avoid errors with MD and _structure_list
 
     """Abstract base class for all structural units
 
@@ -70,6 +71,7 @@ class StructuralUnit(ABC):
         self.velocity = velocity
         self.name = name
         self.parent = self
+        self._position_in_parent = None
 
         LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
                     self.__class__,
@@ -263,8 +265,7 @@ class StructuralUnit(ABC):
         if issubclass(type(self.parent), StructuralUnit) \
         and self.parent is not self:
             return self.parent.top_level_structure
-        else:
-            return self
+        return self
 
     def copy(self, position):
 
@@ -320,8 +321,7 @@ class StructuralUnit(ABC):
 
         if self.top_level_structure is self:
             raise AttributeError("This structure has no parent")
-        else:
-            return self.position - self.parent._get_center_of_mass()
+        return self.position - self.parent.get_center_of_mass()
 
     def _added_to_structure(self):
 
@@ -357,6 +357,8 @@ class StructuralUnit(ABC):
         ValueError
             If ``position`` if undefined
         """
+        #pylint: disable=nan-comparison
+        # because math.isnan doesn't work here for some reason
 
         if position is None:
             position = self.position
@@ -365,10 +367,9 @@ class StructuralUnit(ABC):
             if (np.any(position < np.array([0., 0., 0])) or
                     np.any(position > self.universe.dimensions)):
                 return False
-            elif np.any(position == float('nan')):
+            if np.any(position == float('nan')):
                 raise ValueError('position of {0} is undefined'.format(self))
-            else:
-                return True
+            return True
         except AttributeError:
             # Not a member of a universe
             return True
@@ -424,8 +425,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         for k, v in self.__dict__.items():
             if k == 'ID':
                 setattr(unit, k, self._generate_ID())
-            elif (k == '_bonded_interaction_pairs'
-                  or k == '_nonbonded_interactions'):
+            elif k in ('_bonded_interaction_pairs', '_nonbonded_interactions'):
                 pass
             elif k == '_structure_list':
                 # Separate structures into atoms and composites
@@ -646,6 +646,8 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         Calculate the position of all subunits in the
         ``CompositeStructuralUnit`` CoM frame in units of ``Ang``
         """
+        # pylint: disable=attribute-defined-outside-init
+        # _CoM_frame_positions breaks when defined in init
 
         self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
@@ -990,7 +992,7 @@ class Atom(StructuralUnit):
         # Update atom_types in Coulombic interactions
         for inter in self.nonbonded_interactions:
             if isinstance(inter, Coulombic) and value not in inter.atom_types:
-                inter._atom_types.append(value)
+                inter.atom_types.append(value)
 
     @property
     def nonbonded_interactions(self):
@@ -1117,7 +1119,7 @@ class Atom(StructuralUnit):
             if interaction not in self.nonbonded_interactions:
                 self._nonbonded_interactions.append(interaction)
 
-    def copy_interactions(self, atom, memo={}):
+    def copy_interactions(self, atom, memo=None):
 
         """
         This replicates the interactions from ``self`` for ``Atom``, but with
@@ -1134,6 +1136,14 @@ class Atom(StructuralUnit):
         memo : dict, optional
             The memoization `dict`
         """
+        # pylint: disable=protected-access
+        # because bonded_interaction_pairs is not designed to be set directly
+
+        # default arguments are set at definition time (and not at call time)
+        # so setting memo={} as the default value is dangerous, because the
+        # dict will not be reset between calls of copy_interactions()
+        if memo is None:
+            memo = {}
 
         # if/else required for deepcopy (where _bonded_interaction_pairs attribute
         # doesn't exist). try/except not valid due to order of operations in
@@ -1163,6 +1173,8 @@ class _Group(CompositeStructuralUnit):
     NotImplementedError
         THIS CLASS HAS NOT BEEN IMPLEMENTED
     """
+    # pylint: disable=super-init-not-called
+    # as this is not implemented yet
 
     def __init__(self):
 
@@ -1270,6 +1282,8 @@ class Molecule(CompositeStructuralUnit):
             >>> print(O.bonded_interaction_pairs)
             [(Bond, (H1, O)), (Bond, (H2, O))]
         """
+        # pylint: disable=simplifiable-condition
+        # as simplifying the condition breaks it for some reason
 
         # Cache only most recent value, as atoms only expected to increase
         @lru_cache(maxsize=1)
@@ -1320,7 +1334,8 @@ class BoundingBox:
 
     def __init__(self, atoms: List):
         if not atoms:
-            raise ValueError("Empty atoms passed; it must contain at least one atom to create a BoundingBox object.")
+            raise ValueError("Empty atoms passed; "
+                             "it must contain at least one atom to create a BoundingBox object.")
 
         # Start with arbitrary min and max from the positions of the atoms in
         # the atom list
@@ -1509,4 +1524,3 @@ def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
                                    in reduced_symbols_count.items()])
 
     return reduced_formula
-

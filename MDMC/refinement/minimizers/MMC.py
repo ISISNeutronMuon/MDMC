@@ -1,19 +1,38 @@
+"""The Metropolis-Hastings minimizer class"""
 import numpy as np
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
 
 class MMC(Minimizer):
 
     """
     ``Minimizer`` employing the Metropolis-Hastings algorithm
+
+    Parameters
+    ----------
+    MC_norm : float
+        Normalization parameter for MC which determines the accept/reject ratio, default is 1.0
+
+    Attributes
+    ----------
+    history_columns: list[str]
+        list of the column titles for the minimizer history
     """
+
+
+    def __init__(self, parameters, distribution, max_parameter_change, **settings):
+        super().__init__(parameters, distribution, max_parameter_change)
+        self.MC_norm = settings.get('MC_norm', 1.0)
 
     @property
     def history_columns(self):
 
         return ['FoM', 'Change state'] + [p.name for p in self.parameters]
 
-    def step(self, FoM):
+    # pylint: disable=arguments-differ
+    # we allow implementations of the abstract method to have different arguments
 
+    def step(self, FoM):
         """
         Increments the minimization by a step
         """
@@ -39,7 +58,6 @@ class MMC(Minimizer):
         self.change_parameters(self.parameters)
 
     def change_state(self):
-
         """
         Stochastic determination of whether the state should change based on the
         FoM
@@ -53,7 +71,7 @@ class MMC(Minimizer):
         # Only determine if state will be changed on rank 0 process
         if self.comm.rank == 0:
             prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-            change_state = True if prob > np.random.random() else False
+            change_state = bool(prob > np.random.random())
         else:
             change_state = None
         # Broadcast to all processes whether or not the state will be changed
@@ -62,7 +80,6 @@ class MMC(Minimizer):
         return change_state
 
     def change_parameters(self, parameters):
-
         """
         Selects a new value for each parameter from a distribution centered
         around the current value.
@@ -101,7 +118,6 @@ class MMC(Minimizer):
             parameter.value = new_value
 
     def reset_parameters(self):
-
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """

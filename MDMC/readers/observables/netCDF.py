@@ -1,5 +1,6 @@
 """A reader for netcdf SQw data"""
-
+# disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
+# pylint: disable=no-name-in-module
 import numpy as np
 from netCDF4 import Dataset
 
@@ -19,7 +20,6 @@ class netCDF(SQwReader):
     """
 
     def __enter__(self):
-
         """
         Opens the file for parsing
         """
@@ -32,7 +32,6 @@ class netCDF(SQwReader):
         self.file.close()
 
     def parse(self, **settings):
-
         """
         Parse into SQw format
 
@@ -44,7 +43,7 @@ class netCDF(SQwReader):
                   * h_bar)
         Q = self.file.variables['q']
         if 'nm' in Q.units:
-            Q =  np.array(Q) * 0.1
+            Q = np.array(Q) * 0.1
         self.Q = np.array(Q)
 
         self.SQw = np.abs(np.array(self.file.variables['Sqw-total']))

@@ -1,6 +1,8 @@
+"""The Lorentzian resolution subclass"""
+import numpy as np
+
 from MDMC.resolution.resolution import Resolution
 from MDMC.common.resolution_functions import lorentzian
-import numpy as np
 
 
 class LorentzianResolution(Resolution):
@@ -11,11 +13,11 @@ class LorentzianResolution(Resolution):
     def __init__(self, e_res):
         self.e_res = e_res / 1000
 
-    def apply(self, fqt, t, Q):
-        N_Q, N_T = np.shape(fqt)
+    def apply(self, FQt, t, Q):
+        N_Q, N_T = np.shape(FQt)
         window = self.window_in_t(t[:N_T])
 
-        return np.broadcast_to(window, (N_Q, N_T)) * fqt
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
     def window_in_w(self, w):
         """
@@ -29,7 +31,8 @@ class LorentzianResolution(Resolution):
     def window_in_t(self, t):
         """
         The Lorentzian window in time space (i.e. the Fourier transform centred around zero)
-        The Fourier transform of the Lorentzian is F(k) = e^((2 * pi * i) * k * x_0) - Gamma * pi * |k|
+        The Fourier transform of the Lorentzian is
+        F(k) = e^((2 * pi * i) * k * x_0) - Gamma * pi * |k|
         where x_0 is the offset and Gamma the FWHM.
         thus as the instrument resolution function is centred around x_0, this simplifies to
         e^(-Gamma * pi * |k|).

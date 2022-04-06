@@ -8,12 +8,6 @@ tests ensure that SQw is the same (within uncertainty) independent of the
 trajectory length, it the same energies are specified.  THIS MODULE COULD BE
 PARAMETERIZED TO TEST OTHER OBSERVABLES"""
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-import zlib
-
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
@@ -86,11 +80,15 @@ def test_SQw_max_t(trajectory, independent_variables, SQw_type):
                                      dimensions=DIMENSIONS)
     SQw_full_array = SQw_observable.SQw[0]
 
-    SQw_observable.calculate_from_MD([trajectory[:n], trajectory[n:]],
+    SQw_observable.calculate_from_MD(trajectory[:n],
                                      energy_resolution=E_RES,
                                      dimensions=DIMENSIONS)
     SQw_1_array = SQw_observable.SQw[0]
-    SQw_2_array = SQw_observable.SQw[1]
+
+    SQw_observable.calculate_from_MD(trajectory[n:],
+                                     energy_resolution=E_RES,
+                                     dimensions=DIMENSIONS)
+    SQw_2_array = SQw_observable.SQw[0]
 
     # Calculate the total standard deviation for the two half runs and test that
     # the total run is within a factor of 3

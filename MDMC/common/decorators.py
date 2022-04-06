@@ -8,7 +8,6 @@ from MDMC.common.units import UnitFloat, unit_array
 
 
 def unit_decorator(unit):
-
     """
     Decorates ``property.setter`` methods to add units
 
@@ -75,7 +74,6 @@ def unit_decorator(unit):
 
 
 def unit_decorator_getter(unit):
-
     """
     Decorates ``property.getter`` methods to add units
 
@@ -135,7 +133,6 @@ def unit_decorator_getter(unit):
 
 
 def set_docstring(docstring):
-
     """
     Decorator for setting the docstring of a function, method, class or property
 
@@ -218,7 +215,6 @@ def set_docstring(docstring):
 
 
 def mod_docstring(replacements):
-
     """
     Decorator for modifying the docstring of a function, method, class or
     property
@@ -316,7 +312,6 @@ def mod_docstring(replacements):
 
 
 def wrap_docstring(docstring, line_length):
-
     """
     Wraps a docstring to a specific line length.
 
@@ -384,7 +379,6 @@ def wrap_docstring(docstring, line_length):
 
 
 def repr_decorator(attribute, *attributes):
-
     """
     Implements ``__repr__`` for a class using passed attributes (including
     properties)
@@ -447,12 +441,12 @@ def repr_decorator(attribute, *attributes):
             attrs = (attribute,) + attributes
             # Using getattr rather than __dict__ avoids problems with __slots__
             # and properties
-            repr_dict = {attr:getattr(self, attr) for attr in attrs}
-            attributes_str = ''.join([key + ': ' + repr(value) +',\n  '
+            repr_dict = {attr: getattr(self, attr) for attr in attrs}
+            attributes_str = ''.join([key + ': ' + repr(value) + ',\n  '
                                       for key, value in repr_dict.items()])
             attributes_str = attributes_str.strip(',\n ')
-            return ('<{0}\n'
-                    ' {{{1}}}>').format(self.__class__.__name__, attributes_str)
+            return (f'<{self.__class__.__name__}\n'
+                    f' {{{attributes_str}}}>')
 
         cls.__repr__ = __repr__
 

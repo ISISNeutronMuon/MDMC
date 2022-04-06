@@ -109,7 +109,7 @@ jobs:
     - name: apt get
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin
+        sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
     - name: pip install
       run: |
         pip3 install --upgrade pip

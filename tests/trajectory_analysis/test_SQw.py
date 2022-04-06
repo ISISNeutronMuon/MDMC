@@ -47,8 +47,7 @@ def SQw_from_MD(trajectory, universe) -> callable:
     Returns
     -------
     callable
-        A function which optionally accepts ``use_FFT`` (defaults to `True`) and
-        ``use_traj_list`` (defaults to `False`).
+        A function which optionally accepts ``use_FFT`` (defaults to `True`)
         Returns an ``SQw`` ``Observable``.
     """
 
@@ -60,17 +59,12 @@ def SQw_from_MD(trajectory, universe) -> callable:
         n_Q = 10
         Q_values = [2 * np.pi * i / dimensions[0] for i in range(1, n_Q+1)]
 
-        if use_traj_list:
-            MD_input = [trajectory]
-        else:
-            MD_input = trajectory
-
         if energy_resolution is None:
-            _SQw.calculate_from_MD(MD_input,
+            _SQw.calculate_from_MD(trajectory,
                                    Q_values=Q_values,
                                    dimensions=dimensions)
         else:
-            _SQw.calculate_from_MD(MD_input,
+            _SQw.calculate_from_MD(trajectory,
                                    Q_values=Q_values,
                                    dimensions=dimensions,
                                    energy_resolution=energy_resolution)
@@ -122,8 +116,7 @@ def test_from_MD(SQw_from_MD):
     """
 
     SQw_FFT = SQw_from_MD(energy_resolution = 49.99998257)
-    SQw_no_FFT = SQw_from_MD(use_FFT=False, use_traj_list=True,
-                             energy_resolution = 49.99998257)
+    SQw_no_FFT = SQw_from_MD(use_FFT=False, energy_resolution = 49.99998257)
 
     assert SQw_FFT.origin == 'MD'
     assert 'Q' in SQw_FFT.independent_variables and \
@@ -137,40 +130,3 @@ def test_from_MD(SQw_from_MD):
 
     # Assert there is no difference between FFT and non-FFT calculation
     assert_allclose(SQw_FFT.SQw, SQw_no_FFT.SQw, rtol=1e-5)
-
-
-def test_trajectory_assertions(SQw_from_MD, trajectory, altered_trajectory):
-
-    """
-    Test that an ``AssertionError`` is raised when a list of trajectories that
-    have different times are given to ``calculate_from_MD()``
-    """
-
-    MD_input = [trajectory, altered_trajectory]
-    SQw_obj = SQw_from_MD()
-    with pytest.raises(AssertionError):
-        SQw_obj.calculate_from_MD(MD_input)
-
-
-@pytest.mark.parametrize('verbose_tuple',
-                         [(0, 0, False), (1, 1, False), (2, 1, True)])
-def test_verbose(SQw_from_MD, trajectory, verbose_tuple, capsys):
-
-    """
-    Test that we only return timings of operations when ``verbose > 0``, and
-    that we only print to stdout when ``verbose=2``.
-
-    The pytest parameter ``verbose_tuple`` has the value of ``verbose`` as the
-    first element, the expected number of timings as the second element, and
-    whether stdout should contain information as the third element.
-    """
-
-    SQw_obj = SQw_from_MD()
-    timings = SQw_obj.calculate_from_MD(trajectory,
-                                        verbose=verbose_tuple[0])
-
-    assert len(timings['calculate_FQt']) == verbose_tuple[1]
-    assert len(timings['_calculate_SQw']) == verbose_tuple[1]
-
-    stdout = capsys.readouterr().out
-    assert (len(stdout) > 0) == verbose_tuple[2]

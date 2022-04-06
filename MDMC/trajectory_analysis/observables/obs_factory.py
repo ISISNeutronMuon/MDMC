@@ -18,7 +18,6 @@ class ObservableFactory:
 
     @classmethod
     def register(cls, names: Union[str, Iterable]) -> Callable:
-
         """
         A class level decorator for registering Observable classes
 
@@ -54,7 +53,6 @@ class ObservableFactory:
 
     @classmethod
     def create_observable(cls, name: str) -> Observable:
-
         """
         Creates an ``Observable`` object from a module name
 
@@ -76,7 +74,6 @@ class ObservableFactory:
 
     @classmethod
     def get_observable(cls, name: str) -> Type[Observable]:
-
         """
         Gets an ``Observable`` class from a registry name
 

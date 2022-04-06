@@ -1,6 +1,8 @@
+"""The class for Chi Squared figure of merit calculation with no errors"""
 import numpy as np
 
 from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
+
 
 class ChiSquaredNoError(FigureOfMerit):
 
@@ -31,7 +33,8 @@ class ChiSquaredNoError(FigureOfMerit):
     """
 
     def calculate_single_FoM(self, obs_pair: ObservablePair):
-
+        # ignore line too long linting as it is necessary for LaTeX formatting
+        # pylint: disable=line-too-long
         r"""
         Performs the square difference for an ``ObservablePair``. If ``obs_pair.auto_scale`` is
         `True`, then this will also set ``obs_pair.rescale`` to the value which minimizes the FoM.
@@ -64,7 +67,8 @@ class ChiSquaredNoError(FigureOfMerit):
         """
 
         if obs_pair.auto_scale:
-            exp_values = np.array(*obs_pair.exp_obs.dependent_variables.values())
+            exp_values = np.array(
+                *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
             obs_pair.rescale_factor = (np.sum(MD_values * exp_values)
                                        / np.sum(exp_values ** 2))
@@ -72,4 +76,3 @@ class ChiSquaredNoError(FigureOfMerit):
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
-

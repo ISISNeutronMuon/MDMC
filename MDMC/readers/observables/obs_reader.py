@@ -2,6 +2,8 @@
 
 from abc import abstractmethod, ABC
 
+import numpy as np
+
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.readers.reader import Reader
@@ -18,7 +20,6 @@ class ObservableReader(Reader):
 
     @property
     def data(self):
-
         """
         A dictionary of dictionaries containing the independent variables,
         dependent variables and the associated errors.
@@ -30,14 +31,13 @@ class ObservableReader(Reader):
             the dependent variables
         """
 
-        return {"independent":self.independent_variables,
-                "dependent":self.dependent_variables,
-                "errors":self.errors}
+        return {"independent": self.independent_variables,
+                "dependent": self.dependent_variables,
+                "errors": self.errors}
 
     @property
     @abstractmethod
     def independent_variables(self):
-
         """
         The independent variables
 
@@ -52,7 +52,6 @@ class ObservableReader(Reader):
     @property
     @abstractmethod
     def dependent_variables(self):
-
         """
         The dependent variables
 
@@ -67,7 +66,6 @@ class ObservableReader(Reader):
     @property
     @abstractmethod
     def errors(self):
-
         """
         The errors on the dependent variables
 
@@ -78,6 +76,27 @@ class ObservableReader(Reader):
         """
 
         raise NotImplementedError
+
+    @staticmethod
+    def _make_float(i):
+        """
+        Casts the input to a `float`, or passes if the input cannot be cast
+
+        Parameters
+        ----------
+        i : numeric
+            Input to be cast to `float`
+
+        Returns
+        -------
+        float
+            A non-negative `float`, if the input can be converted to a `float`.
+        """
+
+        try:
+            return np.float64(i)
+        except ValueError:
+            return None
 
 
 class SQwReader(ObservableReader, ABC):
