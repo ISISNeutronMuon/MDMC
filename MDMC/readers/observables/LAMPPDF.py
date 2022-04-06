@@ -10,7 +10,7 @@ class LAMPPDF(PDFReader):
     A class for reading files from LAMP that contain pair/radial distribution function data
     LAMP's ascii output uses a single file, with the expected file structure being:
     Row-Number  Distance  rdf1  rdf2  ...  rdfN
-   
+
     Attributes
     ----------
     file_name : file

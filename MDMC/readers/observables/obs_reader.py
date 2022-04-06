@@ -300,7 +300,7 @@ class PDFReader(ObservableReader, ABC):
 
         return self._PDF_err
 
-    @PDF.setter
+    @PDF_err.setter
     @unit_decorator(unit=units.Unit('barn'))
     def PDF_err(self, value):
 
