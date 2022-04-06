@@ -23,14 +23,16 @@ _CONFIG_PATH = '/configurations'
 # MantidSQw
 # TODO cite data once published, the Mantid data file was provided by Jeff Armstrong
 #
-# XML_SQw
+# xml_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
+#
+# LAMPPDF
+# calculated by Inna using ... (!!! to be filled in !!!)
 
-READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
-               'MantidSQw':'/iris70429_graphite002_red',
-               'XML_SQw':'/Well_s_q_omega_Ar_data.xml',
-               'LAMPRDF':'/RDF2.ref'}
-               'xml_SQw':'/Well_s_q_omega_Ar_data.xml'}
+READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
+               'MantidSQw':'/experimental_data/iris70429_graphite002_red',
+               'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
+               'LAMPPDF':'/calculated_observables/RDF2.ref'}
 
 CONFIG_DATA = {'cif':'/Paracetamol.cif'}
 
@@ -38,7 +40,7 @@ RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
 # Add paths to data values
 for key in READER_DATA:
-    READER_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + READER_DATA[key]
+    READER_DATA[key] = _ABS_DIR_PATH + READER_DATA[key]
 
 for key in CONFIG_DATA:
     CONFIG_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + CONFIG_DATA[key]
