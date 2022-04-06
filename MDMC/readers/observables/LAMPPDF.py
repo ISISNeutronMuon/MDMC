@@ -35,12 +35,13 @@ class LAMPPDF(PDFReader):
             if i == 3:
                 #the 4th line contains information on the time-step and number of rows/distances
                 columns = line.strip().split()
-                # Initialization of `r` array
                 r_array = np.zeros(int(columns[1]))
             elif i > 3:
                 columns = line.strip().split()
+                # r is the radial distance in nm so convert to Angstrom !!! CHECK !!!
                 r_array[i - 4] = float(columns[1])
-                pdf_array.append(np.array(columns[2:]).astype(np.float))
+                # columns 3 onwards are the pair/radial distribution functions (in barn)
+                pdf_array.append([float(value) for value in columns[2:]])
 
         self.r = r_array
         self.PDF = np.array(pdf_array)
