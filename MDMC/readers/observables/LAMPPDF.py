@@ -11,6 +11,10 @@ class LAMPPDF(PDFReader):
     LAMP's ascii output uses a single file, with the expected file structure being:
     Row-Number  Distance  rdf1  rdf2  ...  rdfN
 
+    Because of the ability to have multiple columns with dependent data, the parsed self.PDF
+    property will be a 2D array with the second dimension being of length N (the number of
+    columns containing radial/pair distribution functions).
+
     Attributes
     ----------
     file_name : file
