@@ -26,14 +26,15 @@ _CONFIG_PATH = '/configurations'
 # xml_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
 #
-# LAMP_RDF_water
-# calculated for SPCE water using LAMP, with the columns corresponding to:
-#
+# LAMPPDF
+# Pair distribution function (PDF) imported from the netcdf PDF that was calculated with nMOLDYN
+# (OBS_DATA['netcdf_PDF'], using the same trajectory as all OBS_DATA). The data was
+# reformatted into LAMP-style format for PDF data.
 
 READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
                'MantidSQw':'/experimental_data/iris70429_graphite002_red',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
-               'LAMPPDF':'/calculated_observables/LAMP_RDF_water.ref'}
+               'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
 
 CONFIG_DATA = {'cif':'/Paracetamol.cif'}
 
@@ -69,12 +70,14 @@ for key in RESOLUTION_DATA:
 # Pair distribution function (PDF)
 # Same simulation/trajectory as DISF. PDF calculated from time start:end:step of
 # 51:5001:1000, with rvalues start:end:step of 0.:1.05:0.01. File format is
-# netcdf.
+# netcdf ('netcdf_PDF'). In addition, the data was reformatted file in the style of LAMP output
+# and saved as another file ('lamp_pdf').
 
 OBS_DATA = {'SQw_incoh':'/nMOLDYN_DISF_water.nc',
             'SQw_coh':'/nMOLDYN_DCSF_water.nc',
             'Q_vectors':'/qVectors.dat',
-            'PDF':'/nMOLDYN_PDF_water.nc'}
+            'netcdf_PDF':'/nMOLDYN_PDF_water.nc',
+            'lamp_PDF':'/LAMP_from_nMOLDYN_PDF_water.ref'}
 
 # Add paths to data values
 for key in OBS_DATA:
