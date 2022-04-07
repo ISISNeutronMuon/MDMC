@@ -27,7 +27,7 @@ _CONFIG_PATH = '/configurations'
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
 #
 # LAMP_RDF_water
-# calculated by Inna for SPCE water using LAMP, with the columns corresponding to:
+# calculated for SPCE water using LAMP, with the columns corresponding to:
 #
 
 READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
