@@ -26,13 +26,14 @@ _CONFIG_PATH = '/configurations'
 # xml_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
 #
-# LAMPPDF
-# calculated by Inna using ... (!!! to be filled in !!!)
+# LAMP_RDF_water
+# calculated by Inna for SPCE water using LAMP, with the columns corresponding to:
+#
 
 READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
                'MantidSQw':'/experimental_data/iris70429_graphite002_red',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
-               'LAMPPDF':'/calculated_observables/RDF2.ref'}
+               'LAMPPDF':'/calculated_observables/LAMP_RDF_water.ref'}
 
 CONFIG_DATA = {'cif':'/Paracetamol.cif'}
 

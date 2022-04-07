@@ -26,7 +26,7 @@ class LAMPPDF(PDFReader):
         """
         Parse the file into format for pair/radial distribution functions from LAMP
 
-        r is the radial distance (in ????nm????) CHECK WHAT CORRECT THE UNITS ARE!!!
+        r is the radial distance (in Angstrom)
         PDF is the pair/radial distribution function (in barn)
 
         """
@@ -38,7 +38,6 @@ class LAMPPDF(PDFReader):
                 r_array = np.zeros(int(columns[1]))
             elif i > 3:
                 columns = line.strip().split()
-                # r is the radial distance in nm so convert to Angstrom !!! CHECK !!!
                 r_array[i - 4] = float(columns[1])
                 # columns 3 onwards are the pair/radial distribution functions (in barn)
                 pdf_array.append([float(value) for value in columns[2:]])

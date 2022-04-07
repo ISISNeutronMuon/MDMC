@@ -239,7 +239,7 @@ class PDFReader(ObservableReader, ABC):
             The dependent variable, PDF (in ``barn``)
         """
 
-        return {"PDF": [self.PDF]}
+        return {"PDF": self.PDF}
 
     @property
     def errors(self):
@@ -252,7 +252,7 @@ class PDFReader(ObservableReader, ABC):
             The error on PDF (in ``barn``)
         """
 
-        return {"PDF": [self.PDF_err]}
+        return {"PDF": self.PDF_err}
 
     @property
     def r(self):
