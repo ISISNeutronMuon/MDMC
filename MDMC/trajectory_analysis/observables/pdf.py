@@ -126,7 +126,7 @@ class PairDistributionFunction(Observable):
     @property
     def r(self):
         """
-        Get or set the value of the atomc separation distance (in ``Ang``)
+        Get or set the value of the atomic separation distance (in ``Ang``)
         """
 
         try:

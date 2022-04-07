@@ -8,7 +8,6 @@ from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.readers.reader import Reader
 
-
 @repr_decorator('data')
 class ObservableReader(Reader):
 
@@ -17,6 +16,21 @@ class ObservableReader(Reader):
 
     ObservableReaders are created using ObservableReaderFactory
     """
+
+    def assign(self, observable: 'Observable'):
+        # disable pylint warning about writing to the `Observable`
+        #pylint: disable=protected-access
+        """
+        Abstract method to assign the parsed information into the `Observable`
+
+        Parameters
+        ----------
+        observable : `Observable`
+            An MDMC `Observable` that will be assigned the data parsed by the reader.
+        """
+        observable._independent_variables = self.independent_variables
+        observable._dependent_variables = self.dependent_variables
+        observable._errors = self.errors
 
     @property
     def data(self):
