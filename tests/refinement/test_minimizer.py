@@ -312,18 +312,17 @@ def test_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
     ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]],4, False),
     ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]], None, True),
     ([[2,'Accepted',3],[2,'Rejected',3],[2,'Accepted',3]], None, True)])
-def test_minimizer_has_converged(mock_history, min_steps, expected):
+def test_MMC_minimizer_has_converged(mock_history, min_steps, expected):
     """
     Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
     """
     parameter = [Parameter(name='A', value=1.)]
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameter=parameter)
-        minim._history = mock_history
-        if min_steps:
-            assert minim.has_converged(min_steps=min_steps) == expected
-        else:
-            assert minim.has_converged() == expected
+    minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter)
+    minim._history = mock_history
+    if min_steps:
+        assert minim.has_converged(min_steps=min_steps) == expected
+    else:
+        assert minim.has_converged() == expected
 
 
 def test_minimizer_fixed_parameter():
@@ -357,17 +356,32 @@ def test_GPR_parameter_point_array():
     """
     Test that the array of points to be simulated is created correctly
     """
-    parameters = [Parameter(name='parameter1', value=1.), 
+    '''parameters = [Parameter(name='parameter1', value=1.), 
                     Parameter(name='parameter2', value=2.)]
-    gpr = MinimizerFactory.create_minimizer('GPR', parameters)
-    points = gpr.create_parameter_point_array(parameters, points=2)
-    assert np.allclose(points[0], (0.1,0.2), rtol=1e-5)
-    assert np.allclose(points[1], (0.1,10.0), rtol=1e-5)
-    assert np.allclose(points[2], (5.0,0.2), rtol=1e-5)
-    assert np.allclose(points[3], (5.0,10.0), rtol=1e-5)
+    gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
+    _, points = gpr.create_parameter_point_array(parameters)
+    assert np.allclose(points[0], (0.46, 1.1), rtol=1e-5)
+    assert np.allclose(points[1], (0.46, 1.9), rtol=1e-5)
+    assert np.allclose(points[2], (0.94, 1.1), rtol=1e-5)
+    assert np.allclose(points[3], (0.94, 1.9), rtol=1e-5)
 
     constrained_parameters = [Parameter(name='parameter1', value=1., constraints=(0.5,2.0)), 
                             Parameter(name='parameter2', value=2.,  constraints=(1.0,4.0))]
-    points = gpr.create_parameter_point_array(constrained_parameters, points=2)
+    _, points = gpr.create_parameter_point_array(constrained_parameters)
     assert np.allclose(points[0], [0.5, 1.0], rtol=1e-5)
-    assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
+    assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)'''
+    constrained_parameters = [Parameter(name='parameter1', value=1., constraints=(0.5,2.0)), 
+                            Parameter(name='parameter2', value=2.,  constraints=(1.0,4.0))]
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, hypercube=True)
+    _, points = gpr.create_parameter_point_array(constrained_parameters, points=4)
+    #assert len(points) == 4
+    assert np.logical_and(np.array(points)[:,0]>=0.5, np.array(points)[:,0]<=2.0).all()
+    assert np.logical_and(np.array(points)[:,1]>=1.0, np.array(points)[:,1]<=4.0).all()
+
+
+def test_GPR_create_bounds():
+    constrained_parameter = [Parameter(name='parameter1', value=1., constraints=(0.5,2.0))]
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameter, n_points=3)
+    lower_bound, upper_bound = gpr.create_bounds(constrained_parameter[0])
+    assert np.allclose([lower_bound, upper_bound], [constrained_parameter[0].constraints[0], constrained_parameter[0].constraints[1]], rtol=1e-5)
+

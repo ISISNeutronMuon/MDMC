@@ -20,7 +20,12 @@ class GPR(Minimizer):
         Hyperparameter for the fitting, also can represent additional Gaussian noise in measrement points 
     length_scale : float
         Lengthscale parameter for the kernel
-    
+    n_points : int
+        A number of points which will be measured at, either randomly on a latin hypercube (if hypercube=True) 
+        or p^n_points (p = number of parameters) in a grid (if hypercube=False)
+    hypercube : optional, bool
+        Boolian toggle for is the n_points should be placed in a latin hypercube, or as a grid across 
+        each parameter. Defaults to False
 
     Attributes
     ----------
@@ -31,10 +36,14 @@ class GPR(Minimizer):
 
     def __init__(self, parameters, distribution, max_parameter_change, n_points, **settings):
         super().__init__(parameters, distribution, max_parameter_change)
+        self.hypercube = settings.get('hypercube', False)
         self.kernel = settings.get('kernel', 'RBF')
         self.alpha = settings.get('alpha', 0.0001)
         self.length_scale = settings.get('length_scale', 0.1)
-        self.parameter_point_array = self.create_parameter_point_array(parameters, n_points)
+
+        self.parameter_names, self.parameter_point_array = self.create_parameter_point_array(parameters, n_points)
+        self.change_parameters(parameters)
+
 
     def create_parameter_point_array(self, parameters, points=2):
         """
@@ -51,26 +60,72 @@ class GPR(Minimizer):
 
         Returns
         -------
-            array 
-                all coordinates to be simulated.
+        parameter_names : list 
+                Ordered list of names of parameters
+        point_array : array
+                Array of parameter coordinates to be simulated
         """
+        parameter_names = []
         bounds_array=[]
-        for parameter in parameters:
+        if not self.hypercube:
 
-            if parameter.constraints:
-                min_bound = parameter.constraints[0]
-                max_bound = parameter.constraints[1]
-            else:
-                min_bound = parameter.value*0.1-0.1
-                max_bound = parameter.value*5+0.1  # This creates some finite bounds and also deals with zeros
+            for parameter in parameters:
+                lower_bound, upper_bound = self.create_bounds(parameter)
+                parameter_names.append(str(parameter.name))
+                
+                bounds_grid = np.linspace(lower_bound, upper_bound, points)
+                bounds_array.append(bounds_grid)
+            point_array =  list(map(list, itertools.product(*bounds_array))) # * is necessary for unpacking the arrays 
+            return parameter_names, point_array
+            
+        else:
+            samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
+            latin_points = samples.random(n=points)
+            for i, parameter in enumerate(parameters):
+                lower_bound, upper_bound = self.create_bounds(parameter)
+                parameter_names.append(str(parameter.name))
+            point_array = self.scale_hypercube(latin_points[:, i], lower_bound, upper_bound)
+            return parameter_names, point_array
 
-            bounds = np.linspace(min_bound, max_bound, points)
-            bounds_array.append(bounds)
 
-        point_array =  list(map(list, itertools.product(*bounds_array))) # * is necessary for unpacking the arrays 
-        print(point_array)
-        return point_array
 
+    def create_bounds(self, parameter, fraction = 0.2):
+        """
+        Returns either the parameter constraints (bounds) or some sensible bounds for 
+        a given parameter, defaults to +-20% but with 0.1 added/subtracted to account 
+        for zero being a possible parameter value
+
+        Parameters
+        ----------
+        parameter : Parameter instance
+            A instance of the MDMC Parameter class
+        fraction : optional, float
+            The size of the bound, defaults to +-20%
+        
+        Returns
+        -------
+        lower_bound : float
+            The lower bound for the parameter
+        upper_bound : float
+            The upper bound for the parameter        
+        """
+        try:
+            lower_bound = parameter.constraints[0]
+            upper_bound = parameter.constraints[1]
+        except(TypeError):
+            lower_bound = parameter.value*(1.0 - fraction) - 0.1
+            upper_bound = parameter.value*(1.0 + fraction) + 0.1
+
+        return lower_bound, upper_bound
+    
+    def scale_hypercube(input_array, lower_bound, upper_bound):
+        """
+        Takes an input array in interval [0,1] and scales the values to instead be between
+        the lower and upper bounds
+
+        """
+        scaled_array = input_array * lower_bound + (upper_bound - lower_bound)
+        return scaled_array
 
     def has_converged(self, conv_tol: float = 1e-5, min_steps: int =1) -> bool:
         """
@@ -96,18 +151,18 @@ class GPR(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        min_steps = np.max([min_steps,len(self.parameter_point_array)])
-        if len(self.history) >= min_steps:
+        converged = False
+        run_steps = np.max([min_steps, len(self.parameter_point_array)])
+
+        if len(self.history) >= run_steps:
             #self.GPR_fit()
             converged = True
-        else:
-            converged = False
 
         return converged
 
     def change_state(self):
         change_state = self.comm.bcast(change_state, root=0)
-        return change_state
+        return True
 
     @property
     def history_columns(self):
@@ -126,11 +181,17 @@ class GPR(Minimizer):
         parameters : list
             All ``Parameter`` objects that are being refined
         """
-
-        # Change parameters by same amount on all processes
-        for i, parameter in enumerate(parameters):
+        self.parameter_names
+        for i, parameter_name in enumerate(self.parameter_names):
             point_to_calculate = len(self._history)
-            parameter.value = self.parameter_point_array[point_to_calculate][i]
+            print("history length:"+str(len(self._history)))
+            if point_to_calculate < len(self.parameter_point_array):
+                for parameter in self.parameters:
+                    if parameter.name == parameter_name:
+                        parameter.value = self.parameter_point_array[point_to_calculate][i]
+                        print(parameter.name, parameter.value)
+                        break
+        
 
     def step(self, FoM):
         """
@@ -146,12 +207,23 @@ class GPR(Minimizer):
 
         history.extend(values)
         self._history.append(history)
-        self.change_parameters(self.parameters)
+        if len(self._history) <= len(self.parameter_point_array):
+            self.change_parameters(self.parameters)
+
+    def reset_parameters(self):
+        """
+        Resets the ``Parameter`` values to the first step
+        """
+        for i, parameter_name in enumerate(self.parameter_names):
+            for parameter in self.parameters:
+                if parameter.name == parameter_name:
+                    parameter.value = self.parameter_point_array[0][i]
+
 
     def GPR_fit(self):
         n_dims = len(self.parameters)
-        kernel = kernels.RBF(length_scale = np.ones(np.ones(n_dims))*self.length_scale)
-        gpr = GPR(kernel, n_restarts_optimizer=10)
+        kernel = kernels.RBF(length_scale = np.ones(n_dims)*self.length_scale)
+        gpr = GPR(kernel, n_restarts_optimizer=50)
 
         gpr.fit(self.parameter_point_array, self.MD_sim_output)
         y_mean, y_cov = gpr.predict(self.parameter_point_array, return_cov=True)
