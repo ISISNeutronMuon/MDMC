@@ -4,8 +4,8 @@ functions
 
 import pandas as pd
 
-def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
 
+def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
     """
 
 
@@ -47,8 +47,8 @@ def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
     # Raise an error if there are more values than columns (as every value must
     # be found in a column)
     if len(column_names) < len(values):
-        raise ValueError('There must be at least as many columns ({0}) as'
-                         ' values ({1})'.format(len(column_names), len(values)))
+        raise ValueError(f'There must be at least as many columns ({len(column_names)}) as'
+                         f' values ({len(values)})')
 
     # Filter all columns of dataframe which match column_regex for the first
     # value in values
@@ -69,7 +69,6 @@ def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
 
 def filter_ordered_dataframe(values, dataframe, column_names=None,
                              column_regex=None, wildcard=None):
-
     """
     Filters a ``pd.DataFrame`` with an iterable of ordered values. The values
     must occur in columns in the correct order, with the order specified by
@@ -116,15 +115,15 @@ def filter_ordered_dataframe(values, dataframe, column_names=None,
     # Raise an error if there are more values than columns (as every value must
     # be found in a column)
     if len(column_names) < len(values):
-        raise ValueError('There must be at least as many columns ({0}) as'
-                         ' values ({1})'.format(len(column_names), len(values)))
+        raise ValueError(f'There must be at least as many columns ({len(column_names)}) as'
+                         f' values ({len(values)})')
 
     # Whether all elements of each row have the same order as values (including
     # wildcard)
-    bool_rows = dataframe[column_names].agg(lambda x: all([x[i] in
-                                                           [values[i], wildcard]
-                                                           for i
-                                                           in range(len(x))]),
+    bool_rows = dataframe[column_names].agg(lambda x: all(x[i] in
+                                                          [values[i], wildcard]
+                                                          for i
+                                                          in range(len(x))),
                                             axis="columns")
     filtered_dataframe = dataframe.loc[bool_rows]
 

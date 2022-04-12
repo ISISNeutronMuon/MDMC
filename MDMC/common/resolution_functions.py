@@ -4,7 +4,6 @@ import numpy as np
 
 
 def gaussian(x, sigma, mu=0.0, norm=True):
-
     """
     Calculates the Gaussian distribution
 
@@ -37,7 +36,6 @@ def gaussian(x, sigma, mu=0.0, norm=True):
 
 
 def lorentzian(x, gamma, x_0=0.0):
-
     """
     Calculates the Lorentzian (Cauchy) distribution
 

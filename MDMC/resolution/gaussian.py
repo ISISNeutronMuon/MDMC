@@ -1,7 +1,9 @@
+"""The Gaussian resolution subclass"""
+import numpy as np
+
 from MDMC.resolution.resolution import Resolution
 from MDMC.common.constants import h_bar
 from MDMC.common.resolution_functions import gaussian
-import numpy as np
 
 
 class GaussianResolution(Resolution):
@@ -13,11 +15,11 @@ class GaussianResolution(Resolution):
         # converts energy resolution from user-friendly ueV to system unit meV
         self.e_res = e_res / 1000
 
-    def apply(self, fqt, t, Q):
-        N_Q, N_T = np.shape(fqt)
+    def apply(self, FQt, t, Q):
+        N_Q, N_T = np.shape(FQt)
         window = self.window_in_t(t[:N_T])
 
-        return np.broadcast_to(window, (N_Q, N_T)) * fqt
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
     def window_in_w(self, w, norm=True):
         """

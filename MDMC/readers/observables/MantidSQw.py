@@ -2,12 +2,10 @@
 
 import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
-from MDMC.readers.observables.obs_reader import ObservableReader
+from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class MantidSQw(ObservableReader):
+class MantidSQw(SQwReader):
 
     """
     A class for reading SQw files from Mantid
@@ -26,23 +24,29 @@ class MantidSQw(ObservableReader):
         File containing the errors on the dependent variables
     """
 
-    def open(self, file_name):
+    def __init__(self, file_name):
+        super().__init__(file_name)
+        self.detector_IDs = None
+        self.file_detectors = None
+        self.file_variables = None
 
+    def __enter__(self):
         """
         Open the files for variables and detector momenta
-
-        Parameters
-        ----------
-        file_name : str
-            The variables file name, which contains the SQw, error, and energy values for each
-            detector ID
         """
+        # pylint: disable=consider-using-with
+        # as this is an abstracted open method
 
-        self.file_variables = open(file_name)
-        self.file_detectors = open(file_name + '_detectors')
+        self.file_variables = open(self.file_name, encoding='UTF-8')
+        self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """Closes variable and detector files after parsing"""
+
+        self.file_variables.close()
+        self.file_detectors.close()
 
     def parse(self, **settings):
-
         """
         Parse into SQw format
 
@@ -50,7 +54,8 @@ class MantidSQw(ObservableReader):
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.E, self.SQw, self.SQw_err = self.parse_variables(self.file_variables)
+        self.E, self.SQw, self.SQw_err = self.parse_variables(
+            self.file_variables)
         self.Q = self.parse_detectors(self.file_detectors)
 
         # Explicitly sort data
@@ -67,90 +72,7 @@ class MantidSQw(ObservableReader):
         # inf so that error calculations can still be performed on them.
         self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
 
-    @property
-    def independent_variables(self):
-
-        """
-        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables Q and E
-        """
-
-        return {"Q":self.Q, "E":self.E}
-
-    @property
-    def dependent_variables(self):
-
-        """
-        Get the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables, SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw]}
-
-    @property
-    def errors(self):
-
-        """
-        Get the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The error on SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw_err]}
-
-    @property
-    def E(self):
-
-        """
-        Get or set the energy transfer, E, in meV
-
-        Returns
-        -------
-        numpy.ndarray
-            Energy transfer, E, in ``meV``
-        """
-
-        return self._E
-
-    @E.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def E(self, value):
-
-        self._E = value
-
-    @property
-    def Q(self):
-
-        """
-        Get or set the momentum transfer, Q, in ``Ang^-1``
-
-        Returns
-        -------
-        numpy.ndarray
-            Momentum transfer, Q, in ``Ang^-1``
-        """
-
-        return self._Q
-
-    @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
-
-        self._Q = value
-
     def parse_variables(self, file):
-
         """
         Parses the values for energy, SQw and its error for each detector, but not the momentum of
         that detector.
@@ -178,7 +100,7 @@ class MantidSQw(ObservableReader):
             strings = line.split(',')
             if len(strings) == 1:
                 self.detector_IDs.append(strings[0])
-                data.append({'X':[], 'Y':[], 'E':[]})
+                data.append({'X': [], 'Y': [], 'E': []})
             else:
                 data[-1]['X'].append(self._make_float(strings[0]))
                 data[-1]['Y'].append(self._make_float(strings[1]))
@@ -196,7 +118,6 @@ class MantidSQw(ObservableReader):
         return X, Y, E
 
     def parse_detectors(self, file):
-
         """
         Parses the detector momenta values.
 
@@ -212,7 +133,6 @@ class MantidSQw(ObservableReader):
         """
 
         Q = np.zeros(len(self.detector_IDs))
-        data = {}
         for i, line in enumerate(file):
             if i == 0:
                 headings = line.split(', ')
@@ -220,41 +140,21 @@ class MantidSQw(ObservableReader):
                     ID_header = 'Spectrum No'
                     spectrum_index = headings.index(ID_header)
                 except ValueError as error:
-                    raise ValueError('Detector file must have the heading "{0}"'
-                                        ''.format(ID_header)) from error
+                    raise ValueError(f'Detector file must have the heading "{ID_header}"') \
+                        from error
 
                 try:
                     Q_header = 'Q'
                     Q_index = headings.index(Q_header)
                 except ValueError as error:
-                    raise ValueError('Detector file must have the heading "{0}"'
-                                     ''.format(Q_header)) from error
+                    raise ValueError(f'Detector file must have the heading "{Q_header}"') \
+                        from error
             else:
                 values = line.split()
                 spectrum_no = values[spectrum_index]
                 Q_value = values[Q_index]
                 # Ensure that we assign Q values in the same order as detector_IDs
-                Q[self.detector_IDs.index(spectrum_no)] = self._make_float(Q_value)
+                Q[self.detector_IDs.index(
+                    spectrum_no)] = self._make_float(Q_value)
 
         return Q
-
-    def _make_float(self, i):
-
-        """
-        Casts the input to a `float`, or passes if the input cannot be cast
-
-        Parameters
-        ----------
-        i : numeric
-            Input to be cast to `float`
-
-        Returns
-        -------
-        float
-            A non-negative `float`, if the input can be converted to a `float`.
-        """
-
-        try:
-            return np.float64(i)
-        except ValueError:
-            pass

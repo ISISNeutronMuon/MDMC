@@ -12,9 +12,9 @@ import warnings
 try:
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
-except ModuleNotFoundError:
+except ModuleNotFoundError as error:
     raise ModuleNotFoundError('MDMC plotting utilities require matplotlib to be'
-                              ' installed.')
+                              ' installed.') from error
 
 from MDMC.common.df_operations import filter_dataframe
 
@@ -25,8 +25,9 @@ PLOT_HEIGHT = 360
 CNVS_WIDTH = 800
 
 
+# pylint: disable=import-outside-toplevel, protected-access
+# we are importing things out-of-order and copying variables on purpose here
 def plot_progress(inst, ynames):
-
     """
     Modifies an instance of ``MDMC.control.Control`` so that the progress of 1
     or more variables is plotted with each step when ``refine`` is called.
@@ -101,8 +102,8 @@ def plot_progress(inst, ynames):
         from IPython import display
         from ipywidgets import Output, VBox
     except ModuleNotFoundError as err:
-        warnings.warn('plot_progress requires {}. No plots will be'
-                      ' displayed.'.format(err.name))
+        warnings.warn(
+            f'plot_progress requires {err.name}. No plots will be displayed.')
         return inst
 
     # This font size and linewidth were suitable for OSX dev environment
@@ -122,15 +123,16 @@ def plot_progress(inst, ynames):
     # Create a VBox for the text consisting of N empty outputs. These are then
     # dynamically replaced by lines containing text output with each step.
     # height layout setting is used to reduce padding between lines of text.
-    inst._vbox = VBox([Output()] * N_TEXT_LINES, layout={'height':VBOX_HEIGHT})
+    inst._vbox = VBox([Output()] * N_TEXT_LINES,
+                      layout={'height': VBOX_HEIGHT})
 
     # Basic validation of user input
     if not inst._ynames:
         raise ValueError('ynames must contain at least one str')
     for yname in inst._ynames:
         if yname not in inst.minimizer.history:
-            raise ValueError('{0} is not a variable in the minimizer'
-                             ' history'.format(yname))
+            raise ValueError(
+                f'{yname} is not a variable in the minimizer history')
 
     # Redefined refine so that figure plotting is set, and the vbox containing
     # the text is displayed after the header
@@ -154,8 +156,8 @@ def plot_progress(inst, ynames):
         # This try/except allows IPython/Jupyter console to run without error
         # (although it does not live plot)
         try:
-            self.figure.canvas.handle_resize({'width':CNVS_WIDTH,
-                                              'height':height})
+            self.figure.canvas.handle_resize({'width': CNVS_WIDTH,
+                                              'height': height})
         except AttributeError:
             pass
         self.figure.canvas.draw()

@@ -18,8 +18,6 @@ having converted from their units of kcal to our kJ.
 Note that different values for bond strengths are given in the OPLSAA data
 file, namely 2510.4 and 313.8 respectively."""
 
-from MDMC.common import units
-from MDMC.common.units import UnitFloat
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import (Coulomb, HarmonicPotential,
                                            LennardJones)
@@ -60,11 +58,11 @@ class TIP3PFB(WaterModel):
         f_HOH = 230.12      # kJ mol^-1 rad^-2
 
         return {
-            (Coulombic, ('O',)):Coulomb(q_O),
-            (Coulombic, ('H',)):Coulomb(q_H),
-            (Dispersion, ('O', 'O')):LennardJones(epsilon, sigma),
+            (Coulombic, ('O',)): Coulomb(q_O),
+            (Coulombic, ('H',)): Coulomb(q_H),
+            (Dispersion, ('O', 'O')): LennardJones(epsilon, sigma),
             (Bond,
-             ('H', 'O')):HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
+             ('H', 'O')): HarmonicPotential(r_OH, f_OH, interaction_type='bond'),
             (BondAngle,
-             ('H', 'O', 'H')):HarmonicPotential(a_HOH, f_HOH,
-                                                interaction_type='angle')}
+             ('H', 'O', 'H')): HarmonicPotential(a_HOH, f_HOH,
+                                                 interaction_type='angle')}

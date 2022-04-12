@@ -8,6 +8,7 @@ from os.path import basename, dirname, join, isfile
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
+
 class MinimizerFactory:
 
     """
@@ -17,9 +18,26 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name, MC_norm, parameter, distribution='uniform', max_parameter_change: float=0.01):
-
+    def create_minimizer(module_name, parameter, distribution='uniform',
+                         max_parameter_change: float = 0.01, **settings: dict):
         """
+        Checks that the module is a supported minimzer and instantiates it as a minimizer.
+
+        Parameters
+        ----------
+        module_name: str
+            The name of the module to be used as the minimizer, e.g. 'MMC'
+        parameter: list[str]
+            List of parameters to be refined
+        distribution: str, optional
+            Name of distribution to be used, defaults to 'uniform'
+        max_parameter_change: float, optional
+            Maximum factor by which a Parameter can change each step of the
+            refinement. Defaults to `0.01`
+        **settings: dict, optional
+            Settings to be passed to the created minimiser, e.g. MC_norm=1.0 if MMC minimiser is
+            used.
+
         Returns
         -------
         Minimizer
@@ -28,17 +46,18 @@ class MinimizerFactory:
 
         try:
             module = import_module('.' + module_name, __package__)
-        except ImportError:
-            raise ValueError('{0} is not a supported minimizer'.format(module_name))
+        except ImportError as error:
+            raise ValueError(
+                f'{module_name} is not a supported minimizer') from error
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](MC_norm, parameter,distribution,
-                 max_parameter_change)
+        # The ** here is dictionary unpacking not passing directly the settings kwargs
+        return classes[0][1](parameter, distribution,
+                             max_parameter_change , **settings)
 
     @staticmethod
     def get_minimizer_names():
-
         """
         Get the names of available minimizer
 
@@ -60,6 +79,3 @@ class MinimizerFactory:
                     minimizer_names.append(module_name.replace('.py', ''))
 
         return minimizer_names
-
-
-

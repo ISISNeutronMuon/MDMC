@@ -34,12 +34,15 @@ for full_module_name in MODULE_NAMES:
         if not module_name.startswith('_') and module_name != 'obs.py':
             import_module(__name__ + '.' + module_name.replace('.py', ''))
 
+
 def _merge_obs_aliases(registry: Dict[str, Type]) -> List[str]:
     inverse_registry = defaultdict(list)
     for reg_name, reg_class in registry.items():
         inverse_registry[reg_class].append(reg_name)
-    aliases = [' / '.join(reg_names) for reg_names in inverse_registry.values()]
+    aliases = [' / '.join(reg_names)
+               for reg_names in inverse_registry.values()]
     return aliases
+
 
 # Get the names and classes of observables registered with ObservableFactory
 OBS_REGISTRY = obs_factory.ObservableFactory.registry
@@ -56,4 +59,3 @@ for name in OBS_NAMES:
 # merge these and insert them into the module docstring
 OBS_ALIASES = _merge_obs_aliases(OBS_REGISTRY)
 __doc__ = __doc__.replace('DYNAMIC_OBS_ALIASES', '\n'.join(OBS_ALIASES))
-

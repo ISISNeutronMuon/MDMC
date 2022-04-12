@@ -19,12 +19,11 @@ class FQtCoherent(AbstractFQt):
     """
 
     def _set_weights(self):
-
         """
         Calculate the neutron weighting for coherent scattering
         """
 
-        self.weights = {element:B_COH[element] for element
+        self.weights = {element: B_COH[element] for element
                         in self._trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors):
@@ -63,10 +62,10 @@ class FQtCoherent(AbstractFQt):
             for element2 in elements:
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1] \
-                                * self.weights[element2] \
-                                * correlation(rho_element[element1],
-                                              rho_element[element2],
-                                              normalise=True)[:n_t]
+                    * self.weights[element2] \
+                    * correlation(rho_element[element1],
+                                  rho_element[element2],
+                                  normalise=True)[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:

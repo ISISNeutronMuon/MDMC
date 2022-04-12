@@ -11,7 +11,6 @@ from MDMC.utilities.installation_tests import run_installation_tests
 
 
 def get_parser() -> ArgumentParser:
-
     """
     Creates and returns a parser for sys.args
 
@@ -40,8 +39,9 @@ def get_parser() -> ArgumentParser:
     return parser
 
 # subparsers not typed because it is protected class (special action object)
-def _add_test_subparser(subparsers):
 
+
+def _add_test_subparser(subparsers):
     """
     Add a subparser for running installation tests
     """
@@ -57,7 +57,6 @@ def _add_test_subparser(subparsers):
 
 
 def main():
-
     """
     Entry point exposed for running installation tests
     """

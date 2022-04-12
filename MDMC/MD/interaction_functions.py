@@ -52,8 +52,8 @@ class InteractionFunction:
     def __str__(self):
 
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
-                           for p in self.parameters]).strip(',')
-        return '{0} {1}'.format(self.__class__.__name__, parameters)
+                               for p in self.parameters]).strip(',')
+        return f'{self.__class__.__name__} {parameters}'
 
     def __eq__(self, other):
 
@@ -64,7 +64,6 @@ class InteractionFunction:
 
     @property
     def parameters(self):
-
         """
         Get or set the ``array`` of ``Parameter`` objects
 
@@ -86,7 +85,6 @@ class InteractionFunction:
 
     @property
     def parameters_values(self):
-
         """
         Get the values for all ``Parameters`` objects
 
@@ -100,7 +98,6 @@ class InteractionFunction:
 
     @property
     def name(self):
-
         """
         Get the name of the class of the ``InteractionFunction``
 
@@ -113,7 +110,6 @@ class InteractionFunction:
         return self.__class__.__name__
 
     def set_parameters_interactions(self, interaction):
-
         """
         Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
 
@@ -130,7 +126,6 @@ class InteractionFunction:
 
 
 def inter_func_decorator(*parameter_units):
-
     """
     Decorates a method to add units to all positional and any relevant keyword
     arguments
@@ -142,7 +137,7 @@ def inter_func_decorator(*parameter_units):
     ----------
     *parameter_units : tuple
         One or more `tuple` where the first element is a `str` giving the
-        keyword name of an expected parameter. The second element is a       
+        keyword name of an expected parameter. The second element is a
         `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
         which is applied to the corresponding value passed to the decorated
         method. If one of the values is unitless, pass `None` at the
@@ -198,7 +193,7 @@ def inter_func_decorator(*parameter_units):
             # decorator)
             values = list(values)
             for name, unit in parameter_units:
-                if name in settings.keys():
+                if name in settings:
                     settings[name] = unit_creator(settings[name], unit)
                 else:
                     settings[name] = unit_creator(values.pop(0), unit)
@@ -390,7 +385,8 @@ class HarmonicPotential(InteractionFunction):
         # irrelevant, as the original decorator will be the last called. So
         # cls._init is used as it will always be equivalent to the undecorated
         # __init__ visible below.
-        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit), ('potential_strength', pot_unit))(cls._init)
+        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit),
+                                            ('potential_strength', pot_unit))(cls._init)
         return h_pot
 
     def __init__(self, equilibrium_state, potential_strength, **settings):
@@ -521,6 +517,6 @@ class LennardJones(InteractionFunction):
     @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
     def __init__(self, epsilon, sigma, **settings):
 
-        super().__init__({'epsilon':epsilon, 'sigma':sigma})
+        super().__init__({'epsilon': epsilon, 'sigma': sigma})
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)

@@ -317,11 +317,18 @@ def ensemble(populated_lammps_simulation):
     """
 
     populated_lammps_simulation.lin_momentum_steps = None
-    return lmp_eng.Ensemble(populated_lammps_simulation.lmp,
-                            time_step=1.)
+    return lmp_eng.LAMMPSEnsemble(populated_lammps_simulation.lmp,
+                                  time_step=1.)
 
 @pytest.fixture
-def lammps_engine(universe):
+def simulation(universe):
+    """
+    A mock simulation to give the engine facade its necessary 'parent simulation'
+    """
+    return Simulation(universe, traj_step=1, time_step=1., engine='lammps')
+
+@pytest.fixture
+def lammps_engine(universe, simulation):
 
     """
     Returns:
@@ -330,8 +337,9 @@ def lammps_engine(universe):
     """
 
     lammps_engine = lmp_eng.LAMMPSEngine()
+    lammps_engine.parent_simulation = simulation
     lammps_engine.setup_universe(universe)
-    lammps_engine.setup_simulation(traj_step=1, time_step=1.)
+    lammps_engine.setup_simulation()
     return lammps_engine
 
 
@@ -1424,7 +1432,10 @@ def test_remove_momentum(populated_lammps_simulation, momentum_steps,
                            {'temperature':400., 't_damp':100}),
                           ('rescale', ['nve', 'temp/rescale'],
                            {'temperature':100., 't_fraction':0.5,
-                            't_window':10., 'rescale_step':100})])
+                            't_window':10., 'rescale_step':100}),
+                          ('csvr', ['nve', 'temp/csvr'],
+                           {'temperature': 400., 't_damp': 100})
+                          ])
 def test_apply_thermostat(ensemble, thermostat, styles, attributes):
 
     """
@@ -1613,23 +1624,6 @@ def test_minimize(args, lammps_engine):
     assert lammps_engine.lmp.eval('pe') < start_energy
 
 
-@pytest.mark.parametrize('verbose', [False, True])
-def test_minimize_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling minimize with different verbose arguments results in the
-    expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps')
-    sim.minimize(0, verbose=verbose)
-
-    verbose_msg = ('Starting minimization for 0 steps\n'
-                   'Minimization complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
-
-
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
                           ('nose', None, {}),
@@ -1646,9 +1640,8 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # it is not being used in this test
     # add_args is a dictionary of additional arguments that are required for the
     # specific ensemble
-    lammps_engine.setup_simulation(traj_step=1, time_step=1., temperature=300.,
-                                   thermostat=thermostat, barostat=barostat,
-                                   **add_args)
+    lammps_engine.setup_simulation(temperature=300., thermostat=thermostat,
+                                   barostat=barostat, **add_args)
 
     n_steps = 20
     lammps_engine.lmp.run(n_steps)
@@ -1656,40 +1649,6 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # Test that the largest step number in the LAMMPS wrapper runs attribute
     # (which records ThermoData from the previous run) is correct
     assert max(lammps_engine.lmp.runs[0][0].Step) == n_steps
-
-
-@pytest.mark.parametrize('verbose', [False, True])
-def test_run_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with different verbose arguments results in the
-    expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps')
-    sim.run(0, verbose=verbose)
-
-    verbose_msg = ('Starting simulation for 0 steps\n'
-                   'Simulation complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
-
-
-@pytest.mark.parametrize('verbose', [False, True])
-def test_equilibration_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with ``equilibration=True`` and different verbose
-    arguments results in the expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps', temperature=1)
-    sim.run(0, equilibration=True, verbose=verbose)
-
-    verbose_msg = ('Starting equilibration for 0 steps\n'
-                   'Equilibration complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
 
 
 @pytest.mark.parametrize("value", [1., 5, -100, -13.])
