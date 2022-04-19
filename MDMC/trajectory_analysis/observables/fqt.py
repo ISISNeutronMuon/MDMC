@@ -326,9 +326,13 @@ class AbstractFQt(SQwMixins, Observable):
 
         # create components of the Q vector for each axis on each lattice point in the cube
         # .reshape(-1, 1) reshapes each axis to a column vector
-        vector_x = np.array(range(-x_max, x_max + 1)).reshape(-1, 1) * self.reciprocal_basis[0]
-        vector_y = np.array(range(-y_max, y_max + 1)).reshape(-1, 1) * self.reciprocal_basis[1]
-        vector_z = np.array(range(-z_max, z_max + 1)).reshape(-1, 1) * self.reciprocal_basis[2]
+        # the list comprehension defines the way we traverse lattice points
+        vector_x = (np.array([(-i, i) for i in range(0, x_max + 1)]).reshape(-1, 1)
+                    * self.reciprocal_basis[0])
+        vector_y = (np.array([(-i, i) for i in range(0, y_max + 1)]).reshape(-1, 1)
+                    * self.reciprocal_basis[1])
+        vector_z = (np.array([(-i, i) for i in range(0, z_max + 1)]).reshape(-1, 1)
+                    * self.reciprocal_basis[2])
 
         # combine to create overall vectors for each lattice point in the cube
         vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
