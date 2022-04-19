@@ -1,0 +1,39 @@
+# MDMC Pint definitions file
+# Contains extra definitions and aliases needed by MDMC.
+#
+# Aliases
+# -------
+
+@alias angstrom = ang = Ang = AA
+
+
+#
+# Units
+# -----
+
+
+
+
+#
+# Unit systems
+# ------------------
+
+@system MDMC
+angstrom: meter
+femtosecond: second
+amu: gram
+elementary_charge : coulomb
+kilojoule: joule
+@end
+
+# note that technically LAMMPS uses g/mol, but
+# uses the old definition from before 2019 SI redefinitions
+# thus 1 g/mol = 1 amu
+@system LAMMPS
+angstrom: meter
+femtosecond: second
+amu: gram
+elementary_charge: coulomb
+kilocalorie: joule
+atmospheric_pressure: pascal
+@end

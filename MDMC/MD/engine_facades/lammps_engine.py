@@ -881,7 +881,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         xlo = ylo = zlo = 0.
-        xhi, yhi, zhi = universe.dimensions
+        xhi, yhi, zhi = universe.dimensions.magnitude
         region_ID = 'universe'
         # 'block' gives a cuboidal universe
         self.lmp.region(region_ID, 'block', xlo, xhi, ylo, yhi, zlo, zhi,
@@ -911,18 +911,18 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for type_ID, atom_type_group in self.atom_types.items():
             # The mass below has associated units, which causes a segfault when
             # it is passed to LAMMPS - cast to float to remove units
-            self.lmp.mass(type_ID, float(atom_type_group[0].mass))
+            self.lmp.mass(type_ID, float(atom_type_group[0].mass.magnitude))
             for atom in atom_type_group:
-                self.lmp.create_atoms(type_ID, 'single', *atom.position)
+                self.lmp.create_atoms(type_ID, 'single', *atom.position.magnitude)
                 if self.comm.rank == 0:
                     # As PyLammps has a bug preventing getting atom id from
                     # self.lmp.atoms[index].id, use number of atoms as proxy for
                     # new atom id (as it is sequential)
                     lmp_atom_id = self.lmp.atoms.natoms
                     self.lmp.set('atom', lmp_atom_id,
-                                 'vx', atom.velocity[0],
-                                 'vy', atom.velocity[1],
-                                 'vz', atom.velocity[2])
+                                 'vx', atom.velocity[0].magnitude,
+                                 'vy', atom.velocity[1].magnitude,
+                                 'vz', atom.velocity[2].magnitude)
                 else:
                     lmp_atom_id = None
                 self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
@@ -1167,7 +1167,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 self.lmp.set('atom',
                              lmp_atom_id,
                              'charge',
-                             convert_unit(atom.charge, 'LAMMPS'))
+                             convert_unit(atom.charge, 'LAMMPS').magnitude)
             except ValueError as error:
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.') from error
@@ -1412,7 +1412,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         self._time_step = value * UREG.fs
         try:
             # Set the timestep in LAMMPS wrapper
-            self.lmp.timestep(convert_unit(self._time_step, 'LAMMPS'))
+            self.lmp.timestep(convert_unit(self._time_step, 'LAMMPS').magnitude)
         except ValueError:
             pass
 
@@ -1444,7 +1444,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                     # then "create" a velocity for each atom
                     self.lmp.velocity('all', 'create',
                                       convert_unit(
-                                          self._temperature, 'LAMMPS'),
+                                          self._temperature, 'LAMMPS').magnitude,
                                       randint(1, 9999))
                 else:
                     if any(zero_velocity):
@@ -1456,7 +1456,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                     # If we have set velocities then "scale" the velocities we have to the correct
                     # temperature
                     self.lmp.velocity(
-                        'all', 'scale', convert_unit(self._temperature, 'LAMMPS'))
+                        'all', 'scale', convert_unit(self._temperature, 'LAMMPS').magnitude)
         except ValueError:
             pass
 
@@ -1534,7 +1534,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
         self._skin = value * UREG.angstrom
         # Set the neighor list parameters in the LAMMPS wrapper
-        self.lmp.neighbor(convert_unit(self._skin, 'LAMMPS'), 'bin')
+        self.lmp.neighbor(convert_unit(self._skin, 'LAMMPS').magnitude, 'bin')
 
     @property
     def neighbor_steps(self):
@@ -2002,13 +2002,13 @@ class LAMMPSEnsemble(PyLammpsAttribute):
             self.lmp.fix('nve', 'all', 'nve')
         else:
             if self.thermostat:
-                temp = convert_unit(self.temperature, 'LAMMPS')
+                temp = convert_unit(self.temperature, 'LAMMPS').magnitude
                 if self.thermostat != 'rescale':
-                    t_damp = convert_unit(self.t_damp, 'LAMMPS')
+                    t_damp = convert_unit(self.t_damp, 'LAMMPS').magnitude
                     thermo_parameters = [temp, temp, t_damp]
             if self.barostat:
-                press = convert_unit(self.pressure, 'LAMMPS')
-                p_damp = convert_unit(self.p_damp, 'LAMMPS')
+                press = convert_unit(self.pressure, 'LAMMPS').magnitude
+                p_damp = convert_unit(self.p_damp, 'LAMMPS').magnitude
                 press_parameters = ['iso', press, press, p_damp]
 
             # Apply thermostat
@@ -2037,7 +2037,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
 
             def rescale():
                 # temp/rescale does not do time integration so also requires nve
-                t_window = convert_unit(self.t_window, 'LAMMPS')
+                t_window = convert_unit(self.t_window, 'LAMMPS').magnitude
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('rescale', 'all', 'temp/rescale',
                              self.rescale_step, temp, temp, t_window,
@@ -2155,7 +2155,7 @@ def parse_nonbonded_styles(interaction):
                                   ' implemented in the LAMMPS facade')
 
     if interaction.cutoff:
-        cutoff = convert_unit(interaction.cutoff, 'LAMMPS')
+        cutoff = convert_unit(interaction.cutoff, 'LAMMPS').magnitude
         kspace = interaction.universe.kspace_solver
         electrostatic = interaction.universe.electrostatic_solver
         dispersive = interaction.universe.dispersive_solver
@@ -2368,7 +2368,7 @@ def parse_bonded_coefficients(interaction):
         the LAMMPS facade.
     """
 
-    parameters = {p.name: convert_unit(p.value, 'LAMMPS')
+    parameters = {p.name: convert_unit(p.value, 'LAMMPS').magnitude
                   for p in interaction.parameters}
     style = parse_bonded_styles(interaction)
 
@@ -2459,7 +2459,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         if 'buck' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'Buckingham':
-                    parameters = {p.name: convert_unit(p.value, 'LAMMPS')
+                    parameters = {p.name: convert_unit(p.value, 'LAMMPS').magnitude
                                   for p in inter.parameters}
             ordered_parameters = [parameters['A'],
                                   parameters['B'] ** -1,
@@ -2475,7 +2475,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         elif 'lj' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'LennardJones':
-                    parameters = {p.name: convert_unit(p.value, 'LAMMPS')
+                    parameters = {p.name: convert_unit(p.value, 'LAMMPS', strip=True)
                                   for p in inter.parameters}
             ordered_parameters = [parameters['epsilon'],
                                   parameters['sigma']]

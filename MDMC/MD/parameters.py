@@ -17,7 +17,7 @@ import weakref
 import pint
 
 from MDMC.common.decorators import repr_decorator
-from MDMC.common.unit_registry import scrub_unit, UREG
+from MDMC.common.unit_registry import strip_unit, UREG
 
 
 @repr_decorator('name', 'value', 'fixed', 'constraints',
@@ -113,7 +113,7 @@ class Parameter:
             warnings.warn(f"Parameter {self.name} already has units of {self.unit}; "
                           f"but they are now being set to {UREG.Unit(unit)}")
 
-        self.value = scrub_unit(self.value) * UREG.Unit(unit)
+        self.value = strip_unit(self.value) * UREG.Unit(unit)
 
     @property
     def constraints(self):
@@ -278,7 +278,7 @@ class Parameter:
             If the ``value`` is not within the ``constraints``
         """
 
-        if scrub_unit(value) < constraints[0] or scrub_unit(value) > constraints[1]:
+        if strip_unit(value) < constraints[0] or strip_unit(value) > constraints[1]:
             raise ValueError("Value must be within constraints")
 
     # comparison operator so parameters are always in the same order on refinement headings
@@ -362,7 +362,7 @@ class Parameters(list):
                '==': operator.eq,
                '!=': operator.ne}
 
-        return Parameters(filter(lambda p: ops[comparison](scrub_unit(p.value), value), self))
+        return Parameters(filter(lambda p: ops[comparison](strip_unit(p.value), value), self))
 
     def filter_interaction(self, interaction_name):
         """
@@ -433,7 +433,7 @@ class Parameters(list):
                     yield element
 
         return Parameters(filter(lambda p:
-                                 value in [scrub_unit(getattr(atom, attribute))
+                                 value in [strip_unit(getattr(atom, attribute))
                                            for int in p.interactions
                                            for atom
                                            in flatten(int.atoms)],

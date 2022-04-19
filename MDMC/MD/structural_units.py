@@ -17,7 +17,7 @@ import weakref
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from MDMC.common.unit_registry import UREG, scrub_unit
+from MDMC.common.unit_registry import UREG, strip_unit
 from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator
@@ -47,9 +47,9 @@ class StructuralUnit(ABC):
     name : str
         The name of the structure.
 
-        Attributes
+    Attributes
     ----------
-        ID : int
+    ID : int
         A unique identifier for each ``StructuralUnit``.
     universe : Universe
         The ``Universe`` to which the ``StructuralUnit`` belongs.
@@ -96,7 +96,7 @@ class StructuralUnit(ABC):
         # due to molecule construction methods,
         # sometimes the molecules have units and sometimes they do not: check for this
         # else we will sometimes give a molecule the units Angstrom ** 2
-        self._position = scrub_unit(position) * UREG.angstrom
+        self._position = strip_unit(position) * UREG.angstrom
 
     @property
     def velocity(self):
@@ -1200,7 +1200,7 @@ class Molecule(CompositeStructuralUnit):
 
     @position.setter
     def position(self, position):
-        self._position = scrub_unit(position) * UREG.angstrom
+        self._position = strip_unit(position) * UREG.angstrom
         self._set_subunit_positions()
 
     @property
@@ -1312,7 +1312,7 @@ class BoundingBox:
 
     @min.setter
     def min(self, value):
-        self._min = scrub_unit(value) * UREG.angstrom
+        self._min = strip_unit(value) * UREG.angstrom
 
     @property
     def max(self):
@@ -1329,7 +1329,7 @@ class BoundingBox:
 
     @max.setter
     def max(self, value):
-        self._max = scrub_unit(value) * UREG.angstrom
+        self._max = strip_unit(value) * UREG.angstrom
 
     @property
     def volume(self):

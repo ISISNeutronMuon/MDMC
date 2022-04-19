@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
 
-from MDMC.common.unit_registry import UREG, scrub_unit
+from MDMC.common.unit_registry import UREG, strip_unit
 from MDMC.common.constants import h, h_bar
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -16,6 +16,7 @@ from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 # pylint: disable=no-member
 # as it creates a false positive for Q magnitude
+
 
 class SQwMixins:
     """
@@ -582,7 +583,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         # In general we do not have equal energy spacing, multiply the exponential factor by this
         # before transposing and dotting to sum over the energy domain
-        exp = np.exp(1j * np.outer(scrub_unit(t_array), scrub_unit(E_sorted)) /
+        exp = np.exp(1j * np.outer(strip_unit(t_array), strip_unit(E_sorted)) /
                      (h_bar.magnitude * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 

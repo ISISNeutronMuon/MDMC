@@ -11,7 +11,7 @@ import numpy as np
 
 from MDMC.MD.structural_units import Atom
 from MDMC.MD.interactions import Bond
-from MDMC.common.unit_registry import scrub_unit
+from MDMC.common.unit_registry import strip_unit
 
 
 class ASEAtoms(ase.atoms.Atoms):
@@ -122,11 +122,11 @@ def convert_to_ase_atom(atom, index=None):
     """
 
     index = index if index else atom.ID
-    return ase.atom.Atom(position=scrub_unit(atom.position),
+    return ase.atom.Atom(position=strip_unit(atom.position),
                          index=index,
-                         mass=scrub_unit(atom.mass),
+                         mass=strip_unit(atom.mass),
                          symbol=atom.element,
-                         charge=scrub_unit(atom.charge))
+                         charge=strip_unit(atom.charge))
 
 
 def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
