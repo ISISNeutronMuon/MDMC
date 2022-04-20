@@ -1,4 +1,4 @@
-"""Reader for radial distribution functions"""
+"""Reader for pair distribution function data from LAMP's ascii files"""
 
 from typing import List, Tuple
 import numpy as np
@@ -8,18 +8,17 @@ from MDMC.readers.observables.obs_reader import PDFReader
 
 class LAMPPDF(PDFReader):
     """
-    A class for reading files from LAMP that contain pair/radial distribution function data
+    A class for reading files from LAMP that contain pair distribution function (PDF) data.
     LAMP's ascii output uses a single file, with the expected file structure being:
-    Row-Number  Distance  rdf1  rdf2  ...  rdfN
+    Row-Number  Distance  pdf-total  pdf1 pdf2  ...  pdfN
 
-    Because of the ability to have multiple columns with dependent data, the parsed self.PDF
-    property will be a 2D array with the second dimension being of length N (the number of
-    columns containing radial/pair distribution functions).
+    The `pdf_col` parameter can be used to select which data column contains the total PDF. The
+    remaining columns (if existent) are assumed to be partial PDFs.
 
     Parameters
     ----------
     file_name : file
-        File containing the pair/radial distribution function data
+        File containing the pair distribution function data
     pdf_col : int>=3
         Column that contains the data to be saved as the total PDF
         (`PairDistributionFunction.PDF`). Optional, default value is 3 as columns 1 and 2 are
@@ -60,8 +59,12 @@ class LAMPPDF(PDFReader):
         """
         Parse the file information
 
-        r is the radial distance (in Angstrom)
-        PDF is the pair/radial distribution function (in barn)
+        `r` is the radial distance (in Angstrom), expected in column 2 of the file
+        `PDF` is the total pair distribution function (in barn), by default expected in column 3
+        of the file, but can be specified by `pdf_col` setting.
+        `partial_pairs` are the partial PDFs (in barn), imported from the remaining columns with
+        the labels of the partial pairs either specified by `partial_strings` or taken from the
+        column headers.
 
         """
         pdf_array = []
@@ -76,7 +79,7 @@ class LAMPPDF(PDFReader):
                 r_array = np.zeros(int(columns[1]))
             elif i > 3:
                 r_array[i - 4] = float(columns[1])
-                # columns 3 onwards are the pair/radial distribution functions (in barn)
+                # columns 3 onwards are the pair distribution functions (in barn)
                 pdf_array.append([float(value) for value in columns[2:]])
         pdf_array = np.array(pdf_array)
 

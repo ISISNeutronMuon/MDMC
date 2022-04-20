@@ -286,11 +286,11 @@ class PDFReader(ObservableReader, ABC):
     def PDF(self):
 
         """
-        Get or set the pair/radial distribution function between pairs (in ``barn``)
+        Get or set the total pair distribution function between pairs (in ``barn``)
         Returns
         -------
         numpy.ndarray
-            pair/radial distribution function (in ``barn``)
+            total pair distribution function (in ``barn``)
         """
 
         return self._PDF
@@ -305,11 +305,11 @@ class PDFReader(ObservableReader, ABC):
     def PDF_err(self):
 
         """
-        Get or set the error on the pair/radial distribution function between pairs (in ``barn``)
+        Get or set the error on the total pair distribution function between pairs (in ``barn``)
         Returns
         -------
         numpy.ndarray
-            error on the pair/radial distribution function (in ``barn``)
+            error on the total pair distribution function (in ``barn``)
         """
 
         return self._PDF_err
