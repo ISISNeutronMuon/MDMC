@@ -1,4 +1,4 @@
-"""Module for calculating the pair distribution function (PDF)"""
+"""Module for calculating the total pair distribution function (PDF)"""
 
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement,
@@ -21,8 +21,29 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 class PairDistributionFunction(Observable):
 
     """
-    A class for containing, calculating and reading a pair distribution
-    function
+    A class for containing, calculating and reading a pair distribution function (PDF).
+    We employ the following mathematical form for the total pair distribution function (``PDF``):
+
+        .. math::
+
+            G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
+
+        where :math:`c_i` is the number concentration of element :math:`i`,
+        :math:`b_i` is the (coherent) scattering length of element :math:`i`,
+        and the partial pair distribution, :math:`g_{ij}`, is:
+
+        .. math::
+
+            g_{ij}(r) = \frac{h_{ij}(r)}{4 \pi r^2 \rho_{j} \Delta{r}}
+
+        where :math:`h_{ij}`` is the histogram of distances of :math:`j` element
+        atoms around atoms of element :math:`i`, with bins of size
+        :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
+        atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
+        :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
+
+    The total PDF is contained in ``PDF`` and the partial pair PDFs (if calculated or imported)
+    are contained in ``partial_pdfs``.
     """
 
     def __init__(self):
