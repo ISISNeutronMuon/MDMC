@@ -141,7 +141,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose=0, **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings):
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -153,9 +153,11 @@ class AbstractFQt(SQwMixins, Observable):
         MD_input : Trajectory
             a single ``Trajectory`` object.
         verbose: int, optional
-            If 2, timings are printed for each calculation of FQt and SQw. If 1,
-            timings are collected so they can be printed at the end of the refinement.
-            If 0, no timings are collected. Default is 0.
+            The level of verbosity:
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -459,7 +461,6 @@ class AbstractFQt(SQwMixins, Observable):
         numpy.ndarray
             The S(Q, w) calculated from F(Q, t)
         """
-
         nE = len(energy)
         if self.use_FFT:
             # Ensure that if we recorded a longer trajectory than required by
