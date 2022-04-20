@@ -577,6 +577,7 @@ class FileForceField(ForceField):
         function_name = self.inter_functions[interaction_type.lower()]
         return getattr(interaction_functions, function_name)
 
+    # # pylint: disable=cache-max-size-none
     @lru_cache(maxsize=None)
     def _convert_atom_type_name(self, atom):
         """

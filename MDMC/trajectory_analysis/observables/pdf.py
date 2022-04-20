@@ -20,7 +20,7 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
 
-    """
+    r"""
     A class for containing, calculating and reading a pair distribution function (PDF).
     We employ the following mathematical form for the total pair distribution function (``PDF``):
 
