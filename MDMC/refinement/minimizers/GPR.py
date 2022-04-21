@@ -1,6 +1,8 @@
 """The Gaussian-Process-Regression minimizer class"""
 import numpy as np
+import itertools
 import scipy.stats as st
+import pandas as pd
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
 import itertools
@@ -34,12 +36,13 @@ class GPR(Minimizer):
     """
 
 
-    def __init__(self, parameters, distribution, max_parameter_change, n_points, **settings):
+    def __init__(self, parameters, distribution, max_parameter_change, **settings):
         super().__init__(parameters, distribution, max_parameter_change)
         self.hypercube = settings.get('hypercube', False)
         self.kernel = settings.get('kernel', 'RBF')
         self.alpha = settings.get('alpha', 0.0001)
         self.length_scale = settings.get('length_scale', 0.1)
+        n_points = settings.get('n_points', 4)
 
         self.parameter_names, self.parameter_point_array = self.create_parameter_point_array(parameters, n_points)
         self.change_parameters(parameters)
@@ -66,7 +69,7 @@ class GPR(Minimizer):
                 Array of parameter coordinates to be simulated
         """
         parameter_names = []
-        bounds_array=[]
+        bounds_array = []
         if not self.hypercube:
 
             for parameter in parameters:
@@ -79,13 +82,14 @@ class GPR(Minimizer):
             return parameter_names, point_array
             
         else:
+            point_array = []
             samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
             latin_points = samples.random(n=points)
             for i, parameter in enumerate(parameters):
                 lower_bound, upper_bound = self.create_bounds(parameter)
                 parameter_names.append(str(parameter.name))
-            point_array = self.scale_hypercube(latin_points[:, i], lower_bound, upper_bound)
-            return parameter_names, point_array
+                latin_points[:, i] = self.scale_hypercube(latin_points[:, i], lower_bound, upper_bound)
+            return parameter_names, latin_points
 
 
 
@@ -118,7 +122,7 @@ class GPR(Minimizer):
 
         return lower_bound, upper_bound
     
-    def scale_hypercube(input_array, lower_bound, upper_bound):
+    def scale_hypercube(self, input_array, lower_bound, upper_bound):
         """
         Takes an input array in interval [0,1] and scales the values to instead be between
         the lower and upper bounds
@@ -155,7 +159,9 @@ class GPR(Minimizer):
         run_steps = np.max([min_steps, len(self.parameter_point_array)])
 
         if len(self.history) >= run_steps:
-            #self.GPR_fit()
+            fit = self.GPR_fit()
+            points, FoMs = self.GPR_predict(fit)
+            minima = self.global_minimum_position(FoMs, points)
             converged = True
 
         return converged
@@ -181,14 +187,17 @@ class GPR(Minimizer):
         parameters : list
             All ``Parameter`` objects that are being refined
         """
-        self.parameter_names
+        #self.parameter_names
         for i, parameter_name in enumerate(self.parameter_names):
             point_to_calculate = len(self._history)
             print("history length:"+str(len(self._history)))
-            if point_to_calculate < len(self.parameter_point_array):
+            if point_to_calculate <= len(self.parameter_point_array):
                 for parameter in self.parameters:
                     if parameter.name == parameter_name:
-                        parameter.value = self.parameter_point_array[point_to_calculate][i]
+                        try:
+                            parameter.value = self.parameter_point_array[point_to_calculate][i]
+                        except(IndexError):
+                            parameter.value = self.parameter_point_array[i]
                         print(parameter.name, parameter.value)
                         break
         
@@ -207,7 +216,7 @@ class GPR(Minimizer):
 
         history.extend(values)
         self._history.append(history)
-        if len(self._history) <= len(self.parameter_point_array):
+        if len(self._history) < len(self.parameter_point_array):
             self.change_parameters(self.parameters)
 
     def reset_parameters(self):
@@ -220,15 +229,98 @@ class GPR(Minimizer):
                     parameter.value = self.parameter_point_array[0][i]
 
 
-    def GPR_fit(self):
-        n_dims = len(self.parameters)
-        kernel = kernels.RBF(length_scale = np.ones(n_dims)*self.length_scale)
-        gpr = GPR(kernel, n_restarts_optimizer=50)
+    def GPR_fit(self, filename="results.csv", alpha=0.1):
+        """
+        Uses the measured points in the supplied file to perform a Gaussian
+        process regression and fit the points.  
 
-        gpr.fit(self.parameter_point_array, self.MD_sim_output)
-        y_mean, y_cov = gpr.predict(self.parameter_point_array, return_cov=True)
+        Parameters
+        ----------
+        filename : str, optional
+            The filename or full path to a comma separated value file containing 
+            the full output of the refinement. Defaults to the results.csv 
+            produced by the refinement.
+        alpha: float, optional
+            The intrinsic uncertainty associated with the measured points
+            i.e. not assuming the measured point must lie on the underlying 
+            surface, but may fluctuate around it by some value
 
-        posteriors = st.multivariate_normal.rvs(mean=y_mean, cov=y_cov)
-        return posteriors
+        Returns
+        -------
+        GaussianProcessRegressor
+            The fitted points using GPR
+        """
+        records = pd.read_csv(filename, delimiter=',')
+        records = records.astype(dtype=float, errors='ignore')  # Convert to float where possible (i.e. not a string)
+        headers = records.columns
+        data = records.values
 
-    
+        coordinates = []
+        FOMs = []
+        for i in range(len(data)):
+            coordinate = data[i]
+            coordinates.append(coordinate[3:])  # Only append parameters
+            FOMs.append(records['FoM'][i])
+
+        kernel = self.kernel(length_scale = np.ones(len(coordinates[0]))*self.length_scale)
+        gpr = GPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+
+        fitted_GPR = gpr.fit(coordinates, FOMs)
+
+        return fitted_GPR, headers
+
+    def GPR_predict(self, input_regressor, points=100):
+        """
+        Takes a fitted Gaussian process regressor, creates an array of points between the 
+        minimum and maximum measured parameter values and predicts the FoM on these points
+        
+        Parameters
+        ----------
+        input_regressor : GaussianProcessRegressor object
+            A fitted Gaussian Process regressor object 
+        points: int, optional
+            Number of points to predict the GPR over. Defaults to 100
+
+        Returns
+        -------
+        point_array : list
+            The list of coordinates at which the predictions are made
+        prediction : array
+            Array of predicted figure of merit surface at each coordinate in the point_array 
+        """
+        regressor_points = input_regressor.X_train_
+
+        predictive_coordinates = []
+
+        for column in regressor_points.T:
+            min, max = np.min(column), np.max(column)
+            dense_array = np.linspace(min, max, points)
+            predictive_coordinates.append(dense_array)
+
+        point_array =  list(itertools.product(*predictive_coordinates))  # predict method needs explicit array
+
+        prediction = input_regressor.predict(point_array, return_std=False)
+
+        return point_array, prediction
+
+    def global_minimum_position(self, predicted_FOMs, point_array):
+        """
+        Gives the coordinates of the global minimum of the predicted figure of merit surface.
+
+        Parameters
+        ----------
+        predicted_FOMs : array
+            An array of the predicted figures of merit
+        point_array: list
+            A list of the coordinates corresponding to the points at which the FoM was predicted
+
+        Returns
+        -------
+        minimum_coordinates : array
+            The list of coordinates where the minimum figure of merit is predicted to be
+        """
+        min_FoM = np.min(predicted_FOMs)
+        array_entry = np.where(predicted_FOMs == min_FoM)[0]
+        minimum_coordinates = point_array[array_entry]
+
+        return minimum_coordinates
