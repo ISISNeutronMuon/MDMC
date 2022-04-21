@@ -23,7 +23,7 @@ class LAMPPDF(PDFReader):
     pdf_col : int>=3
         Column that contains the data to be saved as the total PDF
         (`PairDistributionFunction.PDF`). Optional, default value is 3 as columns 1 and 2 are
-        normally reserved for the row-counter and the distance value.
+        reserved for the row-counter and the distance value.
     partial_strings : list of tuples
         List of tuples to specify the labels of the partial pairs to be saved as such in
         `PairDistributionFunction.partial_pdfs`. All columns in the data file apart from the
