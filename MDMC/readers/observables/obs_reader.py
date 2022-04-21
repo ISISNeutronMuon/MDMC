@@ -8,7 +8,6 @@ from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.readers.reader import Reader
 
-
 @repr_decorator('data')
 class ObservableReader(Reader):
 
@@ -17,6 +16,21 @@ class ObservableReader(Reader):
 
     ObservableReaders are created using ObservableReaderFactory
     """
+
+    def assign(self, observable: 'Observable'):
+        # disable pylint warning about writing to the `Observable`
+        #pylint: disable=protected-access
+        """
+        Abstract method to assign the parsed information into the `Observable`
+
+        Parameters
+        ----------
+        observable : `Observable`
+            An MDMC `Observable` that will be assigned the data parsed by the reader.
+        """
+        observable._independent_variables = self.independent_variables
+        observable._dependent_variables = self.dependent_variables
+        observable._errors = self.errors
 
     @property
     def data(self):
@@ -205,3 +219,103 @@ class SQwReader(ObservableReader, ABC):
     def Q(self, value):
 
         self._Q = value
+
+
+class PDFReader(ObservableReader, ABC):
+    """Abstract base subclass that adds attributes & methods common to all PDF readers"""
+
+    def __init__(self, file_name):
+        super().__init__(file_name)
+        self.PDF = None
+        self.PDF_err = None
+
+    @property
+    def independent_variables(self):
+        """
+        Get the independent variable r (in ``Ang^-1``)
+
+        Returns
+        -------
+        dict
+            The independent variable r (in ``Ang^-1``)
+        """
+
+        return {"r": self.r}
+
+    @property
+    def dependent_variables(self):
+        """
+        Get the dependent variable PDF, the pair distribution function (in ``barn``)
+
+        Returns
+        -------
+        dict
+            The dependent variable, PDF (in ``barn``)
+        """
+
+        return {"PDF": self.PDF}
+
+    @property
+    def errors(self):
+        """
+        Get the errors on the dependent variable
+
+        Returns
+        -------
+        dict
+            The error on PDF (in ``barn``)
+        """
+
+        return {"PDF": self.PDF_err}
+
+    @property
+    def r(self):
+        """
+        Get or set the value of the atomic separation distance (in ``Ang``)
+        """
+
+        return self._r
+
+    @r.setter
+    @unit_decorator(unit=units.Unit('Ang'))
+    def r(self, value):
+
+        self._r = value
+
+    @property
+    def PDF(self):
+
+        """
+        Get or set the total pair distribution function between pairs (in ``barn``)
+        Returns
+        -------
+        numpy.ndarray
+            total pair distribution function (in ``barn``)
+        """
+
+        return self._PDF
+
+    @PDF.setter
+    @unit_decorator(unit=units.Unit('barn'))
+    def PDF(self, value):
+
+        self._PDF = value
+
+    @property
+    def PDF_err(self):
+
+        """
+        Get or set the error on the total pair distribution function between pairs (in ``barn``)
+        Returns
+        -------
+        numpy.ndarray
+            error on the total pair distribution function (in ``barn``)
+        """
+
+        return self._PDF_err
+
+    @PDF_err.setter
+    @unit_decorator(unit=units.Unit('barn'))
+    def PDF_err(self, value):
+
+        self._PDF_err = value
