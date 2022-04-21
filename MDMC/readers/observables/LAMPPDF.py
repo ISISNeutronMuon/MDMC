@@ -12,9 +12,10 @@ class LAMPPDF(PDFReader):
     LAMP's ascii output uses a single file, with the expected file structure being:
     Row-Number  Distance  pdf-total  pdf1 pdf2  ...  pdfN
 
-    The column file format above is the default with the total PDF data contained in the 3 column. When
-    initialising instances of this class it is possible to change this using the `pdf_col` parameter to select
-    which data column contains the total PDF. The remaining columns (if exist) are assumed to be partial PDFs.
+    The column file format above is the default with the total PDF data contained in the 3 column.
+    When initialising instances of this class it is possible to change this using the `pdf_col`
+    parameter to select which data column contains the total PDF. The remaining columns (if they
+    exist) are assumed to be partial PDFs.
 
     Parameters
     ----------
