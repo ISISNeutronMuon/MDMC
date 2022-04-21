@@ -577,7 +577,7 @@ class FileForceField(ForceField):
         function_name = self.inter_functions[interaction_type.lower()]
         return getattr(interaction_functions, function_name)
 
-    @lru_cache(maxsize=None)
+    @lru_cache()
     def _convert_atom_type_name(self, atom):
         """
         Converts all ``Atom`` objects with ``Atom.name`` that are a valid force
