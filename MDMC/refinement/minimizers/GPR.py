@@ -3,9 +3,11 @@ import numpy as np
 import itertools
 import scipy.stats as st
 import pandas as pd
+
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
-import itertools
+from scipy.ndimage import minimum_position
+
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 
@@ -15,9 +17,10 @@ class GPR(Minimizer):
     ``Minimizer`` employing Gaussian Process Regression 
 
     Parameters
-    ----------
-    kernel : string
-        Type of kernel to be used, defaults to 'RBF' 
+    ---------- 
+    hypercube : optional, bool
+        Boolian toggle for is the n_points should be placed in a latin hypercube, or as a grid across 
+        each parameter. Defaults to False
     alpha : float
         Hyperparameter for the fitting, also can represent additional Gaussian noise in measrement points 
     length_scale : float
@@ -25,9 +28,7 @@ class GPR(Minimizer):
     n_points : int
         A number of points which will be measured at, either randomly on a latin hypercube (if hypercube=True) 
         or p^n_points (p = number of parameters) in a grid (if hypercube=False)
-    hypercube : optional, bool
-        Boolian toggle for is the n_points should be placed in a latin hypercube, or as a grid across 
-        each parameter. Defaults to False
+
 
     Attributes
     ----------
@@ -39,7 +40,6 @@ class GPR(Minimizer):
     def __init__(self, parameters, distribution, max_parameter_change, **settings):
         super().__init__(parameters, distribution, max_parameter_change)
         self.hypercube = settings.get('hypercube', False)
-        self.kernel = settings.get('kernel', 'RBF')
         self.alpha = settings.get('alpha', 0.0001)
         self.length_scale = settings.get('length_scale', 0.1)
         n_points = settings.get('n_points', 4)
@@ -117,15 +117,31 @@ class GPR(Minimizer):
             lower_bound = parameter.constraints[0]
             upper_bound = parameter.constraints[1]
         except(TypeError):
-            lower_bound = parameter.value*(1.0 - fraction) - 0.1
-            upper_bound = parameter.value*(1.0 + fraction) + 0.1
-
+            if not parameter.value ==0:
+                lower_bound = parameter.value*(1.0 - fraction)
+                upper_bound = parameter.value*(1.0 + fraction)
+            else:
+                raise ValueError(f'You have set parameter {parameter.name} value to zero and have no constraints set for it. Please set constraints for it')
         return lower_bound, upper_bound
     
     def scale_hypercube(self, input_array, lower_bound, upper_bound):
         """
-        Takes an input array in interval [0,1] and scales the values to instead be between
-        the lower and upper bounds
+        Takes an input array in interval [0,1] and scales the values to instead be in 
+        the interval [lower_bound, upper_bound]
+        
+        Parameters
+        ----------
+        input_array : array
+            The relative tolerance of the convergence check. Defaults to `1e-5`
+        lower_bound : float
+            The value to scale the array to from 0 
+        upper_bound : float
+            The value to scale the array to from 1
+
+        Returns
+        -------
+        array
+            Scale array of same shape as input array
 
         """
         scaled_array = input_array * lower_bound + (upper_bound - lower_bound)
@@ -159,9 +175,6 @@ class GPR(Minimizer):
         run_steps = np.max([min_steps, len(self.parameter_point_array)])
 
         if len(self.history) >= run_steps:
-            fit = self.GPR_fit()
-            points, FoMs = self.GPR_predict(fit)
-            minima = self.global_minimum_position(FoMs, points)
             converged = True
 
         return converged
@@ -261,8 +274,8 @@ class GPR(Minimizer):
             coordinate = data[i]
             coordinates.append(coordinate[3:])  # Only append parameters
             FOMs.append(records['FoM'][i])
-
-        kernel = self.kernel(length_scale = np.ones(len(coordinates[0]))*self.length_scale)
+        
+        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*self.length_scale)
         gpr = GPR(kernel, n_restarts_optimizer=50, alpha = alpha)
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
@@ -303,7 +316,7 @@ class GPR(Minimizer):
 
         return point_array, prediction
 
-    def global_minimum_position(self, predicted_FOMs, point_array):
+    def global_minimum_position(self, predicted_FOMs, measured_parameter_coordinates):
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 
@@ -311,16 +324,26 @@ class GPR(Minimizer):
         ----------
         predicted_FOMs : array
             An array of the predicted figures of merit
-        point_array: list
+        measured_parameter_coordinates: list
             A list of the coordinates corresponding to the points at which the FoM was predicted
 
         Returns
         -------
-        minimum_coordinates : array
-            The list of coordinates where the minimum figure of merit is predicted to be
+        minimum_parameters : array
+            The parameter coordinates where the minimum figure of merit is predicted to be
         """
-        min_FoM = np.min(predicted_FOMs)
-        array_entry = np.where(predicted_FOMs == min_FoM)[0]
-        minimum_coordinates = point_array[array_entry]
 
-        return minimum_coordinates
+        min_coordinates = minimum_position(predicted_FOMs)
+        minimum_parameters = measured_parameter_coordinates[min_coordinates]
+
+        return minimum_parameters
+
+    def present_result(self):
+        """
+        Returns the predicted minimum parameter values and associated figure of merit
+        """
+        fit, parameter_names = self.GPR_fit()
+        points, FoMs = self.GPR_predict(fit)
+        minima_coordinate = self.global_minimum_position(FoMs, points)
+
+        return parameter_names, minima_coordinate
