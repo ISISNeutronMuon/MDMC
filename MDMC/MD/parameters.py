@@ -8,7 +8,6 @@ a sequence of Parameter objects.
 """
 
 import ast
-import itertools
 from collections.abc import Iterable
 from itertools import chain
 import operator
@@ -328,7 +327,6 @@ class Parameters(dict):
                     super().__setitem__(parameter.name + parameter_number, parameter)
             else:
                 super().__setitem__(parameter.name, parameter)
-
 
     def filter(self, predicate):
         """

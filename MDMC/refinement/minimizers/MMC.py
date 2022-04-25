@@ -1,5 +1,7 @@
 """The Metropolis-Hastings minimizer class"""
 import numpy as np
+
+from MDMC.MD import Parameters
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 
@@ -26,7 +28,7 @@ class MMC(Minimizer):
 
         # MMC doesn't need parameter indexing; just keep a sorted list of values
         # to save memory and performance
-        self.parameters = sorted(list(parameters.values()))
+        self.parameters = sorted(list(self.parameters.values()))
 
     @property
     def history_columns(self):
