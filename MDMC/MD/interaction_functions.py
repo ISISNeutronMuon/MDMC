@@ -74,7 +74,7 @@ class InteractionFunction:
     @parameters.setter
     def parameters(self, value):
 
-        self._parameters = np.array(sorted(value, key=lambda p: p.name))
+        self._parameters = np.array(sorted(list(value.values()), key=lambda p: p.name))
 
     @property
     def parameters_values(self):

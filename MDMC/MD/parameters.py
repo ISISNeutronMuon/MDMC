@@ -8,9 +8,11 @@ a sequence of Parameter objects.
 """
 
 import ast
+import itertools
 from collections.abc import Iterable
 from itertools import chain
 import operator
+from typing import Union
 import warnings
 import weakref
 
@@ -21,7 +23,6 @@ from MDMC.common.decorators import repr_decorator, unit_decorator, \
 @repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
 class Parameter:
-
     """
     A force field parameter which can be fixed or constrained within limits
 
@@ -231,7 +232,7 @@ class Parameter:
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
-                     'Constrained ' if self.constraints is not None else '')
+        'Constrained ' if self.constraints is not None else '')
         function = self.functions_name + ' ' if self.functions_name else ''
         return '{0}{_value} {1}{name}'.format(condition, function,
                                               **self.__dict__)
@@ -269,19 +270,54 @@ class Parameter:
         return self.name < other.name
 
 
-class Parameters(list):
-
+class Parameters(dict):
     """
-    A `list-like` object where every element is a ``Parameter``, which contains
-    a number of helper methods for filtering
+    A `dict-like` object where every element is a ``Parameter`` indexed by name,
+    which contains a number of helper methods for filtering.
+
+    Although ``Parameters`` is a `dict`, it should be treated like a `list` when writing to it;
+    i.e. initialise it using a `list` and use `append` to add to it. These parameters can
+    then be accessed by their name as a key.
+
+    In short; Parameters writes like a list and reads like a dict.
+
+    Parameters
+    ----------
+    initial_list: ``Parameter`` or `list` of ``Parameter``s, optional, default None
+        The initial ``Parameter`` objects that the ``Parameters`` object contains.
     """
 
-    def __getitem__(self, key):
+    def __init__(self, initial_list: Union["list[Parameter]", Parameter, None] = None):
+        if initial_list is None:  # if initialising empty parameters object
+            super(Parameters, self).__init__()
+        else:
+            if isinstance(initial_list, Parameter):
+                initial_list = [initial_list]
 
-        item = super().__getitem__(key)
-        if isinstance(key, slice):
-            return self.__class__(item)
-        return item
+            # turn parameters into a dict, keyed by name, then initialise the dict
+            parameters_dict = {parameter.name: parameter for parameter in initial_list}
+            super(Parameters, self).__init__(parameters_dict)
+
+    def __setitem__(self, key, value):
+        # disable this method to ensure parameter keys are always the parameter name
+        raise TypeError("Parameters should be added to using Parameters.append(parameter), "
+                        "with a parameter or list of parameters as your argument.")
+
+    def append(self, parameters: Union["list[Parameter]", Parameter]):
+        """
+        Appends a ``Parameter`` or list of ``Parameter``s to the dict,
+        with the parameter name as its key.
+
+        Parameters
+        ----------
+        parameters: ``Parameter`` or `list` of ``Parameter``s
+            The parameter(s) to be added to the dict.
+        """
+        if isinstance(parameters, Parameter):
+            parameters = [parameters]
+
+        for parameter in parameters:
+            super(Parameters, self).__setitem__(parameter.name, parameter)
 
     def filter(self, predicate):
         """
@@ -299,7 +335,7 @@ class Parameters(list):
             The ``Parameter`` objects which meet the condition of the predicate
         """
 
-        return Parameters(filter(predicate, self))
+        return Parameters(filter(predicate, list(self.values())))
 
     def filter_name(self, name):
         """
@@ -316,7 +352,7 @@ class Parameters(list):
             The ``Parameter`` objects with ``name``
         """
 
-        return Parameters(filter(lambda p: p.name == name, self))
+        return self.filter(lambda p: p.name == name)
 
     def filter_value(self, comparison, value):
         """
@@ -345,7 +381,7 @@ class Parameters(list):
                '==': operator.eq,
                '!=': operator.ne}
 
-        return Parameters(filter(lambda p: ops[comparison](p.value, value), self))
+        return self.filter(lambda p: ops[comparison](p.value, value))
 
     def filter_interaction(self, interaction_name):
         """
@@ -364,8 +400,7 @@ class Parameters(list):
             specified ``interaction_name``
         """
 
-        return Parameters(filter(lambda p: p.interactions_name == interaction_name,
-                                 self))
+        return self.filter(lambda p: p.interactions_name == interaction_name)
 
     def filter_function(self, function_name):
         """
@@ -385,7 +420,7 @@ class Parameters(list):
             specified ``function_name``
         """
 
-        return Parameters(filter(lambda p: p.functions_name == function_name, self))
+        return self.filter(lambda p: p.functions_name == function_name)
 
     def filter_atom_attribute(self, attribute, value):
         """
@@ -415,12 +450,11 @@ class Parameters(list):
                 else:
                     yield element
 
-        return Parameters(filter(lambda p:
-                                 value in [getattr(atom, attribute)
-                                           for int in p.interactions
-                                           for atom
-                                           in flatten(int.atoms)],
-                                 self))
+        return self.filter(lambda p:
+                           value in [getattr(atom, attribute)
+                                     for int in p.interactions
+                                     for atom
+                                     in flatten(int.atoms)])
 
     def filter_structure(self, structure_name):
         """
@@ -464,4 +498,4 @@ class Parameters(list):
                     add_name(atom)
             return structure_name in structure_names
 
-        return Parameters(filter(check_structure_name, self))
+        return self.filter(check_structure_name)
