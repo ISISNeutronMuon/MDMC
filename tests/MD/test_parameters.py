@@ -443,8 +443,15 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
 def test_duplicate_parameters_naming():
     """Tests that duplicates of a parameter have a number appended to them."""
 
+    # test if separate parameters will all be indexed
     parameters = Parameters([Parameter(name='charge', value=1.),
                              Parameter(name='charge', value=2.),
                              Parameter(name='charge', value=3.)])
 
     assert list(parameters.keys()) == ['charge', 'charge_2', 'charge_3']
+
+    # test that identical parameters are not registered twice
+    parameters = Parameters([Parameter(name='charge', value=1.),
+                             Parameter(name='charge', value=1.)])
+
+    assert list(parameters.keys()) == ['charge']

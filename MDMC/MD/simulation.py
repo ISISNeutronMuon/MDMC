@@ -322,7 +322,7 @@ class Universe(AtomContainer):
 
         Returns
         -------
-        set
+        Parameters
             The ``Parameters`` objects defined within ``Universe``
         """
 

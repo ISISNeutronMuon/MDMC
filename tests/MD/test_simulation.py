@@ -8,7 +8,7 @@ import numpy.testing as npt
 import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
-from MDMC.MD import interactions
+from MDMC.MD import interactions, Parameters
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import Parameter
 import MDMC.MD.simulation as sim
@@ -982,7 +982,7 @@ def test_solvate_spce_with_solute(molecule):
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a large diatomic molecule.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -1013,7 +1013,7 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structural_unit(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -1119,13 +1119,13 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
 
 @pytest.mark.parametrize("solvent, parameters", [('SPCE',
                                                  (('equilibrium_state', 1.),
-                                                  ('potential_strength', 383.),
-                                                  ('equilibrium_state',
-                                                   109.47),
                                                   ('potential_strength',
                                                    4637.),
+                                                  ('potential_strength_2', 383.),
+                                                  ('equilibrium_state_2',
+                                                   109.47),
                                                   ('charge', 0.4238),
-                                                  ('charge', -0.8476),
+                                                  ('charge_2', -0.8476),
                                                   ('epsilon', 0.6502),
                                                   ('sigma', 3.166)))])
 def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
@@ -1135,22 +1135,14 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     the solvent has been selected from inbuilt solvents
     """
 
-    test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
-                       for parameter in parameters]
-    uni_parameters = list(solvated_universe.parameters)
+    uni_parameters = solvated_universe.parameters
 
     # Check lists are same length, then remove all Parameters that have a
     # matching name and value, finally check list of Parameters is empty (i.e.
     # all Parameters have matched)
-    print(uni_parameters)
-    assert len(test_parameters) == len(uni_parameters)
-    from copy import copy
-    for test_p in test_parameters:
-        for uni_p in copy(uni_parameters):
-            if (test_p.value == uni_p.value and test_p.name == uni_p.name):
-                uni_parameters.remove(uni_p)
-                break
-    assert uni_parameters == []
+    assert len(parameters) == len(uni_parameters)
+    for parameter in parameters:
+        assert uni_parameters[parameter[0]].value == parameter[1]
 
 
 @pytest.mark.parametrize("density, tolerance", [(0.7, 20.),

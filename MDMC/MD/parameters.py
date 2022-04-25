@@ -265,9 +265,13 @@ class Parameter:
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
-    # comparison operator so parameters are always in the same order on refinement headings
+    # comparison operator so parameters are always in the same order on MMC refinement headings
     def __lt__(self, other):
         return self.name < other.name
+
+    def __eq__(self, other):
+
+        return self.name == other.name and self.value == other.value
 
 
 class Parameters(dict):
@@ -313,12 +317,18 @@ class Parameters(dict):
         parameters = self._check_input(parameters)
 
         for parameter in parameters:
-            parameter_number = ""
-            # add number to parameter if one with this name already exists
+            # if parameter with this name already exists, check if an identical parameter
+            # is already here; if not, record it with a number to indicate it as separate
             if parameter.name in self.keys():
-                parameter_number = f"_{len(self.filter_name(parameter.name)) + 1}"
+                if any(parameter == existing_p
+                       for existing_p in self.filter_name(parameter.name).values()):
+                    pass
+                else:
+                    parameter_number = f"_{len(self.filter_name(parameter.name)) + 1}"
+                    super().__setitem__(parameter.name + parameter_number, parameter)
+            else:
+                super().__setitem__(parameter.name, parameter)
 
-            super().__setitem__(parameter.name + parameter_number, parameter)
 
     def filter(self, predicate):
         """
