@@ -53,7 +53,7 @@ def parameters():
         each case the value is equal to the index of the parameter
     """
 
-    return Parameters([Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i
+    return Parameters([Parameter(UnitFloat(VALUE * i, UNIT), NAME + str(i)) for i
                        in range(10)])
 
 @pytest.fixture
@@ -166,7 +166,7 @@ def test_interaction_function_set_parameters(interaction_func, parameters):
     """
 
     interaction_func.parameters = parameters
-    for intfunc_parameter, parameter in zip(interaction_func.parameters, parameters):
+    for intfunc_parameter, parameter in zip(interaction_func.parameters, parameters.values()):
         assert intfunc_parameter.value == parameter.value
 
 

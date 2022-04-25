@@ -24,6 +24,10 @@ class MMC(Minimizer):
         super().__init__(parameters, distribution, max_parameter_change)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
+        # MMC doesn't need parameter indexing; just keep a sorted list of values
+        # to save memory and performance
+        self.parameters = sorted(list(parameters.values()))
+
     @property
     def history_columns(self):
 

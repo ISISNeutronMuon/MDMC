@@ -12,7 +12,7 @@ import itertools
 from collections.abc import Iterable
 from itertools import chain
 import operator
-from typing import Union
+from typing import Union, Any
 import warnings
 import weakref
 
@@ -287,16 +287,13 @@ class Parameters(dict):
         The initial ``Parameter`` objects that the ``Parameters`` object contains.
     """
 
-    def __init__(self, initial_list: Union["list[Parameter]", Parameter, None] = None):
-        if initial_list is None:  # if initialising empty parameters object
-            super(Parameters, self).__init__()
-        else:
-            if isinstance(initial_list, Parameter):
-                initial_list = [initial_list]
-
+    def __init__(self, init_parameters: Union["list[Parameter]", Parameter, None] = None):
+        super().__init__()
+        if init_parameters is not None:
+            init_parameters = self._check_input(init_parameters)
             # turn parameters into a dict, keyed by name, then initialise the dict
-            parameters_dict = {parameter.name: parameter for parameter in initial_list}
-            super(Parameters, self).__init__(parameters_dict)
+            for parameter in init_parameters:
+                self.append(parameter)
 
     def __setitem__(self, key, value):
         # disable this method to ensure parameter keys are always the parameter name
@@ -313,11 +310,15 @@ class Parameters(dict):
         parameters: ``Parameter`` or `list` of ``Parameter``s
             The parameter(s) to be added to the dict.
         """
-        if isinstance(parameters, Parameter):
-            parameters = [parameters]
+        parameters = self._check_input(parameters)
 
         for parameter in parameters:
-            super(Parameters, self).__setitem__(parameter.name, parameter)
+            parameter_number = ""
+            # add number to parameter if one with this name already exists
+            if parameter.name in self.keys():
+                parameter_number = f"_{len(self.filter_name(parameter.name)) + 1}"
+
+            super().__setitem__(parameter.name + parameter_number, parameter)
 
     def filter(self, predicate):
         """
@@ -335,7 +336,7 @@ class Parameters(dict):
             The ``Parameter`` objects which meet the condition of the predicate
         """
 
-        return Parameters(filter(predicate, list(self.values())))
+        return Parameters(list(filter(predicate, list(self.values()))))
 
     def filter_name(self, name):
         """
@@ -499,3 +500,37 @@ class Parameters(dict):
             return structure_name in structure_names
 
         return self.filter(check_structure_name)
+
+    @staticmethod
+    def _check_input(x: Any) -> 'list[Parameter]':
+        """
+        Ensures that input to a Parameters object is in the correct form.
+
+        Input must be either a Parameter (in which case it is turned into a list,
+        so it can be fed into an iteration loop) or a list of Parameters.
+
+        Parameters
+        ----------
+        x: Any
+            The object to be sanitised.
+
+        Returns
+        -------
+        list[Parameter]
+            Returns x if x is a list of Parameters, or [x] if x is a Parameter
+            (so it can be iterated over)
+
+        Raises
+        ------
+        TypeError
+            If the object is not a Parameter or list of Parameters (including
+            if it is a list that contains a non-Parameter object)
+        """
+        if isinstance(x, Parameter):
+            return [x]
+        if isinstance(x, list):
+            if all(isinstance(i, Parameter) for i in x):
+                return x
+
+        raise TypeError("Input into a Parameters object must be either a Parameter "
+                        "or a list of Parameters.")

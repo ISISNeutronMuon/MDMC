@@ -1142,6 +1142,7 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     # Check lists are same length, then remove all Parameters that have a
     # matching name and value, finally check list of Parameters is empty (i.e.
     # all Parameters have matched)
+    print(uni_parameters)
     assert len(test_parameters) == len(uni_parameters)
     from copy import copy
     for test_p in test_parameters:

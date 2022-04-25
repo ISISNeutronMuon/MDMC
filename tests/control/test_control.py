@@ -10,7 +10,7 @@ from typing import List
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
-from MDMC.MD.parameters import Parameter
+from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
@@ -645,16 +645,16 @@ def test_control_fit_parameters(simulation):
     tie_target = Parameter(-1., 'tie_target')
     tied_param = Parameter(2., 'tied')
     tied_param.set_tie(tie_target, '')
-    fit_parameters = [Parameter(0., 'zero'),
+    fit_parameters = Parameters([Parameter(0., 'zero'),
                       Parameter(1., 'fixed', fixed=True),
                       tied_param,
-                      Parameter(3., 'constraints', constraints=(2.9, 3.1))]
+                      Parameter(3., 'constraints', constraints=(2.9, 3.1))])
 
     ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
                            reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
-    assert ctrl.fit_parameters[0].name == 'constraints'
+    assert list(ctrl.fit_parameters.keys())[0] == 'constraints'
 
 
 def test_control_resolution_function(simulation, exp_datasets):

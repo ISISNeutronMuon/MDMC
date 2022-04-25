@@ -265,7 +265,6 @@ def test_filter_parameters(pred, attr, val):
     assert parameters.filter(pred) == expected_parameters
 
 
-@pytest.mark.skip(reason="Not implementable until #824 is solved")
 @pytest.mark.parametrize('name, number', [('charge', 3),
                                           ('epsilon', 2),
                                           ('sigma', 0)])
@@ -439,3 +438,13 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
 
     assert (parameters.filter_structure(struct_name)
             == expected_parameters)
+
+
+def test_duplicate_parameters_naming():
+    """Tests that duplicates of a parameter have a number appended to them."""
+
+    parameters = Parameters([Parameter(name='charge', value=1.),
+                             Parameter(name='charge', value=2.),
+                             Parameter(name='charge', value=3.)])
+
+    assert list(parameters.keys()) == ['charge', 'charge_2', 'charge_3']
