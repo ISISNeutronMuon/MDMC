@@ -1372,12 +1372,7 @@ class Molecule(CompositeStructuralUnit):
             The total charge in ``e``
         """
 
-        charge = 0.
-        for atom in self.atoms:
-            if atom.charge is not None:
-                charge += atom.charge
-
-        return charge
+        return sum(atom.charge for atom in self.atoms if atom.charge is not None) 
 
     def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
 
