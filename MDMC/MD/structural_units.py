@@ -1194,9 +1194,9 @@ class Atom(StructuralUnit):
                 and (len(self.nonbonded_interactions)
                      == len(structural_unit.nonbonded_interactions)))
                 and all(a.is_equivalent(b) for a, b in
-                     zip(self.bonded_interactions, structural_unit.bonded_interactions))
+                    zip(self.bonded_interactions, structural_unit.bonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                     zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions))
+                    zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions))
 
 
 class _Group(CompositeStructuralUnit):
@@ -1368,7 +1368,7 @@ class Molecule(CompositeStructuralUnit):
             The total charge in ``e``
         """
 
-        return sum(atom.charge for atom in self.atoms if atom.charge is not None) 
+        return sum(atom.charge for atom in self.atoms if atom.charge is not None)
 
     def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
 
