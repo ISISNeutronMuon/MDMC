@@ -62,9 +62,7 @@ class DLPOLYAttribute:
         The ``dlpoly-py`` object owned by this class
     """
 
-    def __init__(self, dlpoly=None, control=None,
-                 config=None, field=None, statis=None, output=None,
-                 destconfig=None, rdf=None, workdir=None):
+    def __init__(self, dlpoly=None):
 
         if dlpoly:
             self.dlpoly = dlpoly
