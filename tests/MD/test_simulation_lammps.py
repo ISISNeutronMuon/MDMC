@@ -88,7 +88,7 @@ def universe_interactions(empty_universe, atoms):
     """
 
     for atom in atoms:
-        empty_universe.add_structures(atom)
+        empty_universe.add_structure(atom)
 
     # Create InteractionFunctions for bonds, angles, dihedrals and dispersive
     # interactions
@@ -937,7 +937,7 @@ def test_update_charges_error():
     """
 
     universe = Universe(10.)
-    universe.add_structures(Atom('H'))
+    universe.add_structure(Atom('H'))
     with pytest.raises(AttributeError):
         lmp_eng.LAMMPSUniverse(universe)
 

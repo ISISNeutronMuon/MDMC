@@ -609,7 +609,7 @@ class Universe(AtomContainer):
             raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structures(self, structures, force_field=None,
+    def add_structure(self, structure, force_field=None,
                             center=False):
         """
         Adds a single ``Structure`` to the ``Universe``, with optional
@@ -617,28 +617,28 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structures : Structure or int
+        structure : Structure or int
             The ``Structure`` (or its ``ID`` as an `int`) to be added to the ``Universe``
         force_field : str, optional
-            The force field to be applied to the structures. The available
+            The force field to be applied to the structure. The available
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
         center : bool, optional
-            Whether to center `structures` within the Universe as it is
+            Whether to center `structure` within the Universe as it is
             added
         """
 
         if center:
-            structures.position = self.dimensions / 2.
-        structures.universe = self
-        self.configuration.add_structures(structures)
-        for atom in structures.atoms:
+            structure.position = self.dimensions / 2.
+        structure.universe = self
+        self.configuration.add_structure(structure)
+        for atom in structure.atoms:
             self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
             self.add_nonbonded_interaction(*atom.nonbonded_interactions)
             self._update_atom_types(atom)
 
         if force_field:
-            self.add_force_field(force_field, *structures.interactions)
+            self.add_force_field(force_field, *structure.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
     def fill(self, structures: Structure, force_field: str = None,
@@ -722,11 +722,11 @@ class Universe(AtomContainer):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structures(structures, force_field)
+                self.add_structure(structures, force_field)
                 structures.position = position
             else:
                 new_unit = structures.copy(position)
-                self.add_structures(new_unit)
+                self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field, *interactions, **settings):
@@ -1020,7 +1020,7 @@ class Universe(AtomContainer):
         # Also determine the total density of the solvent
         bonded_interactions = []
         for molecule in mols:
-            self.add_structures(molecule)
+            self.add_structure(molecule)
             bonded_interactions += molecule.interactions
 
         # Get nonbonded interactions from atom types

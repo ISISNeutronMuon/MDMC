@@ -500,7 +500,7 @@ class Coulombic(NonBondedInteraction):
 
         O = Atom('O', atom_type=1)
         universe = Universe(10.0)
-        universe.add_structures('O')
+        universe.add_structure('O')
 
     The following initializations of Coulombic are equivalent:
 

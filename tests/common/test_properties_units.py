@@ -58,7 +58,7 @@ def test_Atom_units(atom, universe):
     except AssertionError:
         raise AssertionError(ERROR_MESSAGE.format('Atom'))
 
-    universe.add_structures(atom)
+    universe.add_structure(atom)
     universe.add_force_field('SPCE')
     try:
         check_property(atom.charge, SPCE_CHARGE, units.CHARGE, units.UnitFloat)

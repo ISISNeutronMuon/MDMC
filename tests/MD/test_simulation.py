@@ -281,7 +281,7 @@ def test_add_atom(universe, atom):
 
     atom_coulombic = interactions.Coulombic(atoms=atom)
     assert len(universe.atom_types) == 0
-    universe.add_structures(atom)
+    universe.add_structure(atom)
     assert atom.atoms == universe.atoms
     assert atom.atom_type == 1
     assert atom in universe.atom_types[1]
@@ -290,7 +290,7 @@ def test_add_atom(universe, atom):
 
 def test_add_molecule(universe, water_molecule):
 
-    universe.add_structures(water_molecule)
+    universe.add_structure(water_molecule)
     assert water_molecule.position.all() == np.array(WATER_POSITION).all()
     assert (sorted(water_molecule.atoms, key=id)
             == sorted(universe.atoms, key=id))
@@ -324,7 +324,7 @@ def test_add_molecule(universe, water_molecule):
 
 def test_spce_water_molecule(universe, water_molecule):
 
-    universe.add_structures(water_molecule)
+    universe.add_structure(water_molecule)
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
                        if atom.element == 'O')
@@ -361,15 +361,15 @@ def test_spce_water_molecule(universe, water_molecule):
 
 
 @parametrize('structures', [fixture_ref(atom), fixture_ref(water_molecule)])
-def test_add_structures_center(universe, structures, request):
+def test_add_structure_center(universe, structures, request):
 
     """
-    Tests that passing center=True to Universe.add_structures adds the
+    Tests that passing center=True to universe.add_structure adds the
     structures to the center of the Universe
     """
 
     assert all(structures.position != universe.dimensions / 2)
-    universe.add_structures(structures, center=True)
+    universe.add_structure(structures, center=True)
     assert all(structures.position == universe.dimensions / 2)
 
 
@@ -446,7 +446,7 @@ def test_translate(unit, universe):
 
     unit_position = unit.position
     atom_positions = [atom.position for atom in unit.atoms]
-    universe.add_structures(unit)
+    universe.add_structure(unit)
     positions_in_universe(atom_positions, universe)
 
     DISPLACEMENT = np.array([1.0, 1.5, -2.0])
@@ -468,7 +468,7 @@ def test_valid_position(atom):
 
     atom.position = [0., 0., 0.]
     uni = sim.Universe(5.0)
-    uni.add_structures(atom)
+    uni.add_structure(atom)
     assert atom.valid_position()
 
     atom.position = [3., 3., 3.]
@@ -632,8 +632,8 @@ def test_universe_atom_types(water_molecule, universe):
     H1, H2, O = water_molecule.atoms
 
     assert len(universe.atom_types) == 0
-    universe.add_structures(C)
-    universe.add_structures(water_molecule)
+    universe.add_structure(C)
+    universe.add_structure(water_molecule)
 
     for atom, atom_type in {C:2, H1:1, H2:1, O:3}.items():
         assert atom.atom_type == atom_type
@@ -682,7 +682,7 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     C_coulombic = interactions.Coulombic(atoms=C)
 
     for atom in [He, C]:
-        water_SPCE_universe.add_structures(atom)
+        water_SPCE_universe.add_structure(atom)
 
     disp = interactions.Dispersion(water_SPCE_universe, *atom_types_init)
     assert disp.atom_types == atom_types_expected
@@ -913,7 +913,7 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     """
     Tests that specifying either num_density or manually calling
-    add_structures fills the universe and results in no difference in the
+    add_structure fills the universe and results in no difference in the
     actual number density achieved (other than rounding down to a cube number
     as fill does) or the types of atoms.
     """
@@ -923,7 +923,7 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
     universe_manual = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
     for i in range(num_strucs_rounded):
-        universe_manual.add_structures(water_molecule)
+        universe_manual.add_structure(water_molecule)
 
     assert len(universe.atoms) == len(universe_manual.atoms)
 
@@ -984,7 +984,7 @@ def test_solvate_spce_with_solute(molecule):
     """
     
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
-    univ.add_structures(molecule)
+    univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     tot_mass = 0
     for mol in univ.molecule_list:
@@ -1015,7 +1015,7 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
     """
     
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
-    univ.add_structures(molecule)
+    univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     solute_bounds = molecule.bounding_box
     for mol in univ.molecule_list:
@@ -1260,7 +1260,7 @@ def test_universe_density(structures, expected, universe):
 
     assert universe.density == 0.
     for structures in structures:
-        universe.add_structures(structures)
+        universe.add_structure(structures)
     assert universe.density == expected
 
 @pytest.mark.parametrize("dimensions, expected",
@@ -1303,7 +1303,7 @@ def test_add_force_field_dispersions_bool(universe):
              su.Atom('H', position=(1., 1., 1.), name='7', atom_type=2),
              su.Atom('N', position=(2., 2., 2.), name='204', atom_type=3)]
     for atom in atoms:
-        universe.add_structures(atom)
+        universe.add_structure(atom)
     #pylint: disable=len-as-condition
     assert len(get_dispersions(universe.nonbonded_interactions)) == 0
 
@@ -1326,7 +1326,7 @@ def test_add_force_field_dispersions_atoms(universe, water_molecule):
     atom_types.
     """
 
-    universe.add_structures(water_molecule)
+    universe.add_structure(water_molecule)
     #pylint: disable=len-as-condition
     assert len(get_dispersions(universe.nonbonded_interactions)) == 0
 

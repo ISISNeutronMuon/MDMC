@@ -60,7 +60,7 @@ def atom_types_universe(atoms, universe):
     """
 
     for atom in atoms:
-        universe.add_structures(atom)
+        universe.add_structure(atom)
     return ([atom.atom_type for atom in atoms], universe)
 
 @pytest.fixture
@@ -313,7 +313,7 @@ def test_init_coulombic_atoms_added_to_universe(atoms, universe):
     """
 
     for atom in atoms:
-        universe.add_structures(atom)
+        universe.add_structure(atom)
     coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
 

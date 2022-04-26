@@ -230,9 +230,9 @@ class Configuration(AtomCollection):
         self._structure_list = []
         self._data = []
         for unit in structures:
-            self.add_structures(unit)
+            self.add_structure(unit)
 
-    def add_structures(self, structures):
+    def add_structure(self, structures):
         """
         Adds the ``Atom`` objects from a ``Structure`` to the data
 

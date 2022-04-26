@@ -35,7 +35,7 @@ def universe(atoms):
 
     uni = Universe(10.)
     for atom in atoms:
-        uni.add_structures(atom)
+        uni.add_structure(atom)
     return uni
 
 @pytest.fixture
