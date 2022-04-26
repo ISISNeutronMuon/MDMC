@@ -80,8 +80,8 @@ Q = exp_obs.Q[Q_slice]
 E_range = (exp_obs.E >=0)
 E = exp_obs.E[E_range]
 # copy the updated E values, and Q values back to the control.observable
-control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
-control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
+control.observable_pairs[0].exp_obs.independent_variables = {'E': E, 'Q': Q}
+control.observable_pairs[0].MD_obs.independent_variables = {'E': E, 'Q': Q}
 
 # Run refinement
 control.refine(n_steps=0)
