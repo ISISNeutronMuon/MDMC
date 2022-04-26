@@ -67,11 +67,11 @@ simulation = Simulation(universe,
                         traj_step=15)
 
 # Energy Minimization and equilibration
-simulation.engine.time_step=1.0
-simulation.minimize(n_steps=100,output_log='min.log',work_dir='mininm')
-simulation.run(n_steps=100, equilibration=True, output_log='equil.log',work_dir='equil' )
-simulation.engine.time_step=10.18893
-simulation.run(n_steps=10000, equilibration=False,output_log='prod.log',work_dir='prod')
+simulation.engine.time_step = 1.0
+simulation.minimize(n_steps=100, output_log='min.log', work_dir='mininm')
+simulation.run(n_steps=100, equilibration=True, output_log='equil.log', work_dir='equil')
+simulation.engine.time_step = 10.18893
+simulation.run(n_steps=10000, equilibration=False, output_log='prod.log', work_dir='prod')
 #print(simulation.trajectory)
 ## dataset
 exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
