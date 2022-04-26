@@ -52,9 +52,8 @@ class DLPOLYAttribute:
     Parameters
     ----------
     dlpoly : dlpoly-py, optional
-        Set the ``dlpoly`` attribute to a ``dlpoly-py`` object.
-        Default is `None`,
-        which results in a new ``dlpoly-py`` object being initialised.
+        Set the ``dlpoly`` attribute to a ``dlpoly-py`` object. Default is `None`, which results
+        in a new ``dlpoly-py`` object being initialised.
 
     Attributes
     -----------
