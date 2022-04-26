@@ -879,18 +879,7 @@ class BondedInteraction(Interaction):
             A set of all (unique) ``atom_type``s, sorted, with `None` as the
             last entry if any of the ``atom_type``s were `None`.
         """
-        append_None = False
-        all_atom_types = []
-        for atom_tuple in self.atoms:
-            for atom in atom_tuple:
-                if atom.atom_type is None:
-                    append_None = True
-                else:
-                    all_atom_types.append(atom.atom_type)
-        all_atom_types.sort()
-        if append_None:
-            all_atom_types.append(None)
-        return set(all_atom_types)
+        return {atom.atom_type for atom in atom_tuple for atom_tuple in self.atoms}
 
     @property
     def universe(self):
