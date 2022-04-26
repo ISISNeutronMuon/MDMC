@@ -120,7 +120,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def time_step(self):
 
         """
-        Get or set the simulation time step in ``fs``
+        Get or set the simulation time step in ``ps``
 
         Optional, but should be useful to implement
 
@@ -383,7 +383,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
-        Must be implemented (abstract method in MDEngine ABC)
         Must be implemented (abstract method in MDEngine ABC)
 
         Parameters
@@ -1068,13 +1067,13 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 SYSTEM = {
     'LENGTH': units.Unit('Ang'),
     'TIME': units.Unit('ps'),
-    'MASS': units.Unit('g') / units.Unit('mol'),
+    'MASS': units.Unit('amu'),
     'CHARGE': units.Unit('e'),
     'ANGLE': units.Unit('deg'),
     'TEMPERATURE': units.Unit('K'),
     'ENERGY': units.Unit('kcal') / units.Unit('mol'),
     'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('atm')
+    'PRESSURE': units.Unit('katm')
 }
 
 
