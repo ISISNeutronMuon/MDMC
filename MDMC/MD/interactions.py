@@ -497,26 +497,6 @@ class Dispersion(NonBondedInteraction):
         return (super().is_equivalent()
                 and self.vdw_tail_correction == other.vdw_tail_correction)
 
-    def is_equivalent(self, other) -> bool:
-
-        """
-        Checks for equivalence between two ``Dispersion``s, specifically
-        if they apply to the same ``atom_types``, have the same ``cuttoff``,
-        the same ``function`` describing the interaction and
-        ``vdw_tail_correction`` setting.
-
-        Parameters
-        ----------
-        other : Dispersion
-            The object to compare against.
-
-        Returns
-        -------
-        bool
-        """
-
-        return (super().is_equivalent()
-                and self.vdw_tail_correction == other.vdw_tail_correction)
 
 
 class Coulombic(NonBondedInteraction):
