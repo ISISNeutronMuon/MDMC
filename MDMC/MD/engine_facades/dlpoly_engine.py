@@ -360,9 +360,13 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         ----------
         n_steps : int
             Number of steps for the time integrator.
-        equilibration : bool
-            If `True`, run is equilibration which does not store the
-            ``trajectory``. Otherwise run is prodution.
+        equilibration : bool (optional, default False)
+            If `True`, just runs an equilibration which does not store the
+            ``trajectory``.
+        output_log: str, optional, default None
+            file where the output goes.
+        work_dir: str, optional, default None
+            folder where the run happens
         """
 
         if equilibration:
