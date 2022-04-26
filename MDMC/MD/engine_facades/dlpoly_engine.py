@@ -3,12 +3,6 @@
 This is a facade to the DL_POLY MD engine and
 the Python wrapper dlpoly-py that can interface with it.
 
-This facade is a skeleton example adapted from the analogous one
- for the DL_POLY MD engine in lammmps_engine.py.
-
-Notes
------
-
 """
 
 from copy import copy
