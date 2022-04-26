@@ -326,6 +326,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         ----------
         n_steps : int
             Maximum number of steps for the energy minimization.
+        output_log: str, optional, default None
+            file where the output goes.
+        work_dir: str, optional, default None
+            folder where the run happens
         **settings
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
