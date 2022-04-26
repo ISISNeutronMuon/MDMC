@@ -5,6 +5,7 @@ the Python wrapper dlpoly-py that can interface with it.
 
 """
 
+from abc import ABC
 from copy import copy
 import logging
 from ase import Atoms, Atom
@@ -43,7 +44,7 @@ BOND_CLASS_REF = {
     }
 
 
-class DLPOLYAttribute:
+class DLPOLYAttribute(ABC):
 
     """
     A class which has a ``dlpoly-py`` object as an
@@ -66,7 +67,10 @@ class DLPOLYAttribute:
         if dlpoly:
             self.dlpoly = dlpoly
         else:
-            self.dlpoly = DLPoly()
+            self.dlpoly = DLPoly(control=control, config=config,
+                                 field=field, statis=statis,
+                                 output=output, destconfig=destconfig,
+                                 rdf=rdf, workdir=workdir)
 
         LOGGER.debug('%s: {dlpoly: %s}. dlpoly-py'
                      ' instance %s.',
@@ -82,6 +86,18 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     Facade for DL_POLY
 
     """
+    def __init__(self, dlpoly=None, control=None,
+                 config=None, field=None, statis=None, output=None,
+                 destconfig=None, rdf=None, workdir=None):
+
+        DLPOLYAttribute.__init__(self, dlpoly, control,
+                                 config, field, statis, output,
+                                 destconfig, rdf, workdir)
+
+        self.universe = None
+        self.dlpoly_universe = None
+        self.dlpoly_simulation = None
+        self._saved_config = None
 
     @property
     def saved_config(self):
@@ -103,7 +119,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def time_step(self):
 
         """
-        Get or set the simulation time step in ``fs``
+        Get or set the simulation time step in ``ps``
 
         Optional, but should be useful to implement
 
@@ -299,7 +315,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly_simulation = DLPOLYSimulation(self.universe, self.dlpoly,
                                                   **settings)
 
-    def minimize(self, n_steps, output_log: str=None, work_dir: str=None, **settings):
+    def minimize(self, n_steps, output_log: str = None, work_dir: str = None, **settings):
         """
         Minimizes the simulation energy
 
@@ -318,20 +334,20 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         # e.g. tolerances
         etol = settings.get('etol', 1.e-3)
         ftol = settings.get('ftol', 0.)
+        min_freq = settings.get('nfreq', 10)
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
                     self.__class__, n_steps, ftol)
         if ftol == 0.0:
             self.dlpoly.control['minimisation_criterion'] = 'energy'
             self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
-            self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
         else:
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
-            self.dlpoly.control['minimisation_frequency'] = (10, 'steps')
+        self.dlpoly.control['minimisation_frequency'] = (min_freq, 'steps')
         self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
                  **settings)
 
-    def run(self, n_steps, equilibration=False, output_log: str=None, work_dir: str=None,
+    def run(self, n_steps, equilibration=False, output_log: str = None, work_dir: str = None,
             **settings):
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
@@ -366,7 +382,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
-        Must be implemented (abstract method in MDEngine ABC)
         Must be implemented (abstract method in MDEngine ABC)
 
         Parameters
@@ -417,26 +432,28 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             return atom
 
         atom_ids = settings.get('atom_IDs')
-        f = open(self.dlpoly.control['io_file_history'], "r")
-        title = f.readline()
-        lvl, imcon, n_atoms, frames, _ = [int(i) for i in f.readline().split()]
-        if self.universe:
-            assert n_atoms == len(self.universe.atoms)
-        configs = []
-        end = stop
-        if stop is None:
-            end = frames + 1
-        for k in range(frames):
-            time = float(f.readline().split()[-1])
-            cell = read_cell(f)
-            atoms = []
-            for a in range(n_atoms):
-                atom = create_atom(f, lvl)
-                if not atom_ids or atom.ID in atom_ids:
-                    atoms.append(atom)
-            if ((k >= start) and ((k - start)%step == 0) and (k < end)):
-                configs.append(TemporalConfiguration(convert_unit(time,unit=units.Unit('ps'),to_dlpoly=False),*atoms))
-        f.close()
+        with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
+            title = f.readline()
+            lvl, imcon, n_atoms, frames, _ = [int(i) for i in f.readline().split()]
+            if self.universe:
+                assert n_atoms == len(self.universe.atoms)
+            configs = []
+            end = stop
+            if stop is None:
+                end = frames + 1
+            for k in range(frames):
+                time = float(f.readline().split()[-1])
+                cell = read_cell(f)
+                atoms = []
+                for _ in range(n_atoms):
+                    atom = create_atom(f, lvl)
+                    if not atom_ids or atom.ID in atom_ids:
+                        atoms.append(atom)
+                if (start <= k < end) and ((k - start) % step == 0):
+                    configs.append(
+                        TemporalConfiguration(
+                            convert_unit(time, unit=units.Unit('ps'), to_dlpoly=False), *atoms
+                        ))
 
         return Trajectory(*configs)
 
@@ -506,6 +523,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self._add_topology(self.universe, **settings)
         self.update_parameters()
 
+        self.bonds = []
+        self.disps = []
+        self.angles = []
+        self.dihedrals = []
+        self.couls = []
+
     def update_parameters(self):
         """
         Updates the DL_POLY force field parameters from the MDMC universe
@@ -519,7 +542,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
             lst=True)
-
 
         # example methods
         self._update_charges()
@@ -553,7 +575,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             self.dlpoly.control['ewald_precision'] = self.universe.electrostatic_solver.accuracy
         else:
             self.dlpoly.control['coul_method'] = 'off'
-
 
     def _build_config(self, universe):
 
@@ -599,8 +620,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.field.write('FIELD')
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
-        self.dlpoly.control['cutoff'] = (
-            max(i.cutoff for i in self.universe.nonbonded_interactions), 'Ang')
+        self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
     def _create_field(self, universe) -> Field:
         """
@@ -754,16 +774,14 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     pot.params = [*map(lambda x: str(x.value.real), bond.parameters)]
 
     def apply_constraints(self):
-
         """
         Adds a constraint ``fix`` to DL_POLY
         for all bonds and bond angles which are constrained
         """
-        pass
 
     def set_config(self, config):
         """
-
+        Set DL_POLY config file
         """
         self.dlpoly.config = config
 
@@ -829,7 +847,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
 
         self._time_step = value
         self.dlpoly.control['timestep'] = (
-                convert_unit(self._time_step), str(SYSTEM['TIME']) )
+                convert_unit(self._time_step), str(SYSTEM['TIME']))
 
     @property
     def temperature(self):
@@ -1048,13 +1066,13 @@ class DLPOLYEnsemble(DLPOLYAttribute):
 SYSTEM = {
     'LENGTH': units.Unit('Ang'),
     'TIME': units.Unit('ps'),
-    'MASS': units.Unit('g') / units.Unit('mol'),
+    'MASS': units.Unit('amu'),
     'CHARGE': units.Unit('e'),
     'ANGLE': units.Unit('deg'),
     'TEMPERATURE': units.Unit('K'),
     'ENERGY': units.Unit('kcal') / units.Unit('mol'),
     'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE': units.Unit('atm')
+    'PRESSURE': units.Unit('katm')
 }
 
 
@@ -1212,9 +1230,9 @@ def convert_unit(value, unit=None, to_dlpoly=True):
         # If value is unitless, no conversion is required
         try:
             unit = value.unit
-        except AttributeError:
+        except AttributeError as err:
             if value is None:
-                raise ValueError('Cannot convert NoneType value')
+                raise ValueError('Cannot convert NoneType value') from err
             return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_dlpoly:

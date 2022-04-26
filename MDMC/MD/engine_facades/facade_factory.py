@@ -49,8 +49,8 @@ class MDEngineFacadeFactory:
         alias = alias.lower()
 
         if alias in ('lammps', 'lammps_engine'):
-             module_name = 'lammps_engine'
+            module_name = 'lammps_engine'
         elif alias in ('dlpoly', 'dlpoly_engine'):
-             module_name = 'dlpoly_engine'
+            module_name = 'dlpoly_engine'
 
         return import_module('.' + module_name, __package__)

@@ -57,10 +57,10 @@ class InteractionFunction:
 
     def __eq__(self, other):
 
-        if id(other) == id(self):
-            return True
-        elif isinstance(other, self.__class__):
-            return str(self) == str(other)
+        return (id(self) == id(other) or
+                (type(self) is type(other) and
+                 str(self) == str(other))
+                )
 
     @property
     def parameters(self):
