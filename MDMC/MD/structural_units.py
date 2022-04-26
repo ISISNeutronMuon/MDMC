@@ -48,9 +48,9 @@ class StructuralUnit(ABC):
     name : str
         The name of the structure.
 
- 	Attributes
+        Attributes
     ----------
- 	ID : int
+        ID : int
         A unique identifier for each ``StructuralUnit``.
     universe : Universe
         The ``Universe`` to which the ``StructuralUnit`` belongs.
@@ -1192,11 +1192,11 @@ class Atom(StructuralUnit):
                 and (len(self.bonded_interactions)
                      == len(structural_unit.bonded_interactions))
                 and (len(self.nonbonded_interactions)
-                     == len(structural_unit.nonbonded_interactions)))
+                     == len(structural_unit.nonbonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
                     zip(self.bonded_interactions, structural_unit.bonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                    zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions))
+                    zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
 
 
 class _Group(CompositeStructuralUnit):
@@ -1379,11 +1379,11 @@ class Molecule(CompositeStructuralUnit):
                 and (len(self.bonded_interactions)
                      == len(structural_unit.bonded_interactions))
                 and (len(self.nonbonded_interactions)
-                     == len(structural_unit.nonbonded_interactions)))
+                     == len(structural_unit.nonbonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
                      zip(self.bonded_interactions, structural_unit.bonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                     zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions))
+                     zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
 
 
 @repr_decorator('min', 'max', 'volume')
