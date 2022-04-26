@@ -63,7 +63,9 @@ class DLPOLYAttribute(ABC):
         The ``dlpoly-py`` object owned by this class
     """
 
-    def __init__(self, dlpoly=None):
+    def __init__(self, dlpoly=None, control=None,
+                 config=None, field=None, statis=None, output=None,
+                 destconfig=None, rdf=None, workdir=None):
 
         if dlpoly:
             self.dlpoly = dlpoly
@@ -410,14 +412,19 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
             symbol, d1, d2, *_ = f.readline().split()
             mass = float(d2)
-            aid = int(d1)
+            _ = int(d1)  # aid
             pos = [float(x) for x in f.readline().split()]
-            vel = None
-            force = None
+
             if lvl > 0:
                 vel = [float(x) for x in f.readline().split()]
-            if lvl > 1:
-                force = [float(x) for x in f.readline().split()]
+            else:
+                vel = None
+
+            # Can ignore forces
+            # if lvl > 1:
+            #     force = [float(x) for x in f.readline().split()]
+            # else:
+            #     force = None
 
             atom_type = self.universe.element_dict[symbol].atom_type
             atom = MAtom(symbol, position=pos, mass=mass)
@@ -430,8 +437,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
-            title = f.readline()
-            lvl, imcon, n_atoms, frames, _ = [int(i) for i in f.readline().split()]
+            _ = f.readline()  # title
+            lvl, _, n_atoms, frames, *_ = [int(i) for i in f.readline().split()]  # imcon
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
             configs = []
@@ -440,7 +447,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 end = frames + 1
             for k in range(frames):
                 time = float(f.readline().split()[-1])
-                cell = read_cell(f)
+                read_cell(f)  # Just skip
                 atoms = []
                 for _ in range(n_atoms):
                     atom = create_atom(f, lvl)
