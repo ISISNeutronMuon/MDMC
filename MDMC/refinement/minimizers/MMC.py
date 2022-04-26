@@ -1,7 +1,6 @@
 """The Metropolis-Hastings minimizer class"""
 import numpy as np
 
-from MDMC.MD import Parameters
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 

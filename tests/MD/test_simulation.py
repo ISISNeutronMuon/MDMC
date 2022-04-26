@@ -1121,11 +1121,11 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
                                                  (('equilibrium_state', 1.),
                                                   ('potential_strength',
                                                    4637.),
-                                                  ('potential_strength_2', 383.),
-                                                  ('equilibrium_state_2',
+                                                  ('potential_strength', 383.),
+                                                  ('equilibrium_state',
                                                    109.47),
                                                   ('charge', 0.4238),
-                                                  ('charge_2', -0.8476),
+                                                  ('charge', -0.8476),
                                                   ('epsilon', 0.6502),
                                                   ('sigma', 3.166)))])
 def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
@@ -1137,12 +1137,8 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
 
     uni_parameters = solvated_universe.parameters
 
-    # Check lists are same length, then remove all Parameters that have a
-    # matching name and value, finally check list of Parameters is empty (i.e.
-    # all Parameters have matched)
     assert len(parameters) == len(uni_parameters)
-    for parameter in parameters:
-        assert uni_parameters[parameter[0]].value == parameter[1]
+    assert set(parameters) == {(p.name, p.value.real) for p in list(uni_parameters.values())}
 
 
 @pytest.mark.parametrize("density, tolerance", [(0.7, 20.),
