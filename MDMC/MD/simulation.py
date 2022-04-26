@@ -20,7 +20,7 @@ from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structural_units import StructuralUnit
-from MDMC.MD.interactions import Dispersion, Coulombic, DihedralAngle
+from MDMC.MD.interactions import Dispersion, Coulombic
 from MDMC.trajectory_analysis.trajectory import Configuration
 
 
@@ -1484,6 +1484,8 @@ class Simulation:
                 Frequency at which minimisation is performed. Default depends
                 on engine used.
         """
+
+        verbose_manager = VerboseManager.instance()
 
         verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
