@@ -1185,22 +1185,18 @@ class Atom(StructuralUnit):
 
     def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
 
-        if (isinstance(structural_unit, type(self))
-            and structural_unit.element == self.element
-            and structural_unit.mass == self.mass
-            and structural_unit.charge == self.charge
-            and (len(self.bonded_interactions)
-                 == len(structural_unit.bonded_interactions))
-            and (len(self.nonbonded_interactions)
-                 == len(structural_unit.nonbonded_interactions))):
-            for i, interaction in enumerate(self.bonded_interactions):
-                if not interaction.is_equivalent(structural_unit.bonded_interactions[i]):
-                    return False
-            for i, interaction in enumerate(self.nonbonded_interactions):
-                if not interaction.is_equivalent(structural_unit.nonbonded_interactions[i]):
-                    return False
-            return True
-        return False
+        return (isinstance(structural_unit, type(self))
+                and structural_unit.element == self.element
+                and structural_unit.mass == self.mass
+                and structural_unit.charge == self.charge
+                and (len(self.bonded_interactions)
+                     == len(structural_unit.bonded_interactions))
+                and (len(self.nonbonded_interactions)
+                     == len(structural_unit.nonbonded_interactions)))
+                and all(a.is_equivalent(b) for a, b in
+                     zip(self.bonded_interactions, structural_unit.bonded_interactions))
+                and all(a.is_equivalent(b) for a, b in
+                     zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions))
 
 
 class _Group(CompositeStructuralUnit):
