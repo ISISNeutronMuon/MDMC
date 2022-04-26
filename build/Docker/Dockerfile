@@ -72,13 +72,10 @@ RUN make
 RUN make install-python
 
 # get DLPOLY
-RUN git clone -b 5.1.0-pre https://gitlab.com/ccp5/dl-poly.git dl-poly-5.1.0-pre
-RUN cmake -S dl-poly-5.0.0 -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=off -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
+RUN git clone https://gitlab.com/ccp5/dl-poly.git
+RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=off -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
 RUN cd build-dlpoly && make install
-
-# get dlpoly-py
-RUN pip install dlpoly-py==0.3.3
-  
+ 
 # Start in /home
 WORKDIR /home
 
