@@ -106,8 +106,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Get the saved configuration of the atomic positions
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Returns
         -------
         ``Configuration``
@@ -281,8 +279,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Creates the simulation box, the atomic configuration, and the topology
         in DL_POLY
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         universe : Universe
@@ -304,8 +300,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         **settings
@@ -319,8 +313,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def minimize(self, n_steps, output_log: str = None, work_dir: str = None, **settings):
         """
         Minimizes the simulation energy
-
-        Must be implemented (abstract method in MDEngine ABC)
 
         Parameters
         ----------
@@ -358,8 +350,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         n_steps : int
@@ -390,8 +380,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
-
-        Must be implemented (abstract method in MDEngine ABC)
 
         Parameters
         ----------
@@ -471,8 +459,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Updates the ``MDEngine`` force field ``Parameter`` objects
         from the ``Universe``
-
-        Must be implemented (abstract method in MDEngine ABC)
         """
 
         self.dlpoly_universe.update_parameters()
@@ -481,8 +467,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Sets ``self.saved_config`` to the current configuration
-
-        Must be implemented (abstract method in MDEngine ABC)
         """
         self._saved_config = Config(self.dlpoly.control['io_file_revcon'])
 
@@ -490,8 +474,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Resets the configuration of the simulation to that in ``saved_config``
-
-        Must be implemented (abstract method in MDEngine ABC)
         """
 
         self.dlpoly_universe.set_config(self.saved_config)
