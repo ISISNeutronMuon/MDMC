@@ -8,7 +8,6 @@ from MDMC.resolution.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
-
 class FileResolution(Resolution):
     """
     A `Resolution` subclass for applying resolution from file.
