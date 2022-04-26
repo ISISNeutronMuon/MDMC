@@ -81,11 +81,9 @@ def partition_interactions(interactions, names, unpartitioned=False, lst=False):
     """
 
     interaction_lst = [None] * len(names)
-    i = 0
-    for name in names:
-        predicate = lambda x, n=name: x.name == n
-        interaction_lst[i], interactions = partition(interactions, predicate)
-        i += 1
+    for i, name in enumerate(names):
+        interaction_lst[i], interactions = partition(interactions, lambda x, n=name: x.name == n)
+
     if unpartitioned:
         interaction_lst += [interactions]
     if lst:
