@@ -45,7 +45,7 @@ BOND_CLASS_REF = {
 
 
 class DLPOLYAttribute(ABC):
-
+    # pylint: disable=too-few-public-methods
     """
     A class which has a ``dlpoly-py`` object as an
     attribute and possesses attributes and methods relating to it.
@@ -535,7 +535,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
 
         (self.bonds, self.angles, self.dihedrals,
-         self.disps, self.couls, others) = partition_interactions(
+         self.disps, self.couls, _) = partition_interactions(
             set(self.universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,

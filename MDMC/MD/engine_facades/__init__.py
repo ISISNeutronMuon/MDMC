@@ -7,6 +7,9 @@ force_field_factory
 lammps_engine (requires external module lammps.py)
 """
 
+# TODO: Fix
+# pylint: disable=import-self
+
 from . import facade_factory
 from . import facade
 
