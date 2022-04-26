@@ -1480,6 +1480,9 @@ class Simulation:
             ``maxeval`` (`int`)
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
+            ``nfreq`` (`int`)
+                Frequency at which minimisation is performed. Default depends
+                on engine used.
         """
 
         verbose_manager.step(f"Running minimization for {n_steps} steps")
