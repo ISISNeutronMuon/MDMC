@@ -1448,9 +1448,7 @@ class Simulation:
         """
 
         self.engine.setup_universe(self.universe, **self.settings)
-        self.engine.setup_simulation(traj_step=self.traj_step,
-                                     time_step=self.time_step,
-                                     **self.settings)
+        self.engine.setup_simulation(**self.settings)
 
     def minimize(self, n_steps: int, verbose: bool = False, output_log: str = None,
                  work_dir: str = None, **settings):
