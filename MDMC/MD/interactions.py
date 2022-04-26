@@ -808,13 +808,10 @@ class BondedInteraction(Interaction):
         bool
         """
 
-        if id(other) == id(self):
-            return True
-        elif (isinstance(other, self.__class__)
-              and self.atom_types == other.atom_types
-              and self.function == other.function):
-            return True
-        return False
+        return (id(other) == id(self) or
+                (isinstance(other, self.__class__)
+                and self.atom_types == other.atom_types
+                and self.function == other.function))
 
     @property
     def atoms(self):
