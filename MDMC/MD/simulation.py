@@ -491,9 +491,7 @@ class Universe(AtomContainer):
             The top level ``StructuralUnit`` objects in the ``Universe``
         """
 
-        structural_units = []
-        for atom in self.atoms:
-            structural_units.append(atom.top_level_structure)
+        structural_units = [atom.top_level_structure for atom in self.atoms]
 
         # Remove duplicate entries from multiple atoms belonging to the same molecule,
         # and sort by ID for consistency
