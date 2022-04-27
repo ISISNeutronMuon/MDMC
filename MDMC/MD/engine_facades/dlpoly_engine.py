@@ -520,7 +520,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.control['data_dump_frequency'] = (settings.get('data_dump_frequency',5000), 'steps')
         self.dlpoly.control['stats_frequency'] = (settings.get('stats_frequency',100), 'steps')
         self.dlpoly.control['print_frequency'] = (settings.get('print_frequency',100), 'steps')
-        self.dlpoly.control['stack_size'] = (settings.get('stack_size'),100), 'steps')
+        self.dlpoly.control['stack_size'] = (settings.get('stack_size',100), 'steps')
         self.dlpoly.control['padding'] = (settings.get('padding',0.5), 'Ang')
         self.dlpoly.control['vdw_method'] = settings.get('vdw_method','direct')
 
