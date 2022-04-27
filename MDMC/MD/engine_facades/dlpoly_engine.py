@@ -272,7 +272,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         # e.g. tolerances
         etol = settings.get('etol', 1.e-3)
         ftol = settings.get('ftol', 0.)
-        min_freq = settings.get('nfreq', 10)
+        min_freq = settings.get('minimisation_frequency', 10)
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
                     self.__class__, n_steps, ftol)
         if ftol == 0.0:
@@ -306,13 +306,13 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         if equilibration:
             self.dlpoly.control['time_equilibration'] = (n_steps, 'steps')
-            self.dlpoly.control['traj_calculate'] = 'Off'
+            self.dlpoly.control['traj_calculate'] = settings.get('traj_calculate','Off')
         else:
-            self.dlpoly.control['time_equilibration'] = (0, 'steps')
+            self.dlpoly.control['time_equilibration'] = (settings.get('time_equilibration',0), 'steps')
             self.dlpoly.control['traj_calculate'] = 'On'
-            self.dlpoly.control['traj_start'] = (0, 'steps')
+            self.dlpoly.control['traj_start'] = (settings.get('traj_start',0), 'steps')
             self.dlpoly.control['traj_interval'] = (self.traj_step, 'steps')
-            self.dlpoly.control['traj_key'] = 'pos'
+            self.dlpoly.control['traj_key'] = settings.get('traj_key','pos')
 
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
@@ -344,15 +344,17 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 cell[i, :] = np.array([float(x) for x in f.readline().split()])
             return cell
 
-        def create_atom(f, lvl):
+        def create_atom(f, level_of_detail):
+            # level_of_detail of information in the file, 0, indicates only positions,
+            # 1 positions and velocities, 2 positions, velocities and forces
             # the first line gives the symbol, mass and atom_ID of the atom
-            symbol, d1, d2, *_ = f.readline().split()
-            mass = float(d2)
-            _ = int(d1)  # atom_id
+            symbol, id_str, mass_str, *_ = f.readline().split()
+            mass = float(mass_str)
+            _ = int(is_str)  # atom_id
             # the next line gives the position of the atom
             pos = [float(x) for x in f.readline().split()]
             # the next line, if it exists, gives the velocity of the atom
-            if lvl > 0:
+            if level_of_detail > 0:
                 vel = [float(x) for x in f.readline().split()]
             else:
                 vel = None
@@ -382,7 +384,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 end = frames + 1
             for k in range(frames):
                 time = float(f.readline().split()[-1])
-                read_cell(f)  # Just skip
+                read_cell(f)  # Just skip, this shall be revisited for npt simulations
                 atoms = []
                 for _ in range(n_atoms):
                     atom = create_atom(f, lvl)
@@ -907,7 +909,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         super().__init__(dlpoly)
         self.temperature = temperature
         self.pressure = pressure
-        self.dlpoly.control['ensemble'] = 'nve'
+        self.dlpoly.control['ensemble'] = settings.get('ensemble','nve')
 
         self.time_step = settings.get('time_step')
         self.t_damp = settings.get('t_damp')
