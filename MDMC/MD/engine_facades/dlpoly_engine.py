@@ -362,9 +362,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             # else:
             #     force = None
 
-            atom_type = self.universe.element_dict[symbol].atom_type
             atom = MAtom(symbol, position=pos, mass=mass)
-            atom.atom_type = atom_type
+            atom.atom_type = self.universe.element_dict[symbol].atom_type
             if self.universe:
                 atom.universe = self.universe
             if vel is not None:
@@ -452,16 +451,15 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
-        self._define_simulation_box(self.universe)
-        self._build_config(self.universe)
-        self._add_topology(self.universe, **settings)
-        self.update_parameters()
-
         self.bonds = []
         self.disps = []
         self.angles = []
         self.dihedrals = []
         self.couls = []
+        self._define_simulation_box(self.universe)
+        self._build_config(self.universe)
+        self._add_topology(self.universe, **settings)
+        self.update_parameters()
 
     def update_parameters(self):
         """
@@ -475,7 +473,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
             unpartitioned=True,
             lst=True)
 
-        # example methods
         self._update_charges()
         self._update_bonded_interactions()
         self._update_dispersions()
