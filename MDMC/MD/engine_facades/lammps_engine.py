@@ -1234,7 +1234,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             The name of the bonded interaction type used for setting coeffs in
             LAMMPS. This must be one of: ``bond``, ``angle``, ``dihedral``,
             ``improper``. In the case of ``dihedral``, LAMMPS is just referring
-            to proper dihedral interactions.
+            to proper dihedral interactions.MDMC/MD/engine_facades/dlpoly_engine.py
         bonded_interactions : list of bonded_interactions (or single type)
             ``BondedInteractions`` which will be created in LAMMPS. This list
             must only contain a single type of ``bonded_interactions`` (e.g.
