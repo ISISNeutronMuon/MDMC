@@ -266,6 +266,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         **settings
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
+        etol: float, energy tolerance criteria for energy minimisation
+        ftol: float, force tolerance criteria for force minimisation, active only if non-zero
+        minimisation_frequency: how often to do a geometry optimisation during minimisation process
         """
 
         # Example of how to use the **settings to specify parameters,
@@ -302,6 +305,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             file where the output goes.
         work_dir: str, optional, default None
             folder where the run happens
+        **settings
+            The majority of these are generic but some are specific to the
+            ``MDEngine`` that is being used.
+        time_equilibration: int, number of steps to run equilibrarion for, typically 0 in production stage
+        traj_calculate: on/off prints trajectory or not
+        traj_start: int, at which the trajectory printing shall start
+        traj_key: pos,pos-vel,pos-vel-force, level of details for trajectory prints positions, positions and
+                  velocities, positions, velocities and forces
         """
 
         if equilibration:
@@ -359,10 +370,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             else:
                 vel = None
             # next line, if existent, gives the force on the atom. currently not used by MDMC
-            # if lvl > 1:
-            #     force = [float(x) for x in f.readline().split()]
-            # else:
-            #     force = None
+            if level_of_detail > 1:
+                 force = [float(x) for x in f.readline().split()]
+            else:
+                 force = None
 
             atom = MAtom(symbol, position=pos, mass=mass)
             atom.atom_type = self.universe.element_dict[symbol].atom_type
@@ -382,15 +393,15 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             end = stop
             if stop is None:
                 end = frames + 1
-            for k in range(frames):
+            for iframe in range(frames):
                 time = float(f.readline().split()[-1])
-                read_cell(f)  # Just skip, this shall be revisited for npt simulations
+                read_cell(f)  # Just skip, unused for the moment, will need to be used for npt simulations
                 atoms = []
                 for _ in range(n_atoms):
-                    atom = create_atom(f, lvl)
+                    atom = create_atom(f, level_of_detail)
                     if not atom_ids or atom.ID in atom_ids:
                         atoms.append(atom)
-                if (start <= k < end) and ((k - start) % step == 0):
+                if (start <= iframe < end) and ((iframe - start) % step == 0):
                     configs.append(
                         TemporalConfiguration(
                             convert_unit(time, unit=units.Unit('ps'), to_dlpoly=False), *atoms
@@ -481,14 +492,25 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self._update_dispersions()
         self.dlpoly.field.write(self.dlpoly.control['io_file_field'])
 
-    def _define_simulation_details(self, *settings):
+    def _define_simulation_details(self, **settings):
         """
         Defines a region and creates a simulation box that fills this region
 
         Parameters
         ----------
-        universe : Universe
-            The MDMC ``Universe`` used to create the region and simulation box.
+        **settings
+            The majority of these are generic but some are specific to the
+            ``MDEngine`` that is being used.
+        title: str, title for the simulation
+        time_job: float, time of seconds for simulation to run
+        time_close: float, close time to allow writing
+        data_dump_frequency: int, interval to write restart, recovery data
+        stats_frequency: int, interval to print stats
+        print_frequency: int, interval to print statistics in output
+        stack_size: int, how many steps use for averge stacks
+        padding: float, buffer for neighbour lists
+        vdw_method: direct/tabulated how do compute dispersion operations
+        coul_method: spme, off how to compute long range interactions
         """
 
         self.dlpoly.control = DLPControl()
@@ -517,6 +539,10 @@ class DLPOLYUniverse(DLPOLYAttribute):
         ----------
         universe : Universe
             The MDMC ``Universe`` used to fill the DL_POLY box with atoms.
+        **settings
+            The majority of these are generic but some are specific to the
+            ``MDEngine`` that is being used.
+        config: str, filename for the config file to be written
         """
         # assume the dimensions are in angstrom
         atoms = Atoms(cell=universe.dimensions, pbc=True)
@@ -540,7 +566,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         **settings
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
-
+        field: str, filename for the field file to be written
         Raises
         ------
         NotImplementedError
@@ -565,7 +591,11 @@ class DLPOLYUniverse(DLPOLYAttribute):
         ----------
         universe : Universe
             The MDMC ``Universe`` used to define the topology.
-
+        **settings
+            The majority of these are generic but some are specific to the
+            ``MDEngine`` that is being used.
+        header: str, header to be written to the field file
+        units: str, kJ,kcal,eV, internal in what units, field file is written, default kJ
         Raises
         ------
         NotImplementedError
@@ -751,6 +781,10 @@ class DLPOLYSimulation(DLPOLYAttribute):
         between the ``Trajectory`` being stored.
     ensemble : DLPOLYEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
+    **settings
+        The majority of these are generic but some are specific to the
+        ``MDEngine`` that is being used.
+    temperature: float, temperatjre of the stimulation
     """
 
     def __init__(self, universe, dlpoly=None, **settings):
