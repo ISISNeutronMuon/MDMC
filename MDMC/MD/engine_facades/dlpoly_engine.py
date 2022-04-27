@@ -10,6 +10,7 @@ from copy import copy
 import logging
 from ase import Atoms, Atom
 from ase.io import write
+from mpi4py import MPI
 
 from dlpoly import DLPoly
 from dlpoly.species import Species
@@ -315,7 +316,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
-        self.dlpoly.run(numProcs=1, outputFile=output_log)
+        self.dlpoly.run(numProcs=MPI.COMM_WORLD.Get_size(), outputFile=output_log)
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
