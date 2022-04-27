@@ -403,7 +403,7 @@ class Dispersion(NonBondedInteraction):
     def __init__(self, universe, *atom_types, **settings):
 
         # Ignore pylint warning for inner function docstring
-        #pylint: disable=missing-docstring
+        # pylint: disable=missing-docstring
         def validate_atom_type_pair(atom_type_pair):
             try:
                 atom_type_pair = tuple(sorted(atom_type_pair))
@@ -494,9 +494,8 @@ class Dispersion(NonBondedInteraction):
         bool
         """
 
-        return (super().is_equivalent()
+        return (super().is_equivalent(other)
                 and self.vdw_tail_correction == other.vdw_tail_correction)
-
 
 
 class Coulombic(NonBondedInteraction):
@@ -879,7 +878,7 @@ class BondedInteraction(Interaction):
             A set of all (unique) ``atom_type``s, sorted, with `None` as the
             last entry if any of the ``atom_type``s were `None`.
         """
-        return {atom.atom_type for atom in atom_tuple for atom_tuple in self.atoms}
+        return {atom.atom_type for atom_tuple in self.atoms for atom in atom_tuple}
 
     @property
     def universe(self):
@@ -1001,7 +1000,7 @@ class BondedInteraction(Interaction):
 
     # _get_equivalent_structures is a method because of the override in
     # DihedralAngle
-    #pylint: disable=R0201
+    # pylint: disable=R0201
     def _get_equivalent_structures(self, structs):
         """
         Returns

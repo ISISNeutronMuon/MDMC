@@ -45,7 +45,7 @@ BOND_CLASS_REF = {
 
 
 class DLPOLYAttribute(ABC):
-
+    # pylint: disable=too-few-public-methods
     """
     A class which has a ``dlpoly-py`` object as an
     attribute and possesses attributes and methods relating to it.
@@ -62,7 +62,9 @@ class DLPOLYAttribute(ABC):
         The ``dlpoly-py`` object owned by this class
     """
 
-    def __init__(self, dlpoly=None):
+    def __init__(self, dlpoly=None, control=None,
+                 config=None, field=None, statis=None, output=None,
+                 destconfig=None, rdf=None, workdir=None):
 
         if dlpoly:
             self.dlpoly = dlpoly
@@ -104,8 +106,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Get the saved configuration of the atomic positions
-
-        Must be implemented (abstract method in MDEngine ABC)
 
         Returns
         -------
@@ -280,8 +280,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Creates the simulation box, the atomic configuration, and the topology
         in DL_POLY
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         universe : Universe
@@ -303,8 +301,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         **settings
@@ -319,12 +315,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Minimizes the simulation energy
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         n_steps : int
             Maximum number of steps for the energy minimization.
+        output_log: str, optional, default None
+            file where the output goes.
+        work_dir: str, optional, default None
+            folder where the run happens
         **settings
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
@@ -353,15 +351,17 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
 
-        Must be implemented (abstract method in MDEngine ABC)
-
         Parameters
         ----------
         n_steps : int
             Number of steps for the time integrator.
-        equilibration : bool
-            If `True`, run is equilibration which does not store the
-            ``trajectory``. Otherwise run is prodution.
+        equilibration : bool (optional, default False)
+            If `True`, just runs an equilibration which does not store the
+            ``trajectory``.
+        output_log: str, optional, default None
+            file where the output goes.
+        work_dir: str, optional, default None
+            folder where the run happens
         """
 
         if equilibration:
@@ -381,8 +381,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
-
-        Must be implemented (abstract method in MDEngine ABC)
 
         Parameters
         ----------
@@ -413,14 +411,19 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
             symbol, d1, d2, *_ = f.readline().split()
             mass = float(d2)
-            aid = int(d1)
+            _ = int(d1)  # aid
             pos = [float(x) for x in f.readline().split()]
-            vel = None
-            force = None
+
             if lvl > 0:
                 vel = [float(x) for x in f.readline().split()]
-            if lvl > 1:
-                force = [float(x) for x in f.readline().split()]
+            else:
+                vel = None
+
+            # Can ignore forces
+            # if lvl > 1:
+            #     force = [float(x) for x in f.readline().split()]
+            # else:
+            #     force = None
 
             atom_type = self.universe.element_dict[symbol].atom_type
             atom = MAtom(symbol, position=pos, mass=mass)
@@ -433,8 +436,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
-            title = f.readline()
-            lvl, imcon, n_atoms, frames, _ = [int(i) for i in f.readline().split()]
+            _ = f.readline()  # title
+            lvl, _, n_atoms, frames, *_ = [int(i) for i in f.readline().split()]  # imcon
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
             configs = []
@@ -443,7 +446,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 end = frames + 1
             for k in range(frames):
                 time = float(f.readline().split()[-1])
-                cell = read_cell(f)
+                read_cell(f)  # Just skip
                 atoms = []
                 for _ in range(n_atoms):
                     atom = create_atom(f, lvl)
@@ -462,8 +465,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Updates the ``MDEngine`` force field ``Parameter`` objects
         from the ``Universe``
-
-        Must be implemented (abstract method in MDEngine ABC)
         """
 
         self.dlpoly_universe.update_parameters()
@@ -472,8 +473,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Sets ``self.saved_config`` to the current configuration
-
-        Must be implemented (abstract method in MDEngine ABC)
         """
         self._saved_config = Config(self.dlpoly.control['io_file_revcon'])
 
@@ -481,8 +480,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Resets the configuration of the simulation to that in ``saved_config``
-
-        Must be implemented (abstract method in MDEngine ABC)
         """
 
         self.dlpoly_universe.set_config(self.saved_config)
@@ -537,7 +534,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
 
         (self.bonds, self.angles, self.dihedrals,
-         self.disps, self.couls, others) = partition_interactions(
+         self.disps, self.couls, _) = partition_interactions(
             set(self.universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,

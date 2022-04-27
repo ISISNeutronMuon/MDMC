@@ -263,7 +263,7 @@ class StructuralUnit(ABC):
         """
 
         if issubclass(type(self.parent), StructuralUnit) \
-        and self.parent is not self:
+           and self.parent is not self:
             return self.parent.top_level_structure
         return self
 
@@ -357,7 +357,8 @@ class StructuralUnit(ABC):
         ValueError
             If ``position`` if undefined
         """
-        #pylint: disable=nan-comparison
+        # pylint: disable=nan-comparison
+
         # because math.isnan doesn't work here for some reason
 
         if position is None:
@@ -407,7 +408,6 @@ class StructuralUnit(ABC):
         """
 
         raise NotImplementedError
-
 
 
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
@@ -588,9 +588,9 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         self._structure_list = value
 
     def copy(self, position, rotation=None):
-    # pylint:disable=arguments-differ
-    # CompositeStructuralUnit's can be rotated, which is meaningless for
-    # StructuralUnits in general
+        # pylint:disable=arguments-differ
+        # CompositeStructuralUnit's can be rotated, which is meaningless for
+        # StructuralUnits in general
 
         """
         Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
@@ -752,7 +752,7 @@ class Atom(StructuralUnit):
                  charge=None, **settings):
 
         self.universe = None
-        #the syntax for optional keyword arguments is: kwargs.get(str, default_value)
+        # the syntax for optional keyword arguments is: kwargs.get(str, default_value)
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
@@ -1057,8 +1057,8 @@ class Atom(StructuralUnit):
         return self._bonded_interaction_pairs
 
     def copy(self, position):
-    # pylint:disable=useless-super-delegation
-    # Docstring specific to Atom
+        # pylint:disable=useless-super-delegation
+        # Docstring specific to Atom
         """
         Copies the ``Atom`` and all attributes, except ``ID`` which is generated
 
@@ -1131,7 +1131,7 @@ class Atom(StructuralUnit):
             # The tuple most recently added to interaction.atoms should always
             # contain self
             if from_interaction:
-                if not interaction.atoms or not self in interaction.atoms[-1]:
+                if not interaction.atoms or self not in interaction.atoms[-1]:
                     raise ValueError('incorrect atom_tuple passed to atom')
             else:
                 interaction.add_atoms(self, from_structure=True)
@@ -1194,9 +1194,9 @@ class Atom(StructuralUnit):
                 and (len(self.nonbonded_interactions)
                      == len(structural_unit.nonbonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                    zip(self.bonded_interactions, structural_unit.bonded_interactions))
+                        zip(self.bonded_interactions, structural_unit.bonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                    zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
+                        zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
 
 
 class _Group(CompositeStructuralUnit):
@@ -1217,7 +1217,6 @@ class _Group(CompositeStructuralUnit):
     def __init__(self):
 
         raise NotImplementedError
-
 
 
 class Molecule(CompositeStructuralUnit):
@@ -1373,7 +1372,7 @@ class Molecule(CompositeStructuralUnit):
     def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
 
         return (isinstance(structural_unit, type(self))
-                and structural_unit.element == self.element
+                and structural_unit.formula == self.formula
                 and structural_unit.mass == self.mass
                 and structural_unit.charge == self.charge
                 and (len(self.bonded_interactions)
@@ -1381,9 +1380,9 @@ class Molecule(CompositeStructuralUnit):
                 and (len(self.nonbonded_interactions)
                      == len(structural_unit.nonbonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                     zip(self.bonded_interactions, structural_unit.bonded_interactions))
+                        zip(self.bonded_interactions, structural_unit.bonded_interactions))
                 and all(a.is_equivalent(b) for a, b in
-                     zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
+                        zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
 
 
 @repr_decorator('min', 'max', 'volume')
