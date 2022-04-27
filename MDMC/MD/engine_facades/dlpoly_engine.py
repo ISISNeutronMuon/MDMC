@@ -116,53 +116,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         return self._saved_config
 
     @property
-    def time_step(self):
-
-        """
-        Get or set the simulation time step in ``ps``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``fs``
-        """
-
-        try:
-            return self.dlpoly_simulation.time_step
-        except AttributeError:
-            return None
-
-    @time_step.setter
-    @unit_decorator(unit=units.TIME)
-    def time_step(self, value):
-
-        self.dlpoly_simulation.time_step = value
-
-    @property
-    def traj_step(self):
-
-        """
-        Get or set the number of simulation steps between saving the
-        ``Trajectory``
-
-        Returns
-        -------
-        `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
-        """
-
-        try:
-            return self.dlpoly_simulation.traj_step
-        except AttributeError:
-            return None
-
-    @traj_step.setter
-    def traj_step(self, value):
-
-        self.dlpoly_simulation.traj_step = value
-
-    @property
     def temperature(self):
 
         """
