@@ -550,12 +550,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     self.__class__)
 
         self.dlpoly.field = self._create_field(universe)
-        self.dlpoly.field.write('FIELD')
+        self.dlpoly.field.write(settings.get('field','FIELD'))
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
-    def _create_field(self, universe) -> Field:
+    def _create_field(self, universe,**settings) -> Field:
         """
         Creates a dlpoly Field object
 
@@ -583,8 +583,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
                                       ' implemented in the DL_POLY facade')
 
         out = Field()
-        out.header = 'MDMC Generated Field File'
-        out.units = 'kJ'
+        out.header = settings.get('header','MDMC Generated Field File')
+        out.units = settings.get('units','kJ')
 
         spec = universe.element_lookup
         mols = {}
