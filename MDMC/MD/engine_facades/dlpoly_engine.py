@@ -378,6 +378,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
                 force = [float(x) for x in f.readline().split()]
+            else:
+                force = None
             _ = force
 
             atom = MAtom(symbol, position=pos, mass=mass)
