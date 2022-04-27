@@ -308,10 +308,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         **settings
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
-        time_equilibration: int, number of steps to run equilibrarion for, typically 0 in production stage
+        time_equilibration: int, number of steps to run equilibrarion for,
+                                 typically 0 in production stage
         traj_calculate: on/off prints trajectory or not
         traj_start: int, at which the trajectory printing shall start
-        traj_key: pos,pos-vel,pos-vel-force, level of details for trajectory prints positions, positions and
+        traj_key: pos,pos-vel,pos-vel-force, level of details for trajectory
+                  prints positions, positions and
                   velocities, positions, velocities and forces
         """
 
@@ -319,7 +321,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['time_equilibration'] = (n_steps, 'steps')
             self.dlpoly.control['traj_calculate'] = settings.get('traj_calculate','Off')
         else:
-            self.dlpoly.control['time_equilibration'] = (settings.get('time_equilibration',0), 'steps')
+            self.dlpoly.control['time_equilibration'] = \
+                (settings.get('time_equilibration',0), 'steps')
             self.dlpoly.control['traj_calculate'] = 'On'
             self.dlpoly.control['traj_start'] = (settings.get('traj_start',0), 'steps')
             self.dlpoly.control['traj_interval'] = (self.traj_step, 'steps')
@@ -327,6 +330,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
+        # pylint: disable=c-extension-no-member, too-many-lines
         self.dlpoly.run(numProcs=MPI.COMM_WORLD.Get_size(), outputFile=output_log)
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
@@ -359,9 +363,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             # level_of_detail of information in the file, 0, indicates only positions,
             # 1 positions and velocities, 2 positions, velocities and forces
             # the first line gives the symbol, mass and atom_ID of the atom
-            symbol, id_str, mass_str, *_ = f.readline().split()
+            symbol, _, mass_str, *_ = f.readline().split()
             mass = float(mass_str)
-            _ = int(is_str)  # atom_id
             # the next line gives the position of the atom
             pos = [float(x) for x in f.readline().split()]
             # the next line, if it exists, gives the velocity of the atom
@@ -371,9 +374,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 vel = None
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
-                 force = [float(x) for x in f.readline().split()]
-            else:
-                 force = None
+                force = [float(x) for x in f.readline().split()]
+            _ = force
 
             atom = MAtom(symbol, position=pos, mass=mass)
             atom.atom_type = self.universe.element_dict[symbol].atom_type
@@ -386,7 +388,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
             _ = f.readline()  # title
-            lvl, _, n_atoms, frames, *_ = [int(i) for i in f.readline().split()]  # imcon
+            level_of_detail, _, n_atoms, frames, *_ = \
+                              [int(i) for i in f.readline().split()]  # imcon
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
             configs = []
@@ -395,7 +398,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 end = frames + 1
             for iframe in range(frames):
                 time = float(f.readline().split()[-1])
-                read_cell(f)  # Just skip, unused for the moment, will need to be used for npt simulations
+                read_cell(f)  # Just skip, unused for the moment, will need to be
+                              # used for npt simulations
                 atoms = []
                 for _ in range(n_atoms):
                     atom = create_atom(f, level_of_detail)
@@ -470,7 +474,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.angles = []
         self.dihedrals = []
         self.couls = []
-        self._define_simulation_box(self.universe)
+        self._define_simulation_details()
         self._build_config(self.universe)
         self._add_topology(self.universe, **settings)
         self.update_parameters()
@@ -517,10 +521,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.control['title'] = settings.get('title','my simulation title')
         self.dlpoly.control['time_job'] = (settings.get('time_job',100000.0), 's')
         self.dlpoly.control['time_close'] = (settings.get('time_close',10.0), 's')
-        self.dlpoly.control['data_dump_frequency'] = (settings.get('data_dump_frequency',5000), 'steps')
-        self.dlpoly.control['stats_frequency'] = (settings.get('stats_frequency',100), 'steps')
-        self.dlpoly.control['print_frequency'] = (settings.get('print_frequency',100), 'steps')
-        self.dlpoly.control['stack_size'] = (settings.get('stack_size'),100), 'steps')
+        self.dlpoly.control['data_dump_frequency'] = \
+            (settings.get('data_dump_frequency',5000), 'steps')
+        self.dlpoly.control['stats_frequency'] = \
+            (settings.get('stats_frequency',100), 'steps')
+        self.dlpoly.control['print_frequency'] = \
+            (settings.get('print_frequency',100), 'steps')
+        self.dlpoly.control['stack_size'] = (settings.get('stack_size',100), 'steps')
         self.dlpoly.control['padding'] = (settings.get('padding',0.5), 'Ang')
         self.dlpoly.control['vdw_method'] = settings.get('vdw_method','direct')
 
