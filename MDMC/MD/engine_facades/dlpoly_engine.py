@@ -248,7 +248,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``MDEngine`` that is being used.
         """
 
-        self.dlpoly_simulation = DLPOLYSimulation(self.universe, self.dlpoly,
+        self.dlpoly_simulation = DLPOLYSimulation(universe=self.universe,
+                                                  traj_step=self.traj_step,
+                                                  time_step=self.time_step,
+                                                  dlpoly=self.dlpoly,
                                                   **settings)
 
     def minimize(self, n_steps, output_log: str = None, work_dir: str = None, **settings):
@@ -773,6 +776,11 @@ class DLPOLYSimulation(DLPOLYAttribute):
         Set the ``dlpoly`` attribute to a ``dlpoly-py`` object.
         Default is `None`,
         which results in a new ``dlpoly-py`` object being initialised.
+    traj_step : int
+        How many steps the simulation should take between dumping each
+        ``Trajectory`` frame
+    time_step : float, optional
+        Simulation timestep in ``fs``, default is ``1.``
     **settings
         The majority of these are generic but some are specific to the
         ``MDEngine`` that is being used.
@@ -794,14 +802,14 @@ class DLPOLYSimulation(DLPOLYAttribute):
     temperature: float, temperatjre of the stimulation
     """
 
-    def __init__(self, universe, dlpoly=None, **settings):
+    def __init__(self, universe, traj_step: int, time_step: float = 1., dlpoly=None, **settings):
         super().__init__(dlpoly=dlpoly)
 
         self.universe = universe
         self.ensemble = DLPOLYEnsemble(self.dlpoly, **settings)
         self.temperature = settings.get('temperature')
-        self.time_step = settings.get('time_step')
-        self.traj_step = settings.get['traj_step']
+        self.traj_step = traj_step
+        self.time_step = time_step
 
     @property
     def time_step(self):
