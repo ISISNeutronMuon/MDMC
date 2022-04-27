@@ -14,7 +14,10 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 class GPR(Minimizer):
 
     """
-    ``Minimizer`` employing Gaussian Process Regression 
+    ``Minimizer`` employing Gaussian Process Regression. Creates apredefined array of points across all 
+    parameters and performs a simulation at each point. Then performs a Gaussian process regression fit
+    across all measured points and predicts across a finer grid, before returning the predicted minimum
+    FoM and the associated parameter values. 
 
     Parameters
     ---------- 
@@ -24,10 +27,10 @@ class GPR(Minimizer):
     alpha : float
         Hyperparameter for the fitting, also can represent additional Gaussian noise in measrement points 
     length_scale : float
-        Lengthscale parameter for the kernel
+        Hyperparameter for the fitting, a lengthscale parameter for the kernel.
     n_points : int
         A number of points which will be measured at, either randomly on a latin hypercube (if hypercube=True) 
-        or p^n_points (p = number of parameters) in a grid (if hypercube=False)
+        or p^n_points (p = number of parameters) in a regular grid (if hypercube=False)
 
 
     Attributes
@@ -40,7 +43,7 @@ class GPR(Minimizer):
     def __init__(self, parameters, distribution, max_parameter_change, **settings):
         super().__init__(parameters, distribution, max_parameter_change)
         self.hypercube = settings.get('hypercube', False)
-        self.alpha = settings.get('alpha', 0.0001)
+        self.alpha = settings.get('alpha', 0.01)
         self.length_scale = settings.get('length_scale', 0.1)
         n_points = settings.get('n_points', 4)
 
@@ -50,15 +53,17 @@ class GPR(Minimizer):
 
     def create_parameter_point_array(self, parameters, points=2):
         """
-        Takes the constraints of the parameters to be minimised, makes an array of length points
-        then performs the Cartesian product, to give every set of coordinates. If no constraints
-        are present, then some arbitrary ones are set based on the parameter value.
+        Takes or creates the constraints of the parameters to be minimised, the either makes an array of 
+        length "points" and performs the Cartesian product across all parameters, to give an equally spaced
+        set of coordinates to be measured. This set of coordinates will be points^#of dimensions long.
+        If self.hypercube is True then an array of points will be placed on a Latin hypercube covering the 
+        space defined by the constraints. The resulting array of coordinates will be "points" long.
         
         Parameters
         ----------
         parameters : list
             All ``Parameter`` objects that are being refined.
-        points : int
+        points : int, optional
             Number of points across the constraint range to take, defaults to 2.
 
         Returns
@@ -67,22 +72,13 @@ class GPR(Minimizer):
                 Ordered list of names of parameters
         point_array : array
                 Array of parameter coordinates to be simulated
+        
         """
         parameter_names = []
         bounds_array = []
-        if not self.hypercube:
+        point_array = []
 
-            for parameter in parameters:
-                lower_bound, upper_bound = self.create_bounds(parameter)
-                parameter_names.append(str(parameter.name))
-                
-                bounds_grid = np.linspace(lower_bound, upper_bound, points)
-                bounds_array.append(bounds_grid)
-            point_array =  list(map(list, itertools.product(*bounds_array))) # * is necessary for unpacking the arrays 
-            return parameter_names, point_array
-            
-        else:
-            point_array = []
+        if self.hypercube:
             samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
             latin_points = samples.random(n=points)
             for i, parameter in enumerate(parameters):
@@ -91,7 +87,16 @@ class GPR(Minimizer):
                 latin_points[:, i] = self.scale_hypercube(latin_points[:, i], lower_bound, upper_bound)
             return parameter_names, latin_points
 
-
+        else:
+            for parameter in parameters:
+                lower_bound, upper_bound = self.create_bounds(parameter)
+                parameter_names.append(str(parameter.name))
+                
+                bounds_grid = np.linspace(lower_bound, upper_bound, points)
+                bounds_array.append(bounds_grid)
+            point_array =  list(itertools.product(*bounds_array)) # * is necessary for unpacking the arrays 
+            return parameter_names, point_array
+    
 
     def create_bounds(self, parameter, fraction = 0.2):
         """
@@ -104,14 +109,19 @@ class GPR(Minimizer):
         parameter : Parameter instance
             A instance of the MDMC Parameter class
         fraction : optional, float
-            The size of the bound, defaults to +-20%
+            The fractional size of the bound, defaults to 0.2 == +-20%
         
         Returns
         -------
         lower_bound : float
             The lower bound for the parameter
         upper_bound : float
-            The upper bound for the parameter        
+            The upper bound for the parameter
+        
+        Raises
+        -----
+        ValueError 
+            If parameter.value is zero and no constraints have been set for it there is no sensible way to guess bounds.
         """
         try:
             lower_bound = parameter.constraints[0]
@@ -132,11 +142,11 @@ class GPR(Minimizer):
         Parameters
         ----------
         input_array : array
-            The relative tolerance of the convergence check. Defaults to `1e-5`
+            Array of values in the interval [0,1] to be scaled
         lower_bound : float
-            The value to scale the array to from 0 
+            The value to scale the array to, from 0 
         upper_bound : float
-            The value to scale the array to from 1
+            The value to scale the array to, from 1
 
         Returns
         -------
@@ -191,7 +201,21 @@ class GPR(Minimizer):
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
 
-    def change_parameters(self, parameters):
+    def set_parameter_values(self, parameter_names, values):
+        """
+        Assigns a new value to each parameter (specified by the parameter.name)
+
+        Parameters
+        ----------
+        parameter_names : list[str]
+            A list of the names of the parameters whose values are to be set
+        values : list[float]
+            A list of the values to be set for each parameter
+        """
+        for name, value in zip(parameter_names, values):
+            self.parameter[str(name)].value = value
+
+    def change_parameters(self):
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
 
@@ -200,20 +224,11 @@ class GPR(Minimizer):
         parameters : list
             All ``Parameter`` objects that are being refined
         """
-        #self.parameter_names
-        for i, parameter_name in enumerate(self.parameter_names):
-            point_to_calculate = len(self._history)
-            print("history length:"+str(len(self._history)))
-            if point_to_calculate <= len(self.parameter_point_array):
-                for parameter in self.parameters:
-                    if parameter.name == parameter_name:
-                        try:
-                            parameter.value = self.parameter_point_array[point_to_calculate][i]
-                        except(IndexError):
-                            parameter.value = self.parameter_point_array[i]
-                        print(parameter.name, parameter.value)
-                        break
         
+        point_to_calculate = len(self._history)
+        if point_to_calculate <= len(self.parameter_point_array):
+            coordinates = self.parameter_point_array[point_to_calculate]
+            self.set_parameter_values(self.parameter_names, coordinates)        
 
     def step(self, FoM):
         """
@@ -230,7 +245,7 @@ class GPR(Minimizer):
         history.extend(values)
         self._history.append(history)
         if len(self._history) < len(self.parameter_point_array):
-            self.change_parameters(self.parameters)
+            self.change_parameters()
 
     def reset_parameters(self):
         """
@@ -265,7 +280,7 @@ class GPR(Minimizer):
         """
         records = pd.read_csv(filename, delimiter=',')
         records = records.astype(dtype=float, errors='ignore')  # Convert to float where possible (i.e. not a string)
-        headers = records.columns
+        self.parameter_names = records.columns
         data = records.values
 
         coordinates = []
@@ -280,7 +295,7 @@ class GPR(Minimizer):
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
-        return fitted_GPR, headers
+        return fitted_GPR
 
     def GPR_predict(self, input_regressor, points=100):
         """
@@ -340,10 +355,20 @@ class GPR(Minimizer):
 
     def present_result(self):
         """
-        Returns the predicted minimum parameter values and associated figure of merit
+        Sets the parameters those predicted to return the minimum FoM, returns the parameter names, 
+        the coordinates of the minima and the predicted FoM.
+
+        Returns
+        -------
+        self.parameter_names : array(srt)
+        
+        minima_coordinate : array(float)
+
+        FoM : float
         """
-        fit, parameter_names = self.GPR_fit()
+        fit = self.GPR_fit()
         points, FoMs = self.GPR_predict(fit)
         minima_coordinate = self.global_minimum_position(FoMs, points)
+        self.set_parameter_values(self.parameter_names, minima_coordinate)
 
-        return parameter_names, minima_coordinate
+        return self.parameter_names, minima_coordinate, FoM
