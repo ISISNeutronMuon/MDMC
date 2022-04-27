@@ -421,7 +421,7 @@ class AbstractSQw(SQwMixins, Observable):
             if trj_sliced:
                 try:
                     assert_allclose(self.trajectory.times -
-                                    self.trajectory.times[0], t)
+                                    self.trajectory.times[0], t, rtol=1e-7, atol=1e-3)
                 except AssertionError as error:
                     msg = ('The `times` of the current `Trajectory` were not '
                            'consistent with the first `Trajectory` passed')
