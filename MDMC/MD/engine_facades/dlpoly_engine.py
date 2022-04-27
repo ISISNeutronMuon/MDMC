@@ -506,7 +506,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         else:
             self.dlpoly.control['coul_method'] = settings.get('coul_method','off')
 
-    def _build_config(self, universe):
+    def _build_config(self, universe,**settings):
 
         """
         Adds atoms to DL_POLY
@@ -517,11 +517,14 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` used to fill the DL_POLY box with atoms.
         """
         # assume the dimensions are in angstrom
-        a = Atoms(cell=universe.dimensions, pbc=True)
+        atoms = Atoms(cell=universe.dimensions, pbc=True)
         for atom in universe.atoms:
-            a.append(Atom(atom.name, atom.position))
-        write('test.config', a, format='dlp4')
-        self.dlpoly.load_config('test.config')
+            atoms.append(Atom(atom.name, atom.position))
+        config_filename = settings.get('config','test.config')
+        write(config_filename, atoms, format='dlp4')
+        self.dlpoly.load_config(config_filename)
+        LOGGER.info('%s configuration written in %s',
+                    self.__class__, config_filename)
 
     def _add_topology(self, universe, **settings):
 
