@@ -15,7 +15,7 @@ from mpi4py import MPI
 from dlpoly import DLPoly
 from dlpoly.species import Species
 from dlpoly.field import Field, Bond, Potential, Molecule
-from dlpoly.new_control import NewControl as Control
+from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.config import Config
 import numpy as np
 
@@ -451,6 +451,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
+
         self.bonds = []
         self.disps = []
         self.angles = []
@@ -478,7 +479,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self._update_dispersions()
         self.dlpoly.field.write(self.dlpoly.control['io_file_field'])
 
-    def _define_simulation_box(self, universe):
+    def _define_simulation_details(self, *settings):
         """
         Defines a region and creates a simulation box that fills this region
 
@@ -488,22 +489,22 @@ class DLPOLYUniverse(DLPOLYAttribute):
             The MDMC ``Universe`` used to create the region and simulation box.
         """
 
-        self.dlpoly.control = Control()
-        self.dlpoly.control['title'] = 'my simulation title'
-        self.dlpoly.control['time_job'] = (10000, 's')
-        self.dlpoly.control['time_close'] = (10, 's')
-        self.dlpoly.control['data_dump_frequency'] = (5000, 'steps')
-        self.dlpoly.control['stats_frequency'] = (100, 'steps')
-        self.dlpoly.control['print_frequency'] = (100, 'steps')
-        self.dlpoly.control['stack_size'] = (10, 'steps')
-        self.dlpoly.control['padding'] = (0.5, 'Ang')
-        self.dlpoly.control['vdw_method'] = 'direct'
+        self.dlpoly.control = DLPControl()
+        self.dlpoly.control['title'] = settings.get('title','my simulation title')
+        self.dlpoly.control['time_job'] = (settings.get('time_job',100000.0), 's')
+        self.dlpoly.control['time_close'] = (settings.get('time_close',10.0), 's')
+        self.dlpoly.control['data_dump_frequency'] = (settings.get('data_dump_frequency',5000), 'steps')
+        self.dlpoly.control['stats_frequency'] = (settings.get('stats_frequency',100), 'steps')
+        self.dlpoly.control['print_frequency'] = (settings.get('print_frequency',100), 'steps')
+        self.dlpoly.control['stack_size'] = (settings.get('stack_size'),100), 'steps')
+        self.dlpoly.control['padding'] = (settings.get('padding',0.5), 'Ang')
+        self.dlpoly.control['vdw_method'] = settings.get('vdw_method','direct')
 
         if self.universe.electrostatic_solver:
-            self.dlpoly.control['coul_method'] = 'ewald'
+            self.dlpoly.control['coul_method'] = settings.get('coul_method','spme')
             self.dlpoly.control['ewald_precision'] = self.universe.electrostatic_solver.accuracy
         else:
-            self.dlpoly.control['coul_method'] = 'off'
+            self.dlpoly.control['coul_method'] = settings.get('coul_method','off')
 
     def _build_config(self, universe):
 
@@ -754,7 +755,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
         self.ensemble = DLPOLYEnsemble(self.dlpoly, **settings)
         self.temperature = settings.get('temperature')
         self.time_step = settings.get('time_step')
-        self.traj_step = settings['traj_step']
+        self.traj_step = settings.get['traj_step']
 
     @property
     def time_step(self):
