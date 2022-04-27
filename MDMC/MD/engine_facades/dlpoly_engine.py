@@ -319,7 +319,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
-        Parses the trajectory from the ``MDEngine`` format into MDMC format
+        Parses the trajectory from the ``DL_POLY`` format into MDMC format.
 
         Parameters
         ----------
@@ -329,9 +329,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             The index of the last trajectory, exclusive.
         step : int
             The step size between trajectories.
-        **settings
-            The majority of these are generic but some are specific to the
-            ``MDEngine`` that is being used.
 
         Returns
         -------
@@ -347,18 +344,18 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             return cell
 
         def create_atom(f, lvl):
-
+            # the first line gives the symbol, mass and atom_ID of the atom
             symbol, d1, d2, *_ = f.readline().split()
             mass = float(d2)
-            _ = int(d1)  # aid
+            _ = int(d1)  # atom_id
+            # the next line gives the position of the atom
             pos = [float(x) for x in f.readline().split()]
-
+            # the next line, if it exists, gives the velocity of the atom
             if lvl > 0:
                 vel = [float(x) for x in f.readline().split()]
             else:
                 vel = None
-
-            # Can ignore forces
+            # next line, if existent, gives the force on the atom. currently not used by MDMC
             # if lvl > 1:
             #     force = [float(x) for x in f.readline().split()]
             # else:
@@ -468,8 +465,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
     def update_parameters(self):
         """
         Updates the DL_POLY force field parameters from the MDMC universe
-            self.workdir
-
         """
 
         (self.bonds, self.angles, self.dihedrals,
