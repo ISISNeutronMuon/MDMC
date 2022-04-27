@@ -121,8 +121,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Get or set the simulation time step in ``ps``
 
-        Optional, but should be useful to implement
-
         Returns
         -------
         `float`
@@ -147,8 +145,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Get or set the number of simulation steps between saving the
         ``Trajectory``
 
-        Optional, but should be useful to implement.
-
         Returns
         -------
         `int`
@@ -172,8 +168,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Get or set the temperature of the simulation in ``K``
 
-        Optional, but should be useful to implement
-
         Returns
         -------
         `float`
@@ -193,8 +187,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Get or set the pressure of the simulation in ``atm``
-
-        Optional, but should be useful to implement
 
         Returns
         -------
@@ -217,8 +209,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Get or set the ensemble object which applies a ``thermostat`` and/or
         ``barostat`` to DL_POLY
 
-        Optional, not sure if it fits the paradigm of DL_POLY
-
         Returns
         -------
         DLPOLYEnsemble
@@ -238,8 +228,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
         Get or set the `str` which specifies the thermostat
 
-        Optional, but should be useful to implement
-
         Returns
         -------
         `str`
@@ -258,8 +246,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         """
         Get or set the `str` which specifies the barostat
-
-        Optional, but should be useful to implement
 
         Returns
         -------
