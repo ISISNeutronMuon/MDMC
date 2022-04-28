@@ -6,7 +6,7 @@ cli
 installation_tests
 tinker_converter
 plotting
-structural_units
+structures
 """
 
 from .installation_tests import run_installation_tests

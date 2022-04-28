@@ -10,7 +10,7 @@ import logging
 
 import numpy as np
 
-from MDMC.utilities.structural_units import is_atom
+from MDMC.utilities.structures import is_atom
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
@@ -500,7 +500,7 @@ class Coulombic(NonBondedInteraction):
 
         O = Atom('O', atom_type=1)
         universe = Universe(10.0)
-        universe.add_structural_unit('O')
+        universe.add_structure('O')
 
     The following initializations of Coulombic are equivalent:
 
@@ -862,7 +862,7 @@ class BondedInteraction(Interaction):
             one or more ``Atom`` objects
         **settings
             ``from_structure`` (`bool`)
-                If ``add_atoms`` has been called from a ``StructuralUnit``
+                If ``add_atoms`` has been called from a ``Structure``
 
         Raises
         ------
@@ -887,20 +887,20 @@ class BondedInteraction(Interaction):
 
     def _check_duplicates(self, structs):
         """
-        Checks for duplicates ``StructuralUnit``
+        Checks for duplicates ``Structure``
 
         Parameters
         ----------
         structs : list
-            A `list` of ``StructuralUnit``
+            A `list` of ``Structure``
         err_msg : str
             A `str` to provide as an error message if there is a duplicate
-            ``StructuralUnit``
+            ``Structure``
 
         Raises
         ------
         ValueError
-            If there is a duplicate ``StructuralUnit``
+            If there is a duplicate ``Structure``
         """
 
         err_msg = ('Each tuple in the list of atom tuples must be unique, and'
