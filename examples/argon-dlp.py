@@ -29,7 +29,6 @@ universe = Universe(dimensions=38.4441)
 Ar = Atom('Ar', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
 n_ar_atoms = int(density * np.product(universe.dimensions))
-print(n_ar_atoms)
 universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
 # Above an universe of non-interacting argon atoms was created. Below
@@ -47,12 +46,13 @@ simulation = Simulation(universe,
                         engine="dlpoly",
                         time_step=10.18893,
                         temperature=100.,
-                        traj_step=15)
+                        traj_step=15,
+                        numprocs=4)
 
 # Energy Minimization and equilibration
-simulation.minimize(n_steps=100)
-simulation.run(n_steps=100, equilibration=True)
-simulation.run(n_steps=10000, equilibration=False)
+simulation.minimize(n_steps=1000,output_log='minim.log')
+simulation.run(n_steps=1000, equilibration=True,output_log='equilibration.log')
+#simulation.run(n_steps=10000, equilibration=False)
 #print(simulation.trajectory)
 ## dataset
 exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
@@ -71,4 +71,4 @@ control = Control(simulation=simulation,
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=3)
+control.refine(n_steps=10)

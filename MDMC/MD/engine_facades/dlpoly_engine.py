@@ -10,7 +10,6 @@ from copy import copy
 import logging
 from ase import Atoms, Atom
 from ase.io import write
-from mpi4py import MPI
 
 from dlpoly import DLPoly
 from dlpoly.species import Species
@@ -289,7 +288,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
         self.dlpoly.control['minimisation_frequency'] = (min_freq, 'steps')
         self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
-                 **settings)
+                  **settings)
+        self.dlpoly.control['minimisation_criterion'] = 'off'
 
     def run(self, n_steps, equilibration=False, output_log: str = None, work_dir: str = None,
             **settings):
@@ -318,6 +318,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         traj_key: pos,pos-vel,pos-vel-force, level of details for trajectory
                   prints positions, positions and
                   velocities, positions, velocities and forces
+        numprocs: int, number of mpi processes to start to run dl_poly
         """
 
         if equilibration:
@@ -334,7 +335,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
         # pylint: disable=c-extension-no-member, too-many-lines
-        self.dlpoly.run(numProcs=MPI.COMM_WORLD.Get_size(), outputFile=output_log)
+        self.dlpoly.run(numProcs=1, outputFile=output_log)
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
