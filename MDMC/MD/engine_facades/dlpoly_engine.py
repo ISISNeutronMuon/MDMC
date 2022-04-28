@@ -80,6 +80,18 @@ class DLPOLYAttribute(ABC):
                      self.dlpoly,
                      'added to class' if dlpoly else 'created by class')
 
+    def read_settings(self, settings):
+        """
+        Read DLP parameters from a settings dict
+
+        Parameters
+        ----------
+        settings : dict
+            MDMC settings dictionary to read parameters from.
+        """
+        new_opt = DLPControl.from_dict(settings, strict=False)
+        self.dlpoly.control = self.dlpoly.control + new_opt
+
 
 @repr_decorator('dlpoly', 'dlpoly_universe', 'dlpoly_simulation')
 class DLPOLYEngine(DLPOLYAttribute, MDEngine):
@@ -288,7 +300,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
         self.dlpoly.control['minimisation_frequency'] = (min_freq, 'steps')
         self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
-                  **settings)
+                 **settings)
         self.dlpoly.control['minimisation_criterion'] = 'off'
 
     def run(self, n_steps, equilibration=False, output_log: str = None, work_dir: str = None,
@@ -323,14 +335,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         if equilibration:
             self.dlpoly.control['time_equilibration'] = (n_steps, 'steps')
-            self.dlpoly.control['traj_calculate'] = settings.get('traj_calculate','Off')
+            self.dlpoly.control['traj_calculate'] = settings.get('traj_calculate', 'Off')
         else:
             self.dlpoly.control['time_equilibration'] = \
-                (settings.get('time_equilibration',0), 'steps')
+                (settings.get('time_equilibration', 0), 'steps')
             self.dlpoly.control['traj_calculate'] = 'On'
-            self.dlpoly.control['traj_start'] = (settings.get('traj_start',0), 'steps')
+            self.dlpoly.control['traj_start'] = (settings.get('traj_start', 0), 'steps')
             self.dlpoly.control['traj_interval'] = (self.traj_step, 'steps')
-            self.dlpoly.control['traj_key'] = settings.get('traj_key','pos')
+            self.dlpoly.control['traj_key'] = settings.get('traj_key', 'pos')
 
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
@@ -395,7 +407,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
             _ = f.readline()  # title
             level_of_detail, _, n_atoms, frames, *_ = \
-                              [int(i) for i in f.readline().split()]  # imcon
+                [int(i) for i in f.readline().split()]  # imcon
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
             configs = []
@@ -404,8 +416,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 end = frames + 1
             for iframe in range(frames):
                 time = float(f.readline().split()[-1])
-                read_cell(f)  # Just skip, unused for the moment, will need to be
-                              # used for npt simulations
+                # Just skip, unused for the moment, will need to be
+                # used for npt simulations
+                read_cell(f)
                 atoms = []
                 for _ in range(n_atoms):
                     atom = create_atom(f, level_of_detail)
@@ -524,26 +537,26 @@ class DLPOLYUniverse(DLPOLYAttribute):
         """
 
         self.dlpoly.control = DLPControl()
-        self.dlpoly.control['title'] = settings.get('title','my simulation title')
-        self.dlpoly.control['time_job'] = (settings.get('time_job',100000.0), 's')
-        self.dlpoly.control['time_close'] = (settings.get('time_close',10.0), 's')
+        self.dlpoly.control['title'] = settings.get('title', 'my simulation title')
+        self.dlpoly.control['time_job'] = (settings.get('time_job', 100000.0), 's')
+        self.dlpoly.control['time_close'] = (settings.get('time_close', 10.0), 's')
         self.dlpoly.control['data_dump_frequency'] = \
-            (settings.get('data_dump_frequency',5000), 'steps')
+            (settings.get('data_dump_frequency', 5000), 'steps')
         self.dlpoly.control['stats_frequency'] = \
-            (settings.get('stats_frequency',100), 'steps')
+            (settings.get('stats_frequency', 100), 'steps')
         self.dlpoly.control['print_frequency'] = \
-            (settings.get('print_frequency',100), 'steps')
-        self.dlpoly.control['stack_size'] = (settings.get('stack_size',100), 'steps')
-        self.dlpoly.control['padding'] = (settings.get('padding',0.5), 'Ang')
-        self.dlpoly.control['vdw_method'] = settings.get('vdw_method','direct')
+            (settings.get('print_frequency', 100), 'steps')
+        self.dlpoly.control['stack_size'] = (settings.get('stack_size', 100), 'steps')
+        self.dlpoly.control['padding'] = (settings.get('padding', 0.5), 'Ang')
+        self.dlpoly.control['vdw_method'] = settings.get('vdw_method', 'direct')
 
         if self.universe.electrostatic_solver:
-            self.dlpoly.control['coul_method'] = settings.get('coul_method','spme')
+            self.dlpoly.control['coul_method'] = settings.get('coul_method', 'spme')
             self.dlpoly.control['ewald_precision'] = self.universe.electrostatic_solver.accuracy
         else:
-            self.dlpoly.control['coul_method'] = settings.get('coul_method','off')
+            self.dlpoly.control['coul_method'] = settings.get('coul_method', 'off')
 
-    def _build_config(self, universe,**settings):
+    def _build_config(self, universe, **settings):
 
         """
         Adds atoms to DL_POLY
@@ -561,7 +574,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         atoms = Atoms(cell=universe.dimensions, pbc=True)
         for atom in universe.atoms:
             atoms.append(Atom(atom.name, atom.position))
-        config_filename = settings.get('config','test.config')
+        config_filename = settings.get('config', 'test.config')
         write(config_filename, atoms, format='dlp4')
         self.dlpoly.load_config(config_filename)
         LOGGER.info('%s configuration written in %s',
@@ -591,12 +604,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
                     self.__class__)
 
         self.dlpoly.field = self._create_field(universe)
-        self.dlpoly.field.write(settings.get('field','FIELD'))
+        self.dlpoly.field.write(settings.get('field', 'FIELD'))
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
-    def _create_field(self, universe,**settings) -> Field:
+    def _create_field(self, universe, **settings) -> Field:
         """
         Creates a dlpoly Field object
 
@@ -628,8 +641,8 @@ class DLPOLYUniverse(DLPOLYAttribute):
                                       ' implemented in the DL_POLY facade')
 
         out = Field()
-        out.header = settings.get('header','MDMC Generated Field File')
-        out.units = settings.get('units','kJ')
+        out.header = settings.get('header', 'MDMC Generated Field File')
+        out.units = settings.get('units', 'kJ')
 
         spec = universe.element_lookup
         mols = {}
@@ -961,7 +974,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         super().__init__(dlpoly)
         self.temperature = temperature
         self.pressure = pressure
-        self.dlpoly.control['ensemble'] = settings.get('ensemble','nve')
+        self.dlpoly.control['ensemble'] = settings.get('ensemble', 'nve')
 
         self.time_step = settings.get('time_step')
         self.t_damp = settings.get('t_damp')
