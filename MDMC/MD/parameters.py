@@ -286,7 +286,7 @@ class Parameters(dict):
 
     Parameters
     ----------
-    initial_list: ``Parameter`` or `list` of ``Parameter``s, optional, default None
+    init_parameters: ``Parameter`` or `list` of ``Parameter``s, optional, default None
         The initial ``Parameter`` objects that the ``Parameters`` object contains.
     """
 
