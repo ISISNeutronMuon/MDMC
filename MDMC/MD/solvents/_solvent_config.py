@@ -10,7 +10,7 @@ import numpy as np
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
 from MDMC.common import units
-from MDMC.MD import structural_units, interactions
+from MDMC.MD import structures, interactions
 
 
 @repr_decorator('description', 'box_dimensions', 'atom_types', 'molecule_name',
@@ -301,7 +301,7 @@ class SolventConfig(ABC):
         atoms = {}
         for name, position in mol_dict.items():
             elem = name.replace('1', '').replace('2', '')
-            atoms[name] = structural_units.Atom(elem,
+            atoms[name] = structures.Atom(elem,
                                                 position=position,
                                                 atom_type=self.atom_types[elem],
                                                 universe=universe)
@@ -314,7 +314,7 @@ class SolventConfig(ABC):
                               atom_name_tuples)
             b_i[0].atoms += atom_tuples
 
-        return structural_units.Molecule(atoms=list(atoms.values()))
+        return structures.Molecule(atoms=list(atoms.values()))
 
     def molecules_from_coords(self, coords, universe=None):
         """
@@ -324,7 +324,7 @@ class SolventConfig(ABC):
         ----------
         coords : dict
             A dict of {ID : atom_coordinates} where ID is an int specifying the
-            ID of the Molecule (unrelated to StructuralUnit.ID, purely for this
+            ID of the Molecule (unrelated to Structure.ID, purely for this
             dict) and atom_coordinates is a dict of {atom_name : position}
             pairs, where atom_name is a str and position is a 3 element array
         universe : Universe, optional

@@ -14,4 +14,4 @@ MD
   ./md/parameters
   ./md/simulation
   ./md/solvents
-  ./md/structural_units
+  ./md/structures

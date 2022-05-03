@@ -6,7 +6,7 @@ from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import Coulomb, LennardJones
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, Dispersion, Coulombic
 
 NAME = 'length'

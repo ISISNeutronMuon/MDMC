@@ -1,5 +1,5 @@
 """
-Tests for creating StructuralUnit, BoundingBox, and Coulombic objects
+Tests for creating Structure, BoundingBox, and Coulombic objects
 and setting their attributes.
 """
 
@@ -12,7 +12,7 @@ from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, BoundingBox, Molecule,
+from MDMC.MD.structures import (Atom, BoundingBox, Molecule,
                                       get_reduced_chemical_formula)
 from MDMC.MD.interactions import Coulombic
 
@@ -60,7 +60,7 @@ def atom_types_universe(atoms, universe):
     """
 
     for atom in atoms:
-        universe.add_structural_unit(atom)
+        universe.add_structure(atom)
     return ([atom.atom_type for atom in atoms], universe)
 
 @pytest.fixture
@@ -313,7 +313,7 @@ def test_init_coulombic_atoms_added_to_universe(atoms, universe):
     """
 
     for atom in atoms:
-        universe.add_structural_unit(atom)
+        universe.add_structure(atom)
     coul = Coulombic(universe, atoms=atoms, charge=TEST_CHARGE_1)
     assert isinstance(coul.universe, Universe)
 
