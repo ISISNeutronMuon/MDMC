@@ -461,6 +461,8 @@ class Universe(AtomContainer):
             The ``Structure`` objects in the ``Universe``
         """
 
+
+
         def add_all_parents(unit):
 
             parent = unit.parent
@@ -469,10 +471,10 @@ class Universe(AtomContainer):
                 parents += add_all_parents(parent)
             return parents
 
-        structures = {add_all_parents(atom) for atom in self.atoms}
-        structures.add(list(self.atoms))
+        structures = [add_all_parents(atom) for atom in self.atoms]
+        structures += list(self.atoms)
 
-        return list(structures)
+        return list(set(structures))
 
     @property
     def top_level_structure_list(self) -> List[Structure]:
