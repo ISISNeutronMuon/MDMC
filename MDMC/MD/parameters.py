@@ -12,7 +12,7 @@ import logging
 import re
 from collections.abc import Iterable
 from copy import copy
-from itertools import chain
+from itertools import chain, count
 import operator
 from typing import Union, Any
 import warnings
@@ -47,9 +47,12 @@ class Parameter:
             the object passed as ``value``.
     """
 
+    # each Parameter has a unique ID, so they can be distinguished
+    _ID_generator = count(start=1, step=1)
+
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
-        self.ID = self._get_ID()
+        self.ID = self._generate_ID()
         self.name = name + f" (#{self.ID})"
         self.type = name
         try:
@@ -233,13 +236,10 @@ class Parameter:
         self._tie = ast.parse(
             'self._tie_parameter().value' + expr, mode='eval')
 
-    HIGHEST_PARAMETER_ID = 0
-
     @classmethod
-    def _get_ID(cls):
-        """Gets a unique ID for the Parameter that has just been created."""
-        cls.HIGHEST_PARAMETER_ID += 1
-        return cls.HIGHEST_PARAMETER_ID
+    def _generate_ID(cls):
+        """Generates a unique ID for the Parameter that has just been created."""
+        return next(cls._ID_generator)
 
     def __str__(self):
 
@@ -412,7 +412,7 @@ class Parameters(dict):
             The ``Parameter`` objects with ``name``
         """
 
-        return self.filter(lambda p: p.name == name)
+        return self.filter(lambda p: name in p.name)
 
     def filter_value(self, comparison, value):
         """
