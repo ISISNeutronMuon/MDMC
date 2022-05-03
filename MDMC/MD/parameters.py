@@ -10,7 +10,6 @@ a sequence of Parameter objects.
 import ast
 import logging
 import re
-from collections import UserDict
 from collections.abc import Iterable
 from copy import copy
 from itertools import chain
@@ -286,7 +285,7 @@ class Parameter:
         return self.name.split(" (")[0] == other.name.split(" (")[0] and self.value == other.value
 
 
-class Parameters(UserDict):
+class Parameters(dict):
     """
     A `dict-like` object where every element is a ``Parameter`` indexed by name,
     which contains a number of helper methods for filtering.
@@ -318,7 +317,7 @@ class Parameters(UserDict):
 
     def __getitem__(self, key):
         try:
-            return self.data[key]
+            return super().__getitem__(key)
         except KeyError as error:
             try:
                 # see if the key passed was a parameter name with no ID, and catch the error
@@ -330,7 +329,7 @@ class Parameters(UserDict):
                         warnings.warn("Calling a parameter name with no ID fetches the first "
                                       "parameter with that name; this may cause buggy or "
                                       "inconsistent behaviour!")
-                    return self.data[matching_parameters[0]]
+                    return super().__getitem__(matching_parameters[0])
                 else:
                     raise KeyError
             except KeyError:
