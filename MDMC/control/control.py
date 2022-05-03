@@ -373,7 +373,8 @@ class Control:
         try:
             # Reset the minimizer parameters to those from the final FoM:
             # to account for a current side effect of step()
-            self.minimizer.reset_parameters()
+            #self.minimizer.reset_parameters()
+            self.minimizer.present_results()
             self._update_engine_parameters()
         except TypeError:
             pass

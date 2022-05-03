@@ -384,3 +384,29 @@ def test_GPR_create_bounds():
     lower_bound, upper_bound = gpr.create_bounds(constrained_parameter[0])
     assert np.allclose([lower_bound, upper_bound], [constrained_parameter[0].constraints[0], constrained_parameter[0].constraints[1]], rtol=1e-5)
 
+@pytest.mark.parametrize('FoMs,coordinates,expected',
+    [([2, 3, 0, 1, 4], 
+    [[0,0], [0,1], [1,0], [1,1], [2,0]], 
+    [[1,0], 0]),
+    ([2], 
+    [[0,0,1]], 
+    [[0,0,1], 2]),
+    ([0.01, 0.020, 0.01, 6], 
+    [[0.1,0.1,0.1],[0.1,0.1,1],[0.1,1,1],[1,1,1]], 
+    [[0.1,0.1,0.1], 0.01])])
+def test_global_minimum_position(FoMs, coordinates, expected):
+    constrained_parameter = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0))])
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameter, n_points=3)
+    min_coord, min_FoM = gpr.global_minimum_position(FoMs, coordinates)
+    assert np.allclose([min_coord, min_FoM] == expected, rtol=1e-5)
+
+@pytest.mark.parametrize('points,FoMs,expected',
+[([[1],[2],[3]], [1,2,3], [1,1])])
+def test_present_results(points,FoMs,expected):
+    with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_fit", autospec=True, return_value=None):
+        with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_predict", autospec=True, return_value=(points, FoMs)):
+            constrained_parameter = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0))])
+            gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameter, n_points=3)
+            coord, FoM = gpr.present_result()
+            assert [coord, FoM] == expected
+    

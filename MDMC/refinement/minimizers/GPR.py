@@ -6,7 +6,7 @@ import pandas as pd
 
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
 from sklearn.gaussian_process import kernels
-from scipy.ndimage import minimum_position
+from scipy.ndimage import minimum_position, minimum
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
@@ -48,7 +48,7 @@ class GPR(Minimizer):
         n_points = settings.get('n_points', 4)
 
         self.parameter_names, self.parameter_point_array = self.create_parameter_point_array(parameters, n_points)
-        self.change_parameters(parameters)
+        #self.change_parameters()
 
 
     def create_parameter_point_array(self, parameters, points=2):
@@ -346,29 +346,31 @@ class GPR(Minimizer):
         -------
         minimum_parameters : array
             The parameter coordinates where the minimum figure of merit is predicted to be
+        min_FoM : float
+            The predicted minimum figure of merit value
         """
 
-        min_coordinates = minimum_position(predicted_FOMs)
+        min_coordinates = minimum_position(predicted_FOMs)[0]
+        min_FoM = minimum(predicted_FOMs)
         minimum_parameters = measured_parameter_coordinates[min_coordinates]
 
-        return minimum_parameters
+        return minimum_parameters, min_FoM
 
     def present_result(self):
         """
-        Sets the parameters those predicted to return the minimum FoM, returns the parameter names, 
+        Sets the parameters those predicted to return the minimum FoM, returns 
         the coordinates of the minima and the predicted FoM.
 
         Returns
         -------
-        self.parameter_names : array(srt)
-        
         minima_coordinate : array(float)
-
-        FoM : float
+            The parameter coordinates where the minimum figure of merit is predicted to be
+        min_FoM : float
+            The predicted minimum figure of merit value
         """
         fit = self.GPR_fit()
         points, FoMs = self.GPR_predict(fit)
-        minima_coordinate = self.global_minimum_position(FoMs, points)
+        minima_coordinate, min_FoM = self.global_minimum_position(FoMs, points)
         self.set_parameter_values(self.parameter_names, minima_coordinate)
 
-        return self.parameter_names, minima_coordinate, FoM
+        return minima_coordinate, min_FoM

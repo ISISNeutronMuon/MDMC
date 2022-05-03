@@ -124,3 +124,19 @@ class MMC(Minimizer):
 
         for i, parameter in enumerate(self.parameters):
             parameter.value = self.parameters_old_values[i]
+    
+    def present_result(self):
+        """
+        Sets the parameters those predicted to return the last FoM, returns 
+        coordinates of the minima and the predicted FoM.
+
+        Returns
+        -------
+        minima_coordinate : array(float)
+            The parameter coordinates where the last figure of merit was measured
+        self.FoM : float
+            The last figure of merit value
+        """
+        self.reset_parameters()
+        minima_coordinate = np.array([parameter.value for parameter in self.parameters])
+        return minima_coordinate, self.FoM
