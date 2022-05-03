@@ -469,12 +469,12 @@ class Universe(AtomContainer):
             parents = [parent]
             if parent is not parent.top_level_structure:
                 parents += add_all_parents(parent)
-            return parents
+            return tuple(parents)
 
-        structures = [add_all_parents(atom) for atom in self.atoms]
-        structures += list(self.atoms)
+        structures = {add_all_parents(atom) for atom in self.atoms}
+        structures.add(tuple(self.atoms))
 
-        return list(set(structures))
+        return list(structures)
 
     @property
     def top_level_structure_list(self) -> List[Structure]:
