@@ -50,7 +50,7 @@ class Structure(ABC):
 
         Attributes
     ----------
- 	ID : int
+        ID : int
         A unique identifier for each ``Structure``.
     universe : Universe
         The ``Universe`` to which the ``Structure`` belongs.
@@ -131,10 +131,8 @@ class Structure(ABC):
             All atoms in the structure
         """
 
-        atoms = []
-        for structure in self._structure_list:
-            atoms.extend(structure.atoms)
-        return atoms
+        return [atom for structure in self._structure_list
+                for atom in structure.atoms]
 
     @property
     @abstractmethod
@@ -263,7 +261,7 @@ class Structure(ABC):
         """
 
         if issubclass(type(self.parent), Structure) \
-        and self.parent is not self:
+           and self.parent is not self:
             return self.parent.top_level_structure
         return self
 
@@ -501,11 +499,8 @@ class CompositeStructure(Structure, AtomContainer):
         """
 
         name = self.name + ' ' if self.name else ''
-        return ('{0}{1}  formula: {2}  position: {3}'.format(
-            name,
-            self.__class__.__name__,
-            self.formula,
-            self.position))
+        return (f"{name}{self.__class__.__name__}  "
+                f"formula: {self.formula}  position: {self.position}")
 
     @property
     @abstractmethod
@@ -588,9 +583,9 @@ class CompositeStructure(Structure, AtomContainer):
         self._structure_list = value
 
     def copy(self, position, rotation=None):
-    # pylint:disable=arguments-differ
-    # CompositeStructure's can be rotated, which is meaningless for
-    # Structures in general
+        # pylint:disable=arguments-differ
+        # CompositeStructure's can be rotated, which is meaningless for
+        # Structures in general
 
         """
         Copies the ``CompositeStructure`` and all attributes, except ``ID``
@@ -672,10 +667,8 @@ class CompositeStructure(Structure, AtomContainer):
         # pylint: disable=attribute-defined-outside-init
         # _CoM_frame_positions breaks when defined in init
 
-        self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
-        for atom in self.atoms:
-            self._CoM_frame_positions[atom] = atom.position - CoM
+        self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
     def rotate(self, x=0., y=0., z=0.):
 
@@ -757,10 +750,8 @@ class Atom(Structure):
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
         self.element = element
-        try:
-            self.mass = settings['mass']
-        except KeyError:
-            self.mass = atom_properties.MASS[self.element]
+
+        self.mass = settings.get('mass', atom_properties.MASS[self.element])
         self._atom_type = settings.get('atom_type', None)
         self.charge = charge
 

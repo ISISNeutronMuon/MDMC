@@ -469,12 +469,10 @@ class Universe(AtomContainer):
                 parents += add_all_parents(parent)
             return parents
 
-        structures = []
-        for atom in self.atoms:
-            structures += add_all_parents(atom)
+        structures = {add_all_parents(atom) for atom in self.atoms}
+        structures.add(list(self.atoms))
 
-        structures += list(self.atoms)
-        return list(set(structures))
+        return list(structures)
 
     @property
     def top_level_structure_list(self) -> List[Structure]:
@@ -491,12 +489,12 @@ class Universe(AtomContainer):
             The top level ``Structure`` objects in the ``Universe``
         """
 
-        structural_units = [atom.top_level_structure for atom in self.atoms]
+        # Remove duplicate entries from multiple atoms belonging to the same molecule
+        structural_units = {atom.top_level_structure for atom in self.atoms}
 
-        # Remove duplicate entries from multiple atoms belonging to the same molecule,
         # and sort by ID for consistency
-        top_level_structures = list(set(structural_units))
-        top_level_structures.sort(key=lambda x: x.ID)
+        # Sorted converts to list
+        top_level_structures = sorted(structural_units, key=lambda x: x.ID)
         return top_level_structures
 
     @property
@@ -684,7 +682,7 @@ class Universe(AtomContainer):
 
     @mod_docstring(_FF_DOCSTRING)
     def add_structure(self, structure, force_field=None,
-                            center=False):
+                      center=False):
         """
         Adds a single ``Structure`` to the ``Universe``, with optional
         ``ForceField`` applying only to that ``Structure``

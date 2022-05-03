@@ -21,8 +21,8 @@ import numpy as np
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structural_units import (Atom as MAtom,
-                                      Molecule as MMolecule)
+from MDMC.MD.structures import (Atom as MAtom,
+                                Molecule as MMolecule)
 from MDMC.trajectory_analysis.trajectory import (Trajectory,
                                                  TemporalConfiguration)
 from MDMC.utilities.partitioning import partition_interactions
@@ -348,10 +348,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.workdir = work_dir
         # pylint: disable=c-extension-no-member, too-many-lines
         self.dlpoly.run(numProcs=1, outputFile=output_log)
-        print("update coordinates from ",self.dlpoly.control['io_file_revcon'])
+        print("update coordinates from ", self.dlpoly.control['io_file_revcon'])
         self.dlpoly.dest_config = 'minim.config'
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
-
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
