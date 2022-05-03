@@ -1,6 +1,6 @@
 """Tests units assigned to properties
 
-Tests properties belonging to the following classes: StructuralUnit, Atom,
+Tests properties belonging to the following classes: Structure, Atom,
 Molecule, BoundingBox, Parameter, LAMPSQW, MantidSQw, netCDF, xml_SQw, SQw"""
 
 import numpy as np
@@ -8,7 +8,7 @@ import pytest
 
 from MDMC.common import units
 from MDMC.MD.interaction_functions import Parameter
-from MDMC.MD.structural_units import Atom, Molecule, BoundingBox
+from MDMC.MD.structures import Atom, Molecule, BoundingBox
 from MDMC.MD.interactions import Bond, Coulombic
 from MDMC.MD.simulation import Universe
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
@@ -58,7 +58,7 @@ def test_Atom_units(atom, universe):
     except AssertionError:
         raise AssertionError(ERROR_MESSAGE.format('Atom'))
 
-    universe.add_structural_unit(atom)
+    universe.add_structure(atom)
     universe.add_force_field('SPCE')
     try:
         check_property(atom.charge, SPCE_CHARGE, units.CHARGE, units.UnitFloat)

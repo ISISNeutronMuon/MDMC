@@ -3,17 +3,17 @@
 Simulations
 ===========
 An MDMC simulation requires a :class:`~MDMC.MD.simulation.Universe`, and one or
-more :class:`~MDMC.MD.structural_units.Atom` objects, which can be combined into
-one or more :class:`~MDMC.MD.structural_units.Molecule` objects.  These atoms
+more :class:`~MDMC.MD.structures.Atom` objects, which can be combined into
+one or more :class:`~MDMC.MD.structures.Molecule` objects.  These atoms
 and molecules must be added to a :class:`~MDMC.MD.simulation.Universe`.
 
-Atoms can have bonded (:class:`~MDMC.MD.structural_units.Bond`,
-:class:`~MDMC.MD.structural_units.BondAngle`,
-:class:`~MDMC.MD.structural_units.Dihedral`) interactions or non-bonded
-(:class:`~MDMC.MD.structural_units.Dispersive`,
-:class:`~MDMC.MD.structural_units.Coulombic`) interactions applied to them.
+Atoms can have bonded (:class:`~MDMC.MD.structures.Bond`,
+:class:`~MDMC.MD.structures.BondAngle`,
+:class:`~MDMC.MD.structures.Dihedral`) interactions or non-bonded
+(:class:`~MDMC.MD.structures.Dispersive`,
+:class:`~MDMC.MD.structures.Coulombic`) interactions applied to them.
 For a simulation to run, a functional form must be specified for each
-interaction: for instance a :class:`~MDMC.MD.structural_units.Dispersive`
+interaction: for instance a :class:`~MDMC.MD.structures.Dispersive`
 interaction could have a :class:`~MDMC.MD.interaction_functions.LennardJones` or
 a :class:`~MDMC.MD.interaction_functions.Buckingham` interaction function
 applied to it.
@@ -40,7 +40,7 @@ to:
    :py:meth:`~MDMC.MD.simulation.Universe.solvate` a Universe
 
  - :py:meth:`~MDMC.readers.configurations.read` in configuration and topology
-   (except :class:`~MDMC.MD.structural_units.Dispersive` interactions) from CIF
+   (except :class:`~MDMC.MD.structures.Dispersive` interactions) from CIF
    files (see `Reading atoms from configuration files <../tutorials/read-configurations.ipynb>`_
    tutorial)
 

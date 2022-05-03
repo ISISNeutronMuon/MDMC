@@ -4,7 +4,7 @@
 import pytest
 
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.structures import Atom, Molecule
 
 
 ELEMENTS = ['H', 'He', 'O', 'C', 'Dy']
@@ -35,7 +35,7 @@ def universe(atoms):
 
     uni = Universe(10.)
     for atom in atoms:
-        uni.add_structural_unit(atom)
+        uni.add_structure(atom)
     return uni
 
 @pytest.fixture
