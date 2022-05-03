@@ -299,7 +299,7 @@ class Parameters(dict):
 
     Parameters
     ----------
-    initial_list: ``Parameter`` or `list` of ``Parameter``s, optional, default None
+    init_parameters: ``Parameter`` or `list` of ``Parameter``s, optional, default None
         The initial ``Parameter`` objects that the ``Parameters`` object contains.
     """
 
@@ -307,9 +307,7 @@ class Parameters(dict):
         super().__init__()
         if init_parameters is not None:
             init_parameters = self._check_input(init_parameters)
-            # turn parameters into a dict, keyed by name, then initialise the dict
-            for parameter in init_parameters:
-                self.append(parameter)
+            self.append(init_parameters)
 
     def __setitem__(self, key, value):
         # disable this method to ensure parameter keys are always the parameter name
