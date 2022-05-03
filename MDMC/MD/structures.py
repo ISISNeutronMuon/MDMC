@@ -1,7 +1,7 @@
 """Module in which all structural units are defined.
 
 ``Atom`` is the fundamental structural unit in terms of which all others must be
-defined.  All shared behaviour is included within the ``StructuralUnit`` base
+defined.  All shared behaviour is included within the ``Structure`` base
 class."""
 
 from abc import ABC, abstractmethod
@@ -31,7 +31,7 @@ LOGGER = logging.getLogger(__name__)
 
 @repr_decorator('name', 'ID', 'position', 'velocity', 'parent', 'bounding_box',
                 'atoms')
-class StructuralUnit(ABC):
+class Structure(ABC):
     # pylint: disable=no-member
     # to avoid errors with MD and _structure_list
 
@@ -50,14 +50,14 @@ class StructuralUnit(ABC):
 
         Attributes
     ----------
-        ID : int
-        A unique identifier for each ``StructuralUnit``.
+ 	ID : int
+        A unique identifier for each ``Structure``.
     universe : Universe
-        The ``Universe`` to which the ``StructuralUnit`` belongs.
+        The ``Universe`` to which the ``Structure`` belongs.
     name : str
         The name of the structure.
-    parent : StructuralUnit
-        ``StructuralUnit`` to which this unit belongs, or ``self``
+    parent : Structure
+        ``Structure`` to which this unit belongs, or ``self``
     """
 
     # ID exists to facilitate a 1 to 1 association with structural units within
@@ -83,7 +83,7 @@ class StructuralUnit(ABC):
     def position(self):
 
         """
-        Get or set the position of the center of mass of the ``StructuralUnit``
+        Get or set the position of the center of mass of the ``Structure``
         in ``Ang``
 
         Returns
@@ -103,7 +103,7 @@ class StructuralUnit(ABC):
     def velocity(self):
 
         """
-        Get or set the velocity of the ``StructuralUnit`` in ``Ang/fs``
+        Get or set the velocity of the ``Structure`` in ``Ang/fs``
 
         Returns
         -------
@@ -141,12 +141,12 @@ class StructuralUnit(ABC):
     def universe(self):
 
         """
-        Get the ``Universe`` to which the ``StructuralUnit`` belongs
+        Get the ``Universe`` to which the ``Structure`` belongs
 
         Returns
         -------
         Universe
-            The ``Universe`` to which the ``StructuralUnit`` belongs or `None`
+            The ``Universe`` to which the ``Structure`` belongs or `None`
         """
 
         raise NotImplementedError
@@ -168,12 +168,12 @@ class StructuralUnit(ABC):
     def interactions(self):
 
         """
-        Get a list of the interactions acting on the ``StructuralUnit``
+        Get a list of the interactions acting on the ``Structure``
 
         Returns
         -------
         list
-            Interactions acting on the ``StructuralUnit``
+            Interactions acting on the ``Structure``
         """
 
         return self.bonded_interactions + self.nonbonded_interactions
@@ -182,12 +182,12 @@ class StructuralUnit(ABC):
     def bonded_interactions(self):
 
         """
-        Get a list of the bonded interactions acting on the ``StructuralUnit``
+        Get a list of the bonded interactions acting on the ``Structure``
 
         Returns
         -------
         list
-            ``BondedInteractions`` acting on the ``StructuralUnit``
+            ``BondedInteractions`` acting on the ``Structure``
         """
 
         return [pair[0] for pair in self.bonded_interaction_pairs]
@@ -198,12 +198,12 @@ class StructuralUnit(ABC):
 
         """
         Get a list of the nonbonded interactions acting on the
-        ``StructuralUnit``
+        ``Structure``
 
         Returns
         -------
         list
-            ``NonBondedInteractions`` acting on the ``StructuralUnit``
+            ``NonBondedInteractions`` acting on the ``Structure``
         """
 
         raise NotImplementedError
@@ -213,17 +213,17 @@ class StructuralUnit(ABC):
     def bonded_interaction_pairs(self):
 
         """
-        Get bonded interactions acting on the ``StructuralUnit`` and the other
+        Get bonded interactions acting on the ``Structure`` and the other
         atoms to which the atom is bonded
 
 
         Returns
         -------
         list
-            (``interaction``, ``atoms``) pairs acting on the ``StructuralUnit``,
+            (``interaction``, ``atoms``) pairs acting on the ``Structure``,
             where ``atoms`` is a `tuple` of all ``Atom`` objects for that
             specific bonded ``interaction``. At least one of these ``Atom``
-            objects belongs to the ``StructuralUnit``
+            objects belongs to the ``Structure``
 
         Example
         -------
@@ -239,7 +239,7 @@ class StructuralUnit(ABC):
     def structure_type(self):
 
         """
-        Get the class of the ``StructuralUnit``.
+        Get the class of the ``Structure``.
 
         Returns
         -------
@@ -253,17 +253,17 @@ class StructuralUnit(ABC):
     def top_level_structure(self):
 
         """
-        Get the top level structure (i.e. ``StructuralUnit`` which has no
-        ``parent``) of the ``StructuralUnit``
+        Get the top level structure (i.e. ``Structure`` which has no
+        ``parent``) of the ``Structure``
 
         Returns
         -------
-        StructuralUnit
-            Highest level ``StructuralUnit`` of which it is a member
+        Structure
+            Highest level ``Structure`` of which it is a member
         """
 
-        if issubclass(type(self.parent), StructuralUnit) \
-           and self.parent is not self:
+        if issubclass(type(self.parent), Structure) \
+        and self.parent is not self:
             return self.parent.top_level_structure
         return self
 
@@ -276,24 +276,24 @@ class StructuralUnit(ABC):
         ----------
         position : list, tuple, numpy.ndarray
             3 element `list`, `tuple` or ``array`` of `float` specifying the
-            ``position`` of the new ``StructuralUnit``
+            ``position`` of the new ``Structure``
 
         Returns
         -------
-        StructuralUnit
-            A ``StructuralUnit`` of the same type with all non-unique attributes
+        Structure
+            A ``Structure`` of the same type with all non-unique attributes
             copied and a new ``position``
         """
 
-        structural_unit = deepcopy(self)
-        structural_unit.position = position
-        return structural_unit
+        structures = deepcopy(self)
+        structures.position = position
+        return structures
 
     def _generate_ID(self):
 
         """
         Uses class attribute to generate a unique ``ID`` for each
-        ``StructuralUnit``
+        ``Structure``
 
         Returns
         -------
@@ -316,7 +316,7 @@ class StructuralUnit(ABC):
         Raises
         ------
         AttributeError
-            If ``StructuralUnit`` has no ``parent``
+            If ``Structure`` has no ``parent``
         """
 
         if self.top_level_structure is self:
@@ -326,7 +326,7 @@ class StructuralUnit(ABC):
     def _added_to_structure(self):
 
         """
-        Method is called if it becomes subunit of another ``StructuralUnit``
+        Method is called if it becomes subunit of another ``Structure``
         """
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
@@ -335,20 +335,20 @@ class StructuralUnit(ABC):
 
         """
         Checks if the specified ``position`` is within the bounds of the
-        ``StructuralUnit.universe``, if it has one
+        ``Structure.universe``, if it has one
 
         Parameters
         ----------
         position : list, tuple, numpy.ndarray
             3 element `list`, `tuple` or ``array`` with units of ``Ang`` or
-            `None`. If `None` then the ``position`` of the ``StructuralUnit`` is
+            `None`. If `None` then the ``position`` of the ``Structure`` is
             used.
 
         Returns
         -------
         bool
             `True` if ``position`` is within ``Universe`` or there is no
-            associated ``Universe``. `False` if ``StructuralUnit`` has an
+            associated ``Universe``. `False` if ``Structure`` has an
             associated ``Universe`` but the ``position`` is not within its
             bounds.
 
@@ -412,7 +412,7 @@ class StructuralUnit(ABC):
 
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
                 'atoms')
-class CompositeStructuralUnit(StructuralUnit, AtomContainer):
+class CompositeStructure(Structure, AtomContainer):
 
     """
     Base class for structural units comprised of more than one ``Atom``
@@ -426,10 +426,10 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def __deepcopy__(self, memo):
 
         """
-        Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
+        Copies the ``CompositeStructure`` and all attributes, except ``ID``
         which is generated
 
-        This will not currently work if the ``CompositeStructuralUnit`` has any
+        This will not currently work if the ``CompositeStructure`` has any
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
@@ -497,7 +497,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         -------
         str
             The formula and center of mass position of the
-            ``CompositeStructuralUnit``
+            ``CompositeStructure``
         """
 
         name = self.name + ' ' if self.name else ''
@@ -523,7 +523,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def formula(self):
 
         """
-        Get the chemical formula of the ``CompositeStructuralUnit``
+        Get the chemical formula of the ``CompositeStructure``
 
         Returns
         -------
@@ -538,13 +538,13 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def universe(self):
 
         """
-        Get or set the ``Universe`` to which the ``CompositeStructuralUnit``
+        Get or set the ``Universe`` to which the ``CompositeStructure``
         belongs
 
         Returns
         -------
         Universe
-            The Universe to which the ``CompositeStructuralUnit`` belongs or
+            The Universe to which the ``CompositeStructure`` belongs or
             `None`
         """
 
@@ -570,14 +570,14 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def structure_list(self):
 
         """
-        Get or set the ``StructuralUnit`` objects that are subunits of this
-        ``CompositeStructuralUnit``
+        Get or set the ``Structure`` objects that are subunits of this
+        ``CompositeStructure``
 
         Returns
         -------
         list
-            `list` of ``StructuralUnit`` that are subunits of this
-            ``CompositeStructuralUnit``
+            `list` of ``Structure`` that are subunits of this
+            ``CompositeStructure``
         """
 
         return self._structure_list
@@ -588,24 +588,24 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         self._structure_list = value
 
     def copy(self, position, rotation=None):
-        # pylint:disable=arguments-differ
-        # CompositeStructuralUnit's can be rotated, which is meaningless for
-        # StructuralUnits in general
+    # pylint:disable=arguments-differ
+    # CompositeStructure's can be rotated, which is meaningless for
+    # Structures in general
 
         """
-        Copies the ``CompositeStructuralUnit`` and all attributes, except ``ID``
+        Copies the ``CompositeStructure`` and all attributes, except ``ID``
         which is generated
 
-        Copying a ``CompositeStructuralUnit`` (e.g. a ``Molecule``) will copy
+        Copying a ``CompositeStructure`` (e.g. a ``Molecule``) will copy
         all of the ``Atom`` objects within it. All of these atoms will have
         identical bonded and nonbonded interactions to the
-        ``CompositeStructuralUnit`` from which they were copied i.e. the
-        ``CompositeStructuralUnit`` will be exacltly duplicated. The only
-        attributes of the ``CompositeStructuralUnit`` which will differ are the
+        ``CompositeStructure`` from which they were copied i.e. the
+        ``CompositeStructure`` will be exacltly duplicated. The only
+        attributes of the ``CompositeStructure`` which will differ are the
         ``position`` (which is passed as a Parameter to ``copy``), and the
         ``ID``, which is generated automatically.
 
-        This will not currently work if the ``CompositeStructuralUnit`` has any
+        This will not currently work if the ``CompositeStructure`` has any
         bonded interactions with atoms external to it (e.g. it may cause issues
         for copying molecules with groups)
 
@@ -616,18 +616,18 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         ----------
         position : list, tuple, numpy.ndarray
             3 element `list`, `tuple` or ``array`` of `float` specifying the
-            ``position`` of the new ``StructuralUnit``
+            ``position`` of the new ``Structure``
         rotation : list, tuple, numpy.ndarray, optional
             3 element `list`, `tuple` or ``array`` of `floats` specifying the
             degrees of anticlockwise rotation around the x, y, and z axes
             respectively. The rotation is centered on the center of mass of the
-            ``CompositeStructuralUnit``. The default ``rotation`` is `None`,
-            which applies no rotation to the copied ``CompositeStructuralUnit``.
+            ``CompositeStructure``. The default ``rotation`` is `None`,
+            which applies no rotation to the copied ``CompositeStructure``.
 
         Returns
         -------
-        CompositeStructuralUnit
-            A ``CompositeStructuralUnit`` of the same type with all non-unique
+        CompositeStructure
+            A ``CompositeStructure`` of the same type with all non-unique
             attributes copied and a new ``position``
         """
 
@@ -652,7 +652,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
         Returns
         -------
         numpy.ndarray
-            Position of the center of mass of the ``CompositeStructuralUnit`` in
+            Position of the center of mass of the ``CompositeStructure`` in
             units of ``Ang``
         """
 
@@ -667,7 +667,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
         """
         Calculate the position of all subunits in the
-        ``CompositeStructuralUnit`` CoM frame in units of ``Ang``
+        ``CompositeStructure`` CoM frame in units of ``Ang``
         """
         # pylint: disable=attribute-defined-outside-init
         # _CoM_frame_positions breaks when defined in init
@@ -680,7 +680,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
     def rotate(self, x=0., y=0., z=0.):
 
         """
-        Rotates the ``CompositeStructuralUnit`` around its center of mass
+        Rotates the ``CompositeStructure`` around its center of mass
 
         In all cases (e.g. x, y and z) the rotation is anticlockwise about the
         specific axis
@@ -706,7 +706,7 @@ class CompositeStructuralUnit(StructuralUnit, AtomContainer):
 
 
 @repr_decorator('name', 'ID', 'element', 'position', 'velocity')
-class Atom(StructuralUnit):
+class Atom(Structure):
 
     """
     A single atom
@@ -1199,7 +1199,7 @@ class Atom(StructuralUnit):
                         zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
 
 
-class _Group(CompositeStructuralUnit):
+class _Group(CompositeStructure):
 
     """
     Two or more `Atom` objects that form a subset of a ``Molecule``
@@ -1219,7 +1219,7 @@ class _Group(CompositeStructuralUnit):
         raise NotImplementedError
 
 
-class Molecule(CompositeStructuralUnit):
+class Molecule(CompositeStructure):
 
     """
     Two or more bonded atoms

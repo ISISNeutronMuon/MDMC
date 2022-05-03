@@ -48,7 +48,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structural_units import Atom
+from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory

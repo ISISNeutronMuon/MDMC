@@ -1,4 +1,4 @@
-"""This module enables conversion between MDMC StructuralUnit objects and ASE
+"""This module enables conversion between MDMC Structure objects and ASE
 Atom and Atoms objects.
 """
 
@@ -9,7 +9,7 @@ import ase
 from ase.io import x3d
 import numpy as np
 
-from MDMC.MD.structural_units import Atom
+from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import Bond
 
 
