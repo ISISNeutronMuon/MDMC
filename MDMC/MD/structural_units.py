@@ -907,7 +907,7 @@ class Atom(StructuralUnit):
                     # Check that a charge parameter exists.
                     charge_parameters = 0
                     for parameter in interaction.parameters:
-                        if parameter.name == 'charge':
+                        if 'charge' in parameter.name:
                             charge_parameters += 1
                             value = parameter.value
                     if charge_parameters == 0:

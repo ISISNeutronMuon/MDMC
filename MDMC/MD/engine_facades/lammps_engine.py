@@ -2592,7 +2592,7 @@ def parse_bonded_coefficients(interaction):
         the LAMMPS facade.
     """
 
-    parameters = {p.name: convert_unit(p.value)
+    parameters = {p.type: convert_unit(p.value)
                   for p in interaction.parameters}
     style = parse_bonded_styles(interaction)
 
@@ -2607,8 +2607,8 @@ def parse_bonded_coefficients(interaction):
         ord_let = ('K', 'n', 'd')
         # Sort by fourier_order first and then by letter sequence
         ordered_p_names = sorted(parameters,
-                                 key=lambda p_name: (p_name[1],
-                                                     ord_let.index(p_name[0])))
+                                 key=lambda p_type: (p_type[1],
+                                                     ord_let.index(p_type[0])))
         # Get parameters values and prepend the order of the equation
         ordered_parameters = [fourier_order] + [parameters[p_name] for p_name
                                                 in ordered_p_names]
@@ -2683,7 +2683,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         if 'buck' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'Buckingham':
-                    parameters = {p.name: convert_unit(p.value)
+                    parameters = {p.type: convert_unit(p.value)
                                   for p in inter.parameters}
             ordered_parameters = [parameters['A'],
                                   parameters['B'] ** -1,
@@ -2699,7 +2699,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         elif 'lj' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'LennardJones':
-                    parameters = {p.name: convert_unit(p.value)
+                    parameters = {p.type: convert_unit(p.value)
                                   for p in inter.parameters}
             ordered_parameters = [parameters['epsilon'],
                                   parameters['sigma']]

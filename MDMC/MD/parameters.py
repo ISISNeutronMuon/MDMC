@@ -22,7 +22,7 @@ from MDMC.common.decorators import repr_decorator, unit_decorator, \
     unit_decorator_getter
 
 
-@repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
+@repr_decorator('ID', 'type', 'value', 'unit', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
 class Parameter:
     """
@@ -51,6 +51,7 @@ class Parameter:
 
         self.ID = self._get_ID()
         self.name = name + f" (#{self.ID})"
+        self.type = name
         try:
             self.unit = settings['unit'] if 'unit' in settings else value.unit
         except AttributeError:
@@ -282,7 +283,7 @@ class Parameter:
 
     def __eq__(self, other):
 
-        return self.name.split(" (")[0] == other.name.split(" (")[0] and self.value == other.value
+        return self.type == other.type and self.value == other.value
 
 
 class Parameters(dict):
@@ -565,20 +566,11 @@ class Parameters(dict):
         """Logs all Parameters by ID"""
 
         LOGGER = logging.getLogger(__name__)
+        msg = "List of all parameters with ID: \n"
         for parameter in self.values():
-            msg = ("Parameter #%s is the following:\n"
-                   "name: %s\n"
-                   "initial value: %s\n"
-                   "interactions: %s\n"
-                   "constraints: %s")
+            msg += f"{parameter.__repr__()}"
 
-            LOGGER.info(msg,
-                        parameter.ID,
-                        parameter.name.split(" (")[0],
-                        parameter.value,
-                        parameter.interactions,
-                        parameter.constraints)
-
+        LOGGER.info(msg)
         print("Details on which Parameter corresponds to each ID have been written to the log.")
 
     @staticmethod
