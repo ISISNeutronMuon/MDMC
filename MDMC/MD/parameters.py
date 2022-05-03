@@ -8,6 +8,7 @@ a sequence of Parameter objects.
 """
 
 import ast
+import logging
 from collections.abc import Iterable
 from itertools import chain
 import operator
@@ -46,7 +47,8 @@ class Parameter:
 
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
-        self.name = name
+        self.ID = self._get_ID()
+        self.name = name + f" (#{self.ID})"
         try:
             self.unit = settings['unit'] if 'unit' in settings else value.unit
         except AttributeError:
@@ -228,6 +230,14 @@ class Parameter:
         self._tie = ast.parse(
             'self._tie_parameter().value' + expr, mode='eval')
 
+    HIGHEST_PARAMETER_ID = 0
+
+    @classmethod
+    def _get_ID(cls):
+        """Gets a unique ID for the Parameter that has just been created."""
+        cls.HIGHEST_PARAMETER_ID += 1
+        return cls.HIGHEST_PARAMETER_ID
+
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
@@ -316,17 +326,37 @@ class Parameters(dict):
         parameters = self._check_input(parameters)
 
         for parameter in parameters:
-            # if parameter with this name already exists, check if an identical parameter
-            # is already here; if not, record it with a number to indicate it as separate
-            if parameter.name in self.keys():
-                if any(parameter == existing_p
-                       for existing_p in self.filter_name(parameter.name).values()):
-                    pass
-                else:
-                    parameter_number = f"_{len(self.filter_name(parameter.name)) + 1}"
-                    super().__setitem__(parameter.name + parameter_number, parameter)
+            super().__setitem__(parameter.name, parameter)
+
+        self._remove_duplicates()
+
+    def _remove_duplicates(self):
+        """
+        Removes duplicate parameters from the Parameters object.
+
+        For example, if Parameters takes the form
+        {charge (#1): X
+         charge (#2): X
+         equilibrium_state (#3): Y
+         equilibrium_state (#4): Z
+         equilibrium_state (#5): Y
+         equilibrium_state (#6): Z
+         epsilon (#7): W}
+
+        _remove_duplicates will reduce it to
+        {charge (#1): X
+         equilibrium_state (#3): Y
+         equilibrium_state (#4): Z
+         epsilon (#7): W
+        }
+        """
+
+        unique_parameters = []
+        for parameter in self.values():
+            if any([parameter == p for p in unique_parameters]):
+                self.pop(parameter.name)
             else:
-                super().__setitem__(parameter.name, parameter)
+                unique_parameters.append(parameter)
 
     def filter(self, predicate):
         """
@@ -508,6 +538,27 @@ class Parameters(dict):
             return structure_name in structure_names
 
         return self.filter(check_structure_name)
+
+    def log_parameters(self):
+        """Logs all Parameters by ID"""
+
+        LOGGER = logging.getLogger(__name__)
+        for parameter in self.values():
+            msg = ("Parameter #%s is the following:\n"
+                   "name: %s\n"
+                   "initial value: %s\n"
+                   "interactions: %s\n"
+                   "constraints: %s")
+
+            LOGGER.info(msg,
+                        parameter.ID,
+                        parameter.name.split(" (")[0],
+                        parameter.value,
+                        parameter.interactions,
+                        parameter.constraints)
+
+        print("Details on which Parameter corresponds to each ID have been written to the log.")
+
 
     @staticmethod
     def _check_input(x: Any) -> 'list[Parameter]':

@@ -448,10 +448,10 @@ def test_duplicate_parameters_naming():
                              Parameter(name='charge', value=2.),
                              Parameter(name='charge', value=3.)])
 
-    assert list(parameters.keys()) == ['charge', 'charge_2', 'charge_3']
+    assert list(parameters.keys()) == ['charge (#1)', 'charge (#2)', 'charge (#3)']
 
     # test that identical parameters are not registered twice
-    parameters = Parameters([Parameter(name='charge', value=1.),
-                             Parameter(name='charge', value=1.)])
+    parameters.append([Parameter(name='charge', value=1.),
+                       Parameter(name='charge', value=5.)])
 
-    assert list(parameters.keys()) == ['charge']
+    assert list(parameters.keys()) == ['charge (#1)', 'charge (#2)', 'charge (#3)', 'charge (#5)']
