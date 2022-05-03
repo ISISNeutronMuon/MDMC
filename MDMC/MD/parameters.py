@@ -9,7 +9,10 @@ a sequence of Parameter objects.
 
 import ast
 import logging
+import re
+from collections import UserDict
 from collections.abc import Iterable
+from copy import copy
 from itertools import chain
 import operator
 from typing import Union, Any
@@ -280,10 +283,10 @@ class Parameter:
 
     def __eq__(self, other):
 
-        return self.name == other.name and self.value == other.value
+        return self.name.split(" (")[0] == other.name.split(" (")[0] and self.value == other.value
 
 
-class Parameters(dict):
+class Parameters(UserDict):
     """
     A `dict-like` object where every element is a ``Parameter`` indexed by name,
     which contains a number of helper methods for filtering.
@@ -312,6 +315,26 @@ class Parameters(dict):
         # disable this method to ensure parameter keys are always the parameter name
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
+
+    def __getitem__(self, key):
+        try:
+            return self.data[key]
+        except KeyError as error:
+            try:
+                # see if the key passed was a parameter name with no ID, and catch the error
+                # by getting the first parameter with that name
+                r = re.compile(rf"{key} \(.+\)")
+                matching_parameters = list(filter(r.match, list(self.keys())))
+                if matching_parameters:
+                    if len(matching_parameters) > 1:
+                        warnings.warn("Calling a parameter name with no ID fetches the first "
+                                      "parameter with that name; this may cause buggy or "
+                                      "inconsistent behaviour!")
+                    return self.data[matching_parameters[0]]
+                else:
+                    raise KeyError
+            except KeyError:
+                raise error
 
     def append(self, parameters: Union["list[Parameter]", Parameter]):
         """
@@ -352,7 +375,7 @@ class Parameters(dict):
         """
 
         unique_parameters = []
-        for parameter in self.values():
+        for parameter in copy(list(self.values())):
             if any([parameter == p for p in unique_parameters]):
                 self.pop(parameter.name)
             else:
@@ -558,7 +581,6 @@ class Parameters(dict):
                         parameter.constraints)
 
         print("Details on which Parameter corresponds to each ID have been written to the log.")
-
 
     @staticmethod
     def _check_input(x: Any) -> 'list[Parameter]':

@@ -455,3 +455,14 @@ def test_duplicate_parameters_naming():
                        Parameter(name='charge', value=5.)])
 
     assert list(parameters.keys()) == ['charge (#1)', 'charge (#2)', 'charge (#3)', 'charge (#5)']
+
+
+def test_parameters_getitem_lazy():
+    """Tests that the user can get a parameter without using its ID"""
+
+    parameters = Parameters([Parameter(name='charge', value=1.),
+                             Parameter(name='epsilon', value=2.),
+                             Parameter(name='sigma', value=3.)])
+
+    for test_parameter in [('charge', 1.), ('epsilon', 2.), ('sigma', 3.)]:
+        assert parameters[test_parameter[0]].value == test_parameter[1]
