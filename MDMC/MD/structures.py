@@ -751,7 +751,11 @@ class Atom(Structure):
         self._bonded_interaction_pairs = []
         self.element = element
 
-        self.mass = settings.get('mass', atom_properties.MASS[self.element])
+        try:
+            self.mass = settings['mass']
+        except KeyError:
+            self.mass = atom_properties.MASS[self.element]
+
         self._atom_type = settings.get('atom_type', None)
         self.charge = charge
 
