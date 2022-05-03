@@ -64,14 +64,14 @@ class DLPOLYAttribute(ABC):
 
     def __init__(self, dlpoly=None, control=None,
                  config=None, field=None, statis=None, output=None,
-                 destconfig=None, rdf=None, workdir=None):
+                 dest_config=None, rdf=None, workdir=None):
 
         if dlpoly:
             self.dlpoly = dlpoly
         else:
             self.dlpoly = DLPoly(control=control, config=config,
                                  field=field, statis=statis,
-                                 output=output, destconfig=destconfig,
+                                 output=output, dest_config=dest_config,
                                  rdf=rdf, workdir=workdir)
 
         LOGGER.debug('%s: {dlpoly: %s}. dlpoly-py'
@@ -102,11 +102,11 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     """
     def __init__(self, dlpoly=None, control=None,
                  config=None, field=None, statis=None, output=None,
-                 destconfig=None, rdf=None, workdir=None):
+                 dest_config=None, rdf=None, workdir=None):
 
         DLPOLYAttribute.__init__(self, dlpoly, control,
                                  config, field, statis, output,
-                                 destconfig, rdf, workdir)
+                                 dest_config, rdf, workdir)
 
         self.universe = None
         self.dlpoly_universe = None
@@ -348,6 +348,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.workdir = work_dir
         # pylint: disable=c-extension-no-member, too-many-lines
         self.dlpoly.run(numProcs=1, outputFile=output_log)
+        print("update coordinates from ",self.dlpoly.control['io_file_revcon'])
+        self.dlpoly.dest_config = 'minim.config'
+        self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
+
 
     def convert_trajectory(self, start=0, stop=None, step=1, **settings):
         """
@@ -607,6 +611,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.field.write(settings.get('field', 'FIELD'))
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
+        print([i.cutoff for i in self.universe.nonbonded_interactions])
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
     def _create_field(self, universe, **settings) -> Field:

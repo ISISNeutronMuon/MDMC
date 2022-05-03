@@ -25,7 +25,7 @@ density = 0.0176
 # 26.911 A will contain 343 Ar atoms
 # 30.7553 A will contain 512 Ar atoms
 # 38.4441 A will contain 1000 Ar atoms
-universe = Universe(dimensions=38.4441)
+universe = Universe(dimensions=30.7553)
 Ar = Atom('Ar', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
 n_ar_atoms = int(density * np.product(universe.dimensions))
@@ -35,7 +35,7 @@ universe.fill(Ar, num_struc_units=(n_ar_atoms))
 # specify how these atoms will interact
 Ar_dispersion = Dispersion(universe,
                            (Ar.atom_type, Ar.atom_type),
-                           cutoff=8.,
+                           cutoff=8.0,
                            vdw_tail_correction=True,
                            function=LennardJones(1.0243, 3.36))
 
@@ -45,13 +45,13 @@ Ar_dispersion = Dispersion(universe,
 simulation = Simulation(universe,
                         engine="dlpoly",
                         time_step=10.18893,
-                        temperature=100.,
+                        temperature=120.,
                         traj_step=15,
                         numprocs=4)
 
 # Energy Minimization and equilibration
-simulation.minimize(n_steps=1000,output_log='minim.log')
-simulation.run(n_steps=1000, equilibration=True,output_log='equilibration.log')
+simulation.minimize(n_steps=10,output_log='minim.log',work_dir='minim')
+simulation.run(n_steps=1000, equilibration=True,output_log='equilibration.log',work_dir='equil')
 #simulation.run(n_steps=10000, equilibration=False)
 #print(simulation.trajectory)
 ## dataset
