@@ -477,18 +477,18 @@ class Universe(AtomContainer):
         return list(set(structures))
 
     @property
-    def top_level_structure_list(self) -> List[StructuralUnit]:
+    def top_level_structure_list(self) -> List[Structure]:
 
         """
-        Get a `list` of the top level ``StructuralUnit`` objects that exist in the
-        ``Universe``. This does not include any ``StructuralUnit`` that are a subunit
+        Get a `list` of the top level ``Structure`` objects that exist in the
+        ``Universe``. This does not include any ``Structure`` that are a subunit
         of another structure belonging to the ``Universe``.
 
 
         Returns
         -------
         list
-            The top level ``StructuralUnit`` objects in the ``Universe``
+            The top level ``Structure`` objects in the ``Universe``
         """
 
         structural_units = [atom.top_level_structure for atom in self.atoms]
@@ -500,20 +500,20 @@ class Universe(AtomContainer):
         return top_level_structures
 
     @property
-    def equivalent_top_level_structures_dict(self) -> Dict[StructuralUnit, int]:
+    def equivalent_top_level_structures_dict(self) -> Dict[Structure, int]:
 
         """
-        Get a `dict` of equivalent top level ``StructuralUnit`` objects that
-        exist in the ``Universe`` as keys, and the number of ``StructuralUnit``
+        Get a `dict` of equivalent top level ``Structure`` objects that
+        exist in the ``Universe`` as keys, and the number of ``Structure``
         that are equivalent to the key as a value. This does not include any
-        ``StructuralUnit`` that are a subunit of another structure belonging
+        ``Structure`` that are a subunit of another structure belonging
         to the ``Universe``.
 
 
         Returns
         -------
         dict
-            The top level ``StructuralUnit`` objects in the ``Universe`` as
+            The top level ``Structure`` objects in the ``Universe`` as
             keys, and the number of each as a value
         """
 

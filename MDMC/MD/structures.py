@@ -391,7 +391,7 @@ class Structure(ABC):
     def is_equivalent(self, structural_unit) -> bool:
 
         """
-        Checks the passed ``StructuralUnit`` against `self` for equivalence in
+        Checks the passed ``Structure`` against `self` for equivalence in
         terms of the force field application, namely that the following are the
         same:
           - Element or chemical formula
@@ -1183,7 +1183,7 @@ class Atom(Structure):
                 inter.add_atoms(*new_atoms)
                 memo[id(inter)] = inter
 
-    def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
+    def is_equivalent(self, structural_unit: Structure) -> bool:
 
         return (isinstance(structural_unit, type(self))
                 and structural_unit.element == self.element
@@ -1369,7 +1369,7 @@ class Molecule(CompositeStructure):
 
         return sum(atom.charge for atom in self.atoms if atom.charge is not None)
 
-    def is_equivalent(self, structural_unit: StructuralUnit) -> bool:
+    def is_equivalent(self, structural_unit: Structure) -> bool:
 
         return (isinstance(structural_unit, type(self))
                 and structural_unit.formula == self.formula
