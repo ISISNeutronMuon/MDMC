@@ -288,11 +288,11 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
         etol = settings.get('etol', 1.e-3)
-        ftol = settings.get('ftol', 0.)
+        ftol = settings.get('ftol', None)
         min_freq = settings.get('minimisation_frequency', 10)
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
                     self.__class__, n_steps, ftol)
-        if ftol == 0.0:
+        if not ftol:  # Should handle ftol == 0 or undefined ftol
             self.dlpoly.control['minimisation_criterion'] = 'energy'
             self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
         else:
@@ -378,6 +378,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 cell[i, :] = np.array([float(x) for x in f.readline().split()])
             return cell
 
+        def read_line_as(f, typ):
+            return list(map(typ, f.readline().split()))
+
         def create_atom(f, level_of_detail):
             # level_of_detail of information in the file, 0, indicates only positions,
             # 1 positions and velocities, 2 positions, velocities and forces
@@ -385,21 +388,22 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             symbol, _, mass_str, *_ = f.readline().split()
             mass = float(mass_str)
             # the next line gives the position of the atom
-            pos = [float(x) for x in f.readline().split()]
+            pos = read_line_as(f, float)
             # the next line, if it exists, gives the velocity of the atom
             if level_of_detail > 0:
-                vel = [float(x) for x in f.readline().split()]
+                vel = read_line_as(f, float)
             else:
                 vel = None
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
-                force = [float(x) for x in f.readline().split()]
+                force = read_line_as(f, float)
             else:
                 force = None
             _ = force
 
             atom = MAtom(symbol, position=pos, mass=mass)
             atom.atom_type = self.universe.element_dict[symbol].atom_type
+
             if self.universe:
                 atom.universe = self.universe
             if vel is not None:
@@ -409,29 +413,33 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
             _ = f.readline()  # title
-            level_of_detail, _, n_atoms, frames, *_ = \
-                [int(i) for i in f.readline().split()]  # imcon
+            level_of_detail, _, n_atoms, frames, *_ = read_line_as(f, int)  # imcon
+
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
+
             configs = []
-            end = stop
-            if stop is None:
-                end = frames + 1
+            end = stop or frames + 1
+
+            take = range(start, end, step)
+
             for iframe in range(frames):
-                time = float(f.readline().split()[-1])
-                # Just skip, unused for the moment, will need to be
-                # used for npt simulations
-                read_cell(f)
-                atoms = []
-                for _ in range(n_atoms):
-                    atom = create_atom(f, level_of_detail)
-                    if not atom_ids or atom.ID in atom_ids:
-                        atoms.append(atom)
-                if (start <= iframe < end) and ((iframe - start) % step == 0):
+                if iframe in take:
+                    time = float(f.readline().split()[-1])
+                    # Just skip, unused for the moment, will need to be
+                    # used for npt simulations
+                    read_cell(f)
+
+                    atoms = filter(lambda atom: not atom_ids or atom.ID in atom_ids,
+                                   (create_atom(f, level_of_detail) for _ in range(n_atoms))
+                                   )
                     configs.append(
                         TemporalConfiguration(
                             convert_unit(time, unit=units.Unit('ps'), to_dlpoly=False), *atoms
                         ))
+                else:  # Skip time + cell + atoms
+                    for _ in range(1 + 3 + n_atoms):
+                        f.readline()
 
         return Trajectory(*configs)
 
@@ -610,7 +618,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.field.write(settings.get('field', 'FIELD'))
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
-        print([i.cutoff for i in self.universe.nonbonded_interactions])
+        # print([i.cutoff for i in self.universe.nonbonded_interactions])
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
     def _create_field(self, universe, **settings) -> Field:
@@ -653,48 +661,14 @@ class DLPOLYUniverse(DLPOLYAttribute):
 
         for structure in universe.top_level_structure_list:
             if structure.name not in mols:
-                newMol = Molecule()
-                newMol.name = structure.name
 
                 if isinstance(structure, MAtom):
-                    species = structure.name
-                    MDMC_spec = universe.element_dict[species]
-                    newSpec = Species(species, 0,
-                                      charge=MDMC_spec.charge, mass=MDMC_spec.mass)
-                    newMol.nAtoms = 1
-                    newMol.species = {1: newSpec}
-                    mols[newMol.name] = newMol
+                    new_molecule = self._from_atom(universe, structure)
+                    mols[new_molecule.name] = new_molecule
 
                 elif isinstance(structure, MMolecule):
-                    mapping = {}
-                    for ind, atm in enumerate(structure.atoms, 1):
-                        MDMC_spec = universe.element_dict[atm.element]
-                        newSpec = Species(atm.element, ind,
-                                          MDMC_spec.charge, MDMC_spec.mass)
-                        newMol.species[ind] = newSpec
-                        newMol.nAtoms += 1
-                        mapping[atm.ID] = ind
-
-                    for bond, atms in structure.bonded_interaction_pairs:
-                        currAtm = [mapping[atm.ID] for atm in atms]
-                        if bond.constrained:
-                            if not type(bond).__name__ == 'Bond':
-                                raise NotImplementedError(f'{type(bond).__name__} constraints '
-                                                          'not supported in DLPOLY')
-
-                            pot = Bond('constraints',
-                                       ['',
-                                        *map(str, currAtm),
-                                        str(bond.parameters[0].value.real)
-                                        ])
-                        else:
-                            pot = Bond(BOND_CLASS_REF[type(bond).__name__],
-                                       [POTENTIAL_REF[bond.function.name],
-                                        *map(str, currAtm),
-                                        *map(lambda x: str(x.value.real), bond.parameters)
-                                        ])
-                        newMol.add_potential(currAtm, pot)
-                    mols[newMol.name] = newMol
+                    new_molecule = self._from_molecule(universe, structure)
+                    mols[new_molecule.name] = new_molecule
 
                 else:
                     raise TypeError(f'Unknown species type: {type(structure).__name__}')
@@ -709,6 +683,85 @@ class DLPOLYUniverse(DLPOLYAttribute):
             out.add_potential(currAtm, pot)
 
         return out
+
+    @staticmethod
+    def _from_atom(universe, structure: MAtom) -> Molecule:
+
+        """
+        Construct DLPoly molecule from MDMC Atom
+
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC ``Universe`` used to define the topology.
+        structure : MAtom
+            The atom from which to construct DLPoly molecule
+        """
+
+        new_molecule = Molecule()
+        new_molecule.name = structure.name
+        species = structure.name
+        MDMC_spec = universe.element_dict[species]
+        newSpec = Species(species, 0,
+                          charge=MDMC_spec.charge, mass=MDMC_spec.mass)
+        new_molecule.nAtoms = 1
+        new_molecule.species = {1: newSpec}
+        return new_molecule
+
+    @staticmethod
+    def _from_molecule(universe, structure: MMolecule) -> Molecule:
+
+        """
+        Construct DLPoly molecule from MDMC molecule
+
+        Parameters
+        ----------
+        universe : Universe
+            The MDMC ``Universe`` used to define the topology.
+        structure : MMolecule
+            The molecule from which to construct DLPoly molecule
+
+        Raises
+        ------
+        NotImplementedError
+            If ``universe`` contains an interaction type that has not been
+            implemented in the DL_POLY facade
+
+        """
+
+        new_molecule = Molecule()
+        new_molecule.name = structure.name
+
+        mapping = {}
+        for ind, atm in enumerate(structure.atoms, 1):
+            MDMC_spec = universe.element_dict[atm.element]
+            new_species = Species(atm.element, ind,
+                                  MDMC_spec.charge, MDMC_spec.mass)
+            new_molecule.species[ind] = new_species
+            new_molecule.nAtoms += 1
+            mapping[atm.ID] = ind
+
+        for bond, atms in structure.bonded_interaction_pairs:
+            current_atom = [mapping[atm.ID] for atm in atms]
+            if bond.constrained:
+                if not isinstance(bond, Bond):
+                    raise NotImplementedError(f'{type(bond).__name__} constraints '
+                                              'not supported in DLPOLY')
+
+                pot = Bond('constraints',
+                           ['',
+                            *map(str, current_atom),
+                            str(bond.parameters[0].value.real)
+                            ])
+            else:
+                pot = Bond(BOND_CLASS_REF[type(bond).__name__],
+                           [POTENTIAL_REF[bond.function.name],
+                            *map(str, current_atom),
+                            *map(lambda x: str(x.value.real), bond.parameters)
+                            ])
+            new_molecule.add_potential(current_atom, pot)
+
+        return new_molecule
 
     def _update_charges(self):
 
@@ -735,12 +788,12 @@ class DLPOLYUniverse(DLPOLYAttribute):
         spec = self.universe.element_lookup
 
         for disp in self.disps:
-            currAtm = [spec[atm]
-                       for parm in disp.atom_types
-                       for atm in parm]
-            currPot = next(self.dlpoly.field.get_pot(species=currAtm,
-                                                     potType='lj'))
-            currPot.params = [*map(lambda x: str(x.value.real), disp.parameters)]
+            current_atom = [spec[atm]
+                            for parm in disp.atom_types
+                            for atm in parm]
+            current_pot = next(self.dlpoly.field.get_pot(species=current_atom,
+                                                         potType='lj'))
+            current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters)]
 
     def _update_bonded_interactions(self):
 
@@ -757,13 +810,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
             mol = mols[structure.name]
 
             for bond, atms in structure.bonded_interaction_pairs:
-                currAtm = [mapping[atm.ID] for atm in atms]
+                current_atom = [mapping[atm.ID] for atm in atms]
                 if bond.constrained:
-                    pot = next(mol.get_pot(species=currAtm))
+                    pot = next(mol.get_pot(species=current_atom))
                     pot.params = str(bond.parameters[0].value.real)
 
                 else:
-                    pot = next(mol.get_pot(species=currAtm,
+                    pot = next(mol.get_pot(species=current_atom,
                                            potClass=BOND_CLASS_REF[type(bond).__name__],
                                            potType=POTENTIAL_REF[bond.function.name]))
                     pot.params = [*map(lambda x: str(x.value.real), bond.parameters)]
