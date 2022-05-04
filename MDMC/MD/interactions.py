@@ -112,8 +112,8 @@ class Interaction(ABC):
 
         Returns
         -------
-        list
-            A `list` of the ``Parameter``
+        Parameters
+            A ``Parameters`` object containing each ``Parameter``
         """
 
         return self.function.parameters

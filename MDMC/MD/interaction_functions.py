@@ -52,21 +52,18 @@ class InteractionFunction:
     def __str__(self):
 
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
-                               for p in self.parameters]).strip(',')
+                               for p in self.parameters.values()]).strip(',')
         return f'{self.__class__.__name__} {parameters}'
 
     @property
     def parameters(self):
         """
-        Get or set the ``array`` of ``Parameter`` objects
-
-        On setting the ``Parameter`` objects, they are ordered alphabetically by
-        ``Parameter.name``
+        Get or set the interaction function's parameters
 
         Returns
         -------
-        numpy.ndarray
-            A NumPy ``array`` of ``Parameter``
+        Parameters
+            A Parameters object containing each ``Parameter``
         """
 
         return self._parameters
@@ -74,7 +71,7 @@ class InteractionFunction:
     @parameters.setter
     def parameters(self, value):
 
-        self._parameters = np.array(sorted(list(value.values()), key=lambda p: p.name))
+        self._parameters = value
 
     @property
     def parameters_values(self):
@@ -87,7 +84,7 @@ class InteractionFunction:
             A NumPy ``array`` of values for all ``Parameter``
         """
 
-        return np.array([p.value for p in self.parameters])
+        return np.array([p.value for p in self.parameters.values()])
 
     @property
     def name(self):
@@ -114,8 +111,7 @@ class InteractionFunction:
         """
 
         for parameter in self.parameters:
-
-            parameter.interactions = interaction
+            self.parameters[parameter].interactions = interaction
 
 
 def inter_func_decorator(*parameter_units):
