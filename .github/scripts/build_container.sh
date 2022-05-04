@@ -8,7 +8,7 @@ then
   echo "Docker file does not require rebuilding." 
 else
   echo "Docker file requires rebuilding."
-  docker build -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile . || exit 1 
+  docker pull mdmc/mdmc:ci-$BRANCH && docker build --cache-from mdmc/mdmc:ci-$BRANCH -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile . || docker pull mdmc/mdmc:latest && docker build --cache-from mdmc/mdmc:latest -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile . || exit 1 
   docker push mdmc/mdmc:ci-$BRANCH
 fi
 docker logout
