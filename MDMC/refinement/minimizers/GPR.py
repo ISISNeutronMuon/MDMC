@@ -213,7 +213,7 @@ class GPR(Minimizer):
             A list of the values to be set for each parameter
         """
         for name, value in zip(parameter_names, values):
-            self.parameter[str(name)].value = value
+            self.parameters[str(name)].value = value
 
     def change_parameters(self):
         """
