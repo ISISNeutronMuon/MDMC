@@ -777,7 +777,7 @@ class Universe(AtomContainer):
                          msg)
             raise ValueError(msg)
 
-        n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
+        n_units_xyz = self.dimensions * (num_density ** (1. / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
         # Determine the upper and lower bounds for structural unit with its
@@ -1007,18 +1007,15 @@ class Universe(AtomContainer):
                          density, msg)
             raise ValueError(msg)
         # Get the prelim scaling of the orig box required to achieve density
-        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
+        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3.)]
                                * 3)
 
         scale_factor = 0.
         counter = 0
         # Offset the atom_types of the solvent_config by the maximum atom_type
         # in the Universe.
-        # Try/except accounts for empty universe (i.e. no atom_types)
-        try:
-            max_atom_type = np.max(list(self.atom_types.keys()))
-        except ValueError:
-            max_atom_type = 0
+        max_atom_type = max(self.atom_types.keys(), default=0)
+
         solvent_config.offset_atom_types(max_atom_type)
         difference = float('inf')
 
@@ -1383,7 +1380,7 @@ class Simulation:
         setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
             setup_values = [[value] for value in self.settings.values()]
-            setup_keys = ['  {}'.format(key) for key in self.settings]
+            setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
 
