@@ -287,9 +287,9 @@ def test_equivalent_top_level_structures_dict(
     # Add a Molecule and atom that was created using the same parameters,
     # but different Python objects
     universe.fill(water_molecule, num_struc_units=27)
-    universe.add_structural_unit(water_copy)
+    universe.add_structure(water_copy)
     universe.fill(atom, num_struc_units=64)
-    universe.add_structural_unit(atom_copy)
+    universe.add_structure(atom_copy)
 
     equivalent_dict = universe.equivalent_top_level_structures_dict
     keys = list(equivalent_dict.keys())
