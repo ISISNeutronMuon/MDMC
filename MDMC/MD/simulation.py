@@ -461,18 +461,18 @@ class Universe(AtomContainer):
             The ``Structure`` objects in the ``Universe``
         """
 
-
-
         def add_all_parents(unit):
-
+            current = unit
             parent = unit.parent
             parents = [parent]
-            if parent is not parent.top_level_structure:
-                parents += add_all_parents(parent)
-            return tuple(parents)
+            while parent is not parent.top_level_structure:
+                parent = current.parent
+                parents.append(parent)
+                current = parent
+            return parents
 
-        structures = {add_all_parents(atom) for atom in self.atoms}
-        structures.add(tuple(self.atoms))
+        structures = {parent for atom in self.atoms for parent in add_all_parents(atom)}
+        structures.update(self.atoms)
 
         return list(structures)
 
@@ -587,7 +587,7 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe``
         """
 
-        return np.sum([atom.mass for atom in self.atoms]) / self.volume
+        return np.sum(atom.mass for atom in self.atoms) / self.volume
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
@@ -780,27 +780,22 @@ class Universe(AtomContainer):
         n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
-        positions = []
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
         bounds = structures.bounding_box
         mn = np.array((0., 0., 0.)) - (bounds.min - structures.position)
         mx = self.dimensions - (bounds.min - structures.position)
-        for i in range(len(self.dimensions)):
-            positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
-                                         endpoint=False))
-
-        positions = sorted(list(product(*positions)))
+        positions = [np.linspace(mi, ma, n_units, endpoint=False)
+                     for mi, ma, n_units in zip(mn, mx, n_units_xyz)]
+        positions = sorted(product(*positions))
 
         # Add the first structural unit and force field (if specified) before
         # copying the structural unit to fill the universe
+        self.add_structure(structures, force_field)
+        structures.position = positions.pop(0)
         for position in positions:
-            if position is positions[0]:
-                self.add_structure(structures, force_field)
-                structures.position = position
-            else:
-                new_unit = structures.copy(position)
-                self.add_structure(new_unit)
+            new_unit = structures.copy(position)
+            self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field, *interactions, **settings):
@@ -844,11 +839,9 @@ class Universe(AtomContainer):
                              self.__class__,
                              add_dispersions)
                 raise TypeError(msg)
-            dispersions = []
             # Get unique atom types and add dispersions for each of these
             atom_types = {atom.atom_type for atom in atoms}
-            for atom_type in atom_types:
-                dispersions.append(Dispersion(self, (atom_type,) * 2))
+            dispersions = [Dispersion(self, (atom_type,) * 2) for atom_type in atom_types]
 
         if not interactions:
             self.force_fields.parameterize_interactions(set(self.interactions))
@@ -898,14 +891,8 @@ class Universe(AtomContainer):
         """
 
         # Check if interactions already exists in Universe
-        new_nonbonded_interactions = []
-        for nbi in nonbonded_interactions:
-            # As in uses == (as well as is) to test for membership, this
-            # excludes all nonbonded interactions that are equal to any already
-            # in the Universe
-            if nbi not in self.nonbonded_interactions:
-                new_nonbonded_interactions.append(nbi)
-        self._nonbonded_interactions.update(new_nonbonded_interactions)
+        new_nonbonded_interactions = {nbi for nbi in nonbonded_interactions}
+        self._nonbonded_interactions.update(list(new_nonbonded_interactions))
 
     @property
     def nbis_by_atom_type_pairs(self):
@@ -931,9 +918,9 @@ class Universe(AtomContainer):
         pairs_interactions = {}
         # Find pairwise combinations of N atom_types in the universe
         # Where each pair (i, j) has 0 < i, j <= N   and    i <= j
-        atom_type_pairs = [(i, j) for i, j in product(self.atom_types,
+        atom_type_pairs = ((i, j) for i, j in product(self.atom_types,
                                                       repeat=2)
-                           if i <= j]
+                           if i <= j)
         # Create dict of interactions for each atom type pair
         for pair in atom_type_pairs:
             pairs_interactions[pair] = []
