@@ -195,9 +195,7 @@ class Observable(ABC):
         self.reader = ObservableReaderFactory.create_reader(reader, file_name)
         with self.reader:
             self.reader.parse()
-        self._independent_variables = self.reader.independent_variables
-        self._dependent_variables = self.reader.dependent_variables
-        self._errors = self.reader.errors
+            self.reader.assign(observable=self)
 
     @abstractmethod
     def calculate_from_MD(self, MD_input, verbose=0, **parameters):

@@ -28,7 +28,7 @@ def PDF_file():
         used here
     """
 
-    return Dataset(data.OBS_DATA['PDF'], 'r')
+    return Dataset(data.OBS_DATA['netcdf_PDF'], 'r')
 
 @pytest.fixture(scope="module")
 def PDF(trajectory, PDF_file):

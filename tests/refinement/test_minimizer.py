@@ -1,4 +1,5 @@
-"""Tests the Minimizer class and subclasses
+"""
+Tests the Minimizer base class
 """
 
 from tempfile import NamedTemporaryFile
@@ -15,46 +16,45 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 pytestmark = pytest.mark.mpi
 
+
 @pytest.fixture
 def parameters():
-
     """
     Returns
     -------
-    list
-        A `list` of ``Parameter`` objects with a variety of `name` and
+    Parameters
+        A `dict-like` of ``Parameter`` objects with a variety of `name` and
         `value` attributes
     """
 
-    # note these parameters are listed in alphabetical order
-    # as that is the order in which they are sorted when added to a Minimizer object
-    return([Parameter(name='A', value=1.),
-            Parameter(name='B', value=2.),
-            Parameter(name='C', value=3.),
-            Parameter(name='charge', value=1.),
-            Parameter(name='charge', value=.5),
-            Parameter(name='epsilon', value=.2),
-            Parameter(name='equilibrium_state', value=1.2),
-            Parameter(name='potential_strength', value=1234.),
-            Parameter(name='sigma', value=3.3)])
+    return Parameters([Parameter(name='A', value=1.),
+                       Parameter(name='B', value=2.),
+                       Parameter(name='C', value=3.),
+                       Parameter(name='charge', value=1.),
+                       Parameter(name='charge', value=.5),
+                       Parameter(name='epsilon', value=.2),
+                       Parameter(name='equilibrium_state', value=1.2),
+                       Parameter(name='potential_strength', value=1234.),
+                       Parameter(name='sigma', value=3.3)])
 
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init(parameters):
-
     """
     Test initializing ``Minimizer``
     """
+    # it's not worth parametrising a fixture just for this, so we use a loop
+    cases = [parameters, list(parameters.values())]
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
-    minim = Minimizer(parameters)
-    assert np.all(minim.parameters == np.array(parameters))
+    for parms in cases:
+        minim = Minimizer(parms)
+        assert np.all(minim.parameters == parameters)
 
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init_invalid_parameters(parameters):
-
     """
     Test initializing ``Minimizer`` with fixed parameters, which should raise a
     `ValueError`
@@ -62,16 +62,16 @@ def test_minimizer_init_invalid_parameters(parameters):
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
-    fixed_parameter = Parameter(name='charge', value=1.)
+    fixed_parameter = Parameter(name='fixed_parameter', value=1.)
     fixed_parameter.fixed = True
+    parameters.append(fixed_parameter)
 
     with pytest.raises(ValueError):
-        Minimizer(parameters + [fixed_parameter])
+        Minimizer(parameters)
 
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_write_history(parameters):
-
     """
     Test history csv output of ``Minimizer``
     """
@@ -80,7 +80,6 @@ def test_minimizer_write_history(parameters):
 
         @property
         def history_columns(self):
-
             return ['A', 'B', 'C']
 
     # Ignore pylint error as abstract class is mocked
@@ -97,26 +96,26 @@ def test_minimizer_write_history(parameters):
                      b'1,Accepted,Rejected,Accepted\n',
                      b'2,3.0,4.0,5.874958734958\n']
 
+
 @pytest.mark.parametrize('p_slice, columns',
                          [([0, 4, 1],
                            ['A', 'B', 'C', 'charge']),
                           ([0, 9, 2],
                            ['A', 'C', 'charge', 'equilibrium_state', 'sigma'])
-                         ])
+                          ])
 def test_minimizer_history_columns(parameters, p_slice, columns):
-
     """
     Tests that the history columns for the ``MMC`` minimizer are as expected,
     including the names of the ``Parameter`` objects which are refined
     """
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
+    parameter_slice = Parameters(list(parameters.values())[slice(*p_slice)])
 
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters[slice(*p_slice)])
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name, parameter_slice)
         assert minim.history_columns == ['FoM', 'Change state'] + columns
 
 
 def mock_change_parameters(self, parameters):
-
     """
     Mock of minimizer.change_parameters which doubles each ``Parameter`` value
     """
@@ -125,93 +124,7 @@ def mock_change_parameters(self, parameters):
         p.value *= 2
 
 
-def test_mmc_step_accepted(monkeypatch, parameters):
-
-    """
-    Tests that the ``MMC`` minimizer increments with the correct step when the
-    state change is accepted (i.e. ``MMC.change_state`` returns `True`)
-
-    This includes testing that:
-
-        - the old FoM is set to whatever the FoM provided is
-        - the old parameter values are changed to the current parameter values
-        - the state changed attribute is True
-        - the history is correctly updated
-        - the parameters are correctly changed (using the current parameters)
-    """
-
-    def mock_change_state(self):
-
-        return True
-
-    # The original parameter values should be added to the history, and the
-    # changed values should be 2x these (as determined by
-    # mock_change_parameters)
-    original_values = [p.value for p in parameters]
-    changed_values = [p.value * 2 for p in parameters]
-    mmc = MinimizerFactory.create_minimizer('MMC', parameters)
-
-    # Monkeypatch both the state change and the parameter change
-    monkeypatch.setattr( minimizers.MMC.MMC, 'change_state', mock_change_state)
-    monkeypatch.setattr(minimizers.MMC.MMC, 'change_parameters',
-                        mock_change_parameters)
-
-    FoM = 1000.
-    mmc.step(FoM)
-
-    assert mmc.FoM_old == FoM
-    assert np.all(mmc.parameters_old_values == np.array(original_values))
-    assert mmc.state_changed is True
-    assert [p.value for p in mmc.parameters] == changed_values
-    assert mmc._history == [[FoM, 'Accepted'] + original_values]
-
-
-def test_mmc_step_rejected(monkeypatch, parameters):
-
-    """
-    Tests that the ``MMC`` minimizer increments with the correct step when the
-    state change is rejected (i.e. ``MMC.change_state`` returns `False`)
-
-    This includes testing that:
-
-        - the current FoM is set to the old FoM
-        - the current parameters are reset to their old values
-        - the state changed attribute is False
-        - the history is correctly updated
-        - the parameters are correctly changed (using the old parameters)
-    """
-
-    def mock_change_state(self):
-
-        return False
-
-    # The original parameter values should be added to the history, and the
-    # changed values should be 2x the old values which the MMC already
-    # possesses.  As these are not set when MMC is initialised, set these
-    # manually to something arbitrary.
-    mmc = MinimizerFactory.create_minimizer('MMC', parameters)
-    mmc.parameters_old_values = np.arange(len(parameters))
-    original_FoM = mmc.FoM_old
-    original_values = [p.value for p in parameters]
-    expected_values = list(mmc.parameters_old_values * 2)
-
-    # Monkeypatch both the state change and the parameter change
-    monkeypatch.setattr(minimizers.MMC.MMC, 'change_state', mock_change_state)
-    monkeypatch.setattr(minimizers.MMC.MMC, 'change_parameters',
-                        mock_change_parameters)
-
-    FoM = 1000.
-    mmc.step(FoM)
-
-    assert mmc.FoM == original_FoM
-    assert mmc.state_changed is False
-    assert np.all(mmc.parameters_old_values == np.arange(len(parameters)))
-    assert [p.value for p in mmc.parameters] == expected_values
-    assert mmc._history == [[FoM, 'Rejected'] + original_values]
-
-
 def test_minimizer_change_parameters(parameters):
-
     """
     Tests that the parameters change by the expected amount when given a mocked
     distribution which always returns 1.
@@ -220,7 +133,7 @@ def test_minimizer_change_parameters(parameters):
     def mock_distribution(low: float, high: float, size: int):
         return np.ones(size)
 
-    expected_values = [2 * p.value for p in parameters]
+    expected_values = [2 * p.value for p in parameters.values()]
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
         minim.distribution = mock_distribution
@@ -229,7 +142,6 @@ def test_minimizer_change_parameters(parameters):
 
 
 def test_minimizer_change_constrained_parameter():
-
     """
     Tests that constrained parameters do not exceed their max/min values.
     """
@@ -239,8 +151,8 @@ def test_minimizer_change_constrained_parameter():
         # second set to 0
         return np.array([1., -1.])
 
-    parameters = [Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
-                  Parameter(name='constraints', value=1., constraints=(0.5, 1.5))]
+    parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
+                             Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
 
     # Expect values to be set to the upper/lower limit
     expected_values = [1.5, 0.5]
@@ -258,7 +170,6 @@ def test_minimizer_change_constrained_parameter():
                           (1.e+10, 1.e+10),
                           (0., 0.)])
 def test_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
-
     """
     Tests that the state always changes (i.e. returns True) given an FoM, old
     FoM, and MC norm, where the FoM is less than or equal to old FoM, and the
@@ -266,8 +177,8 @@ def test_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
     """
 
     def mock_random():
-
         return 0.999999
+
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameters, MC_norm=1.0)
         minim.FoM_old = FoM_old
@@ -285,8 +196,7 @@ def test_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
                           (60., 40., 29., True),
                           (60., 40., 28., False)])
 def test_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
-                                 MC_norm, change):
-
+                                       MC_norm, change):
     """
     Tests that the state changes correctly given an FoM, old FoM, and MC norm,
     where the FoM is greater than the old FoM, and the return of
@@ -294,14 +204,15 @@ def test_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
     """
 
     def mock_random():
-
         return 0.5
+
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameters, MC_norm=MC_norm)
         minim.FoM_old = FoM_old
         minim.FoM = FoM
         monkeypatch.setattr(np.random, 'random', mock_random)
         assert minim.change_state() == change
+
 
 @pytest.mark.parametrize('mock_history, min_steps, expected',
     [([[3,'Accepted',4],[2,'Accepted',3],[1,'Accepted',2]], None, False),
@@ -326,7 +237,6 @@ def test_MMC_minimizer_has_converged(mock_history, min_steps, expected):
 
 
 def test_minimizer_fixed_parameter():
-
     """
     Test that a ``ValueError`` is raised when passing a fixed ``Parameter``
     """
@@ -338,13 +248,12 @@ def test_minimizer_fixed_parameter():
 
 
 def test_minimizer_tied_parameter():
-
     """
     Test that a ``ValueError`` is raised when passing a tied ``Parameter``
     """
 
-    target_parameter = Parameter(name='target', value=1.,)
-    tied_parameter = Parameter(name='tied', value=1.,)
+    target_parameter = Parameter(name='target', value=1., )
+    tied_parameter = Parameter(name='tied', value=1., )
     tied_parameter.set_tie(target_parameter, ' * 2')
     parameters = [tied_parameter]
     with pytest.raises(ValueError):

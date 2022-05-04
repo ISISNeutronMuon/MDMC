@@ -5,10 +5,10 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from time import time
 
 import numpy as np
 import pandas as pd
+from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import unit_decorator_getter, \
     mod_docstring, repr_decorator, unit_decorator
@@ -18,7 +18,7 @@ from MDMC.MD.engine_facades.facade_factory import MDEngineFacadeFactory
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
-from MDMC.MD.structural_units import StructuralUnit
+from MDMC.MD.structures import Structure
 from MDMC.MD.interactions import Dispersion, Coulombic
 from MDMC.trajectory_analysis.trajectory import Configuration
 
@@ -48,7 +48,7 @@ class Universe(AtomContainer):
         A force field to apply to the Universe. The force fields available are:
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
     structures : list, optional
-        ``StructuralUnit`` objects contained in the ``Universe``. Default is None.
+        ``Structure`` objects contained in the ``Universe``. Default is None.
     **settings
         ``kspace_solver`` (`KSpaceSolver`)
             The k-space solver to be used for both electrostatic and dispersive
@@ -322,12 +322,12 @@ class Universe(AtomContainer):
 
         Returns
         -------
-        set
+        Parameters
             The ``Parameters`` objects defined within ``Universe``
         """
 
-        return Parameters({parameter for interaction in self.interactions
-                           for parameter in interaction.parameters})
+        return Parameters([parameter for interaction in self.interactions
+                           for parameter in interaction.parameters])
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
@@ -430,15 +430,15 @@ class Universe(AtomContainer):
     @property
     def structure_list(self):
         """
-        Get a `list` of all ``StructuralUnit`` objects that exist in the
-        ``Universe``.  This includes all ``StructuralUnit`` that are a subunit
+        Get a `list` of all ``Structure`` objects that exist in the
+        ``Universe``.  This includes all ``Structure`` that are a subunit
         of another structure belonging to the ``Universe``.
 
 
         Returns
         -------
         list
-            The ``StructuralUnit`` objects in the ``Universe``
+            The ``Structure`` objects in the ``Universe``
         """
 
         def add_all_parents(unit):
@@ -449,12 +449,12 @@ class Universe(AtomContainer):
                 parents += add_all_parents(parent)
             return parents
 
-        structural_units = []
+        structures = []
         for atom in self.atoms:
-            structural_units += add_all_parents(atom)
+            structures += add_all_parents(atom)
 
-        structural_units += list(self.atoms)
-        return list(set(structural_units))
+        structures += list(self.atoms)
+        return list(set(structures))
 
     @property
     @mod_docstring(_FF_DOCSTRING)
@@ -609,44 +609,44 @@ class Universe(AtomContainer):
             raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structural_unit(self, structural_unit, force_field=None,
+    def add_structure(self, structure, force_field=None,
                             center=False):
         """
-        Adds a single ``StructuralUnit`` to the ``Universe``, with optional
-        ``ForceField`` applying only to that ``StructuralUnit``
+        Adds a single ``Structure`` to the ``Universe``, with optional
+        ``ForceField`` applying only to that ``Structure``
 
         Parameters
         ----------
-        structural_unit : StructuralUnit or int
-            The ``StructuralUnit`` (or its ``ID`` as an `int`) to be added to the ``Universe``
+        structure : Structure or int
+            The ``Structure`` (or its ``ID`` as an `int`) to be added to the ``Universe``
         force_field : str, optional
-            The force field to be applied to the structural_unit. The available
+            The force field to be applied to the structure. The available
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
         center : bool, optional
-            Whether to center `structural_unit` within the Universe as it is
+            Whether to center `structure` within the Universe as it is
             added
         """
 
         if center:
-            structural_unit.position = self.dimensions / 2.
-        structural_unit.universe = self
-        self.configuration.add_structural_unit(structural_unit)
-        for atom in structural_unit.atoms:
+            structure.position = self.dimensions / 2.
+        structure.universe = self
+        self.configuration.add_structure(structure)
+        for atom in structure.atoms:
             self.add_bonded_interaction_pairs(*atom.bonded_interaction_pairs)
             self.add_nonbonded_interaction(*atom.nonbonded_interactions)
             self._update_atom_types(atom)
 
         if force_field:
-            self.add_force_field(force_field, *structural_unit.interactions)
+            self.add_force_field(force_field, *structure.interactions)
 
     @mod_docstring(_FF_DOCSTRING)
-    def fill(self, structural_unit: StructuralUnit, force_field: str = None,
+    def fill(self, structures: Structure, force_field: str = None,
              num_density: float = None, num_struc_units: int = None):
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
 
-        Adds copies of ``structural_unit`` to existing configuration until
+        Adds copies of ``structures`` to existing configuration until
         ``Universe`` is full.  As exclusion region is defined by the size of a
         bounding sphere, this method is most suitable for atoms or molecules
         with approximately equal dimensions.
@@ -661,18 +661,18 @@ class Universe(AtomContainer):
 
         Parameters
         ----------
-        structural_unit : StructuralUnit or int
-            The ``StructuralUnit`` with which to fill the ``Universe``
+        structures : Structure or int
+            The ``Structure`` with which to fill the ``Universe``
         force_field : str
             Applies a ``ForceField`` to the ``Universe``. The available
             ``ForceField`` are:
             DYNAMIC_FORCE_FIELD_LIST
         num_density: float
             Non-negative `float` specifying the number density of the
-            ``StructuralUnit``, in units of ``StructuralUnit / Ang ^ -3``
+            ``Structure``, in units of ``Structure / Ang ^ -3``
         num_struc_units: int
             Non-negative `int` specifying the number of passed
-            ``StructuralUnit`` objects that the universe should be filled
+            ``Structure`` objects that the universe should be filled
             with, regardless of ``Universe.dimensions``.
 
         Raises
@@ -709,9 +709,9 @@ class Universe(AtomContainer):
         positions = []
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
-        bounds = structural_unit.bounding_box
-        mn = np.array((0., 0., 0.)) - (bounds.min - structural_unit.position)
-        mx = self.dimensions - (bounds.min - structural_unit.position)
+        bounds = structures.bounding_box
+        mn = np.array((0., 0., 0.)) - (bounds.min - structures.position)
+        mx = self.dimensions - (bounds.min - structures.position)
         for i in range(len(self.dimensions)):
             positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
                                          endpoint=False))
@@ -722,11 +722,11 @@ class Universe(AtomContainer):
         # copying the structural unit to fill the universe
         for position in positions:
             if position is positions[0]:
-                self.add_structural_unit(structural_unit, force_field)
-                structural_unit.position = position
+                self.add_structure(structures, force_field)
+                structures.position = position
             else:
-                new_unit = structural_unit.copy(position)
-                self.add_structural_unit(new_unit)
+                new_unit = structures.copy(position)
+                self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field, *interactions, **settings):
@@ -1020,7 +1020,7 @@ class Universe(AtomContainer):
         # Also determine the total density of the solvent
         bonded_interactions = []
         for molecule in mols:
-            self.add_structural_unit(molecule)
+            self.add_structure(molecule)
             bonded_interactions += molecule.interactions
 
         # Get nonbonded interactions from atom types
@@ -1064,7 +1064,7 @@ def _primitive_cubic(dimensions, number):
 
 def _liquid_structure():
     """
-    Generates a random arrangement of ``StructuralUnit`` objects
+    Generates a random arrangement of ``Structure`` objects
 
     Raises
     ------
@@ -1387,8 +1387,8 @@ class Simulation:
         n_steps : int
             Maximum number of steps to run the minimization
         verbose: bool, optional
-            Whether to print statements when the minimization has been started and completed
-            (including the number minimizatin steps and time taken). Default is `False`.
+            If true, prints time taken for the minimization when complete.
+            If false (default), does nothing.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1401,15 +1401,16 @@ class Simulation:
                 on engine used.
         """
 
-        if verbose:
-            print('Starting minimization for {} steps'.format(n_steps))
-            time_0 = time()
+        verbose_manager = VerboseManager.instance()
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
+        verbose_manager.start(1, verbose=int(verbose))
 
+        verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, **settings)
 
-        if verbose:
-            print('Minimization complete in {} s'.format(
-                round(time() - time_0, 3)))
+        verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False):
         """
@@ -1427,8 +1428,8 @@ class Simulation:
             If the run is for equilibration (`True`) or production (`False`).
             Default is `False`.
         verbose: bool, optional
-            Whether to print statements upon starting and completing the run.
-            Default is `False`.
+            If true, prints time taken for the run when complete.
+            If false (default), does nothing.
         """
 
         if equilibration:
@@ -1436,15 +1437,16 @@ class Simulation:
         else:
             process = 'simulation'
 
-        if verbose:
-            print('Starting {0} for {1} steps'.format(process, n_steps))
-            time_0 = time()
+        verbose_manager = VerboseManager.instance()
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
+        verbose_manager.start(1, verbose=int(verbose))
 
+        verbose_manager.step(f"Running {process} for {n_steps} steps")
         self.engine.run(n_steps, equilibration)
 
-        if verbose:
-            print('{0} complete in {1} s'.format(
-                process.capitalize(), round(time() - time_0, 3)))
+        verbose_manager.finish(f"{process.capitalize()}")
 
     @property
     def trajectory(self):

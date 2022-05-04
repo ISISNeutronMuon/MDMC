@@ -6,7 +6,7 @@ from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import Coulomb, LennardJones
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, Dispersion, Coulombic
 
 NAME = 'length'
@@ -84,11 +84,11 @@ def parameters():
     Returns
     -------
     Parameters
-        A Parameters object of Parameter objecys with a value and a name. In
+        A Parameters object of Parameter objects with a value and a name. In
         each case the value is equal to the index of the parameter
     """
 
-    return Parameters([Parameter(UnitFloat(VALUE * i, UNIT), NAME) for i
+    return Parameters([Parameter(UnitFloat(VALUE * i, UNIT), NAME + str(i)) for i
                        in range(10)])
 
 
@@ -255,12 +255,14 @@ def test_filter_parameters(pred, attr, val):
 
     parameters = Parameters()
     for index in range(10):
-        parameter = Parameter(VALUE * index, NAME, unit=UNIT)
+        parameter = Parameter(VALUE * index, NAME + str(index), unit=UNIT)
         if index % 2:
             setattr(parameter, attr, val)
         parameters.append(parameter)
 
-    assert parameters.filter(pred) == parameters[1::2]
+    expected_parameters = Parameters(list(parameters.values())[1::2])
+
+    assert parameters.filter(pred) == expected_parameters
 
 
 @pytest.mark.parametrize('name, number', [('charge', 3),
@@ -279,7 +281,7 @@ def test_filter_parameters_name(name, number):
                          for index in range(5)])
 
     filtered = parameters.filter_name(name)
-    assert [parameter.name for parameter in filtered] == [name] * number
+    assert [parameter.name for parameter in filtered.values()] == [name] * number
 
 
 @pytest.mark.parametrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
@@ -300,9 +302,9 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
     where no parameters are returned, second parameterization tests case where
     all parameters are returned.
     """
+    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
 
-    assert (parameters.filter_value(comp, value)
-            == parameters[slice(*expected_slice)])
+    assert parameters.filter_value(comp, value) == expected_parameters
 
 
 @pytest.mark.parametrize('int_name, expected_slice', [('Dispersion',
@@ -319,7 +321,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
     parameters being returned
     """
 
-    for index, parameter in enumerate(parameters):
+    for index, parameter in enumerate(parameters.values()):
         if index % 2:
             parameter.interactions = coulombic
         else:
@@ -327,8 +329,10 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
                                             function=LennardJones((1., 'arb'),
                                                                   (1., 'arb')))
 
+    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
+
     assert (parameters.filter_interaction(int_name)
-            == parameters[slice(*expected_slice)])
+            == expected_parameters)
 
 
 @pytest.mark.parametrize('function_name, expected_slice', [('Coulomb',
@@ -345,7 +349,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
     correct number of parameters which have the correct interaction function
     """
 
-    for index, parameter in enumerate(parameters):
+    for index, parameter in enumerate(parameters.values()):
         if index % 2:
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
@@ -353,8 +357,10 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
         parameter.interactions = Dispersion(Universe(1.0), [1, 1],
                                         function=function)
 
+    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
+
     assert (parameters.filter_function(function_name)
-            == parameters[slice(*expected_slice)])
+            == expected_parameters)
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")
@@ -385,7 +391,7 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
               for props in [(1., 0.5),
                             (4., -1.0)]]
 
-    for index, parameter in enumerate(parameters):
+    for index, parameter in enumerate(parameters.values()):
         # Set parameters with different interactions
         # So all parameters will have a Bond with Atoms with masses of 1. and 2.
         # and charges of 0.5 and 1.0, while only parameters with even indexes
@@ -395,11 +401,13 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
             if not index % (inter_index + 1):
                 parameter.interactions = inter
 
+    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
+
     # Test that filter returns expected atoms for both val and val * 2, as any
     # parameter of an atom with val must also be a parameter of an atom with
     # val * 2
     assert (parameters.filter_atom_attribute(attr, val)
-            == parameters[slice(*expected_slice)]
+            == expected_parameters
             == parameters.filter_atom_attribute(attr, val * 2))
 
 
@@ -420,11 +428,30 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
     H2_bond = Bond(H2.atoms[0], H2.atoms[1])
     C_bond = Bond(Atom('C'), Atom('C'))
 
-    for index, parameter in enumerate(parameters):
+    for index, parameter in enumerate(parameters.values()):
         if not index % 3:
             parameter.interactions = H2_bond
         if not index % 2:
             parameter.interactions = C_bond
 
+    expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
+
     assert (parameters.filter_structure(struct_name)
-            == parameters[slice(*expected_slice)])
+            == expected_parameters)
+
+
+def test_duplicate_parameters_naming():
+    """Tests that duplicates of a parameter have a number appended to them."""
+
+    # test if separate parameters will all be indexed
+    parameters = Parameters([Parameter(name='charge', value=1.),
+                             Parameter(name='charge', value=2.),
+                             Parameter(name='charge', value=3.)])
+
+    assert list(parameters.keys()) == ['charge', 'charge_2', 'charge_3']
+
+    # test that identical parameters are not registered twice
+    parameters = Parameters([Parameter(name='charge', value=1.),
+                             Parameter(name='charge', value=1.)])
+
+    assert list(parameters.keys()) == ['charge']

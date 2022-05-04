@@ -1,5 +1,6 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
+from itertools import product
 from typing import Dict
 
 import numpy as np
@@ -140,7 +141,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose=0, **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings):
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -152,9 +153,11 @@ class AbstractFQt(SQwMixins, Observable):
         MD_input : Trajectory
             a single ``Trajectory`` object.
         verbose: int, optional
-            If 2, timings are printed for each calculation of FQt and SQw. If 1,
-            timings are collected so they can be printed at the end of the refinement.
-            If 0, no timings are collected. Default is 0.
+            The level of verbosity:
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -323,29 +326,28 @@ class AbstractFQt(SQwMixins, Observable):
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
                                in self.reciprocal_basis)
 
-        vectors = []
-        for l in range(-x_max, x_max + 1):
-            for m in range(-y_max, y_max + 1):
-                for n in range(-z_max, z_max + 1):
-                    # Within this cube, iterate over reciprocal lattice points
+        # create components of the Q vector for each axis on each lattice point in the cube
+        # .reshape(-1, 1) reshapes each axis to a column vector
+        # the list comprehension defines the way we traverse lattice points
+        vector_x = (np.array([(-i, i) for i in range(0, x_max + 1)]).reshape(-1, 1)
+                    * self.reciprocal_basis[0])
+        vector_y = (np.array([(-i, i) for i in range(0, y_max + 1)]).reshape(-1, 1)
+                    * self.reciprocal_basis[1])
+        vector_z = (np.array([(-i, i) for i in range(0, z_max + 1)]).reshape(-1, 1)
+                    * self.reciprocal_basis[2])
 
-                    if l == m == n == 0:
-                        continue
+        # combine to create overall vectors for each lattice point in the cube
+        vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
 
-                    vector = np.array(l * self.reciprocal_basis[0]
-                                      + m * self.reciprocal_basis[1]
-                                      + n * self.reciprocal_basis[2])
+        Q_vectors = []
+        # get all rows that fit our requirements
+        for vector in vectors:
+            if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
+                Q_vectors.append(vector)
+            if len(Q_vectors) >= self.n_Q_vectors:
+                break
 
-                    # If a point satisfies the requirements, append it to the
-                    # list
-                    if Q_min < np.linalg.norm(vector) <= Q_max:
-                        vectors.append(vector)
-
-                    # Return early if we reach our upper limit ``n_Q_vectors``
-                    if len(vectors) >= self.n_Q_vectors:
-                        return np.array(vectors)
-
-        return np.array(vectors)
+        return np.array(Q_vectors)
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
@@ -459,7 +461,6 @@ class AbstractFQt(SQwMixins, Observable):
         numpy.ndarray
             The S(Q, w) calculated from F(Q, t)
         """
-
         nE = len(energy)
         if self.use_FFT:
             # Ensure that if we recorded a longer trajectory than required by

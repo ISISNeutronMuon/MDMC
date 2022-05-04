@@ -1,8 +1,10 @@
 """Module which defines decorators"""
 
 from functools import wraps
+import functools
 import textwrap
 from types import FunctionType
+import weakref
 
 from MDMC.common.units import UnitFloat, unit_array
 
@@ -36,7 +38,7 @@ def unit_decorator(unit):
     -------
     Add a ``unit_decorator`` to the ``position`` ``property``::
 
-        >>> Class Atom(StructuralUnit):
+        >>> Class Atom(Structure):
         ...
         ...     @property
         ...     def position(self):
@@ -416,7 +418,7 @@ def repr_decorator(attribute, *attributes):
     attribute and the ``position`` property::
 
         >>> @repr_decorator('name', 'position')
-        ... Class Atom(StructuralUnit):
+        ... Class Atom(Structure):
         ...
         ...     def __init__(self, element, name, position):
         ...         self.element = element
@@ -452,3 +454,26 @@ def repr_decorator(attribute, *attributes):
 
         return cls
     return decorator
+
+
+def weakref_cache(maxsize=128):
+    """
+    Weakref LRU cache to avoid memory leaks
+
+    Caches on instance methods store `self`, which can
+    lead to excess memory use. This avoids it
+    by only holding a weakref to the instance.
+    """
+    def wrapper(func):
+
+        @functools.lru_cache(maxsize)  # create a 'semi-static' cached version of the method
+        def _func(_self, *args, **kwargs):
+            return func(_self(), *args, **kwargs)
+
+        @functools.wraps(func)  # call the 'semi-static' method with weakref
+        def inner(self, *args, **kwargs):
+            return _func(weakref.ref(self), *args, **kwargs)
+
+        return inner
+
+    return wrapper

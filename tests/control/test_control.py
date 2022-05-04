@@ -10,7 +10,7 @@ from typing import List
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
-from MDMC.MD.parameters import Parameter
+from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
@@ -228,97 +228,6 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_refine_stdout_verbose_1(simulation, exp_datasets, monkeypatch,
-                                         file_name, capsys):
-
-    """
-    Tests that the stdout from Control.refine is in the expected format when `verbose=1`, i.e.
-    timings are printed after refinement. Note that because the times are variable, we only assert
-    on the stdout for operations that have a time of `NaN` (those that we didn't actually time). 
-    """
-
-    # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
-                        mock_update_engine_parameters)
-
-    # Set history and parameters of MockMinimizer, as these are both involved in
-    # output
-    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
-               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3,
-               'really_long_title':[1, 1, 1, 1, 1] * 3}
-    minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
-
-    datasets = exp_datasets(file_name=file_name)
-    dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False,
-                           verbose=1)
-
-    ctrl.minimizer = minim
-    ctrl.refine(10)
-
-    # Capture stdout using pytest fixure
-    stdout = capsys.readouterr().out
-    expected_timings = ('Average Timings (s)\n'
-                        '  equilibrate           NaN\n'
-                        '  _run_MD               NaN\n'
-                        '  convert_trajectory    NaN\n'
-                        '  FoM_calculator        NaN\n')
-    assert expected_timings in stdout
-
-
-@pytest.mark.parametrize('file_name',
-                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_refine_stdout_verbose_2(simulation, exp_datasets, monkeypatch,
-                                         file_name, capsys):
-
-    """
-    Tests that the stdout from Control.refine is in the expected format when `verbose=2`, i.e.
-    timings are printed after each refinement step. Note that because the times are variable,
-    we only assert on the stdout for the names of the operations that we're timing, not the times
-    themselves. 
-    """
-
-    # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
-                        mock_update_engine_parameters)
-
-    # Set history and parameters of MockMinimizer, as these are both involved in
-    # output
-    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
-               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3,
-               'really_long_title':[1, 1, 1, 1, 1] * 3}
-    minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
-
-    datasets = exp_datasets(file_name=file_name)
-    dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False,
-                           verbose=2)
-
-    ctrl.minimizer = minim
-    ctrl.refine(10)
-
-    # Capture stdout using pytest fixure
-    stdout = capsys.readouterr().out
-    assert '           minimizer: ' in stdout
-    assert '          TOTAL STEP: ' in stdout
-
-
-@pytest.mark.parametrize('file_name',
-                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                                           monkeypatch, file_name, capsys):
 
@@ -379,6 +288,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
+
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
@@ -735,16 +645,16 @@ def test_control_fit_parameters(simulation):
     tie_target = Parameter(-1., 'tie_target')
     tied_param = Parameter(2., 'tied')
     tied_param.set_tie(tie_target, '')
-    fit_parameters = [Parameter(0., 'zero'),
+    fit_parameters = Parameters([Parameter(0., 'zero'),
                       Parameter(1., 'fixed', fixed=True),
                       tied_param,
-                      Parameter(3., 'constraints', constraints=(2.9, 3.1))]
+                      Parameter(3., 'constraints', constraints=(2.9, 3.1))])
 
     ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
                            reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
-    assert ctrl.fit_parameters[0].name == 'constraints'
+    assert list(ctrl.fit_parameters.keys())[0] == 'constraints'
 
 
 def test_control_resolution_function(simulation, exp_datasets):
