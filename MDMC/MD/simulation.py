@@ -891,8 +891,7 @@ class Universe(AtomContainer):
         """
 
         # Check if interactions already exists in Universe
-        new_nonbonded_interactions = {nbi for nbi in nonbonded_interactions}
-        self._nonbonded_interactions.update(list(new_nonbonded_interactions))
+        self._nonbonded_interactions.update(new_nonbonded_interactions)
 
     @property
     def nbis_by_atom_type_pairs(self):
