@@ -286,9 +286,9 @@ def test_equivalent_top_level_structures_dict(
 
     # Add a Molecule and atom that was created using the same parameters,
     # but different Python objects
-    universe.fill(structural_unit=water_molecule, num_struc_units=27)
+    universe.fill(water_molecule, num_struc_units=27)
     universe.add_structural_unit(water_copy)
-    universe.fill(structural_unit=atom, num_struc_units=64)
+    universe.fill(atom, num_struc_units=64)
     universe.add_structural_unit(atom_copy)
 
     equivalent_dict = universe.equivalent_top_level_structures_dict
@@ -1035,7 +1035,7 @@ def test_solvate_spce_with_solute(molecule):
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a large diatomic molecule.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -1066,7 +1066,7 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
