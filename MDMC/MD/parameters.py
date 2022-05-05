@@ -290,6 +290,11 @@ class Parameters(dict):
     ----------
     init_parameters: ``Parameter`` or `list` of ``Parameter``s, optional, default None
         The initial ``Parameter`` objects that the ``Parameters`` object contains.
+
+    Attributes
+    ----------
+    array: np.ndarray
+        An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
 
     def __init__(self, init_parameters: Union["list[Parameter]", Parameter, None] = None):
