@@ -30,7 +30,7 @@ class MMC(Minimizer):
     @property
     def history_columns(self):
 
-        return ['FoM', 'Change state'] + [p for p in self.parameters]
+        return ['FoM', 'Change state'] + list(self.parameters)
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
