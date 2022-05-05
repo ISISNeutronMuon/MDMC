@@ -48,7 +48,7 @@ class GPR(Minimizer):
         n_points = settings.get('n_points', 4)
 
         self.parameter_names, self.parameter_point_array = self.create_parameter_point_array(parameters, n_points)
-        #self.change_parameters()
+        self.change_parameters()
 
 
     def create_parameter_point_array(self, parameters, points=2):
@@ -77,20 +77,26 @@ class GPR(Minimizer):
         parameter_names = []
         bounds_array = []
         point_array = []
+        lower_bounds = []
+        upper_bounds = []
 
         if self.hypercube:
             samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
             latin_points = samples.random(n=points)
-            for i, parameter in enumerate(parameters):
+
+            for name, parameter in parameters.items():
                 lower_bound, upper_bound = self.create_bounds(parameter)
-                parameter_names.append(str(parameter.name))
-                latin_points[:, i] = self.scale_hypercube(latin_points[:, i], lower_bound, upper_bound)
+                parameter_names.append(str(name))
+                lower_bounds.append(lower_bound)
+                upper_bounds.append(upper_bound)
+
+            latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
             return parameter_names, latin_points
 
         else:
-            for parameter in parameters:
+            for name, parameter in parameters.items():
                 lower_bound, upper_bound = self.create_bounds(parameter)
-                parameter_names.append(str(parameter.name))
+                parameter_names.append(str(name))
                 
                 bounds_grid = np.linspace(lower_bound, upper_bound, points)
                 bounds_array.append(bounds_grid)
@@ -133,31 +139,8 @@ class GPR(Minimizer):
             else:
                 raise ValueError(f'You have set parameter {parameter.name} value to zero and have no constraints set for it. Please set constraints for it')
         return lower_bound, upper_bound
-    
-    def scale_hypercube(self, input_array, lower_bound, upper_bound):
-        """
-        Takes an input array in interval [0,1] and scales the values to instead be in 
-        the interval [lower_bound, upper_bound]
-        
-        Parameters
-        ----------
-        input_array : array
-            Array of values in the interval [0,1] to be scaled
-        lower_bound : float
-            The value to scale the array to, from 0 
-        upper_bound : float
-            The value to scale the array to, from 1
 
-        Returns
-        -------
-        array
-            Scale array of same shape as input array
-
-        """
-        scaled_array = input_array * lower_bound + (upper_bound - lower_bound)
-        return scaled_array
-
-    def has_converged(self, conv_tol: float = 1e-5, min_steps: int =1) -> bool:
+    def has_converged(self, min_steps: int =1) -> bool:
         """
         Checks if the refinement process has converged on a stable solution.
         Specifically, it checks if the certainty of the parameters being refined have all
@@ -168,8 +151,6 @@ class GPR(Minimizer):
 
         Parameters
         ----------
-        conv_tol : float, optional
-            The relative tolerance of the convergence check. Defaults to `1e-5`
         min_steps : int, optional
             The number of refinement steps after which
             convergence is checked. If the number of accepted state changes is less than this,
@@ -190,13 +171,13 @@ class GPR(Minimizer):
         return converged
 
     def change_state(self):
-        change_state = self.comm.bcast(change_state, root=0)
+        #change_state = self.comm.bcast(change_state, root=0)
         return True
 
     @property
     def history_columns(self):
 
-        return ['FoM', 'Change state'] + [p.name for p in self.parameters]
+        return ['FoM', 'Change state'] + [p for p in self.parameters]
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
@@ -215,7 +196,7 @@ class GPR(Minimizer):
         for name, value in zip(parameter_names, values):
             self.parameters[str(name)].value = value
 
-    def change_parameters(self):
+    def change_parameters(self, parameters=None):
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
 
@@ -280,15 +261,11 @@ class GPR(Minimizer):
         """
         records = pd.read_csv(filename, delimiter=',')
         records = records.astype(dtype=float, errors='ignore')  # Convert to float where possible (i.e. not a string)
-        self.parameter_names = records.columns
-        data = records.values
 
-        coordinates = []
-        FOMs = []
-        for i in range(len(data)):
-            coordinate = data[i]
-            coordinates.append(coordinate[3:])  # Only append parameters
-            FOMs.append(records['FoM'][i])
+        FOMs = records['FoM'].to_list()
+
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'])  # TODO this is hard coded to creation of history, may want to change
+        coordinates = records.values.tolist()
         
         kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*self.length_scale)
         gpr = GPR(kernel, n_restarts_optimizer=50, alpha = alpha)
