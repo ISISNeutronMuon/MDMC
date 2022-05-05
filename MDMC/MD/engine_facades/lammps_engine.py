@@ -2592,7 +2592,7 @@ def parse_bonded_coefficients(interaction):
         the LAMMPS facade.
     """
 
-    parameters = {p.type: convert_unit(p.value)
+    parameters = {p.name: convert_unit(p.value)
                   for p in interaction.parameters.array}
     style = parse_bonded_styles(interaction)
 
@@ -2683,7 +2683,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         if 'buck' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'Buckingham':
-                    parameters = {p.type: convert_unit(p.value)
+                    parameters = {p.name: convert_unit(p.value)
                                   for p in inter.parameters.array}
             ordered_parameters = [parameters['A'],
                                   parameters['B'] ** -1,
@@ -2699,7 +2699,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         elif 'lj' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'LennardJones':
-                    parameters = {p.type: convert_unit(p.value)
+                    parameters = {p.name: convert_unit(p.value)
                                   for p in inter.parameters.array}
             ordered_parameters = [parameters['epsilon'],
                                   parameters['sigma']]
