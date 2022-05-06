@@ -327,7 +327,7 @@ class Universe(AtomContainer):
         """
 
         return Parameters([parameter for interaction in self.interactions
-                           for parameter in interaction.parameters])
+                           for parameter in interaction.parameters.array])
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)

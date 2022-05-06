@@ -900,7 +900,7 @@ def test_update_individual_interactions(lammps_universe, interaction_fixture,
     # Scale all parameters for all interactions
     for interaction in interactions:
         for parameter in interaction.parameters:
-            parameter.value *= 2
+            interaction.parameters[parameter].value *= 2
 
     if interaction_fixture == 'dispersions':
         lammps_universe._update_dispersions(lammps_universe.universe)
@@ -924,7 +924,7 @@ def test_update_all_interactions(lammps_universe, interactions):
     # Scale all parameters for all interactions
     for interaction in interactions:
         for parameter in interaction.parameters:
-            parameter.value *= 2
+            interaction.parameters[parameter].value *= 2
 
     lammps_universe.update_parameters()
 

@@ -321,7 +321,7 @@ def test_add_molecule(universe, water_molecule):
     assert sorted([['H', 'H', 'O'], ['H', 'O'], ['H', 'O'], ['O', 'O'], ['O'],
                    ['H'], ['H']]) == sorted(interaction_elements)
 
-
+#FIXME
 def test_spce_water_molecule(universe, water_molecule):
 
     universe.add_structure(water_molecule)
@@ -346,7 +346,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # and the correspoding Parameter value
     parameters = []
     for function in functions:
-        {p.name:p.value for p in function.parameters}
+        {p.name: p.value for p in function.parameters.values()}
 
     # Test interaction parameters
     SPCEparameters = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
