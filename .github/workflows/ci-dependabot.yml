@@ -1,6 +1,6 @@
 name: Dependabot CI
 # separate workflow for Dependabot that avoids using secrets
-# as Dependabot does not have access to secrets
+# as Dependabot does not have access to regular secrets
 on:
   pull_request:
   
@@ -23,4 +23,7 @@ jobs:
     - name: Push image
       env:
         BRANCH: ${{ github.head_ref }}
-      run: docker push mdmc/mdmc:ci-$BRANCH
+        DOCKER_PASSWORD: ${{ secrets.DEPENDABOT_DOCKER }}
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
+        docker push mdmc/mdmc:ci-$BRANCH
