@@ -58,6 +58,9 @@ RUN make install-python
 WORKDIR /
 # Install any packages required for container which are not specifically for
 # running MDMC (i.e. not in requirements.txt)
+# [if this fails, you may be running Docker from the wrong directory. Go to
+# the main directory and build the image with
+# "docker build -f $(pwd)/build/Docker/Dockerfile ."]
 RUN pip3 install --upgrade pip
 RUN pip3 install setuptools --upgrade
 COPY .dev_requirements.txt .dev_requirements.txt 
@@ -65,9 +68,6 @@ RUN pip3 install -r .dev_requirements.txt
 RUN rm .dev_requirements.txt
 
 # Install dependencies
-# [if this fails, you may be running Docker from the wrong directory. Go to
-# the main directory and build the image with
-# "docker build -f $(pwd)/build/Docker/Dockerfile ."]
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 RUN rm requirements.txt
