@@ -4,7 +4,7 @@ import itertools
 import scipy.stats as st
 import pandas as pd
 
-from sklearn.gaussian_process import GaussianProcessRegressor as GPR
+from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 from scipy.ndimage import minimum_position, minimum
 
@@ -268,7 +268,7 @@ class GPR(Minimizer):
         coordinates = records.values.tolist()
         
         kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*self.length_scale)
-        gpr = GPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
