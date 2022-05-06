@@ -111,7 +111,9 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
 
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameter_slice)
-        assert minim.history_columns == ['FoM', 'Change state'] + columns
+        expected_columns = ['FoM', 'Change state'] + columns
+        for i in range(len(minim.history_columns)):
+            assert expected_columns[i] in minim.history_columns[i]
 
 
 def mock_change_parameters(self, parameters):
@@ -122,7 +124,6 @@ def mock_change_parameters(self, parameters):
     for p in parameters:
         parameters[p].value *= 2
 
-@pytest.mark.skip(reason="This test fails due to parameter duplication being inconsistent. Will work again once ID system is implemented")
 def test_minimizer_change_parameters(parameters):
     """
     Tests that the parameters change by the expected amount when given a mocked

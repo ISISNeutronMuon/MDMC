@@ -156,7 +156,7 @@ def test_interaction_function_get_parameters(interaction_func):
     """
 
     for parameter in interaction_func.parameters.array:
-        assert parameter.value == VAL_DICT[parameter.name]
+        assert parameter.value == VAL_DICT[parameter.type]
 
 
 def test_interaction_function_set_parameters(interaction_func, parameters):
@@ -224,9 +224,8 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     correct values and names to the parameters.
     """
     
-    for idx, parameter in enumerate(obj.parameters.array):
-        assert parameter.value == values[idx]
-        assert parameter.name == names[idx]
+    for value, name in zip(values, names):
+        assert obj.parameters[name].value == value
 
 
 @parametrize("inter_func, parameters",
@@ -249,9 +248,9 @@ def test_interaction_function_attributes(inter_func, parameters, request):
 
     for parameter in parameters:
         # Test both for existence of attribute and that the Parameter has the
-        # correct name
+        # correct type
         assert hasattr(inter_func, parameter)
-        assert getattr(inter_func, parameter).name == parameter
+        assert getattr(inter_func, parameter).type == parameter
 
 
 @pytest.mark.parametrize("inter_func, units",

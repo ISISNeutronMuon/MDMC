@@ -46,7 +46,7 @@ class InteractionFunction:
                 parameter = Parameter(value, name)
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
-                setattr(self, parameter.name, parameter)
+                setattr(self, parameter.type, parameter)
         self.parameters = parameters
 
     def __str__(self):
