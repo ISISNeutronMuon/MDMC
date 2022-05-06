@@ -325,21 +325,17 @@ class Parameters(dict):
         try:
             return super().__getitem__(key)
         except KeyError as error:
-            try:
-                # see if the key passed was a parameter name with no ID, and catch the error
-                # by getting the first parameter with that name
-                r = re.compile(rf"{key} \(.+\)")
-                matching_parameters = list(filter(r.match, list(self.keys())))
-                if matching_parameters:
-                    if len(matching_parameters) > 1:
-                        warnings.warn("Calling a parameter name with no ID fetches the first "
-                                      "parameter with that name; this may cause buggy or "
-                                      "inconsistent behaviour!")
-                    return super().__getitem__(matching_parameters[0])
-                else:
-                    raise KeyError
-            except KeyError:
-                raise error
+            # see if the key passed was a parameter name with no ID, and catch the error
+            # by getting the first parameter with that name
+            r = re.compile(rf"{key} \(.+\)")
+            matching_parameters = list(filter(r.match, list(self.keys())))
+            if matching_parameters:
+                if len(matching_parameters) > 1:
+                    warnings.warn("Calling a parameter name with no ID fetches the first "
+                                  "parameter with that name; this may cause buggy or "
+                                  "inconsistent behaviour!")
+                return super().__getitem__(matching_parameters[0])
+            raise KeyError from error
 
     def append(self, parameters: Union["list[Parameter]", Parameter]):
         """
@@ -381,7 +377,7 @@ class Parameters(dict):
 
         unique_parameters = []
         for parameter in copy(list(self.values())):
-            if any([parameter == p for p in unique_parameters]):
+            if any(parameter == p for p in unique_parameters):
                 self.pop(parameter.name)
             else:
                 unique_parameters.append(parameter)
