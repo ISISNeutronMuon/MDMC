@@ -140,7 +140,7 @@ class GPR(Minimizer):
                 raise ValueError(f'You have set parameter {parameter.name} value to zero and have no constraints set for it. Please set constraints for it')
         return lower_bound, upper_bound
 
-    def has_converged(self, min_steps: int =1) -> bool:
+    def has_converged(self, conv_tol: float = 1e-5, min_steps: int =1) -> bool:
         """
         Checks if the refinement process has converged on a stable solution.
         Specifically, it checks if the certainty of the parameters being refined have all
@@ -151,6 +151,8 @@ class GPR(Minimizer):
 
         Parameters
         ----------
+        conv_tol : float, optional
+            The relative tolerance of the convergence check. Defaults to `1e-5`
         min_steps : int, optional
             The number of refinement steps after which
             convergence is checked. If the number of accepted state changes is less than this,
@@ -217,7 +219,7 @@ class GPR(Minimizer):
         """
 
         self.FoM = FoM
-        values = np.array([p.value for p in self.parameters])
+        values = np.array([self.parameters[str(p)].value for p in self.parameters])
         history = [self.FoM]
         history.append('Accepted')
         self.FoM_old = self.FoM
@@ -333,7 +335,7 @@ class GPR(Minimizer):
 
         return minimum_parameters, min_FoM
 
-    def present_result(self):
+    def present_results(self):
         """
         Sets the parameters those predicted to return the minimum FoM, returns 
         the coordinates of the minima and the predicted FoM.

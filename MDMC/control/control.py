@@ -389,7 +389,7 @@ class Control:
             pass
 
         # print values of final parameters
-        parameter_df = pd.DataFrame({p.name: p.value for p in self.minimizer.parameters},
+        parameter_df = pd.DataFrame({p: self.minimizer.parameters[str(p)].value for p in self.minimizer.parameters},
                                     index=[0])
         print('\nFinal Parameters\n{}'
               ''.format(parameter_df.to_string(index=False)))

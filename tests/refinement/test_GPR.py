@@ -2,7 +2,7 @@
 Tests the GPR minimizer class
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 
 import numpy as np
 import pandas as pd
@@ -120,12 +120,12 @@ def test_GPR_fit():
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         with patch("MDMC.refinement.minimizers.GPR.skGPR.fit", autospec=True) as mock_fit:
             gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
-            fitted_GPR = gpr.GPR_fit()
-            mock_fit.assert_called_with(GaussianProcessRegressor(alpha=0.1, kernel=RBF(length_scale=[0.1, 0.1]),
-                                         n_restarts_optimizer=50), [[0.2, 2.6], [1.8, 2.6]], [100.0, 150.5])
+            _ = gpr.GPR_fit()
+            mock_fit.assert_called_with(ANY, [[0.2, 2.6], [1.8, 2.6]], [100.0, 150.5])
 
 def test_GPR_predict():
     gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
-    input_regressor = MagicMock(autospec=True)
-    input_regressor.X_train_.return_value = [[[0.0, 0.0], [1.0, 2.0]], [10.0, 20.0]]
-    prediction_GPR = gpr.GPR_predict(input_regressor, points=4)
+    input_regressor = GaussianProcessRegressor()
+    input_regressor.fit([[0.0, 0.0], [1.0, 2.0]], [1.0, 2.0])
+    point_array, prediction = gpr.GPR_predict(input_regressor, points=2)
+    assert np.allclose(point_array, [[0.0, 0.0], [0.0, 2.0], [1.0, 0.0], [1.0, 2.0]], rtol=1e-5)

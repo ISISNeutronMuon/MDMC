@@ -52,7 +52,6 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        # The ** here is dictionary unpacking not passing directly the settings kwargs
         return classes[0][1](parameter, distribution,
                              max_parameter_change , **settings)
 
