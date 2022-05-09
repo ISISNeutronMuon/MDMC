@@ -335,7 +335,7 @@ class GPR(Minimizer):
 
         return minimum_parameters, min_FoM
 
-    def present_results(self):
+    def present_result(self):
         """
         Sets the parameters those predicted to return the minimum FoM, returns 
         the coordinates of the minima and the predicted FoM.
