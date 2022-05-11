@@ -13,13 +13,23 @@ jobs:
     # just need an env that include docker, here picked:
     runs-on: ubuntu-latest
     steps:
-    - name: Update image
+    - name: Login to Docker
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
+
+    - name: Update image
+      env:
         BRANCH: ${{ github.head_ref }} 
       run: |
-        echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
         # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/mdmc:ci-$BRANCH || exit 0  
         docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
         docker push mdmc/mdmc:latest
+
+    - name: Update base image
+        BRANCH: ${{ github.head_ref }} 
+      run: |
+        docker pull mdmc/engines:ci-$BRANCH || exit 0
+        docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest
+        docker push mdmc/engines:latest
