@@ -27,12 +27,12 @@ class MMC(Minimizer):
 
         # MMC doesn't need parameter indexing; just keep a sorted list of values
         # to save memory and performance
-        self.parameters = sorted(list(self.parameters.values()))
+        #self.parameters = sorted(list(self.parameters.values()))
 
     @property
     def history_columns(self):
-
-        return ['FoM', 'Change state'] + [p.name for p in self.parameters]
+        what = [p for p in self.parameters]
+        return ['FoM', 'Change state'] + [list(self.parameters)]
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
@@ -129,10 +129,10 @@ class MMC(Minimizer):
 
         for i, parameter in enumerate(self.parameters):
             parameter.value = self.parameters_old_values[i]
-    
+
     def present_result(self):
         """
-        Sets the parameters those predicted to return the last FoM, returns 
+        Sets the parameters those predicted to return the last FoM, returns
         coordinates of the minima and the predicted FoM.
 
         Returns

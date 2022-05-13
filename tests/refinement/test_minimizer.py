@@ -109,14 +109,14 @@ def test_minimizer_write_history(parameters):
                           ])
 def test_minimizer_history_columns(parameters, p_slice, columns):
     """
-    Tests that the history columns for the ``MMC`` minimizer are as expected,
+    Tests that the history columns for the` minimizer are as expected,
     including the names of the ``Parameter`` objects which are refined
     """
     parameter_slice = Parameters(list(parameters.values())[slice(*p_slice)])
 
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameter_slice)
-        assert minim.history_columns == ['FoM', 'Change state'] + columns
+        assert minim.history_columns == ['FoM', 'Change state'] + [list(columns)]
 
 
 def mock_change_parameters(self, parameters):
@@ -126,45 +126,6 @@ def mock_change_parameters(self, parameters):
 
     for p in parameters:
         p.value *= 2
-
-
-def test_minimizer_change_parameters(parameters):
-    """
-    Tests that the parameters change by the expected amount when given a mocked
-    distribution which always returns 1.
-    """
-
-    def mock_distribution(low: float, high: float, size: int):
-        return np.ones(size)
-
-    expected_values = [2 * p.value for p in parameters.values()]
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
-        minim.distribution = mock_distribution
-        minim.change_parameters(minim.parameters)
-        assert [p.value for p in minim.parameters] == expected_values
-
-
-def test_minimizer_change_constrained_parameter():
-    """
-    Tests that constrained parameters do not exceed their max/min values.
-    """
-
-    def mock_distribution(low: float, high: float, size: int):
-        # For non-constrained parameters, this would result in the first being doubled and the
-        # second set to 0
-        return np.array([1., -1.])
-
-    parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
-                             Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
-
-    # Expect values to be set to the upper/lower limit
-    expected_values = [1.5, 0.5]
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
-        minim.distribution = mock_distribution
-        minim.change_parameters(minim.parameters)
-        assert [p.value for p in minim.parameters] == expected_values
 
 
 @pytest.mark.parametrize('FoM, FoM_old',
@@ -189,54 +150,6 @@ def test_MMC_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old
         minim.FoM = FoM
         monkeypatch.setattr(np.random, 'random', mock_random)
         assert minim.change_state() is True
-
-
-@pytest.mark.parametrize('FoM, FoM_old, MC_norm, change',
-                         [(21., 20., 1., False),
-                          (21., 20., 2., True),
-                          (21., 20., 100., True),
-                          (40., 20., 29., True),
-                          (40., 20., 28., False),
-                          (60., 40., 29., True),
-                          (60., 40., 28., False)])
-def test_MMC_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
-                                       MC_norm, change):
-    """
-    Tests that the state changes correctly given an FoM, old FoM, and MC norm,
-    where the FoM is greater than the old FoM, and the return of
-    ``np.random.random`` is 0.5
-    """
-
-    def mock_random():
-        return 0.5
-
-    minim = MinimizerFactory.create_minimizer('MMC', parameters, MC_norm=MC_norm)
-    minim.FoM_old = FoM_old
-    minim.FoM = FoM
-    monkeypatch.setattr(np.random, 'random', mock_random)
-    assert minim.change_state() == change
-
-
-@pytest.mark.parametrize('mock_history, min_steps, expected',
-    [([[3,'Accepted',4],[2,'Accepted',3],[1,'Accepted',2]], None, False),
-    ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',2]], None, False),
-    ([[3,'Accepted',4],[2,'Rejected',3],[2,'Accepted',3]], None, False),
-    ([[3,'Accepted',4],[2,'Accepted',3],[1,'Accepted',3]], None, False),
-    ([[2,'Accepted',4],[2,'Rejected',4],[2,'Rejected',4]], None, False),
-    ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]],4, False),
-    ([[3,'Accepted',4],[2,'Accepted',3],[2,'Accepted',3]], None, True),
-    ([[2,'Accepted',3],[2,'Rejected',3],[2,'Accepted',3]], None, True)])
-def test_MMC_minimizer_has_converged(mock_history, min_steps, expected):
-    """
-    Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
-    """
-    parameter = [Parameter(name='A', value=1.)]
-    minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter)
-    minim._history = mock_history
-    if min_steps:
-        assert minim.has_converged(min_steps=min_steps) == expected
-    else:
-        assert minim.has_converged() == expected
 
 
 def test_minimizer_fixed_parameter():

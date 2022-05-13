@@ -112,7 +112,6 @@ def test_GPR_set_parameter_values():
     with pytest.raises(ValueError):
         gpr.set_parameter_values(['parameter2'], [7.0])
 
-
 def test_GPR_fit():
     mocked_df = pd.DataFrame(data=[[0,100.0,'Accepted',0.2,2.6],
                             [1,150.5,'Accepted',1.8,2.6]],
@@ -126,6 +125,7 @@ def test_GPR_fit():
 def test_GPR_predict():
     gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
     input_regressor = GaussianProcessRegressor()
-    input_regressor.fit([[0.0, 0.0], [1.0, 2.0]], [1.0, 2.0])
+    input_regressor.fit([[0.0, 0.0], [1.0, 1.0]], [0.0, 1.0])
     point_array, prediction = gpr.GPR_predict(input_regressor, points=2)
-    assert np.allclose(point_array, [[0.0, 0.0], [0.0, 2.0], [1.0, 0.0], [1.0, 2.0]], rtol=1e-5)
+    assert np.allclose(point_array, [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], rtol=1e-5)
+    assert np.allclose(prediction, [0.0, 0.443409, 0.443409, 1.0], rtol=1e-5)

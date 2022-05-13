@@ -248,10 +248,11 @@ class Minimizer(ABC):
         """
 
         self.history.to_csv(filename)
-    
+
     @abstractmethod
     def present_result(self):
         """
-        Returns the most appropriate output for the minimiser class e.g. minimum FOM and parameter values
+        Returns the most appropriate output for the minimiser class
+        e.g. minimum FOM and parameter values
         """
         raise NotImplementedError

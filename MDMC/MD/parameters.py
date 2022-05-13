@@ -11,7 +11,7 @@ import ast
 from collections.abc import Iterable
 from itertools import chain
 import operator
-from typing import Union, Any
+from typing import Union, Any, Optional, List
 import warnings
 import weakref
 
@@ -291,7 +291,7 @@ class Parameters(dict):
         The initial ``Parameter`` objects that the ``Parameters`` object contains.
     """
 
-    def __init__(self, init_parameters: Union["list[Parameter]", Parameter, None] = None):
+    def __init__(self, init_parameters: Optional[Union[List[Parameter], Parameter]] = None):
         super().__init__()
         if init_parameters is not None:
             init_parameters = self._check_input(init_parameters)
@@ -302,7 +302,7 @@ class Parameters(dict):
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
-    def append(self, parameters: Union["list[Parameter]", Parameter]):
+    def append(self, parameters: Union[List[Parameter], Parameter]):
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
         with the parameter name as its key.
