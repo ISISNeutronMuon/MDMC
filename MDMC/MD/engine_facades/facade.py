@@ -94,7 +94,7 @@ class MDEngine(ABC):
     def setup_universe(self, universe, **settings):
         """
         Creates a ``Universe.configuration`` and populates with
-        ``StructuralUnit``
+        ``Structure``
 
         Parameters
         ----------

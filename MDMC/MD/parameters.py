@@ -424,18 +424,18 @@ class Parameters(list):
 
     def filter_structure(self, structure_name):
         """
-        Filters based on the name of the ``StructuralUnit`` to which each
+        Filters based on the name of the ``Structure`` to which each
         ``Parameter`` applies
 
         Parameters
         ----------
         structure_name : str
-            The name of a ``StructuralUnit``.
+            The name of a ``Structure``.
 
         Returns
         -------
         Parameters
-            The ``Parameter`` objects which are applied to a ``StructuralUnit``
+            The ``Parameter`` objects which are applied to a ``Structure``
             which has the specified ``zstructure_name``
         """
 
@@ -446,7 +446,7 @@ class Parameters(list):
             Returns
             -------
             list
-                A `list` of `str` with the names of ``StructuralUnit`` objects
+                A `list` of `str` with the names of ``Structure`` objects
             """
 
             # Recursively add structure.name to structure_names set until the

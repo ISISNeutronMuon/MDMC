@@ -9,7 +9,6 @@ MD engine facades, so that a correspondence is established between the MDMC
 force field and the MD engine equivalent."""
 
 from abc import ABC, abstractmethod
-from functools import lru_cache
 from inspect import signature
 from itertools import chain, permutations
 import logging
@@ -18,7 +17,7 @@ from re import escape, sub
 
 import pandas as pd
 
-from MDMC.common.decorators import repr_decorator
+from MDMC.common.decorators import repr_decorator, weakref_cache
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.MD import interaction_functions
@@ -577,7 +576,7 @@ class FileForceField(ForceField):
         function_name = self.inter_functions[interaction_type.lower()]
         return getattr(interaction_functions, function_name)
 
-    @lru_cache(maxsize=None)
+    @weakref_cache(maxsize=None)
     def _convert_atom_type_name(self, atom):
         """
         Converts all ``Atom`` objects with ``Atom.name`` that are a valid force
@@ -606,7 +605,6 @@ class FileForceField(ForceField):
         try:
             atom.name = self.atom_type_name[int(atom.name)]
         except (KeyError, ValueError) as err:
-
             # Check if atom.name is already a name in the atoms DataFrame
             if filter_dataframe([atom.name], self.atoms,
                                 column_names=['name']).empty:
