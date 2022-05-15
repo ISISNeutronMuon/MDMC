@@ -23,4 +23,4 @@ jobs:
     - name: Try to build documentation
       env:
         BRANCH: ${{ github.head_ref }} 
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c  "cd $(pwd) && apt-get update && apt-get install pandoc -y && make -d -C $(pwd)/doc html"
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c  "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
