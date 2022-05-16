@@ -12,11 +12,10 @@ lammps_engine (requires external module lammps.py)
 
 from . import facade_factory
 from . import facade
+from contextlib import suppress
 
 engines = ['lammps_engine', 'dlpoly_engine']
 
 for engine in engines:
-    try:
+    with suppress(ModuleNotFoundError):
         from . import engine
-    except ModuleNotFoundError:
-        pass
