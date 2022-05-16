@@ -503,9 +503,7 @@ class Trajectory(AtomCollection):
             including any weak references.
         """
 
-        configs = [TemporalConfiguration(time,
-                                         *structure,
-                                         universe=d['universe'])
+        configs = [TemporalConfiguration(time, *structure, universe=d['universe'])
                    for time, structure in zip(d['times'], d['structures'])]
 
         self.__init__(*configs)
