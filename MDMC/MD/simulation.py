@@ -1446,7 +1446,7 @@ class Simulation:
             Maximum number of steps to run the minimization
         verbose: bool, optional
             Whether to print statements when the minimization has been started and completed
-            (including the number minimizatin steps and time taken). Default is `False`.
+            (including the number of minimization steps and time taken). Default is `False`.
         output_log: str, optional
             Log file for the MD engine to write to. Default is `None`.
         work_dir: str, optional
@@ -1467,7 +1467,11 @@ class Simulation:
         """
 
         verbose_manager = VerboseManager.instance()
-
+        # to match legacy use of verbose on this function (where verbose was bool) we use bool
+        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
+        # step in this function so verbose levels 2 or 3 would not provide extra information
+        verbose_manager.start(1, verbose=int(verbose))
+        
         verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
                              **self.settings)
