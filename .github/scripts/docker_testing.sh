@@ -10,8 +10,6 @@
 
 # $TESTSET is defined in the main CI .yml script
 
-# $TESTSET is defined in CI so we only need one script for both lammps and non-lammps tests in parallel
-
 echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
 if ! git diff remotes/origin/master --name-only | grep 'MDMC/\|requirements.txt'
 then
