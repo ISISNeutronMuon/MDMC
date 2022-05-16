@@ -890,7 +890,7 @@ class Universe(AtomContainer):
             for more details on non-bonded interactions.
         """
 
-        # Check if interactions already exists in Universe
+        # Since self._nonbonded_interactions is a set the update method only adds new interactions
         self._nonbonded_interactions.update(nonbonded_interactions)
 
     @property
