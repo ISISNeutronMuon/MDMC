@@ -1000,7 +1000,7 @@ class BondedInteraction(Interaction):
 
     # _get_equivalent_structures is a method because of the override in
     # DihedralAngle
-    # pylint: disable=R0201
+    # pylint: disable=(no-self-use)
     def _get_equivalent_structures(self, structs):
         """
         Returns
