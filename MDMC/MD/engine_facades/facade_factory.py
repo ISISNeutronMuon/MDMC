@@ -47,10 +47,13 @@ class MDEngineFacadeFactory:
         """
 
         alias = alias.lower()
-
-        if alias in ('lammps', 'lammps_engine'):
-            module_name = 'lammps_engine'
-        elif alias in ('dlpoly', 'dlpoly_engine'):
-            module_name = 'dlpoly_engine'
+        engines = ['lammps_engine', 'dlpoly_engine']
+        if not alias.endswith('_engine'):
+            alias += '_engine'
+        if alias in engines:
+            module_name = alias
+        else:
+            raise ImportError(f"The MD engine {alias} is not in the list of recognised engines, "
+                              f"which currently comprises: {engines}")
 
         return import_module('.' + module_name, __package__)
