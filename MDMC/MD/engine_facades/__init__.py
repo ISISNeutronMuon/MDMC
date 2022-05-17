@@ -10,9 +10,10 @@ lammps_engine (requires external module lammps.py)
 # TODO: Fix
 # pylint: disable=import-self
 
+from contextlib import suppress
+
 from . import facade_factory
 from . import facade
-from contextlib import suppress
 
 engines = ['lammps_engine', 'dlpoly_engine']
 
