@@ -386,7 +386,7 @@ class Structure(ABC):
         return BoundingBox(self.atoms)
 
     @abstractmethod
-    def is_equivalent(self, structural_unit) -> bool:
+    def is_equivalent(self, structure) -> bool:
 
         """
         Checks the passed ``Structure`` against `self` for equivalence in
@@ -1178,20 +1178,18 @@ class Atom(Structure):
                 inter.add_atoms(*new_atoms)
                 memo[id(inter)] = inter
 
-    def is_equivalent(self, structural_unit: Structure) -> bool:
+    def is_equivalent(self, structure: Structure) -> bool:
 
-        return (isinstance(structural_unit, type(self))
-                and structural_unit.element == self.element
-                and structural_unit.mass == self.mass
-                and structural_unit.charge == self.charge
-                and (len(self.bonded_interactions)
-                     == len(structural_unit.bonded_interactions))
-                and (len(self.nonbonded_interactions)
-                     == len(structural_unit.nonbonded_interactions))
-                and all(a.is_equivalent(b) for a, b in
-                        zip(self.bonded_interactions, structural_unit.bonded_interactions))
-                and all(a.is_equivalent(b) for a, b in
-                        zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
+        return all([isinstance(structure, type(self)),
+                    structure.element == self.element,
+                    structure.mass == self.mass,
+                    structure.charge == self.charge,
+                    len(self.bonded_interactions) == len(structure.bonded_interactions),
+                    len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
+                    all(a.is_equivalent(b) for a, b in
+                        zip(self.bonded_interactions, structure.bonded_interactions)),
+                    all(a.is_equivalent(b) for a, b in
+                        zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
 
 
 class _Group(CompositeStructure):
@@ -1364,20 +1362,18 @@ class Molecule(CompositeStructure):
 
         return sum(atom.charge for atom in self.atoms if atom.charge is not None)
 
-    def is_equivalent(self, structural_unit: Structure) -> bool:
+    def is_equivalent(self, structure: Structure) -> bool:
 
-        return (isinstance(structural_unit, type(self))
-                and structural_unit.formula == self.formula
-                and structural_unit.mass == self.mass
-                and structural_unit.charge == self.charge
-                and (len(self.bonded_interactions)
-                     == len(structural_unit.bonded_interactions))
-                and (len(self.nonbonded_interactions)
-                     == len(structural_unit.nonbonded_interactions))
-                and all(a.is_equivalent(b) for a, b in
-                        zip(self.bonded_interactions, structural_unit.bonded_interactions))
-                and all(a.is_equivalent(b) for a, b in
-                        zip(self.nonbonded_interactions, structural_unit.nonbonded_interactions)))
+        return all([isinstance(structure, type(self)),
+                structure.formula == self.formula,
+                structure.mass == self.mass,
+                structure.charge == self.charge,
+                len(self.bonded_interactions) == len(structure.bonded_interactions),
+                len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
+                all(a.is_equivalent(b) for a, b in
+                        zip(self.bonded_interactions, structure.bonded_interactions)),
+                all(a.is_equivalent(b) for a, b in
+                        zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
 
 
 @repr_decorator('min', 'max', 'volume')

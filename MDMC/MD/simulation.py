@@ -492,11 +492,11 @@ class Universe(AtomContainer):
         """
 
         # Remove duplicate entries from multiple atoms belonging to the same molecule
-        structural_units = {atom.top_level_structure for atom in self.atoms}
+        structures = {atom.top_level_structure for atom in self.atoms}
 
         # and sort by ID for consistency
         # Sorted converts to list
-        top_level_structures = sorted(structural_units, key=lambda x: x.ID)
+        top_level_structures = sorted(structures, key=lambda x: x.ID)
         return top_level_structures
 
     @property
@@ -518,15 +518,15 @@ class Universe(AtomContainer):
         """
 
         equivalent_dict = {}
-        for structural_unit in self.top_level_structure_list:
+        for structure in self.top_level_structure_list:
             match = False
             for key in equivalent_dict:
-                if structural_unit.is_equivalent(key):
+                if structure.is_equivalent(key):
                     equivalent_dict[key] += 1
                     match = True
                     break
             if not match:
-                equivalent_dict[structural_unit] = 1
+                equivalent_dict[structure] = 1
 
         return equivalent_dict
 
