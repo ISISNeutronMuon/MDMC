@@ -105,9 +105,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                  config=None, field=None, statis=None, output=None,
                  dest_config=None, rdf=None, workdir=None):
 
-        super().__init__(self, dlpoly, control,
-                                 config, field, statis, output,
-                                 dest_config, rdf, workdir)
+        super().__init__(dlpoly, control, config, field, statis, output,
+                         dest_config, rdf, workdir)
 
         self.universe = None
         self.dlpoly_universe = None
