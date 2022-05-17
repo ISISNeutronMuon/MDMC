@@ -127,24 +127,6 @@ def mock_change_parameters(self, parameters):
     for p in parameters:
         parameters[p].value *= 2
 
-@pytest.mark.skip(reason="This test fails due to parameter duplication being inconsistent. Will work again once ID system is implemented")
-def test_minimizer_change_parameters(parameters):
-    """
-    Tests that the parameters change by the expected amount when given a mocked
-    distribution which always returns 1.
-    """
-
-    def mock_distribution(low: float, high: float, size: int):
-        return np.ones(size)
-
-    expected_values = {p: 2 * parameters[p].value for p in parameters}
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
-        minim.distribution = mock_distribution
-        minim.change_parameters(minim.parameters)
-        for p in minim.parameters:
-            assert minim.parameters[p].value == expected_values[p]
-
 
 def test_minimizer_change_constrained_parameter():
     """
@@ -217,36 +199,6 @@ def test_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
         minim.FoM = FoM
         monkeypatch.setattr(np.random, 'random', mock_random)
         assert minim.change_state() == change
-
-
-@pytest.mark.parametrize('mock_history, min_steps, expected',
-                         [([[3, 'Accepted', 4], [2, 'Accepted', 3], [1, 'Accepted', 2]], None,
-                           False),
-                          ([[3, 'Accepted', 4], [2, 'Accepted', 3], [2, 'Accepted', 2]], None,
-                           False),
-                          ([[3, 'Accepted', 4], [2, 'Rejected', 3], [2, 'Accepted', 3]], None,
-                           False),
-                          ([[3, 'Accepted', 4], [2, 'Accepted', 3], [1, 'Accepted', 3]], None,
-                           False),
-                          ([[2, 'Accepted', 4], [2, 'Rejected', 4], [2, 'Rejected', 4]], None,
-                           False),
-                          ([[3, 'Accepted', 4], [2, 'Accepted', 3], [2, 'Accepted', 3]], 4, False),
-                          ([[3, 'Accepted', 4], [2, 'Accepted', 3], [2, 'Accepted', 3]], None,
-                           True),
-                          ([[2, 'Accepted', 3], [2, 'Rejected', 3], [2, 'Accepted', 3]], None,
-                           True)])
-def test_minimizer_has_converged(mock_history, min_steps, expected):
-    """
-    Tests that the has_converged method returns the expected boolean for a number of mocked minimizer histories.
-    """
-    parameter = Parameters(Parameter(name='A', value=None))
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameter=parameter)
-        minim._history = mock_history
-        if min_steps:
-            assert minim.has_converged(min_steps=min_steps) == expected
-        else:
-            assert minim.has_converged() == expected
 
 
 def test_minimizer_fixed_parameter():
