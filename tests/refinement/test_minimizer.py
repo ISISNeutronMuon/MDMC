@@ -125,7 +125,7 @@ def mock_change_parameters(self, parameters):
     """
 
     for p in parameters:
-        p.value *= 2
+        parameters[p].value *= 2
 
 
 @pytest.mark.parametrize('FoM, FoM_old',

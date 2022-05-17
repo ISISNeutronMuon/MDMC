@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 from scipy.ndimage import minimum_position, minimum
+from typing import Generic, List, Union, Optional, Tuple
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
@@ -59,7 +60,7 @@ class GPR(Minimizer):
         self.change_parameters()
 
 
-    def create_parameter_point_array(self, parameters, points=2):
+    def create_parameter_point_array(self, parameters: List, points: Optional[int]=2) -> Tuple[List[str], List[Tuple]]:
         """
         Takes or creates the constraints of the parameters to be minimised, the either makes an
         array of length "points" and performs the Cartesian product across all parameters, to
@@ -112,7 +113,7 @@ class GPR(Minimizer):
         return parameter_names, point_array
 
 
-    def create_bounds(self, parameter, fraction = 0.2):
+    def create_bounds(self, parameter, fraction: float=0.2) -> Tuple[float, float]:
         """
         Returns either the parameter constraints (bounds) or some sensible bounds for
         a given parameter, defaults to +-20%. Raises a ValueError if value is zero and has
@@ -150,7 +151,7 @@ class GPR(Minimizer):
                     have no constraints set for it. Please set constraints for it')
         return lower_bound, upper_bound
 
-    def has_converged(self, conv_tol: float = 1e-5, min_steps: int =1) -> bool:
+    def has_converged(self, conv_tol: Optional[float]=1e-5, min_steps: Optional[int]=1) -> bool:
         """
         Checks if the refinement process has converged on a stable solution.
         Specifically, it checks if the certainty of the parameters being refined have all
@@ -182,19 +183,19 @@ class GPR(Minimizer):
 
         return converged
 
-    def change_state(self):
+    def change_state(self) -> bool:
         #change_state = self.comm.bcast(change_state, root=0)
         return True
 
     @property
-    def history_columns(self):
+    def history_columns(self) -> Tuple[Tuple[str]]:
 
         return ['FoM', 'Change state'] + [list(self.parameters)]
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
 
-    def set_parameter_values(self, parameter_names, values):
+    def set_parameter_values(self, parameter_names: List[str], values: List[float]) -> None:
         """
         Assigns a new value to each parameter (specified by the parameter.name)
 
@@ -208,7 +209,7 @@ class GPR(Minimizer):
         for name, value in zip(parameter_names, values):
             self.parameters[str(name)].value = value
 
-    def change_parameters(self, parameters=None):
+    def change_parameters(self, parameters=None) -> None:
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
 
@@ -223,7 +224,7 @@ class GPR(Minimizer):
             coordinates = self.parameter_point_array[point_to_calculate]
             self.set_parameter_values(self.parameter_names, coordinates)
 
-    def step(self, FoM):
+    def step(self, FoM: float) -> None:
         """
         Increments the minimization by a step
         """
@@ -240,7 +241,7 @@ class GPR(Minimizer):
         if len(self._history) < len(self.parameter_point_array):
             self.change_parameters()
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         """
         Resets the ``Parameter`` values to the first step
         """
@@ -250,7 +251,7 @@ class GPR(Minimizer):
                     parameter.value = self.parameter_point_array[0][i]
 
 
-    def GPR_fit(self, filename="results.csv", alpha=0.1):
+    def GPR_fit(self, filename: Optional[str]="results.csv", alpha: Optional[float]=0.1):
         """
         Uses the measured points in the supplied file to perform a Gaussian
         process regression and fit the points.
@@ -276,8 +277,11 @@ class GPR(Minimizer):
         # Convert to float where possible (i.e. not a string)
 
         FOMs = records['FoM'].to_list()
+        min_FOM = np.min(FOMs)
+        min_parameters = records.index[records['FoM']==min_FOM].tolist()
 
         records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'])
+
         # TODO this is hard coded to creation of history, may want to change
         coordinates = records.values.tolist()
 
@@ -286,9 +290,9 @@ class GPR(Minimizer):
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
-        return fitted_GPR
+        return fitted_GPR, min_FOM, min_parameters
 
-    def GPR_predict(self, input_regressor, points=100):
+    def GPR_predict(self, input_regressor, points: Optional[float]=100) -> Tuple[List[Tuple[float]], np.ndarray]:
         """
         Takes a fitted Gaussian process regressor, creates an array of points between the
         minimum and maximum measured parameter values and predicts the FoM on these points
@@ -322,7 +326,7 @@ class GPR(Minimizer):
 
         return point_array, prediction
 
-    def global_minimum_position(self, predicted_FOMs, measured_parameter_coordinates):
+    def global_minimum_position(self, predicted_FOMs: np.ndarray, measured_parameter_coordinates: List[float]) -> Tuple[np.ndarray, float]:
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 
@@ -347,21 +351,24 @@ class GPR(Minimizer):
 
         return minimum_parameters, min_FoM
 
-    def present_result(self):
+    def present_result(self) -> str:
         """
         Sets the parameters those predicted to return the minimum FoM, returns
         the coordinates of the minima and the predicted FoM.
 
         Returns
         -------
-        minima_coordinate : array(float)
-            The parameter coordinates where the minimum figure of merit is predicted to be
-        min_FoM : float
-            The predicted minimum figure of merit value
+        output_string : str
+            A string presenting the best predicted and measured parameters, to be printed
+            by Control to the user.
         """
-        fit = self.GPR_fit()
+        fit, min_FOM, min_parameters = self.GPR_fit()
         points, FoMs = self.GPR_predict(fit)
         minima_coordinate, min_FoM = self.global_minimum_position(FoMs, points)
         self.set_parameter_values(self.parameter_names, minima_coordinate)
+        output_string = f'Predicted minimum coordinate is {minima_coordinate} for a minimum FoM \
+            of {min_FoM}. /n \
+            Best point measured was {min_parameters} for a minimum FoM of {min_FOM}. /n/n \
+            The parameters have been set to the predicted minimum values'
 
-        return minima_coordinate, min_FoM
+        return output_string

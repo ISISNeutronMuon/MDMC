@@ -382,22 +382,14 @@ class Control:
         try:
             # Reset the minimizer parameters to those from the final FoM:
             # to account for a current side effect of step()
-            #self.minimizer.reset_parameters()
-            minima_coordinate, min_FoM = self.minimizer.present_result()
+            self.minimizer.reset_parameters()
             self._update_engine_parameters()
         except TypeError:
             pass
 
         # print values of final parameters
-        parameter_df = pd.DataFrame({p: self.minimizer.parameters[str(p)].value \
-                                            for p in self.minimizer.parameters},
-                                    index=[0])
-        print('\nFinal Parameters\n{}'
-              ''.format(parameter_df.to_string(index=False)))
-        print('\nGPR coordinate\n{}'
-              ''.format(minima_coordinate))
-        print('\nGPR FoM\n{}'
-              ''.format(min_FoM))
+        result_string = self.minimizer.present_result()
+        print(result_string)
 
         # If automatically scaling data print the scale factor for each dataset
         scaling_keys = []

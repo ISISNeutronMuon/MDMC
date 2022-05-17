@@ -43,7 +43,7 @@ class MMC(Minimizer):
         """
 
         self.FoM = FoM
-        values = np.array([p.value for p in self.parameters])
+        values = np.array([self.parameters[p].value for p in self.parameters])
         history = [self.FoM]
 
         if self.change_state():
@@ -111,7 +111,7 @@ class MMC(Minimizer):
         # Broadcast parameters changes to all processes
         changes = self.comm.bcast(changes, root=0)
         # Change parameters by same amount on all processes
-        for i, parameter in enumerate(parameters):
+        for i, parameter in enumerate(parameters.values()):
             new_value = parameter.value * (1 + changes[i])
             # If the parameter is constrained, then clip changes that would be out of range
             if parameter.constraints is not None:
@@ -120,15 +120,15 @@ class MMC(Minimizer):
                 elif new_value > parameter.constraints[1]:
                     new_value = parameter.constraints[1]
 
-            parameter.value = new_value
+            parameters[parameter.name].value = new_value
 
     def reset_parameters(self):
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """
 
-        for i, parameter in enumerate(self.parameters):
-            parameter.value = self.parameters_old_values[i]
+        for parameter in self.parameters:
+            self.parameters[parameter].value = self.parameters_old_values[parameter]
 
     def present_result(self):
         """
@@ -137,11 +137,17 @@ class MMC(Minimizer):
 
         Returns
         -------
-        minima_coordinate : array(float)
-            The parameter coordinates where the last figure of merit was measured
-        self.FoM : float
-            The last figure of merit value
+        output_string : str
+            A string presenting the best measured parameters and the current ones, to be printed
+            by Control to the user.
         """
         self.reset_parameters()
-        minima_coordinate = np.array([parameter.value for parameter in self.parameters])
-        return minima_coordinate, self.FoM
+        final_coordinate = np.array([parameter.value for parameter in self.parameters])
+
+        minimum_FoM, min_index = self.history['FoM'].min(), self.history['FoM'].idxmin()
+        minimum_parameters = self.history.iloc[min_index,2:]
+        output_string = f'Current coordinate is {final_coordinate} with a FoM \
+        of {self.FoM}. /n \
+        Best point measured was {minimum_parameters} for a minimum FoM of {minimum_FoM}.'
+
+        return output_string

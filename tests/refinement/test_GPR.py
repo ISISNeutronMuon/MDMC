@@ -2,7 +2,7 @@
 Tests the GPR minimizer class
 """
 
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import patch, ANY
 
 import numpy as np
 import pandas as pd
@@ -54,15 +54,9 @@ def test_GPR_create_bounds():
     assert np.allclose([lower_bound, upper_bound], [constrained_parameter[0].constraints[0], constrained_parameter[0].constraints[1]], rtol=1e-5)
 
 @pytest.mark.parametrize('FoMs,coordinates,expected',
-    [([2, 3, 0, 1, 4], 
-    [[0,0], [0,1], [1,0], [1,1], [2,0]], 
-    [[1,0], 0]),
-    ([2], 
-    [[0,0,1]], 
-    [[0,0,1], 2]),
-    ([0.01, 0.020, 0.01, 6], 
-    [[0.1,0.1,0.1],[0.1,0.1,1],[0.1,1,1],[1,1,1]], 
-    [[0.1,0.1,0.1], 0.01])])
+    [([2, 3, 0, 1, 4], [[0,0], [0,1], [1,0], [1,1], [2,0]], [[1,0], 0]),
+    ([2], [[0,0,1]], [[0,0,1], 2]),
+    ([0.01, 0.020, 0.01, 6], [[0.1,0.1,0.1],[0.1,0.1,1],[0.1,1,1],[1,1,1]], [[0.1,0.1,0.1], 0.01])])
 def test_GPR_global_minimum_position(FoMs, coordinates, expected):
     constrained_parameter = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0))])
     gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameter, n_points=3)
@@ -74,12 +68,12 @@ def test_GPR_global_minimum_position(FoMs, coordinates, expected):
 [([[1],[2],[3]], [1,2,3], [[1],1]),
 ([[1,0],[2,0],[3,0],[4,0]], [0.1,2,3,0], [[4,0],0])])
 def test_GPR_present_results(points,FoMs,expected):
-    with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_fit", autospec=True, return_value=None):
+    with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_fit", autospec=True, return_value=(None,points, FoMs)):
         with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_predict", autospec=True, return_value=(points, FoMs)):
             gpr = MinimizerFactory.create_minimizer('GPR', Parameters(), n_points=3)
-            coord, FoM = gpr.present_result()
-            assert np.allclose(coord, expected[0], rtol=1e-5)
-            assert np.allclose(FoM, expected[1], rtol=1e-5)
+            coord = gpr.present_result()
+            assert str(expected[0]) in coord
+            assert str(expected[1]) in coord
 
 def test_GPR_create_bounds():
     constrained_parameter = Parameter(name='parameter1', value=1., constraints=(0.5,2.0))
@@ -119,7 +113,7 @@ def test_GPR_fit():
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         with patch("MDMC.refinement.minimizers.GPR.skGPR.fit", autospec=True) as mock_fit:
             gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
-            _ = gpr.GPR_fit()
+            _, _, _ = gpr.GPR_fit()
             mock_fit.assert_called_with(ANY, [[0.2, 2.6], [1.8, 2.6]], [100.0, 150.5])
 
 def test_GPR_predict():

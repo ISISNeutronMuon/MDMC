@@ -4,10 +4,14 @@ Tests the Metropolis-Hastings minimizer
 import numpy as np
 import pytest
 
-from MDMC.MD import Parameter
+from unittest.mock import patch
+
+from MDMC.MD import Parameter, Parameters
 from MDMC.refinement import minimizers
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from tests.refinement.test_minimizer import mock_change_parameters
+import numpy as np
+import pytest
 
 
 @pytest.fixture
@@ -20,24 +24,22 @@ def parameters():
         `value` attributes
     """
 
-    return ([Parameter(name='A', value=1.),
-             Parameter(name='B', value=2.),
-             Parameter(name='C', value=3.),
-             Parameter(name='charge', value=1.),
-             Parameter(name='charge', value=.5),
-             Parameter(name='epsilon', value=.2),
-             Parameter(name='equilibrium_state', value=1.2),
-             Parameter(name='potential_strength', value=1234.),
-             Parameter(name='sigma', value=3.3)])
+    return Parameters([Parameter(name='A', value=1.),
+                       Parameter(name='B', value=2.),
+                       Parameter(name='C', value=3.),
+                       Parameter(name='charge', value=1.),
+                       Parameter(name='charge', value=.5),
+                       Parameter(name='epsilon', value=.2),
+                       Parameter(name='equilibrium_state', value=1.2),
+                       Parameter(name='potential_strength', value=1234.),
+                       Parameter(name='sigma', value=3.3)])
 
 
 def test_mmc_step_accepted(monkeypatch, parameters):
     """
     Tests that the ``MMC`` minimizer increments with the correct step when the
     state change is accepted (i.e. ``MMC.change_state`` returns `True`)
-
     This includes testing that:
-
         - the old FoM is set to whatever the FoM provided is
         - the old parameter values are changed to the current parameter values
         - the state changed attribute is True
@@ -51,8 +53,8 @@ def test_mmc_step_accepted(monkeypatch, parameters):
     # The original parameter values should be added to the history, and the
     # changed values should be 2x these (as determined by
     # mock_change_parameters)
-    original_values = [p.value for p in parameters]
-    changed_values = [p.value * 2 for p in parameters]
+    original_values = [parameters[p].value for p in parameters]
+    changed_values = [parameters[p].value * 2 for p in parameters]
     mmc = MinimizerFactory.create_minimizer('MMC', parameters)
 
     # Monkeypatch both the state change and the parameter change
@@ -64,9 +66,9 @@ def test_mmc_step_accepted(monkeypatch, parameters):
     mmc.step(FoM)
 
     assert mmc.FoM_old == FoM
-    assert np.all(mmc.parameters_old_values == np.array(original_values))
+    assert np.all(np.array(list(mmc.parameters_old_values.values())) == np.array(original_values))
     assert mmc.state_changed is True
-    assert [p.value for p in mmc.parameters] == changed_values
+    assert [mmc.parameters[p].value for p in mmc.parameters] == changed_values
     assert mmc._history == [[FoM, 'Accepted'] + original_values]
 
 
@@ -74,9 +76,7 @@ def test_mmc_step_rejected(monkeypatch, parameters):
     """
     Tests that the ``MMC`` minimizer increments with the correct step when the
     state change is rejected (i.e. ``MMC.change_state`` returns `False`)
-
     This includes testing that:
-
         - the current FoM is set to the old FoM
         - the current parameters are reset to their old values
         - the state changed attribute is False
@@ -92,10 +92,10 @@ def test_mmc_step_rejected(monkeypatch, parameters):
     # possesses.  As these are not set when MMC is initialised, set these
     # manually to something arbitrary.
     mmc = MinimizerFactory.create_minimizer('MMC', parameters)
-    mmc.parameters_old_values = np.arange(len(parameters))
+    mmc.parameters_old_values = {p: v for p, v in zip(parameters, np.arange(len(parameters)))}
     original_FoM = mmc.FoM_old
-    original_values = [p.value for p in parameters]
-    expected_values = list(mmc.parameters_old_values * 2)
+    original_values = [parameters[p].value for p in parameters]
+    expected_values = list(np.arange(len(parameters)) * 2)
 
     # Monkeypatch both the state change and the parameter change
     monkeypatch.setattr(minimizers.MMC.MMC, 'change_state', mock_change_state)
@@ -107,8 +107,8 @@ def test_mmc_step_rejected(monkeypatch, parameters):
 
     assert mmc.FoM == original_FoM
     assert mmc.state_changed is False
-    assert np.all(mmc.parameters_old_values == np.arange(len(parameters)))
-    assert [p.value for p in mmc.parameters] == expected_values
+    assert np.all(np.array(list(mmc.parameters_old_values.values())) == np.arange(len(parameters)))
+    assert [parameters[p].value for p in mmc.parameters] == expected_values
     assert mmc._history == [[FoM, 'Rejected'] + original_values]
 
 
@@ -130,7 +130,7 @@ def test_minimizer_change_constrained_parameter():
     minim = MinimizerFactory.create_minimizer('MMC', parameters)
     minim.distribution = mock_distribution
     minim.change_parameters(minim.parameters)
-    assert [p.value for p in minim.parameters] == expected_values
+    assert [parameters[p].value for p in minim.parameters] == expected_values
 
 
 def test_minimizer_change_parameters(parameters):
@@ -142,11 +142,11 @@ def test_minimizer_change_parameters(parameters):
     def mock_distribution(low: float, high: float, size: int):
         return np.ones(size)
 
-    expected_values = [2 * p.value for p in parameters.values()]
+    expected_values = [2 * parameters[p].value for p in parameters]
     minim = MinimizerFactory.create_minimizer('MMC', parameters)
     minim.distribution = mock_distribution
     minim.change_parameters(minim.parameters)
-    assert [p.value for p in minim.parameters] == expected_values
+    assert [parameters[p].value for p in minim.parameters] == expected_values
 
 @pytest.mark.parametrize('FoM, FoM_old, MC_norm, change',
                          [(21., 20., 1., False),
@@ -194,3 +194,17 @@ def test_MMC_minimizer_has_converged(mock_history, min_steps, expected):
         assert minim.has_converged(min_steps=min_steps) == expected
     else:
         assert minim.has_converged() == expected
+
+@pytest.mark.parametrize('points,FoMs,expected',
+[([[1],[2],[3]], [1,2,3], [[1],1]),
+([[1,0],[2,0],[3,0],[4,0]], [0.1,2,3,0], [[4,0],0])])
+def test_MMC_present_results(points,FoMs,expected):
+    params = Parameters()
+    with patch("MDMC.refinement.minimizers.MMC.MMC.history", autospec=True) as hist:
+        hist['FoM'].min.return_value = expected[1]
+        hist['FoM'].idxmin.return_value = FoMs
+        hist.iloc.__getitem__.return_value = points
+        mmc = MinimizerFactory.create_minimizer('MMC', params)
+        coord = mmc.present_result()
+        assert str(expected[0]) in coord
+        assert str(expected[1]) in coord
