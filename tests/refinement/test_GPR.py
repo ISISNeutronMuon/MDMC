@@ -123,3 +123,16 @@ def test_GPR_predict():
     point_array, prediction = gpr.GPR_predict(input_regressor, points=2)
     assert np.allclose(point_array, [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], rtol=1e-5)
     assert np.allclose(prediction, [0.0, 0.443409, 0.443409, 1.0], rtol=1e-5)
+
+def test_GPR_minimizer_change_constrained_parameter():
+    """
+    Tests that constrained parameters do not exceed their max/min values.
+    """
+    parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
+                             Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
+
+    # Expect values to be set to the upper/lower limit
+    expected_values = [0.5, 0.5]
+    minim = MinimizerFactory.create_minimizer('GPR', parameters)
+    minim.change_parameters(minim.parameters)
+    assert [p.value for p in minim.parameters.values()] == expected_values

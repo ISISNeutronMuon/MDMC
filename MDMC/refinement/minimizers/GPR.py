@@ -1,5 +1,6 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
+from typing import List, Optional, Tuple
 
 import numpy as np
 import scipy.stats as st
@@ -8,7 +9,6 @@ import pandas as pd
 from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 from scipy.ndimage import minimum_position, minimum
-from typing import Generic, List, Union, Optional, Tuple
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
@@ -60,7 +60,8 @@ class GPR(Minimizer):
         self.change_parameters()
 
 
-    def create_parameter_point_array(self, parameters: List, points: Optional[int]=2) -> Tuple[List[str], List[Tuple]]:
+    def create_parameter_point_array(self, parameters: List,
+                                    points: Optional[int]=2) -> Tuple[List[str], List[Tuple]]:
         """
         Takes or creates the constraints of the parameters to be minimised, the either makes an
         array of length "points" and performs the Cartesian product across all parameters, to
@@ -190,7 +191,7 @@ class GPR(Minimizer):
     @property
     def history_columns(self) -> Tuple[Tuple[str]]:
 
-        return ['FoM', 'Change state'] + [list(self.parameters)]
+        return ['FoM', 'Change state'] + list(self.parameters)
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
@@ -292,7 +293,8 @@ class GPR(Minimizer):
 
         return fitted_GPR, min_FOM, min_parameters
 
-    def GPR_predict(self, input_regressor, points: Optional[float]=100) -> Tuple[List[Tuple[float]], np.ndarray]:
+    def GPR_predict(self, input_regressor,
+                    points: Optional[float]=100) -> Tuple[List[Tuple[float]], np.ndarray]:
         """
         Takes a fitted Gaussian process regressor, creates an array of points between the
         minimum and maximum measured parameter values and predicts the FoM on these points
@@ -326,7 +328,8 @@ class GPR(Minimizer):
 
         return point_array, prediction
 
-    def global_minimum_position(self, predicted_FOMs: np.ndarray, measured_parameter_coordinates: List[float]) -> Tuple[np.ndarray, float]:
+    def global_minimum_position(self, predicted_FOMs: np.ndarray,
+                                measured_parameter_coordinates: List[float])-> Tuple[np.ndarray, float]:
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 

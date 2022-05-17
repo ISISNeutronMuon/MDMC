@@ -193,3 +193,49 @@ def test_minimizer_change_parameters(parameters):
         minim.change_parameters(minim.parameters)
         for p in minim.parameters:
             assert minim.parameters[p].value == expected_values[p]
+
+def test_MMC_minimizer_change_constrained_parameter():
+    """
+    Tests that constrained parameters do not exceed their max/min values.
+    """
+
+    def mock_distribution(low: float, high: float, size: int):
+        # For non-constrained parameters, this would result in the first being doubled and the
+        # second set to 0
+        return np.array([1., -1.])
+
+    parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
+                             Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
+
+    # Expect values to be set to the upper/lower limit
+    expected_values = [1.5, 0.5]
+    minim = MinimizerFactory.create_minimizer('MMC', parameters)
+    minim.distribution = mock_distribution
+    minim.change_parameters(minim.parameters)
+    assert [p.value for p in minim.parameters.values()] == expected_values
+
+
+@pytest.mark.parametrize('FoM, FoM_old, MC_norm, change',
+                         [(21., 20., 1., False),
+                          (21., 20., 2., True),
+                          (21., 20., 100., True),
+                          (40., 20., 29., True),
+                          (40., 20., 28., False),
+                          (60., 40., 29., True),
+                          (60., 40., 28., False)])
+def test_MMC_minimizer_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
+                                       MC_norm, change):
+    """
+    Tests that the state changes correctly given an FoM, old FoM, and MC norm,
+    where the FoM is greater than the old FoM, and the return of
+    ``np.random.random`` is 0.5
+    """
+
+    def mock_random():
+        return 0.5
+        
+    minim = MinimizerFactory.create_minimizer('MMC', parameters, MC_norm=MC_norm)
+    minim.FoM_old = FoM_old
+    minim.FoM = FoM
+    monkeypatch.setattr(np.random, 'random', mock_random)
+    assert minim.change_state() == change
