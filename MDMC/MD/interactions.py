@@ -875,8 +875,7 @@ class BondedInteraction(Interaction):
         Returns
         -------
         Set[Union[int, NoneType]]
-            A set of all (unique) ``atom_type``s, sorted, with `None` as the
-            last entry if any of the ``atom_type``s were `None`.
+            A set of all (unique) ``atom_type``s.
         """
         return {atom.atom_type for atom_tuple in self.atoms for atom in atom_tuple}
 
