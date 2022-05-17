@@ -25,14 +25,12 @@ class MMC(Minimizer):
         super().__init__(parameters, distribution, max_parameter_change)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
-        # MMC doesn't need parameter indexing; just keep a sorted list of values
-        # to save memory and performance
-        #self.parameters = sorted(list(self.parameters.values()))
+        self.parameters = parameters
 
     @property
     def history_columns(self):
-        what = [p for p in self.parameters]
-        return ['FoM', 'Change state'] + [list(self.parameters)]
+
+        return ['FoM', 'Change state'] + list(self.parameters)
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
@@ -43,7 +41,7 @@ class MMC(Minimizer):
         """
 
         self.FoM = FoM
-        values = np.array([self.parameters[p].value for p in self.parameters])
+        values = {p: self.parameters[p].value for p in self.parameters}
         history = [self.FoM]
 
         if self.change_state():
@@ -58,7 +56,7 @@ class MMC(Minimizer):
             self.reset_parameters()
             self.state_changed = False
 
-        history.extend(values)
+        history.extend(list(values.values()))
         self._history.append(history)
         self.change_parameters(self.parameters)
 
@@ -95,7 +93,7 @@ class MMC(Minimizer):
 
         Parameters
         ----------
-        parameters : list
+        parameters : Parameters
             All ``Parameter`` objects that are being refined
         """
 
@@ -120,7 +118,7 @@ class MMC(Minimizer):
                 elif new_value > parameter.constraints[1]:
                     new_value = parameter.constraints[1]
 
-            parameters[parameter.name].value = new_value
+            self.parameters[parameter.name].value = new_value
 
     def reset_parameters(self):
         """

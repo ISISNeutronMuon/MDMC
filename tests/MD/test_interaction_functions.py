@@ -155,7 +155,7 @@ def test_interaction_function_get_parameters(interaction_func):
     an already-initialized InteractionFunction object.
     """
 
-    for parameter in interaction_func.parameters:
+    for parameter in interaction_func.parameters.array:
         assert parameter.value == VAL_DICT[parameter.name]
 
 
@@ -166,7 +166,7 @@ def test_interaction_function_set_parameters(interaction_func, parameters):
     """
 
     interaction_func.parameters = parameters
-    for intfunc_parameter, parameter in zip(interaction_func.parameters, parameters.values()):
+    for intfunc_parameter, parameter in zip(interaction_func.parameters.values(), parameters.values()):
         assert intfunc_parameter.value == parameter.value
 
 
@@ -178,7 +178,7 @@ def test_interaction_function_parameters_values(interaction_func):
     """
 
     assert all(interaction_func.parameters_values
-               == [parameter.value for parameter in interaction_func.parameters])
+               == [parameter.value for parameter in interaction_func.parameters.array])
 
 
 def test_interaction_function_name(interaction_func):
@@ -200,7 +200,7 @@ def test_interaction_function_set_parameters_inters(interaction_func, coulombic)
     """
 
     interaction_func.set_parameters_interactions(coulombic)
-    for parameter in interaction_func.parameters:
+    for parameter in interaction_func.parameters.array:
         for inter in parameter.interactions:
             assert isinstance(inter, Coulombic)
 
@@ -224,7 +224,7 @@ def test_interaction_function_subclass_parameters(obj, values, names):
     correct values and names to the parameters.
     """
     
-    for idx, parameter in enumerate(obj.parameters):
+    for idx, parameter in enumerate(obj.parameters.array):
         assert parameter.value == values[idx]
         assert parameter.name == names[idx]
 

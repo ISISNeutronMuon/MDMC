@@ -15,6 +15,8 @@ from typing import Union, Any, Optional, List
 import warnings
 import weakref
 
+import numpy as np
+
 from MDMC.common.decorators import repr_decorator, unit_decorator, \
     unit_decorator_getter
 
@@ -289,6 +291,11 @@ class Parameters(dict):
     ----------
     init_parameters: ``Parameter`` or `list` of ``Parameter``s, optional, default None
         The initial ``Parameter`` objects that the ``Parameters`` object contains.
+
+    Attributes
+    ----------
+    array: np.ndarray
+        An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
 
     def __init__(self, init_parameters: Optional[Union[List[Parameter], Parameter]] = None):
@@ -326,6 +333,19 @@ class Parameters(dict):
                     super().__setitem__(parameter.name + parameter_number, parameter)
             else:
                 super().__setitem__(parameter.name, parameter)
+
+    @property
+    def array(self) -> np.ndarray:
+        """
+        The parameters in the object as a sorted numpy array.
+
+        Returns
+        -------
+        np.ndarray
+            An alphabetically-sorted array of parameter values in the object.
+        """
+
+        return np.array(sorted(list(self.values()), key=lambda p: p.name))
 
     def filter(self, predicate):
         """
