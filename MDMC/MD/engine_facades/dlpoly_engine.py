@@ -30,6 +30,7 @@ from MDMC.utilities.partitioning import partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
+# mapping from the MDMC class names to names within DLPOLY
 POTENTIAL_REF = {
     'LennardJones': 'lj',
     'HarmonicPotential': 'harm',
@@ -104,7 +105,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                  config=None, field=None, statis=None, output=None,
                  dest_config=None, rdf=None, workdir=None):
 
-        DLPOLYAttribute.__init__(self, dlpoly, control,
+        super().__init__(self, dlpoly, control,
                                  config, field, statis, output,
                                  dest_config, rdf, workdir)
 
@@ -151,12 +152,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def pressure(self):
 
         """
-        Get or set the pressure of the simulation in ``atm``
+        Get or set the pressure of the simulation in ``katm``
 
         Returns
         -------
         `float`
-            Pressure in ``atm``
+            Pressure in ``katm``
         """
 
         return self.dlpoly_simulation.pressure
@@ -265,7 +266,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   dlpoly=self.dlpoly,
                                                   **settings)
 
-    def minimize(self, n_steps, output_log: str = None, work_dir: str = None, **settings):
+    def minimize(self, n_steps: int, output_log: str = None, work_dir: str = None, **settings):
         """
         Minimizes the simulation energy
 
@@ -303,7 +304,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                  **settings)
         self.dlpoly.control['minimisation_criterion'] = 'off'
 
-    def run(self, n_steps, equilibration=False, output_log: str = None, work_dir: str = None,
+    def run(self, n_steps: int, equilibration=False, output_log: str = None, work_dir: str = None,
             **settings):
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
@@ -541,9 +542,9 @@ class DLPOLYUniverse(DLPOLYAttribute):
         data_dump_frequency: int, interval to write restart, recovery data
         stats_frequency: int, interval to print stats
         print_frequency: int, interval to print statistics in output
-        stack_size: int, how many steps use for averge stacks
+        stack_size: int, how many steps use for average stacks
         padding: float, buffer for neighbour lists
-        vdw_method: direct/tabulated how do compute dispersion operations
+        vdw_method: direct/tabulated how to compute dispersion operations
         coul_method: spme, off how to compute long range interactions
         """
 
@@ -618,7 +619,6 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self.dlpoly.field.write(settings.get('field', 'FIELD'))
 
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
-        # print([i.cutoff for i in self.universe.nonbonded_interactions])
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
     def _create_field(self, universe, **settings) -> Field:
@@ -779,7 +779,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             currAtom = self.dlpoly.field.molecules[atom.name]
             currAtom.charge = atom.charge
 
-    def _update_dispersions(self, pair_coeff_cmds=None):
+    def _update_dispersions(self):
 
         """
         Updates ``Dispersion`` interactions in DL_POLY
@@ -936,7 +936,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
     def pressure(self):
 
         """
-        Get or set the pressure of the simulation in ``atm``
+        Get or set the pressure of the simulation in ``katm``
 
         Returns
         -------
@@ -1013,8 +1013,13 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     barostat : str
         Name of a barostat to be applied.
     **settings
-        The majority of these are generic but some are specific to the
-        ``MDEngine`` that is being used, e.g.:
+        ``ensemble`` (`str`)
+        ``time_step`` (`float`)
+        ``t_damp`` (`int`)
+        ``p_damp`` (`int`)
+        ``t_window`` (`float`)
+        ``t_fraction`` (`float`)
+        ``rescale_step`` (`int`)
 
     Attributes
     ----------
@@ -1062,7 +1067,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     def pressure(self):
 
         """
-        Get or set the pressure of the simulation in ``atm``
+        Get or set the pressure of the simulation in ``katm``
         """
 
         return self._pressure
