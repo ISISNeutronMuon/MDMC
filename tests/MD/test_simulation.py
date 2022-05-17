@@ -10,7 +10,7 @@ from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
-from MDMC.MD.interaction_functions import Parameter
+from MDMC.MD.interaction_functions import LennardJones, Parameter
 import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
@@ -249,6 +249,59 @@ def test_top_level_structure(water_molecule):
 
     for atom in water_molecule.atoms:
         assert atom.top_level_structure is water_molecule
+
+
+def test_equivalent_top_level_structures_dict(
+    universe: sim.Universe, water_molecule: su.Molecule,
+):
+
+    """
+    Test that ``Universe.equivalent_top_level_structures_dict`` correctly
+    counts all equivalent structures and atoms.
+    """
+
+    H1 = su.Atom('H', mass=H_MASS)
+    H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
+    O = su.Atom('O', position=O_POSITION, mass=O_MASS)
+    interactions.Coulombic(atoms=[H1, H2])
+    interactions.Coulombic(atoms=O)
+    water_copy = su.Molecule(position=[1,1,1], atoms=[H1, H2, O],
+                             interactions=[interactions.Bond((H1, O), (H2, O)),
+                                           interactions.BondAngle(H1, O, H2)],
+                             name='water_copy')
+
+    atom = su.Atom('Ar', charge=0.)
+    interactions.Dispersion(universe=universe,
+                            atom_types=(atom.atom_type, atom.atom_type),
+                            cutoff=8.,
+                            vdw_tail_correction=True,
+                            function=LennardJones(1.0243, 3.36))
+
+    atom_copy = su.Atom('Ar', charge=0., position=[2, 2, 2])
+    interactions.Dispersion(universe=universe,
+                            atom_types=(atom_copy.atom_type, atom_copy.atom_type),
+                            cutoff=8.,
+                            vdw_tail_correction=True,
+                            function=LennardJones(1.0243, 3.36))
+
+    # Add a Molecule and atom that was created using the same parameters,
+    # but different Python objects
+    universe.fill(water_molecule, num_struc_units=27)
+    universe.add_structure(water_copy)
+    universe.fill(atom, num_struc_units=64)
+    universe.add_structure(atom_copy)
+
+    equivalent_dict = universe.equivalent_top_level_structures_dict
+    keys = list(equivalent_dict.keys())
+    assert len(keys) == 2
+
+    assert isinstance(keys[0], su.Molecule)
+    assert keys[0].formula == "H2O"
+    assert equivalent_dict[keys[0]] == 28
+
+    assert isinstance(keys[1], su.Atom)
+    assert keys[1].element == "Ar"
+    assert equivalent_dict[keys[1]] == 65
 
 
 def test_atoms(atom):
@@ -982,7 +1035,7 @@ def test_solvate_spce_with_solute(molecule):
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a large diatomic molecule.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -1013,7 +1066,7 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
     univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)

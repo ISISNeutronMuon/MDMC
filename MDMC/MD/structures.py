@@ -48,9 +48,9 @@ class Structure(ABC):
     name : str
         The name of the structure.
 
- 	Attributes
+        Attributes
     ----------
- 	ID : int
+        ID : int
         A unique identifier for each ``Structure``.
     universe : Universe
         The ``Universe`` to which the ``Structure`` belongs.
@@ -131,10 +131,8 @@ class Structure(ABC):
             All atoms in the structure
         """
 
-        atoms = []
-        for structure in self._structure_list:
-            atoms.extend(structure.atoms)
-        return atoms
+        return [atom for structure in self._structure_list
+                for atom in structure.atoms]
 
     @property
     @abstractmethod
@@ -263,7 +261,7 @@ class Structure(ABC):
         """
 
         if issubclass(type(self.parent), Structure) \
-        and self.parent is not self:
+           and self.parent is not self:
             return self.parent.top_level_structure
         return self
 
@@ -357,7 +355,8 @@ class Structure(ABC):
         ValueError
             If ``position`` if undefined
         """
-        #pylint: disable=nan-comparison
+        # pylint: disable=nan-comparison
+
         # because math.isnan doesn't work here for some reason
 
         if position is None:
@@ -385,6 +384,28 @@ class Structure(ABC):
         """
 
         return BoundingBox(self.atoms)
+
+    @abstractmethod
+    def is_equivalent(self, structure) -> bool:
+
+        """
+        Checks the passed ``Structure`` against `self` for equivalence in
+        terms of the force field application, namely that the following are the
+        same:
+          - Element or chemical formula
+          - Mass
+          - Charge
+          - Bonded interactions
+          - Non bonded interactions
+
+
+        Returns
+        -------
+        bool
+            Whether the two are equivalent
+        """
+
+        raise NotImplementedError
 
 
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
@@ -478,11 +499,8 @@ class CompositeStructure(Structure, AtomContainer):
         """
 
         name = self.name + ' ' if self.name else ''
-        return ('{0}{1}  formula: {2}  position: {3}'.format(
-            name,
-            self.__class__.__name__,
-            self.formula,
-            self.position))
+        return (f"{name}{self.__class__.__name__}  "
+                f"formula: {self.formula}  position: {self.position}")
 
     @property
     @abstractmethod
@@ -565,9 +583,9 @@ class CompositeStructure(Structure, AtomContainer):
         self._structure_list = value
 
     def copy(self, position, rotation=None):
-    # pylint:disable=arguments-differ
-    # CompositeStructure's can be rotated, which is meaningless for
-    # Structures in general
+        # pylint:disable=arguments-differ
+        # CompositeStructure's can be rotated, which is meaningless for
+        # Structures in general
 
         """
         Copies the ``CompositeStructure`` and all attributes, except ``ID``
@@ -649,10 +667,8 @@ class CompositeStructure(Structure, AtomContainer):
         # pylint: disable=attribute-defined-outside-init
         # _CoM_frame_positions breaks when defined in init
 
-        self._CoM_frame_positions = {}
         CoM = self._calc_CoM()
-        for atom in self.atoms:
-            self._CoM_frame_positions[atom] = atom.position - CoM
+        self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
     def rotate(self, x=0., y=0., z=0.):
 
@@ -729,15 +745,17 @@ class Atom(Structure):
                  charge=None, **settings):
 
         self.universe = None
-        #the syntax for optional keyword arguments is: kwargs.get(str, default_value)
+        # the syntax for optional keyword arguments is: kwargs.get(str, default_value)
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
         self.element = element
+
         try:
             self.mass = settings['mass']
         except KeyError:
             self.mass = atom_properties.MASS[self.element]
+
         self._atom_type = settings.get('atom_type', None)
         self.charge = charge
 
@@ -1034,8 +1052,8 @@ class Atom(Structure):
         return self._bonded_interaction_pairs
 
     def copy(self, position):
-    # pylint:disable=useless-super-delegation
-    # Docstring specific to Atom
+        # pylint:disable=useless-super-delegation
+        # Docstring specific to Atom
         """
         Copies the ``Atom`` and all attributes, except ``ID`` which is generated
 
@@ -1108,7 +1126,7 @@ class Atom(Structure):
             # The tuple most recently added to interaction.atoms should always
             # contain self
             if from_interaction:
-                if not interaction.atoms or not self in interaction.atoms[-1]:
+                if not interaction.atoms or self not in interaction.atoms[-1]:
                     raise ValueError('incorrect atom_tuple passed to atom')
             else:
                 interaction.add_atoms(self, from_structure=True)
@@ -1160,6 +1178,19 @@ class Atom(Structure):
                 inter.add_atoms(*new_atoms)
                 memo[id(inter)] = inter
 
+    def is_equivalent(self, structure: Structure) -> bool:
+
+        return isinstance(structure, type(self)) and \
+               all([structure.element == self.element,
+                    structure.mass == self.mass,
+                    structure.charge == self.charge,
+                    len(self.bonded_interactions) == len(structure.bonded_interactions),
+                    len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
+                    all(a.is_equivalent(b) for a, b in
+                        zip(self.bonded_interactions, structure.bonded_interactions)),
+                    all(a.is_equivalent(b) for a, b in
+                        zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
+
 
 class _Group(CompositeStructure):
 
@@ -1179,7 +1210,6 @@ class _Group(CompositeStructure):
     def __init__(self):
 
         raise NotImplementedError
-
 
 
 class Molecule(CompositeStructure):
@@ -1316,6 +1346,34 @@ class Molecule(CompositeStructure):
             mass += atom.mass
 
         return mass
+
+    @property
+    @unit_decorator_getter(unit=units.CHARGE)
+    def charge(self) -> float:
+
+        """
+        Get the total charge of the ``Molecule`` in ``e``.
+
+        Returns
+        -------
+        float
+            The total charge in ``e``
+        """
+
+        return sum(atom.charge for atom in self.atoms if atom.charge is not None)
+
+    def is_equivalent(self, structure: Structure) -> bool:
+
+        return isinstance(structure, type(self)) and \
+               all([structure.formula == self.formula,
+                structure.mass == self.mass,
+                structure.charge == self.charge,
+                len(self.bonded_interactions) == len(structure.bonded_interactions),
+                len(self.nonbonded_interactions) == len(structure.nonbonded_interactions),
+                all(a.is_equivalent(b) for a, b in
+                        zip(self.bonded_interactions, structure.bonded_interactions)),
+                all(a.is_equivalent(b) for a, b in
+                        zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
 
 
 @repr_decorator('min', 'max', 'volume')

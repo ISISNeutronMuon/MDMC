@@ -436,7 +436,7 @@ class Parameters(list):
         -------
         Parameters
             The ``Parameter`` objects which are applied to a ``Structure``
-            which has the specified ``zstructure_name``
+            which has the specified ``structure_name``
         """
 
         def check_structure_name(parameter):
