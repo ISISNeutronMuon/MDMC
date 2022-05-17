@@ -1180,8 +1180,8 @@ class Atom(Structure):
 
     def is_equivalent(self, structure: Structure) -> bool:
 
-        return all([isinstance(structure, type(self)),
-                    structure.element == self.element,
+        return isinstance(structure, type(self)) and \
+               all([structure.element == self.element,
                     structure.mass == self.mass,
                     structure.charge == self.charge,
                     len(self.bonded_interactions) == len(structure.bonded_interactions),
@@ -1364,8 +1364,8 @@ class Molecule(CompositeStructure):
 
     def is_equivalent(self, structure: Structure) -> bool:
 
-        return all([isinstance(structure, type(self)),
-                structure.formula == self.formula,
+        return isinstance(structure, type(self)) and \
+               all([structure.formula == self.formula,
                 structure.mass == self.mass,
                 structure.charge == self.charge,
                 len(self.bonded_interactions) == len(structure.bonded_interactions),
