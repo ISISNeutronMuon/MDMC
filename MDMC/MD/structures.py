@@ -917,7 +917,7 @@ class Atom(Structure):
         """
         try:
             num_coul = 0
-            value = 0.
+            value = None
             for interaction in self.interactions:
                 if isinstance(interaction, Coulombic):
                     # Check that only one Coulombic interaction exists.
@@ -936,15 +936,11 @@ class Atom(Structure):
                                          ' parameter "charge".')
             return value
         except AttributeError:
-            return 0.
+            return None
 
     @charge.setter
     @unit_decorator(unit=units.CHARGE)
     def charge(self, value):
-
-        # if charge = 0, do not create an interaction
-        if value == 0:
-            value = None
 
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
