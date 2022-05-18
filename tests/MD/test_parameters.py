@@ -331,8 +331,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
 
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
 
-    assert (parameters.filter_interaction(int_name)
-            == expected_parameters)
+    assert parameters.filter_interaction(int_name) == expected_parameters
 
 
 @pytest.mark.parametrize('function_name, expected_slice', [('Coulomb',
@@ -359,8 +358,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
 
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
 
-    assert (parameters.filter_function(function_name)
-            == expected_parameters)
+    assert parameters.filter_function(function_name) == expected_parameters
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")

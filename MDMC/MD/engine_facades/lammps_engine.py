@@ -2593,7 +2593,7 @@ def parse_bonded_coefficients(interaction):
     """
 
     parameters = {p.name: convert_unit(p.value)
-                  for p in interaction.parameters.array}
+                  for p in interaction.parameters.as_array}
     style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
@@ -2684,7 +2684,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
             for inter in interactions:
                 if inter.function.name == 'Buckingham':
                     parameters = {p.name: convert_unit(p.value)
-                                  for p in inter.parameters.array}
+                                  for p in inter.parameters.as_array}
             ordered_parameters = [parameters['A'],
                                   parameters['B'] ** -1,
                                   parameters['C']]
@@ -2700,7 +2700,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
             for inter in interactions:
                 if inter.function.name == 'LennardJones':
                     parameters = {p.name: convert_unit(p.value)
-                                  for p in inter.parameters.array}
+                                  for p in inter.parameters.as_array}
             ordered_parameters = [parameters['epsilon'],
                                   parameters['sigma']]
             coeff_cmd = (pair_style + ' '

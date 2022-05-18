@@ -321,7 +321,7 @@ def test_add_molecule(universe, water_molecule):
     assert sorted([['H', 'H', 'O'], ['H', 'O'], ['H', 'O'], ['O', 'O'], ['O'],
                    ['H'], ['H']]) == sorted(interaction_elements)
 
-#FIXME
+
 def test_spce_water_molecule(universe, water_molecule):
 
     universe.add_structure(water_molecule)
