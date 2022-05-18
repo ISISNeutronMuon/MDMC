@@ -30,7 +30,7 @@ def atom():
     Creates an Atom object.
     """
 
-    return Atom('H')
+    return Atom('H',cutoff=10.)
 
 @pytest.fixture
 def universe():
@@ -70,7 +70,7 @@ def atom_charge():
     Creates an Atom object initialised with a charge.
     """
 
-    return Atom('H', charge=TEST_CHARGE_1)
+    return Atom('H', charge=TEST_CHARGE_1, cutoff=10.)
 
 @pytest.fixture
 def water_molecule():
@@ -99,7 +99,7 @@ def test_charge():
     Ignores any warnings thrown.
     """
 
-    assert Atom('O', charge=TEST_CHARGE_1).charge == TEST_CHARGE_1
+    assert Atom('O', charge=TEST_CHARGE_1, cutoff=10.).charge == TEST_CHARGE_1
 
 
 def test_charge_creates_coulombic(atom_charge):
@@ -494,3 +494,12 @@ def test_get_reduced_chemical_formula_error(symbols, factor, formula, system):
     """
 
     assert get_reduced_chemical_formula(symbols, factor, system) == formula
+
+
+def test_neutral_atom_has_no_charge(atom, atom_charge):
+    """Tests that when an Atom is added with no charge,
+        it is not given a charge parameter, and if an
+        atom is added *with* charge, it is."""
+
+    assert len(atom.interactions) == 0
+    assert len(atom_charge.interactions) == 1
