@@ -46,7 +46,14 @@ class MDEngineFacadeFactory:
         Converts an ``alias`` into a module name
         """
 
-        if alias.upper() == 'LAMMPS' or alias.lower() == 'lammps_engine':
-            module_name = 'lammps_engine'
+        alias = alias.lower()
+        engines = ['lammps_engine', 'dlpoly_engine']
+        if not alias.endswith('_engine'):
+            alias += '_engine'
+        if alias in engines:
+            module_name = alias
+        else:
+            raise ImportError(f"The MD engine {alias} is not in the list of recognised engines, "
+                              f"which currently comprises: {engines}")
 
         return import_module('.' + module_name, __package__)

@@ -33,7 +33,7 @@ As MDMC is currently private, Github credentials are required for access. This i
  * Check the 'repo' box in the 'select scopes' section.
  * Scroll to the bottom and click 'generate token'.
  * Copy your personal access token and save it somewhere secure.
- 
+
 You now have a personal access token!
 
 Windows
