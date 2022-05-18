@@ -113,8 +113,8 @@ class GPR(Minimizer):
         # * is necessary for unpacking the arrays
         return parameter_names, point_array
 
-
-    def create_bounds(self, parameter, fraction: float=0.2) -> Tuple[float, float]:
+    @staticmethod
+    def create_bounds(parameter, fraction: float=0.2) -> Tuple[float, float]:
         """
         Returns either the parameter constraints (bounds) or some sensible bounds for
         a given parameter, defaults to +-20%. Raises a ValueError if value is zero and has
@@ -143,13 +143,13 @@ class GPR(Minimizer):
         try:
             lower_bound = parameter.constraints[0]
             upper_bound = parameter.constraints[1]
-        except TypeError:
+        except TypeError as terror:
             if not parameter.value ==0:
                 lower_bound = parameter.value*(1.0 - fraction)
                 upper_bound = parameter.value*(1.0 + fraction)
             else:  # pylint: disable=raise-missing-from
                 raise ValueError(f'You have set parameter {parameter.name} value to zero and \
-                    have no constraints set for it. Please set constraints for it')
+                    have no constraints set for it. Please set constraints for it') from terror
         return lower_bound, upper_bound
 
     def has_converged(self, conv_tol: Optional[float]=1e-5, min_steps: Optional[int]=1) -> bool:
@@ -293,7 +293,8 @@ class GPR(Minimizer):
 
         return fitted_GPR, min_FOM, min_parameters
 
-    def GPR_predict(self, input_regressor,
+    @staticmethod
+    def GPR_predict(input_regressor,
                     points: Optional[float]=100) -> Tuple[List[Tuple[float]], np.ndarray]:
         """
         Takes a fitted Gaussian process regressor, creates an array of points between the
@@ -328,8 +329,9 @@ class GPR(Minimizer):
 
         return point_array, prediction
 
-    def global_minimum_position(self, predicted_FOMs: np.ndarray,
-                                measured_parameter_coordinates: List[float])-> Tuple[np.ndarray, float]:
+    @staticmethod
+    def global_minimum_position(predicted_FOMs: np.ndarray,
+        measured_parameter_coordinates: List[float])-> Tuple[np.ndarray, float]:
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 
