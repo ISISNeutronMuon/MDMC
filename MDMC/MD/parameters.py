@@ -11,7 +11,7 @@ import ast
 from collections.abc import Iterable
 from itertools import chain
 import operator
-from typing import Union, Any, NewType
+from typing import Union, Any
 import warnings
 import weakref
 
@@ -533,8 +533,8 @@ class Parameters(dict):
         """
         Ensures that input to a Parameters object is in the correct form.
 
-        Raises an error if the input is not either a Parameter 
-        (in which case it is turned into a list, so it can be fed into an iteration loop) 
+        Raises an error if the input is not either a Parameter
+        (in which case it is turned into a list, so it can be fed into an iteration loop)
         or a list of Parameters.
 
         Parameters
@@ -562,4 +562,3 @@ class Parameters(dict):
 
         raise TypeError("Input into a Parameters object must be either a Parameter "
                         "or a list of Parameters.")
-
