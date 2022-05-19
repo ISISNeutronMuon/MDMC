@@ -102,7 +102,8 @@ class GPR(Minimizer):
             return parameter_names, latin_points
 
         bounds_grid = [self.create_bounds(parameter) for parameter in parameters.values()]
-        bounds_array = [np.linspace(lower_bound, upper_bound, points) for lower_bound, upper_bound in bounds_grid]
+        bounds_array = [np.linspace(lower_bound, upper_bound, points) \
+                        for lower_bound, upper_bound in bounds_grid]
         point_array =  list(itertools.product(*bounds_array))
         # * is necessary for unpacking the arrays
         return parameter_names, point_array
@@ -244,9 +245,10 @@ class GPR(Minimizer):
 
     def GPR_fit(self, filename: Optional[str]="results.csv", alpha: Optional[float]=0.1):
         """
-        Reads in the contents of the suplied filename, assumes it is the output of a refinement and can be 
-        read into a dataframe with the relevant parameters. Uses the recorded points file to perform a Gaussian
-        process regression (https://scikit-learn.org/stable/modules/gaussian_process.html) and fit the points
+        Reads in the contents of the suplied filename, assumes it is the output of a refinement
+        and can be read into a dataframe with the relevant parameters. Uses the recorded points
+        file to perform a Gaussian process regression
+        (https://scikit-learn.org/stable/modules/gaussian_process.html) and fit the points
         to some kernel, here using an RBF kernel.
 
         Parameters
@@ -289,9 +291,9 @@ class GPR(Minimizer):
     def GPR_predict(input_regressor,
                     points: Optional[float]=100) -> Tuple[List[Tuple[float]], np.ndarray]:
         """
-        Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points 
-        between the minimum and maximum measured parameter values and predicts the FoM at each one of 
-        these points.
+        Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
+        between the minimum and maximum measured parameter values and predicts the FoM at each
+        one of these points.
 
         Parameters
         ----------
