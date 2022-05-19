@@ -8,8 +8,10 @@ a sequence of Parameter objects.
 """
 
 import ast
+import logging
+import re
 from collections.abc import Iterable
-from itertools import chain
+from itertools import chain, count
 import operator
 from typing import Union, Any
 import warnings
@@ -21,7 +23,7 @@ from MDMC.common.decorators import repr_decorator, unit_decorator, \
     unit_decorator_getter
 
 
-@repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
+@repr_decorator('ID', 'type', 'value', 'unit', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
 class Parameter:
     """
@@ -46,9 +48,14 @@ class Parameter:
             the object passed as ``value``.
     """
 
+    # each Parameter has a unique ID, so they can be distinguished
+    _ID_generator = count(start=1, step=1)
+
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
-        self.name = name
+        self.ID = self._generate_ID()
+        self.name = name + f" (#{self.ID})"
+        self.type = name
         try:
             self.unit = settings['unit'] if 'unit' in settings else value.unit
         except AttributeError:
@@ -230,6 +237,11 @@ class Parameter:
         self._tie = ast.parse(
             'self._tie_parameter().value' + expr, mode='eval')
 
+    @classmethod
+    def _generate_ID(cls):
+        """Generates a unique ID for the Parameter that has just been created."""
+        return next(cls._ID_generator)
+
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
@@ -273,7 +285,8 @@ class Parameter:
     def __eq__(self, other):
 
         # TODO: make this more robust
-        return self.name == other.name and self.value == other.value
+        return self.type == other.type and self.value == other.value
+
 
 
 class Parameters(dict):
@@ -309,6 +322,22 @@ class Parameters(dict):
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError as error:
+            # see if the key passed was a parameter name with no ID, and catch the error
+            # by getting the first parameter with that name
+            r = re.compile(rf"{key} \(#[0-9]+\)")
+            matching_parameters = list(filter(r.match, list(self.keys())))
+            if matching_parameters:
+                if len(matching_parameters) > 1:
+                    warnings.warn("Calling a parameter name with no ID fetches the first "
+                                  "parameter with that name; this may cause buggy or "
+                                  "inconsistent behaviour!")
+                return super().__getitem__(matching_parameters[0])
+            raise KeyError from error
+
     def append(self, parameters: Union["list[Parameter]", Parameter]):
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
@@ -322,17 +351,37 @@ class Parameters(dict):
         parameters = self._check_input(parameters)
 
         for parameter in parameters:
-            # if parameter with this name already exists, check if an identical parameter
-            # is already here; if not, record it with a number to indicate it as separate
-            if parameter.name in self.keys():
-                if any(parameter == existing_p
-                       for existing_p in self.filter_name(parameter.name).values()):
-                    pass
-                else:
-                    parameter_number = f"_{len(self.filter_name(parameter.name)) + 1}"
-                    super().__setitem__(parameter.name + parameter_number, parameter)
+            super().__setitem__(parameter.name, parameter)
+
+        self._remove_duplicates()
+
+    def _remove_duplicates(self):
+        """
+        Removes duplicate parameters from the Parameters object.
+
+        For example, if Parameters takes the form
+        {charge (#1): X
+         charge (#2): X
+         equilibrium_state (#3): Y
+         equilibrium_state (#4): Z
+         equilibrium_state (#5): Y
+         equilibrium_state (#6): Z
+         epsilon (#7): W}
+
+        _remove_duplicates will reduce it to
+        {charge (#1): X
+         equilibrium_state (#3): Y
+         equilibrium_state (#4): Z
+         epsilon (#7): W
+        }
+        """
+
+        unique_parameters = []
+        for parameter in list(self.values()):
+            if any(parameter == p for p in unique_parameters):
+                self.pop(parameter.name)
             else:
-                super().__setitem__(parameter.name, parameter)
+                unique_parameters.append(parameter)
 
     @property
     def as_array(self) -> np.ndarray:
@@ -380,7 +429,7 @@ class Parameters(dict):
             The ``Parameter`` objects with ``name``
         """
 
-        return self.filter(lambda p: p.name == name)
+        return self.filter(lambda p: name in p.name)
 
     def filter_value(self, comparison, value):
         """
@@ -527,6 +576,17 @@ class Parameters(dict):
             return structure_name in structure_names
 
         return self.filter(check_structure_name)
+
+    def log_parameters(self):
+        """Logs all Parameters by ID"""
+
+        LOGGER = logging.getLogger(__name__)
+        msg = "List of all parameters with ID: \n"
+        for parameter in self.values():
+            msg += f"{parameter.__repr__()}"
+
+        LOGGER.info(msg)
+        print("Details on which Parameter corresponds to each ID have been written to the log.")
 
     @staticmethod
     def _check_input(x: Any) -> 'list[Parameter]':

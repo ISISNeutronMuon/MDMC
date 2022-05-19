@@ -654,7 +654,7 @@ def test_control_fit_parameters(simulation):
                            reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
-    assert list(ctrl.fit_parameters.keys())[0] == 'constraints'
+    assert 'constraints' in list(ctrl.fit_parameters.keys())[0] 
 
 
 def test_control_resolution_function(simulation, exp_datasets):

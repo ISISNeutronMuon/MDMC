@@ -281,7 +281,7 @@ def test_filter_parameters_name(name, number):
                          for index in range(5)])
 
     filtered = parameters.filter_name(name)
-    assert [parameter.name for parameter in filtered.values()] == [name] * number
+    assert [parameter.type for parameter in filtered.values()] == [name] * number
 
 
 @pytest.mark.parametrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
@@ -438,18 +438,32 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
             == expected_parameters)
 
 
-def test_duplicate_parameters_naming():
-    """Tests that duplicates of a parameter have a number appended to them."""
+def test_duplicate_parameters_ID():
+    """Tests that duplicates of a parameter will be filed correctly."""
 
     # test if separate parameters will all be indexed
     parameters = Parameters([Parameter(name='charge', value=1.),
                              Parameter(name='charge', value=2.),
                              Parameter(name='charge', value=3.)])
 
-    assert list(parameters.keys()) == ['charge', 'charge_2', 'charge_3']
+    assert len(parameters.keys()) == 3
 
     # test that identical parameters are not registered twice
-    parameters = Parameters([Parameter(name='charge', value=1.),
-                             Parameter(name='charge', value=1.)])
+    parameters.append([Parameter(name='charge', value=1.),
+                       Parameter(name='charge', value=5.)])
 
-    assert list(parameters.keys()) == ['charge']
+    assert len(parameters.keys()) == 4
+
+
+def test_parameters_getitem_lazy():
+    """Tests that the user can get a parameter without using its ID"""
+
+    parameters = Parameters([Parameter(name='charge', value=1.),
+                             Parameter(name='epsilon', value=2.),
+                             Parameter(name='sigma', value=3.)])
+
+    for test_parameter in [('charge', 1.), ('epsilon', 2.), ('sigma', 3.)]:
+        assert parameters[test_parameter[0]].value == test_parameter[1]
+
+    with pytest.raises(KeyError):
+        nonexistent_parameter = parameters['nonexistent_parameter']
