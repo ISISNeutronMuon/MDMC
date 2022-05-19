@@ -18,7 +18,7 @@ jobs:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
 
-    - name: Update image
+    - name: Update frontend image for Python modules
       env:
         BRANCH: ${{ github.head_ref }} 
       run: |
@@ -27,10 +27,11 @@ jobs:
         docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
         docker push mdmc/mdmc:latest
 
-    - name: Update base image
+    - name: Update backend image for MD engines
       env:
         BRANCH: ${{ github.head_ref }} 
       run: |
+        # If no image (mdmc/engines:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/engines:ci-$BRANCH || exit 0
         docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest
         docker push mdmc/engines:latest
