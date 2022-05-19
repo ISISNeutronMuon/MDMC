@@ -28,6 +28,7 @@ jobs:
         docker push mdmc/mdmc:latest
 
     - name: Update base image
+      env:
         BRANCH: ${{ github.head_ref }} 
       run: |
         docker pull mdmc/engines:ci-$BRANCH || exit 0
