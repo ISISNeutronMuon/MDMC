@@ -59,7 +59,7 @@ class InteractionFunction:
 
         return (id(self) == id(other) or
                 all([(type(self) is type(other)),
-                    ([p.type for p in self.parameters.values()] == 
+                    ([p.type for p in self.parameters.values()] ==
                      [p.type for p in other.parameters.values()]),
                     (self.parameters_values == other.parameters_values)]))
 
