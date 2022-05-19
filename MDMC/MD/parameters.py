@@ -11,7 +11,6 @@ import ast
 import logging
 import re
 from collections.abc import Iterable
-from copy import copy
 from itertools import chain, count
 import operator
 from typing import Union, Any
@@ -327,7 +326,7 @@ class Parameters(dict):
         except KeyError as error:
             # see if the key passed was a parameter name with no ID, and catch the error
             # by getting the first parameter with that name
-            r = re.compile(rf"{key} \(.+\)")
+            r = re.compile(rf"{key} \(#[0-9]+\)")
             matching_parameters = list(filter(r.match, list(self.keys())))
             if matching_parameters:
                 if len(matching_parameters) > 1:
@@ -376,7 +375,7 @@ class Parameters(dict):
         """
 
         unique_parameters = []
-        for parameter in copy(list(self.values())):
+        for parameter in list(self.values()):
             if any(parameter == p for p in unique_parameters):
                 self.pop(parameter.name)
             else:

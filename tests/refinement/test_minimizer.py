@@ -112,8 +112,8 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameter_slice)
         expected_columns = ['FoM', 'Change state'] + columns
-        for i in range(len(minim.history_columns)):
-            assert expected_columns[i] in minim.history_columns[i]
+        for i, column in enumerate(minim.history_columns):
+            assert column in minim.history_columns[i]
 
 
 def mock_change_parameters(self, parameters):

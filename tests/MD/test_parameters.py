@@ -466,3 +466,6 @@ def test_parameters_getitem_lazy():
 
     for test_parameter in [('charge', 1.), ('epsilon', 2.), ('sigma', 3.)]:
         assert parameters[test_parameter[0]].value == test_parameter[1]
+
+    with pytest.raises(KeyError):
+        nonexistent_parameter = parameters['nonexistent_parameter']
