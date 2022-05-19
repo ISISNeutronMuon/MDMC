@@ -26,8 +26,8 @@ class GPR(Minimizer):
 
     Parameters
     ----------
-    hypercube : optional, bool
-        Boolian toggle for is the n_points should be placed in a latin hypercube, or as a grid
+    use_hypercube : optional, bool
+        Boolian toggle for if the n_points should be placed in a latin hypercube, or as a grid
         across each parameter. Defaults to False
     alpha : float
         Hyperparameter for the fitting, also can represent additional Gaussian noise in measurement
@@ -36,8 +36,8 @@ class GPR(Minimizer):
         Hyperparameter for the fitting, a lengthscale parameter for the kernel.
     n_points : int
         A number of points which will be measured at, either randomly on a latin hypercube
-        (if hypercube=True) or p^n_points (p = number of parameters) in a regular grid
-        (if hypercube=False)
+        (if use_hypercube=True) or p^n_points (p = number of parameters) in a regular grid
+        (if use_hypercube=False)
 
 
     Attributes
@@ -49,7 +49,7 @@ class GPR(Minimizer):
 
     def __init__(self, parameters, distribution, max_parameter_change, **settings):
         super().__init__(parameters, distribution, max_parameter_change)
-        self.hypercube = settings.get('hypercube', False)
+        self.use_hypercube = settings.get('use_hypercube', False)
         self.alpha = settings.get('alpha', 0.01)
         self.length_scale = settings.get('length_scale', 0.1)
         n_points = settings.get('n_points', 4)
@@ -66,7 +66,7 @@ class GPR(Minimizer):
         Takes or creates the constraints of the parameters to be minimised, the either makes an
         array of length "points" and performs the Cartesian product across all parameters, to
         give an equally spaced set of coordinates to be measured. This set of coordinates will
-        be points^(#of dimensions long). If self.hypercube is True then an array of points will
+        be points^(#of dimensions long). If self.use_hypercube is True then an array of points will
         be placed on a Latin hypercube covering the space defined by the constraints. The resulting
         array of coordinates will be "points" long.
 
@@ -89,26 +89,20 @@ class GPR(Minimizer):
         point_array = []
         lower_bounds = []
         upper_bounds = []
+        parameter_names = [str(name) for name in parameters.keys()]
 
-        if self.hypercube:
+        if self.use_hypercube:
             samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
             latin_points = samples.random(n=points)
 
-            for name, parameter in parameters.items():
-                lower_bound, upper_bound = self.create_bounds(parameter)
-                parameter_names.append(str(name))
-                lower_bounds.append(lower_bound)
-                upper_bounds.append(upper_bound)
+            lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
+            upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
 
             latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
             return parameter_names, latin_points
 
-        for name, parameter in parameters.items():
-            lower_bound, upper_bound = self.create_bounds(parameter)
-            parameter_names.append(str(name))
-
-            bounds_grid = np.linspace(lower_bound, upper_bound, points)
-            bounds_array.append(bounds_grid)
+        bounds_grid = [self.create_bounds(parameter) for parameter in parameters.values()]
+        bounds_array = [np.linspace(lower_bound, upper_bound, points) for lower_bound, upper_bound in bounds_grid]
         point_array =  list(itertools.product(*bounds_array))
         # * is necessary for unpacking the arrays
         return parameter_names, point_array
@@ -176,20 +170,16 @@ class GPR(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        converged = False
         run_steps = np.max([min_steps, len(self.parameter_point_array)])
 
-        if len(self.history) >= run_steps:
-            converged = True
-
-        return converged
+        return len(self.history) >= run_steps
 
     def change_state(self) -> bool:
         #change_state = self.comm.bcast(change_state, root=0)
         return True
 
     @property
-    def history_columns(self) -> Tuple[Tuple[str]]:
+    def history_columns(self) -> list[str]:
 
         return ['FoM', 'Change state'] + list(self.parameters)
 
@@ -254,8 +244,10 @@ class GPR(Minimizer):
 
     def GPR_fit(self, filename: Optional[str]="results.csv", alpha: Optional[float]=0.1):
         """
-        Uses the measured points in the supplied file to perform a Gaussian
-        process regression and fit the points.
+        Reads in the contents of the suplied filename, assumes it is the output of a refinement and can be 
+        read into a dataframe with the relevant parameters. Uses the recorded points file to perform a Gaussian
+        process regression (https://scikit-learn.org/stable/modules/gaussian_process.html) and fit the points
+        to some kernel, here using an RBF kernel.
 
         Parameters
         ----------
@@ -297,8 +289,9 @@ class GPR(Minimizer):
     def GPR_predict(input_regressor,
                     points: Optional[float]=100) -> Tuple[List[Tuple[float]], np.ndarray]:
         """
-        Takes a fitted Gaussian process regressor, creates an array of points between the
-        minimum and maximum measured parameter values and predicts the FoM on these points
+        Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points 
+        between the minimum and maximum measured parameter values and predicts the FoM at each one of 
+        these points.
 
         Parameters
         ----------

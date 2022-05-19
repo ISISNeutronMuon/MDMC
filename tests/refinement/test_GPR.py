@@ -37,7 +37,7 @@ def test_GPR_parameter_point_array():
     assert np.allclose(points[0], [0.5, 1.0], rtol=1e-5)
     assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
     
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, hypercube=True)
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, use_hypercube=True)
     points = gpr.parameter_point_array
     par1_constraints = constrained_parameters['parameter1'].constraints
     par2_constraints = constrained_parameters['parameter2'].constraints
