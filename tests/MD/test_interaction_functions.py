@@ -156,7 +156,7 @@ def test_interaction_function_get_parameters(interaction_func):
     """
 
     for parameter in interaction_func.parameters.as_array:
-        assert parameter.value == VAL_DICT[parameter.name]
+        assert parameter.value == VAL_DICT[parameter.type]
 
 
 def test_interaction_function_set_parameters(interaction_func, parameters):
