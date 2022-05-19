@@ -19,7 +19,7 @@ fi
 
 
 # mdmc/mdmc image rebuild without base image changes 
-if ! git diff remotes/origin/master --name-only | grep 'build/\|requirements.txt'
+if ! git diff remotes/origin/master --name-only | grep 'build/Docker/Dockerfile.mdmc\|requirements.txt'
 then
   echo "Docker file does not require rebuilding." 
 else
