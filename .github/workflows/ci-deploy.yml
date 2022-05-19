@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [closed]
 
-# note that the workflow will be triggered whenever a PR is closed, but the "if:" line of the job means the job will only run if it is closed due to merge    
+# note that the workflow will be triggered whenever a PR is closed, but the "if:" line of the job means the job will only run if it is closed due to merge
 jobs:
   update-latest-image:
     name: Update Docker image
@@ -16,10 +16,10 @@ jobs:
     - name: Update image
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }} 
+        BRANCH: ${{ github.head_ref }}
       run: |
         echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
         # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
-        docker pull mdmc/mdmc:ci-$BRANCH || exit 0  
+        docker pull mdmc/mdmc:ci-$BRANCH || exit 0
         docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
         docker push mdmc/mdmc:latest

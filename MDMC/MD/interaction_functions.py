@@ -55,6 +55,13 @@ class InteractionFunction:
                                for p in self.parameters.values()]).strip(',')
         return f'{self.__class__.__name__} {parameters}'
 
+    def __eq__(self, other):
+
+        return (id(self) == id(other) or
+                (type(self) is type(other) and
+                 str(self) == str(other))
+                )
+
     @property
     def parameters(self):
         """

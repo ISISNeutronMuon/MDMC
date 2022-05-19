@@ -245,7 +245,7 @@ class Parameter:
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
-        'Constrained ' if self.constraints is not None else '')
+                     'Constrained ' if self.constraints is not None else '')
         function = self.functions_name + ' ' if self.functions_name else ''
         return '{0}{_value} {1}{name}'.format(condition, function,
                                               **self.__dict__)
@@ -284,7 +284,9 @@ class Parameter:
 
     def __eq__(self, other):
 
+        # TODO: make this more robust
         return self.type == other.type and self.value == other.value
+
 
 
 class Parameters(dict):
@@ -382,7 +384,7 @@ class Parameters(dict):
                 unique_parameters.append(parameter)
 
     @property
-    def array(self) -> np.ndarray:
+    def as_array(self) -> np.ndarray:
         """
         The parameters in the object as a sorted numpy array.
 
@@ -545,7 +547,7 @@ class Parameters(dict):
         -------
         Parameters
             The ``Parameter`` objects which are applied to a ``Structure``
-            which has the specified ``zstructure_name``
+            which has the specified ``structure_name``
         """
 
         def check_structure_name(parameter):
@@ -591,8 +593,9 @@ class Parameters(dict):
         """
         Ensures that input to a Parameters object is in the correct form.
 
-        Input must be either a Parameter (in which case it is turned into a list,
-        so it can be fed into an iteration loop) or a list of Parameters.
+        Raises an error if the input is not either a Parameter
+        (in which case it is turned into a list, so it can be fed into an iteration loop)
+        or a list of Parameters.
 
         Parameters
         ----------

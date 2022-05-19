@@ -1,6 +1,6 @@
 name: CI
 # contains jobs which run on every pull request
-on: 
+on:
   pull_request:
 
 jobs:
@@ -16,9 +16,9 @@ jobs:
       run: git fetch origin master
 
     - name: Check and build container
-      env: 
+      env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }} 
+        BRANCH: ${{ github.head_ref }}
       run: source .github/scripts/build_container.sh
 
   engine_tests:
@@ -37,9 +37,9 @@ jobs:
       run: git fetch origin master
 
     - name: Run tests
-      env: 
+      env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }} 
+        BRANCH: ${{ github.head_ref }}
         TESTSET: lammps
       run: source .github/scripts/docker_testing.sh
 
@@ -67,14 +67,14 @@ jobs:
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
       run: git fetch origin master
-        
+
     - name: Run tests
-      env: 
+      env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }} 
+        BRANCH: ${{ github.head_ref }}
         TESTSET: "not lammps"
       run: source .github/scripts/docker_testing.sh
-      
+
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
       continue-on-error: true
@@ -94,10 +94,10 @@ jobs:
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if doc files changed
       run: git fetch origin master
-      
+
     - name: Run script
       env:
-        BRANCH: ${{ github.head_ref }} 
+        BRANCH: ${{ github.head_ref }}
       run: source .github/scripts/documentation_testing.sh
 
   linting:
