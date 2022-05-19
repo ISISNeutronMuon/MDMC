@@ -29,7 +29,7 @@ ends up using the OutputCapture class).
 import warnings
 from collections import defaultdict, namedtuple
 from copy import copy
-from itertools import chain, combinations, count, product, tee
+from itertools import chain, combinations, count, product
 import logging
 from random import randint
 from tempfile import NamedTemporaryFile
@@ -52,6 +52,7 @@ from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
+from MDMC.utilities.partitioning import partition, partition_interactions
 
 
 LOGGER = logging.getLogger(__name__)
@@ -374,7 +375,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                lmp=self.lmp,
                                                **settings)
 
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps: int, output_log: str = None, work_dir: str = None, **settings):
 
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
@@ -405,7 +406,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.lmp_universe.apply_constraints()
             self.ensemble.apply_ensemble_fixes()
 
-    def run(self, n_steps, equilibration=False):
+    def run(self, n_steps: int, equilibration=False, output_log: str = None,
+            work_dir: str = None, **settings):
         if not equilibration:
             # Remove previous dumps if they exist
             if 'traj1' in [dump['name'] for dump in self.dumps]:
@@ -529,7 +531,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
 
         # ID is an acronym
-        #pylint: disable=invalid-name
+        # pylint: disable=invalid-name
         atom_IDs = settings.get('atom_IDs')
 
         configs = []
@@ -621,7 +623,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                              *atoms))
 
                         # next_frame_n next attribute is assigned dynamically
-                        #pylint: disable=no-member
+                        # pylint: disable=no-member
                         next_frame_n = next(frame_indexes)
                     frame_n += 1
                     if stop is not None and frame_n >= stop:
@@ -671,7 +673,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 class LAMMPSUniverse(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
-    #pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     """
     A class with what would be the equivalent in LAMMPS to the universe (i.e.
@@ -747,7 +749,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.propers = []
         self.impropers = []
         # ID is an acronym
-        #pylint: disable=invalid-name
+        # pylint: disable=invalid-name
         self.bond_ID = {}
         self.angle_ID = {}
         self.proper_ID = {}
@@ -816,7 +818,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         # ID is an acronym
-        #pylint: disable=invalid-name
+        # pylint: disable=invalid-name
         region_ID = 'universe'
         self._create_lammps_region(universe, region_ID)
         n_atom_types = len(universe.atom_types)
@@ -868,7 +870,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                             )
 
     # ID is an acronym
-    #pylint: disable=invalid-name
+    # pylint: disable=invalid-name
     def _create_lammps_region(self, universe, region_ID):
         """
         Create a geometry of the simulation box in LAMMPS
@@ -1313,9 +1315,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
         b_inters = set(self.universe.bonded_interactions)
         # *_ is for pylint as it does not know about the output of partition_interactions
         bonds, angles, *_ = partition_interactions([inter for inter
-                                                in b_inters
-                                                if inter.constrained],
-                                               ['Bond', 'BondAngle'], lst=True)
+                                                    in b_inters
+                                                    if inter.constrained],
+                                                   ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
                                      angles=angles, angle_ID_dict=self.angle_ID)
@@ -1336,7 +1338,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 class LAMMPSSimulation(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
-    #pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     """
     The attributes and methods related running a simulation in LAMMPS using a
@@ -1687,7 +1689,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 class LAMMPSEnsemble(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
-    #pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     """
     A thermodynamic ensemble determined by applying a thermostat and/or barostat
@@ -2736,27 +2738,18 @@ def parse_kspace_solver(solver):
         If ``solver`` type has has not been implemented in the LAMMPS facade.
     """
 
-    lmp_str = []
-
-    # Add algorithm name
-    if solver.name.lower() == 'ewald':
-        lmp_str.append('ewald')
-    elif solver.name.lower() == 'pppm':
-        lmp_str.append('pppm')
-    else:
-        raise NotImplementedError('This k-space solver has not been implemented'
+    solver_name = solver.name.lower()
+    if solver_name not in ('ewald', 'pppm'):
+        raise NotImplementedError(f'This k-space solver ({solver_name}) has not been implemented'
                                   ' in the LAMMPS facade')
 
-    # Add accuracy
-    lmp_str.append(solver.accuracy)
-
-    return lmp_str
+    return [solver_name, solver.accuracy]
 
 
 def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
                      angles=None, angle_ID_dict=None):
     # ID is an acronym
-    #pylint: disable=invalid-name
+    # pylint: disable=invalid-name
     """
     Converts an MDMC ``ConstraintAlgorithm`` for input to LAMMPS fix
 
@@ -2833,85 +2826,3 @@ def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
                     if angle.constrained]
 
     return lmp_str
-
-
-def partition(items, predicate):
-    """
-    Partitions an ``iterable`` using a predicate
-
-    Parameters
-    ----------
-    items : iterable
-        An ``interable`` to be partitioned.
-    predicate : function
-        A predicate that can be applied to items to returned `True` or `False`.
-
-    Returns
-    -------
-    `tuple`
-        A `tuple` of (``gen_true``, ``gen_false``), where ``gen_true`` is a
-        generator of all items for which the ``predicate`` returned `True`, and
-        ``gen_false is a generator of all items for which the ``predicate``
-        returned `False`
-    """
-
-    iter_a, iter_b = tee((predicate(item), item) for item in items)
-    return ((item for pred, item in iter_a if pred),
-            (item for pred, item in iter_b if not pred))
-
-
-def partition_interactions(interactions, names, unpartitioned=False, lst=False):
-    """
-    Partitions an ``iterable`` of ``Interaction`` objects using a `list` of
-    ``Interaction`` ``names``
-
-    This occurs by using ``partition`` to filter out one ``Interaction`` type
-    for each loop, so previously identified ``Interactions`` are no longer
-    considered.
-
-    Parameters
-    ----------
-    interactions : iterable of Interactions
-        An ``interable`` of ``Interaction`` objects to be partitioned.
-    names : list of str
-        Names of ``Interaction`` classes.
-    unpartitioned : bool, optional
-        If `True`, then a generator containing any ``Interaction`` objects that
-        did not have a name in ``names`` is returned as an additional item in
-        the `tuple`. Default is `False`.
-    lst : bool, optional
-        If `True`, then the returned `tuple` contains `list` rather than
-        generators. ``Interaction`` objects which have the name specified by
-        ``names[n]``. Default is `False`.
-
-    Returns
-    -------
-    `tuple`
-        A `tuple` of length ``len(names)`` where ``index`` ``n`` is a generator
-        of all of the ``Interaction`` objects which have the name specified by
-        ``names[n]``. If ``unpartitioned`` is `True`, `tuple` is length ``n+1``.
-        If ``lst`` is `True`, the generators are replaced by `list`.
-
-    Example
-    -------
-    Partion ``interactions`` into ``Bonds`` and ``BondAngles``:
-
-        .. highlight:: python
-        .. code-block:: python
-
-            bonds, angles = partition_interactions(interactions,
-                                                   ['Bond, BondAngle'])
-    """
-
-    interaction_lst = [None] * len(names)
-    i = 0
-    for name in names:
-        def predicate(x, n=name):
-            return x.name == n
-        interaction_lst[i], interactions = partition(interactions, predicate)
-        i += 1
-    if unpartitioned:
-        interaction_lst += [interactions]
-    if lst:
-        interaction_lst = [list(i) for i in interaction_lst]
-    return tuple(interaction_lst)

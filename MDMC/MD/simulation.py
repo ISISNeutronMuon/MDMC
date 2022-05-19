@@ -5,6 +5,7 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -104,7 +105,7 @@ class Universe(AtomContainer):
         self.kspace_solver = settings.get('kspace_solver')
         self.electrostatic_solver = settings.get('electrostatic_solver')
         self.dispersive_solver = settings.get('dispersive_solver')
-        # kspace_solver is mutually excusive with the other two solver
+        # kspace_solver is mutually exclusive with the other two solver
         # attributes
         if self.kspace_solver and (self.electrostatic_solver or
                                    self.dispersive_solver):
@@ -376,6 +377,25 @@ class Universe(AtomContainer):
         return {atom.element: atom for atom in self.atoms}
 
     @property
+    def element_lookup(self):
+
+        """
+        Get the elements by ID in the ``Universe``
+
+        This is required for MD engines which assign the same potential
+        parameters for all identical element names.
+
+        Returns
+        -------
+        dict
+            ``element:atom pairs``, where ``atom`` is a single ``Atom`` of the
+            specified ``element``.
+
+        """
+
+        return {atom.atom_type: atom.element for atom in self.atoms}
+
+    @property
     def atoms(self):
         """
         Get a list of the atoms in the Universe
@@ -442,19 +462,73 @@ class Universe(AtomContainer):
         """
 
         def add_all_parents(unit):
-
+            current = unit
             parent = unit.parent
             parents = [parent]
-            if parent is not parent.top_level_structure:
-                parents += add_all_parents(parent)
+            while parent is not parent.top_level_structure:
+                parent = current.parent
+                parents.append(parent)
+                current = parent
             return parents
 
-        structures = []
-        for atom in self.atoms:
-            structures += add_all_parents(atom)
+        structures = {parent for atom in self.atoms for parent in add_all_parents(atom)}
+        structures.update(self.atoms)
 
-        structures += list(self.atoms)
-        return list(set(structures))
+        return list(structures)
+
+    @property
+    def top_level_structure_list(self) -> List[Structure]:
+
+        """
+        Get a `list` of the top level ``Structure`` objects that exist in the
+        ``Universe``. This does not include any ``Structure`` that are a subunit
+        of another structure belonging to the ``Universe``.
+
+
+        Returns
+        -------
+        list
+            The top level ``Structure`` objects in the ``Universe``
+        """
+
+        # Remove duplicate entries from multiple atoms belonging to the same molecule
+        structures = {atom.top_level_structure for atom in self.atoms}
+
+        # and sort by ID for consistency
+        # Sorted converts to list
+        top_level_structures = sorted(structures, key=lambda x: x.ID)
+        return top_level_structures
+
+    @property
+    def equivalent_top_level_structures_dict(self) -> Dict[Structure, int]:
+
+        """
+        Get a `dict` of equivalent top level ``Structure`` objects that
+        exist in the ``Universe`` as keys, and the number of ``Structure``
+        that are equivalent to the key as a value. This does not include any
+        ``Structure`` that are a subunit of another structure belonging
+        to the ``Universe``.
+
+
+        Returns
+        -------
+        dict
+            The top level ``Structure`` objects in the ``Universe`` as
+            keys, and the number of each as a value
+        """
+
+        equivalent_dict = {}
+        for structure in self.top_level_structure_list:
+            match = False
+            for key in equivalent_dict:
+                if structure.is_equivalent(key):
+                    equivalent_dict[key] += 1
+                    match = True
+                    break
+            if not match:
+                equivalent_dict[structure] = 1
+
+        return equivalent_dict
 
     @property
     @mod_docstring(_FF_DOCSTRING)
@@ -513,7 +587,7 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe``
         """
 
-        return np.sum([atom.mass for atom in self.atoms]) / self.volume
+        return np.sum(atom.mass for atom in self.atoms) / self.volume
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
@@ -610,7 +684,7 @@ class Universe(AtomContainer):
 
     @mod_docstring(_FF_DOCSTRING)
     def add_structure(self, structure, force_field=None,
-                            center=False):
+                      center=False):
         """
         Adds a single ``Structure`` to the ``Universe``, with optional
         ``ForceField`` applying only to that ``Structure``
@@ -703,30 +777,25 @@ class Universe(AtomContainer):
                          msg)
             raise ValueError(msg)
 
-        n_units_xyz = self.dimensions * (num_density ** (1 / 3.))
+        n_units_xyz = self.dimensions * (num_density ** (1. / 3.))
         n_units_xyz = n_units_xyz.astype(int)
 
-        positions = []
         # Determine the upper and lower bounds for structural unit with its
         # position (CoM) and its bounding box
         bounds = structures.bounding_box
         mn = np.array((0., 0., 0.)) - (bounds.min - structures.position)
         mx = self.dimensions - (bounds.min - structures.position)
-        for i in range(len(self.dimensions)):
-            positions.append(np.linspace(mn[i], mx[i], n_units_xyz[i],
-                                         endpoint=False))
-
-        positions = sorted(list(product(*positions)))
+        positions = [np.linspace(mi, ma, n_units, endpoint=False)
+                     for mi, ma, n_units in zip(mn, mx, n_units_xyz)]
+        positions = sorted(product(*positions))
 
         # Add the first structural unit and force field (if specified) before
         # copying the structural unit to fill the universe
+        self.add_structure(structures, force_field)
+        structures.position = positions.pop(0)
         for position in positions:
-            if position is positions[0]:
-                self.add_structure(structures, force_field)
-                structures.position = position
-            else:
-                new_unit = structures.copy(position)
-                self.add_structure(new_unit)
+            new_unit = structures.copy(position)
+            self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
     def add_force_field(self, force_field, *interactions, **settings):
@@ -770,11 +839,9 @@ class Universe(AtomContainer):
                              self.__class__,
                              add_dispersions)
                 raise TypeError(msg)
-            dispersions = []
             # Get unique atom types and add dispersions for each of these
             atom_types = {atom.atom_type for atom in atoms}
-            for atom_type in atom_types:
-                dispersions.append(Dispersion(self, (atom_type,) * 2))
+            dispersions = [Dispersion(self, (atom_type,) * 2) for atom_type in atom_types]
 
         if not interactions:
             self.force_fields.parameterize_interactions(set(self.interactions))
@@ -823,15 +890,8 @@ class Universe(AtomContainer):
             for more details on non-bonded interactions.
         """
 
-        # Check if interactions already exists in Universe
-        new_nonbonded_interactions = []
-        for nbi in nonbonded_interactions:
-            # As in uses == (as well as is) to test for membership, this
-            # excludes all nonbonded interactions that are equal to any already
-            # in the Universe
-            if nbi not in self.nonbonded_interactions:
-                new_nonbonded_interactions.append(nbi)
-        self._nonbonded_interactions.update(new_nonbonded_interactions)
+        # Since self._nonbonded_interactions is a set the update method only adds new interactions
+        self._nonbonded_interactions.update(nonbonded_interactions)
 
     @property
     def nbis_by_atom_type_pairs(self):
@@ -857,9 +917,9 @@ class Universe(AtomContainer):
         pairs_interactions = {}
         # Find pairwise combinations of N atom_types in the universe
         # Where each pair (i, j) has 0 < i, j <= N   and    i <= j
-        atom_type_pairs = [(i, j) for i, j in product(self.atom_types,
+        atom_type_pairs = ((i, j) for i, j in product(self.atom_types,
                                                       repeat=2)
-                           if i <= j]
+                           if i <= j)
         # Create dict of interactions for each atom type pair
         for pair in atom_type_pairs:
             pairs_interactions[pair] = []
@@ -947,18 +1007,15 @@ class Universe(AtomContainer):
                          density, msg)
             raise ValueError(msg)
         # Get the prelim scaling of the orig box required to achieve density
-        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3)]
+        dim_scaling = np.array([(solvent_config.density / density) ** (1. / 3.)]
                                * 3)
 
         scale_factor = 0.
         counter = 0
         # Offset the atom_types of the solvent_config by the maximum atom_type
         # in the Universe.
-        # Try/except accounts for empty universe (i.e. no atom_types)
-        try:
-            max_atom_type = np.max(list(self.atom_types.keys()))
-        except ValueError:
-            max_atom_type = 0
+        max_atom_type = max(self.atom_types.keys(), default=0)
+
         solvent_config.offset_atom_types(max_atom_type)
         difference = float('inf')
 
@@ -1323,7 +1380,7 @@ class Simulation:
         setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
             setup_values = [[value] for value in self.settings.values()]
-            setup_keys = ['  {}'.format(key) for key in self.settings]
+            setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
 
@@ -1376,7 +1433,8 @@ class Simulation:
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps: int, verbose: bool = False, **settings):
+    def minimize(self, n_steps: int, verbose: bool = False, output_log: str = None,
+                 work_dir: str = None, **settings):
         """
         Minimizes the total potential energy of the simulated system by
         modifying the positions of the constituent atoms until one of the
@@ -1387,8 +1445,12 @@ class Simulation:
         n_steps : int
             Maximum number of steps to run the minimization
         verbose: bool, optional
-            If true, prints time taken for the minimization when complete.
-            If false (default), does nothing.
+            Whether to print statements when the minimization has been started and completed
+            (including the number of minimization steps and time taken). Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
         **settings
             ``etol`` (`float`)
                 If the energy change between iterations is less than ``etol``,
@@ -1399,6 +1461,9 @@ class Simulation:
             ``maxeval`` (`int`)
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
+            ``nfreq`` (`int`)
+                Frequency at which minimisation is performed. Default depends
+                on engine used.
         """
 
         verbose_manager = VerboseManager.instance()
@@ -1408,11 +1473,13 @@ class Simulation:
         verbose_manager.start(1, verbose=int(verbose))
 
         verbose_manager.step(f"Running minimization for {n_steps} steps")
-        self.engine.minimize(n_steps, **settings)
+        self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
+                             **self.settings)
 
         verbose_manager.finish("Minimization")
 
-    def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False):
+    def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
+            output_log: str = None, work_dir: str = None, **settings):
         """
         Runs the MD simulation for the specified number of steps. Trajectories
         for the simulation are only saved when ``equilibration`` is `False`.
@@ -1428,8 +1495,12 @@ class Simulation:
             If the run is for equilibration (`True`) or production (`False`).
             Default is `False`.
         verbose: bool, optional
-            If true, prints time taken for the run when complete.
-            If false (default), does nothing.
+            Whether to print statements upon starting and completing the run.
+            Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
         """
 
         if equilibration:
@@ -1442,9 +1513,9 @@ class Simulation:
         # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
         # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
-
         verbose_manager.step(f"Running {process} for {n_steps} steps")
-        self.engine.run(n_steps, equilibration)
+        self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
+                        work_dir=work_dir, **self.settings)
 
         verbose_manager.finish(f"{process.capitalize()}")
 
