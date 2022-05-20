@@ -237,6 +237,19 @@ def test_charge_getter_checks(atom_charge):
     with pytest.raises(ValueError):
         atom_charge.charge
 
+
+def test_charge_no_cutoff():
+
+    """
+    Tests that not supplying a cutoff value for a charged atom
+    raises a warning and uses the default cutoff of 10.
+    """
+
+    with pytest.warns(UserWarning):
+        atom = Atom('H', charge=5.)
+
+    assert atom.cutoff == 10.
+
 def test_bounding_box_empty_raises_value_error():
 
     """

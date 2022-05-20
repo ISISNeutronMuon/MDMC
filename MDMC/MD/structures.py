@@ -12,6 +12,7 @@ from itertools import count
 import logging
 from math import gcd
 from typing import List
+import warnings
 import weakref
 
 import numpy as np
@@ -964,8 +965,11 @@ class Atom(Structure):
         # Initialises an interaction unless the charge passed is None.
         if value is not None:
             if self.cutoff is None:
-                raise ValueError("A cutoff radius must be set if the atom has a charge."
-                                 " Set cutoff=[value] when initialising the Atom object.")
+                warnings.warn("No cutoff was set for the Coulombic interaction of this atom."
+                              " The default cutoff of 10 Angstrom will be used. To set a cutoff,"
+                              " provide the argument cutoff=[value]"
+                              " when initialising the Atom object.")
+                self.cutoff = 10.
             Coulombic(atoms=self, charge=value, cutoff=self.cutoff)
 
     @property
