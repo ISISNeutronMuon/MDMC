@@ -737,7 +737,7 @@ class Atom(Structure):
             should only have the same names if they are equivalent. Defaults to the element
             of the atom.
         ``cutoff`` (`float`)
-            Sets the cutoff radius in ``Ang``, beyond which this atom does not interact 
+            Sets the cutoff radius in ``Ang``, beyond which this atom does not interact
             with other atoms. Must be set if a charge is being added to the atom.
     Attributes
     ----------
