@@ -1,3 +1,6 @@
+### This is the Dockerfile for mdmc/engines, which contains apt-get dependencies
+### and MD engines; i.e. the 'backend' of mdmc/mdmc.
+
 # Use an official Python runtime as a parent image
 FROM python:3.9.6-slim-buster
 
@@ -25,31 +28,7 @@ RUN apt-get update && apt-get install --upgrade -y \
   cmake \
   wget \
   python3-tk
-
-# Install any packages required for container which are not specifically for
-# running MDMC (i.e. not in requirements.txt)
-RUN pip3 install --upgrade pip
-RUN pip3 install setuptools --upgrade
-COPY .dev_requirements.txt .dev_requirements.txt 
-RUN pip3 install -r .dev_requirements.txt
-RUN rm .dev_requirements.txt
-
-# Install dependencies
-# [if this fails, you may be running Docker from the wrong directory. Go to
-# the main directory and build the image with
-# "docker build -f $(pwd)/build/Docker/Dockerfile ."]
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
-RUN rm requirements.txt
-
-# create a file in root directory called TIMESTAMP, containing
-# the time and date the image was created, as well as its dependency versions.
-# This is useful for troubleshooting docker image issues.
-RUN echo "This docker image was created on: " > TIMESTAMP && \
-echo `date` >> TIMESTAMP && \
-echo "With the following packages: " >> TIMESTAMP && \
-pip3 list >> TIMESTAMP
-
+  
 # Get LAMMPS
 RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
 RUN mkdir /lammps \
@@ -71,6 +50,11 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
 RUN make
 RUN make install-python
 
+# get DLPOLY
+RUN git clone https://gitlab.com/ccp5/dl-poly.git
+RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
+RUN cd build-dlpoly && make install
+ 
 # Start in /home
 WORKDIR /home
 
