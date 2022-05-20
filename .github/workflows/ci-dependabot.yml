@@ -20,6 +20,10 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }} 
       run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+    - name: Try to build documentation
+      env:
+        BRANCH: ${{ github.head_ref }} 
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c  "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
     - name: Push image
       env:
         BRANCH: ${{ github.head_ref }}
