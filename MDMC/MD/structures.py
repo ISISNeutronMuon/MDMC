@@ -923,14 +923,11 @@ class Atom(Structure):
                         raise ValueError('Atom should not have more than one'
                                          ' Coulombic interaction')
                     # Check that a charge parameter exists.
-                    charge_parameters = 0
-                    for parameter in interaction.parameters:
-                        if parameter.name == 'charge':
-                            charge_parameters += 1
-                            value = parameter.value
-                    if charge_parameters == 0:
+                    try:
+                        value = interaction.parameters['charge'].value
+                    except KeyError as error:
                         raise ValueError('Coulombic interaction does not have a'
-                                         ' parameter "charge".')
+                                            ' parameter "charge".') from error
             return value
         except AttributeError:
             return None
@@ -943,12 +940,10 @@ class Atom(Structure):
             if isinstance(inter, Coulombic):
                 if value is not None:
                     try:
-                        for parameter in inter.parameters:
-                            if parameter.name == 'charge':
-                                parameter.value = value
-                                return
+                        inter.parameters['charge'].value = value
+                    except KeyError as error:
                         raise ValueError('Coulombic interaction does not have'
-                                         ' a parameter "charge".')
+                                         ' a parameter "charge".') from error
                     except AttributeError:
                         # creates an interaction function if the Atom's
                         # Coulomb interaction doesn't have one

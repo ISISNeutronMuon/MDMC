@@ -414,7 +414,7 @@ def _validate_interaction_parameters(interaction, expected_parameters):
         If the interaction parameters are not equal to the expected_parameters
     """
 
-    for actual, expected in zip(interaction.parameters, expected_parameters):
+    for actual, expected in zip(interaction.parameters.as_array, expected_parameters):
         assert actual.value == expected
 
 

@@ -8,7 +8,7 @@ import numpy.testing as npt
 import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
-from MDMC.MD import interactions
+from MDMC.MD import interactions, Parameters
 from MDMC.MD.force_fields.ff import WaterModel
 from MDMC.MD.interaction_functions import LennardJones, Parameter
 import MDMC.MD.simulation as sim
@@ -399,7 +399,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # and the correspoding Parameter value
     parameters = []
     for function in functions:
-        {p.name:p.value for p in function.parameters}
+        {p.name: p.value for p in function.parameters.values()}
 
     # Test interaction parameters
     SPCEparameters = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
@@ -1172,11 +1172,11 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
 
 @pytest.mark.parametrize("solvent, parameters", [('SPCE',
                                                  (('equilibrium_state', 1.),
+                                                  ('potential_strength',
+                                                   4637.),
                                                   ('potential_strength', 383.),
                                                   ('equilibrium_state',
                                                    109.47),
-                                                  ('potential_strength',
-                                                   4637.),
                                                   ('charge', 0.4238),
                                                   ('charge', -0.8476),
                                                   ('epsilon', 0.6502),
@@ -1188,21 +1188,12 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     the solvent has been selected from inbuilt solvents
     """
 
-    test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
-                       for parameter in parameters]
-    uni_parameters = list(solvated_universe.parameters)
+    uni_parameters = solvated_universe.parameters
 
-    # Check lists are same length, then remove all Parameters that have a
-    # matching name and value, finally check list of Parameters is empty (i.e.
-    # all Parameters have matched)
-    assert len(test_parameters) == len(uni_parameters)
-    from copy import copy
-    for test_p in test_parameters:
-        for uni_p in copy(uni_parameters):
-            if (test_p.value == uni_p.value and test_p.name == uni_p.name):
-                uni_parameters.remove(uni_p)
-                break
-    assert uni_parameters == []
+    # we use string.split to remove the ID from the parameter because we don't need to consider it
+    assert len(parameters) == len(uni_parameters)
+    assert set(parameters) == {(p.name.split(" (")[0], p.value.real)
+                               for p in list(uni_parameters.values())}
 
 
 @pytest.mark.parametrize("density, tolerance", [(0.7, 20.),

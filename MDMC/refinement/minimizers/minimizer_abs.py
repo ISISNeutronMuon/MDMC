@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from mpi4py import MPI
 import numpy as np
 import pandas as pd
+
+from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
 
 # pylint: disable=c-extension-no-member
@@ -21,7 +23,7 @@ class Minimizer(ABC):
 
     Parameters
     ----------
-    parameters : list
+    parameters : Parameters or list of Parameter
         A `list` of ``Parameter`` objects which will be fit
     distribution : str, optional
         The distribution from which ``Parameter`` changes are selected
@@ -38,11 +40,11 @@ class Minimizer(ABC):
         The FoM from the current ``Minimizer`` step
     FoM_old : float
         The FoM from the previous ``Minimizer`` step
-    parameters : list
-        A `list` of ``Parameter`` objects being fitted
-    parameters_old_values : list
-        A `list` of the values of the ``Parameter`` objects from the previous
-        minimizer step
+    parameters : Parameters
+        A ``Parameters`` object containing the ``Parameter`` objects being fitted
+    parameters_old_values : Parameters
+        A ``Parameters`` object containing the values of 
+        the ``Parameter`` objects from the previous minimizer step
     state_changed : bool
         If the MMC algorithm resulted in the step being Accepted or Rejected
     max_parameter_change : float, optional
@@ -72,7 +74,8 @@ class Minimizer(ABC):
         # History of minimization
         self._history = []
 
-        parameters = np.array(sorted(list(parameters)))
+        if isinstance(parameters, list):
+            parameters = Parameters(parameters)
         self._check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters
@@ -153,14 +156,14 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def change_parameters(self, parameters):
+    def change_parameters(self, parameters: Parameters):
         """
         Selects a new value for each ``Parameter`` from a distribution centered
         around the current value
 
         Parameters
         ----------
-        parameters : list
+        parameters : Parameters
             All ``Parameter`` objects that are being refined
         """
 
@@ -211,13 +214,13 @@ class Minimizer(ABC):
         return converged
 
     @staticmethod
-    def _check_parameters(parameters):
+    def _check_parameters(parameters: Parameters):
         """
         Checks the validity of the parameters on input
 
         Parameters
         ----------
-        parameters : list
+        parameters : Parameters
             All ``Parameter`` objects to validate
 
         Raises
@@ -226,7 +229,7 @@ class Minimizer(ABC):
             If any ``Parameter`` is fixed
         """
 
-        for parameter in parameters:
+        for parameter in parameters.values():
             if parameter.fixed is True:
                 raise ValueError(
                     f'Parameter {parameter.name} is fixed, and so cannot be refined')

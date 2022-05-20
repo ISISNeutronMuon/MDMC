@@ -323,12 +323,12 @@ class Universe(AtomContainer):
 
         Returns
         -------
-        set
+        Parameters
             The ``Parameters`` objects defined within ``Universe``
         """
 
-        return Parameters({parameter for interaction in self.interactions
-                           for parameter in interaction.parameters})
+        return Parameters([parameter for interaction in self.interactions
+                           for parameter in interaction.parameters.as_array])
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)

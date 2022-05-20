@@ -1,5 +1,6 @@
 """The Metropolis-Hastings minimizer class"""
 import numpy as np
+
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 
@@ -24,10 +25,12 @@ class MMC(Minimizer):
         super().__init__(parameters, distribution, max_parameter_change)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
+        self.parameters = parameters
+
     @property
     def history_columns(self):
 
-        return ['FoM', 'Change state'] + [p.name for p in self.parameters]
+        return ['FoM', 'Change state'] + list(self.parameters)
 
     # pylint: disable=arguments-differ
     # we allow implementations of the abstract method to have different arguments
@@ -38,13 +41,13 @@ class MMC(Minimizer):
         """
 
         self.FoM = FoM
-        values = np.array([p.value for p in self.parameters])
+        parameters = {p: self.parameters[p].value for p in self.parameters}
         history = [self.FoM]
 
         if self.change_state():
             history.append('Accepted')
             self.FoM_old = self.FoM
-            self.parameters_old_values = values
+            self.parameters_old_values = parameters
             self.state_changed = True
 
         else:
@@ -53,7 +56,7 @@ class MMC(Minimizer):
             self.reset_parameters()
             self.state_changed = False
 
-        history.extend(values)
+        history.extend(list(parameters.values()))
         self._history.append(history)
         self.change_parameters(self.parameters)
 
@@ -90,7 +93,7 @@ class MMC(Minimizer):
 
         Parameters
         ----------
-        parameters : list
+        parameters : Parameters
             All ``Parameter`` objects that are being refined
         """
 
@@ -106,7 +109,7 @@ class MMC(Minimizer):
         # Broadcast parameters changes to all processes
         changes = self.comm.bcast(changes, root=0)
         # Change parameters by same amount on all processes
-        for i, parameter in enumerate(parameters):
+        for i, parameter in enumerate(parameters.values()):
             new_value = parameter.value * (1 + changes[i])
             # If the parameter is constrained, then clip changes that would be out of range
             if parameter.constraints is not None:
@@ -115,12 +118,12 @@ class MMC(Minimizer):
                 elif new_value > parameter.constraints[1]:
                     new_value = parameter.constraints[1]
 
-            parameter.value = new_value
+            self.parameters[parameter.name].value = new_value
 
     def reset_parameters(self):
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """
 
-        for i, parameter in enumerate(self.parameters):
-            parameter.value = self.parameters_old_values[i]
+        for parameter in self.parameters:
+            self.parameters[parameter].value = self.parameters_old_values[parameter]

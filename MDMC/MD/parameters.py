@@ -8,20 +8,24 @@ a sequence of Parameter objects.
 """
 
 import ast
+import logging
+import re
 from collections.abc import Iterable
-from itertools import chain
+from itertools import chain, count
 import operator
+from typing import Union, Any
 import warnings
 import weakref
+
+import numpy as np
 
 from MDMC.common.decorators import repr_decorator, unit_decorator, \
     unit_decorator_getter
 
 
-@repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
+@repr_decorator('ID', 'type', 'value', 'unit', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
 class Parameter:
-
     """
     A force field parameter which can be fixed or constrained within limits
 
@@ -44,9 +48,14 @@ class Parameter:
             the object passed as ``value``.
     """
 
+    # each Parameter has a unique ID, so they can be distinguished
+    _ID_generator = count(start=1, step=1)
+
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
-        self.name = name
+        self.ID = self._generate_ID()
+        self.name = name + f" (#{self.ID})"
+        self.type = name
         try:
             self.unit = settings['unit'] if 'unit' in settings else value.unit
         except AttributeError:
@@ -228,6 +237,11 @@ class Parameter:
         self._tie = ast.parse(
             'self._tie_parameter().value' + expr, mode='eval')
 
+    @classmethod
+    def _generate_ID(cls):
+        """Generates a unique ID for the Parameter that has just been created."""
+        return next(cls._ID_generator)
+
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
@@ -264,24 +278,123 @@ class Parameter:
         if value < constraints[0] or value > constraints[1]:
             raise ValueError("Value must be within constraints")
 
-    # comparison operator so parameters are always in the same order on refinement headings
+    # comparison operator so parameters are always in the same order on MMC refinement headings
     def __lt__(self, other):
         return self.name < other.name
 
+    def __eq__(self, other):
 
-class Parameters(list):
+        # TODO: make this more robust
+        return self.type == other.type and self.value == other.value
 
+
+
+class Parameters(dict):
     """
-    A `list-like` object where every element is a ``Parameter``, which contains
-    a number of helper methods for filtering
+    A `dict-like` object where every element is a ``Parameter`` indexed by name,
+    which contains a number of helper methods for filtering.
+
+    Although ``Parameters`` is a `dict`, it should be treated like a `list` when writing to it;
+    i.e. initialise it using a `list` and use `append` to add to it. These parameters can
+    then be accessed by their name as a key.
+
+    In short; Parameters writes like a list and reads like a dict.
+
+    Parameters
+    ----------
+    init_parameters: ``Parameter`` or `list` of ``Parameter``s, optional, default None
+        The initial ``Parameter`` objects that the ``Parameters`` object contains.
+
+    Attributes
+    ----------
+    array: np.ndarray
+        An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
+
+    def __init__(self, init_parameters: Union["list[Parameter]", Parameter, None] = None):
+        super().__init__()
+        if init_parameters is not None:
+            init_parameters = self._check_input(init_parameters)
+            self.append(init_parameters)
+
+    def __setitem__(self, key, value):
+        # disable this method to ensure parameter keys are always the parameter name
+        raise TypeError("Parameters should be added to using Parameters.append(parameter), "
+                        "with a parameter or list of parameters as your argument.")
 
     def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError as error:
+            # see if the key passed was a parameter name with no ID, and catch the error
+            # by getting the first parameter with that name
+            r = re.compile(rf"{key} \(#[0-9]+\)")
+            matching_parameters = list(filter(r.match, list(self.keys())))
+            if matching_parameters:
+                if len(matching_parameters) > 1:
+                    warnings.warn("Calling a parameter name with no ID fetches the first "
+                                  "parameter with that name; this may cause buggy or "
+                                  "inconsistent behaviour!")
+                return super().__getitem__(matching_parameters[0])
+            raise KeyError from error
 
-        item = super().__getitem__(key)
-        if isinstance(key, slice):
-            return self.__class__(item)
-        return item
+    def append(self, parameters: Union["list[Parameter]", Parameter]):
+        """
+        Appends a ``Parameter`` or list of ``Parameter``s to the dict,
+        with the parameter name as its key.
+
+        Parameters
+        ----------
+        parameters: ``Parameter`` or `list` of ``Parameter``s
+            The parameter(s) to be added to the dict.
+        """
+        parameters = self._check_input(parameters)
+
+        for parameter in parameters:
+            super().__setitem__(parameter.name, parameter)
+
+        self._remove_duplicates()
+
+    def _remove_duplicates(self):
+        """
+        Removes duplicate parameters from the Parameters object.
+
+        For example, if Parameters takes the form
+        {charge (#1): X
+         charge (#2): X
+         equilibrium_state (#3): Y
+         equilibrium_state (#4): Z
+         equilibrium_state (#5): Y
+         equilibrium_state (#6): Z
+         epsilon (#7): W}
+
+        _remove_duplicates will reduce it to
+        {charge (#1): X
+         equilibrium_state (#3): Y
+         equilibrium_state (#4): Z
+         epsilon (#7): W
+        }
+        """
+
+        unique_parameters = []
+        for parameter in list(self.values()):
+            if any(parameter == p for p in unique_parameters):
+                self.pop(parameter.name)
+            else:
+                unique_parameters.append(parameter)
+
+    @property
+    def as_array(self) -> np.ndarray:
+        """
+        The parameters in the object as a sorted numpy array.
+
+        Returns
+        -------
+        np.ndarray
+            An alphabetically-sorted array of parameter values in the object.
+        """
+
+        return np.array(sorted(list(self.values()), key=lambda p: p.name))
 
     def filter(self, predicate):
         """
@@ -299,7 +412,7 @@ class Parameters(list):
             The ``Parameter`` objects which meet the condition of the predicate
         """
 
-        return Parameters(filter(predicate, self))
+        return Parameters(list(filter(predicate, list(self.values()))))
 
     def filter_name(self, name):
         """
@@ -316,7 +429,7 @@ class Parameters(list):
             The ``Parameter`` objects with ``name``
         """
 
-        return Parameters(filter(lambda p: p.name == name, self))
+        return self.filter(lambda p: name in p.name)
 
     def filter_value(self, comparison, value):
         """
@@ -345,7 +458,7 @@ class Parameters(list):
                '==': operator.eq,
                '!=': operator.ne}
 
-        return Parameters(filter(lambda p: ops[comparison](p.value, value), self))
+        return self.filter(lambda p: ops[comparison](p.value, value))
 
     def filter_interaction(self, interaction_name):
         """
@@ -364,8 +477,7 @@ class Parameters(list):
             specified ``interaction_name``
         """
 
-        return Parameters(filter(lambda p: p.interactions_name == interaction_name,
-                                 self))
+        return self.filter(lambda p: p.interactions_name == interaction_name)
 
     def filter_function(self, function_name):
         """
@@ -385,7 +497,7 @@ class Parameters(list):
             specified ``function_name``
         """
 
-        return Parameters(filter(lambda p: p.functions_name == function_name, self))
+        return self.filter(lambda p: p.functions_name == function_name)
 
     def filter_atom_attribute(self, attribute, value):
         """
@@ -415,12 +527,11 @@ class Parameters(list):
                 else:
                     yield element
 
-        return Parameters(filter(lambda p:
-                                 value in [getattr(atom, attribute)
-                                           for int in p.interactions
-                                           for atom
-                                           in flatten(int.atoms)],
-                                 self))
+        return self.filter(lambda p:
+                           value in [getattr(atom, attribute)
+                                     for int in p.interactions
+                                     for atom
+                                     in flatten(int.atoms)])
 
     def filter_structure(self, structure_name):
         """
@@ -464,4 +575,50 @@ class Parameters(list):
                     add_name(atom)
             return structure_name in structure_names
 
-        return Parameters(filter(check_structure_name, self))
+        return self.filter(check_structure_name)
+
+    def log_parameters(self):
+        """Logs all Parameters by ID"""
+
+        LOGGER = logging.getLogger(__name__)
+        msg = "List of all parameters with ID: \n"
+        for parameter in self.values():
+            msg += f"{parameter.__repr__()}"
+
+        LOGGER.info(msg)
+        print("Details on which Parameter corresponds to each ID have been written to the log.")
+
+    @staticmethod
+    def _check_input(x: Any) -> 'list[Parameter]':
+        """
+        Ensures that input to a Parameters object is in the correct form.
+
+        Raises an error if the input is not either a Parameter
+        (in which case it is turned into a list, so it can be fed into an iteration loop)
+        or a list of Parameters.
+
+        Parameters
+        ----------
+        x: Any
+            The object to be sanitised.
+
+        Returns
+        -------
+        list[Parameter]
+            Returns x if x is a list of Parameters, or [x] if x is a Parameter
+            (so it can be iterated over)
+
+        Raises
+        ------
+        TypeError
+            If the object is not a Parameter or list of Parameters (including
+            if it is a list that contains a non-Parameter object)
+        """
+        if isinstance(x, Parameter):
+            return [x]
+        if isinstance(x, list):
+            if all(isinstance(i, Parameter) for i in x):
+                return x
+
+        raise TypeError("Input into a Parameters object must be either a Parameter "
+                        "or a list of Parameters.")

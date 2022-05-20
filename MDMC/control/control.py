@@ -195,7 +195,11 @@ class Control:
                         'TOTAL STEP': []}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
-        fit_parameters = {p for p in fit_parameters if (not (p.fixed or p.tied) and p.value != 0)}
+        # if a Parameters object, convert to list first for comprehension
+        if isinstance(fit_parameters, Parameters):
+            fit_parameters = list(fit_parameters.values())
+        fit_parameters = [p for p in fit_parameters
+                          if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.

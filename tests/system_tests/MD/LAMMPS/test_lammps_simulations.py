@@ -108,9 +108,7 @@ def universe():
     universe.add_force_field('SPCE')
     # Change LJ epsilon parameter slightly so that it is exactly the same as
     # LAMMPS value
-    for parameter in O_dispersion.parameters:
-        if parameter.name == 'epsilon':
-            parameter.value = 0.6501936
+    O_dispersion.parameters['epsilon'].value = 0.6501936
 
     return universe
 
@@ -201,12 +199,11 @@ def NVE_unconstrained(universe):
     # those interactions according to SPC/Fd water model
     for interaction in universe.bonded_interactions:
         interaction.constrained = False
-        for parameter in interaction.parameters:
-            if parameter.name == 'potential_strength':
-                if interaction.name == 'Bond':
-                    parameter.value = 4410.7728 / 2
-                elif interaction.name == 'BondAngle':
-                    parameter.value = 158.7828
+        for parameter in interaction.parameters.filter_name("potential_strength"):
+            if interaction.name == 'Bond':
+                interaction.parameters[parameter].value = 4410.7728 / 2
+            elif interaction.name == 'BondAngle':
+                interaction.parameters[parameter].value = 158.7828
     # Remove constraint algorithm from universe
     universe.constraint_algorithm = None
 
