@@ -12,6 +12,7 @@ from itertools import count
 import logging
 from math import gcd
 from typing import List
+import warnings
 import weakref
 
 import numpy as np
@@ -720,7 +721,7 @@ class Atom(Structure):
         the MD engine will be randomly chosen in order to provide an accurate
         temperature. The default is ``(0., 0., 0.)``.
     charge : float
-        The charge of the ``Atom`` in units of elementary charge (``e)``. The
+        The charge of the ``Atom`` in units of elementary charge (``e``). The
         default is `None`, meaning that a ``Coulomb`` interaction is not applied
         to the ``Atom``.
     **settings
@@ -735,6 +736,9 @@ class Atom(Structure):
             A name to uniquely identify the atom. Used by ForceFields (e.g. OPLSAA). Atoms
             should only have the same names if they are equivalent. Defaults to the element
             of the atom.
+        ``cutoff`` (`float`)
+            Sets the cutoff radius in ``Ang``, beyond which this atom does not interact
+            with other atoms. Must be set if a charge is being added to the atom.
     Attributes
     ----------
     element : str
@@ -757,6 +761,7 @@ class Atom(Structure):
             self.mass = atom_properties.MASS[self.element]
 
         self._atom_type = settings.get('atom_type', None)
+        self.cutoff = settings.get('cutoff', None)
         self.charge = charge
 
     def __deepcopy__(self, memo):
@@ -911,7 +916,6 @@ class Atom(Structure):
             When setting charge to `None` when a ``Coulombic`` interaction
             already exists.
         """
-
         try:
             num_coul = 0
             value = None
@@ -955,7 +959,13 @@ class Atom(Structure):
         # Executes if Coulombic interaction doesn't currently exist.
         # Initialises an interaction unless the charge passed is None.
         if value is not None:
-            Coulombic(atoms=self, charge=value, cutoff=10.)
+            if self.cutoff is None:
+                warnings.warn("No cutoff was set for the Coulombic interaction of this atom."
+                              " The default cutoff of 10 Angstrom will be used. To set a cutoff,"
+                              " provide the argument cutoff=[value]"
+                              " when initialising the Atom object.")
+                self.cutoff = 10.
+            Coulombic(atoms=self, charge=value, cutoff=self.cutoff)
 
     @property
     def mass(self):

@@ -171,7 +171,7 @@ def test_convert_to_ase_atom(position, index, mass, symbol, charge):
     Tests that an equivalent ase.atom.Atom object is created from an MDMC Atom
     """
 
-    atom = Atom(symbol, position=position, mass=mass, charge=charge)
+    atom = Atom(symbol, position=position, mass=mass, charge=charge, cutoff=10.)
     ase_atom = conversions.convert_to_ase_atom(atom, index)
     # If an index is not passed, the index should be set to the Atom ID
     index = index if index else atom.ID
@@ -201,7 +201,8 @@ def test_convert_from_ase_atom(element, atom_type, name, set_charge):
     atom = conversions.convert_from_ase_atom(ase_atom,
                                              atom_type=atom_type,
                                              name=name,
-                                             set_charge=set_charge)
+                                             set_charge=set_charge,
+                                             cutoff=10.)
     assert atom.element == element
     assert atom.atom_type == atom_type
     # If a name is not passed, the name should be the symbol

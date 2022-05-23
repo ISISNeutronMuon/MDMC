@@ -270,14 +270,14 @@ def test_equivalent_top_level_structures_dict(
                                            interactions.BondAngle(H1, O, H2)],
                              name='water_copy')
 
-    atom = su.Atom('Ar', charge=0.)
+    atom = su.Atom('Ar', charge=0., cutoff=10.)
     interactions.Dispersion(universe=universe,
                             atom_types=(atom.atom_type, atom.atom_type),
                             cutoff=8.,
                             vdw_tail_correction=True,
                             function=LennardJones(1.0243, 3.36))
 
-    atom_copy = su.Atom('Ar', charge=0., position=[2, 2, 2])
+    atom_copy = su.Atom('Ar', charge=0., position=[2, 2, 2], cutoff=10.)
     interactions.Dispersion(universe=universe,
                             atom_types=(atom_copy.atom_type, atom_copy.atom_type),
                             cutoff=8.,
