@@ -50,6 +50,14 @@ class MockParameter:
         self.name = name
         self.value = value
 
+
+class MockParameters(dict):
+
+    def __init__(self, parameters_list):
+        for p in parameters_list:
+            self[p.name] = p
+
+
 class MockMinimizer:
 
     def __init__(self, history):
@@ -190,10 +198,10 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                'int':[10, 100, 1000, 10000, 0.00001] * 3,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
+    minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
+                                       MockParameter('sigma', 0.339834),
+                                       MockParameter('A', 1),
+                                       MockParameter('B', 34743.233E6)])
 
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
@@ -248,10 +256,10 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                'int':[10, 100, 1000, 10000, 0.00001] * 3,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
+    minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
+                                       MockParameter('sigma', 0.339834),
+                                       MockParameter('A', 1),
+                                       MockParameter('B', 34743.233E6)])
 
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
