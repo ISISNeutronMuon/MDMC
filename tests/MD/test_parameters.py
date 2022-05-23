@@ -438,23 +438,6 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
             == expected_parameters)
 
 
-def test_duplicate_parameters_ID():
-    """Tests that duplicates of a parameter will be filed correctly."""
-
-    # test if separate parameters will all be indexed
-    parameters = Parameters([Parameter(name='charge', value=1.),
-                             Parameter(name='charge', value=2.),
-                             Parameter(name='charge', value=3.)])
-
-    assert len(parameters.keys()) == 3
-
-    # test that identical parameters are not registered twice
-    parameters.append([Parameter(name='charge', value=1.),
-                       Parameter(name='charge', value=5.)])
-
-    assert len(parameters.keys()) == 4
-
-
 def test_parameters_getitem_lazy():
     """Tests that the user can get a parameter without using its ID"""
 
