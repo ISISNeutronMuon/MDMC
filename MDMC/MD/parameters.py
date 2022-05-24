@@ -282,12 +282,6 @@ class Parameter:
     def __lt__(self, other):
         return self.name < other.name
 
-    def __eq__(self, other):
-
-        # TODO: make this more robust
-        return self.type == other.type and self.value == other.value
-
-
 
 class Parameters(dict):
     """
@@ -353,35 +347,6 @@ class Parameters(dict):
         for parameter in parameters:
             super().__setitem__(parameter.name, parameter)
 
-        self._remove_duplicates()
-
-    def _remove_duplicates(self):
-        """
-        Removes duplicate parameters from the Parameters object.
-
-        For example, if Parameters takes the form
-        {charge (#1): X
-         charge (#2): X
-         equilibrium_state (#3): Y
-         equilibrium_state (#4): Z
-         equilibrium_state (#5): Y
-         equilibrium_state (#6): Z
-         epsilon (#7): W}
-
-        _remove_duplicates will reduce it to
-        {charge (#1): X
-         equilibrium_state (#3): Y
-         equilibrium_state (#4): Z
-         epsilon (#7): W
-        }
-        """
-
-        unique_parameters = []
-        for parameter in list(self.values()):
-            if any(parameter == p for p in unique_parameters):
-                self.pop(parameter.name)
-            else:
-                unique_parameters.append(parameter)
 
     @property
     def as_array(self) -> np.ndarray:

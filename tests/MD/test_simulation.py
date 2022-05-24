@@ -1190,9 +1190,8 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
 
     uni_parameters = solvated_universe.parameters
 
-    # we use string.split to remove the ID from the parameter because we don't need to consider it
     assert len(parameters) == len(uni_parameters)
-    assert set(parameters) == {(p.name.split(" (")[0], p.value.real)
+    assert set(parameters) == {(p.type, p.value.real)
                                for p in list(uni_parameters.values())}
 
 
