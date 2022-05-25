@@ -8,7 +8,7 @@ on:
 jobs:
   docker_tests:
     name: Docker including MD tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -35,7 +35,7 @@ jobs:
 
   basic_tests:
     name: Non-container and not inc MD tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -84,7 +84,7 @@ jobs:
 
   singularity:
     name: Singularity tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: Setup Go
         uses: actions/setup-go@v2
