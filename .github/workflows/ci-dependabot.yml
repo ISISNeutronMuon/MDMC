@@ -15,7 +15,7 @@ jobs:
     - name: Build Docker container
       env:
         BRANCH: ${{ github.head_ref }} 
-      run: docker build -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile . || exit 1 
+      run: docker build -t mdmc/mdmc:ci-$BRANCH -f "$(pwd)"/build/Docker/Dockerfile.mdmc . || exit 1 
     - name: Run tests
       env:
         BRANCH: ${{ github.head_ref }} 
