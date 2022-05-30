@@ -122,13 +122,12 @@ jobs:
         sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
     - name: pip3 install
       run: |
+        export PATH=$PATH:/home/ansible/.local/lib/python3.8/site-packages
         pip3 install --upgrade pip
         pip3 install -r requirements.txt
         pip3 install pylint pylint-exit
     - name: pylint
       run: |
-        alias pylint="python3 -m pylint"
-        alias pylint-exit="python3 -m pylint-exit"
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
         exit $?
 
