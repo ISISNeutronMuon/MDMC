@@ -40,7 +40,7 @@ jobs:
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }}
-        OPTIONS: -m lammps -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml
+        OPTIONS: "-m lammps -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml"
       run: source .github/scripts/docker_testing.sh
 
     - name: Copy coverage
@@ -72,7 +72,7 @@ jobs:
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }}
-        OPTIONS: -m "not lammps" -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml
+        OPTIONS: -m "not lammps" -s $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml
       run: source .github/scripts/docker_testing.sh
 
     - name: Copy coverage
@@ -104,7 +104,7 @@ jobs:
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }}
-        OPTIONS: -s "$(pwd)"/tests/full_tests --argon
+        OPTIONS: -s $(pwd)/tests/full_tests --argon
       run: source .github/scripts/docker_testing.sh
 
   documentation:
