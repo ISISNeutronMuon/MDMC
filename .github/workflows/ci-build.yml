@@ -10,6 +10,8 @@ jobs:
     # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
+    - name: Own repo for checkout
+      run: chown ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if Docker build files changed
@@ -31,6 +33,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo for checkout
+      run: chown ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
@@ -63,6 +67,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo for checkout
+      run: chown ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
@@ -95,6 +101,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo for checkout
+      run: chown ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
@@ -112,6 +120,8 @@ jobs:
     needs: build # so it can use new docker image if docker image has changed
     runs-on: self-hosted
     steps:
+    - name: Own repo for checkout
+      run: chown ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if doc files changed
