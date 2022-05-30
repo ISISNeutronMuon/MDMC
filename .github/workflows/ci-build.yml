@@ -6,10 +6,12 @@ on:
 jobs:
   build:
     name: Build docker container
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if Docker build files changed
@@ -24,8 +26,10 @@ jobs:
   engine_tests:
     name: Docker MD tests
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
@@ -56,13 +60,15 @@ jobs:
   tests:
     name: Docker non-MD tests
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if source code changed
@@ -88,8 +94,10 @@ jobs:
   documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if doc files changed
@@ -102,19 +110,21 @@ jobs:
 
   linting:
     name: Pylint
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: apt get
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
-    - name: pip install
+    - name: pip3 install
       run: |
         pip3 install --upgrade pip
-        pip install -r requirements.txt
-        pip install pylint pylint-exit
+        pip3 install -r requirements.txt
+        pip3 install pylint pylint-exit
     - name: pylint
       run: |
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
