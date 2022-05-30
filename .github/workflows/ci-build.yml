@@ -127,6 +127,8 @@ jobs:
         pip3 install pylint pylint-exit
     - name: pylint
       run: |
+        alias pylint="python3 -m pylint"
+        alias pylint-exit="python3 -m pylint-exit"
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
         exit $?
 
