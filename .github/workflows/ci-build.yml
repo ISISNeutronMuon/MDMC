@@ -120,9 +120,12 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
+    - name: add package locations to PATH
+      run: |
+        export PATH=$PATH:/home/ansible/.local/lib/python3.8/site-packages:/home/ansible/.local/bin
+        export PYTHONPATH=$PYTHONPATH:$PATH
     - name: pip3 install
       run: |
-        export PATH=$PATH:/home/ansible/.local/lib/python3.8/site-packages
         pip3 install --upgrade pip
         pip3 install -r requirements.txt
         pip3 install pylint pylint-exit
