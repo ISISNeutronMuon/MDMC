@@ -139,12 +139,11 @@ def test_minimizer_change_parameters(parameters):
         return np.ones(size)
 
     expected_values = {p: 2 * parameters[p].value for p in parameters}
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
-        minim.distribution = mock_distribution
-        minim.change_parameters(minim.parameters)
-        for p in minim.parameters:
-            assert minim.parameters[p].value == expected_values[p]
+    minim = MinimizerFactory.create_minimizer('MMC', parameters)
+    minim.distribution = mock_distribution
+    minim.change_parameters(minim.parameters)
+    for p in minim.parameters:
+        assert minim.parameters[p].value == expected_values[p]
 
 
 

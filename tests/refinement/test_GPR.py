@@ -47,6 +47,18 @@ def test_GPR_parameter_point_array():
     assert np.logical_and(np.array(points)[:,1]>=par2_constraints[0], np.array(points)[:,1]<=par2_constraints[1]).all()
 
 
+def test_reset_parameters():
+    parameters = Parameters([Parameter(name='parameter1', value=1.), 
+                Parameter(name='parameter2', value=2.)])
+    gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
+    
+    parameter_values = [p.value for p in gpr.parameters.values()]
+    assert np.allclose(parameter_values, (0.8, 1.6), rtol=1e-5)
+
+    gpr.reset_parameters()
+    parameter_values = [p.value for p in gpr.parameters.values()]
+    assert np.allclose(parameter_values, (1.2, 2.4), rtol=1e-5)
+
 def test_GPR_create_bounds():
     constrained_parameter = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0))])
     gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameter, n_points=3)
