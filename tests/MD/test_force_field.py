@@ -21,9 +21,9 @@ def water_universe():
     """
 
     universe = Universe(10.0)
-    H1 = Atom('H', charge=0.)
+    H1 = Atom('H', charge=0., cutoff=10.)
     H2 = H1.copy(position=(0., 1.63298, 0.))
-    O = Atom('O', position=(0., 0.81649, 0.57736), charge=0.)
+    O = Atom('O', position=(0., 0.81649, 0.57736), charge=0., cutoff=10.)
     water_mol = Molecule(position=(0, 0, 0),
                          velocity=(0, 0, 0),
                          atoms=[H1, H2, O],
@@ -414,7 +414,7 @@ def _validate_interaction_parameters(interaction, expected_parameters):
         If the interaction parameters are not equal to the expected_parameters
     """
 
-    for actual, expected in zip(interaction.parameters.array, expected_parameters):
+    for actual, expected in zip(interaction.parameters.as_array, expected_parameters):
         assert actual.value == expected
 
 

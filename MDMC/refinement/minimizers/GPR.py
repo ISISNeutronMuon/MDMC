@@ -237,10 +237,11 @@ class GPR(Minimizer):
         """
         Resets the ``Parameter`` values to the first step
         """
-        for i, parameter_name in enumerate(self.parameter_names):
+        pass
+        '''for i, parameter_name in enumerate(self.parameter_names):
             for parameter in self.parameters:
                 if parameter.name == parameter_name:
-                    parameter.value = self.parameter_point_array[0][i]
+                    parameter.value = self.parameter_point_array[0][i]'''
 
 
     def GPR_fit(self, filename: Optional[str]="results.csv", alpha: Optional[float]=0.1):

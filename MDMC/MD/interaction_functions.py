@@ -46,7 +46,7 @@ class InteractionFunction:
                 parameter = Parameter(value, name)
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
-                setattr(self, parameter.name, parameter)
+                setattr(self, parameter.type, parameter)
         self.parameters = parameters
 
     def __str__(self):
@@ -54,6 +54,14 @@ class InteractionFunction:
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
                                for p in self.parameters.values()]).strip(',')
         return f'{self.__class__.__name__} {parameters}'
+
+    def __eq__(self, other):
+
+        return (id(self) == id(other) or
+                all([(type(self) is type(other)),
+                    ([p.type for p in self.parameters.values()] ==
+                     [p.type for p in other.parameters.values()]),
+                    (self.parameters_values == other.parameters_values)]))
 
     @property
     def parameters(self):

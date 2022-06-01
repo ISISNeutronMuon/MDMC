@@ -281,7 +281,7 @@ def test_filter_parameters_name(name, number):
                          for index in range(5)])
 
     filtered = parameters.filter_name(name)
-    assert [parameter.name for parameter in filtered.values()] == [name] * number
+    assert [parameter.type for parameter in filtered.values()] == [name] * number
 
 
 @pytest.mark.parametrize('comp, value, expected_slice', [('<', 0., [-1, -2]),
@@ -331,8 +331,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
 
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
 
-    assert (parameters.filter_interaction(int_name)
-            == expected_parameters)
+    assert parameters.filter_interaction(int_name) == expected_parameters
 
 
 @pytest.mark.parametrize('function_name, expected_slice', [('Coulomb',
@@ -359,8 +358,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
 
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
 
-    assert (parameters.filter_function(function_name)
-            == expected_parameters)
+    assert parameters.filter_function(function_name) == expected_parameters
 
 
 @pytest.mark.filterwarnings("ignore: Coulombic")
@@ -386,8 +384,8 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
     # Make two bonds with atoms with different masses and charges
     # The second atom in each Bond has double the mass and charge of the first
     # atom
-    inters = [Bond(Atom('H', mass=props[0], charge=props[1]),
-                   Atom('H', mass=(2 * props[0]), charge=(props[1] * 2)))
+    inters = [Bond(Atom('H', mass=props[0], charge=props[1], cutoff=10.),
+                   Atom('H', mass=(2 * props[0]), charge=(props[1] * 2), cutoff=10.))
               for props in [(1., 0.5),
                             (4., -1.0)]]
 
@@ -440,18 +438,15 @@ def test_filter_parameters_structure(struct_name, expected_slice, parameters):
             == expected_parameters)
 
 
-def test_duplicate_parameters_naming():
-    """Tests that duplicates of a parameter have a number appended to them."""
+def test_parameters_getitem_lazy():
+    """Tests that the user can get a parameter without using its ID"""
 
-    # test if separate parameters will all be indexed
     parameters = Parameters([Parameter(name='charge', value=1.),
-                             Parameter(name='charge', value=2.),
-                             Parameter(name='charge', value=3.)])
+                             Parameter(name='epsilon', value=2.),
+                             Parameter(name='sigma', value=3.)])
 
-    assert list(parameters.keys()) == ['charge', 'charge_2', 'charge_3']
+    for test_parameter in [('charge', 1.), ('epsilon', 2.), ('sigma', 3.)]:
+        assert parameters[test_parameter[0]].value == test_parameter[1]
 
-    # test that identical parameters are not registered twice
-    parameters = Parameters([Parameter(name='charge', value=1.),
-                             Parameter(name='charge', value=1.)])
-
-    assert list(parameters.keys()) == ['charge']
+    with pytest.raises(KeyError):
+        nonexistent_parameter = parameters['nonexistent_parameter']

@@ -482,9 +482,7 @@ class Trajectory(AtomCollection):
             including any weak references.
         """
 
-        structures = []
-        for config in self.configurations:
-            structures.append(config.structure_list)
+        structures = [config.structure_list for config in self.configurations]
 
         return {'universe': self.universe,
                 'times': self.times,
@@ -505,9 +503,8 @@ class Trajectory(AtomCollection):
             including any weak references.
         """
 
-        configs = [TemporalConfiguration(d['times'][i],
-                                         *d['structures'][i],
-                                         universe=d['universe']) for i in range(len(d['times']))]
+        configs = [TemporalConfiguration(time, *structure, universe=d['universe'])
+                   for time, structure in zip(d['times'], d['structures'])]
 
         self.__init__(*configs)
 

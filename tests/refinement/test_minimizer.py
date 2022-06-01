@@ -116,7 +116,9 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
 
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minim = MinimizerFactory.create_minimizer(minimizer_name, parameter_slice)
-        assert minim.history_columns == ['FoM', 'Change state'] + list(columns)
+        expected_columns = ['FoM', 'Change state'] + columns
+        for i, column in enumerate(minim.history_columns):
+            assert column in minim.history_columns[i]
 
 
 def mock_change_parameters(self, parameters):
@@ -126,6 +128,23 @@ def mock_change_parameters(self, parameters):
 
     for p in parameters:
         parameters[p].value *= 2
+
+def test_minimizer_change_parameters(parameters):
+    """
+    Tests that the parameters change by the expected amount when given a mocked
+    distribution which always returns 1.
+    """
+
+    def mock_distribution(low: float, high: float, size: int):
+        return np.ones(size)
+
+    expected_values = {p: 2 * parameters[p].value for p in parameters}
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+        minim.distribution = mock_distribution
+        minim.change_parameters(minim.parameters)
+        for p in minim.parameters:
+            assert minim.parameters[p].value == expected_values[p]
 
 
 

@@ -128,7 +128,7 @@ def convert_to_ase_atom(atom, index=None):
                          charge=atom.charge)
 
 
-def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
+def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True, cutoff=None):
     """
     Converts an ``ase.atom.Atom`` to an MDMC ``Atom``.
 
@@ -149,6 +149,8 @@ def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
         set to 0. if it is uninitialized. As MDMC ``Atom`` objects can have
         ``charge=None`, in some cases it might be preferential to leave the
         ``charge`` unset. The default is to set the ``charge``.
+    cutoff : float, optional
+        The cutoff value for the atom's charge interaction. Must be set if set_charge is True.
 
     Returns
     -------
@@ -161,6 +163,9 @@ def convert_from_ase_atom(ase_atom, atom_type=None, name=None, set_charge=True):
               'mass': ase_atom.mass, 'name': name}
     if set_charge:
         kwargs['charge'] = ase_atom.charge
+        if cutoff is None:
+            raise ValueError("If set_charge is True, a cutoff must also be set.")
+        kwargs['cutoff'] = cutoff
     if atom_type:
         kwargs['atom_type'] = atom_type
     return Atom(ase_atom.symbol, **kwargs)

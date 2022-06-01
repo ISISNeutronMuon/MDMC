@@ -8,8 +8,10 @@ a sequence of Parameter objects.
 """
 
 import ast
+import logging
+import re
 from collections.abc import Iterable
-from itertools import chain
+from itertools import chain, count
 import operator
 from typing import Union, Any, Optional, List
 import warnings
@@ -21,7 +23,7 @@ from MDMC.common.decorators import repr_decorator, unit_decorator, \
     unit_decorator_getter
 
 
-@repr_decorator('name', 'value', 'unit', 'fixed', 'constraints',
+@repr_decorator('ID', 'type', 'value', 'unit', 'fixed', 'constraints',
                 'interactions_name', 'functions_name', 'tied')
 class Parameter:
     """
@@ -46,9 +48,14 @@ class Parameter:
             the object passed as ``value``.
     """
 
+    # each Parameter has a unique ID, so they can be distinguished
+    _ID_generator = count(start=1, step=1)
+
     def __init__(self, value, name, fixed=False, constraints=None, **settings):
 
-        self.name = name
+        self.ID = self._generate_ID()
+        self.name = name + f" (#{self.ID})"
+        self.type = name
         try:
             self.unit = settings['unit'] if 'unit' in settings else value.unit
         except AttributeError:
@@ -230,10 +237,15 @@ class Parameter:
         self._tie = ast.parse(
             'self._tie_parameter().value' + expr, mode='eval')
 
+    @classmethod
+    def _generate_ID(cls):
+        """Generates a unique ID for the Parameter that has just been created."""
+        return next(cls._ID_generator)
+
     def __str__(self):
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
-        'Constrained ' if self.constraints is not None else '')
+                     'Constrained ' if self.constraints is not None else '')
         function = self.functions_name + ' ' if self.functions_name else ''
         return '{0}{_value} {1}{name}'.format(condition, function,
                                               **self.__dict__)
@@ -271,10 +283,6 @@ class Parameter:
     def __lt__(self, other):
         return self.name < other.name
 
-    def __eq__(self, other):
-
-        return self.name == other.name and self.value == other.value
-
 
 class Parameters(dict):
     """
@@ -309,7 +317,23 @@ class Parameters(dict):
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
-    def append(self, parameters: Union[List[Parameter], Parameter]):
+    def __getitem__(self, key):
+        try:
+            return super().__getitem__(key)
+        except KeyError as error:
+            # see if the key passed was a parameter name with no ID, and catch the error
+            # by getting the first parameter with that name
+            r = re.compile(rf"{key} \(#[0-9]+\)")
+            matching_parameters = list(filter(r.match, list(self.keys())))
+            if matching_parameters:
+                if len(matching_parameters) > 1:
+                    warnings.warn("Calling a parameter name with no ID fetches the first "
+                                  "parameter with that name; this may cause buggy or "
+                                  "inconsistent behaviour!")
+                return super().__getitem__(matching_parameters[0])
+            raise KeyError from error
+
+    def append(self, parameters: Union["list[Parameter]", Parameter]):
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
         with the parameter name as its key.
@@ -322,20 +346,11 @@ class Parameters(dict):
         parameters = self._check_input(parameters)
 
         for parameter in parameters:
-            # if parameter with this name already exists, check if an identical parameter
-            # is already here; if not, record it with a number to indicate it as separate
-            if parameter.name in self.keys():
-                if any(parameter == existing_p
-                       for existing_p in self.filter_name(parameter.name).values()):
-                    pass
-                else:
-                    parameter_number = f"_{len(self.filter_name(parameter.name)) + 1}"
-                    super().__setitem__(parameter.name + parameter_number, parameter)
-            else:
-                super().__setitem__(parameter.name, parameter)
+            super().__setitem__(parameter.name, parameter)
+
 
     @property
-    def array(self) -> np.ndarray:
+    def as_array(self) -> np.ndarray:
         """
         The parameters in the object as a sorted numpy array.
 
@@ -380,7 +395,7 @@ class Parameters(dict):
             The ``Parameter`` objects with ``name``
         """
 
-        return self.filter(lambda p: p.name == name)
+        return self.filter(lambda p: name in p.name)
 
     def filter_value(self, comparison, value):
         """
@@ -498,7 +513,7 @@ class Parameters(dict):
         -------
         Parameters
             The ``Parameter`` objects which are applied to a ``Structure``
-            which has the specified ``zstructure_name``
+            which has the specified ``structure_name``
         """
 
         def check_structure_name(parameter):
@@ -528,13 +543,25 @@ class Parameters(dict):
 
         return self.filter(check_structure_name)
 
+    def log_parameters(self):
+        """Logs all Parameters by ID"""
+
+        LOGGER = logging.getLogger(__name__)
+        msg = "List of all parameters with ID: \n"
+        for parameter in self.values():
+            msg += f"{parameter.__repr__()}"
+
+        LOGGER.info(msg)
+        print("Details on which Parameter corresponds to each ID have been written to the log.")
+
     @staticmethod
     def _check_input(x: Any) -> 'list[Parameter]':
         """
         Ensures that input to a Parameters object is in the correct form.
 
-        Input must be either a Parameter (in which case it is turned into a list,
-        so it can be fed into an iteration loop) or a list of Parameters.
+        Raises an error if the input is not either a Parameter
+        (in which case it is turned into a list, so it can be fed into an iteration loop)
+        or a list of Parameters.
 
         Parameters
         ----------

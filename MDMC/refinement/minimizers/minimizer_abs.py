@@ -40,11 +40,11 @@ class Minimizer(ABC):
         The FoM from the current ``Minimizer`` step
     FoM_old : float
         The FoM from the previous ``Minimizer`` step
-    parameters : list
-        A `list` of ``Parameter`` objects being fitted
-    parameters_old_values : list
-        A `list` of the values of the ``Parameter`` objects from the previous
-        minimizer step
+    parameters : Parameters
+        A ``Parameters`` object containing the ``Parameter`` objects being fitted
+    parameters_old_values : Parameters
+        A ``Parameters`` object containing the values of
+        the ``Parameter`` objects from the previous minimizer step
     state_changed : bool
         If the MMC algorithm resulted in the step being Accepted or Rejected
     max_parameter_change : float, optional

@@ -136,3 +136,8 @@ def test_GPR_minimizer_change_constrained_parameter():
     minim = MinimizerFactory.create_minimizer('GPR', parameters)
     minim.change_parameters(minim.parameters)
     assert [p.value for p in minim.parameters.values()] == expected_values
+
+def test_GPR_reset_parameters():
+    gpr = MinimizerFactory.create_minimizer('GPR', Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5))]))
+    gpr.reset_parameters()
+    

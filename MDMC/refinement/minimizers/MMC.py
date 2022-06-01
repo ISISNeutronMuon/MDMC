@@ -41,13 +41,13 @@ class MMC(Minimizer):
         """
 
         self.FoM = FoM
-        values = {p: self.parameters[p].value for p in self.parameters}
+        parameters = {p: self.parameters[p].value for p in self.parameters}
         history = [self.FoM]
 
         if self.change_state():
             history.append('Accepted')
             self.FoM_old = self.FoM
-            self.parameters_old_values = values
+            self.parameters_old_values = parameters
             self.state_changed = True
 
         else:
@@ -56,7 +56,7 @@ class MMC(Minimizer):
             self.reset_parameters()
             self.state_changed = False
 
-        history.extend(list(values.values()))
+        history.extend(list(parameters.values()))
         self._history.append(history)
         self.change_parameters(self.parameters)
 
