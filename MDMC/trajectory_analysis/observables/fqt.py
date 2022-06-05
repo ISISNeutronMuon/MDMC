@@ -1,6 +1,6 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
-from itertools import product
+from itertools import permutations, product
 from typing import Dict
 
 import numpy as np
@@ -321,33 +321,94 @@ class AbstractFQt(SQwMixins, Observable):
             An ``array`` of Q vectors which lie within the range defined by
             ``Q_min`` and ``Q_max``
         """
+        # after we define the cube in reciprocal space, we can take a lot of shortcuts
+        # if the universe is a cube; we can take advantage of all Q-vectors lying on a sphere
+        # by using reflections and permutations to generate more vectors quickly.
+        # thus there are two algorithms here - a fast one for cubic universes
+        # and a slower one for non-cubic universes.
 
-        # Define a cube in reciprocal space from the limit of ``Q_max``
-        x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
-                               in self.reciprocal_basis)
+        def _define_cube(Q_max):
+            """Define a cube in reciprocal space from the limit of ``Q_max``"""
+            return (int(Q_max / np.linalg.norm(r_b)) for r_b
+                                in self.reciprocal_basis)
 
-        # create components of the Q vector for each axis on each lattice point in the cube
-        # .reshape(-1, 1) reshapes each axis to a column vector
-        # the list comprehension defines the way we traverse lattice points
-        vector_x = (np.array([(-i, i) for i in range(0, x_max + 1)]).reshape(-1, 1)
-                    * self.reciprocal_basis[0])
-        vector_y = (np.array([(-i, i) for i in range(0, y_max + 1)]).reshape(-1, 1)
-                    * self.reciprocal_basis[1])
-        vector_z = (np.array([(-i, i) for i in range(0, z_max + 1)]).reshape(-1, 1)
-                    * self.reciprocal_basis[2])
+        def _fast_calculate_vectors(Q_min, Q_max):
+            """
+            Fast vector calculation if the universe is cubic.
+            If the universe is cubic, the space in which we are calculating
+            vectors is symmetrical in real space, so we can use permutations
+            and reflections to calculate vectors 30x-50x faster.
+            """
 
-        # combine to create overall vectors for each lattice point in the cube
-        vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
+            x_max, y_max, z_max = _define_cube(Q_max)
 
-        Q_vectors = []
-        # get all rows that fit our requirements
-        for vector in vectors:
-            if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
-                Q_vectors.append(vector)
-            if len(Q_vectors) >= self.n_Q_vectors:
-                break
+            # create components of the Q vector for each axis on each lattice point in the cube
+            # note we are only defining vector components for one octant of the cube -
+            # we will reflect later
+            vector_x = (np.array(list(range(0, x_max + 1))).reshape(-1, 1)
+                        * self.reciprocal_basis[0])
+            vector_y = (np.array(list(range(0, y_max + 1))).reshape(-1, 1)
+                        * self.reciprocal_basis[1])
+            vector_z = (np.array(list(range(0, z_max + 1))).reshape(-1, 1)
+                        * self.reciprocal_basis[2])
 
-        return np.array(Q_vectors)
+            # combine to create overall vectors for each lattice point in the cube
+            vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
+
+            Q_vectors = []
+            ### get all vectors that fit our requirements
+            for vector in vectors:
+                if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
+                    # add vector and all its permutations, since their norm
+                    # will also be on the sphere
+                    Q_vectors.extend(set(permutations(vector)))
+                if len(Q_vectors) >= self.n_Q_vectors:
+                    break
+
+            # convert to array and reflect our vectors to create a full sphere
+            Q_vectors = np.array(list(set(Q_vectors)))
+            reflection_vectors = product([-1, 1], repeat=3)
+            Q_vectors = np.concatenate([Q_vectors * reflection 
+                                        for reflection in reflection_vectors])
+
+            return np.array(Q_vectors)
+
+        def _slow_calculate_vectors(Q_min, Q_max):
+            """
+            Slow vector calculation if the universe is not cubic.
+            If the universe is not cubic, we cannot assume symmetry, so
+            must be much more careful in vector calculation.
+            """
+            
+            x_max, y_max, z_max = _define_cube(Q_max)
+
+            # create components of the Q vector for each axis on each lattice point in the cube
+            # .reshape(-1, 1) reshapes each axis to a column vector
+            # the list comprehension defines the way we traverse lattice points
+            vector_x = (np.array([(-i, i) for i in range(0, x_max + 1)]).reshape(-1, 1)
+                        * self.reciprocal_basis[0])
+            vector_y = (np.array([(-i, i) for i in range(0, y_max + 1)]).reshape(-1, 1)
+                        * self.reciprocal_basis[1])
+            vector_z = (np.array([(-i, i) for i in range(0, z_max + 1)]).reshape(-1, 1)
+                        * self.reciprocal_basis[2])
+
+            # combine to create overall vectors for each lattice point in the cube
+            vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
+
+            Q_vectors = []
+            # get all rows that fit our requirements
+            for vector in vectors:
+                if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
+                    Q_vectors.append(vector)
+                if len(Q_vectors) >= self.n_Q_vectors:
+                    break
+
+            return np.array(Q_vectors)
+
+        if np.all(self.universe_dimensions == self.universe_dimensions[0]):
+            return _fast_calculate_vectors(Q_min, Q_max)
+        return _slow_calculate_vectors(Q_min, Q_max)
+
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
