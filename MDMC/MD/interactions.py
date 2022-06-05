@@ -997,9 +997,6 @@ class BondedInteraction(Interaction):
         if len(set(equivalent_structs)) != len(equivalent_structs):
             raise ValueError(err_msg)
 
-    # _get_equivalent_structures is a method because of the override in
-    # DihedralAngle
-    # pylint: disable=(no-self-use)
     def _get_equivalent_structures(self, structs):
         """
         Returns

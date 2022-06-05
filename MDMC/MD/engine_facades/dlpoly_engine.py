@@ -4,6 +4,8 @@ This is a facade to the DL_POLY MD engine and
 the Python wrapper dlpoly-py that can interface with it.
 
 """
+# pylint: disable=import-error
+# as it flags up dlpoly import errors outside of container
 
 from abc import ABC
 from copy import copy
