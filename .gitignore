@@ -24,6 +24,6 @@ doc/_build/
 
 build/lib/
 
-results.csv
+results*.csv
 
 MDMC.egg-info/
