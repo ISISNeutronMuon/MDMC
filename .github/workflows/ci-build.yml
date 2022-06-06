@@ -85,11 +85,12 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
+      # we use cat and grep here to get the version-pinned pylint version from .dev_requirements.txt; thus we can version control pylint
     - name: pip3 install
       run: |
         sudo pip3 install --upgrade pip
         sudo pip3 install -r requirements.txt
-        sudo pip3 install pylint pylint-exit
+        sudo pip3 install $(cat .dev_requirements.txt | grep pylint) 
     - name: pylint
       run: |
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
