@@ -340,14 +340,14 @@ class AbstractFQt(SQwMixins, Observable):
         vector_z = (np.array(list(range(0, z_max + 1))).reshape(-1, 1)
                     * self.reciprocal_basis[2])
 
+        Q_vectors = []
         # combine to create overall vectors for each lattice point in the cube
         # the 'if' part of the generator comprehension ensures that we aren't generating
         # large numbers of duplicate vectors from multiple vectors within the same symmetry group
         vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z)
-                    if not any(v in Q_vectors for v in 
+                    if not any(v in Q_vectors for v in
                                wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
 
-        Q_vectors = []
         # get all vectors that fit our requirements
         for vector in vectors:
             if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
@@ -363,7 +363,7 @@ class AbstractFQt(SQwMixins, Observable):
     def _calculate_FQt_single_Q(self, single_Q_vectors):
         # ignore line too long linting as it is necessary for LaTeX formatting
         # pylint: disable=line-too-long
-        """
+        r"""
         Calculates the F(Q, t) from an array of vectors corresponding to a
         single value of Q.
 
