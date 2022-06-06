@@ -731,7 +731,7 @@ def wyckoff_symmetries(point: tuple, point_group: str):
         The  point group of the universe in Hermann-Mauguin notation.
         Currently accepted groups are:
             'm-3m' (cubic)
-            '4/mmm' (tetrahedral)
+            '4/mmm' (tetragonal)
             'mmm' (orthorhombic)
     """
 
