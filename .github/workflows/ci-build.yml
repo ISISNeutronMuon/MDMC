@@ -29,7 +29,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        testset: [lammps, "not lammps"]
+        testset: [lammps, 'not lammps']
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -44,9 +44,10 @@ jobs:
     - name: Run tests
       env:
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }}
-        TESTSET: ${{ matrix.testset }}
-      run: source .github/scripts/docker_testing.sh
+        SCRIPT: "python3 -m pytest -m ${{ matrix.testset }} -s $(pwd)/tests/"
+      run: |
+          sudo chmod +x .github/scripts/docker_testing.sh
+          sudo .github/scripts/docker_testing.sh $SCRIPT
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -70,8 +71,11 @@ jobs:
 
     - name: Run script
       env:
-        BRANCH: ${{ github.head_ref }}
-      run: source .github/scripts/documentation_testing.sh
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        SCRIPT: "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
+      run: |
+          sudo chmod +x .github/scripts/docker_testing.sh
+          sudo .github/scripts/docker_testing.sh $SCRIPT
 
   linting:
     name: Pylint
