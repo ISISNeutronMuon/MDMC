@@ -46,8 +46,8 @@ jobs:
         BRANCH: ${{ github.head_ref }}
         TESTSET: ${{ matrix.testset }}
       run: |
-        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m $TESTSET -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
-        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m $TESTSET -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
+        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
         exit 0
 
     - name: Copy coverage
