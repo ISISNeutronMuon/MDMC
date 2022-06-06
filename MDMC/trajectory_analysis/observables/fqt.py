@@ -753,23 +753,24 @@ def wyckoff_symmetries(point: tuple, point_group: str):
     def tetragonal(unique_side: str):
         """The symmetries of a point in a tetragonal group."""
 
-        x, y, z = point
-
         # slightly more complicated as we don't know what axis is unpermutable
         def tetragonal_z(point: tuple):
             """Tetragonal symmetries for unpermutable z-axis"""
+            x, y, z = point
             return ({(x,y,z), (-x,-y,z), (-y,x,z), (y,-x,z), (-x,y,-z), (x,-y,-z),
                     (y,x,-z), (-y,-x,-z), (-x,-y,-z), (x,y,-z), (y,-x,-z), (-y,x,-z),
                     (x,-y,z), (-x,y,z), (-y,-x,z), (y,x,z)})
 
         def tetragonal_y(point: tuple):
             """Tetragonal symmetries for unpermutable y-axis"""
+            x, y, z = point
             return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
                     (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
                     (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
 
         def tetragonal_x(point: tuple):
             """Tetragonal symmetries for unpermutable x-axis"""
+            x, y, z = point
             return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
                     (x, -y, -z), (-x, -y, -z), (x, z, y), (-x, z, y), (x, z, -y), (-x, z, -y),
                     (x, -z, y), (-x, -z, y), (x, -z, -y), (-x, -z, -y)})
