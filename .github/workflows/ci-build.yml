@@ -43,11 +43,12 @@ jobs:
 
     - name: Run tests
       env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        SCRIPT: "python3 -m pytest -m ${{ matrix.testset }} -s $(pwd)/tests/"
+        BRANCH: ${{ github.head_ref }}
+        TESTSET: ${{ matrix.testset }}
       run: |
-          sudo chmod +x .github/scripts/docker_testing.sh
-          sudo .github/scripts/docker_testing.sh $SCRIPT
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m $TESTSET -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
+        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m $TESTSET -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
+        exit 0
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -71,11 +72,11 @@ jobs:
 
     - name: Run script
       env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        SCRIPT: "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
+        BRANCH: ${{ github.head_ref }}
       run: |
-          sudo chmod +x .github/scripts/docker_testing.sh
-          sudo .github/scripts/docker_testing.sh $SCRIPT
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || \
+        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || exit 1
+        exit 0
 
   linting:
     name: Pylint
