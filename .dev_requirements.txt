@@ -3,6 +3,8 @@
 pytest==6.2.5
 pytest-cov==2.12.1
 pytest-cases==3.6.4
+pylint==2.14.0
+pylint-exit==1.2.0
 # packages for documentation and containerisation
 sphinx==4.4.0
 nbsphinx==0.8.8
