@@ -680,7 +680,13 @@ def calculate_rho(positions, Q_vector):
 
 def get_point_group(dimensions: np.array) -> str:
     """
-    Gets the Hermann-Mauguin point group for the universe
+    Gets the Hermann-Mauguin point group for the universe.
+    Currently, MDMC can only create universes with mutually orthogonal
+    sides, so this method can only produce cubic, tetragonal, or orthorhombic
+    universe point groups.
+
+    For tetragonal universes, an additional identifier (x), (y), or (z) is
+    added to identify which of the sides is unique.
 
     Parameters
     ----------
@@ -703,8 +709,13 @@ def get_point_group(dimensions: np.array) -> str:
 
     if equal_sides == 3:  # cubic
         return 'm-3m'
-    if equal_sides == 1:  # tetrahedral
-        return '4/mmm'
+    if equal_sides == 1:  # tetragonal
+        # False == 0 in duck typing, so this only keeps
+        # the side equal to True
+        unique_side = ((dimensions[0]==dimensions[1]) * ' (z)'
+                       + (dimensions[0]==dimensions[2]) * ' (y)'
+                       + (dimensions[1]==dimensions[2]) * ' (x)')
+        return '4/mmm' + unique_side
     return 'mmm'  # orthorhombic
 
 
@@ -739,26 +750,36 @@ def wyckoff_symmetries(point: tuple, point_group: str):
                (-y,-x,z), (y,x,z), (-y,x,-z), (y,-x,-z), (-x,-z,y), (x,-z,-y),
                (x,z,y), (-x,z,-y), (-z,-y,x), (-z,y,-x), (z,-y,-x), (z,y,x)})
 
-    def tetrahedral(point: tuple):
-        """The symmetries of a point in a tetrahedral group."""
+    def tetragonal(unique_side: str):
+        """The symmetries of a point in a tetragonal group."""
 
         x, y, z = point
 
         # slightly more complicated as we don't know what axis is unpermutable
-        if x == y:  # z unpermutable
+        def tetragonal_z(point: tuple):
+            """Tetragonal symmetries for unpermutable z-axis"""
             return ({(x,y,z), (-x,-y,z), (-y,x,z), (y,-x,z), (-x,y,-z), (x,-y,-z),
                     (y,x,-z), (-y,-x,-z), (-x,-y,-z), (x,y,-z), (y,-x,-z), (-y,x,-z),
                     (x,-y,z), (-x,y,z), (-y,-x,z), (y,x,z)})
 
-        if x == z:  # y unpermutable
+        def tetragonal_y(point: tuple):
+            """Tetragonal symmetries for unpermutable y-axis"""
             return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
                     (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
                     (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
 
-        # else y == z; x unpermutable
-        return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
-                (x, -y, -z), (-x, -y, -z), (x, z, y), (-x, z, y), (x, z, -y), (-x, z, -y),
-                (x, -z, y), (-x, -z, y), (x, -z, -y), (-x, -z, -y)})
+        def tetragonal_x(point: tuple):
+            """Tetragonal symmetries for unpermutable x-axis"""
+            return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
+                    (x, -y, -z), (-x, -y, -z), (x, z, y), (-x, z, y), (x, z, -y), (-x, z, -y),
+                    (x, -z, y), (-x, -z, y), (x, -z, -y), (-x, -z, -y)})
+
+        # get the correct function and return it as the group function
+        side = {'x': tetragonal_x,
+                'y': tetragonal_y,
+                'z': tetragonal_z}
+
+        return side[unique_side]
 
     def orthorhombic(point: tuple):
         """The symmetries of a point in an orthorhombic group."""
@@ -768,7 +789,9 @@ def wyckoff_symmetries(point: tuple, point_group: str):
                 (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z)})
 
     groups = {'m-3m': cubic,
-              '4/mmm': tetrahedral,
+              '4/mmm (x)': tetragonal('x'),
+              '4/mmm (y)': tetragonal('y'),
+              '4/mmm (z)': tetragonal('z'),
               'mmm': orthorhombic}
 
     return groups[point_group](point)
