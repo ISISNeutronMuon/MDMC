@@ -1064,6 +1064,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                          self.__class__)
             # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
+            # pylint: disable=not-an-iterable
+            # false positive raised here
             self.lmp.angle_style('hybrid',
                                  *set(tuple(parse_bonded_styles(a)
                                             for a in angles)))
