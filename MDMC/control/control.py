@@ -207,7 +207,7 @@ class Control:
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
                                                            max_parameter_change=max_parameter_change,
-                                                          **settings)
+                                                           **settings)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol

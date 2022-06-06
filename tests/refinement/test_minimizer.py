@@ -4,17 +4,12 @@ Tests the Minimizer base class
 
 from tempfile import NamedTemporaryFile
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
 import pytest
 
-from sklearn.gaussian_process import GaussianProcessRegressor 
-from sklearn.gaussian_process.kernels import RBF
-
 from MDMC.MD.parameters import Parameter, Parameters
-from MDMC.refinement import minimizers
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
@@ -120,7 +115,6 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
         for i, column in enumerate(minim.history_columns):
             assert column in minim.history_columns[i]
 
-
 def mock_change_parameters(self, parameters):
     """
     Mock of minimizer.change_parameters which doubles each ``Parameter`` value
@@ -128,50 +122,6 @@ def mock_change_parameters(self, parameters):
 
     for p in parameters:
         parameters[p].value *= 2
-
-def test_minimizer_change_parameters(parameters):
-    """
-    Tests that the parameters change by the expected amount when given a mocked
-    distribution which always returns 1.
-    """
-
-    def mock_distribution(low: float, high: float, size: int):
-        return np.ones(size)
-
-    expected_values = {p: 2 * parameters[p].value for p in parameters}
-    minim = MinimizerFactory.create_minimizer('MMC', parameters)
-    minim.distribution = mock_distribution
-    minim.change_parameters(minim.parameters)
-    for p in minim.parameters:
-        assert minim.parameters[p].value == expected_values[p]
-
-
-
-
-
-@pytest.mark.parametrize('FoM, FoM_old',
-                         [(10., 20.),
-                          (10., 20.),
-                          (10., 20.),
-                          (1.e+10, 1.e+10),
-                          (0., 0.)])
-def test_MMC_minimizer_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
-    """
-    Tests that the state always changes (i.e. returns True) given an FoM, old
-    FoM, and MC norm, where the FoM is less than or equal to old FoM, and the
-    return of ``np.random.random`` is 0.999
-    """
-
-    def mock_random():
-        return 0.999999
-
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minim = MinimizerFactory.create_minimizer(minimizer_name, parameters, MC_norm=1.0)
-        minim.FoM_old = FoM_old
-        minim.FoM = FoM
-        monkeypatch.setattr(np.random, 'random', mock_random)
-        assert minim.change_state() is True
-
 
 def test_minimizer_fixed_parameter():
     """
@@ -195,5 +145,4 @@ def test_minimizer_tied_parameter():
     parameters = [tied_parameter]
     with pytest.raises(ValueError):
         for minimizer_name in MinimizerFactory.get_minimizer_names():
-           minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
-
+            minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)

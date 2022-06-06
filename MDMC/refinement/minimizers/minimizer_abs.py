@@ -6,7 +6,7 @@ from mpi4py import MPI
 import numpy as np
 import pandas as pd
 
-from MDMC.MD import Parameters
+from MDMC.MD import Parameters, Parameter
 from MDMC.common.decorators import repr_decorator
 
 # pylint: disable=c-extension-no-member
@@ -76,6 +76,7 @@ class Minimizer(ABC):
 
         if isinstance(parameters, list):
             parameters = Parameters(parameters)
+
         self._check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters

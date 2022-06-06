@@ -130,7 +130,7 @@ class MMC(Minimizer):
 
     def present_result(self):
         """
-        Sets the parameters those predicted to return the last FoM, returns
+        Sets the parameters to those predicted to return the last FoM, returns
         coordinates of the minima and the predicted FoM.
 
         Returns
@@ -140,12 +140,14 @@ class MMC(Minimizer):
             by Control to the user.
         """
         self.reset_parameters()
-        final_coordinate = np.array([parameter.value for parameter in self.parameters])
+        final_coordinate = np.array([self.parameters[p].value for p in self.parameters])
+        coordinate_names = list(p for p in self.parameters)
 
         minimum_FoM, min_index = self.history['FoM'].min(), self.history['FoM'].idxmin()
         minimum_parameters = self.history.iloc[min_index,2:]
-        output_string = f'Current coordinate is {final_coordinate} with a FoM \
-        of {self.FoM}. /n \
+
+        output_string = f'Refined parameters {coordinate_names} have converged coordinate: {final_coordinate}\n \
+        with a FoM of {self.FoM}.\n \
         Best point measured was {minimum_parameters} for a minimum FoM of {minimum_FoM}.'
 
         return output_string
