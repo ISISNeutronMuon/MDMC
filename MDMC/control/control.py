@@ -202,20 +202,23 @@ class Control:
         fit_parameters = [p for p in fit_parameters
                           if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
+
+        self.results_filename = settings.get('results_filename',
+                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
+        settings['results_filename'] = self.results_filename
+
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
                                                            max_parameter_change=max_parameter_change,
-                                                          **settings)
+                                                           **settings)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.convergence_tol = convergence_tol
         self.min_refine_steps = min_refinement_steps
         self.settings = settings
-        self.results_filename = settings.get('results_filename',
-                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -391,10 +394,8 @@ class Control:
             pass
 
         # print values of final parameters
-        parameter_df = pd.DataFrame({p.name: p.value for p in self.minimizer.parameters.values()},
-                                    index=[0])
-        print('\nFinal Parameters\n{}'
-              ''.format(parameter_df.to_string(index=False)))
+        result_string = self.minimizer.present_result()
+        print(result_string)
 
         # If automatically scaling data print the scale factor for each dataset
         scaling_keys = []

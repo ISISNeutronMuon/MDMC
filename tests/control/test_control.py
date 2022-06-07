@@ -83,6 +83,10 @@ class MockMinimizer:
 
         pass
 
+    def present_result(self):
+
+        return ""
+
 def mock_generate_FoM(self):
 
     return 1000
@@ -228,10 +232,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                       '   8   1.324e+08     Rejected        1e+04            1\n'
                       '   9   1.535e+07        False        1e-05            1\n'
                       '  10       1.657         str1           10            1\n'
-                      '\n'
-                      'Final Parameters\n'
-                      ' epsilon    sigma  A            B\n'
-                      '3.134544 0.339834  1 3.474323e+10\n')
+                      '\n')
 
 
 @pytest.mark.parametrize('file_name',
@@ -289,9 +290,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       '   9   1.535e+07        False        1e-05            1\n'
                       '  10       1.657         str1           10            1\n'
                       '\n'
-                      'Final Parameters\n'
-                      ' epsilon    sigma  A            B\n'
-                      '3.134544 0.339834  1 3.474323e+10\n'
                       '\n'
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
