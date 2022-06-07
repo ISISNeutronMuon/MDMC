@@ -214,7 +214,8 @@ class GPR(Minimizer):
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
-    def GPR_fit(self, filename: Optional[str]="results.csv",
+    @staticmethod
+    def GPR_fit(filename: Optional[str]="results.csv",
                 alpha: Optional[float]=0.1, length_scale: Optional[float]=4):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement

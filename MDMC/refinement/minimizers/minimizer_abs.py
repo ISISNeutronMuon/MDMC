@@ -6,7 +6,7 @@ from mpi4py import MPI
 import numpy as np
 import pandas as pd
 
-from MDMC.MD import Parameters, Parameter
+from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
 
 # pylint: disable=c-extension-no-member

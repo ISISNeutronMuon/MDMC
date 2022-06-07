@@ -146,8 +146,8 @@ class MMC(Minimizer):
         minimum_FoM, min_index = self.history['FoM'].min(), self.history['FoM'].idxmin()
         minimum_parameters = self.history.iloc[min_index,2:]
 
-        output_string = f'Refined parameters {coordinate_names} have converged coordinate: {final_coordinate}\n \
-        with a FoM of {self.FoM}.\n \
+        output_string = f'Refined parameters {coordinate_names} have converged \
+        coordinate: {final_coordinate}\n with a FoM of {self.FoM}.\n \
         Best point measured was {minimum_parameters} for a minimum FoM of {minimum_FoM}.'
 
         return output_string
