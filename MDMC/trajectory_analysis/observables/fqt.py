@@ -322,32 +322,42 @@ class AbstractFQt(SQwMixins, Observable):
             ``Q_min`` and ``Q_max``
         """
 
-        # Define a cube in reciprocal space from the limit of ``Q_max``
+        # define a cube in reciprocal space
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
-                               in self.reciprocal_basis)
+                            in self.reciprocal_basis)
+
+        # get the point group of the universe; we can use Wyckoff symmetries
+        # to generate vectors more quickly
+        point_group = get_point_group(self.universe_dimensions)
 
         # create components of the Q vector for each axis on each lattice point in the cube
-        # .reshape(-1, 1) reshapes each axis to a column vector
-        # the list comprehension defines the way we traverse lattice points
-        vector_x = (np.array([(-i, i) for i in range(0, x_max + 1)]).reshape(-1, 1)
+        # note we are only defining vector components for one octant of the cube -
+        # Wyckoff symmetries will reflect them into other octants for us
+        vector_x = (np.array(list(range(0, x_max + 1))).reshape(-1, 1)
                     * self.reciprocal_basis[0])
-        vector_y = (np.array([(-i, i) for i in range(0, y_max + 1)]).reshape(-1, 1)
+        vector_y = (np.array(list(range(0, y_max + 1))).reshape(-1, 1)
                     * self.reciprocal_basis[1])
-        vector_z = (np.array([(-i, i) for i in range(0, z_max + 1)]).reshape(-1, 1)
+        vector_z = (np.array(list(range(0, z_max + 1))).reshape(-1, 1)
                     * self.reciprocal_basis[2])
 
-        # combine to create overall vectors for each lattice point in the cube
-        vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z))
-
         Q_vectors = []
-        # get all rows that fit our requirements
+        # combine to create overall vectors for each lattice point in the cube
+        # the 'if' part of the generator comprehension ensures that we aren't generating
+        # large numbers of duplicate vectors from multiple vectors within the same symmetry group
+        vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z)
+                    if not any(v in Q_vectors for v in
+                               wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
+
+        # get all vectors that fit our requirements
         for vector in vectors:
             if Q_min < np.linalg.norm(vector) <= Q_max and not vector.all == 0:
-                Q_vectors.append(vector)
+                # add vector and all its symmetries
+                Q_vectors.extend(wyckoff_symmetries(vector, point_group))
             if len(Q_vectors) >= self.n_Q_vectors:
                 break
 
         return np.array(Q_vectors)
+
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors):
@@ -666,3 +676,123 @@ def calculate_rho(positions, Q_vector):
 
     return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
             in range(len(positions))]
+
+
+def get_point_group(dimensions: np.array) -> str:
+    """
+    Gets the Hermann-Mauguin point group for the universe.
+    Currently, MDMC can only create universes with mutually orthogonal
+    sides, so this method can only produce cubic, tetragonal, or orthorhombic
+    universe point groups.
+
+    For tetragonal universes, an additional identifier (x), (y), or (z) is
+    added to identify which of the sides is unique.
+
+    Parameters
+    ----------
+    dimensions: numpy.array
+        An array of length 3, containing the dimensions of the universe.
+
+    Returns
+    -------
+    str
+        The point group symbol for the universe.
+    """
+    # we use a sum of bools to determine group;
+    # if x == y, x == z, y == z
+    # if all sides equal, all are true; if two sides equal, one is true;
+    # if no sides equal, zero are true;
+
+    equal_sides = sum([dimensions[0]==dimensions[1],
+                       dimensions[0]==dimensions[2],
+                       dimensions[1]==dimensions[2]])
+
+    if equal_sides == 3:  # cubic
+        return 'm-3m'
+    if equal_sides == 1:  # tetragonal
+        # False == 0 in duck typing, so this only keeps
+        # the side equal to True
+        unique_side = ((dimensions[0]==dimensions[1]) * ' (z)'
+                       + (dimensions[0]==dimensions[2]) * ' (y)'
+                       + (dimensions[1]==dimensions[2]) * ' (x)')
+        return '4/mmm' + unique_side
+    return 'mmm'  # orthorhombic
+
+
+def wyckoff_symmetries(point: tuple, point_group: str):
+    """
+    Returns the Wyckoff symmetries for a point based on its point group.
+
+    Parameters:
+    -----------
+    point: tuple
+        A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
+    point_group: str
+        The  point group of the universe in Hermann-Mauguin notation.
+        Currently accepted groups are:
+            'm-3m' (cubic)
+            '4/mmm' (tetragonal)
+            'mmm' (orthorhombic)
+    """
+
+    def cubic(point: tuple):
+        """The symmetries of a point in a cubic group."""
+
+        x, y, z = point
+        # it's ugly, but an order of magnitude faster if we just list all the
+        # symmetries out, calculate and return them
+        return ({(x,y,z), (-x,-y,z), (-x,y,-z), (x,-y,-z), (z,x,y), (z,-x,-y),
+               (-z,-x,y), (-z,x,-y), (y,z,x), (-y,z,-x), (y,-z,-x), (-y,-z,x),
+               (y,x,-z), (-y,-x,-z), (y,-x,z), (-y,x,z), (x,z,-y), (-x,z,y),
+               (-x,-z,-y), (x,-z,y), (z,y,-x), (z,-y,x), (-z,y,x), (-z,-y,-x),
+               (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z), (-z,-x,-y), (-z,x,y),
+               (z,x,-y), (z,-x,y), (-y,-z,-x), (y,-z,x), (-y,z,x), (y,z,-x),
+               (-y,-x,z), (y,x,z), (-y,x,-z), (y,-x,-z), (-x,-z,y), (x,-z,-y),
+               (x,z,y), (-x,z,-y), (-z,-y,x), (-z,y,-x), (z,-y,-x), (z,y,x)})
+
+    def tetragonal(unique_side: str):
+        """The symmetries of a point in a tetragonal group."""
+
+        # slightly more complicated as we don't know what axis is unpermutable
+        def tetragonal_z(point: tuple):
+            """Tetragonal symmetries for unpermutable z-axis"""
+            x, y, z = point
+            return ({(x,y,z), (-x,-y,z), (-y,x,z), (y,-x,z), (-x,y,-z), (x,-y,-z),
+                    (y,x,-z), (-y,-x,-z), (-x,-y,-z), (x,y,-z), (y,-x,-z), (-y,x,-z),
+                    (x,-y,z), (-x,y,z), (-y,-x,z), (y,x,z)})
+
+        def tetragonal_y(point: tuple):
+            """Tetragonal symmetries for unpermutable y-axis"""
+            x, y, z = point
+            return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
+                    (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
+                    (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
+
+        def tetragonal_x(point: tuple):
+            """Tetragonal symmetries for unpermutable x-axis"""
+            x, y, z = point
+            return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
+                    (x, -y, -z), (-x, -y, -z), (x, z, y), (-x, z, y), (x, z, -y), (-x, z, -y),
+                    (x, -z, y), (-x, -z, y), (x, -z, -y), (-x, -z, -y)})
+
+        # get the correct function and return it as the group function
+        side = {'x': tetragonal_x,
+                'y': tetragonal_y,
+                'z': tetragonal_z}
+
+        return side[unique_side]
+
+    def orthorhombic(point: tuple):
+        """The symmetries of a point in an orthorhombic group."""
+
+        x, y, z = point
+        return ({(x,y,z), (-x,-y,z), (-x,y,-z), (x,-y,-z),
+                (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z)})
+
+    groups = {'m-3m': cubic,
+              '4/mmm (x)': tetragonal('x'),
+              '4/mmm (y)': tetragonal('y'),
+              '4/mmm (z)': tetragonal('z'),
+              'mmm': orthorhombic}
+
+    return groups[point_group](point)
