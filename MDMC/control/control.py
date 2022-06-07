@@ -3,6 +3,7 @@ import statistics
 from copy import deepcopy
 from typing import List, Dict
 from contextlib import suppress
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -213,6 +214,8 @@ class Control:
         self.convergence_tol = convergence_tol
         self.min_refine_steps = min_refinement_steps
         self.settings = settings
+        self.results_filename = settings.get('results_filename',
+                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -447,7 +450,7 @@ class Control:
                 # Set MD engine to reset to old config
                 self.simulation.engine.reset_config()
 
-        self.minimizer.write_history('results.csv')
+        self.minimizer.write_history(self.results_filename)
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)

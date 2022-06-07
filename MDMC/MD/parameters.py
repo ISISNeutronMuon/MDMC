@@ -549,7 +549,7 @@ class Parameters(dict):
         LOGGER = logging.getLogger(__name__)
         msg = "List of all parameters with ID: \n"
         for parameter in self.values():
-            msg += f"{parameter.__repr__()}"
+            msg += f"{parameter.repr()}"
 
         LOGGER.info(msg)
         print("Details on which Parameter corresponds to each ID have been written to the log.")
