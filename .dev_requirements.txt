@@ -4,7 +4,6 @@ pytest==6.2.5
 pytest-cov==2.12.1
 pytest-cases==3.6.4
 pytest-profiling==1.7.0
-nbmake==1.3.0
 pylint==2.14.0
 pylint-exit==1.2.0
 # packages for documentation and containerisation
@@ -13,4 +12,5 @@ nbsphinx==0.8.8
 sphinx-rtd-theme==1.0.0
 docutils==0.17.1
 jupyter==1.0.0
+papermill==2.3.4
 
