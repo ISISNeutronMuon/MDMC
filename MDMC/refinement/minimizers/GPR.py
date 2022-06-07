@@ -49,7 +49,7 @@ class GPR(Minimizer):
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
-
+        self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
 
 
@@ -214,8 +214,8 @@ class GPR(Minimizer):
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
-    @staticmethod
-    def GPR_fit(filename: Optional[str]="results.csv",
+
+    def GPR_fit(self, filename: Optional[str]=None,
                 alpha: Optional[float]=0.1, length_scale: Optional[float]=4):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement
@@ -228,8 +228,8 @@ class GPR(Minimizer):
         ----------
         filename: str, optional
             The filename or full path to a comma separated value file containing
-            the full output of the refinement. Defaults to the results.csv
-            produced by the refinement.
+            the full output of the refinement. Defaults to None, but if results_filename is set by
+            Control then this is passed into GPR as self.results_filename and used here.
         alpha: float, optional
             Hyperparameter for the fitting, which can represent Gaussian noise in measurement
             points, e.g. how much variation in the output you expect between MD runs.
@@ -245,6 +245,9 @@ class GPR(Minimizer):
         Minimum figure of merit
         Minimum parameter values
         """
+        if not filename:
+            filename = self.results_filename
+
         records = pd.read_csv(filename, delimiter=',')
         records = records.astype(dtype=float, errors='ignore')
         # Convert to float where possible (i.e. not a string)

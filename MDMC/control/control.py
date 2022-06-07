@@ -202,6 +202,11 @@ class Control:
         fit_parameters = [p for p in fit_parameters
                           if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
+
+        self.results_filename = settings.get('results_filename',
+                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
+        settings['results_filename'] = self.results_filename
+
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
@@ -214,8 +219,6 @@ class Control:
         self.convergence_tol = convergence_tol
         self.min_refine_steps = min_refinement_steps
         self.settings = settings
-        self.results_filename = settings.get('results_filename',
-                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
