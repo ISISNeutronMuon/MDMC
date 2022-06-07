@@ -80,6 +80,7 @@ jobs:
         
   notebooks:
     name: Notebook testing
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: self-hosted
     steps:
     - name: Own repo to clear before checkout
