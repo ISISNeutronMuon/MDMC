@@ -61,7 +61,7 @@ jobs:
         BRANCH: ${{ github.head_ref }}
       run: |
           sudo docker cp $(docker ps -lq):home/prof/ /prof
-          sudo pip3 install pandas
+          pip3 install pandas
           python3 .github/scripts/profile.py /prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/profile.py /prof --name $BRANCH-profiling || exit 1
           
     - name: Save profiling info as artifact
