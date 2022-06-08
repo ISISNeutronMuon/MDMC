@@ -1,4 +1,4 @@
-"""Tools used by CI to process and visualise cProfile data"""
+"""Functions used by the profile.py CLI tool to process and visualise pytest-profiling data"""
 
 import pstats
 import io
@@ -32,15 +32,15 @@ def CI_profile_summaries(directory: str) -> pd.DataFrame:
         path += "/"
     path += directory
 
-    # the profiling output folder should not have subfolders, 
+    # the profiling output folder should not have subfolders,
     # so this should only iterate once
     # it's just an easy way to deal with the tuple unpacking
     # then create generator of summaries for each test file
     for _, _, files in os.walk(path):
-        profs = (_summarise(_profile_to_dataframe(directory + file), file[:-5]) 
+        profs = (_summarise(_profile_to_dataframe(directory + file), file[:-5])
                  for file in files if file.endswith('.prof') and file.startswith('test_'))
 
-    # concatenate summary for each test into a dataframe, 
+    # concatenate summary for each test into a dataframe,
     # then transpose it to be the right way around
     summaries = pd.concat(profs, axis=1).T
 
@@ -74,7 +74,7 @@ def _profile_to_dataframe(file: str) -> pd.DataFrame:
     stats = pstats.Stats(path, stream=out_stream)
 
     # format data and print to out_stream
-    stats.sort_stats("cumtime")
+    stats.sort_stats("tottime")
     stats.print_stats()
 
     # convert out_stream data into a CSV and use pandas to convert into a dataframe
@@ -84,7 +84,7 @@ def _profile_to_dataframe(file: str) -> pd.DataFrame:
     lines = [','.join(line.rstrip().split(None, 5)) for line in result.split('\n')]
     return pd.read_csv(io.StringIO('\n'.join(lines)))
 
-def _summarise(df: pd.DataFrame, name: str) -> pd.DataFrame:
+def _summarise(data_frame: pd.DataFrame, name: str) -> pd.DataFrame:
     """
     Summarises a profiling dataframe into the format
 
@@ -105,7 +105,7 @@ def _summarise(df: pd.DataFrame, name: str) -> pd.DataFrame:
         A summarised, one-row series.
     """
 
-    total_time = df['tottime'].sum()
+    total_time = data_frame['tottime'].sum()
 
     return pd.Series(data={'name': name,
                            'tottime': total_time},
