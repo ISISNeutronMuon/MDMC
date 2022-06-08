@@ -15,6 +15,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -54,6 +56,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -106,6 +110,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.1 libarchive-dev libgpgme11-dev libseccomp-dev
+      - name: Own repo to clear before checkout
+        run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
       - name: Checkout repo
         uses: actions/checkout@v2
 
@@ -128,6 +134,8 @@ jobs:
       # with:
         # python-version: '3.8'
         # architecture: x64
+    # - name: Own repo to clear before checkout
+      # run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     # - name: Checkout repo
       # uses: actions/checkout@v2
 
@@ -152,6 +160,8 @@ jobs:
     name: Documentation
     runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Build documentation
