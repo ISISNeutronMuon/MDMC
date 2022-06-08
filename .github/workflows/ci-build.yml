@@ -49,6 +49,28 @@ jobs:
         docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
         docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
         exit 0
+        
+    - name: Download master profiling for comparison
+      uses: actions/download-artifact@v3
+      with:
+        name: master-profiling
+      continue-on-error: true
+        
+    - name: Copy profiling info and profile 
+      env:
+        BRANCH: ${{ github.head_ref }}
+      run: |
+          docker cp $(docker ps -lq):/$(pwd)/prof/ /prof
+          python3 .github/scripts/profile.py /prof --name $BRANCH-profiling --compare "master-profiling.csv"
+      continue-on-error: true
+          
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      env: 
+        BRANCH: ${{ github.head_ref }}
+      with:
+        name: $BRANCH-profiling
+        path: $BRANCH-profiling.csv
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
