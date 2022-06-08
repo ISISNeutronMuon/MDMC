@@ -60,17 +60,14 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
-          docker cp $(docker ps -lq):/$(pwd)/prof/ /prof
-          python3 .github/scripts/profile.py /prof --name $BRANCH-profiling --compare "master-profiling.csv"
-      continue-on-error: true
+          docker cp $(docker ps -lq):$(pwd)/prof/ /prof
+          python3 .github/scripts/profile.py /prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/profile.py /prof --name $BRANCH-profiling || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
-      env: 
-        BRANCH: ${{ github.head_ref }}
       with:
-        name: $BRANCH-profiling
-        path: $BRANCH-profiling.csv
+        name: ${{ github.head_ref }}-profiling
+        path: ${{ github.head_ref }}-profiling.csv
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
