@@ -8,7 +8,7 @@ on:
 jobs:
   docker_tests:
     name: Docker including MD tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -21,7 +21,19 @@ jobs:
     - name: Run tests
       run: |
         docker pull mdmc/mdmc:latest
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ]
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+        
+    - name: Copy profiling info and profile 
+      run: |
+          docker cp $(docker ps -lq):/$(pwd)/prof/ /prof
+          python3 .github/scripts/profile.py /prof --name "master-profiling"
+          
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: master-profiling
+        path: master-profiling.csv
+      
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -35,7 +47,7 @@ jobs:
 
   basic_tests:
     name: Non-container and not inc MD tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -51,9 +63,9 @@ jobs:
         sudo apt-get install -y libopenmpi-dev openmpi-bin
     - name: pip install
       run: |
-        pip3 install --upgrade pip
-        pip3 install -r requirements.txt
-        pip3 install -r .dev_requirements.txt
+        sudo pip3 install --upgrade pip
+        sudo pip3 install -r requirements.txt
+        sudo pip3 install -r .dev_requirements.txt
 
     - name: Run tests
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
@@ -84,7 +96,7 @@ jobs:
 
   singularity:
     name: Singularity tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -138,12 +150,12 @@ jobs:
 
   doc-deploy:
     name: Documentation
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Build documentation
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
     - name: Deploy
       env:
         token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
