@@ -8,14 +8,14 @@ import pandas as pd
 from numpy import NaN
 
 
-def CI_profile_summaries(directory: str) -> pd.DataFrame:
+def CI_profile_summaries(path: str) -> pd.DataFrame:
     """
     Takes a folder of profiling outputs (as given by pytest-profiling)
     and creates a summary of each test.
 
     Parameters
     ----------
-    directory: str
+    path: str
         The path to the folder containing profiling outputs.
 
     Returns
@@ -25,15 +25,17 @@ def CI_profile_summaries(directory: str) -> pd.DataFrame:
     """
 
     # ensure directory is string-manipulation friendly
-    if not directory.endswith("/"):
-        directory += "/"
+    if not path.endswith("/"):
+        path += "/"
 
     # the profiling output folder should not have subfolders,
     # so this should only iterate once
     # it's just an easy way to deal with the tuple unpacking
     # then create generator of summaries for each test file
-    for _, _, files in os.walk(path):
-        profs = (_summarise(_profile_to_dataframe(directory + file), file[:-5])
+    if not list(os.walk(path)):  # if path is empty
+        raise OSError("The directory specified is empty.")
+    for x, y, files in os.walk(path):
+        profs = (_summarise(_profile_to_dataframe(path + file), file[:-5])
                  for file in files if file.endswith('.prof') and file.startswith('test_'))
 
     # concatenate summary for each test into a dataframe,
