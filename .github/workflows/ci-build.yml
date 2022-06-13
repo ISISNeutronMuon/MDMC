@@ -67,7 +67,7 @@ jobs:
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ github.head_ref }}-profiling
+        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
         path: ${{ github.head_ref }}-profiling.csv
 
     - name: Copy coverage
