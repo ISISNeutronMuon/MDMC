@@ -61,7 +61,7 @@ jobs:
         BRANCH: ${{ github.head_ref }}
       run: |
           docker cp $(docker ps -lq):$(pwd)/prof/ /prof
-          python3 .github/scripts/profile.py /prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/profile.py /prof --name $BRANCH-profiling || exit 1
+          python3 .github/scripts/profiling.py /prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/profiling.py /prof --name $BRANCH-profiling || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3

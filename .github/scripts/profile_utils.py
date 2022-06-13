@@ -16,7 +16,7 @@ def CI_profile_summaries(directory: str) -> pd.DataFrame:
     Parameters
     ----------
     directory: str
-        The relative path to the folder containing profiling outputs.
+        The path to the folder containing profiling outputs.
 
     Returns
     -------
@@ -25,12 +25,8 @@ def CI_profile_summaries(directory: str) -> pd.DataFrame:
     """
 
     # ensure directory is string-manipulation friendly
-    path = os.getcwd()
     if not directory.endswith("/"):
         directory += "/"
-    if not directory.startswith('/'):
-        path += "/"
-    path += directory
 
     # the profiling output folder should not have subfolders,
     # so this should only iterate once
@@ -51,14 +47,14 @@ def CI_profile_summaries(directory: str) -> pd.DataFrame:
     return pd.concat([summaries, percentage_time], axis=1)
 
 
-def _profile_to_dataframe(file: str) -> pd.DataFrame:
+def _profile_to_dataframe(path: str) -> pd.DataFrame:
     """
     Converts a cProfile output .prof file into a Pandas dataframe.
 
     Parameters
     ----------
     file: str
-        The relative path to the .prof file.
+        The path to the .prof file.
 
     Returns
     -------
@@ -66,10 +62,6 @@ def _profile_to_dataframe(file: str) -> pd.DataFrame:
         A Pandas dataframe containing the profiling data.
     """
     #import the file as a pstats.Stats object
-    path = os.getcwd()
-    if not file.startswith('/'):
-        path += "/"
-    path += file
     out_stream = io.StringIO()
     stats = pstats.Stats(path, stream=out_stream)
 
