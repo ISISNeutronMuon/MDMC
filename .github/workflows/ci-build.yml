@@ -96,24 +96,6 @@ jobs:
         docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || \
         docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || exit 1
         exit 0
-        
-  notebooks:
-    name: Notebook testing
-    needs: build # so it can use new docker image if docker image has changed
-    runs-on: self-hosted
-    steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
-    - name: Checkout repo
-      uses: actions/checkout@v2
-
-    - name: Run script
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH pip3 install $(pwd) && python3 .github/scripts/test-notebooks.py && exit 0 || \
-        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest pip3 install $(pwd) && python3 .github/scripts/test-notebooks.py && exit 0 || exit 1
-        exit 0
 
   linting:
     name: Pylint
