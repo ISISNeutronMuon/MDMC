@@ -118,15 +118,6 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
             assert np.any([expected_column in history_columns for \
                             history_columns in minim.history_columns])
 
-
-def mock_change_parameters(self, parameters):
-    """
-    Mock of minimizer.change_parameters which doubles each ``Parameter`` value
-    """
-
-    for p in parameters:
-        parameters[p].value *= 2
-
 def test_minimizer_fixed_parameter():
     """
     Test that a ``ValueError`` is raised when passing a fixed ``Parameter``

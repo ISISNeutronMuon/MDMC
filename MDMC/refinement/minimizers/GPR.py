@@ -42,8 +42,9 @@ class GPR(Minimizer):
     """
 
 
-    def __init__(self, parameters, distribution, max_parameter_change, **settings):
-        super().__init__(parameters, distribution, max_parameter_change)
+    def __init__(self, parameters, **settings):
+        super().__init__(parameters)
+
         self.use_hypercube = settings.get('use_hypercube', False)
         self.n_points = settings.get('n_points', 4)
 
@@ -94,6 +95,7 @@ class GPR(Minimizer):
         # * is necessary for unpacking the arrays
         return parameter_names, point_array
 
+
     @staticmethod
     def create_bounds(parameter: Parameter, fraction: float=0.2) -> Tuple[float, float]:
         """
@@ -134,22 +136,11 @@ class GPR(Minimizer):
                     have no constraints set for it. Please set constraints for it') from error
         return lower_bound, upper_bound
 
-    def has_converged(self, conv_tol: Optional[float]=1e-5, min_steps: Optional[int]=1) -> bool:
-        """
-        Checks if the refinement process has converged on a stable solution.
-        Specifically, it checks if the certainty of the parameters being refined have all
-        become less than the relative conversion tolerance (`conv_tol`).
-        It also allows specifying a minimum number of refinement steps (`min_steps`)
-        that must have been simulated before checking for convergence.
 
-        Parameters
-        ----------
-        conv_tol : float, optional
-            The relative tolerance of the convergence check. Defaults to `1e-5`. Obsolete for GPR.
-        min_steps : int, optional
-            The number of refinement steps after which convergence is checked.
-            If the number of accepted state changes is less than this, then the refinement is
-            deemed as not converged. Defaults to `1`.
+    def has_converged(self) -> bool:
+        """
+        Checks if the refinement process has finished, i.e. if all points across
+        the parameter_point_array have been measured.
 
         Returns
         -------
@@ -158,13 +149,12 @@ class GPR(Minimizer):
         """
         return len(self.history) >= len(self.parameter_point_array)
 
-    def change_state(self) -> bool:
-        return True
 
     @property
     def history_columns(self) -> list[str]:
 
         return ['FoM', 'Change state'] + list(self.parameters)
+
 
     def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
@@ -177,14 +167,15 @@ class GPR(Minimizer):
         values : list[float]
             A list of the values to be set for each parameter
         """
-        for name, value in zip(parameter_names, values):
-            self.parameters[str(name)].value = value
 
-    # pylint: disable=arguments-differ
-    # we allow implementations of the abstract method to have different arguments
+        for name, value in zip(parameter_names, values):
+            self.parameters[name].value = value
+
+
     def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
+        from the parameter_point_array.
         """
 
         point_to_calculate = len(self._history)
@@ -192,25 +183,26 @@ class GPR(Minimizer):
             coordinates = self.parameter_point_array[point_to_calculate]
             self.set_parameter_values(self.parameter_names, coordinates)
 
+
     def step(self, FoM: float) -> None:
-        """
-        Increments the minimization by a step
-        """
+        """Increments the minimization by a step"""
 
         self.FoM = FoM
-        values = np.array([self.parameters[str(p)].value for p in self.parameters])
         history = [self.FoM]
         history.append('Accepted')
         self.FoM_old = self.FoM
         self.state_changed = True
 
+        values = np.array([self.parameters[p].value for p in self.parameters])
         history.extend(values)
         self._history.append(history)
-        if self.has_converged():
+        if not self.has_converged():
             self.change_parameters()
+
 
     def reset_parameters(self) -> None:
         """Resets the Parameter values to the last set of values in parameter_point_array"""
+
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
@@ -245,6 +237,7 @@ class GPR(Minimizer):
         Minimum figure of merit
         Minimum parameter values
         """
+
         if not filename:
             filename = self.results_filename
 
@@ -268,6 +261,7 @@ class GPR(Minimizer):
 
         return fitted_GPR, min_FOM, min_parameters
 
+
     @staticmethod
     def GPR_predict(input_regressor,
                     points: Optional[float]=100) -> Tuple[list[Tuple[float]], np.ndarray]:
@@ -290,6 +284,7 @@ class GPR(Minimizer):
         prediction : array
             Array of predicted figure of merit surface at each coordinate in the point_array
         """
+
         regressor_points = input_regressor.X_train_
 
         predictive_coordinates = []
@@ -304,6 +299,7 @@ class GPR(Minimizer):
         prediction = input_regressor.predict(point_array, return_std=False)
 
         return point_array, prediction
+
 
     @staticmethod
     def global_minimum_position(predicted_FOMs: np.ndarray,
@@ -332,6 +328,7 @@ class GPR(Minimizer):
 
         return minimum_parameters, min_FoM
 
+
     def present_result(self) -> str:
         """
         Sets the parameters to those predicted to return the minimum FoM, returns
@@ -343,14 +340,16 @@ class GPR(Minimizer):
             A string presenting the parameters for which the calculated and predicted
             figures of merit are lowest. To be printed by Control to the user.
         """
+
         fit, min_FOM_measured, min_parameters_measured = self.GPR_fit()
         points, FoMs = self.GPR_predict(fit)
         min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
-        output_string = f'Best point measured was {min_parameters_measured} for a minimum FoM of \
-            {min_FOM_measured}. /n/n \
-            Predicted minimum coordinate is {min_parameters_predicted} for a minimum\
-            FoM of {min_FoM_predicted}. /n \
-            The parameters have been set to the predicted minimum values'
+
+        output_string = (f'Best point measured was {min_parameters_measured} for a minimum FoM of '
+            f'{min_FOM_measured}. /n/n '
+            f'Predicted minimum coordinate is {min_parameters_predicted} for a minimum '
+            f'FoM of {min_FoM_predicted}. /n '
+            'The parameters have been set to the predicted minimum values')
 
         return output_string
