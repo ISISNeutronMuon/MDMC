@@ -1,0 +1,356 @@
+"""The Gaussian-Process-Regression minimizer class"""
+import itertools
+from typing import Optional, Tuple
+
+import numpy as np
+import scipy.stats as st
+import pandas as pd
+
+from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
+from sklearn.gaussian_process import kernels
+from scipy.ndimage import minimum_position, minimum
+
+from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+from MDMC.MD.parameters import Parameters, Parameter
+
+
+class GPR(Minimizer):
+
+    """
+    ``Minimizer`` employing Gaussian Process Regression. Creates a predefined array of points
+    across all parameters and performs a simulation at each point. Then performs a Gaussian
+    process regression fit across all measured points and predicts across a finer grid, before
+    returning the predicted minimum FoM and the associated parameter values. This minimizer
+    works best when physically realistic constraints are applied, in the absence of being
+    provided with them, the minimizer sets constraints equal to 20% of the current parameter
+    values.
+
+    Parameters
+    ----------
+    n_points : int
+        A number of points which will be measured at, either randomly on a latin hypercube
+        (if use_hypercube=True) or p^n_points (p = number of parameters) in a regular grid
+        (if use_hypercube=False)
+    use_hypercube : optional, bool
+        Boolian toggle for if the n_points should be placed in a latin hypercube, or as a grid
+        across each parameter. Defaults to False
+
+    Attributes
+    ----------
+    history_columns: list[str]
+        list of the column titles, and parameter names in the minimizer history
+    """
+
+
+    def __init__(self, parameters, distribution, max_parameter_change, **settings):
+        super().__init__(parameters, distribution, max_parameter_change)
+        self.use_hypercube = settings.get('use_hypercube', False)
+        self.n_points = settings.get('n_points', 4)
+
+        self.parameter_names, self.parameter_point_array = \
+        self.create_parameter_point_array(parameters)
+        self.results_filename = settings.get('results_filename', None)
+        self.change_parameters()
+
+
+    def create_parameter_point_array(self, parameters: Parameters) -> Tuple[list[str], list[Tuple]]:
+        """
+        Takes or creates the constraints of the parameters to be minimised, if
+        self.use_hypercube=False this makes an array of length self.n_points and performs the
+        Cartesian product across all parameters, to give an equally spaced set of coordinates to
+        be measured. This set of coordinates will be #of parameters^(self.n_points) long. If
+        self.use_hypercube=True then an array of points will be placed on a Latin hypercube covering
+        the space defined by the constraints. The resulting array of coordinates will be
+        self.n_points long.
+
+        Parameters
+        ----------
+        parameters : Parameters
+            All ``Parameter`` objects that are being refined.
+
+        Returns
+        -------
+        parameter_names : list
+                Ordered list of names of parameters
+        point_array : array
+                Array of parameter coordinates to be simulated
+        """
+        parameter_names = [str(name) for name in parameters.keys()]
+
+        if self.use_hypercube:
+            samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
+            latin_points = samples.random(n=self.n_points)
+
+            lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
+            upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
+
+            latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
+            return parameter_names, latin_points
+
+        bounds_grid = [self.create_bounds(parameter) for parameter in parameters.values()]
+        bounds_array = [np.linspace(lower_bound, upper_bound, self.n_points) \
+                        for lower_bound, upper_bound in bounds_grid]
+        point_array =  list(itertools.product(*bounds_array))
+        # * is necessary for unpacking the arrays
+        return parameter_names, point_array
+
+    @staticmethod
+    def create_bounds(parameter: Parameter, fraction: float=0.2) -> Tuple[float, float]:
+        """
+        Returns either the parameter constraints (bounds) or bounds for each parameter
+        equal to the parameter value =/- fraction*parameter.value, defaulting to +-20%.
+        Raises a ValueError if value is zero and has no constraints since it is not possible
+        to make a guess.
+
+        Parameters
+        ----------
+        parameter : Parameter
+            A MDMC 'Parameter'
+        fraction : optional, float
+            The fractional size of the bound, defaults to 0.2 == +-20%
+
+        Returns
+        -------
+        lower_bound : float
+            The lower bound for the parameter
+        upper_bound : float
+            The upper bound for the parameter
+
+        Raises
+        -----
+        ValueError
+            If parameter.value is zero and no constraints have been set for it there
+            is no sensible way to guess bounds.
+        """
+        try:
+            lower_bound = parameter.constraints[0]
+            upper_bound = parameter.constraints[1]
+        except TypeError as error:
+            if not parameter.value ==0:
+                lower_bound = parameter.value*(1.0 - fraction)
+                upper_bound = parameter.value*(1.0 + fraction)
+            else:
+                raise ValueError(f'You have set parameter {parameter.name} value to zero and \
+                    have no constraints set for it. Please set constraints for it') from error
+        return lower_bound, upper_bound
+
+    def has_converged(self, conv_tol: Optional[float]=1e-5, min_steps: Optional[int]=1) -> bool:
+        """
+        Checks if the refinement process has converged on a stable solution.
+        Specifically, it checks if the certainty of the parameters being refined have all
+        become less than the relative conversion tolerance (`conv_tol`).
+        It also allows specifying a minimum number of refinement steps (`min_steps`)
+        that must have been simulated before checking for convergence.
+
+        Parameters
+        ----------
+        conv_tol : float, optional
+            The relative tolerance of the convergence check. Defaults to `1e-5`. Obsolete for GPR.
+        min_steps : int, optional
+            The number of refinement steps after which convergence is checked.
+            If the number of accepted state changes is less than this, then the refinement is
+            deemed as not converged. Defaults to `1`.
+
+        Returns
+        -------
+        bool
+            Whether or not the minimizer has converged.
+        """
+        return len(self.history) >= len(self.parameter_point_array)
+
+    def change_state(self) -> bool:
+        return True
+
+    @property
+    def history_columns(self) -> list[str]:
+
+        return ['FoM', 'Change state'] + list(self.parameters)
+
+    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
+        """
+        Assigns a new value to each parameter (specified by the parameter.name)
+
+        Parameters
+        ----------
+        parameter_names : list[str]
+            A list of the names of the parameters whose values are to be set
+        values : list[float]
+            A list of the values to be set for each parameter
+        """
+        for name, value in zip(parameter_names, values):
+            self.parameters[str(name)].value = value
+
+    # pylint: disable=arguments-differ
+    # we allow implementations of the abstract method to have different arguments
+    def change_parameters(self) -> None:
+        """
+        Selects a new value for each parameter from the array of parameter values to interrogate
+        """
+
+        point_to_calculate = len(self._history)
+        if point_to_calculate <= len(self.parameter_point_array):
+            coordinates = self.parameter_point_array[point_to_calculate]
+            self.set_parameter_values(self.parameter_names, coordinates)
+
+    def step(self, FoM: float) -> None:
+        """
+        Increments the minimization by a step
+        """
+
+        self.FoM = FoM
+        values = np.array([self.parameters[str(p)].value for p in self.parameters])
+        history = [self.FoM]
+        history.append('Accepted')
+        self.FoM_old = self.FoM
+        self.state_changed = True
+
+        history.extend(values)
+        self._history.append(history)
+        if self.has_converged():
+            self.change_parameters()
+
+    def reset_parameters(self) -> None:
+        """Resets the Parameter values to the last set of values in parameter_point_array"""
+        for i, parameter in enumerate(self.parameters):
+            self.parameters[parameter].value = self.parameter_point_array[-1][i]
+
+
+    def GPR_fit(self, filename: Optional[str]=None,
+                alpha: Optional[float]=0.1, length_scale: Optional[float]=4):
+        """
+        Reads in the contents of the supplied filename, assumes it is the output of a refinement
+        and can be read into a dataframe with the relevant parameters. Uses the recorded points
+        file to perform a Gaussian process regression
+        (https://scikit-learn.org/stable/modules/gaussian_process.html) and fit the points
+        to some kernel, here using an RBF kernel.
+
+        Parameters
+        ----------
+        filename: str, optional
+            The filename or full path to a comma separated value file containing
+            the full output of the refinement. Defaults to None, but if results_filename is set by
+            Control then this is passed into GPR as self.results_filename and used here.
+        alpha: float, optional
+            Hyperparameter for the fitting, which can represent Gaussian noise in measurement
+            points, e.g. how much variation in the output you expect between MD runs.
+            Defaults to 0.1.
+        length_scale: float, optional
+            Hyperparameter for the fitting, which can represent how quickly the kernel is able
+            to change/oscillate. Defaults to 4.0.
+
+        Returns
+        -------
+        GaussianProcessRegressor
+            The fitted points using GPR
+        Minimum figure of merit
+        Minimum parameter values
+        """
+        if not filename:
+            filename = self.results_filename
+
+        records = pd.read_csv(filename, delimiter=',')
+        records = records.astype(dtype=float, errors='ignore')
+        # Convert to float where possible (i.e. not a string)
+
+        FOMs = records['FoM'].to_list()
+        min_FOM = np.min(FOMs)
+        min_parameters = records.index[records['FoM']==min_FOM].tolist()
+
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'])
+
+        # TODO this is hard coded to creation of history, may want to change
+        coordinates = records.values.tolist()
+
+        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
+        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
+
+        fitted_GPR = gpr.fit(coordinates, FOMs)
+
+        return fitted_GPR, min_FOM, min_parameters
+
+    @staticmethod
+    def GPR_predict(input_regressor,
+                    points: Optional[float]=100) -> Tuple[list[Tuple[float]], np.ndarray]:
+        """
+        Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
+        between the minimum and maximum measured parameter values and predicts the FoM at each
+        one of these points.
+
+        Parameters
+        ----------
+        input_regressor : GaussianProcessRegressor object
+            A fitted Gaussian Process regressor object
+        points: int, optional
+            Number of points to predict the GPR over. Defaults to 100
+
+        Returns
+        -------
+        point_array : list
+            The list of coordinates at which the predictions are made
+        prediction : array
+            Array of predicted figure of merit surface at each coordinate in the point_array
+        """
+        regressor_points = input_regressor.X_train_
+
+        predictive_coordinates = []
+
+        for column in regressor_points.T:
+            min_point, max_point = np.min(column), np.max(column)
+            dense_array = np.linspace(min_point, max_point, points)
+            predictive_coordinates.append(dense_array)
+
+        point_array =  list(itertools.product(*predictive_coordinates))
+        # predict method needs explicit array
+        prediction = input_regressor.predict(point_array, return_std=False)
+
+        return point_array, prediction
+
+    @staticmethod
+    def global_minimum_position(predicted_FOMs: np.ndarray,
+        measured_parameter_coordinates: list[float])-> Tuple[np.ndarray, float]:
+        """
+        Gives the coordinates of the global minimum of the predicted figure of merit surface.
+
+        Parameters
+        ----------
+        predicted_FOMs : array
+            An array of the predicted figures of merit
+        measured_parameter_coordinates: list
+            A list of the coordinates corresponding to the points at which the FoM was predicted
+
+        Returns
+        -------
+        minimum_parameters : array
+            The parameter coordinates where the minimum figure of merit is predicted to be
+        min_FoM : float
+            The predicted minimum figure of merit value
+        """
+
+        min_coordinates = minimum_position(predicted_FOMs)[0]
+        min_FoM = minimum(predicted_FOMs)
+        minimum_parameters = measured_parameter_coordinates[min_coordinates]
+
+        return minimum_parameters, min_FoM
+
+    def present_result(self) -> str:
+        """
+        Sets the parameters to those predicted to return the minimum FoM, returns
+        the coordinates of the minima and the predicted FoM.
+
+        Returns
+        -------
+        output_string : str
+            A string presenting the parameters for which the calculated and predicted
+            figures of merit are lowest. To be printed by Control to the user.
+        """
+        fit, min_FOM_measured, min_parameters_measured = self.GPR_fit()
+        points, FoMs = self.GPR_predict(fit)
+        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
+        self.set_parameter_values(self.parameter_names, min_parameters_predicted)
+        output_string = f'Best point measured was {min_parameters_measured} for a minimum FoM of \
+            {min_FOM_measured}. /n/n \
+            Predicted minimum coordinate is {min_parameters_predicted} for a minimum\
+            FoM of {min_FoM_predicted}. /n \
+            The parameters have been set to the predicted minimum values'
+
+        return output_string

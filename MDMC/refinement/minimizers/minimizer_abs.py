@@ -76,6 +76,7 @@ class Minimizer(ABC):
 
         if isinstance(parameters, list):
             parameters = Parameters(parameters)
+
         self._check_parameters(parameters)
         self.parameters_old_values = None
         self.parameters = parameters
@@ -248,3 +249,11 @@ class Minimizer(ABC):
         """
 
         self.history.to_csv(filename)
+
+    @abstractmethod
+    def present_result(self):
+        """
+        Returns the most appropriate output for the minimiser class
+        e.g. minimum FOM and parameter values
+        """
+        raise NotImplementedError

@@ -13,7 +13,7 @@ import re
 from collections.abc import Iterable
 from itertools import chain, count
 import operator
-from typing import Union, Any
+from typing import Union, Any, Optional, List
 import warnings
 import weakref
 
@@ -276,7 +276,8 @@ class Parameter:
         """
 
         if value < constraints[0] or value > constraints[1]:
-            raise ValueError("Value must be within constraints")
+            raise ValueError(f"Value must be within constraints, \
+                            value is: {value}, constraints are: {constraints}")
 
     # comparison operator so parameters are always in the same order on MMC refinement headings
     def __lt__(self, other):
@@ -305,7 +306,7 @@ class Parameters(dict):
         An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
 
-    def __init__(self, init_parameters: Union["list[Parameter]", Parameter, None] = None):
+    def __init__(self, init_parameters: Optional[Union[List[Parameter], Parameter]] = None):
         super().__init__()
         if init_parameters is not None:
             init_parameters = self._check_input(init_parameters)
