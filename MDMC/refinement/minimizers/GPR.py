@@ -254,11 +254,13 @@ class GPR(Minimizer):
 
         FOMs = records['FoM'].to_list()
         min_FOM = np.min(FOMs)
-        min_parameters = records.index[records['FoM']==min_FOM].tolist()
+        min_par_index = records.index[records['FoM']==min_FOM].tolist()
 
         records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'])
-
         # TODO this is hard coded to creation of history, may want to change
+
+        min_pars = records.loc[min_par_index]
+
         coordinates = records.values.tolist()
 
         kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
@@ -266,7 +268,7 @@ class GPR(Minimizer):
 
         fitted_GPR = gpr.fit(coordinates, FOMs)
 
-        return fitted_GPR, min_FOM, min_parameters
+        return fitted_GPR, min_FOM, min_pars
 
 
     @staticmethod
@@ -353,10 +355,11 @@ class GPR(Minimizer):
         min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
 
-        output_string = (f'Best point measured was {min_parameters_measured} for a minimum FoM of '
-            f'{min_FOM_measured}. /n/n '
+        output_string = (f'Best point measured was \n'
+            f'{min_parameters_measured} for a minimum FoM of '
+            f'{min_FOM_measured}. \n\n '
             f'Predicted minimum coordinate is {min_parameters_predicted} for a minimum '
-            f'FoM of {min_FoM_predicted}. /n '
+            f'FoM of {min_FoM_predicted}. \n '
             'The parameters have been set to the predicted minimum values')
 
         return output_string

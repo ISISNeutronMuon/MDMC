@@ -200,7 +200,7 @@ class MMC(Minimizer):
         coordinate_names = list(p for p in self.parameters)
 
         minimum_FoM, min_index = self.history['FoM'].min(), self.history['FoM'].idxmin()
-        minimum_parameters = self.history.iloc[min_index,2:]
+        minimum_parameters = self.history.iloc[min_index,2:].values
 
         output_string = (f'Refined parameters {coordinate_names} have converged '
         f'coordinate: {final_coordinate}\n with a FoM of {self.FoM}.\n '

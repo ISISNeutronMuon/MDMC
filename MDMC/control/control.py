@@ -93,9 +93,6 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
-    max_parameter_change : float, optional
-        Maximum factor by which a Parameter can change each step of the
-        refinement. Defaults to `0.01`
     MD_steps : int, optional
         Number of molecular dynamics steps for each step of the refinement.
         When not provided, the minimum number of steps needed for successful
@@ -108,14 +105,6 @@ class Control:
         much shorter than the equilibration needed before starting the refinement process, but in
         general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
         is 0.
-    convergence_tol : float, optional
-        The relative tolerance used to determine if a refinement has converged.
-        If the Figure of Merit and all ``Parameters`` change less than this
-        tolerance between two accepted refinement steps, the refinement stops.
-        Default value is 1e-5.
-    min_refinement_steps : int, optional
-        The minimum number of refinement steps before the refinement process can stop
-         if all parameters and the Figure of Merit have converged. Default value is 2.
      cont_slicing : bool, optional
         Flag to decide between two possible behaviours when the number of ``MD_steps`` is
         larger than the minimum required to calculate the observables. If ``False`` (default) then
@@ -178,9 +167,6 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
-                 convergence_tol: float = 1e-5,
-                 min_refinement_steps: int = 2,
-                 max_parameter_change: float = 0.01,
                  verbose: int = 0,
                  **settings: dict):
 
@@ -209,9 +195,6 @@ class Control:
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
-        settings['conv_tol'] = convergence_tol
-        settings['min_steps'] = min_refinement_steps
-        settings['max_parameter_change'] = max_parameter_change
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
