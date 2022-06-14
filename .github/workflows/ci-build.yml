@@ -97,10 +97,12 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: ${{ github.head_ref }}-lammps-profiling
+        path: /home/
     - name: Download LAMMPS tests artifact
       uses: actions/download-artifact@v3
       with:
         name: ${{ github.head_ref }}-not lammps-profiling
+        path: /home/
 
     - name: Combine and check profiling data
       env: 
