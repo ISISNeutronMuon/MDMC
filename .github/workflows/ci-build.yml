@@ -103,7 +103,8 @@ jobs:
         name: ${{ github.head_ref }}-not lammps-profiling
 
     - name: Combine and check profiling data
-      with: BRANCH = ${{ github.head_ref }}
+      env: 
+        BRANCH: ${{ github.head_ref }}
       run: python3 .github/scripts/check_deploy_prof_data.py --files "$BRANCH-lammps-profiling.csv" "$BRANCH-not lammps-profiling.csv" --name $BRANCH-total-profiling.csv
     
     - name: Upload total profiling as artifact if successful
