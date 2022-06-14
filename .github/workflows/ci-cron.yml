@@ -23,19 +23,7 @@ jobs:
     - name: Run tests
       run: |
         docker pull mdmc/mdmc:latest
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
-        
-    - name: Copy profiling info and profile 
-      run: |
-          docker cp $(docker ps -lq):/$(pwd)/prof/ /prof
-          python3 .github/scripts/profile.py /prof --name "master-profiling"
-          
-    - name: Save profiling info as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: master-profiling
-        path: master-profiling.csv
-      
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]      
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0

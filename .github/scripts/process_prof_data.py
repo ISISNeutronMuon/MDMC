@@ -22,21 +22,30 @@ def main():
                                                  'Prints output tables and writes csv files.')
 
     # positional arguments
-    parser.add_argument('dir', type=str, help='the directory of .prof files to be profiled.')
+    parser.add_argument(
+        'dir',
+        type=str,
+        help='the directory of .prof files to be profiled.'
+        )
 
     # options
-    parser.add_argument('--compare', '-c',help='if invoked, the results are compared to '
-                                                'the previously summarised csv '
-                                                'given under this flag.')
-    parser.add_argument('--name', '-n', help='The name for the output file. '
-                                             'Defaults to profiling-[DATE AND TIME]')
+    parser.add_argument(
+        '--compare', '-c',
+        type=str,
+        help='if invoked, the results are compared to the previously summarised csv '
+             'given under this flag.'
+        )
+    parser.add_argument(
+        '--name', '-n',
+        type=str,
+        default=f"profiling-{datetime.now()}",
+        help='The name for the output file. Defaults to profiling-[DATE AND TIME]'
+        )
 
 
     args = parser.parse_args()
     directory = args.dir
-    filename = f"profiling-{datetime.now()}"
-    if args.name:
-        filename = args.name
+    filename = args.name
 
     summary = CI_profile_summaries(directory)
 
@@ -50,6 +59,7 @@ def main():
     print("Profiling results:\n", summary)
     with open(f'{filename}.csv', 'w', encoding='utf-8') as file:
         file.write(summary.to_csv())
+
 
 if __name__ == "__main__":
     main()

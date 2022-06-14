@@ -35,3 +35,27 @@ jobs:
         docker pull mdmc/engines:ci-$BRANCH || exit 0
         docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest
         docker push mdmc/engines:latest
+
+  update-master-profiling:
+    name: Update master profiling data
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download master profiling for comparison
+      # regular download artifact can only get artifacts from latest run
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: ci-deploy.yml
+        name: ${{ github.head_ref }}-total-profiling
+
+    - name: Rename to master profiling
+      env:
+        BRANCH: ${{ github.head_ref }}
+      run: mv $BRANCH-total-profiling.csv master-profiling.csv
+    
+    - name: Upload as master profiling
+      uses: actions/upload-artifact@v3
+      with:
+        name: master-profiling
+        path: master-profiling.csv

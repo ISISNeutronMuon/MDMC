@@ -34,19 +34,18 @@ def CI_profile_summaries(path: str) -> pd.DataFrame:
     # then create generator of summaries for each test file
     if not list(os.walk(path)):  # if path is empty
         raise OSError("The directory specified is empty.")
-    for x, y, files in os.walk(path):
+    for _, _, files in os.walk(path):
         profs = (_summarise(_profile_to_dataframe(path + file), file[:-5])
                  for file in files if file.endswith('.prof') and file.startswith('test_'))
 
     # concatenate summary for each test into a dataframe,
     # then transpose it to be the right way around
-    summaries = pd.concat(profs, axis=1).T
+    summary = pd.concat(profs, axis=1).T
 
-    # add percentage of total time column
-    sum_time = summaries['tottime'].sum()
-    percentage_time = summaries['tottime'].apply(lambda x: (x / sum_time) * 100).rename("% time")
+    # add '% time' column
+    percentage_time = percentage_tottime(summary)
 
-    return pd.concat([summaries, percentage_time], axis=1)
+    return pd.concat([summary, percentage_time], axis=1)
 
 
 def _profile_to_dataframe(path: str) -> pd.DataFrame:
@@ -104,6 +103,28 @@ def _summarise(data_frame: pd.DataFrame, name: str) -> pd.DataFrame:
     return pd.Series(data={'name': name,
                            'tottime': total_time},
                      index=['name', 'tottime'])
+
+def percentage_tottime(df: pd.DataFrame) -> pd.Series:
+    """
+    Calculates the percentage of total time taken by each test.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        A dataframe containing a 'tottime' column of total time
+        taken by each test.
+
+    Returns
+    -------
+    pd.Series
+        A series named '% time' of each row of tottime converted to a percentage.
+    """
+
+    # add percentage of total time column
+    sum_time = df['tottime'].sum()
+    percentage_time = df['tottime'].apply(lambda x: (x / sum_time) * 100).rename("% time")
+
+    return percentage_time
 
 def compare_times(base: pd.DataFrame, head: pd.DataFrame) -> pd.DataFrame:
     """

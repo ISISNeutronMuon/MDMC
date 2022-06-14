@@ -1,0 +1,66 @@
+"""
+Tool to combine profiling data into a total summary, and
+fail the workflow if it is significantly slower than master.
+"""
+
+import argparse
+from datetime import datetime
+import sys
+
+import pandas as pd
+
+from profile_utils import percentage_tottime
+
+
+def main():
+    """
+    Combines profiling data into a total summary, and
+    fails the workflow if it is significantly slower than master.
+    """
+    parser = argparse.ArgumentParser(description='Combine profiling data into a total summary. '
+                                                 'Returns an exit code of 1 if significantly '
+                                                 'slower than master.')
+
+    parser.add_argument(
+        '--files', '-f',
+        type=str,
+        nargs='+',
+        help='The profiling .csv files to combine.'
+        )
+    parser.add_argument(
+        '--name', '-n',
+        type=str,
+        default=f"profiling-{datetime.now()}",
+        help='The name for the output file. Defaults to profiling-[DATE AND TIME]'
+        )
+
+    args = parser.parse_args()
+    filename = args.name
+    dataframes = [pd.read_csv(file) for file in args.files]
+
+    summary = pd.concat(dataframes, axis=0)
+
+    # recalculate percentage time and sort
+    percentage_time = percentage_tottime(summary)
+    summary['% time'] = percentage_time
+    summary = summary.sort_values(by='tottime', ascending=False)
+
+    # get all significantly slower tests
+    slower = summary[summary['change'] > summary['tottime'] * 0.05]
+
+    if slower.empty:
+        print("Profiling results:\n", summary)
+        with open(f'{filename}.csv', 'w', encoding='utf-8') as file:
+            # drop change column so this can be used as master summary
+            # when branch is deployed
+            summary = summary.drop(columns=['change'])
+            file.write(summary.to_csv())
+        sys.exit(0)
+
+    print("Failing as some tests are over 5% slower than master.\n"
+          "These slower tests were the following:\n", slower)
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

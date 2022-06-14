@@ -51,8 +51,11 @@ jobs:
         exit 0
         
     - name: Download master profiling for comparison
-      uses: actions/download-artifact@v3
+      # regular download-artifact can only get artifacts from current run
+      uses: dawidd6/action-download-artifact@v2
       with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: ci-deploy.yml
         name: master-profiling
       continue-on-error: true
         
@@ -62,7 +65,7 @@ jobs:
       run: |
           sudo docker cp $(docker ps -lq):home/prof/ /home/prof
           pip3 install pandas
-          python3 .github/scripts/profiling.py /home/prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/profiling.py /home/prof --name $BRANCH-profiling || exit 1
+          python3 .github/scripts/process_prof_data.py /home/prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/profiling.py /home/prof --name $BRANCH-profiling || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
@@ -79,6 +82,35 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
       continue-on-error: true
+
+  profiling:
+    name: Profiling
+    needs: tests
+    runs-on: self-hosted
+    steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Download LAMMPS tests artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-lammps-profiling
+    - name: Download LAMMPS tests artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-not lammps-profiling
+
+    - name: Combine and check profiling data
+      with: BRANCH = ${{ github.head_ref }}
+      run: python3 .github/scripts/check_deploy_prof_data.py --files "$BRANCH-lammps-profiling.csv" "$BRANCH-not lammps-profiling.csv" --name $BRANCH-total-profiling.csv
+    
+    - name: Upload total profiling as artifact if successful
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-total-profiling
+        path: ${{ github.head_ref }}-total-profiling.csv
 
   documentation:
     name: Documentation
