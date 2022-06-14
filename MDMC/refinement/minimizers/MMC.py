@@ -56,7 +56,14 @@ class MMC(Minimizer):
 
 
     def step(self, FoM: float) -> None:
-        """Increments the minimization by a step"""
+        """
+        Increments the minimization by a step
+
+        Parameters
+        ----------
+        FoM : float
+            The current figure of merit value.
+        """
 
         self.FoM = FoM
         parameters = {p: self.parameters[p].value for p in self.parameters}
@@ -143,16 +150,16 @@ class MMC(Minimizer):
         """
         Checks if the refinement process has converged on a stable solution.
         Specifically, it checks if the Figure of Merit and the parameters being refined have all
-        changed less than the relative conversion tolerance (`conv_tol`) between the
-        last two accepted refinement steps. It also allows specifying a minimum
-        number of refinement steps (`min_steps`) that must have been accepted
-        before checking for convergence.
+        changed less than the relative conversion tolerance (`conv_tol`) between the last two
+        accepted refinement steps. It also allows specifying a minimum number of refinement
+        steps (`min_steps`) that must have been accepted before checking for convergence.
 
         Returns
         -------
         bool
             Whether or not the minimizer has converged.
         """
+
         # select the history of accepted state changes
         accepted_history = (self.history['Change state'] == 'Accepted')
         accepted_history = self.history[accepted_history]
@@ -187,6 +194,7 @@ class MMC(Minimizer):
             A string presenting the best measured parameters and the current ones, to be printed
             by Control to the user.
         """
+
         self.reset_parameters()
         final_coordinate = np.array([self.parameters[p].value for p in self.parameters])
         coordinate_names = list(p for p in self.parameters)

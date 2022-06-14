@@ -126,7 +126,7 @@ def test_minimizer_fixed_parameter():
     parameters = [Parameter(name='fixed', value=1., fixed=True)]
     with pytest.raises(ValueError):
         for minimizer_name in MinimizerFactory.get_minimizer_names():
-            minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+            _ = MinimizerFactory.create_minimizer(minimizer_name, parameters)
 
 
 def test_minimizer_tied_parameter():

@@ -67,7 +67,14 @@ class Minimizer(ABC):
 
     @abstractmethod
     def step(self, FoM: float) -> None:
-        """Increments the minimization by a step"""
+        """
+        Increments the minimization by a step
+
+        Parameters
+        ----------
+        FoM : float
+            The current figure of merit value.
+        """
 
         raise NotImplementedError
 
@@ -111,7 +118,12 @@ class Minimizer(ABC):
     @abstractmethod
     def has_converged(self) -> bool:
         """
-        Checks if the refinement process has converged/finished
+        Checks if the refinement process has converged/finished. The condition
+        which needs to be met to make this True is optimizer dependent, but
+        might be that the refinement has repeatedly returned a very similar FoM
+        which meets some threshold, determining that it is close to the optimal,
+        or it could be that the minimizer has measured at all the parameter points
+        that were specified and it should now predict the best position.
 
         Returns
         -------

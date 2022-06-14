@@ -185,7 +185,14 @@ class GPR(Minimizer):
 
 
     def step(self, FoM: float) -> None:
-        """Increments the minimization by a step"""
+        """
+        Increments the minimization by a step
+
+        Parameters
+        ----------
+        FoM : float
+            The current figure of merit value.
+        """
 
         self.FoM = FoM
         history = [self.FoM]

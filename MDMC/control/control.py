@@ -204,15 +204,14 @@ class Control:
         self.fit_parameters = Parameters(fit_parameters)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
-        self.convergence_tol = convergence_tol
-        self.min_refine_steps = min_refinement_steps
         self.settings = settings
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
-        settings['conv_tol'] = self.convergence_tol
-        settings['min_steps'] = self.min_refine_steps
+        settings['conv_tol'] = convergence_tol
+        settings['min_steps'] = min_refinement_steps
+        settings['max_parameter_change'] = max_parameter_change
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
