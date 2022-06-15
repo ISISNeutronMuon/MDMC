@@ -62,18 +62,19 @@ jobs:
     - name: Copy profiling info, download profile script reqs. and profile
       env:
         BRANCH: ${{ github.head_ref }}
+        FILENAME: ${{ github.head_ref }}-${{ matrix.testset }}-profiling.csv
       run: |
           # clear directory of any existing prof files first
           sudo rm -r /home/prof/
           sudo docker cp $(docker ps -lq):home/prof/ /home/prof
           pip3 install pandas
-          python3 .github/scripts/process_prof_data.py /home/prof --name $BRANCH-profiling --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $BRANCH-profiling || exit 1
+          python3 .github/scripts/process_prof_data.py /home/prof --name "$FILENAME" --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name "$FILENAME" || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: ${{ github.head_ref }}-profiling.csv
+        path: ${{ github.head_ref }}-${{ matrix.testset }}-profiling.csv
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
