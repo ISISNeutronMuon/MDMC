@@ -90,8 +90,10 @@ jobs:
     needs: tests
     runs-on: self-hosted
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
+    - name: Own repo to clear before checkout and home to save files
+      run: |
+        sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
+        sudo chown -R ansible /home/ 
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -100,7 +102,7 @@ jobs:
       with:
         name: ${{ github.head_ref }}-lammps-profiling
         path: /home/
-    - name: Download LAMMPS tests artifact
+    - name: Download non-LAMMPS tests artifact
       uses: actions/download-artifact@v3
       with:
         name: ${{ github.head_ref }}-not lammps-profiling
@@ -152,7 +154,7 @@ jobs:
       run: |
         sudo pip3 install --upgrade pip
         sudo pip3 install -r requirements.txt
-        sudo pip3 install $(cat .dev_requirements.txt | grep pylint) 
+        sudo pip3 install --upgrade $(cat .dev_requirements.txt | grep pylint) 
     - name: pylint
       run: |
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
