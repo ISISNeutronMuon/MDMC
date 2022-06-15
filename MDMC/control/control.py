@@ -93,9 +93,6 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
-    max_parameter_change : float, optional
-        Maximum factor by which a Parameter can change each step of the
-        refinement. Defaults to `0.01`
     MD_steps : int, optional
         Number of molecular dynamics steps for each step of the refinement.
         When not provided, the minimum number of steps needed for successful
@@ -108,14 +105,6 @@ class Control:
         much shorter than the equilibration needed before starting the refinement process, but in
         general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
         is 0.
-    convergence_tol : float, optional
-        The relative tolerance used to determine if a refinement has converged.
-        If the Figure of Merit and all ``Parameters`` change less than this
-        tolerance between two accepted refinement steps, the refinement stops.
-        Default value is 1e-5.
-    min_refinement_steps : int, optional
-        The minimum number of refinement steps before the refinement process can stop
-         if all parameters and the Figure of Merit have converged. Default value is 2.
      cont_slicing : bool, optional
         Flag to decide between two possible behaviours when the number of ``MD_steps`` is
         larger than the minimum required to calculate the observables. If ``False`` (default) then
@@ -178,9 +167,6 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
-                 convergence_tol: float = 1e-5,
-                 min_refinement_steps: int = 2,
-                 max_parameter_change: float = 0.01,
                  verbose: int = 0,
                  **settings: dict):
 
@@ -202,6 +188,9 @@ class Control:
         fit_parameters = [p for p in fit_parameters
                           if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
+        self.reset_config = reset_config
+        self.equilibration_steps = equilibration_steps
+        self.settings = settings
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
@@ -212,13 +201,8 @@ class Control:
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
-                                                           max_parameter_change=max_parameter_change,
                                                            **settings)
-        self.reset_config = reset_config
-        self.equilibration_steps = equilibration_steps
-        self.convergence_tol = convergence_tol
-        self.min_refine_steps = min_refinement_steps
-        self.settings = settings
+
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -372,8 +356,7 @@ class Control:
         self._print_header()  # creates stdout header
         verbose_manager = VerboseManager.instance()
         verbose_manager.start(verbose_steps, verbose=self.verbose)
-        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
-                                                                   min_steps=self.min_refine_steps):
+        while count < n_steps and not self.minimizer.has_converged():
             if count >= 0 and self.equilibration_steps > 0:
                 self.equilibrate()
 

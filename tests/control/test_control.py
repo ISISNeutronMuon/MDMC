@@ -415,16 +415,15 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
 
 
 def test_control_max_parameter_change():
-
     """
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
-    ctrl_default = control.Control(None, [], [], reset_config=False)
+    ctrl_default = control.Control(None, [], [], minimizer_type="MMC", reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
 
     ctrl = control.Control(None, [], [], reset_config=False,
-                           max_parameter_change=0.02)
+                           minimizer_type="MMC", max_parameter_change=0.02)
     assert ctrl.minimizer.max_parameter_change == 0.02
 
 

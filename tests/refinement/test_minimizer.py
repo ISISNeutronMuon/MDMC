@@ -118,15 +118,6 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
             assert np.any([expected_column in history_columns for \
                             history_columns in minim.history_columns])
 
-
-def mock_change_parameters(self, parameters):
-    """
-    Mock of minimizer.change_parameters which doubles each ``Parameter`` value
-    """
-
-    for p in parameters:
-        parameters[p].value *= 2
-
 def test_minimizer_fixed_parameter():
     """
     Test that a ``ValueError`` is raised when passing a fixed ``Parameter``
@@ -135,7 +126,7 @@ def test_minimizer_fixed_parameter():
     parameters = [Parameter(name='fixed', value=1., fixed=True)]
     with pytest.raises(ValueError):
         for minimizer_name in MinimizerFactory.get_minimizer_names():
-            minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+            _ = MinimizerFactory.create_minimizer(minimizer_name, parameters)
 
 
 def test_minimizer_tied_parameter():
