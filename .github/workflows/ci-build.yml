@@ -62,7 +62,7 @@ jobs:
     - name: Copy profiling info, download profile script reqs. and profile
       env:
         BRANCH: ${{ github.head_ref }}
-        FILENAME: "${{ github.head_ref }}-${{ matrix.testset }}-profiling.csv"
+        FILENAME: ${{ github.head_ref }}-profiling.csv
       run: |
           # clear directory of any existing prof files first
           sudo rm -r /home/prof/
@@ -74,7 +74,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: ${{ github.head_ref }}-${{ matrix.testset }}-profiling.csv
+        path: ${{ github.head_ref }}-profiling.csv
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -98,21 +98,15 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
 
-    - name: Download LAMMPS tests artifact
+    - name: Download tests artifacts
       uses: actions/download-artifact@v3
       with:
-        name: ${{ github.head_ref }}-lammps-profiling
-        path: /home/
-    - name: Download non-LAMMPS tests artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: ${{ github.head_ref }}-not lammps-profiling
         path: /home/
 
     - name: Combine and check profiling data
       env: 
         BRANCH: ${{ github.head_ref }}
-      run: python3 .github/scripts/check_deploy_prof_data.py --files "$BRANCH-lammps-profiling.csv" "$BRANCH-not lammps-profiling.csv" --name $BRANCH-total-profiling.csv
+      run: python3 .github/scripts/check_deploy_prof_data.py --files "$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name $BRANCH-total-profiling.csv
     
     - name: Upload total profiling as artifact if successful
       uses: actions/upload-artifact@v3
