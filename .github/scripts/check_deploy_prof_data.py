@@ -4,6 +4,7 @@ fail the workflow if it is significantly slower than master.
 """
 
 import argparse
+from contextlib import suppress
 from datetime import datetime
 import sys
 
@@ -46,14 +47,20 @@ def main():
     summary = summary.sort_values(by='tottime', ascending=False)
 
     # get all significantly slower tests
-    slower = summary[summary['change'] > summary['tottime'] * 0.05]
+    # if we haven't got a change column (if getting master has failed)
+    # pass an empty dataframe and pass 
+    try:
+        slower = summary[summary['change'] > summary['tottime'] * 0.05]
+    except KeyError:
+        slower = pd.DataFrame()
 
     if slower.empty:
         print("Profiling results:\n", summary)
         with open(f'{filename}.csv', 'w', encoding='utf-8') as file:
             # drop change column so this can be used as master summary
             # when branch is deployed
-            summary = summary.drop(columns=['change'])
+            with suppress(KeyError):
+                summary = summary.drop(columns=['change'])
             file.write(summary.to_csv())
         sys.exit(0)
 
