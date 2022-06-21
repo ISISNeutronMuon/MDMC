@@ -12,5 +12,3 @@ nbsphinx==0.8.8
 sphinx-rtd-theme==1.0.0
 docutils==0.17.1
 jupyter==1.0.0
-papermill==2.3.4
-
