@@ -327,9 +327,16 @@ class Parameters(dict):
             matching_parameters = list(filter(r.match, list(self.keys())))
             if matching_parameters:
                 if len(matching_parameters) > 1:
-                    warnings.warn("Calling a parameter name with no ID fetches the first "
-                                  "parameter with that name; this may cause buggy or "
-                                  "inconsistent behaviour!")
+                    warnings.warn("Calling a parameter name with no ID returns a "
+                                  "list of all parameters with that name; "
+                                  "this may create inconsistent behaviour!")
+                    #pylint: disable=super-with-arguments
+                    # for some reason when we run it without arguments,
+                    # it complains in jupyter notebooks
+                    # see http://thomas-cokelaer.info/blog/2011/09/382/
+                    return sorted([super(Parameters, self).__getitem__(p)
+                                   for p in matching_parameters],
+                                   key=lambda p: p.ID)
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
 
