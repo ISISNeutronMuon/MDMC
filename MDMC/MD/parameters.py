@@ -330,7 +330,12 @@ class Parameters(dict):
                     warnings.warn("Calling a parameter name with no ID returns a "
                                   "list of all parameters with that name; "
                                   "this may create inconsistent behaviour!")
-                    return sorted([super(Parameters, self).__getitem__(p) for p in matching_parameters],
+                    #pylint: disable=super-with-arguments
+                    # for some reason when we run it without arguments,
+                    # it complains in jupyter notebooks
+                    # see http://thomas-cokelaer.info/blog/2011/09/382/
+                    return sorted([super(Parameters, self).__getitem__(p)
+                                   for p in matching_parameters],
                                    key=lambda p: p.ID)
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
