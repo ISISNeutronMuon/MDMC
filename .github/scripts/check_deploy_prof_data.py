@@ -37,7 +37,7 @@ def main():
 
     args = parser.parse_args()
     filename = args.name
-    dataframes = [pd.read_csv(file) for file in args.files]
+    dataframes = [pd.read_csv(file, index_col=0) for file in args.files]
 
     summary = pd.concat(dataframes, axis=0)
 
