@@ -4,12 +4,13 @@ from functools import wraps
 import functools
 import textwrap
 from types import FunctionType
+from typing import Optional, Callable, Union
 import weakref
 
 from MDMC.common.units import UnitFloat, unit_array
 
 
-def unit_decorator(unit):
+def unit_decorator(unit: Union(str, None)) -> Callable:
     """
     Decorates ``property.setter`` methods to add units
 
@@ -75,7 +76,7 @@ def unit_decorator(unit):
     return decorator
 
 
-def unit_decorator_getter(unit):
+def unit_decorator_getter(unit: Union(str, None)) -> Callable:
     """
     Decorates ``property.getter`` methods to add units
 
@@ -134,7 +135,7 @@ def unit_decorator_getter(unit):
     return decorator
 
 
-def set_docstring(docstring):
+def set_docstring(docstring: str) -> Callable:
     """
     Decorator for setting the docstring of a function, method, class or property
 
@@ -216,7 +217,7 @@ def set_docstring(docstring):
     return decorator
 
 
-def mod_docstring(replacements):
+def mod_docstring(replacements: 'dict[str, str]') -> Callable:
     """
     Decorator for modifying the docstring of a function, method, class or
     property
@@ -313,7 +314,7 @@ def mod_docstring(replacements):
     return decorator
 
 
-def wrap_docstring(docstring, line_length):
+def wrap_docstring(docstring: str, line_length: int) -> Callable:
     """
     Wraps a docstring to a specific line length.
 
@@ -380,7 +381,7 @@ def wrap_docstring(docstring, line_length):
     return ''.join(wrapped)
 
 
-def repr_decorator(attribute, *attributes):
+def repr_decorator(attribute: str, *attributes: Optional[str]):
     """
     Implements ``__repr__`` for a class using passed attributes (including
     properties)

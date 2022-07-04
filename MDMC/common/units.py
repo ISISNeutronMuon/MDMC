@@ -8,9 +8,12 @@ As members of units.py are set dynamically, pylintrc excludes member checking
 for units.py using the generated-members keyword. Care must be taken to ensure
 members exist when importing from units.py, as these will not be linted."""
 
+from __future__ import annotations
+
 from collections import Counter, defaultdict
 from copy import deepcopy
 from numbers import Number
+from typing import Union
 
 import numpy as np
 
@@ -116,7 +119,7 @@ class Unit(str):
         ``1000.`` as the system units are femtoseconds.
     """
 
-    def __new__(cls, string, components=None):
+    def __new__(cls, string: str, components: defaultdict(list) = None) -> Unit:
 
         if string is None:
             return None
@@ -143,7 +146,7 @@ class Unit(str):
         unit.components = components
         return unit
 
-    def __mul__(self, other):
+    def __mul__(self, other: Unit) -> Unit:
         """
         Multiplies the ``Unit`` by another ``Unit``
 
@@ -165,7 +168,7 @@ class Unit(str):
                 'A Unit can only be multipled by another Unit') from error
         return self.__class__(self._calculate_string(components), components)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: Unit) -> Unit:
         """
         Divides the ``Unit`` by another ``Unit``
 
@@ -187,13 +190,13 @@ class Unit(str):
                 'A Unit can only be divided by another Unit') from error
         return self.__class__(self._calculate_string(components), components)
 
-    def __pow__(self, other):
+    def __pow__(self, exponent: Number) -> Unit:
         """
         Performs the power operation on the ``Unit``
 
         Parameter
         ---------
-        other : numeric (inherits from numbers.Number)
+        exponent : numeric (inherits from numbers.Number)
             The number the ``Unit`` is raised to the power of
 
         Returns
@@ -202,18 +205,18 @@ class Unit(str):
             A compound ``Unit``
         """
 
-        if not isinstance(other, Number):
+        if not isinstance(exponent, Number):
             try:
-                other = float(other)
+                exponent = float(exponent)
             except (TypeError, ValueError) as error:
                 raise TypeError('Only numeric types can be used as a power for'
                                 ' Units') from error
 
-        components = self._calculate_components(other, 'pow')
+        components = self._calculate_components(exponent, 'pow')
         return self.__class__(self._calculate_string(components), components)
 
     @property
-    def base(self):
+    def base(self) -> bool:
         """
         Get whether the ``Unit`` is a ``base`` or compound ``Unit``
 
@@ -230,7 +233,7 @@ class Unit(str):
         return False
 
     @property
-    def conversion_factor(self):
+    def conversion_factor(self) -> float:
         """
         Calculates the factor by which a value with this ``Unit`` should be
         multiplied in order to express it in system units. This takes into
@@ -290,7 +293,7 @@ class Unit(str):
             raise KeyError(f'Unknown unit {str(self)} provided, cannot determine the '
                            'physical property it measures ') from error
 
-    def _calculate_components(self, other, op):
+    def _calculate_components(self, other: Unit, op: str) -> defaultdict(list):
         """
         Calculates the ``components`` for a new ``Unit`` generated from an
         operation
@@ -342,7 +345,7 @@ class Unit(str):
         return components
 
     @staticmethod
-    def _calculate_string(components):
+    def _calculate_string(components: defaultdict(list)) -> str:
         """
         Calculates the `str` for a new ``Unit`` generated from an operation
 
@@ -388,7 +391,7 @@ class Unit(str):
         return numerator + ' / ' + denominator
 
     @staticmethod
-    def _parse_unit_string(unit_string):
+    def _parse_unit_string(unit_string: str) -> tuple[list[Unit]]:
         """
         Converts a ``Unit`` `str` into ``Unit`` objects
 
@@ -495,7 +498,7 @@ SYSTEM = {
 }
 
 
-def create_units(codata_version):
+def create_units(codata_version: str) -> dict[Unit, float]:
     """
     Creates a `dict` of ``Unit`` based on the CODATA version.
 
@@ -621,19 +624,19 @@ class UnitFloat(float):
     immaterial as no quantity which possesses units is complex.
     """
 
-    def __new__(cls, value, unit):
+    def __new__(cls, value: float, unit: Union(Unit, str)):
 
         if value is None:
             return None
         return float.__new__(cls, value)
 
-    def __init__(self, value, unit):
+    def __init__(self, value: float, unit: Union(Unit, str)):
 
         float.__init__(value)
         self.unit = unit
 
     @property
-    def unit(self):
+    def unit(self) -> Unit:
         """
         Get or set the ``unit``
 
@@ -648,7 +651,7 @@ class UnitFloat(float):
         return self._unit
 
     @unit.setter
-    def unit(self, value):
+    def unit(self, value: float):
 
         if not (isinstance(value, str) or value is None):
             raise TypeError('unit must be a string')
@@ -734,7 +737,7 @@ class UnitNDArray(np.ndarray):
         return self._unit
 
     @unit.setter
-    def unit(self, value):
+    def unit(self, value: float):
 
         if not (isinstance(value, str) or value is None):
             raise TypeError('unit must be a string')
