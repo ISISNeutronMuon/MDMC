@@ -463,7 +463,7 @@ class Control:
         header = 'Step' + columns
         print(header)
 
-    def _generate_FoM(self):
+    def _generate_FoM(self) -> float:
         """
         Run the MD for an iteration/step, calculate observable, compare with
         observed and return the FoM
@@ -496,7 +496,7 @@ class Control:
 
     @staticmethod
     def _read_observable_from_file(obstype: str, reader: str, file_name: str,
-                                   use_FFT: bool = True):
+                                   use_FFT: bool = True) -> Observable:
         """
         Creates an Observable of the specified type and reads in data from file
 
@@ -523,7 +523,7 @@ class Control:
         return observable
 
     @staticmethod
-    def _create_empty_observable(exp_observable, use_FFT: bool = True):
+    def _create_empty_observable(exp_observable, use_FFT: bool = True) -> Observable:
         """
         Creates a ``Observable`` without data but with independent variables
         specified from another ``Observable``.  This is a placeholder in which
@@ -550,7 +550,9 @@ class Control:
         observable.use_FFT =  use_FFT
         return observable
 
-    def _calculate_observables(self, simulation, observable_pairs):
+    def _calculate_observables(self,
+                               simulation: Simulation,
+                               observable_pairs: 'list[ObservablePair]'):
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
@@ -580,7 +582,7 @@ class Control:
                     self.timings[key] += value
         verbose_manager.finish("Calculating observables")
 
-    def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair):
+    def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
         """
         Calculates the minimum number of steps required for the MD engine in
         order to calculate MD ``Observables`` objects with the same independent
@@ -608,7 +610,7 @@ class Control:
         return traj_step * minimum_frames
 
     def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: ObservablePair):
+                                    observable_pair: ObservablePair) -> int:
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
         able to use when calculating dependent variables whilst still being
