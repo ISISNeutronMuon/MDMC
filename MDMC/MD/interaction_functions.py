@@ -13,12 +13,16 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import functools
 from itertools import zip_longest
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.common import units
 from MDMC.MD.parameters import Parameter, Parameters
+
+if TYPE_CHECKING:
+    from MDMC.MD.interactions import Interaction
 
 
 @repr_decorator('parameters')
@@ -36,7 +40,7 @@ class InteractionFunction:
         the value and `str` is the unit.
     """
 
-    def __init__(self, val_dict):
+    def __init__(self, val_dict: dict):
 
         # locals which are excluded from Parameter creation
         excluded = ['self', 'settings', '__class__']
@@ -64,7 +68,7 @@ class InteractionFunction:
                     (self.parameters_values == other.parameters_values)]))
 
     @property
-    def parameters(self):
+    def parameters(self) -> Parameters:
         """
         Get or set the interaction function's parameters
 
@@ -77,12 +81,12 @@ class InteractionFunction:
         return self._parameters
 
     @parameters.setter
-    def parameters(self, value):
+    def parameters(self, value: Parameters):
 
         self._parameters = value
 
     @property
-    def parameters_values(self):
+    def parameters_values(self) -> np.ndarray:
         """
         Get the values for all ``Parameters`` objects
 
@@ -95,7 +99,7 @@ class InteractionFunction:
         return np.array([p.value for p in self.parameters.values()])
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Get the name of the class of the ``InteractionFunction``
 
@@ -107,7 +111,7 @@ class InteractionFunction:
 
         return self.__class__.__name__
 
-    def set_parameters_interactions(self, interaction):
+    def set_parameters_interactions(self, interaction: 'Interaction'):
         """
         Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
 
@@ -237,7 +241,7 @@ class Buckingham(InteractionFunction):
 
     @inter_func_decorator(('A', units.ENERGY), ('B', units.LENGTH ** -1),
                           ('C', units.LENGTH ** 6 * units.ENERGY))
-    def __init__(self, A, B, C):
+    def __init__(self, A: float, B: float, C: float):
 
         super().__init__(locals())
 
@@ -279,7 +283,7 @@ class Coulomb(InteractionFunction):
     """
 
     @inter_func_decorator(('charge', units.CHARGE))
-    def __init__(self, charge):
+    def __init__(self, charge: float):
 
         super().__init__(locals())
 
@@ -349,7 +353,7 @@ class HarmonicPotential(InteractionFunction):
         hp = HarmonicPotential(180., 20.92, interaction_type='improper')
     """
 
-    def __new__(cls, equilibrium_state, potential_strength, **settings):
+    def __new__(cls, equilibrium_state: float, potential_strength: float, **settings: dict):
 
         # interaction_type is a required keyword, but has to be passed through
         # settings so that it can be correctly passed in inter_func_decorator
@@ -447,7 +451,7 @@ class Periodic(InteractionFunction):
                                function=periodic)
     """
 
-    def __init__(self, K1, n1, d1, *parameters):
+    def __init__(self, K1: float, n1: float, d1: float, *parameters: float):
 
         # Check that total number of parameters is divisible by 3
         # Check that all n values are non-negative ints
@@ -512,7 +516,7 @@ class LennardJones(InteractionFunction):
     """
 
     @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
-    def __init__(self, epsilon, sigma, **settings):
+    def __init__(self, epsilon: float, sigma: float, **settings: dict):
 
         super().__init__({'epsilon': epsilon, 'sigma': sigma})
         self.cutoff = settings.get('cutoff', None)

@@ -5,7 +5,7 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from typing import Dict, List
+from typing import Dict, Union, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -22,6 +22,9 @@ from MDMC.MD.solvents.solvents import get_solvent_names, get_solvent_config
 from MDMC.MD.structures import Structure
 from MDMC.MD.interactions import Dispersion, Coulombic
 from MDMC.trajectory_analysis.trajectory import Configuration
+
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Molecule, Atom
 
 
 LOGGER = logging.getLogger(__name__)
@@ -157,7 +160,7 @@ class Universe(AtomContainer):
 
     @property
     @unit_decorator_getter(unit=units.LENGTH)
-    def dimensions(self):
+    def dimensions(self) -> np.ndarray:
         """
         Get or set the dimensions of the ``Universe``
 
@@ -176,7 +179,7 @@ class Universe(AtomContainer):
         return self._dimensions
 
     @dimensions.setter
-    def dimensions(self, dimensions):
+    def dimensions(self, dimensions: Union(float, list, tuple, np.ndarray)):
 
         if isinstance(dimensions, float):
             if dimensions <= 0:
@@ -214,7 +217,7 @@ class Universe(AtomContainer):
             raise TypeError(msg)
 
     @property
-    def interactions(self):
+    def interactions(self) -> list:
         """
         Get the interactions in the ``Universe``
 
@@ -227,7 +230,7 @@ class Universe(AtomContainer):
         return self.bonded_interactions + self.nonbonded_interactions
 
     @property
-    def bonded_interactions(self):
+    def bonded_interactions(self) -> list:
         """
         Get the bonded interactions in the ``Universe``
 
@@ -240,7 +243,7 @@ class Universe(AtomContainer):
         return [pair[0] for pair in self.bonded_interaction_pairs]
 
     @property
-    def nonbonded_interactions(self):
+    def nonbonded_interactions(self) -> list:
         """
         Get the nonbonded interactions in the ``Universe``
 
@@ -253,7 +256,7 @@ class Universe(AtomContainer):
         return list(self._nonbonded_interactions)
 
     @property
-    def bonded_interaction_pairs(self):
+    def bonded_interaction_pairs(self) -> list:
         """
         Get the bonded interactions and the atoms they apply to
 
@@ -316,7 +319,7 @@ class Universe(AtomContainer):
         return self.n_bonded + self.n_nonbonded
 
     @property
-    def parameters(self):
+    def parameters(self) -> Parameters:
         """
         Get the parameters of the interactions that exist within the
         ``Universe``
@@ -332,7 +335,7 @@ class Universe(AtomContainer):
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
-    def volume(self):
+    def volume(self) -> float:
         """
         Get the volume of the ``Universe``
 
@@ -345,7 +348,7 @@ class Universe(AtomContainer):
         return np.prod(self.dimensions)
 
     @property
-    def element_list(self):
+    def element_list(self) -> 'list[str]':
         """
         The elements of the atoms in the ``Universe``
 
@@ -358,7 +361,7 @@ class Universe(AtomContainer):
         return [atom.element for atom in self.atoms]
 
     @property
-    def element_dict(self):
+    def element_dict(self) -> 'dict[str, Atom]':
         """
         Get the elements in the ``Universe`` and example ``Atom`` objects for
         each element
@@ -377,7 +380,7 @@ class Universe(AtomContainer):
         return {atom.element: atom for atom in self.atoms}
 
     @property
-    def element_lookup(self):
+    def element_lookup(self) -> 'dict[str, Atom]':
 
         """
         Get the elements by ID in the ``Universe``
@@ -396,7 +399,7 @@ class Universe(AtomContainer):
         return {atom.atom_type: atom.element for atom in self.atoms}
 
     @property
-    def atoms(self):
+    def atoms(self) -> 'list[Atom]':
         """
         Get a list of the atoms in the Universe
 
@@ -422,7 +425,7 @@ class Universe(AtomContainer):
         return len(self.atoms)
 
     @property
-    def molecule_list(self):
+    def molecule_list(self) -> 'list[Molecule]':
         """
         Get a list of the ``Molecule`` objects in the ``Universe``
 
@@ -477,7 +480,7 @@ class Universe(AtomContainer):
         return list(structures)
 
     @property
-    def top_level_structure_list(self) -> List[Structure]:
+    def top_level_structure_list(self) -> 'list[Structure]':
 
         """
         Get a `list` of the top level ``Structure`` objects that exist in the
