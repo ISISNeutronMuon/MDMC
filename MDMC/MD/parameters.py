@@ -187,7 +187,7 @@ class Parameter:
         self._interactions.append(weakref.ref(interaction))
 
     @property
-    def tie(self) -> Union(float, None):
+    def tie(self) -> Union[float, None]:
         """
         Get the ``value`` of a the ``Parameter`` that this ``Parameter`` is tied
         to
@@ -324,7 +324,7 @@ class Parameters(dict):
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
-    def __getitem__(self, key: str) -> Union(Parameter, List[Parameter]):
+    def __getitem__(self, key: str) -> Union[Parameter, List[Parameter]]:
         try:
             return super().__getitem__(key)
         except KeyError as error:
@@ -479,7 +479,7 @@ class Parameters(dict):
 
         return self.filter(lambda p: p.functions_name == function_name)
 
-    def filter_atom_attribute(self, attribute: str, value: Union(str, float)) -> Parameters:
+    def filter_atom_attribute(self, attribute: str, value: Union[str, float]) -> Parameters:
         """
         Filters based on the attribute of ``Atom`` objects which have each
         ``Parameter`` applied to them

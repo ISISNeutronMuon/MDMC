@@ -10,7 +10,7 @@ import weakref
 from MDMC.common.units import UnitFloat, unit_array
 
 
-def unit_decorator(unit: Union(str, None)) -> Callable:
+def unit_decorator(unit: Union[str, None]) -> Callable:
     """
     Decorates ``property.setter`` methods to add units
 
@@ -76,7 +76,7 @@ def unit_decorator(unit: Union(str, None)) -> Callable:
     return decorator
 
 
-def unit_decorator_getter(unit: Union(str, None)) -> Callable:
+def unit_decorator_getter(unit: Union[str, None]) -> Callable:
     """
     Decorates ``property.getter`` methods to add units
 

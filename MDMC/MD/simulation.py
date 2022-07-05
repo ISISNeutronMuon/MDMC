@@ -179,7 +179,7 @@ class Universe(AtomContainer):
         return self._dimensions
 
     @dimensions.setter
-    def dimensions(self, dimensions: Union(float, list, tuple, np.ndarray)):
+    def dimensions(self, dimensions: Union[float, list, tuple, np.ndarray]):
 
         if isinstance(dimensions, float):
             if dimensions <= 0:

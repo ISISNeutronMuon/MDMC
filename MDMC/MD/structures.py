@@ -71,8 +71,8 @@ class Structure(ABC):
     _ID_generator = count(start=1, step=1)
 
     def __init__(self,
-                 position: Union('list[float]', 'tuple[float]', np.ndarray),
-                 velocity: Union('list[float]', 'tuple[float]', np.ndarray),
+                 position: Union['list[float]', 'tuple[float]', np.ndarray],
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray],
                  name: str):
 
         self.ID = self._generate_ID()
@@ -145,7 +145,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def universe(self) -> Union('Universe', None):
+    def universe(self) -> Union['Universe', None]:
 
         """
         Get the ``Universe`` to which the ``Structure`` belongs
@@ -158,7 +158,7 @@ class Structure(ABC):
 
         raise NotImplementedError
 
-    def translate(self, displacement: Union(tuple, np.ndarray)):
+    def translate(self, displacement: Union[tuple, np.ndarray]):
 
         """
         Translate the structural unit by the specified displacement
@@ -274,7 +274,7 @@ class Structure(ABC):
             return self.parent.top_level_structure
         return self
 
-    def copy(self, position: Union('list[float]', 'tuple[float]', np.ndarray)) -> Structure:
+    def copy(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> Structure:
 
         """
         Copies the structural unit and sets the ``position``
@@ -339,7 +339,7 @@ class Structure(ABC):
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
     def valid_position(self,
-                       position: Union('list[float]', 'tuple[float]', np.ndarray) = None) -> bool:
+                       position: Union['list[float]', 'tuple[float]', np.ndarray] = None) -> bool:
 
         """
         Checks if the specified ``position`` is within the bounds of the
@@ -427,8 +427,8 @@ class CompositeStructure(Structure, AtomContainer):
     """
 
     def __init__(self,
-                 position: Union('list[float]', 'tuple[float]', np.ndarray),
-                 velocity: Union('list[float]', 'tuple[float]', np.ndarray),
+                 position: Union['list[float]', 'tuple[float]', np.ndarray],
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray],
                  name: str):
 
         super().__init__(position, velocity, name)
@@ -543,7 +543,7 @@ class CompositeStructure(Structure, AtomContainer):
                                              in self.atoms])
 
     @property
-    def universe(self) -> Union(Universe, None):
+    def universe(self) -> Union[Universe, None]:
 
         """
         Get or set the ``Universe`` to which the ``CompositeStructure``
@@ -758,9 +758,9 @@ class Atom(Structure):
     """
 
     def __init__(self, element: str,
-                 position: Union('list[float]', 'tuple[float]', np.ndarray)
+                 position: Union['list[float]', 'tuple[float]', np.ndarray]
                  = (0., 0., 0.),
-                 velocity: Union('list[float]', 'tuple[float]', np.ndarray)
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray]
                  = (0., 0., 0.),
                  charge: float = None, **settings):
 
@@ -876,7 +876,7 @@ class Atom(Structure):
         return [self]
 
     @property
-    def universe(self) -> Union(Universe, None):
+    def universe(self) -> Union[Universe, None]:
 
         """
         Get the ``Universe`` to which the ``Atomm`` belongs
@@ -907,7 +907,7 @@ class Atom(Structure):
             self._universe = None
 
     @property
-    def charge(self) -> Union(float, None):
+    def charge(self) -> Union[float, None]:
 
         """
         Get or set the charge in ``e`` if one has been applied to the ``Atom``
@@ -1072,7 +1072,7 @@ class Atom(Structure):
 
         return self._bonded_interaction_pairs
 
-    def copy(self, position: Union('list[float]', 'tuple[float]', np.ndarray)) -> Atom:
+    def copy(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> Atom:
         # pylint:disable=useless-super-delegation
         # Docstring specific to Atom
         """
@@ -1264,8 +1264,8 @@ class Molecule(CompositeStructure):
     """
 
     def __init__(self,
-                 position: Union('list[float]', 'tuple[float]', np.ndarray) = None,
-                 velocity: Union('list[float]', 'tuple[float]', np.ndarray) = (0, 0, 0),
+                 position: Union['list[float]', 'tuple[float]', np.ndarray] = None,
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray] = (0, 0, 0),
                  name = None,
                  **settings: dict):
 
@@ -1295,7 +1295,7 @@ class Molecule(CompositeStructure):
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position: Union('list[float]', 'tuple[float]', np.ndarray)):
+    def position(self, position: Union['list[float]', 'tuple[float]', np.ndarray]):
 
         self._position = position
         self._set_subunit_positions()

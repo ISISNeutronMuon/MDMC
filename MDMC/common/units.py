@@ -624,13 +624,13 @@ class UnitFloat(float):
     immaterial as no quantity which possesses units is complex.
     """
 
-    def __new__(cls, value: float, unit: Union(Unit, str)):
+    def __new__(cls, value: float, unit: Union[Unit, str]):
 
         if value is None:
             return None
         return float.__new__(cls, value)
 
-    def __init__(self, value: float, unit: Union(Unit, str)):
+    def __init__(self, value: float, unit: Union[Unit, str]):
 
         float.__init__(value)
         self.unit = unit

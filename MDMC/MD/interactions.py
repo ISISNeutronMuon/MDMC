@@ -144,7 +144,7 @@ class Interaction(ABC):
         self._function = value
 
     @property
-    def function_name(self) -> Union(str, None):
+    def function_name(self) -> Union[str, None]:
         """
         Get the name of the ``InteractionFunction`` belonging to the
         ``Interaction``
@@ -886,7 +886,7 @@ class BondedInteraction(Interaction):
         return {atom.atom_type for atom_tuple in self.atoms for atom in atom_tuple}
 
     @property
-    def universe(self) -> Union('Universe', None):
+    def universe(self) -> Union['Universe', None]:
         """
         Get the ``Universe`` to which the ``BondedInteraction`` belongs
 
@@ -902,7 +902,7 @@ class BondedInteraction(Interaction):
         except IndexError:
             return None
 
-    def element_list(self) -> Union(list, None):
+    def element_list(self) -> Union[list, None]:
         """
         Get a `list` of the elements for which the ``BondedInteraction`` applies
 
