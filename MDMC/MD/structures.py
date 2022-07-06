@@ -104,7 +104,7 @@ class Structure(ABC):
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position: np.ndarray):
+    def position(self, position: np.ndarray) -> None:
 
         self._position = position
 
@@ -123,7 +123,7 @@ class Structure(ABC):
 
     @velocity.setter
     @unit_decorator(unit=units.LENGTH / units.TIME)
-    def velocity(self, velocity: np.ndarray):
+    def velocity(self, velocity: np.ndarray) -> None:
 
         self._velocity = velocity
 
@@ -158,7 +158,7 @@ class Structure(ABC):
 
         raise NotImplementedError
 
-    def translate(self, displacement: Union[tuple, np.ndarray]):
+    def translate(self, displacement: Union[tuple, np.ndarray]) -> None:
 
         """
         Translate the structural unit by the specified displacement
@@ -330,7 +330,7 @@ class Structure(ABC):
             raise AttributeError("This structure has no parent")
         return self.position - self.parent.get_center_of_mass()
 
-    def _added_to_structure(self):
+    def _added_to_structure(self) -> None:
 
         """
         Method is called if it becomes subunit of another ``Structure``
@@ -517,13 +517,13 @@ class CompositeStructure(Structure, AtomContainer):
 
     @property
     @abstractmethod
-    def nonbonded_interactions(self):
+    def nonbonded_interactions(self) -> list[Interaction]:
 
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def bonded_interaction_pairs(self):
+    def bonded_interaction_pairs(self) -> list[Interaction]:
 
         raise NotImplementedError
 
@@ -562,7 +562,7 @@ class CompositeStructure(Structure, AtomContainer):
             return self._universe
 
     @universe.setter
-    def universe(self, value: Universe):
+    def universe(self, value: Universe) -> None:
 
         try:
             self._universe = weakref.ref(value)
@@ -591,7 +591,7 @@ class CompositeStructure(Structure, AtomContainer):
         return self._structure_list
 
     @structure_list.setter
-    def structure_list(self, value: 'list[Structure]'):
+    def structure_list(self, value: 'list[Structure]') -> None:
 
         self._structure_list = value
 
@@ -644,7 +644,7 @@ class CompositeStructure(Structure, AtomContainer):
             composite.rotate(x=rotation[0], y=rotation[1], z=rotation[2])
         return composite
 
-    def _set_subunit_positions(self):
+    def _set_subunit_positions(self) -> None:
 
         """
         Sets the position of all subunits in the global frame in units of
@@ -671,7 +671,7 @@ class CompositeStructure(Structure, AtomContainer):
             weighted_positions += (atom.position * atom.mass)
         return weighted_positions / mass
 
-    def _calc_subunit_position_in_CoM_frame(self):
+    def _calc_subunit_position_in_CoM_frame(self) -> None:
 
         """
         Calculate the position of all subunits in the
@@ -683,7 +683,7 @@ class CompositeStructure(Structure, AtomContainer):
         CoM = self._calc_CoM()
         self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
-    def rotate(self, x: float = 0., y: float = 0., z: float = 0.):
+    def rotate(self, x: float = 0., y: float = 0., z: float = 0.) -> None:
 
         """
         Rotates the ``CompositeStructure`` around its center of mass
@@ -893,7 +893,7 @@ class Atom(Structure):
             return self._universe
 
     @universe.setter
-    def universe(self, value: Universe):
+    def universe(self, value: Universe) -> None:
 
         try:
             self._universe = weakref.ref(value)
@@ -954,7 +954,7 @@ class Atom(Structure):
 
     @charge.setter
     @unit_decorator(unit=units.CHARGE)
-    def charge(self, value: float):
+    def charge(self, value: float) -> None:
 
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
@@ -998,7 +998,7 @@ class Atom(Structure):
 
     @mass.setter
     @unit_decorator(unit=units.MASS)
-    def mass(self, mass: float):
+    def mass(self, mass: float) -> None:
 
         self._mass = mass
 
@@ -1022,7 +1022,7 @@ class Atom(Structure):
         return self._atom_type
 
     @atom_type.setter
-    def atom_type(self, value: int):
+    def atom_type(self, value: int) -> None:
 
         if self._atom_type:
             raise AttributeError('Can\'t change atom_type once it has been set')
@@ -1125,7 +1125,7 @@ class Atom(Structure):
 
         return super().copy(position)
 
-    def add_interaction(self, interaction: Interaction, from_interaction: bool = False):
+    def add_interaction(self, interaction: Interaction, from_interaction: bool = False) -> None:
 
         """
         Adds an interaction to the ``Atom``
@@ -1158,7 +1158,7 @@ class Atom(Structure):
             if interaction not in self.nonbonded_interactions:
                 self._nonbonded_interactions.append(interaction)
 
-    def copy_interactions(self, atom: Atom, memo: dict = None):
+    def copy_interactions(self, atom: Atom, memo: dict = None) -> None:
 
         """
         This replicates the interactions from ``self`` for ``Atom``, but with
@@ -1278,7 +1278,7 @@ class Molecule(CompositeStructure):
         super().__init__(position, velocity, name)
 
     @property
-    def position(self):
+    def position(self) -> np.ndarray:
 
         """
         Get or set the position of the center of mass of the ``Molecule`` in
@@ -1295,7 +1295,7 @@ class Molecule(CompositeStructure):
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position: Union['list[float]', 'tuple[float]', np.ndarray]):
+    def position(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> None:
 
         self._position = position
         self._set_subunit_positions()
@@ -1442,7 +1442,7 @@ class BoundingBox:
 
     @min.setter
     @unit_decorator(unit=units.LENGTH)
-    def min(self, value: np.ndarray):
+    def min(self, value: np.ndarray) -> None:
 
         self._min = value
 
@@ -1462,7 +1462,7 @@ class BoundingBox:
 
     @max.setter
     @unit_decorator(unit=units.LENGTH)
-    def max(self, value: np.ndarray):
+    def max(self, value: np.ndarray) -> None:
 
         self._max = value
 
@@ -1503,7 +1503,7 @@ def filter_atoms(atoms: 'list[Atom]', predicate: Callable) -> 'list[Atom]':
     return list(filter(predicate, atoms))
 
 
-def filter_atoms_element(atoms: 'list[Atom]', element: str):
+def filter_atoms_element(atoms: 'list[Atom]', element: str) -> 'list[Atom]':
 
     """
     Filters a list of atoms based on the atomic element

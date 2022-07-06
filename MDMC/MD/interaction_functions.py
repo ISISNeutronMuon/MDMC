@@ -13,7 +13,7 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import functools
 from itertools import zip_longest
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
@@ -53,7 +53,7 @@ class InteractionFunction:
                 setattr(self, parameter.type, parameter)
         self.parameters = parameters
 
-    def __str__(self):
+    def __str__(self) -> str:
 
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
                                for p in self.parameters.values()]).strip(',')
@@ -111,7 +111,7 @@ class InteractionFunction:
 
         return self.__class__.__name__
 
-    def set_parameters_interactions(self, interaction: 'Interaction'):
+    def set_parameters_interactions(self, interaction: 'Interaction') -> None:
         """
         Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
 
@@ -126,7 +126,7 @@ class InteractionFunction:
             self.parameters[parameter].interactions = interaction
 
 
-def inter_func_decorator(*parameter_units):
+def inter_func_decorator(*parameter_units) -> Callable:
     """
     Decorates a method to add units to all positional and any relevant keyword
     arguments

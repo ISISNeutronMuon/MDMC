@@ -651,13 +651,13 @@ class UnitFloat(float):
         return self._unit
 
     @unit.setter
-    def unit(self, value: float):
+    def unit(self, value: float) -> None:
 
         if not (isinstance(value, str) or value is None):
             raise TypeError('unit must be a string')
         self._unit = Unit(value)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict) -> None:
         """
         Copies the ``UnitFloat`` and all attributes
 
@@ -722,7 +722,7 @@ class UnitNDArray(np.ndarray):
         self.unit = getattr(obj, 'unit', None)
 
     @property
-    def unit(self):
+    def unit(self) -> None:
         """
         Get or set the ``unit``
 
@@ -756,7 +756,7 @@ class UnitNDArray(np.ndarray):
             return super().__str__()
 
 
-def unit_array(obj, unit, dtype=None):
+def unit_array(obj, unit: Union[Unit, str], dtype=None) -> UnitNDArray:
     """
     Helper function for creating a ``UnitNDArray`` from an ``array`` or any
     nested sequence

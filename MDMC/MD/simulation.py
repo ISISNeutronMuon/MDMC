@@ -5,7 +5,7 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from typing import Dict, Union, TYPE_CHECKING
+from typing import Union, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -25,6 +25,8 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 
 if TYPE_CHECKING:
     from MDMC.MD.structures import Molecule, Atom
+    from MDMC.MD.interactions import Interaction
+    from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -136,12 +138,12 @@ class Universe(AtomContainer):
         print(
             f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
-    def __str__(self):
+    def __str__(self) -> str:
 
         return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
                 f'{self.n_nonbonded} nonbonded interactions, and dimensions of {self.dimensions}')
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if id(other) == id(self):
             return True
         if isinstance(other, self.__class__):
@@ -179,7 +181,7 @@ class Universe(AtomContainer):
         return self._dimensions
 
     @dimensions.setter
-    def dimensions(self, dimensions: Union[float, list, tuple, np.ndarray]):
+    def dimensions(self, dimensions: Union[float, list, tuple, np.ndarray]) -> None:
 
         if isinstance(dimensions, float):
             if dimensions <= 0:
@@ -451,7 +453,7 @@ class Universe(AtomContainer):
         return len(self.molecule_list)
 
     @property
-    def structure_list(self):
+    def structure_list(self) -> None:
         """
         Get a `list` of all ``Structure`` objects that exist in the
         ``Universe``.  This includes all ``Structure`` that are a subunit
@@ -503,7 +505,7 @@ class Universe(AtomContainer):
         return top_level_structures
 
     @property
-    def equivalent_top_level_structures_dict(self) -> Dict[Structure, int]:
+    def equivalent_top_level_structures_dict(self) -> 'dict[Structure, int]':
 
         """
         Get a `dict` of equivalent top level ``Structure`` objects that
@@ -535,7 +537,7 @@ class Universe(AtomContainer):
 
     @property
     @mod_docstring(_FF_DOCSTRING)
-    def force_fields(self):
+    def force_fields(self) -> None:
         """
         Get or set the ``ForceField`` acting on the Universe
 
@@ -551,7 +553,7 @@ class Universe(AtomContainer):
         return self._force_fields
 
     @property
-    def atom_types(self):
+    def atom_types(self) -> 'list[Atom]':
         """
         Get the atom types of atoms in the ``Universe``
 
@@ -564,7 +566,7 @@ class Universe(AtomContainer):
         return self._atom_types
 
     @property
-    def atom_type_interactions(self):
+    def atom_type_interactions(self) -> 'dict[int, list[Interaction]]':
         """
         Get the atom types and the interactions for each atom type
 
@@ -580,7 +582,7 @@ class Universe(AtomContainer):
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
-    def density(self):
+    def density(self) -> float:
         """
         Get the mass density of the ``Universe``
 
@@ -594,7 +596,7 @@ class Universe(AtomContainer):
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
-    def solvent_density(self):
+    def solvent_density(self) -> float:
         """
         Get the mass density of a solvent added using ``solvate()``
 
@@ -606,7 +608,7 @@ class Universe(AtomContainer):
 
         return self._solvent_density
 
-    def _update_atom_types(self, atom):
+    def _update_atom_types(self, atom: 'Atom') -> None:
         """
         Adds the atom to ``atom_types`` `dict`
 
@@ -652,7 +654,7 @@ class Universe(AtomContainer):
             atom.atom_type = atom_type
         self._atom_types[atom_type].append(atom)
 
-    def _update_atom_type_interactions(self, key, atom_type):
+    def _update_atom_type_interactions(self, key: tuple, atom_type: int) -> None:
         """
         Adds a new ``key:atom_type`` to ``atom_type_interactions``, if the
         ``key`` does not already exist
@@ -686,8 +688,9 @@ class Universe(AtomContainer):
             raise TypeError(msg)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_structure(self, structure, force_field=None,
-                      center=False):
+    def add_structure(self, structure: Union[Structure, int],
+                      force_field: str = None,
+                      center: bool = False) -> None:
         """
         Adds a single ``Structure`` to the ``Universe``, with optional
         ``ForceField`` applying only to that ``Structure``
@@ -719,7 +722,7 @@ class Universe(AtomContainer):
 
     @mod_docstring(_FF_DOCSTRING)
     def fill(self, structures: Structure, force_field: str = None,
-             num_density: float = None, num_struc_units: int = None):
+             num_density: float = None, num_struc_units: int = None) -> None:
         """
         A liquid-like filling of the ``Universe`` independent of existing atoms
 
@@ -801,7 +804,9 @@ class Universe(AtomContainer):
             self.add_structure(new_unit)
 
     @mod_docstring(_FF_DOCSTRING)
-    def add_force_field(self, force_field, *interactions, **settings):
+    def add_force_field(self, force_field: str,
+                        *interactions: 'Interaction',
+                        **settings: dict) -> None:
         """
         Adds a force field to the specified ``interactions``.  If no
         ``interactions`` are passed, the force field is applied to all
@@ -860,7 +865,8 @@ class Universe(AtomContainer):
         except AttributeError:
             pass
 
-    def add_bonded_interaction_pairs(self, *bonded_interaction_pairs):
+    def add_bonded_interaction_pairs(self, 
+                                     *bonded_interaction_pairs: 'tuple[Interaction, Atom]') -> None:
         """
         Adds one or more interaction pairs to the ``Universe``
 
@@ -873,7 +879,8 @@ class Universe(AtomContainer):
 
         self._bonded_interaction_pairs.update(bonded_interaction_pairs)
 
-    def add_nonbonded_interaction(self, *nonbonded_interactions):
+    def add_nonbonded_interaction(self,
+                                  *nonbonded_interactions: 'tuple[Interaction, Atom]') -> None:
         # ignore line too long linting as it is necessary for URL formatting
         # pylint: disable=line-too-long
         """
@@ -897,7 +904,7 @@ class Universe(AtomContainer):
         self._nonbonded_interactions.update(nonbonded_interactions)
 
     @property
-    def nbis_by_atom_type_pairs(self):
+    def nbis_by_atom_type_pairs(self) -> 'dict[tuple[int], list[Interaction]]':
         """
         Generates a `dict` of all nonbonded interactions possessed by all
         combinations of ``atom_type`` pairs in the ``Universe``.
@@ -936,7 +943,7 @@ class Universe(AtomContainer):
 
         return pairs_interactions
 
-    def _check_out_of_bounds(self, position):
+    def _check_out_of_bounds(self, position: Union[list, np.ndarray]) -> bool:
         """
         Checks whether a ``position`` lies outside the bounds of the
         ``Universe``
@@ -956,7 +963,9 @@ class Universe(AtomContainer):
         return any(position > self.dimensions) or any(position < [0, 0, 0])
 
     @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
-    def solvate(self, density, tolerance=1., solvent='SPCE', **settings):
+    def solvate(self, density: float,
+                tolerance: float = 1., solvent: str = 'SPCE',
+                **settings: dict) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
         coordinates.
@@ -1155,7 +1164,7 @@ class KSpaceSolver:
         The relative RMS error in per-atom forces
     """
 
-    def __init__(self, **settings):
+    def __init__(self, **settings: dict):
 
         self.accuracy = settings.get('accuracy')
 
@@ -1198,7 +1207,7 @@ class PPPM(KSpaceSolver):
             The relative RMS error in per-atom forces
     """
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """
         Two KSpaceSolvers are equal if their __dict__ are equal
         """
@@ -1210,7 +1219,7 @@ class PPPM(KSpaceSolver):
                 return False
         return True
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
 
         return not self.__eq__(other)
 
@@ -1236,13 +1245,13 @@ class ConstraintAlgorithm:
         The accuracy (tolerance) of the applied constraints
     """
 
-    def __init__(self, accuracy, max_iterations):
+    def __init__(self, accuracy: float, max_iterations: int):
 
         self.accuracy = accuracy
         self.max_iterations = max_iterations
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Get the name of the class
 
@@ -1255,7 +1264,7 @@ class ConstraintAlgorithm:
         return self.__class__.__name__
 
     @property
-    def max_iterations(self):
+    def max_iterations(self) -> int:
         """
         Get or set the maximum number of iterations that can be used when
         calculating the additional force that is required to constrain the atoms
@@ -1270,7 +1279,7 @@ class ConstraintAlgorithm:
         return self._max_iterations
 
     @max_iterations.setter
-    def max_iterations(self, value):
+    def max_iterations(self, value: int) -> None:
 
         self._max_iterations = int(value)
 
@@ -1390,7 +1399,7 @@ class Simulation:
         print(setup_msg)
 
     @property
-    def time_step(self):
+    def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
 
@@ -1404,11 +1413,11 @@ class Simulation:
 
     @time_step.setter
     @unit_decorator(unit=units.TIME)
-    def time_step(self, value):
+    def time_step(self, value: float) -> None:
         self._time_step = value
 
     @property
-    def traj_step(self):
+    def traj_step(self) -> int:
         """
         Get or set the number of simulation steps between saving the
         ``Trajectory``
@@ -1423,10 +1432,10 @@ class Simulation:
         return self._traj_step
 
     @traj_step.setter
-    def traj_step(self, value):
+    def traj_step(self, value: int) -> None:
         self._traj_step = value
 
-    def _setup(self):
+    def _setup(self) -> None:
         """
         Creates a universe within the ``MDEngine`` with the equivalent
         configuration and topology to ``self.universe`` and defines the
@@ -1437,7 +1446,7 @@ class Simulation:
         self.engine.setup_simulation(**self.settings)
 
     def minimize(self, n_steps: int, verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings):
+                 work_dir: str = None, **settings: dict) -> None:
         """
         Minimizes the total potential energy of the simulated system by
         modifying the positions of the constituent atoms until one of the
@@ -1482,7 +1491,7 @@ class Simulation:
         verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings):
+            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
         """
         Runs the MD simulation for the specified number of steps. Trajectories
         for the simulation are only saved when ``equilibration`` is `False`.
@@ -1523,7 +1532,7 @@ class Simulation:
         verbose_manager.finish(f"{process.capitalize()}")
 
     @property
-    def trajectory(self):
+    def trajectory(self) -> Union['Trajectory', None]:
         """
         The ``Trajectory`` produced by the most recent production run of the
         ``Simulation``.

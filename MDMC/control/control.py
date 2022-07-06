@@ -318,7 +318,7 @@ class Control:
 
         print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
-    def __str__(self):
+    def __str__(self) -> str:
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
 
         # plural adds "s" to end of "parameter" if there is more than one parameter
@@ -326,7 +326,7 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
-    def refine(self, n_steps: int):
+    def refine(self, n_steps: int) -> None:
         """
         Refines the specified potential parameters
 
@@ -400,7 +400,7 @@ class Control:
 
         verbose_manager.finish("Refinement")
 
-    def equilibrate(self):
+    def equilibrate(self) -> None:
         """
         Run molecular dynamics to equilibrate the ``Universe``.
         """
@@ -408,7 +408,7 @@ class Control:
         self.simulation.run(self.equilibration_steps, equilibration=True,
                             verbose=False)
 
-    def step(self):
+    def step(self) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
@@ -441,7 +441,7 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
-    def _print_data(self):
+    def _print_data(self) -> None:
 
         with pd.option_context('display.max_colwidth', 12,
                                'display.precision', 5,
@@ -452,7 +452,7 @@ class Control:
             data = '{:4d}'.format(n_step) + ''.join(output)
             print(data)
 
-    def _print_header(self):
+    def _print_header(self) -> None:
 
         def format_column(column):
             column = column if len(column) < 13 else column[:9] + '...'
@@ -480,14 +480,14 @@ class Control:
 
         return FoM_value
 
-    def _run_MD(self):
+    def _run_MD(self) -> None:
         """
         Run a molecular dynamics simulation
         """
 
         self.simulation.run(self.MD_steps, verbose=False)
 
-    def _update_engine_parameters(self):
+    def _update_engine_parameters(self) -> None:
         """
         Update the force field parameters of the MD engine
         """
@@ -523,7 +523,7 @@ class Control:
         return observable
 
     @staticmethod
-    def _create_empty_observable(exp_observable, use_FFT: bool = True) -> Observable:
+    def _create_empty_observable(exp_observable: Observable, use_FFT: bool = True) -> Observable:
         """
         Creates a ``Observable`` without data but with independent variables
         specified from another ``Observable``.  This is a placeholder in which
@@ -552,7 +552,7 @@ class Control:
 
     def _calculate_observables(self,
                                simulation: Simulation,
-                               observable_pairs: 'list[ObservablePair]'):
+                               observable_pairs: 'list[ObservablePair]') -> None:
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
@@ -808,7 +808,7 @@ class Control:
         observable.independent_variables = indep_var_uniform
         return observable
 
-    def _validate_energy(self, obs: Observable):
+    def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
         it does not have a ``validate_energy`` function itself

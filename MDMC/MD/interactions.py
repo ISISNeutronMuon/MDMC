@@ -2,7 +2,7 @@
 
  ``Interaction`` is the abstract base class from which all interactions have to be derived.."""
 
-from typing import Set, Union, TYPE_CHECKING
+from typing import NoReturn, Set, Union, TYPE_CHECKING
 import weakref
 from abc import ABC, abstractmethod
 from itertools import permutations
@@ -88,23 +88,23 @@ class Interaction(ABC):
         self.function = settings.get('function', None)
         self.name = self.__class__.__name__
 
-    def __deepcopy__(self, memo=None) -> AttributeError:
+    def __deepcopy__(self, memo=None) -> NoReturn:
+        """
+        Interactions cannot be copied
+        """
+
+        raise AttributeError('Interactions cannot be deepcopied')
+
+    def __copy__(self) -> NoReturn:
         """
         Interactions cannot be copied
         """
 
         raise AttributeError('Interactions cannot be copied')
 
-    def __copy__(self) -> AttributeError:
-        """
-        Interactions cannot be copied
-        """
-
-        self.__deepcopy__()
-
     @property
     @abstractmethod
-    def atoms(self):
+    def atoms(self) -> Union['Atom', 'list[Atom]']:
         """
         Get the atoms on which the ``Interaction`` is applied
         """
@@ -260,11 +260,11 @@ class NonBondedInteraction(Interaction):
                     self.atom_types)
 
     @abstractmethod
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
 
         raise NotImplementedError
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
 
         return not self == other
 
@@ -319,7 +319,7 @@ class NonBondedInteraction(Interaction):
             return self._universe
 
     @universe.setter
-    def universe(self, value):
+    def universe(self, value: 'Universe') -> None:
 
         try:
             self._universe = weakref.ref(value)
@@ -341,7 +341,7 @@ class NonBondedInteraction(Interaction):
 
     @cutoff.setter
     @unit_decorator(unit=units.LENGTH)
-    def cutoff(self, value: float):
+    def cutoff(self, value: float) -> None:
 
         self._cutoff = value
 
@@ -577,7 +577,7 @@ class Coulombic(NonBondedInteraction):
     # __hash__
     __hash__ = NonBondedInteraction.__hash__
 
-    def __init__(self, universe: 'Universe' = None, **settings):
+    def __init__(self, universe: 'Universe' = None, **settings: dict):
         # pylint: disable=not-callable
         # as it raises a false positive on self.add_atoms
 
@@ -639,7 +639,7 @@ class Coulombic(NonBondedInteraction):
 
         return len(self.atoms)
 
-    def __getitem__(self, key) -> tuple:
+    def __getitem__(self, key: int) -> tuple:
         """
         Returns
         -------
@@ -774,7 +774,7 @@ class BondedInteraction(Interaction):
 
         return len(self.atoms)
 
-    def __getitem__(self, key) -> tuple:
+    def __getitem__(self, key: int) -> tuple:
         """
         Returns
         -------
@@ -840,7 +840,7 @@ class BondedInteraction(Interaction):
         return self._atoms
 
     @atoms.setter
-    def atoms(self, atom_tuples: 'list[tuple[Atom]]'):
+    def atoms(self, atom_tuples: 'list[tuple[Atom]]') -> None:
 
         # Check for duplicate tuples in list
         self._check_duplicates(atom_tuples)
@@ -919,7 +919,7 @@ class BondedInteraction(Interaction):
             return None
 
     @staticmethod
-    def _validate_atoms(atoms: list, n_atoms: int):
+    def _validate_atoms(atoms: list, n_atoms: int) -> None:
         """
         Validates that the correct number of atoms have been passed to the
         interaction
@@ -941,7 +941,7 @@ class BondedInteraction(Interaction):
         if len(atoms) not in n_atoms:
             raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
-    def add_atoms(self, *atoms, **settings):
+    def add_atoms(self, *atoms, **settings) -> None:
         """
         Add atoms which are all involved in one example of this interaction
 
@@ -974,7 +974,7 @@ class BondedInteraction(Interaction):
         if self.universe:
             self._add_to_universe(self.universe, atoms)
 
-    def _check_duplicates(self, structs: list):
+    def _check_duplicates(self, structs: list) -> None:
         """
         Checks for duplicates ``Structure``
 
@@ -1003,7 +1003,7 @@ class BondedInteraction(Interaction):
         if len(set(equivalent_structs)) != len(equivalent_structs):
             raise ValueError(err_msg)
 
-    def _get_equivalent_structures(self, structs: list):
+    def _get_equivalent_structures(self, structs: list) -> 'list[tuple[Atom]]':
         """
         Returns
         -------
@@ -1013,7 +1013,7 @@ class BondedInteraction(Interaction):
 
         return structs + [tuple(reversed(atom_tuple)) for atom_tuple in structs]
 
-    def _add_to_universe(self, universe: 'Universe', tpl: 'tuple[Atom]'):
+    def _add_to_universe(self, universe: 'Universe', atoms: 'tuple[Atom]') -> None:
         """
         Adds interaction and atom tuple to ``universe``
 
@@ -1025,7 +1025,7 @@ class BondedInteraction(Interaction):
             A `tuple` of ``Atom``
         """
 
-        universe.add_bonded_interaction_pairs((self, tpl))
+        universe.add_bonded_interaction_pairs((self, atoms))
 
 
 @repr_decorator('constrained')
@@ -1231,7 +1231,7 @@ class DihedralAngle(BondedInteraction):
         return super()._get_equivalent_structures(structs)
 
 
-def _add_atom_types(self, *atom_types: 'list[int]'):
+def _add_atom_types(self, *atom_types: 'list[int]') -> None:
     """
     Function for dynamically creating an ``add_atom_types`` method in
     ``Coulombic``
@@ -1246,7 +1246,7 @@ def _add_atom_types(self, *atom_types: 'list[int]'):
     self.atom_types.append(*atom_types)
 
 
-def _add_atoms(self, *atoms: 'list[Atom]'):
+def _add_atoms(self, *atoms: 'list[Atom]') -> None:
     """
     Function for dynamically creating an ``add_atoms`` method in ``Coulombic``
 

@@ -15,7 +15,7 @@ import re
 from collections.abc import Iterable
 from itertools import chain, count
 import operator
-from typing import Callable, Union, Any, Optional, List, TYPE_CHECKING
+from typing import Callable, NoReturn, Union, Any, Optional, List, TYPE_CHECKING
 import warnings
 import weakref
 
@@ -102,7 +102,7 @@ class Parameter:
 
     @value.setter
     @unit_decorator(unit=None)
-    def value(self, value: float):
+    def value(self, value: float) -> None:
 
         if hasattr(self, 'fixed') and self.fixed:
             warnings.warn("Unable to change fixed parameter")
@@ -133,7 +133,7 @@ class Parameter:
         return self._constraints
 
     @constraints.setter
-    def constraints(self, constraints: tuple):
+    def constraints(self, constraints: tuple) -> None:
 
         # Checks if constraints are a 2 element tuple of floats, that the
         # zeroeth element is less than or equal to the first, and that
@@ -169,7 +169,7 @@ class Parameter:
         return [interaction() for interaction in self._interactions]
 
     @interactions.setter
-    def interactions(self, interaction: 'Interaction'):
+    def interactions(self, interaction: 'Interaction') -> None:
 
         # Test if interaction is of the same type as any interactions already
         # stored
@@ -219,7 +219,7 @@ class Parameter:
 
         return bool(hasattr(self, 'tie') and self.tie is not None)
 
-    def set_tie(self, parameter: Parameter, expr: str):
+    def set_tie(self, parameter: Parameter, expr: str) -> None:
         """
         This ``ties`` the ``Parameter.value`` to the ``value`` of another
         ``Parameter``
@@ -264,7 +264,7 @@ class Parameter:
         self.__setattr__(key, value)
 
     @staticmethod
-    def validate_value(value: float, constraints: tuple):
+    def validate_value(value: float, constraints: tuple) -> None:
         """
         Validates the ``Parameter.value`` by testing if it is within the
         ``constraints``
@@ -319,7 +319,7 @@ class Parameters(dict):
             init_parameters = self._check_input(init_parameters)
             self.append(init_parameters)
 
-    def __setitem__(self, key, value) -> TypeError:
+    def __setitem__(self, key: str, value: Parameter) -> NoReturn:
         # disable this method to ensure parameter keys are always the parameter name
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
@@ -347,7 +347,7 @@ class Parameters(dict):
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
 
-    def append(self, parameters: Union["list[Parameter]", Parameter]):
+    def append(self, parameters: Union["list[Parameter]", Parameter]) -> None:
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
         with the parameter name as its key.
@@ -557,7 +557,7 @@ class Parameters(dict):
 
         return self.filter(check_structure_name)
 
-    def log_parameters(self):
+    def log_parameters(self) -> None:
         """Logs all Parameters by ID"""
 
         LOGGER = logging.getLogger(__name__)

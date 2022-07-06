@@ -457,7 +457,7 @@ def repr_decorator(attribute: str, *attributes: Optional[str]):
     return decorator
 
 
-def weakref_cache(maxsize=128):
+def weakref_cache(maxsize=128) -> Callable:
     """
     Weakref LRU cache to avoid memory leaks
 
