@@ -922,14 +922,11 @@ class Universe(AtomContainer):
                            if i <= j)
         # Create dict of interactions for each atom type pair
         for pair in atom_type_pairs:
-            pairs_interactions[pair] = []
-            for inter in self.interactions:
-                cond1 = (isinstance(inter, Dispersion)
-                         and pair in inter.atom_types)
-                cond2 = (isinstance(inter, Coulombic)
-                         and any(pair) in inter.atom_types)
-                if cond1 or cond2:
-                    pairs_interactions[pair].append(inter)
+            pairs_interactions[pair] = [inter for inter in self.interactions
+                                        if ((isinstance(inter, Dispersion)
+                                             and pair in inter.atom_types)) or
+                                            (isinstance(inter, Coulombic)
+                                             and any(elem in inter.atom_types for elem in pair))]
 
         return pairs_interactions
 
