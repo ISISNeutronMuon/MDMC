@@ -865,7 +865,7 @@ class Universe(AtomContainer):
         except AttributeError:
             pass
 
-    def add_bonded_interaction_pairs(self, 
+    def add_bonded_interaction_pairs(self,
                                      *bonded_interaction_pairs: 'tuple[Interaction, Atom]') -> None:
         """
         Adds one or more interaction pairs to the ``Universe``
