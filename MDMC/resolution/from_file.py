@@ -13,23 +13,20 @@ class FileResolution(Resolution):
     A `Resolution` subclass for applying resolution from file.
     """
 
-    def __init__(self, file_name, file_type, file_reader, dt):
+    def __init__(self, file_name: str, file_type: str, file_reader: str, dt: float):
         self.file_name = file_name
         self.resolution_function = _read_resolution_from_file(file_type,
                                                               file_reader,
                                                               file_name,
                                                               dt)['SQw']
 
-    # ignored=None is here as apply() must have a number of parameters matching
-    # that of the abstract method; however, file resolution requires fewer parameters
-    # than numerical resolution.
     def apply(self, FQt, t, Q):
         N_Q, N_T = np.shape(FQt)
         window = self._calculate_resolution_window(Q, t)
 
         return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
-    def _calculate_resolution_window(self, Q, t) -> np.ndarray:
+    def _calculate_resolution_window(self, Q: np.ndarray, t: np.ndarray) -> np.ndarray:
         """
         Calculate the resolution window in time from a self.resolution_function in the time
         domain. Normalise this window so that the sum over energy for each Q
@@ -64,7 +61,7 @@ class FileResolution(Resolution):
         return "Resolution" + str({'file': self.file_name})
 
 
-def _read_resolution_from_file(file_type, file_reader, file_name, dt):
+def _read_resolution_from_file(file_type: str, file_reader: str, file_name: str, dt: float) -> dict:
     """
     Reads resolution data for the specified ``data_type`` from file and interpolates it
     to give a dictionary of general resolution functions in the time domain for each dependent
