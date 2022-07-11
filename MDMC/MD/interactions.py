@@ -941,7 +941,7 @@ class BondedInteraction(Interaction):
         if len(atoms) not in n_atoms:
             raise TypeError(f"This interaction only accepts {n_atoms} atoms")
 
-    def add_atoms(self, *atoms, **settings) -> None:
+    def add_atoms(self, *atoms: 'Atom', **settings: dict) -> None:
         """
         Add atoms which are all involved in one example of this interaction
 

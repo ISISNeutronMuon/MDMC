@@ -317,7 +317,6 @@ class Structure(ABC):
         return self.position - self.parent.get_center_of_mass()
 
     def _added_to_structure(self) -> None:
-
         """
         Method is called if it becomes subunit of another ``Structure``
         """
@@ -370,7 +369,6 @@ class Structure(ABC):
 
     @property
     def bounding_box(self) -> BoundingBox:
-
         """
         Returns
         -------
@@ -405,7 +403,6 @@ class Structure(ABC):
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
                 'atoms')
 class CompositeStructure(Structure, AtomContainer):
-
     """
     Base class for structural units comprised of more than one ``Atom``
     """
@@ -419,7 +416,6 @@ class CompositeStructure(Structure, AtomContainer):
         self.universe = None
 
     def __deepcopy__(self, memo: dict) -> CompositeStructure:
-
         """
         Copies the ``CompositeStructure`` and all attributes, except ``ID``
         which is generated

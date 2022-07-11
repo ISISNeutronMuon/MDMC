@@ -391,7 +391,7 @@ class Unit(str):
         return numerator + ' / ' + denominator
 
     @staticmethod
-    def _parse_unit_string(unit_string: str) -> tuple[list[Unit]]:
+    def _parse_unit_string(unit_string: str) -> 'tuple[list[Unit]]':
         """
         Converts a ``Unit`` `str` into ``Unit`` objects
 

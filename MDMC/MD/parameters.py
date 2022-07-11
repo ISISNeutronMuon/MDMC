@@ -15,7 +15,7 @@ import re
 from collections.abc import Iterable
 from itertools import chain, count
 import operator
-from typing import Callable, NoReturn, Union, Any, Optional, List, TYPE_CHECKING
+from typing import Callable, NoReturn, Union, Any, Optional, TYPE_CHECKING
 import warnings
 import weakref
 
@@ -313,7 +313,7 @@ class Parameters(dict):
         An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
 
-    def __init__(self, init_parameters: Optional[Union[List[Parameter], Parameter]] = None):
+    def __init__(self, init_parameters: Optional[Union[Parameter, 'list[Parameter]']] = None):
         super().__init__()
         if init_parameters is not None:
             init_parameters = self._check_input(init_parameters)
@@ -324,7 +324,7 @@ class Parameters(dict):
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
-    def __getitem__(self, key: str) -> Union[Parameter, List[Parameter]]:
+    def __getitem__(self, key: str) -> Union[Parameter, 'list[Parameter]']:
         try:
             return super().__getitem__(key)
         except KeyError as error:
@@ -347,7 +347,7 @@ class Parameters(dict):
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
 
-    def append(self, parameters: Union["list[Parameter]", Parameter]) -> None:
+    def append(self, parameters: Union['list[Parameter]', Parameter]) -> None:
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
         with the parameter name as its key.
