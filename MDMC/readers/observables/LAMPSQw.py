@@ -1,7 +1,7 @@
 """Readers for dynamic data"""
 
-import numpy as np
 from typing import IO, Callable
+import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
 

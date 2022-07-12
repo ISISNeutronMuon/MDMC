@@ -1,7 +1,7 @@
 """Readers for dynamic data"""
 
-import numpy as np
 from typing import IO
+import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
 
@@ -25,7 +25,7 @@ class MantidSQw(SQwReader):
         File containing the errors on the dependent variables
     file_variables : file
         File containing the variables for each detector (group) ID
-    
+
     """
 
     def __init__(self, file_name: str) -> None:
@@ -44,8 +44,8 @@ class MantidSQw(SQwReader):
         self.file_variables = open(self.file_name, encoding='UTF-8')
         self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
 
-    def __exit__(self, exception_type, exception_value, traceback) -> None:  # Can this be refactored?
-        """Closes variable and detector files after parsing"""
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        """Closes variable and detector files after parsing""" # Can this be refactored?
 
         self.file_variables.close()
         self.file_detectors.close()

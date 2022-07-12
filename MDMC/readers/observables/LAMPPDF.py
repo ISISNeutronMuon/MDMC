@@ -1,6 +1,6 @@
 """Reader for pair distribution function data from LAMP's ascii files"""
 
-from typing import Tuple, BinaryIO
+from typing import BinaryIO
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import PDFReader
@@ -33,7 +33,8 @@ class LAMPPDF(PDFReader):
         no labels are specified, the column header in the data file is used as the label.
     """
 
-    def __init__(self, file_name: str, pdf_col: int = 3, partial_strings: 'list[Tuple]' = None) -> None:
+    def __init__(self, file_name: str, pdf_col: int = 3,
+                partial_strings: 'list[tuple]' = None) -> None:
         super().__init__(file_name)
         self.pdf_col = pdf_col
         self.partial_pdfs = {}

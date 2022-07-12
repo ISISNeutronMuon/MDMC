@@ -23,7 +23,7 @@ def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[Atom, N
 
     Parameters
     ----------
-    file : str 
+    file : str
         The file name of the configuration file
     docstring : bool, optional
         This will show the docstring (help) related to the type of configuration

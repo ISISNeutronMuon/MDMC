@@ -2,8 +2,8 @@
 
 from abc import abstractmethod, ABC
 
-import numpy as np
 from typing import Union, Any, BinaryIO
+import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
