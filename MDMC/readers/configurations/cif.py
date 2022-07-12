@@ -39,7 +39,7 @@ class CIF(ConfigurationReader):
 
     extension = 'cif'
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, file_name: str):
 
         super().__init__(file_name)
         self._atoms = None
@@ -52,6 +52,6 @@ class CIF(ConfigurationReader):
         self._atoms = ase_read_cif(self.file, **settings)
 
     @property
-    def atoms(self) -> 'Atom':
+    def atoms(self) -> 'list[Atom]':
 
         return self._atoms

@@ -28,7 +28,7 @@ class MantidSQw(SQwReader):
 
     """
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self.detector_IDs = None
         self.file_detectors = None
@@ -45,7 +45,7 @@ class MantidSQw(SQwReader):
         self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Closes variable and detector files after parsing""" # Can this be refactored?
+        """Closes variable and detector files after parsing"""
 
         self.file_variables.close()
         self.file_detectors.close()

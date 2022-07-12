@@ -18,7 +18,7 @@ class ConfigurationReaderFactory(ReaderFactory):
     """
 
     @staticmethod
-    def base_class() -> None:
+    def base_class() -> ConfigurationReader:
 
         return ConfigurationReader
 

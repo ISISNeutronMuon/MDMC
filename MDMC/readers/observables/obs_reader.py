@@ -2,12 +2,15 @@
 
 from abc import abstractmethod, ABC
 
-from typing import Union, Any, BinaryIO
+from typing import Union, Any, TYPE_CHECKING
 import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.readers.reader import Reader
+
+if TYPE_CHECKING:
+    from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('data')
 class ObservableReader(Reader):
@@ -18,7 +21,7 @@ class ObservableReader(Reader):
     ObservableReaders are created using ObservableReaderFactory
     """
 
-    def assign(self, observable: BinaryIO) -> None:
+    def assign(self, observable: 'Observable') -> None:
         # disable pylint warning about writing to the `Observable`
         #pylint: disable=protected-access
         """
@@ -52,7 +55,7 @@ class ObservableReader(Reader):
 
     @property
     @abstractmethod
-    def independent_variables(self) -> None:
+    def independent_variables(self) -> dict:
         """
         The independent variables
 
@@ -119,7 +122,7 @@ class SQwReader(ObservableReader, ABC):
     # pylint: disable=attribute-defined-outside-init
     # to avoid it flagging up on private attributes in getters
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self.SQw = None
         self.SQw_err = None
@@ -225,7 +228,7 @@ class SQwReader(ObservableReader, ABC):
 class PDFReader(ObservableReader, ABC):
     """Abstract base subclass that adds attributes & methods common to all PDF readers"""
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self.PDF = None
         self.PDF_err = None

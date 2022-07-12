@@ -17,7 +17,7 @@ class Reader(ABC):
         name of file to read
     """
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, file_name: str):
 
         self.file = None
         self.file_name = file_name

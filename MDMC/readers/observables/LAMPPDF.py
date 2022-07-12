@@ -1,10 +1,12 @@
 """Reader for pair distribution function data from LAMP's ascii files"""
 
-from typing import BinaryIO
+from typing import TYPE_CHECKING
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import PDFReader
 
+if TYPE_CHECKING:
+    from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 
 class LAMPPDF(PDFReader):
     """
@@ -34,13 +36,13 @@ class LAMPPDF(PDFReader):
     """
 
     def __init__(self, file_name: str, pdf_col: int = 3,
-                partial_strings: 'list[tuple]' = None) -> None:
+                partial_strings: 'list[tuple]' = None):
         super().__init__(file_name)
         self.pdf_col = pdf_col
         self.partial_pdfs = {}
         self.partial_strings = partial_strings
 
-    def assign(self, observable: BinaryIO) -> None:
+    def assign(self, observable: 'PairDistributionFunction') -> None:
         # disable pylint warning about writing to the `Observable`
         #pylint: disable=protected-access
         """

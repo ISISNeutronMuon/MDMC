@@ -1,6 +1,6 @@
 """Readers for dynamic data"""
 
-from typing import IO, Callable
+from typing import IO, Iterable
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
@@ -26,7 +26,7 @@ class LAMPSQw(SQwReader):
         File containing the errors on the dependent variables
     """
 
-    def __init__(self, file_name: str) -> None:
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self._Y_dim = None
         self._X_dim = None
@@ -136,7 +136,7 @@ class LAMPSQw(SQwReader):
         dep = self._get_data(file_split, self._Y_dim, self._X_dim)
         return dep
 
-    def _get_data(self, str_iter: Callable, *dimensions: float) -> np.ndarray:
+    def _get_data(self, str_iter: Iterable, *dimensions: float) -> np.ndarray:
         """
         Iterates over an iterator from a file and extracts the numerical values
         as data.

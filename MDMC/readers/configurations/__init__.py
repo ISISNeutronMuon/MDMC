@@ -8,9 +8,9 @@ from . import cif
 from . import conf_reader
 
 if TYPE_CHECKING:
-    from MDMC.MD.interactions import Atom
+    from MDMC.MD.structures import Atom
 
-def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[Atom, None]':
+def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[list[Atom], None]':
     """
     Reads a configuration file and returns a list of atoms corresponding to the
     atoms in the file
