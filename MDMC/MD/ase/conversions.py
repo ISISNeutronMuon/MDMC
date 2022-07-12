@@ -82,7 +82,7 @@ class ASEAtoms(ase.atoms.Atoms):
     # format (redefined builtin) is used as this is method signature in ASE base
     # class
     #pylint: disable=redefined-builtin
-    def write(self, filename: str, format: str = None, **kwargs) -> None:
+    def write(self, filename: str, format: str = None, **kwargs: dict) -> None:
         """
         Override ase.atoms.Atoms.write so that writing to X3D uses custom X3D
         class
@@ -134,7 +134,7 @@ def convert_from_ase_atom(ase_atom: ASEAtoms,
                           atom_type: int = None,
                           name: str = None,
                           set_charge: bool = True,
-                          cutoff: float = None) -> Atom:
+                          cutoff: float = None) -> 'Atom':
     """
     Converts an ``ase.atom.Atom`` to an MDMC ``Atom``.
 
