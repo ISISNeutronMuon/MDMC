@@ -1,6 +1,6 @@
 """
 Processing CLI tool for pytest-profiling data.
-Run ``python3 profile.py -h`` for more information.
+Run ``python3 process_prof_data.py -h`` for more information.
 
 This tool takes a folder of pytest-profiling output (a folder of .prof files)
 and returns a table of times for each test, sorted highest time to lowest.

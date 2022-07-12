@@ -2,7 +2,7 @@
 
 import pstats
 import io
-import os
+import glob
 
 import pandas as pd
 from numpy import NaN
@@ -32,11 +32,11 @@ def CI_profile_summaries(path: str) -> pd.DataFrame:
     # so this should only iterate once
     # it's just an easy way to deal with the tuple unpacking
     # then create generator of summaries for each test file
-    if not list(os.walk(path)):  # if path is empty
+    files = glob.glob(path + "test_*.prof")
+    if files is None:  # if path is empty
         raise OSError("The directory specified is empty.")
-    for _, _, files in os.walk(path):
-        profs = (_summarise(_profile_to_dataframe(path + file), file[:-5])
-                 for file in files if file.endswith('.prof') and file.startswith('test_'))
+    profs = (_summarise(_profile_to_dataframe(file), file[:-5].split("/")[-1])
+                for file in files)
 
     # concatenate summary for each test into a dataframe,
     # then transpose it to be the right way around
