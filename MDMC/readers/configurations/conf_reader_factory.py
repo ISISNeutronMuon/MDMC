@@ -4,6 +4,7 @@ from importlib import import_module
 from inspect import getmembers, isabstract, isclass
 from os.path import dirname
 from pkgutil import iter_modules
+from typing import Literal
 
 from MDMC.readers.reader_factory import ReaderFactory
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
@@ -18,12 +19,12 @@ class ConfigurationReaderFactory(ReaderFactory):
     """
 
     @staticmethod
-    def base_class() -> ConfigurationReader:
+    def base_class() -> Literal['ConfigurationReader']:
 
         return ConfigurationReader
 
     @classmethod
-    def create_reader_from_ext(cls, extension: str, file_name: str) -> 'ConfigurationReader':
+    def create_reader_from_ext(cls, extension: str, file_name: str) -> ConfigurationReader:
 
         """
         Parameters

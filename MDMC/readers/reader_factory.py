@@ -53,7 +53,7 @@ class ReaderFactory(ABC):
 
     @staticmethod
     @abstractmethod
-    def base_class() -> 'ReaderFactory':
+    def base_class():
         """
         This should be implemented to return the base class of objects returned
         by the ``ReaderFactory``
