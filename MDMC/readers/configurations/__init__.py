@@ -1,12 +1,16 @@
 """A subpackage for reading files containing atomic configurations
 """
 
+from typing import Union, TYPE_CHECKING
+
 from . conf_reader_factory import ConfigurationReaderFactory
 from . import cif
 from . import conf_reader
 
+if TYPE_CHECKING:
+    from MDMC.MD.interactions import Atom
 
-def read(file, docstring=False, **settings):
+def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[Atom, None]':
     """
     Reads a configuration file and returns a list of atoms corresponding to the
     atoms in the file
@@ -19,8 +23,8 @@ def read(file, docstring=False, **settings):
 
     Parameters
     ----------
-    file : str or File
-        The file name or the `File` object of the configuration file
+    file : str 
+        The file name of the configuration file
     docstring : bool, optional
         This will show the docstring (help) related to the type of configuration
         file that has been passed. If this is True, the file will not be read

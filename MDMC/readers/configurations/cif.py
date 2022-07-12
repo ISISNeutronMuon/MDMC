@@ -1,9 +1,13 @@
 """Module for reading cif files
 """
+from typing import TYPE_CHECKING
 
 from MDMC.common.decorators import set_docstring
 from MDMC.MD.ase.cif import ase_read_cif
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
+
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
 
 
 class CIF(ConfigurationReader):
@@ -35,7 +39,7 @@ class CIF(ConfigurationReader):
 
     extension = 'cif'
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str) -> None:
 
         super().__init__(file_name)
         self._atoms = None
@@ -43,11 +47,11 @@ class CIF(ConfigurationReader):
     # Dynamically set docstring
     #pylint: disable=missing-docstring
     @set_docstring(ase_read_cif.__doc__)
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
 
         self._atoms = ase_read_cif(self.file, **settings)
 
     @property
-    def atoms(self):
+    def atoms(self) -> 'Atom':
 
         return self._atoms

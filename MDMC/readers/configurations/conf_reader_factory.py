@@ -18,12 +18,12 @@ class ConfigurationReaderFactory(ReaderFactory):
     """
 
     @staticmethod
-    def base_class():
+    def base_class() -> None:
 
         return ConfigurationReader
 
     @classmethod
-    def create_reader_from_ext(cls, extension, file_name):
+    def create_reader_from_ext(cls, extension: str, file_name: str) -> 'ConfigurationReader':
 
         """
         Parameters

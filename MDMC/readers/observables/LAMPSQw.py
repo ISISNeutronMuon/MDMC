@@ -1,6 +1,7 @@
 """Readers for dynamic data"""
 
 import numpy as np
+from typing import IO, Callable
 
 from MDMC.readers.observables.obs_reader import SQwReader
 
@@ -21,11 +22,11 @@ class LAMPSQw(SQwReader):
         File containing the independent variables
     file_dep : file
         File containing the dependent variables
-    file_dep_err
+    file_dep_err: file
         File containing the errors on the dependent variables
     """
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str) -> None:
         super().__init__(file_name)
         self._Y_dim = None
         self._X_dim = None
@@ -33,7 +34,7 @@ class LAMPSQw(SQwReader):
         self.file_dep = None
         self.file_indep = None
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         """
         Open the files for independent variables, dependent variables and errors
         on the dependent variables
@@ -45,14 +46,14 @@ class LAMPSQw(SQwReader):
         self.file_dep = open(self.file_name + 'ascii', encoding='UTF-8')
         self.file_dep_err = open(self.file_name + 'ascii_e', encoding='UTF-8')
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes all three files after parsing"""
 
         self.file_indep.close()
         self.file_dep.close()
         self.file_dep_err.close()
 
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
         """
         Parse into SQw format
 
@@ -69,7 +70,7 @@ class LAMPSQw(SQwReader):
         # result in inf.
         self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
 
-    def parse_indep_var(self, file):
+    def parse_indep_var(self, file: IO) -> 'tuple[np.ndarray, np.ndarray]':
         """
         Parses the independent variables
 
@@ -116,7 +117,7 @@ class LAMPSQw(SQwReader):
 
         return X, Y
 
-    def parse_dep_var(self, file):
+    def parse_dep_var(self, file: IO) -> np.ndarray:
         """
         Parses the dependent variables or their errors.
 
@@ -135,7 +136,7 @@ class LAMPSQw(SQwReader):
         dep = self._get_data(file_split, self._Y_dim, self._X_dim)
         return dep
 
-    def _get_data(self, str_iter, *dimensions):
+    def _get_data(self, str_iter: Callable, *dimensions: float) -> np.ndarray:
         """
         Iterates over an iterator from a file and extracts the numerical values
         as data.

@@ -1,6 +1,7 @@
 """XML reader for SQw data"""
 
 import xml.etree.ElementTree as ET
+from typing import BinaryIO
 
 import numpy as np
 
@@ -15,7 +16,7 @@ class XML_SQw(SQwReader):
     An XML reader for SQw data
     """
 
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
         """
         Parses the xml file
 
@@ -80,7 +81,7 @@ class XML_SQw(SQwReader):
             np.array(self.SQw_err), [n_w, n_Q]))
 
     @staticmethod
-    def dict_from_element(element):
+    def dict_from_element(element: BinaryIO) -> dict:
         """
         Creates a dictionary from an XML element
 

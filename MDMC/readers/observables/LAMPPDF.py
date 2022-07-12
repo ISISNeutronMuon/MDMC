@@ -1,6 +1,6 @@
 """Reader for pair distribution function data from LAMP's ascii files"""
 
-from typing import List, Tuple
+from typing import Tuple, BinaryIO
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import PDFReader
@@ -19,9 +19,9 @@ class LAMPPDF(PDFReader):
 
     Parameters
     ----------
-    file_name : file
+    file_name : str
         File containing the pair distribution function data
-    pdf_col : int>=3
+    pdf_col : int, optional >= 3
         Column that contains the data to be saved as the total PDF
         (`PairDistributionFunction.PDF`). Optional, default value is 3 as columns 1 and 2 are
         reserved for the row-counter and the distance value.
@@ -33,13 +33,13 @@ class LAMPPDF(PDFReader):
         no labels are specified, the column header in the data file is used as the label.
     """
 
-    def __init__(self, file_name, pdf_col: int = 3, partial_strings: List[Tuple] = None):
+    def __init__(self, file_name: str, pdf_col: int = 3, partial_strings: 'list[Tuple]' = None) -> None:
         super().__init__(file_name)
         self.pdf_col = pdf_col
         self.partial_pdfs = {}
         self.partial_strings = partial_strings
 
-    def assign(self, observable: 'PairDistributionFunction'):
+    def assign(self, observable: BinaryIO) -> None:
         # disable pylint warning about writing to the `Observable`
         #pylint: disable=protected-access
         """
@@ -56,7 +56,7 @@ class LAMPPDF(PDFReader):
         observable.partial_pdfs = self.partial_pdfs
         observable.partial_strings = self.partial_strings
 
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
 
         """
         Parse the file information
