@@ -34,7 +34,7 @@ def CI_profile_summaries(path: str) -> pd.DataFrame:
     # then create generator of summaries for each test file
     files = glob.glob(path + "test_*.prof")
     if files is None:  # if path is empty
-        raise OSError("The directory specified is empty.")
+        raise OSError("The directory specified does not contain any .prof files.")
     profs = (_summarise(_profile_to_dataframe(file), file[:-5].split("/")[-1])
                 for file in files)
 
