@@ -19,19 +19,19 @@ class netCDF(SQwReader):
         The netCDF input file
     """
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         """
         Opens the file for parsing
         """
 
         self.file = Dataset(self.file_name, 'r', encoding='UTF-8')
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the file after parsing"""
 
         self.file.close()
 
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
         """
         Parse into SQw format
 

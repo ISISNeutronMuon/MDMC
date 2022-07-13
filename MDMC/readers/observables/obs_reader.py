@@ -2,11 +2,15 @@
 
 from abc import abstractmethod, ABC
 
+from typing import Union, Any, TYPE_CHECKING
 import numpy as np
 
 from MDMC.common import units
 from MDMC.common.decorators import repr_decorator, unit_decorator
 from MDMC.readers.reader import Reader
+
+if TYPE_CHECKING:
+    from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('data')
 class ObservableReader(Reader):
@@ -17,7 +21,7 @@ class ObservableReader(Reader):
     ObservableReaders are created using ObservableReaderFactory
     """
 
-    def assign(self, observable: 'Observable'):
+    def assign(self, observable: 'Observable') -> None:
         # disable pylint warning about writing to the `Observable`
         #pylint: disable=protected-access
         """
@@ -33,7 +37,7 @@ class ObservableReader(Reader):
         observable._errors = self.errors
 
     @property
-    def data(self):
+    def data(self) -> dict:
         """
         A dictionary of dictionaries containing the independent variables,
         dependent variables and the associated errors.
@@ -51,7 +55,7 @@ class ObservableReader(Reader):
 
     @property
     @abstractmethod
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         The independent variables
 
@@ -65,7 +69,7 @@ class ObservableReader(Reader):
 
     @property
     @abstractmethod
-    def dependent_variables(self):
+    def dependent_variables(self) -> None:
         """
         The dependent variables
 
@@ -79,7 +83,7 @@ class ObservableReader(Reader):
 
     @property
     @abstractmethod
-    def errors(self):
+    def errors(self) -> None:
         """
         The errors on the dependent variables
 
@@ -92,7 +96,7 @@ class ObservableReader(Reader):
         raise NotImplementedError
 
     @staticmethod
-    def _make_float(i):
+    def _make_float(i: Any) -> Union[float, None]:
         """
         Casts the input to a `float`, or passes if the input cannot be cast
 
@@ -118,13 +122,13 @@ class SQwReader(ObservableReader, ABC):
     # pylint: disable=attribute-defined-outside-init
     # to avoid it flagging up on private attributes in getters
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self.SQw = None
         self.SQw_err = None
 
     @property
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
 
@@ -137,7 +141,7 @@ class SQwReader(ObservableReader, ABC):
         return {"Q": self.Q, "E": self.E}
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
         Get the dependent variables, SQw (in ``arb``)
 
@@ -150,7 +154,7 @@ class SQwReader(ObservableReader, ABC):
         return {"SQw": [self.SQw]}
 
     @property
-    def errors(self):
+    def errors(self) -> dict:
         """
         Get the errors on the dependent variables
 
@@ -163,7 +167,7 @@ class SQwReader(ObservableReader, ABC):
         return {"SQw": [self.SQw_err]}
 
     @property
-    def w(self):
+    def w(self) -> float:
         """
         Get or set the energy transfer expressed in angular frequency, w, in
         ``1 / ps``
@@ -178,12 +182,12 @@ class SQwReader(ObservableReader, ABC):
 
     @w.setter
     @unit_decorator(unit=units.Unit('ps') ** -1)
-    def w(self, value):
+    def w(self, value: float) -> None:
 
         self._w = value
 
     @property
-    def E(self):
+    def E(self) -> float:
         """
         Get or set the energy transfer, E, in ``meV``
 
@@ -197,12 +201,12 @@ class SQwReader(ObservableReader, ABC):
 
     @E.setter
     @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def E(self, value):
+    def E(self, value: float) -> None:
 
         self._E = value
 
     @property
-    def Q(self):
+    def Q(self) -> float:
         """
         Get or set the momentum transfer, Q, in ``Ang^-1``
 
@@ -216,7 +220,7 @@ class SQwReader(ObservableReader, ABC):
 
     @Q.setter
     @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
+    def Q(self, value: float) -> None:
 
         self._Q = value
 
@@ -224,13 +228,13 @@ class SQwReader(ObservableReader, ABC):
 class PDFReader(ObservableReader, ABC):
     """Abstract base subclass that adds attributes & methods common to all PDF readers"""
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self.PDF = None
         self.PDF_err = None
 
     @property
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         Get the independent variable r (in ``Ang^-1``)
 
@@ -243,7 +247,7 @@ class PDFReader(ObservableReader, ABC):
         return {"r": self.r}
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
         Get the dependent variable PDF, the pair distribution function (in ``barn``)
 
@@ -256,7 +260,7 @@ class PDFReader(ObservableReader, ABC):
         return {"PDF": self.PDF}
 
     @property
-    def errors(self):
+    def errors(self) -> dict:
         """
         Get the errors on the dependent variable
 
@@ -269,7 +273,7 @@ class PDFReader(ObservableReader, ABC):
         return {"PDF": self.PDF_err}
 
     @property
-    def r(self):
+    def r(self) -> float:
         """
         Get or set the value of the atomic separation distance (in ``Ang``)
         """
@@ -278,12 +282,12 @@ class PDFReader(ObservableReader, ABC):
 
     @r.setter
     @unit_decorator(unit=units.Unit('Ang'))
-    def r(self, value):
+    def r(self, value) -> None:
 
         self._r = value
 
     @property
-    def PDF(self):
+    def PDF(self) -> np.ndarray:
 
         """
         Get or set the total pair distribution function between pairs (in ``barn``)
@@ -297,12 +301,12 @@ class PDFReader(ObservableReader, ABC):
 
     @PDF.setter
     @unit_decorator(unit=units.Unit('barn'))
-    def PDF(self, value):
+    def PDF(self, value: float) -> None:
 
         self._PDF = value
 
     @property
-    def PDF_err(self):
+    def PDF_err(self) -> np.ndarray:
 
         """
         Get or set the error on the total pair distribution function between pairs (in ``barn``)
@@ -316,6 +320,6 @@ class PDFReader(ObservableReader, ABC):
 
     @PDF_err.setter
     @unit_decorator(unit=units.Unit('barn'))
-    def PDF_err(self, value):
+    def PDF_err(self, value: float) -> None:
 
         self._PDF_err = value
