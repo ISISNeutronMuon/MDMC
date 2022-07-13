@@ -11,7 +11,7 @@ class GaussianResolution(Resolution):
     A `Resolution` subclass for applying a Gaussian resolution
     """
 
-    def __init__(self, e_res):
+    def __init__(self, e_res: float):
         # converts energy resolution from user-friendly ueV to system unit meV
         self.e_res = e_res / 1000
 
@@ -21,37 +21,43 @@ class GaussianResolution(Resolution):
 
         return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
-    def window_in_w(self, w, norm=True):
+    def window_in_w(self, w: np.ndarray, mu: float = 0., norm: bool = True) -> np.ndarray:
         """
         The Gaussian window in frequency space
 
         Parameters
         ----------
-        w: frequency
-        mu: the offset of the function (defaults to 0)
-        norm: if True, normalises the distribution to unity.
+        w: array
+            An array of frequency points.
+        mu: float
+            the offset of the function (defaults to 0)
+        norm: bool
+            if True, normalises the distribution to unity.
 
         Returns
         -------
-        The window function in frequency space (i.e. the Gaussian with
-        FWHM self.e_res, centred on 0)
+        array
+            The window function in frequency space (i.e. the Gaussian with
+            FWHM self.e_res, centred on 0)
         """
 
-        window = gaussian(w, self.e_res, norm)
+        window = gaussian(w, self.e_res, mu, norm)
 
         return window
 
-    def window_in_t(self, t):
+    def window_in_t(self, t: np.ndarray) -> np.ndarray:
         """
         The Gaussian window in time space
 
         Parameters
         ----------
-        t: time
+        t: array
+            An array of time points.
 
         Returns
         -------
-        The window function in time space (i.e. the Gaussian with FWHM sigma_t, centred on 0)
+        array
+            The Gaussian window over the times in t.
         """
 
         # We convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse

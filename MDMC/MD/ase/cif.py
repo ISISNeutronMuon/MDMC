@@ -8,6 +8,7 @@ into ``MDMC.readers.configurations.cif`` when an MDMC CIF reader is implemented.
 """
 
 from itertools import groupby
+from typing import TYPE_CHECKING, Callable
 
 from ase.io.cif import read_cif
 import numpy as np
@@ -18,8 +19,12 @@ from MDMC.MD.structures import (
 from MDMC.MD.interactions import Coulombic, Bond, BondAngle, DihedralAngle
 from MDMC.MD.interaction_functions import Coulomb
 
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
+    import ase
 
-def ase_read_cif(file, **settings):
+
+def ase_read_cif(file: str, **settings: dict) -> 'list[Atom]':
     """
     Reads a configuration file and returns a list of ``Atom`` objects.
 
@@ -170,7 +175,9 @@ def ase_read_cif(file, **settings):
     return atoms
 
 
-def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
+def get_bonded_interactions_atoms(ase_atoms_info: dict,
+                                  cif_geom_def: str,
+                                  atoms_labels: dict) -> np.ndarray:
     """
     Gets the atoms for each bonded interaction
 
@@ -213,7 +220,8 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
     return interactions_atoms
 
 
-def _create_coulombic_interactions(atoms, cutoff, key=None):
+def _create_coulombic_interactions(atoms: 'list[Atom]', cutoff: float,
+                                   key: Callable = None) -> None:
     """
     Creates ``Coulombic`` interactions
 
@@ -222,6 +230,8 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
     atoms : list of Atom
         The ``Atom`` objects for which a ``Coulombic`` interaction will be
         created
+    cutoff: float
+        The cutoff distance for the atom's Coulombic interaction.
     key : function
         The key which will be used to group ``Atom`` objects. Grouped ``Atom``
         objects will have a single ``Coulombic`` interaction.
@@ -235,7 +245,9 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
         Coulombic(atoms=atom_group, cutoff=cutoff, function=Coulomb(0.))
 
 
-def _create_bonded_interactions(interactions_atoms, key=None, **settings):
+def _create_bonded_interactions(interactions_atoms: np.ndarray,
+                                key: Callable = None,
+                                **settings: dict) -> None:
     """
     Creates ``BondedInteraction`` objects
 
@@ -293,7 +305,7 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
         bond_type(*tuple(map(tuple, interaction_atoms)), **settings)
 
 
-def _group_atoms(atoms, key):
+def _group_atoms(atoms: 'list[Atom]', key: Callable) -> 'list[tuple[Atom]]':
     """
     Groups atoms based on a key
 
@@ -315,7 +327,7 @@ def _group_atoms(atoms, key):
     return [tuple(group) for _, group in groupby(atoms, key=key)]
 
 
-def _reduce_ase_unit_cell(ase_atoms):
+def _reduce_ase_unit_cell(ase_atoms: 'ase.atoms.Atoms') -> ASEAtoms:
     """
     Reduces an ``ase.atoms.Atoms`` object from a unit cell of molecules to a
     single molecule
@@ -354,7 +366,7 @@ def _reduce_ase_unit_cell(ase_atoms):
                     info=ase_atoms.info)
 
 
-def _make_atom_positions_valid(atoms):
+def _make_atom_positions_valid(atoms: 'list[Atom]') -> None:
     """
     Sets the positions of all atoms are positive (including 0.)
 

@@ -7,6 +7,7 @@ launched. This viewer allows the visualization of atomic positions and bonds.
 
 from functools import partial
 from io import StringIO
+from typing import TYPE_CHECKING, Union
 import warnings
 from tkinter import TclError
 import numpy as np
@@ -20,8 +21,15 @@ from IPython.display import HTML
 
 from MDMC.MD.ase.conversions import get_ase_atoms
 
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
+    from MDMC.MD.ase import ASEAtoms
 
-def view(atoms, viewer='X3DOM', cell=None, **settings):
+
+def view(atoms: 'list[Atom]',
+         viewer: str = 'X3DOM',
+         cell: np.ndarray = None,
+         **settings: dict) -> Union[HTML, None]:
     """
     Launches the ASE ``GUI`` for a collection of atoms
 
@@ -50,7 +58,7 @@ def view(atoms, viewer='X3DOM', cell=None, **settings):
     raise ValueError('Unrecognised viewer. Specify either "X3DOM" or "ASE"')
 
 
-def view_ase(atoms, **settings):
+def view_ase(atoms: 'ASEAtoms', **settings: dict) -> None:
     """
     View atom using the ASE viewer
 
@@ -76,7 +84,7 @@ def view_ase(atoms, **settings):
     viewer.run()
 
 
-def view_x3dom(atoms, **settings):
+def view_x3dom(atoms: 'ASEAtoms', **settings: dict) -> HTML:
     """
     View atoms using the X3D viewer, which enables inline visualization within
     a IPython/Jupyter notebook
@@ -99,7 +107,7 @@ def view_x3dom(atoms, **settings):
     return HTML(data)
 
 
-def limit_atoms(atoms, max_atoms):
+def limit_atoms(atoms: 'ASEAtoms', max_atoms: int) -> 'ASEAtoms':
     """
     Limits the number of atoms that are passed to a visualizer
 
@@ -124,7 +132,7 @@ def limit_atoms(atoms, max_atoms):
     return atoms[:max_atoms]
 
 
-def get_bonds(atoms):
+def get_bonds(atoms: 'ASEAtoms') -> np.ndarray:
     """
     Adds ``(0, 0, 0,)`` to each bonded atom pair defined within an ``ASEAtoms``
     object
@@ -151,7 +159,7 @@ class Viewer(GUI):
     It removes ``GUI`` menu options that are not applicable in MDMC.
     """
 
-    def __init__(self, images=None, rotations='', expr=None):
+    def __init__(self, images: Images  = None, rotations: str = '', expr: str = None):
 
         # Override in order to set show bonds
         super().__init__(images=images, rotations=rotations, show_bonds=True,
@@ -162,7 +170,7 @@ class Viewer(GUI):
         self.X_bonds = None
         self.B = None
 
-    def set_atoms(self, atoms):
+    def set_atoms(self, atoms: 'ASEAtoms'):
         """
         Almost an exact copy from ASE
 

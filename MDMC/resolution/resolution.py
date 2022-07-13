@@ -1,5 +1,9 @@
 """The Resolution abstract base class."""
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class Resolution(ABC):
@@ -9,18 +13,23 @@ class Resolution(ABC):
     # pylint: disable=too-few-public-methods
 
     @abstractmethod
-    def apply(self, FQt, t, Q):
+    def apply(self, FQt: 'np.ndarray', t: 'np.ndarray', Q: 'np.ndarray') -> 'np.ndarray':
         """
         Applies resolution to an array.
 
         Parameters
         ----------
-        FQt: the FQt array to which resolution is applied.
-        t: the variable to which resolution is applied.
+        FQt: array
+            the FQt array to which resolution is applied.
+        t: array
+            the time points for the FQt array.
+        Q: array
+            the momentum points for the FQt array.
 
         Returns
         -------
-        The array with the resolution function applied to it.
+        array
+            The array with the resolution function applied to it.
         """
 
         raise NotImplementedError
