@@ -679,7 +679,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
             currAtm = [spec[atm] for parm in disp.atom_types for atm in parm]
             pot = Potential('vdw', [*currAtm,
                                     POTENTIAL_REF[disp.function.name],
-                                    *map(lambda x: str(x.value.real), disp.parameters)
+                                    *map(lambda x: str(x.value.real), disp.parameters.values())
                                     ])
             out.add_potential(currAtm, pot)
 
@@ -794,7 +794,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
                             for atm in parm]
             current_pot = next(self.dlpoly.field.get_pot(species=current_atom,
                                                          potType='lj'))
-            current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters)]
+            current_pot.params = [*map(lambda x: str(x.value.real), disp.parameters.values())]
 
     def _update_bonded_interactions(self):
 
