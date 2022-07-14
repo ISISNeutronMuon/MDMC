@@ -172,8 +172,33 @@ class Minimizer(ABC):
     @abstractmethod
     def present_result(self):
         """
-        Returns the most appropriate output for the minimiser class
+        Calculates and returns the most appropriate output for the minimiser class
         e.g. minimum FOM and parameter values
         """
 
         raise NotImplementedError
+
+
+    def format_result_string(self,
+                             last_parameters_measured,
+                             last_FoM_predicted,
+                             min_parameters_measured,
+                             min_FoM_measured) -> str:
+        """
+        Formats a string output for the results of the minimiser class
+
+        Parameters
+        ----
+        """
+        has_converged = self.has_converged()
+        converged_message = 'The refinement has converged.' if has_converged else "The refinement has not converged."
+
+        output_string = (f'{converged_message} \n \n'
+                         f'Last accepted point is {last_parameters_measured} with a minimum '
+                         f'FoM of {last_FoM_predicted}. \n \n'
+                         f'Best point measured was: \n'
+                         f'{min_parameters_measured} for a minimum FoM of '
+                         f'{min_FoM_measured}.\n \n '
+                         'The parameters have been set to the predicted minimum values')
+
+        return output_string
