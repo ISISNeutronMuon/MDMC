@@ -178,27 +178,47 @@ class Minimizer(ABC):
 
         raise NotImplementedError
 
-
-    def format_result_string(self,
-                             last_parameters_measured,
-                             last_FoM_predicted,
-                             min_parameters_measured,
-                             min_FoM_measured) -> str:
+    def get_result_string(self) -> str:
         """
-        Formats a string output for the results of the minimiser class
+        Obtains data and formats a string output for the results of the minimiser class
 
-        Parameters
-        ----
+        Returns
+        -------
+        str
+            A string encompassing the output of the minimizer, in the following format:
+            1. Whether or not the minimizer has converged
+            2. The last parameters of the run
+            3. The last FoM value of the run
+            4. The optimal (lowest FoM) parameters
+            5. The optimal (lowest) FoM value
+
         """
+
+        # Find last parameters & FoM
+        last_row = self.history.iloc[-1]
+        last_FoM_value = last_row["FoM"]
+        last_parameters_found = ()
+        for parameter in self.parameters:
+            last_parameters_found += (last_row[parameter],)
+
+        # Find lowest parameters & FoM
+        lowest_FoM_id = self.history["FoM"].idxmin()
+        lowest_FoM_row = self.history.iloc[lowest_FoM_id]
+        lowest_FoM = lowest_FoM_row.get("FoM")
+        lowest_FoM_parameters = ()
+        for parameter in self.parameters:
+            lowest_FoM_parameters += (lowest_FoM_row[parameter],)
+
         has_converged = self.has_converged()
-        converged_message = 'The refinement has converged.' if has_converged else "The refinement has not converged."
+
+        converged_message = '\n The refinement has converged.' if has_converged else "\n The refinement has not converged."
 
         output_string = (f'{converged_message} \n \n'
-                         f'Last accepted point is {last_parameters_measured} with a minimum '
-                         f'FoM of {last_FoM_predicted}. \n \n'
+                         f'Last accepted point is: \n'
+                         f'{last_parameters_found} with a minimum '
+                         f'FoM of {last_FoM_value}. \n \n'
                          f'Best point measured was: \n'
-                         f'{min_parameters_measured} for a minimum FoM of '
-                         f'{min_FoM_measured}.\n \n '
-                         'The parameters have been set to the predicted minimum values')
+                         f'{lowest_FoM_parameters} for a minimum FoM of '
+                         f'{lowest_FoM}.\n \n ')
 
         return output_string
