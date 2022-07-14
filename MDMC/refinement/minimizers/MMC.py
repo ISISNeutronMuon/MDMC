@@ -196,15 +196,5 @@ class MMC(Minimizer):
         """
 
         self.reset_parameters()
-        final_coordinate = np.array([self.parameters[p].value for p in self.parameters])
-        coordinate_names = list(p for p in self.parameters)
 
-        minimum_FoM, min_index = self.history['FoM'].min(), self.history['FoM'].idxmin()
-        minimum_parameters = self.history.iloc[min_index,2:]
-
-        output_string = (f'Refined parameters {coordinate_names} have converged '
-        f'coordinate: {final_coordinate}\n with a FoM of {self.FoM}.\n '
-        f'Best point measured was \n {minimum_parameters} \n '
-        f'for a minimum FoM of {minimum_FoM}.')
-
-        return output_string
+        return self.get_result_string()
