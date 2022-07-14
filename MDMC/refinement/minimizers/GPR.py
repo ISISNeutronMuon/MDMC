@@ -355,11 +355,4 @@ class GPR(Minimizer):
         min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
 
-        output_string = (f'Best point measured was \n'
-            f'{min_parameters_measured} for a minimum FoM of '
-            f'{min_FOM_measured}. \n\n '
-            f'Predicted minimum coordinate is {min_parameters_predicted} for a minimum '
-            f'FoM of {min_FoM_predicted}. \n '
-            'The parameters have been set to the predicted minimum values')
-
-        return output_string
+        return self.get_result_string()
