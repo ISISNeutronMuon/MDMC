@@ -11,7 +11,7 @@
 # $TESTSET is defined in the main CI .yml script
 
 echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin # this login circumvents the Docker IP rate limit for anonymous users
-if ! git diff remotes/origin/master --name-only | grep 'MDMC/\|requirements.txt'
+if ! git diff remotes/origin/master --name-only | grep 'MDMC/\|tests/\|requirements.txt'
 then
   echo "Source code does not require testing."
   exit 0 
