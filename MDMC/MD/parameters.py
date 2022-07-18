@@ -7,13 +7,15 @@ Parameters inherits from lists and implements a number of methods for filterting
 a sequence of Parameter objects.
 """
 
+from __future__ import annotations
+
 import ast
 import logging
 import re
 from collections.abc import Iterable
 from itertools import chain, count
 import operator
-from typing import Union, Any, Optional, List
+from typing import Callable, NoReturn, Union, Any, Optional, TYPE_CHECKING
 import warnings
 import weakref
 
@@ -21,6 +23,9 @@ import numpy as np
 
 from MDMC.common.decorators import repr_decorator, unit_decorator, \
     unit_decorator_getter
+
+if TYPE_CHECKING:
+    from MDMC.MD.interactions import Interaction
 
 
 @repr_decorator('ID', 'type', 'value', 'unit', 'fixed', 'constraints',
@@ -70,7 +75,7 @@ class Parameter:
         self._tie_parameter = None
 
     @property
-    def value(self):
+    def value(self) -> float:
         """
         Get or set the value of the ``Parameter``
 
@@ -97,7 +102,7 @@ class Parameter:
 
     @value.setter
     @unit_decorator(unit=None)
-    def value(self, value):
+    def value(self, value: float) -> None:
 
         if hasattr(self, 'fixed') and self.fixed:
             warnings.warn("Unable to change fixed parameter")
@@ -110,7 +115,7 @@ class Parameter:
 
     @property
     @unit_decorator_getter(unit=None)
-    def constraints(self):
+    def constraints(self) -> tuple:
         """
         Get or set the constraint of the ``Parameter``
 
@@ -128,7 +133,7 @@ class Parameter:
         return self._constraints
 
     @constraints.setter
-    def constraints(self, constraints):
+    def constraints(self, constraints: tuple) -> None:
 
         # Checks if constraints are a 2 element tuple of floats, that the
         # zeroeth element is less than or equal to the first, and that
@@ -141,7 +146,7 @@ class Parameter:
         self._constraints = constraints
 
     @property
-    def interactions(self):
+    def interactions(self) -> list:
         """
         Get or append to the parent ``Interaction`` objects for this
         ``Parameter``
@@ -164,7 +169,7 @@ class Parameter:
         return [interaction() for interaction in self._interactions]
 
     @interactions.setter
-    def interactions(self, interaction):
+    def interactions(self, interaction: 'Interaction') -> None:
 
         # Test if interaction is of the same type as any interactions already
         # stored
@@ -182,7 +187,7 @@ class Parameter:
         self._interactions.append(weakref.ref(interaction))
 
     @property
-    def tie(self):
+    def tie(self) -> Union[float, None]:
         """
         Get the ``value`` of a the ``Parameter`` that this ``Parameter`` is tied
         to
@@ -201,7 +206,7 @@ class Parameter:
         return eval(compile(self._tie, '', 'eval'))
 
     @property
-    def tied(self):
+    def tied(self) -> bool:
         """
         Get whether this ``Parameter`` is tied
 
@@ -214,7 +219,7 @@ class Parameter:
 
         return bool(hasattr(self, 'tie') and self.tie is not None)
 
-    def set_tie(self, parameter, expr):
+    def set_tie(self, parameter: Parameter, expr: str) -> None:
         """
         This ``ties`` the ``Parameter.value`` to the ``value`` of another
         ``Parameter``
@@ -238,11 +243,11 @@ class Parameter:
             'self._tie_parameter().value' + expr, mode='eval')
 
     @classmethod
-    def _generate_ID(cls):
+    def _generate_ID(cls) -> int:
         """Generates a unique ID for the Parameter that has just been created."""
         return next(cls._ID_generator)
 
-    def __str__(self):
+    def __str__(self) -> str:
 
         condition = ('Fixed ' if self.fixed else 'Tied ' if self.tied else
                      'Constrained ' if self.constraints is not None else '')
@@ -259,7 +264,7 @@ class Parameter:
         self.__setattr__(key, value)
 
     @staticmethod
-    def validate_value(value, constraints):
+    def validate_value(value: float, constraints: tuple) -> None:
         """
         Validates the ``Parameter.value`` by testing if it is within the
         ``constraints``
@@ -268,6 +273,8 @@ class Parameter:
         ----------
         values : float
             The value of the ``Parameter``
+        constraints: tuple
+            A 2-tuple of the lower and upper constraints respectively.
 
         Raises
         ------
@@ -306,18 +313,18 @@ class Parameters(dict):
         An alphabetically-sorted numpy array of the ``Parameter``s stored in this object.
     """
 
-    def __init__(self, init_parameters: Optional[Union[List[Parameter], Parameter]] = None):
+    def __init__(self, init_parameters: Optional[Union[Parameter, 'list[Parameter]']] = None):
         super().__init__()
         if init_parameters is not None:
             init_parameters = self._check_input(init_parameters)
             self.append(init_parameters)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Parameter) -> NoReturn:
         # disable this method to ensure parameter keys are always the parameter name
         raise TypeError("Parameters should be added to using Parameters.append(parameter), "
                         "with a parameter or list of parameters as your argument.")
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Union[Parameter, 'list[Parameter]']:
         try:
             return super().__getitem__(key)
         except KeyError as error:
@@ -327,13 +334,20 @@ class Parameters(dict):
             matching_parameters = list(filter(r.match, list(self.keys())))
             if matching_parameters:
                 if len(matching_parameters) > 1:
-                    warnings.warn("Calling a parameter name with no ID fetches the first "
-                                  "parameter with that name; this may cause buggy or "
-                                  "inconsistent behaviour!")
+                    warnings.warn("Calling a parameter name with no ID returns a "
+                                  "list of all parameters with that name; "
+                                  "this may create inconsistent behaviour!")
+                    #pylint: disable=super-with-arguments
+                    # for some reason when we run it without arguments,
+                    # it complains in jupyter notebooks
+                    # see http://thomas-cokelaer.info/blog/2011/09/382/
+                    return sorted([super(Parameters, self).__getitem__(p)
+                                   for p in matching_parameters],
+                                   key=lambda p: p.ID)
                 return super().__getitem__(matching_parameters[0])
             raise KeyError from error
 
-    def append(self, parameters: Union["list[Parameter]", Parameter]):
+    def append(self, parameters: Union['list[Parameter]', Parameter]) -> None:
         """
         Appends a ``Parameter`` or list of ``Parameter``s to the dict,
         with the parameter name as its key.
@@ -362,7 +376,7 @@ class Parameters(dict):
 
         return np.array(sorted(list(self.values()), key=lambda p: p.name))
 
-    def filter(self, predicate):
+    def filter(self, predicate: Callable[[Parameter], bool]) -> Parameters:
         """
         Filters using a predicate
 
@@ -380,7 +394,7 @@ class Parameters(dict):
 
         return Parameters(list(filter(predicate, list(self.values()))))
 
-    def filter_name(self, name):
+    def filter_name(self, name: str) -> Parameters:
         """
         Filters by ``name``
 
@@ -397,7 +411,7 @@ class Parameters(dict):
 
         return self.filter(lambda p: name in p.name)
 
-    def filter_value(self, comparison, value):
+    def filter_value(self, comparison: str, value: float) -> Parameters:
         """
         Filters by ``value``
 
@@ -426,7 +440,7 @@ class Parameters(dict):
 
         return self.filter(lambda p: ops[comparison](p.value, value))
 
-    def filter_interaction(self, interaction_name):
+    def filter_interaction(self, interaction_name: str) -> Parameters:
         """
         Filters based on the name of the ``Interaction`` of each ``Parameter``
 
@@ -445,7 +459,7 @@ class Parameters(dict):
 
         return self.filter(lambda p: p.interactions_name == interaction_name)
 
-    def filter_function(self, function_name):
+    def filter_function(self, function_name: str) -> Parameters:
         """
         Filters based on the name of the ``InteractionFunction`` of each
         ``Parameter``
@@ -465,7 +479,7 @@ class Parameters(dict):
 
         return self.filter(lambda p: p.functions_name == function_name)
 
-    def filter_atom_attribute(self, attribute, value):
+    def filter_atom_attribute(self, attribute: str, value: Union[str, float]) -> Parameters:
         """
         Filters based on the attribute of ``Atom`` objects which have each
         ``Parameter`` applied to them
@@ -499,7 +513,7 @@ class Parameters(dict):
                                      for atom
                                      in flatten(int.atoms)])
 
-    def filter_structure(self, structure_name):
+    def filter_structure(self, structure_name: str) -> Parameters:
         """
         Filters based on the name of the ``Structure`` to which each
         ``Parameter`` applies
@@ -543,7 +557,7 @@ class Parameters(dict):
 
         return self.filter(check_structure_name)
 
-    def log_parameters(self):
+    def log_parameters(self) -> None:
         """Logs all Parameters by ID"""
 
         LOGGER = logging.getLogger(__name__)

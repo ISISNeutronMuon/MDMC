@@ -2,13 +2,15 @@
 functions
 """
 
+from typing import Iterable
 import pandas as pd
 
 
-def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
+def filter_dataframe(values: Iterable,
+                     dataframe: pd.DataFrame,
+                     column_names: 'list[str]' = None,
+                     column_regex: str = None) -> pd.DataFrame:
     """
-
-
     This filter ignores rows which are duplicated (i.e. it only returns the
     first occurence of any duplicated rows).
 
@@ -67,8 +69,11 @@ def filter_dataframe(values, dataframe, column_names=None, column_regex=None):
     return filtered_dataframe.drop_duplicates()
 
 
-def filter_ordered_dataframe(values, dataframe, column_names=None,
-                             column_regex=None, wildcard=None):
+def filter_ordered_dataframe(values: Iterable,
+                             dataframe: pd.DataFrame,
+                             column_names: 'list[str]' = None,
+                             column_regex: str = None,
+                             wildcard: str = None) -> pd.DataFrame:
     """
     Filters a ``pd.DataFrame`` with an iterable of ordered values. The values
     must occur in columns in the correct order, with the order specified by

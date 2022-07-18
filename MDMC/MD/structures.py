@@ -3,6 +3,7 @@
 ``Atom`` is the fundamental structural unit in terms of which all others must be
 defined.  All shared behaviour is included within the ``Structure`` base
 class."""
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections import Counter, OrderedDict
@@ -11,7 +12,7 @@ from functools import lru_cache, reduce
 from itertools import count
 import logging
 from math import gcd
-from typing import List
+from typing import Callable, Union, TYPE_CHECKING
 import warnings
 import weakref
 
@@ -26,6 +27,10 @@ from MDMC.common import units
 from MDMC.MD.container import AtomContainer
 from MDMC.MD.interaction_functions import Coulomb
 
+if TYPE_CHECKING:
+    from MDMC.MD.simulation import Universe
+    from MDMC.MD.interactions import Interaction, NonBondedInteraction
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +40,6 @@ LOGGER = logging.getLogger(__name__)
 class Structure(ABC):
     # pylint: disable=no-member
     # to avoid errors with MD and _structure_list
-
     """Abstract base class for all structural units
 
     Parameters
@@ -65,7 +69,10 @@ class Structure(ABC):
     # MD engines.  It may not be required or may only be required for atoms.
     _ID_generator = count(start=1, step=1)
 
-    def __init__(self, position, velocity, name):
+    def __init__(self,
+                 position: Union['list[float]', 'tuple[float]', np.ndarray],
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray],
+                 name: str):
 
         self.ID = self._generate_ID()
         self.position = position
@@ -81,8 +88,7 @@ class Structure(ABC):
                     self.position)
 
     @property
-    def position(self):
-
+    def position(self) -> np.ndarray:
         """
         Get or set the position of the center of mass of the ``Structure``
         in ``Ang``
@@ -96,13 +102,12 @@ class Structure(ABC):
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position):
+    def position(self, position: np.ndarray) -> None:
 
         self._position = position
 
     @property
-    def velocity(self):
-
+    def velocity(self) -> np.ndarray:
         """
         Get or set the velocity of the ``Structure`` in ``Ang/fs``
 
@@ -115,13 +120,12 @@ class Structure(ABC):
 
     @velocity.setter
     @unit_decorator(unit=units.LENGTH / units.TIME)
-    def velocity(self, velocity):
+    def velocity(self, velocity: np.ndarray) -> None:
 
         self._velocity = velocity
 
     @property
-    def atoms(self):
-
+    def atoms(self) -> 'list[Atom]':
         """
         Get a `list` of all of the `Atom` objects in the structure by
         recursively calling ``atoms`` for all substructures
@@ -137,8 +141,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def universe(self):
-
+    def universe(self) -> Union['Universe', None]:
         """
         Get the ``Universe`` to which the ``Structure`` belongs
 
@@ -150,8 +153,7 @@ class Structure(ABC):
 
         raise NotImplementedError
 
-    def translate(self, displacement):
-
+    def translate(self, displacement: Union[tuple, np.ndarray]) -> None:
         """
         Translate the structural unit by the specified displacement
 
@@ -164,8 +166,7 @@ class Structure(ABC):
         self.position = self.position + np.array(displacement)
 
     @property
-    def interactions(self):
-
+    def interactions(self) -> 'list[Interaction]':
         """
         Get a list of the interactions acting on the ``Structure``
 
@@ -178,8 +179,7 @@ class Structure(ABC):
         return self.bonded_interactions + self.nonbonded_interactions
 
     @property
-    def bonded_interactions(self):
-
+    def bonded_interactions(self) -> 'list[BondedInteraction]':
         """
         Get a list of the bonded interactions acting on the ``Structure``
 
@@ -193,8 +193,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def nonbonded_interactions(self):
-
+    def nonbonded_interactions(self) -> 'list[NonBondedInteraction]':
         """
         Get a list of the nonbonded interactions acting on the
         ``Structure``
@@ -209,8 +208,7 @@ class Structure(ABC):
 
     @property
     @abstractmethod
-    def bonded_interaction_pairs(self):
-
+    def bonded_interaction_pairs(self) -> 'list[tuple[Interaction, tuple[Atom]]]':
         """
         Get bonded interactions acting on the ``Structure`` and the other
         atoms to which the atom is bonded
@@ -235,8 +233,7 @@ class Structure(ABC):
         raise NotImplementedError
 
     @property
-    def structure_type(self):
-
+    def structure_type(self) -> str:
         """
         Get the class of the ``Structure``.
 
@@ -249,8 +246,7 @@ class Structure(ABC):
         return self.__class__.__name__
 
     @property
-    def top_level_structure(self):
-
+    def top_level_structure(self) -> Structure:
         """
         Get the top level structure (i.e. ``Structure`` which has no
         ``parent``) of the ``Structure``
@@ -266,7 +262,7 @@ class Structure(ABC):
             return self.parent.top_level_structure
         return self
 
-    def copy(self, position):
+    def copy(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> Structure:
 
         """
         Copies the structural unit and sets the ``position``
@@ -288,8 +284,7 @@ class Structure(ABC):
         structures.position = position
         return structures
 
-    def _generate_ID(self):
-
+    def _generate_ID(self) -> int:
         """
         Uses class attribute to generate a unique ``ID`` for each
         ``Structure``
@@ -302,8 +297,7 @@ class Structure(ABC):
 
         return next(self._ID_generator)
 
-    def _position_in_parent_CoM_frame(self):
-
+    def _position_in_parent_CoM_frame(self) -> np.ndarray:
         """
         Get the position in the ``parent`` center of mass frame
 
@@ -322,16 +316,15 @@ class Structure(ABC):
             raise AttributeError("This structure has no parent")
         return self.position - self.parent.get_center_of_mass()
 
-    def _added_to_structure(self):
-
+    def _added_to_structure(self) -> None:
         """
         Method is called if it becomes subunit of another ``Structure``
         """
 
         self._position_in_parent = self._position_in_parent_CoM_frame()
 
-    def valid_position(self, position=None):
-
+    def valid_position(self,
+                       position: Union['list[float]', 'tuple[float]', np.ndarray] = None) -> bool:
         """
         Checks if the specified ``position`` is within the bounds of the
         ``Structure.universe``, if it has one
@@ -375,8 +368,7 @@ class Structure(ABC):
             return True
 
     @property
-    def bounding_box(self):
-
+    def bounding_box(self) -> BoundingBox:
         """
         Returns
         -------
@@ -387,8 +379,7 @@ class Structure(ABC):
         return BoundingBox(self.atoms)
 
     @abstractmethod
-    def is_equivalent(self, structure) -> bool:
-
+    def is_equivalent(self, structure: Structure) -> bool:
         """
         Checks the passed ``Structure`` against `self` for equivalence in
         terms of the force field application, namely that the following are the
@@ -412,18 +403,19 @@ class Structure(ABC):
 @repr_decorator('name', 'ID', 'formula', 'position', 'velocity', 'bounding_box',
                 'atoms')
 class CompositeStructure(Structure, AtomContainer):
-
     """
     Base class for structural units comprised of more than one ``Atom``
     """
 
-    def __init__(self, position, velocity, name):
+    def __init__(self,
+                 position: Union['list[float]', 'tuple[float]', np.ndarray],
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray],
+                 name: str):
 
         super().__init__(position, velocity, name)
         self.universe = None
 
-    def __deepcopy__(self, memo):
-
+    def __deepcopy__(self, memo: dict) -> CompositeStructure:
         """
         Copies the ``CompositeStructure`` and all attributes, except ``ID``
         which is generated
@@ -489,8 +481,7 @@ class CompositeStructure(Structure, AtomContainer):
                 setattr(unit, k, deepcopy(v, memo))
         return unit
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         """
         Returns
         -------
@@ -505,19 +496,18 @@ class CompositeStructure(Structure, AtomContainer):
 
     @property
     @abstractmethod
-    def nonbonded_interactions(self):
+    def nonbonded_interactions(self) -> list[Interaction]:
 
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def bonded_interaction_pairs(self):
+    def bonded_interaction_pairs(self) -> list[Interaction]:
 
         raise NotImplementedError
 
     @property
-    def formula(self):
-
+    def formula(self) -> str:
         """
         Get the chemical formula of the ``CompositeStructure``
 
@@ -531,8 +521,7 @@ class CompositeStructure(Structure, AtomContainer):
                                              in self.atoms])
 
     @property
-    def universe(self):
-
+    def universe(self) -> Union[Universe, None]:
         """
         Get or set the ``Universe`` to which the ``CompositeStructure``
         belongs
@@ -550,7 +539,7 @@ class CompositeStructure(Structure, AtomContainer):
             return self._universe
 
     @universe.setter
-    def universe(self, value):
+    def universe(self, value: Universe) -> None:
 
         try:
             self._universe = weakref.ref(value)
@@ -563,8 +552,7 @@ class CompositeStructure(Structure, AtomContainer):
                 structure.universe = value
 
     @property
-    def structure_list(self):
-
+    def structure_list(self) -> 'list[Structure]':
         """
         Get or set the ``Structure`` objects that are subunits of this
         ``CompositeStructure``
@@ -579,15 +567,14 @@ class CompositeStructure(Structure, AtomContainer):
         return self._structure_list
 
     @structure_list.setter
-    def structure_list(self, value):
+    def structure_list(self, value: 'list[Structure]') -> None:
 
         self._structure_list = value
 
-    def copy(self, position, rotation=None):
+    def copy(self, position, rotation=None) -> CompositeStructure:
         # pylint:disable=arguments-differ
         # CompositeStructure's can be rotated, which is meaningless for
         # Structures in general
-
         """
         Copies the ``CompositeStructure`` and all attributes, except ``ID``
         which is generated
@@ -632,7 +619,7 @@ class CompositeStructure(Structure, AtomContainer):
             composite.rotate(x=rotation[0], y=rotation[1], z=rotation[2])
         return composite
 
-    def _set_subunit_positions(self):
+    def _set_subunit_positions(self) -> None:
 
         """
         Sets the position of all subunits in the global frame in units of
@@ -642,8 +629,7 @@ class CompositeStructure(Structure, AtomContainer):
         for atom in self.atoms:
             atom.position = self.position + self._CoM_frame_positions[atom]
 
-    def _calc_CoM(self):
-
+    def _calc_CoM(self) -> np.ndarray:
         """
         Returns
         -------
@@ -659,8 +645,7 @@ class CompositeStructure(Structure, AtomContainer):
             weighted_positions += (atom.position * atom.mass)
         return weighted_positions / mass
 
-    def _calc_subunit_position_in_CoM_frame(self):
-
+    def _calc_subunit_position_in_CoM_frame(self) -> None:
         """
         Calculate the position of all subunits in the
         ``CompositeStructure`` CoM frame in units of ``Ang``
@@ -671,8 +656,7 @@ class CompositeStructure(Structure, AtomContainer):
         CoM = self._calc_CoM()
         self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
-    def rotate(self, x=0., y=0., z=0.):
-
+    def rotate(self, x: float = 0., y: float = 0., z: float = 0.) -> None:
         """
         Rotates the ``CompositeStructure`` around its center of mass
 
@@ -701,7 +685,6 @@ class CompositeStructure(Structure, AtomContainer):
 
 @repr_decorator('name', 'ID', 'element', 'position', 'velocity')
 class Atom(Structure):
-
     """
     A single atom
 
@@ -745,8 +728,12 @@ class Atom(Structure):
         The atomic element label
     """
 
-    def __init__(self, element, position=(0., 0., 0.), velocity=(0., 0., 0.),
-                 charge=None, **settings):
+    def __init__(self, element: str,
+                 position: Union['list[float]', 'tuple[float]', np.ndarray]
+                 = (0., 0., 0.),
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray]
+                 = (0., 0., 0.),
+                 charge: float = None, **settings: dict):
 
         self.universe = None
         # the syntax for optional keyword arguments is: kwargs.get(str, default_value)
@@ -764,8 +751,7 @@ class Atom(Structure):
         self.cutoff = settings.get('cutoff', None)
         self.charge = charge
 
-    def __deepcopy__(self, memo):
-
+    def __deepcopy__(self, memo: dict) -> Atom:
         """
         Copies the Atom and all attributes, except ``ID`` which is generated
 
@@ -810,8 +796,7 @@ class Atom(Structure):
                 setattr(atom, k, deepcopy(v, memo))
         return atom
 
-    def __repr__(self):
-
+    def __repr__(self) -> tuple:
         """
         Returns
         -------
@@ -830,8 +815,7 @@ class Atom(Structure):
                                              [i.name for i
                                               in self.interactions]))
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         """
         Returns
         -------
@@ -846,8 +830,7 @@ class Atom(Structure):
             self.position))
 
     @property
-    def atoms(self):
-
+    def atoms(self) -> 'list[Atom]':
         """
         Get a `list` of the atoms, just consisting of the ``Atom``
 
@@ -860,8 +843,7 @@ class Atom(Structure):
         return [self]
 
     @property
-    def universe(self):
-
+    def universe(self) -> Union[Universe, None]:
         """
         Get the ``Universe`` to which the ``Atomm`` belongs
 
@@ -877,7 +859,7 @@ class Atom(Structure):
             return self._universe
 
     @universe.setter
-    def universe(self, value):
+    def universe(self, value: Universe) -> None:
 
         try:
             self._universe = weakref.ref(value)
@@ -891,8 +873,7 @@ class Atom(Structure):
             self._universe = None
 
     @property
-    def charge(self):
-
+    def charge(self) -> Union[float, None]:
         """
         Get or set the charge in ``e`` if one has been applied to the ``Atom``
 
@@ -938,7 +919,7 @@ class Atom(Structure):
 
     @charge.setter
     @unit_decorator(unit=units.CHARGE)
-    def charge(self, value):
+    def charge(self, value: float) -> None:
 
         for inter in self.interactions:
             if isinstance(inter, Coulombic):
@@ -968,8 +949,7 @@ class Atom(Structure):
             Coulombic(atoms=self, charge=value, cutoff=self.cutoff)
 
     @property
-    def mass(self):
-
+    def mass(self) -> float:
         """
         Get or set the atomic mass in ``amu``
 
@@ -982,13 +962,12 @@ class Atom(Structure):
 
     @mass.setter
     @unit_decorator(unit=units.MASS)
-    def mass(self, mass):
+    def mass(self, mass: float) -> None:
 
         self._mass = mass
 
     @property
-    def atom_type(self):
-
+    def atom_type(self) -> int:
         """
         Get or set the atom type of the ``Atom``
 
@@ -1006,7 +985,7 @@ class Atom(Structure):
         return self._atom_type
 
     @atom_type.setter
-    def atom_type(self, value):
+    def atom_type(self, value: int) -> None:
 
         if self._atom_type:
             raise AttributeError('Can\'t change atom_type once it has been set')
@@ -1018,8 +997,7 @@ class Atom(Structure):
                 inter.atom_types.append(value)
 
     @property
-    def nonbonded_interactions(self):
-
+    def nonbonded_interactions(self) -> list[NonBondedInteraction]:
         """
         Get a `list` of the nonbonded interactions acting on the ``Atom``
 
@@ -1032,8 +1010,7 @@ class Atom(Structure):
         return self._nonbonded_interactions
 
     @property
-    def bonded_interaction_pairs(self):
-
+    def bonded_interaction_pairs(self) -> list:
         """
         Get bonded interactions acting on the ``Atom`` and the other atoms
         to which the ``Atom`` is bonded
@@ -1056,7 +1033,7 @@ class Atom(Structure):
 
         return self._bonded_interaction_pairs
 
-    def copy(self, position):
+    def copy(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> Atom:
         # pylint:disable=useless-super-delegation
         # Docstring specific to Atom
         """
@@ -1109,8 +1086,7 @@ class Atom(Structure):
 
         return super().copy(position)
 
-    def add_interaction(self, interaction, from_interaction=False):
-
+    def add_interaction(self, interaction: Interaction, from_interaction: bool = False) -> None:
         """
         Adds an interaction to the ``Atom``
 
@@ -1142,8 +1118,7 @@ class Atom(Structure):
             if interaction not in self.nonbonded_interactions:
                 self._nonbonded_interactions.append(interaction)
 
-    def copy_interactions(self, atom, memo=None):
-
+    def copy_interactions(self, atom: Atom, memo: dict = None) -> None:
         """
         This replicates the interactions from ``self`` for ``Atom``, but with
         ``self`` substituted by ``atom`` in the ``Interaction.atoms``. These
@@ -1198,7 +1173,6 @@ class Atom(Structure):
 
 
 class _Group(CompositeStructure):
-
     """
     Two or more `Atom` objects that form a subset of a ``Molecule``
 
@@ -1218,7 +1192,6 @@ class _Group(CompositeStructure):
 
 
 class Molecule(CompositeStructure):
-
     """
     Two or more bonded atoms
 
@@ -1247,8 +1220,11 @@ class Molecule(CompositeStructure):
             prior to the ``Molecule``.
     """
 
-    def __init__(self, position=None, velocity=(0, 0, 0), name=None,
-                 **settings):
+    def __init__(self,
+                 position: Union['list[float]', 'tuple[float]', np.ndarray] = None,
+                 velocity: Union['list[float]', 'tuple[float]', np.ndarray] = (0, 0, 0),
+                 name = None,
+                 **settings: dict):
 
         self._structure_list = settings['atoms']
         for structure in self._structure_list:
@@ -1259,8 +1235,7 @@ class Molecule(CompositeStructure):
         super().__init__(position, velocity, name)
 
     @property
-    def position(self):
-
+    def position(self) -> np.ndarray:
         """
         Get or set the position of the center of mass of the ``Molecule`` in
         ``Ang``
@@ -1276,14 +1251,13 @@ class Molecule(CompositeStructure):
 
     @position.setter
     @unit_decorator(unit=units.LENGTH)
-    def position(self, position):
+    def position(self, position: Union['list[float]', 'tuple[float]', np.ndarray]) -> None:
 
         self._position = position
         self._set_subunit_positions()
 
     @property
-    def nonbonded_interactions(self):
-
+    def nonbonded_interactions(self) -> 'list[NonBondedInteraction]':
         """
         Get a list of the nonbonded interactions acting on the ``Molecule``
 
@@ -1297,8 +1271,7 @@ class Molecule(CompositeStructure):
                 for inter in atom.nonbonded_interactions]
 
     @property
-    def bonded_interaction_pairs(self):
-
+    def bonded_interaction_pairs(self) -> list:
         """
         Get bonded interactions acting on the ``Molecule``
 
@@ -1335,8 +1308,7 @@ class Molecule(CompositeStructure):
 
     @property
     @unit_decorator_getter(unit=units.MASS)
-    def mass(self):
-
+    def mass(self) -> float:
         """
         Get the molecular mass of the ``Molecule`` in ``amu``
 
@@ -1355,7 +1327,6 @@ class Molecule(CompositeStructure):
     @property
     @unit_decorator_getter(unit=units.CHARGE)
     def charge(self) -> float:
-
         """
         Get the total charge of the ``Molecule`` in ``e``.
 
@@ -1395,7 +1366,7 @@ class BoundingBox:
         determined
     """
 
-    def __init__(self, atoms: List):
+    def __init__(self, atoms: 'list[Atom]'):
         if not atoms:
             raise ValueError("Empty atoms passed; "
                              "it must contain at least one atom to create a BoundingBox object.")
@@ -1408,8 +1379,7 @@ class BoundingBox:
             self.max = np.maximum(self.max, atom.position)
 
     @property
-    def min(self):
-
+    def min(self) -> np.ndarray:
         """
         Get or set the minimum extent of the positions of a collection of atoms
 
@@ -1423,13 +1393,12 @@ class BoundingBox:
 
     @min.setter
     @unit_decorator(unit=units.LENGTH)
-    def min(self, value):
+    def min(self, value: np.ndarray) -> None:
 
         self._min = value
 
     @property
-    def max(self):
-
+    def max(self) -> np.ndarray:
         """
         Get or set the maximum extent of the positions of a collection of atoms
 
@@ -1443,14 +1412,13 @@ class BoundingBox:
 
     @max.setter
     @unit_decorator(unit=units.LENGTH)
-    def max(self, value):
+    def max(self, value: np.ndarray) -> None:
 
         self._max = value
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** 3)
-    def volume(self):
-
+    def volume(self) -> float:
         """
         Get the volume of the bounding box, in units of ``Ang ^ 3``
 
@@ -1463,8 +1431,7 @@ class BoundingBox:
         return abs(np.prod(self.max - self.min))
 
 
-def filter_atoms(atoms, predicate):
-
+def filter_atoms(atoms: 'list[Atom]', predicate: Callable) -> 'list[Atom]':
     """
     Filters a list of Atoms with a given predicate
 
@@ -1484,8 +1451,7 @@ def filter_atoms(atoms, predicate):
     return list(filter(predicate, atoms))
 
 
-def filter_atoms_element(atoms, element):
-
+def filter_atoms_element(atoms: 'list[Atom]', element: str) -> 'list[Atom]':
     """
     Filters a list of atoms based on the atomic element
 
@@ -1505,8 +1471,9 @@ def filter_atoms_element(atoms, element):
     return list(filter(lambda a: a.element == element, atoms))
 
 
-def get_reduced_chemical_formula(symbols, factor=None, system='Hill'):
-
+def get_reduced_chemical_formula(symbols: 'list[str]',
+                                 factor: int = None,
+                                 system: str = 'Hill') -> str:
     """
     Get the reduced chemical formula
 

@@ -4,10 +4,10 @@
 # as this is a factory class
 
 from inspect import getmembers, isclass, isabstract
+from typing import Any, Union
 import warnings
 
 import MDMC.resolution
-
 
 class ResolutionFactory:
     """
@@ -28,7 +28,9 @@ class ResolutionFactory:
                 self.resolutions.update([[name, _type]])
 
     # users will input e.g. 'gaussian' and this will provide a GaussianResolution object
-    def create_instance(self, resolution: dict, *args):
+    def create_instance(self,
+                        resolution: Union[dict, float, int, str],
+                        *args: Any) -> 'MDMC.resolution.Resolution':
         """Creates a Resolution object from a dictionary."""
         resolution = _standardise_input(resolution)
         function_name = list(resolution.keys())[0].title() + 'Resolution'
@@ -50,7 +52,7 @@ class ResolutionFactory:
                                   str(userkeys))
 
 
-def _standardise_input(resolution):
+def _standardise_input(resolution: Any) -> dict:
     """
     Ensures that resolution is a one-line dictionary. Fixes 'lazy' input, e.g. if resolution
     was input as a string or number.

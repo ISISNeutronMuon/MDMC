@@ -1,5 +1,6 @@
 """Readers for dynamic data"""
 
+from typing import IO
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
@@ -18,19 +19,22 @@ class MantidSQw(SQwReader):
 
     Attributes
     ----------
-    file_variables : file
-        File containing the variables for each detector (group) ID
+    detector_IDs : file
+        File containing the ID's of the detectors
     file_detectors : file
         File containing the errors on the dependent variables
+    file_variables : file
+        File containing the variables for each detector (group) ID
+
     """
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
         super().__init__(file_name)
         self.detector_IDs = None
         self.file_detectors = None
         self.file_variables = None
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         """
         Open the files for variables and detector momenta
         """
@@ -40,13 +44,13 @@ class MantidSQw(SQwReader):
         self.file_variables = open(self.file_name, encoding='UTF-8')
         self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes variable and detector files after parsing"""
 
         self.file_variables.close()
         self.file_detectors.close()
 
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
         """
         Parse into SQw format
 
@@ -72,7 +76,7 @@ class MantidSQw(SQwReader):
         # inf so that error calculations can still be performed on them.
         self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
 
-    def parse_variables(self, file):
+    def parse_variables(self, file: IO) -> 'tuple[float]':
         """
         Parses the values for energy, SQw and its error for each detector, but not the momentum of
         that detector.
@@ -117,7 +121,7 @@ class MantidSQw(SQwReader):
 
         return X, Y, E
 
-    def parse_detectors(self, file):
+    def parse_detectors(self, file: IO) -> np.ndarray:
         """
         Parses the detector momenta values.
 

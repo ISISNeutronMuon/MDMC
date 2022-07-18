@@ -1,10 +1,13 @@
 """Module for observable reader abstract class"""
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
 
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
 
 @repr_decorator('file', 'extension', 'atoms')
 class ConfigurationReader(Reader):
@@ -19,7 +22,7 @@ class ConfigurationReader(Reader):
     @property
     @staticmethod
     @abstractmethod
-    def extension():
+    def extension() -> str:
         """
         The expected file extension for the ``ConfigurationReader``
         """
@@ -28,7 +31,7 @@ class ConfigurationReader(Reader):
 
     @property
     @abstractmethod
-    def atoms(self):
+    def atoms(self) -> 'list[Atom]':
         """
         All subclasses must implement atoms, which returns a list of ``Atom``
         objects from the data read from the file

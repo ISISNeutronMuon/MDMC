@@ -10,7 +10,7 @@ class LorentzianResolution(Resolution):
     A `Resolution` subclass for applying a Lorentzian resolution
     """
 
-    def __init__(self, e_res):
+    def __init__(self, e_res: float):
         self.e_res = e_res / 1000
 
     def apply(self, FQt, t, Q):
@@ -19,16 +19,26 @@ class LorentzianResolution(Resolution):
 
         return np.broadcast_to(window, (N_Q, N_T)) * FQt
 
-    def window_in_w(self, w):
+    def window_in_w(self, w: np.ndarray) -> np.ndarray:
         """
         The Lorentzian window in frequency space
+
+        Parameters
+        ----------
+        w: array
+            An array of frequencies.
+
+        Returns
+        -------
+        array
+            The Lorentzian window over the frequencies in w.
         """
 
         window = lorentzian(w, self.e_res)
 
         return window
 
-    def window_in_t(self, t):
+    def window_in_t(self, t: np.ndarray) -> np.ndarray:
         """
         The Lorentzian window in time space (i.e. the Fourier transform centred around zero)
         The Fourier transform of the Lorentzian is
@@ -36,6 +46,16 @@ class LorentzianResolution(Resolution):
         where x_0 is the offset and Gamma the FWHM.
         thus as the instrument resolution function is centred around x_0, this simplifies to
         e^(-Gamma * pi * |k|).
+
+        Parameters
+        ----------
+        t: array
+            An array of time points.
+
+        Returns
+        -------
+        array
+            The Lorentzian window over the times in t.
         """
 
         window = np.exp((-self.e_res * np.pi * np.abs(t)))

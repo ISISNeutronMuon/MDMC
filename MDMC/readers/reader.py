@@ -10,14 +10,19 @@ class Reader(ABC):
 
     """
     Abstract class that defines methods common to all readers
+
+    Parameters
+    ----------
+    file_name: str
+        name of file to read
     """
 
-    def __init__(self, file_name):
+    def __init__(self, file_name: str):
 
         self.file = None
         self.file_name = file_name
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         """
         Provides a generic implementation of file opening using inbuilt python
         open
@@ -29,13 +34,13 @@ class Reader(ABC):
 
         self.file = open(self.file_name, 'r', encoding='UTF-8')
 
-    def __exit__(self, exception_type, exception_value, traceback):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the open file after parsing"""
 
         self.file.close()
 
     @abstractmethod
-    def parse(self, **settings):
+    def parse(self, **settings: dict) -> None:
         """
         Parses the file data so that it is in a format expected by the class
         calling the data reader
@@ -43,6 +48,11 @@ class Reader(ABC):
         For readers which are not specific to one data type, the calling class
         must be determined so that the file data can be parsed into
         the appropriate data type.
+
+        Parameters
+        ----------
+        **settings: dict
+            dictionary of settings for reader
         """
 
         raise NotImplementedError
