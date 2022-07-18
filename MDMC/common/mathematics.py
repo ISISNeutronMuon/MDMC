@@ -9,7 +9,7 @@ UNIT_VECTOR = np.array([[1., 0., 0.],
                         [0., 0., 1.]])
 
 
-def correlation(input1, input2=None, normalise=False):
+def correlation(input1, input2=None, normalise=False) -> np.ndarray:
     """
     The correlation of two vectors
 

@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def gaussian(x, sigma, mu=0.0, norm=True):
+def gaussian(x: np.ndarray, sigma: float, mu: float = 0.0, norm: bool = True) -> np.ndarray:
     """
     Calculates the Gaussian distribution
 
@@ -35,7 +35,7 @@ def gaussian(x, sigma, mu=0.0, norm=True):
     return y
 
 
-def lorentzian(x, gamma, x_0=0.0):
+def lorentzian(x: np.ndarray, gamma: float, x_0: float = 0.0) -> np.ndarray:
     """
     Calculates the Lorentzian (Cauchy) distribution
 

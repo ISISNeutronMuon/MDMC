@@ -18,8 +18,7 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name, parameter, distribution='uniform',
-                         max_parameter_change: float = 0.01, **settings: dict):
+    def create_minimizer(module_name, parameter,**settings: dict):
         """
         Checks that the module is a supported minimzer and instantiates it as a minimizer.
 
@@ -29,14 +28,9 @@ class MinimizerFactory:
             The name of the module to be used as the minimizer, e.g. 'MMC'
         parameter: list[str]
             List of parameters to be refined
-        distribution: str, optional
-            Name of distribution to be used, defaults to 'uniform'
-        max_parameter_change: float, optional
-            Maximum factor by which a Parameter can change each step of the
-            refinement. Defaults to `0.01`
         **settings: dict, optional
             Settings to be passed to the created minimiser, e.g. MC_norm=1.0 if MMC minimiser is
-            used.
+            used. or use_hypercube=True if GPR is using a Latin hypercube to arrange points.
 
         Returns
         -------
@@ -52,8 +46,7 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](parameter, distribution,
-                             max_parameter_change , **settings)
+        return classes[0][1](parameter, **settings)
 
     @staticmethod
     def get_minimizer_names():

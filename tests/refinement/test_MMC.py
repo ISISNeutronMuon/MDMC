@@ -9,7 +9,6 @@ import pytest
 from MDMC.MD import Parameter, Parameters
 from MDMC.refinement import minimizers
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
-from tests.refinement.test_minimizer import mock_change_parameters
 
 @pytest.fixture
 def parameters():
@@ -31,6 +30,13 @@ def parameters():
                        Parameter(name='potential_strength', value=1234.),
                        Parameter(name='sigma', value=3.3)])
 
+def mock_change_parameters(self):
+    """
+    Mock of minimizer.change_parameters which doubles each ``Parameter`` value
+    """
+
+    for p in self.parameters:
+        self.parameters[p].value *= 2
 
 def test_mmc_step_accepted(monkeypatch, parameters):
     """
@@ -131,12 +137,12 @@ def test_MMC_has_converged(mock_history, min_steps, expected):
     mocked minimizer histories.
     """
     parameter = Parameters(Parameter(name='A', value=None))
-    minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter)
-    minim._history = mock_history
     if min_steps:
-        assert minim.has_converged(min_steps=min_steps) == expected
+        minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter, min_steps=min_steps)
     else:
-        assert minim.has_converged() == expected
+        minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter)
+    minim._history = mock_history
+    assert minim.has_converged() == expected
 
 
 @pytest.mark.parametrize('points,FoMs,expected',
@@ -170,7 +176,7 @@ def test_MMC_change_parameter(parameters):
     minim = MinimizerFactory.create_minimizer('MMC', parameters)
     expected_values = {p: 2 * parameters[p].value for p in parameters}
     minim.distribution = mock_distribution
-    minim.change_parameters(minim.parameters)
+    minim.change_parameters()
     for p in minim.parameters:
         assert minim.parameters[p].value == expected_values[p]
 
@@ -182,7 +188,7 @@ def test_MMC_change_parameter(parameters):
     expected_values = [1.5, 0.5]
     minim = MinimizerFactory.create_minimizer('MMC', parameters)
     minim.distribution = mock_distribution2
-    minim.change_parameters(minim.parameters)
+    minim.change_parameters()
     assert [p.value for p in minim.parameters.values()] == expected_values
 
 

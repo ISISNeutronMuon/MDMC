@@ -13,6 +13,6 @@ class ObservableReaderFactory(ReaderFactory):
     """
 
     @staticmethod
-    def base_class():
+    def base_class() -> ObservableReader:
 
         return ObservableReader

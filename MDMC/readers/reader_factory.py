@@ -3,7 +3,10 @@
 from abc import ABC, abstractmethod
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers, getmodule
+from typing import TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from MDMC.readers.reader import Reader
 
 class ReaderFactory(ABC):
 
@@ -13,7 +16,7 @@ class ReaderFactory(ABC):
     """
 
     @classmethod
-    def create_reader(cls, module_name, file_name):
+    def create_reader(cls, module_name: str, file_name: str) -> 'Reader':
         """
         Creates a reader object from a module name
 
@@ -59,7 +62,7 @@ class ReaderFactory(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def _name_from_alias(alias):
+    def _name_from_alias(alias: str) -> str:
         """
         Converts an ``alias`` into a module name
         """
