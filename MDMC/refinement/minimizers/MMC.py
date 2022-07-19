@@ -196,5 +196,4 @@ class MMC(Minimizer):
         """
 
         self.reset_parameters()
-
-        return self.get_result_string()
+        super(MMC, self).present_result()

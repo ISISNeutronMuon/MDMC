@@ -349,10 +349,4 @@ class GPR(Minimizer):
             A string presenting the parameters for which the calculated and predicted
             figures of merit are lowest. To be printed by Control to the user.
         """
-
-        fit, min_FOM_measured, min_parameters_measured = self.GPR_fit()
-        points, FoMs = self.GPR_predict(fit)
-        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
-        self.set_parameter_values(self.parameter_names, min_parameters_predicted)
-
-        return self.get_result_string()
+        super(GPR, self).present_result()

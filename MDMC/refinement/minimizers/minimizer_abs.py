@@ -2,6 +2,8 @@
 parameters"""
 
 from abc import ABC, abstractmethod
+
+import pandas
 from mpi4py import MPI
 import pandas as pd
 
@@ -175,12 +177,74 @@ class Minimizer(ABC):
         Calculates and returns the most appropriate output for the minimiser class
         e.g. minimum FOM and parameter values
         """
+        if type(self.history) == pandas.DataFrame:
+            # Find last parameters & FoM
+            last_param_row = self.history.iloc[-1]
+            last_FoM_value = last_param_row[0]
 
-        raise NotImplementedError
+            # Find lowest parameters & FoM
+            lowest_FoM_id = self.history["FoM"].idxmin()
+            lowest_FoM_row = self.history.iloc[lowest_FoM_id]
+            lowest_FoM_value = lowest_FoM_row.get("FoM")
 
-    def get_result_string(self) -> str:
+        else:
+            # Relies on an assumptions that a 2D list/table is given
+            # FoM will appear first in any given row
+
+            # Find last parameters & FoM
+            last_row = self.history[-1]
+            last_param_row = {}
+            for parameter_tuple in zip(self.history_columns, last_row):
+                last_param_row[parameter_tuple[0]] = parameter_tuple[1]
+            last_FoM_value = last_param_row.pop("FoM")
+
+            # Find lowest parameters & FoM
+            # Creates dict of FoM -> index, for ease of search & lookup
+            FoMs = {self.history[row_index][0]: row_index for row_index in range(len(self.history))}
+            lowest_FoM_value = min(FoMs.keys())
+
+            lowest_FoM_row = {}
+            for parameter_tuple in zip(self.history_columns, self.history[FoMs[lowest_FoM_value]]):
+                lowest_FoM_row[parameter_tuple[0]] = parameter_tuple[1]
+            lowest_FoM_row.pop("FoM")
+
+        # Extract parameter values
+        last_parameters_found = ()
+        for parameter in self.history_columns:
+            last_parameters_found += (last_param_row[parameter],) if parameter not in ['FoM', 'Change state'] else ()
+
+        lowest_FoM_parameters = ()
+        for parameter in self.history_columns:
+            lowest_FoM_parameters += (lowest_FoM_row[parameter],) if parameter not in ['FoM', 'Change state'] else ()
+
+        return self.format_result_string(last_parameters_found,
+                                         last_FoM_value,
+                                         lowest_FoM_parameters,
+                                         lowest_FoM_value)
+
+    def format_result_string(self,
+                             last_parameters_found: tuple,
+                             last_FoM_value: float,
+                             lowest_FoM_parameters: tuple,
+                             lowest_FoM_value: float) -> str:
         """
-        Obtains data and formats a string output for the results of the minimiser class
+        Formats a string output for the results of the minimiser class
+
+        Parameters
+        ----------
+        last_parameters_found: tuple
+            A tuple-like object containing the parameters of the last point
+            in the history
+
+        last_FoM_value: float
+            The FoM value of the last point in the history
+
+        lowest_FoM_parameters: tuple
+            A tuple-like object containing the parameters of the point with
+
+        lowest_FoM_value: float
+            The lowest FoM value of the history
+
 
         Returns
         -------
@@ -191,27 +255,10 @@ class Minimizer(ABC):
             3. The last FoM value of the run
             4. The optimal (lowest FoM) parameters
             5. The optimal (lowest) FoM value
-
         """
 
-        # Find last parameters & FoM
-        last_row = self.history.iloc[-1]
-        last_FoM_value = last_row["FoM"]
-        last_parameters_found = ()
-        for parameter in self.parameters:
-            last_parameters_found += (last_row[parameter],)
-
-        # Find lowest parameters & FoM
-        lowest_FoM_id = self.history["FoM"].idxmin()
-        lowest_FoM_row = self.history.iloc[lowest_FoM_id]
-        lowest_FoM = lowest_FoM_row.get("FoM")
-        lowest_FoM_parameters = ()
-        for parameter in self.parameters:
-            lowest_FoM_parameters += (lowest_FoM_row[parameter],)
-
         has_converged = self.has_converged()
-
-        converged_message = '\n The refinement has converged.' if has_converged else "\n The refinement has not converged."
+        converged_message = '\nThe refinement has converged.' if has_converged else "\nThe refinement has not converged."
 
         output_string = (f'{converged_message} \n \n'
                          f'Last accepted point is: \n'
@@ -219,6 +266,6 @@ class Minimizer(ABC):
                          f'FoM of {last_FoM_value}. \n \n'
                          f'Best point measured was: \n'
                          f'{lowest_FoM_parameters} for a minimum FoM of '
-                         f'{lowest_FoM}.\n \n ')
+                         f'{lowest_FoM_value}.\n \n ')
 
         return output_string
