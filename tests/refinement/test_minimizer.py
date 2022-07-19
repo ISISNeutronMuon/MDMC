@@ -144,18 +144,17 @@ def test_minimizer_tied_parameter():
             minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
-def test_correct_output(parameters):
+def test_correct_output_with_numpy_data(parameters):
     """
     Test that the output of a minimizer is in the correct format,
-    only dependent on FoM & order of
+    using a pandas DataFrame as the history
     """
 
-    class MockFinishedMinimizer(Minimizer):
+    class DataFrameHistoryMinimizer(Minimizer):
 
         @property
         def history_columns(self):
             return ['FoM', 'Change state', 'epsilon (#2)', 'sigma (#3)']
-
 
         @property
         def history(self):
@@ -174,7 +173,7 @@ def test_correct_output(parameters):
         def has_converged(self):
             return False
 
-    mini = MockFinishedMinimizer(parameters)
+    mini = DataFrameHistoryMinimizer(parameters)
     obtained_output_string = mini.present_result()
     expected_output_string = (f'\nThe refinement has not converged. \n \n'
                          f'Last accepted point is: \n'
@@ -185,3 +184,42 @@ def test_correct_output(parameters):
                          f'405.601993.\n \n ')
 
     assert obtained_output_string == expected_output_string
+
+    @patch.multiple(Minimizer, __abstractmethods__=set())
+    def test_correct_output_with_list_like_data(parameters):
+        """
+        Test that the output of a minimizer is in the correct format,
+        using a 2D List as the history
+        """
+
+        class ListHistoryMinimizer(Minimizer):
+
+            @property
+            def history_columns(self):
+                return ['FoM', 'Change state', 'epsilon (#2)', 'sigma (#3)']
+
+            @property
+            def history(self):
+                return [
+                    [466.498806, "Accepted", 1.024300, 3.360000],
+                    [439.172624, "Accepted", 1.018742, 3.384798],
+                    [405.601993, "Accepted", 1.026101, 3.381142],
+                    [462.436135, "Rejected", 1.020707, 3.369637],
+                    [456.283837, "Rejected", 1.035037, 3.397473],
+                    [419.142104, "Accepted", 1.021885, 3.403754]
+                ]
+
+            def has_converged(self):
+                return False
+
+        mini = ListHistoryMinimizer(parameters)
+        obtained_output_string = mini.present_result()
+        expected_output_string = (f'\nThe refinement has not converged. \n \n'
+                                  f'Last accepted point is: \n'
+                                  f'(1.021885, 3.403754) with a minimum '
+                                  f'FoM of 419.142104. \n \n'
+                                  f'Best point measured was: \n'
+                                  f'(1.026101, 3.381142) for a minimum FoM of '
+                                  f'405.601993.\n \n ')
+
+        assert obtained_output_string == expected_output_string
