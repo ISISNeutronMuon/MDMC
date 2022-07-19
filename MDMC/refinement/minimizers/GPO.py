@@ -40,27 +40,30 @@ class GPO(Minimizer):
     """
 
 
-    def __init__(self, parameters, n_points, **settings):
-        super().__init__(parameters, n_points)
+    def __init__(self, parameters, **settings):
+        super().__init__(parameters)
 
         self.parameters = parameters
-        self.n_points = n_points
+        self.n_points = settings.get('n_points', 20)
         # Ensure all parameters have bounds
-        self.parameter_bounds = np.array(tuple(GPR.create_bounds(p) for p in self.parameters))
+        self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) for parameter in parameters.values()]
+        self.parameter_names =  [str(name) for name in parameters.keys()]
+        #np.array(tuple(GPR.create_bounds(p) for p in self.parameters))
+        #bounds_grid = [tuple(self.create_bounds(parameter)) for parameter in parameters.values()]
 
 
         # Initialise the optimizer, use Gaussian process estimator, an acquisition function which
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-        self.optimizer =Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
+        self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
                 acq_optimizer="sampling", initial_point_generator="lhs", n_initial_points=20)
 
 
     @property
     def history_columns(self) -> list[str]:
 
-        return ['FoM', 'Change state', 'Predicted min coords', 'Predicted min FoM'] + list(self.parameters)
+        return ['FoM', 'Change state', 'Pred coords', 'Pred FoM'] + list(self.parameters)
 
     def has_converged(self) -> bool:
         """
@@ -94,6 +97,9 @@ class GPO(Minimizer):
         for name, value in zip(parameter_names, values):
             self.parameters[name].value = value
 
+    def reset_parameters(self) -> None:
+        pass
+
 
     def change_parameters(self) -> None:
         """
@@ -118,12 +124,15 @@ class GPO(Minimizer):
         """
 
         self.FoM = FoM
+        values = list([self.parameters[p].value for p in self.parameters])
+
+        self.optimizer.tell(values, float(self.FoM))
+
         self.predicted_FoM = self.optimizer.get_result()['fun']
         self.predicted_min_pos = self.optimizer.get_result()['x']
         history = [self.FoM, 'Accepted', self.predicted_min_pos, self.predicted_FoM]
         self.state_changed = True
 
-        values = np.array([self.parameters[p].value for p in self.parameters])
         history.extend(values)
         self._history.append(history)
         if not self.has_converged():
@@ -142,7 +151,7 @@ class GPO(Minimizer):
         """
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FOM_measured = np.min(FoMs)
-        min_parameters_measured = self._history[np.where(FoMs==min_FOM_measured)[0]]
+        min_parameters_measured = self._history[np.where(FoMs==min_FOM_measured)[0][0]][3]
 
         output_string = (f'Best point measured was \n'
             f'{min_parameters_measured} for a minimum FoM of '

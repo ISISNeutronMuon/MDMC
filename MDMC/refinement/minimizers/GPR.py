@@ -96,10 +96,10 @@ class GPR(Minimizer):
 
 
     @staticmethod
-    def create_bounds(parameter: Parameter, fraction: float=0.5) -> Tuple[float, float]:
+    def create_bounds(parameter: Parameter, fraction: float=0.3) -> Tuple[float, float]:
         """
         Returns either the parameter constraints (bounds) or bounds for each parameter
-        equal to the parameter value =/- fraction*parameter.value, defaulting to +-50%.
+        equal to the parameter value =/- fraction*parameter.value, defaulting to +-30%.
         Raises a ValueError if value is zero and has no constraints since it is not possible
         to make a guess.
 
@@ -108,7 +108,7 @@ class GPR(Minimizer):
         parameter : Parameter
             A MDMC 'Parameter'
         fraction : optional, float
-            The fractional size of the bound, defaults to 0.5 == +-50%
+            The fractional size of the bound, defaults to 0.3 == +-30%
 
         Returns
         -------
