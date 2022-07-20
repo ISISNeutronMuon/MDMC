@@ -60,8 +60,6 @@ jobs:
         BRANCH: ${{ github.head_ref }}
         FILENAME: ${{ github.head_ref }}-profiling
       run: |
-          # clear directory of any existing prof files first
-          sudo rm -r $(pwd)/prof/
           sudo docker cp $(docker ps -lq):home/prof/ $(pwd)/prof
           pip3 install pandas
           python3 .github/scripts/process_prof_data.py $(pwd)/prof --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
