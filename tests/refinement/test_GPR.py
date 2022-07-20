@@ -160,6 +160,3 @@ def test_GPR_minimizer_change_constrained_parameter():
     minim = MinimizerFactory.create_minimizer('GPR', parameters)
     minim.change_parameters()
     assert [p.value for p in minim.parameters.values()] == expected_values
-
-def test_GP_opt_ask():
-    pass

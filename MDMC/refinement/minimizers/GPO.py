@@ -6,10 +6,7 @@ import numpy as np
 import scipy.stats as st
 import pandas as pd
 
-from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
-from sklearn.gaussian_process import kernels
 from skopt import Optimizer
-from scipy.ndimage import minimum_position, minimum
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
@@ -77,10 +74,6 @@ class GPO(Minimizer):
         """
         return len(self.history) >= self.n_points
 
-    def GP_opt_tell(self, measured_values: np.ndarray, measured_FoM: float) -> None:
-        """Updates the Gaussian process optimizer with next measured point"""
-        self.optimizer.tell(measured_values, measured_FoM)
-
 
     def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
@@ -107,15 +100,16 @@ class GPO(Minimizer):
         from the parameter_point_array.
         """
 
-        point_to_calculate = len(self._history)
-        if point_to_calculate <= self.n_points:
+        if len(self._history) <= self.n_points:
             coordinates = self.optimizer.ask()
             self.set_parameter_values(self.parameter_names, coordinates)
 
 
     def step(self, FoM: float) -> None:
         """
-        Increments the minimization by a step
+        Increments the minimization by a step, tells the optimizer the most recent measured point
+        asks for the coordinates of the next point, updates the history, checks for convergance
+        and then changes parameters if an additional step is required.
 
         Parameters
         ----------
@@ -140,8 +134,7 @@ class GPO(Minimizer):
 
     def present_result(self) -> str:
         """
-        Sets the parameters to those predicted to return the minimum FoM, returns
-        the coordinates of the minima and the predicted FoM.
+        Returns the coordinates of the minima and the predicted FoM.
 
         Returns
         -------
