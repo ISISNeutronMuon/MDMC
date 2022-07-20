@@ -60,9 +60,9 @@ jobs:
         BRANCH: ${{ github.head_ref }}
         FILENAME: ${{ github.head_ref }}-profiling
       run: |
-          sudo docker cp $(docker ps -lq):home/prof/ $(pwd)/prof
+          sudo docker cp $(docker ps -lq):/home/prof/ prof/
           pip3 install pandas
-          python3 .github/scripts/process_prof_data.py $(pwd)/prof --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
+          python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
