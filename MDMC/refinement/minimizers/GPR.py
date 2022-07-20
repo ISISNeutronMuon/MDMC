@@ -357,15 +357,19 @@ class GPR(Minimizer):
         lowest_FoM_row = self.history.iloc[lowest_FoM_id]
         lowest_FoM_value = lowest_FoM_row.get("FoM")
 
+        history_params = self.history_columns
+        history_params.remove("FoM")
+        history_params.remove("Change state")
+
         last_parameters_found = ()
-        for parameter in self.history_columns:
+        for parameter in history_params:
             last_parameters_found += (last_param_row[parameter],)
 
         lowest_FoM_parameters = ()
-        for parameter in self.history_columns:
+        for parameter in history_params:
             lowest_FoM_parameters += (lowest_FoM_row[parameter],)
 
         return self.format_result_string(last_parameters_found,
-                                  last_FoM_value,
-                                  lowest_FoM_parameters,
-                                  lowest_FoM_value)
+                                         last_FoM_value,
+                                         lowest_FoM_parameters,
+                                         lowest_FoM_value)
