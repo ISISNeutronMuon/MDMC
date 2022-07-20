@@ -6,12 +6,10 @@ on:
 jobs:
   build:
     name: Build docker container
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if Docker build files changed
@@ -26,7 +24,7 @@ jobs:
   tests:
     name: Docker tests
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         testset: [lammps, "not lammps"]
@@ -36,8 +34,6 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -65,16 +61,16 @@ jobs:
         FILENAME: ${{ github.head_ref }}-profiling
       run: |
           # clear directory of any existing prof files first
-          sudo rm -r /home/prof/
-          sudo docker cp $(docker ps -lq):home/prof/ /home/prof
+          sudo rm -r $(pwd)/prof/
+          sudo docker cp $(docker ps -lq):home/prof/ $(pwd)/prof
           pip3 install pandas
-          python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
+          python3 .github/scripts/process_prof_data.py $(pwd)/prof --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: /home/ansible/_work/MDMCv0.2_pilot/MDMCv0.2_pilot/${{ github.head_ref }}-profiling.csv
+        path: $(pwd)/${{ github.head_ref }}-profiling.csv
         if-no-files-found: error
 
     - name: Copy coverage
@@ -90,12 +86,8 @@ jobs:
   profiling:
     name: Profiling
     needs: tests
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
-    - name: Own repo to clear before checkout and home to save files
-      run: |
-        sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
-        sudo chown -R ansible /home/ 
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -113,15 +105,13 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-total-profiling
-        path: /home/ansible/_work/MDMCv0.2_pilot/MDMCv0.2_pilot/${{ github.head_ref }}-total-profiling.csv
+        path: $(pwd)/${{ github.head_ref }}-total-profiling.csv
 
   documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -135,10 +125,8 @@ jobs:
 
   linting:
     name: Pylint
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: apt get

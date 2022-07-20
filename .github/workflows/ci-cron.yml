@@ -8,15 +8,13 @@ on:
 jobs:
   docker_tests:
     name: Docker including MD tests
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
         architecture: x64
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -37,15 +35,13 @@ jobs:
 
   basic_tests:
     name: Non-container and not inc MD tests
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
         architecture: x64
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -88,7 +84,7 @@ jobs:
 
   singularity:
     name: Singularity tests
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -98,8 +94,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.1 libarchive-dev libgpgme11-dev libseccomp-dev
-      - name: Own repo to clear before checkout
-        run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
       - name: Checkout repo
         uses: actions/checkout@v2
 
@@ -122,8 +116,6 @@ jobs:
       # with:
         # python-version: '3.8'
         # architecture: x64
-    # - name: Own repo to clear before checkout
-      # run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     # - name: Checkout repo
       # uses: actions/checkout@v2
 
@@ -146,10 +138,8 @@ jobs:
 
   doc-deploy:
     name: Documentation
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Build documentation
