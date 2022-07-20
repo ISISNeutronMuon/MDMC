@@ -12,6 +12,7 @@ _EXP_DATA_PATH = '/experimental_data'
 _CALC_OBS_PATH = '/calculated_observables'
 _OBJECT_PATH = '/MDMC_objects'
 _CONFIG_PATH = '/configurations'
+_GUI_PATH = '/gui'
 
 
 # Reader/experimental data
@@ -95,3 +96,16 @@ OBJECT_DATA = {'trajectory':'/trajectory.zip'}
 # Add paths to data values
 for key in OBJECT_DATA:
     OBJECT_DATA[key] = _ABS_DIR_PATH + _OBJECT_PATH + OBJECT_DATA[key]
+
+# viewer data
+#
+# html files (for X3DOM viewer)
+
+GUI_DATA = {
+    'atoms_X3DOM': '/atoms.html',
+    'water_molecule_X3DOM': '/water_molecule.html',
+    'universe_X3DOM': '/universe.html'
+}
+
+for key in GUI_DATA:
+    GUI_DATA[key] = _ABS_DIR_PATH + _GUI_PATH + GUI_DATA[key]
