@@ -26,6 +26,7 @@ jobs:
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     strategy:
+      fail-fast: false
       matrix:
         testset: [lammps, "not lammps"]
     steps:
@@ -88,6 +89,8 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
+    - name: Own repo to avoid npm bug
+      run: sudo chmod -R 777 /home/ 
 
     - name: Download tests artifacts
       uses: actions/download-artifact@v3
