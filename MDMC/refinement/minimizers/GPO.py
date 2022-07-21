@@ -1,16 +1,10 @@
 """The Gaussian-Process-Optimizer minimizer class"""
-import itertools
-from typing import Optional, Tuple
-
 import numpy as np
-import scipy.stats as st
-import pandas as pd
 
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
-from MDMC.MD.parameters import Parameters, Parameter
 
 
 class GPO(Minimizer):
@@ -23,7 +17,12 @@ class GPO(Minimizer):
     the optimizer what the result was and it updates its model. The optimizer
     is configured to cycle between prioritising exploration of the space, and
     exploitation of the minima, in order to find the global minimum, without becoming
-    stuck in a local minimum.
+    stuck in a local minimum. The first 20 points will be spaced according to a latin
+    hypercube, to cover the available space, subsequent points will then be chosen according
+    to the acquisition function and the measured values.
+    Due to the potential large jumps between the points, a reasonable amount of equlibration
+    of the MD simulation is likely required. 
+    This optimizer is likely to be the fastest converging (fewest MD steps) option for MDMC. 
 
     Parameters
     ----------
@@ -45,9 +44,8 @@ class GPO(Minimizer):
         # Ensure all parameters have bounds
         self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) for parameter in parameters.values()]
         self.parameter_names =  [str(name) for name in parameters.keys()]
-        #np.array(tuple(GPR.create_bounds(p) for p in self.parameters))
-        #bounds_grid = [tuple(self.create_bounds(parameter)) for parameter in parameters.values()]
 
+        np.random.seed(7) # This should mean results are reproducible in tests
 
         # Initialise the optimizer, use Gaussian process estimator, an acquisition function which
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
@@ -62,10 +60,11 @@ class GPO(Minimizer):
 
         return ['FoM', 'Change state', 'Pred coords', 'Pred FoM'] + list(self.parameters)
 
+
     def has_converged(self) -> bool:
         """
         Checks if the refinement process has finished, i.e. if the number of points
-        equal to n_points have been measured.
+        equal to or greater than n_points have been measured.
 
         Returns
         -------
@@ -89,6 +88,7 @@ class GPO(Minimizer):
 
         for name, value in zip(parameter_names, values):
             self.parameters[name].value = value
+
 
     def reset_parameters(self) -> None:
         pass
@@ -131,6 +131,7 @@ class GPO(Minimizer):
         self._history.append(history)
         if not self.has_converged():
             self.change_parameters()
+
 
     def present_result(self) -> str:
         """

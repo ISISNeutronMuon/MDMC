@@ -1,20 +1,11 @@
 """
 Tests the GPO minimizer class
 """
-
-from unittest.mock import patch, ANY
-
 import numpy as np
 import pandas as pd
 import pytest
 
-from skopt import Optimizer
-
-from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
-from MDMC.refinement.minimizers.GPR import GPR
-from MDMC.refinement.minimizers.GPO import GPO
-
 from MDMC.MD.parameters import Parameters, Parameter
 
 
@@ -31,15 +22,15 @@ def test_GPO_has_converged(mock_history, min_steps, expected):
 
 
 def test_GPO_step():
-    """Tests GPO is able to find the minima of a single cycle of a sine function and then return the result"""
+    """Tests GPO is able to find the minima of a single cycle of a sine function"""
     def cosine_function(x: float) -> float:
         return np.cos(x)
 
-    parameter = Parameters(Parameter(name='sine', value=1.5, constraints=[-2., 4.]))
+    parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=100)
     gpo._history=[]
-    for i in range(30):
-        x = parameter['sine'].value
+    for i in range(25):
+        x = parameter['a'].value
         FoM=np.cos(x)+3.0
         gpo.step(FoM)
-    print(x)
+    assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
