@@ -200,6 +200,9 @@ def test_incorrect_input_for_output_string(parameters, params_last, FoM_last, pa
 
 
 def test_each_minimizer_for_correct_output(parameters):
+    """
+    Tests each implemented minimizer to make sure that the output is given in the same format
+    """
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minimizer = MinimizerFactory.create_minimizer(minimizer_name, parameters)
 
@@ -211,4 +214,5 @@ def test_each_minimizer_for_correct_output(parameters):
         pattern = re.compile(r"\nThe refinement has not converged\. \n \nLast accepted point is: \n\(.*\) with a "
                              r"minimum FoM of .*\..*\. \n \nBest point measured was: \n\(.*\) for a minimum FoM of "
                              r".*\..*\.\n \n")
-        assert re.match(pattern, obtained_history_string)
+
+        assert re.match(pattern, obtained_history_string) is not None
