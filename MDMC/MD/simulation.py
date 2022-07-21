@@ -592,7 +592,7 @@ class Universe(AtomContainer):
             The mass density of all of the atoms of the ``Universe``
         """
 
-        return np.sum(atom.mass for atom in self.atoms) / self.volume
+        return sum(atom.mass for atom in self.atoms) / self.volume
 
     @property
     @unit_decorator_getter(unit=units.MASS / units.LENGTH ** 3)
