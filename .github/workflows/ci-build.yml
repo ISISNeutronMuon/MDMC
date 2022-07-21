@@ -68,7 +68,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: $(pwd)/${{ github.head_ref }}-profiling.csv
+        path: ${{ github.head_ref }}-profiling.csv
         if-no-files-found: error
 
     - name: Copy coverage
@@ -103,7 +103,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-total-profiling
-        path: $(pwd)/${{ github.head_ref }}-total-profiling.csv
+        path: ${{ github.head_ref }}-total-profiling.csv
 
   documentation:
     name: Documentation
