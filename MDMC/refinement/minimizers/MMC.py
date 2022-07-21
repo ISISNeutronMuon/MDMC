@@ -196,25 +196,26 @@ class MMC(Minimizer):
         """
 
         self.reset_parameters()
+        history = self.history
 
-        last_param_row = self.history.iloc[-1]
+        last_param_row = history.iloc[-1]
         last_FoM_value = last_param_row[0]
 
         # Find lowest parameters & FoM
-        lowest_FoM_id = self.history["FoM"].idxmin()
-        lowest_FoM_row = self.history.iloc[lowest_FoM_id]
+        lowest_FoM_id = history["FoM"].idxmin()
+        lowest_FoM_row = history.iloc[lowest_FoM_id]
         lowest_FoM_value = lowest_FoM_row.get("FoM")
 
-        history_params = self.history_columns
-        history_params.remove("FoM")
-        history_params.remove("Change state")
+        columns = self.history_columns
+        columns.remove("FoM")
+        columns.remove("Change state")
 
         last_parameters_found = ()
-        for parameter in history_params:
+        for parameter in columns:
             last_parameters_found += (last_param_row[parameter],)
 
         lowest_FoM_parameters = ()
-        for parameter in history_params:
+        for parameter in columns:
             lowest_FoM_parameters += (lowest_FoM_row[parameter],)
 
         return self.format_result_string(last_parameters_found,
