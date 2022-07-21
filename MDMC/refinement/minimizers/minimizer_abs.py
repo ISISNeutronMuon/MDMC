@@ -214,15 +214,21 @@ class Minimizer(ABC):
             5. The optimal (lowest) FoM value
         """
 
-        has_converged = self.has_converged()
-        converged_message = '\nThe refinement has converged.' if has_converged else "\nThe refinement has not converged."
+        if isinstance(last_parameters_found, tuple) and isinstance(lowest_FoM_parameters, tuple):
+            if isinstance(last_FoM_value, float) and isinstance(lowest_FoM_value, float):
+                has_converged = self.has_converged()
+                converged_message = '\nThe refinement has converged.' if has_converged else "\nThe refinement has not converged."
 
-        output_string = (f'{converged_message} \n \n'
-                         f'Last accepted point is: \n'
-                         f'{last_parameters_found} with a minimum '
-                         f'FoM of {last_FoM_value}. \n \n'
-                         f'Best point measured was: \n'
-                         f'{lowest_FoM_parameters} for a minimum FoM of '
-                         f'{lowest_FoM_value}.\n \n ')
+                output_string = (f'{converged_message} \n \n'
+                                 f'Last accepted point is: \n'
+                                 f'{last_parameters_found} with a minimum '
+                                 f'FoM of {last_FoM_value}. \n \n'
+                                 f'Best point measured was: \n'
+                                 f'{lowest_FoM_parameters} for a minimum FoM of '
+                                 f'{lowest_FoM_value}.\n \n ')
 
-        return output_string
+                return output_string
+            else:
+                raise TypeError("The FoM values provided were not given as floats")
+        else:
+            raise TypeError("The parameters were not given as a tuple")
