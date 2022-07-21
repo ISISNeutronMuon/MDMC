@@ -1,14 +1,17 @@
 """
 Tests the Metropolis-Hastings minimizer
 """
-from unittest.mock import patch
+from unittest.mock import patch, PropertyMock
 
 import numpy as np
+import pandas
 import pytest
 
 from MDMC.MD import Parameter, Parameters
 from MDMC.refinement import minimizers
+from MDMC.refinement.minimizers.MMC import MMC
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
+
 
 @pytest.fixture
 def parameters():
@@ -30,6 +33,7 @@ def parameters():
                        Parameter(name='potential_strength', value=1234.),
                        Parameter(name='sigma', value=3.3)])
 
+
 def mock_change_parameters(self):
     """
     Mock of minimizer.change_parameters which doubles each ``Parameter`` value
@@ -37,6 +41,7 @@ def mock_change_parameters(self):
 
     for p in self.parameters:
         self.parameters[p].value *= 2
+
 
 def test_mmc_step_accepted(monkeypatch, parameters):
     """
@@ -144,23 +149,46 @@ def test_MMC_has_converged(mock_history, min_steps, expected):
     minim._history = mock_history
     assert minim.has_converged() == expected
 
-
-@pytest.mark.parametrize('points,FoMs,expected',
-[([[1],[2],[3]], [1,2,3], [[1],1]),
-([[1,0],[2,0],[3,0],[4,0]], [0.1,2,3,0], [[4,0],0])])
-def test_MMC_present_results(points,FoMs,expected):
+@pytest.mark.parametrize('mock_history, FoMs, expected',
+                         [(pandas.DataFrame(data=[
+                             [123.4, "Accepted", 23.453, 8.],
+                             [235.6, "Rejected", 23.567, 7.85],
+                             [100.2, "Accepted", 24.658, 6.5]
+                         ],
+                             columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                           (100.2, 100.2),
+                           ((24.658, 6.5), (24.658, 6.5))),
+                             (pandas.DataFrame(data=[
+                                 [123.4, "Accepted", 22.453, 8.],
+                                 [34.6, "Accepted", 23.567, 7.85],
+                                 [45.2, "Rejected", 20.655, 5.5]
+                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (34.6, 45.2),
+                              ((23.567, 7.85), (20.655, 5.5))
+                             ),
+                             (pandas.DataFrame(data=[
+                                 [123.4, "Accepted", 23.453, 8.],
+                                 [235.6, "Rejected", 23.567, 7.85],
+                                 [145.2, "Rejected", 24.658, 6.5]
+                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (123.4, 145.2),
+                              ((23.453, 8.), (24.658, 6.5))
+                             )])
+def test_MMC_present_results(mock_history, FoMs, expected):
     """
     Tests that the output of MMC contains the correct refined coordinates.
     """
     params = Parameters()
-    with patch("MDMC.refinement.minimizers.MMC.MMC.history", autospec=True) as hist:
-        hist['FoM'].min.return_value = expected[1]
-        hist['FoM'].idxmin.return_value = FoMs
-        hist.iloc.__getitem__.return_value = points
-        mmc = MinimizerFactory.create_minimizer('MMC', params)
-        coord = mmc.present_result()
-        assert str(expected[0]) in coord
-        assert str(expected[1]) in coord
+    with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
+        hist.return_value = mock_history
+        with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns", new_callable=PropertyMock) as columns:
+            columns.return_value = list(mock_history.columns)
+            mmc = MinimizerFactory().create_minimizer("MMC", params)
+            output_string = mmc.present_result()
+            assert str(FoMs[0]) in output_string
+            assert str(FoMs[1]) in output_string
+            assert str(expected[0]) in output_string
+            assert str(expected[1]) in output_string
 
 
 def test_MMC_change_parameter(parameters):
@@ -182,6 +210,7 @@ def test_MMC_change_parameter(parameters):
 
     def mock_distribution2(low: float, high: float, size: int):
         return np.array([1., -1.])
+
     parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
                              Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
     # Expect values to be set to the upper/lower limit

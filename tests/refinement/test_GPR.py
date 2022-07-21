@@ -2,9 +2,10 @@
 Tests the GPR minimizer class
 """
 
-from unittest.mock import patch, ANY
+from unittest.mock import patch, ANY, PropertyMock
 
 import numpy as np
+import pandas
 import pandas as pd
 import pytest
 
@@ -76,19 +77,46 @@ def test_GPR_global_minimum_position(FoMs, coordinates, expected):
     assert np.allclose(min_coord, expected[0], rtol=1e-5)
     assert np.allclose(min_FoM, expected[1], rtol=1e-5)
 
-@pytest.mark.parametrize('points,FoMs,expected',
-[([[1],[2],[3]], [1,2,3], [[1],1]),
-([[1,0],[2,0],[3,0],[4,0]], [0.1,2,3,0], [[4,0],0])])
-def test_GPR_present_results(points,FoMs,expected):
-    """Tests present_results function includes the correct values"""
-    with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_fit", autospec=True,
-                return_value=(None,points, FoMs)):
-        with patch("MDMC.refinement.minimizers.GPR.GPR.GPR_predict",
-                    autospec=True, return_value=(points, FoMs)):
-            gpr = MinimizerFactory.create_minimizer('GPR', Parameters(), n_points=3)
-            coord = gpr.present_result()
-            assert str(expected[0]) in coord
-            assert str(expected[1]) in coord
+@pytest.mark.parametrize('mock_history, FoMs, expected',
+                         [(pandas.DataFrame(data=[
+                             [123.4, "Accepted", 23.453, 8.],
+                             [235.6, "Rejected", 23.567, 7.85],
+                             [100.2, "Accepted", 24.658, 6.5]
+                         ],
+                             columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                           (100.2, 100.2),
+                           ((24.658, 6.5), (24.658, 6.5))),
+                             (pandas.DataFrame(data=[
+                                 [123.4, "Accepted", 22.453, 8.],
+                                 [34.6, "Accepted", 23.567, 7.85],
+                                 [45.2, "Rejected", 20.655, 5.5]
+                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (34.6, 45.2),
+                              ((23.567, 7.85), (20.655, 5.5))
+                             ),
+                             (pandas.DataFrame(data=[
+                                 [123.4, "Accepted", 23.453, 8.],
+                                 [235.6, "Rejected", 23.567, 7.85],
+                                 [145.2, "Rejected", 24.658, 6.5]
+                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (123.4, 145.2),
+                              ((23.453, 8.), (24.658, 6.5))
+                             )])
+def test_GPR_present_results(mock_history, FoMs, expected):
+    """
+    Tests that the output of GPR contains the correct refined coordinates.
+    """
+    params = Parameters()
+    with patch("MDMC.refinement.minimizers.GPR.GPR.history", new_callable=PropertyMock) as hist:
+        hist.return_value = mock_history
+        with patch("MDMC.refinement.minimizers.GPR.GPR.history_columns", new_callable=PropertyMock) as columns:
+            columns.return_value = list(mock_history.columns)
+            gpr = MinimizerFactory().create_minimizer("GPR", params)
+            output_string = gpr.present_result()
+            assert str(FoMs[0]) in output_string
+            assert str(FoMs[1]) in output_string
+            assert str(expected[0]) in output_string
+            assert str(expected[1]) in output_string
 
 def test_GPR_create_bounds():
     """Tests bounds are created and returned correctly"""
