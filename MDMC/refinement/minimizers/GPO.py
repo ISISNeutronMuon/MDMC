@@ -21,8 +21,8 @@ class GPO(Minimizer):
     hypercube, to cover the available space, subsequent points will then be chosen according
     to the acquisition function and the measured values.
     Due to the potential large jumps between the points, a reasonable amount of equlibration
-    of the MD simulation is likely required. 
-    This optimizer is likely to be the fastest converging (fewest MD steps) option for MDMC. 
+    of the MD simulation is likely required.
+    This optimizer is likely to be the fastest converging (fewest MD steps) option for MDMC.
 
     Parameters
     ----------
@@ -41,8 +41,12 @@ class GPO(Minimizer):
 
         self.parameters = parameters
         self.n_points = settings.get('n_points', 20)
+        self.predicted_FoM = 1e9
+        self.predicted_min_pos = []
         # Ensure all parameters have bounds
-        self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) for parameter in parameters.values()]
+        self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) \
+                                for parameter in parameters.values()]
+
         self.parameter_names =  [str(name) for name in parameters.keys()]
 
         np.random.seed(7) # This should mean results are reproducible in tests
@@ -90,10 +94,6 @@ class GPO(Minimizer):
             self.parameters[name].value = value
 
 
-    def reset_parameters(self) -> None:
-        pass
-
-
     def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
@@ -104,6 +104,11 @@ class GPO(Minimizer):
             coordinates = self.optimizer.ask()
             self.set_parameter_values(self.parameter_names, coordinates)
 
+
+    def reset_parameters(self) -> None:
+        """Not necessary for this minimizer"""
+        # pylint: disable=unnecessary-pass
+        pass
 
     def step(self, FoM: float) -> None:
         """
@@ -118,7 +123,7 @@ class GPO(Minimizer):
         """
 
         self.FoM = FoM
-        values = list([self.parameters[p].value for p in self.parameters])
+        values = list((self.parameters[p].value for p in self.parameters))
 
         self.optimizer.tell(values, float(self.FoM))
 
