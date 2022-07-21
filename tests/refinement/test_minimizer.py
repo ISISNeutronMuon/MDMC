@@ -1,7 +1,8 @@
 """
 Tests the Minimizer base class
 """
-
+import random
+import re
 from tempfile import NamedTemporaryFile
 
 from unittest.mock import patch
@@ -36,8 +37,6 @@ def parameters():
                        Parameter(name='equilibrium_state', value=1.2),
                        Parameter(name='potential_strength', value=1234.),
                        Parameter(name='sigma', value=3.3)])
-
-
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init(parameters):
@@ -145,36 +144,51 @@ def test_minimizer_tied_parameter():
 
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
-def test_correct_output(parameters):
+@pytest.mark.parametrize("params_last, FoM_last, params_lowest, FoM_lowest",
+                         [
+                             ((1.021885, 3.403754), 419.142104, (1.026101, 3.381142), 405.601993),
+                             ((2.82347, 5.238947), 300., (2.82347, 5.238947), 300.),
+                             ((2134, 12344), 23456., (42343., 342.), 1034.)
+                          ])
+def test_correct_output(parameters, params_last, FoM_last, params_lowest, FoM_lowest):
     """
     Test that the output of a minimizer is in the correct format,
     using a pandas DataFrame as the history
     """
     class MockMinimizer(Minimizer):
         def has_converged(self):
-            return False
+            return True if params_last == params_lowest else False
 
-    obtained_output_string = MockMinimizer(parameters).format_result_string(
-        (1.021885, 3.403754),
-        419.142104,
-        (1.026101, 3.381142),
-        405.601993)
+    minimizer = MockMinimizer(parameters)
+    obtained_output_string = minimizer.format_result_string(
+        params_last,
+        FoM_last,
+        params_lowest,
+        FoM_lowest)
 
-    expected_output_string = (f'\nThe refinement has not converged. \n \n'
-                         f'Last accepted point is: \n'
-                         f'(1.021885, 3.403754) with a minimum '
-                         f'FoM of 419.142104. \n \n'
-                         f'Best point measured was: \n'
-                         f'(1.026101, 3.381142) for a minimum FoM of '
-                         f'405.601993.\n \n ')
+    converged_message = "\nThe refinement has converged." if minimizer.has_converged() else "\nThe refinement has not converged."
+
+    expected_output_string = (f'{converged_message} \n \n'
+                                 f'Last accepted point is: \n'
+                                 f'{params_last} with a minimum '
+                                 f'FoM of {FoM_last}. \n \n'
+                                 f'Best point measured was: \n'
+                                 f'{params_lowest} for a minimum FoM of '
+                                 f'{FoM_lowest}.\n \n ')
 
     assert obtained_output_string == expected_output_string
 
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
-def test_incorrect_input_for_output_string(parameters):
+@pytest.mark.parametrize("params_last, FoM_last, params_lowest, FoM_lowest",
+                         [
+                             ("abc", ["Wrong", "Value"], (1.026101, 3.381142), 405.601993),
+                             (2, {"Wrong": 123}, False, ("",)),
+                             ((1.309348, 2.87394, 10.3489), 456., (123, 23, 42), "FoM")
+                          ])
+def test_incorrect_input_for_output_string(parameters, params_last, FoM_last, params_lowest, FoM_lowest):
     """
-    Test that a  is thrown if the wrong input type is provided to format_result_string
+    Test that a TypeError is raised if the wrong input type is provided to format_result_string
     """
     class MockMinimizer(Minimizer):
         def has_converged(self):
@@ -182,9 +196,19 @@ def test_incorrect_input_for_output_string(parameters):
 
     minimizer = MockMinimizer(parameters)
     with pytest.raises(TypeError):
-            Minimizer.format_result_string(
-                "abc",
-                ["Wrong", "Value"],
-                (1.026101, 3.381142),
-                405.601993
-            )
+        print(minimizer.format_result_string(params_last, FoM_last, params_lowest, FoM_lowest))
+
+
+def test_each_minimizer_for_correct_output(parameters):
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minimizer = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+
+        # It does not matter what FoM is - we just want some history to check the output
+        randomizer = random.Random()
+        for i in range(5):
+            minimizer.step(FoM=randomizer.uniform(0.1, 1000))
+        obtained_history_string = minimizer.present_result()
+        pattern = re.compile(r"\nThe refinement has not converged\. \n \nLast accepted point is: \n\(.*\) with a "
+                             r"minimum FoM of .*\..*\. \n \nBest point measured was: \n\(.*\) for a minimum FoM of "
+                             r".*\..*\.\n \n")
+        assert re.match(pattern, obtained_history_string)
