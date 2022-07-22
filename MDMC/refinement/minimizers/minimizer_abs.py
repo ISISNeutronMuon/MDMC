@@ -3,7 +3,6 @@ parameters"""
 
 from abc import ABC, abstractmethod
 
-import pandas
 from mpi4py import MPI
 import pandas as pd
 
@@ -171,7 +170,7 @@ class Minimizer(ABC):
 
         self.history.to_csv(filename)
 
-
+    @abstractmethod
     def present_result(self):
         """
         Calculates and returns the most appropriate output for the minimiser class
@@ -216,8 +215,10 @@ class Minimizer(ABC):
 
         if isinstance(last_parameters_found, tuple) and isinstance(lowest_FoM_parameters, tuple):
             if isinstance(last_FoM_value, float) and isinstance(lowest_FoM_value, float):
-                has_converged = self.has_converged()
-                converged_message = '\nThe refinement has converged.' if has_converged else "\nThe refinement has not converged."
+                if self.has_converged():
+                    converged_message = '\nThe refinement has converged.'
+                else:
+                    converged_message = "\nThe refinement has not converged."
 
                 output_string = (f'{converged_message} \n \n'
                                  f'Last accepted point is: \n'
