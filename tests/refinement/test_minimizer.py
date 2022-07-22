@@ -133,7 +133,6 @@ def test_minimizer_tied_parameter():
     """
     Test that a ``ValueError`` is raised when passing a tied ``Parameter``
     """
-
     target_parameter = Parameter(name='target', value=1., )
     tied_parameter = Parameter(name='tied', value=1., )
     tied_parameter.set_tie(target_parameter, ' * 2')
@@ -152,8 +151,7 @@ def test_minimizer_tied_parameter():
                           ])
 def test_correct_output(parameters, params_last, FoM_last, params_lowest, FoM_lowest):
     """
-    Test that the output of a minimizer is in the correct format,
-    using a pandas DataFrame as the history
+    Test that the output of a minimizer is returned in the correct format
     """
     class MockMinimizer(Minimizer):
         def has_converged(self):

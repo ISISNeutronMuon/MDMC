@@ -178,6 +178,7 @@ def test_MMC_present_results(mock_history, FoMs, expected):
     """
     Tests that the output of MMC contains the correct refined coordinates.
     """
+
     params = Parameters()
     with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
         hist.return_value = mock_history
