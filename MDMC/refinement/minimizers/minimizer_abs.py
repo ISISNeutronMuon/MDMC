@@ -229,7 +229,7 @@ class Minimizer(ABC):
                                  f'{lowest_FoM_value}.\n \n ')
 
                 return output_string
-            else:
-                raise TypeError("The FoM values provided were not given as floats")
-        else:
-            raise TypeError("The parameters were not given as a tuple")
+
+            raise TypeError("The FoM values provided were not given as floats")
+
+        raise TypeError("The parameters were not given as a tuple")
