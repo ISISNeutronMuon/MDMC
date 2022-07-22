@@ -21,42 +21,14 @@ jobs:
         BRANCH: ${{ github.head_ref }}
       run: source .github/scripts/build_container.sh
 
-  engine_tests:
-    name: Docker MD tests
-    needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: fetch  # grabs master to compare if source code changed
-      run: git fetch origin master
-
-    - name: Run tests
-      env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }}
-        TESTSET: lammps
-      run: source .github/scripts/docker_testing.sh
-
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml
-      continue-on-error: true
-
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
-
   tests:
-    name: Docker non-MD tests
+    name: Docker tests
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        testset: [lammps, "not lammps"]
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -65,15 +37,40 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs master to compare if source code changed
-      run: git fetch origin master
 
     - name: Run tests
       env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         BRANCH: ${{ github.head_ref }}
-        TESTSET: "not lammps"
-      run: source .github/scripts/docker_testing.sh
+        TESTSET: ${{ matrix.testset }}
+      run: |
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
+        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
+        exit 0
+        
+    - name: Download master profiling for comparison
+      # regular download-artifact can only get artifacts from current run
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: ci-deploy.yml
+        name: master-profiling
+      continue-on-error: true
+        
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        BRANCH: ${{ github.head_ref }}
+        FILENAME: ${{ github.head_ref }}-profiling
+      run: |
+          sudo docker cp $(docker ps -lq):/home/prof/ prof/
+          pip3 install pandas
+          python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+          
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
+        path: ${{ github.head_ref }}-profiling.csv
+        if-no-files-found: error
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -85,6 +82,34 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
       continue-on-error: true
 
+  profiling:
+    name: Profiling
+    needs: tests
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Own repo to avoid npm bug
+      run: sudo chmod -R 777 /home/ 
+
+    - name: Download tests artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: /home/
+
+    - name: Combine and check profiling data
+      env: 
+        BRANCH: ${{ github.head_ref }}
+      run: |
+        pip3 install pandas
+        python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name $BRANCH-total-profiling
+    
+    - name: Upload total profiling as artifact if successful
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-total-profiling
+        path: ${{ github.head_ref }}-total-profiling.csv
+
   documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
@@ -92,13 +117,14 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: fetch  # grabs master to compare if doc files changed
-      run: git fetch origin master
 
     - name: Run script
       env:
         BRANCH: ${{ github.head_ref }}
-      run: source .github/scripts/documentation_testing.sh
+      run: |
+        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || \
+        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || exit 1
+        exit 0
 
   linting:
     name: Pylint
@@ -111,11 +137,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
       # we use cat and grep here to get the version-pinned pylint version from .dev_requirements.txt; thus we can version control pylint
-    - name: pip install
+    - name: pip3 install
       run: |
-        pip3 install --upgrade pip
-        pip install -r requirements.txt
-        pip install $(cat .dev_requirements.txt | grep pylint) 
+        sudo pip3 install --upgrade pip
+        sudo pip3 install -r requirements.txt
+        sudo pip3 install --upgrade $(cat .dev_requirements.txt | grep pylint) 
     - name: pylint
       run: |
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail

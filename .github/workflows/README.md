@@ -30,6 +30,3 @@ graph TD
         B --no--> D[Rebuild mdmc/mdmc using mdmc/engines as base]
     D --> E[Push mdmc/mdmc to registry]
 ```
-
-## Self-hosted runners
-While MDMC is private, we are using self-hosted Github Actions runners (note to future developers - if MDMC is currently public and you are reading this, please change back to Github-hosted ones and remove this section). The repository MDMCproject/github-actions holds information and Ansible playbooks on how to configure and run these.
