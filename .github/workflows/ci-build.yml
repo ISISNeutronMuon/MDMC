@@ -46,16 +46,7 @@ jobs:
         docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
         docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
         exit 0
-        
-    - name: Download master profiling for comparison
-      # regular download-artifact can only get artifacts from current run
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: ci-deploy.yml
-        name: master-profiling
-      continue-on-error: true
-        
+
     - name: Copy profiling info, download profile script reqs. and profile
       env:
         BRANCH: ${{ github.head_ref }}
@@ -63,7 +54,7 @@ jobs:
       run: |
           sudo docker cp $(docker ps -lq):/home/prof/ prof/
           pip3 install pandas
-          python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+          python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
@@ -97,12 +88,21 @@ jobs:
       with:
         path: /home/
 
-    - name: Combine and check profiling data
+    - name: Download master profiling for comparison
+      # regular download-artifact can only get artifacts from current run
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: ci-deploy.yml
+        name: master-profiling
+      continue-on-error: true
+
+    - name: Combine and compare profiling data
       env: 
         BRANCH: ${{ github.head_ref }}
       run: |
         pip3 install pandas
-        python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name $BRANCH-total-profiling
+        python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name $BRANCH-total-profiling
     
     - name: Upload total profiling as artifact if successful
       uses: actions/upload-artifact@v3
