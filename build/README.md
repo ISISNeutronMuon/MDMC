@@ -19,7 +19,7 @@ web source. Thus by using two images, we rebuild MD engines only when
 needed, and otherwise the latest-built version of `mdmc/engines` is
 simply pulled into `mdmc/mdmc` as a base image. Without this two-layer
 approach, we would have to spend 30 minutes recompiling LAMMPS every
-time we wanted to update a Python package.\
+time we wanted to update a Python package.
 MDMC can also be accessed via Singularity - this is done via
 [Singularity's Docker
 interface](https://sylabs.io/guides/latest/user-guide/singularity_and_docker.html).
