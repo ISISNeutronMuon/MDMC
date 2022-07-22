@@ -2,6 +2,9 @@
 
 from abc import ABC, abstractmethod
 
+from MDMC.MD import Simulation
+from MDMC.trajectory_analysis.trajectory import Configuration, Trajectory
+
 
 class MDEngine(ABC):
 
@@ -9,7 +12,7 @@ class MDEngine(ABC):
     Abstract base class for MD engine facades
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
 
         return ('<{0}\n'
                 ' {{MD_engine: {MD_engine},\n'
@@ -23,7 +26,7 @@ class MDEngine(ABC):
 
     @property
     @abstractmethod
-    def saved_config(self):
+    def saved_config(self) -> Configuration:
         """
         Get the saved configuration of the atomic positions
 
@@ -36,7 +39,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @property
-    def parent_simulation(self):
+    def parent_simulation(self) -> Simulation:
         """
         Get or set the simulation that created this engine facade
 
@@ -54,13 +57,13 @@ class MDEngine(ABC):
                                  "") from error
 
     @parent_simulation.setter
-    def parent_simulation(self, value):
+    def parent_simulation(self, value: Simulation) -> None:
         # pylint: disable=attribute-defined-outside-init
         # as this is internal and abstract
         self._parent_simulation = value
 
     @property
-    def time_step(self):
+    def time_step(self) -> float:
         """
         Get the simulation time step in ``fs`` from the parent simulation
 
@@ -73,7 +76,7 @@ class MDEngine(ABC):
         return self.parent_simulation.time_step
 
     @property
-    def traj_step(self):
+    def traj_step(self) -> int:
         """
         Get the number of simulation steps between saving the
         ``Trajectory`` from the parent simulation
@@ -91,7 +94,7 @@ class MDEngine(ABC):
             return None
 
     @abstractmethod
-    def setup_universe(self, universe, **settings):
+    def setup_universe(self, universe: str, **settings) -> None:
         """
         Creates a ``Universe.configuration`` and populates with
         ``Structure``
@@ -109,7 +112,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def setup_simulation(self, **settings):
+    def setup_simulation(self, **settings) -> None:
         """
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
@@ -127,7 +130,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps: int, **settings) -> None:
         """
         Minimizes the simulation energy
 
@@ -140,7 +143,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def run(self, n_steps, equilibration):
+    def run(self, n_steps: int, equilibration: bool) -> None:
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
@@ -157,7 +160,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def convert_trajectory(self, start=0, stop=None, step=1, **settings):
+    def convert_trajectory(self, start: int = 0, stop: int = None, step: int = 1, **settings) -> Trajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
@@ -188,7 +191,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update_parameters(self):
+    def update_parameters(self) -> None:
         """
         Updates the ``MDEngine`` force field ``Parameter`` objects from the
         ``Universe``
@@ -197,7 +200,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def save_config(self):
+    def save_config(self) -> None:
         """
         Sets ``self.saved_config`` to the current configuration
         """
@@ -205,7 +208,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def reset_config(self):
+    def reset_config(self) -> None:
         """
         Resets the configuration of the simulation to that in ``saved_config``
         """
