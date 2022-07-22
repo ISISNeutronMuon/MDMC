@@ -51,10 +51,12 @@ def main():
 
     # recalculate percentage time, compare and sort
     percentage_time = percentage_tottime(summary)
+    print(percentage_time)
+    summary['% time'] = percentage_time
     if args.compare:
         master = pd.read_csv(args.compare)
         summary = compare_times(master, summary).sort_values(by='change')
-    summary['% time'] = percentage_time
+
     summary = summary.sort_values(by='tottime', ascending=False)
 
     # get all significantly slower tests
