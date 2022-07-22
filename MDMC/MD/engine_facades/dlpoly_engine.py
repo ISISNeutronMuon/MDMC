@@ -11,6 +11,7 @@ import typing
 from abc import ABC
 from copy import copy
 import logging
+from os import PathLike
 
 import dlpoly.control
 from ase import Atoms, Atom
@@ -51,6 +52,8 @@ BOND_CLASS_REF = {
     'DihedralAngle': 'dihedrals'
     }
 
+# For type hint purposes
+array_or_float_like = np.ndarray or float
 
 class DLPOLYAttribute(ABC):
     # pylint: disable=too-few-public-methods
@@ -72,10 +75,8 @@ class DLPOLYAttribute(ABC):
 
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
-                 statis: str = None, output: str = None,
-                 dest_config=None, rdf=None, workdir=None) -> None:
-
-        #TODO: Find attribute types of dest_config, rdf & workdir
+                 statis: PathLike = None, output: PathLike = None, dest_config: PathLike = None,
+                 rdf: PathLike = None, workdir: PathLike = None) -> None:
 
         if dlpoly:
             self.dlpoly = dlpoly
@@ -111,10 +112,11 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     Facade for DL_POLY
 
     """
-    def __init__(self, dlpoly=None, control=None,
-                 config=None, field=None, statis=None, output=None,
-                 dest_config=None, rdf=None, workdir=None):
-        # TODO: implement the types for these parameters
+
+    def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
+                 config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
+                 statis: PathLike = None, output: PathLike = None, dest_config: PathLike = None,
+                 rdf: PathLike = None, workdir: PathLike = None) -> None:
 
         super().__init__(dlpoly, control, config, field, statis, output,
                          dest_config, rdf, workdir)
@@ -178,9 +180,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.dlpoly_simulation.pressure = value
 
-    # TODO: Find the type of this ensemble attribute
     @property
-    def ensemble(self):
+    def ensemble(self) -> MDMC.MD.engine_facades.dlpoly_engine.DLPOLYEnsemble:
 
         """
         Get or set the ensemble object which applies a ``thermostat`` and/or
@@ -195,7 +196,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         return self.dlpoly_simulation.ensemble
 
     @ensemble.setter
-    def ensemble(self, value) -> None:
+    def ensemble(self, value: MDMC.MD.engine_facades.dlpoly_engine.DLPOLYEnsemble) -> None:
         self.dlpoly_simulation.ensemble = value
 
     @property
@@ -837,11 +838,10 @@ class DLPOLYUniverse(DLPOLYAttribute):
         for all bonds and bond angles which are constrained
         """
 
-    def set_config(self, config):
+    def set_config(self, config: PathLike):
         """
         Set DL_POLY config file
         """
-        # TODO: Find the type for this config object
         self.dlpoly.config = config
 
 
@@ -1154,7 +1154,7 @@ SYSTEM = {
 # some extra utility methods. these might be obsolete or
 # importable from lammps_engine.py
 # (in which case they maybe should be refactored into a utility module)
-def convert_unit(value, unit: Unit = None, to_dlpoly: bool = True):
+def convert_unit(value: array_or_float_like, unit: Unit = None, to_dlpoly: bool = True):
 
     """
     Converts between MDMC units and DL_POLY real units
