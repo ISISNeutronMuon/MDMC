@@ -10,7 +10,7 @@ import sys
 
 import pandas as pd
 
-from profile_utils import percentage_tottime
+from profile_utils import percentage_tottime, compare_times
 
 
 def main():
@@ -28,11 +28,19 @@ def main():
         nargs='+',
         help='The profiling .csv files to combine.'
         )
+
     parser.add_argument(
         '--name', '-n',
         type=str,
         default=f"profiling-{datetime.now()}",
         help='The name for the output file. Defaults to profiling-[DATE AND TIME]'
+        )
+
+    parser.add_argument(
+        '--compare', '-c',
+        type=str,
+        help='if invoked, the results are compared to the previously summarised csv '
+             'given under this flag.'
         )
 
     args = parser.parse_args()
@@ -41,9 +49,14 @@ def main():
 
     summary = pd.concat(dataframes, axis=0)
 
-    # recalculate percentage time and sort
+    # recalculate percentage time, compare and sort
     percentage_time = percentage_tottime(summary)
+    print(percentage_time)
     summary['% time'] = percentage_time
+    if args.compare:
+        master = pd.read_csv(args.compare)
+        summary = compare_times(master, summary).sort_values(by='change')
+
     summary = summary.sort_values(by='tottime', ascending=False)
 
     # get all significantly slower tests
