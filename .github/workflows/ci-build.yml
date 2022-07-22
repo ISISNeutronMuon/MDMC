@@ -100,7 +100,9 @@ jobs:
     - name: Combine and check profiling data
       env: 
         BRANCH: ${{ github.head_ref }}
-      run: python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name $BRANCH-total-profiling
+      run: |
+        pip3 install pandas
+        python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name $BRANCH-total-profiling
     
     - name: Upload total profiling as artifact if successful
       uses: actions/upload-artifact@v3
