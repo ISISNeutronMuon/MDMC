@@ -37,6 +37,8 @@ from tempfile import NamedTemporaryFile
 import numpy
 import typing
 
+from typing import List, Dict
+
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.common.units import Unit
 
@@ -978,7 +980,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              config[id_offset][index])
 
     @staticmethod
-    def _max_n_interaction(atoms: [Atom], name: str) -> int:
+    def _max_n_interaction(atoms: List[Atom], name: str) -> int:
         """
         Parameters
         ----------
@@ -1187,7 +1189,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.') from error
 
-    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: [str] = None) -> None:
+    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: List[str] = None) -> None:
         """
         Updates ``Dispersion`` interactions in LAMMPS
 
@@ -1230,7 +1232,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for mod in pair_mods:
             self.lmp.pair_modify('pair', *mod)
 
-    def _create_bonded_interactions(self, lmp_name: str, bonded_interactions: [BondedInteraction]) -> None:
+    def _create_bonded_interactions(self, lmp_name: str,
+                                    bonded_interactions: List[BondedInteraction]) -> None:
         """
         Creates coefficients and new bonded interactions in LAMMPS, and fills
         the relevant ``BondedInteraction`` ID (e.g. ``self.bond_ID`` for bonds,
@@ -1289,7 +1292,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                       'special',
                                       special)
 
-    def _update_bonded_interactions(self, lmp_name: str, bonded_interactions: [BondedInteraction]) -> None:
+    def _update_bonded_interactions(self, lmp_name: str, bonded_interactions: List[BondedInteraction]) -> None:
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
@@ -2123,7 +2126,8 @@ SYSTEM = {
 }
 
 
-def convert_unit(value: typing.Union[np.ndarray, float], unit: Unit = None, to_lammps: bool = True):
+def convert_unit(value: typing.Union[np.ndarray, float],
+                 unit: Unit = None, to_lammps: bool = True):
     """
     Converts between MDMC units and LAMMPS real units
 
@@ -2417,7 +2421,7 @@ def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
     return lmp_str, parse_nonbonded_modifications(interaction)
 
 
-def parse_nonbonded_modifications(interaction: Interaction) -> [str]:
+def parse_nonbonded_modifications(interaction: Interaction) -> List[str]:
     """
     Parses MDMC ``Interaction`` attributes into `list` that can be used with
     LAMMPS ``pair_modify`` command
@@ -2451,7 +2455,7 @@ def parse_nonbonded_modifications(interaction: Interaction) -> [str]:
     return mods
 
 
-def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> {tuple: [str]}:
+def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> Dict[tuple, List[str]]:
     """
     Converts all ``NonBondedInteractions`` to LAMMPS pair styles
 
@@ -2494,7 +2498,7 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> {tuple: [s
         range ``Coulombic``.
     """
 
-    def check_validity(pair_style: str, cutoffs: [float] = None) -> [str]:
+    def check_validity(pair_style: str, cutoffs: List[float] = None) -> List[str]:
         """
         Tests the validity of a LAMMPS ``pair_style``.
 
@@ -2588,7 +2592,7 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> {tuple: [s
     return combined_parsed_inters
 
 
-def parse_bonded_coefficients(interaction: BondedInteraction) -> [str]:
+def parse_bonded_coefficients(interaction: BondedInteraction) -> List[str]:
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``bond_coeff`` and
     ``angle_coeff``
@@ -2655,7 +2659,8 @@ def parse_bonded_coefficients(interaction: BondedInteraction) -> [str]:
     return [style] + ordered_parameters
 
 
-def parse_dispersion_coefficients(interactions: [NonBondedInteraction], nonbonded_styles: [tuple] = None) -> [str]:
+def parse_dispersion_coefficients(interactions: List[NonBondedInteraction],
+                                  nonbonded_styles: List[tuple] = None) -> List[str]:
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``pair_coeff``
 
@@ -2766,8 +2771,9 @@ def parse_kspace_solver(solver: KSpaceSolver) -> list:
     return [solver_name, solver.accuracy]
 
 
-def parse_constraint(constraint_algorithm: ConstraintAlgorithm, bonds: [Bond] = None,
-                     bond_ID_dict: dict = None, angles: [BondAngle] = None, angle_ID_dict: dict = None) -> list:
+def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
+                     bonds: List[Bond] = None, bond_ID_dict: dict = None,
+                     angles: List[BondAngle] = None, angle_ID_dict: dict = None) -> list:
     # ID is an acronym
     # pylint: disable=invalid-name
     """
