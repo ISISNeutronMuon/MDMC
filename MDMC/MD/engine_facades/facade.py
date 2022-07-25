@@ -1,10 +1,7 @@
 """Module containing an abstract base class for MD engine facades"""
 
 from abc import ABC, abstractmethod
-
-from MDMC.MD import Simulation
 from MDMC.trajectory_analysis.trajectory import Configuration, Trajectory
-
 
 class MDEngine(ABC):
 
@@ -39,7 +36,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @property
-    def parent_simulation(self) -> Simulation:
+    def parent_simulation(self) -> object:
         """
         Get or set the simulation that created this engine facade
 
@@ -57,7 +54,7 @@ class MDEngine(ABC):
                                  "") from error
 
     @parent_simulation.setter
-    def parent_simulation(self, value: Simulation) -> None:
+    def parent_simulation(self, value: object) -> None:
         # pylint: disable=attribute-defined-outside-init
         # as this is internal and abstract
         self._parent_simulation = value

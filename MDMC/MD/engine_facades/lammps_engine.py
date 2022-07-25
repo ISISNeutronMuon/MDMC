@@ -35,9 +35,9 @@ from random import randint
 from tempfile import NamedTemporaryFile
 
 import numpy
+import typing
 
-import MDMC.MD.engine_facades.lammps_engine
-from MDMC.MD import Universe, KSpaceSolver, ConstraintAlgorithm
+from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.common.units import Unit
 
 try:
@@ -62,11 +62,11 @@ from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
+if typing.TYPE_CHECKING:
+    from . import LAMMPSEnsemble
+
 # pylint: disable=c-extension-no-member, too-many-lines
 # to avoid MPI warnings
-
-# For type hint purposes
-array_or_float_like = np.ndarray or float
 
 
 class PyLammpsAttribute:
@@ -293,7 +293,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_simulation.pressure = value
 
     @property
-    def ensemble(self) -> MDMC.MD.engine_facades.lammps_engine.LAMMPSEnsemble:
+    def ensemble(self) -> 'LAMMPSEnsemble':
         """
         Get or set the ensemble object which applies a ``thermostat`` and/or
         ``barostat`` to LAMMPS
@@ -307,7 +307,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return self.lmp_simulation.ensemble
 
     @ensemble.setter
-    def ensemble(self, value: MDMC.MD.engine_facades.lammps_engine.LAMMPSEnsemble) -> None:
+    def ensemble(self, value: 'LAMMPSEnsemble') -> None:
 
         self.lmp_simulation.ensemble = value
 
@@ -2121,7 +2121,7 @@ SYSTEM = {
 }
 
 
-def convert_unit(value: array_or_float_like, unit: Unit = None, to_lammps: bool = True):
+def convert_unit(value: typing.Union[np.ndarray, float], unit: Unit = None, to_lammps: bool = True):
     """
     Converts between MDMC units and LAMMPS real units
 
