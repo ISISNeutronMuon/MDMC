@@ -2,12 +2,12 @@
 
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
+from MDMC.MD.engine_facades.facade import MDEngine
 
 # Only imports some modules upon type checking
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from types import ModuleType
-    from MDMC.MD.engine_facades.facade import MDEngine
 
 
 class MDEngineFacadeFactory:

@@ -30,7 +30,6 @@ import warnings
 from collections import defaultdict, namedtuple
 from copy import copy
 from itertools import chain, combinations, count, product
-import logging
 from random import randint
 from tempfile import NamedTemporaryFile
 
@@ -50,22 +49,17 @@ except ModuleNotFoundError as err:
                               ' on Python to rectify this.'
                               ).with_traceback(err.__traceback__)
 from mpi4py import MPI
-import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    repr_decorator
+from MDMC.common.decorators import unit_decorator_getter
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import Atom
-from MDMC.MD.interactions import BondedInteraction, Interaction, NonBondedInteraction, Bond, BondAngle
+from MDMC.MD.interactions import *
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
-if typing.TYPE_CHECKING:
-    from . import LAMMPSEnsemble
 
 # pylint: disable=c-extension-no-member, too-many-lines
 # to avoid MPI warnings
@@ -200,6 +194,415 @@ class PyLammpsAttribute:
         else:
             dumps = None
         return self.comm.bcast(dumps, root=0)
+
+@repr_decorator('temperature', 'pressure', 'thermostat', 'barostat')
+class LAMMPSEnsemble(PyLammpsAttribute):
+    # Class has to maintain a lot of state (attributes) as PyLammps class does
+    # not
+    # pylint: disable=too-many-instance-attributes
+
+    """
+    A thermodynamic ensemble determined by applying a thermostat and/or barostat
+
+    Parameters
+    ----------
+    lmp : PyLammps
+        Set the ``lmp`` attribute to a ``PyLammps`` object.
+    temperature : float, optional
+        Thermostat temperature. Default is `None`, which is only valid if a
+        ``thermostat`` is also `None`.
+    pressure : float, optional
+        Barostat pressure. Default is `None`, which is only valid if a
+        ``barostat`` is also `None`.
+    thermostat : str
+        Name of a thermostat to be applied.
+    barostat : str
+        Name of a barostat to be applied.
+    **settings
+        ``time_step`` (`float`)
+        ``t_damp`` (`int`)
+        ``p_damp`` (`int`)
+        ``t_window`` (`float`)
+        ``t_fraction`` (`float`)
+        ``rescale_step`` (`int`)
+
+    Attributes
+    ----------
+    rescale_step : int
+        Number of steps between applying temperature rescaling. This only
+        applies to rescale thermostats.
+    """
+
+    def __init__(self, lmp, temperature: float = None, pressure: float = None,
+                 thermostat: str = None, barostat: str = None, **settings: dict):
+
+        # Requires a lmp object as thermostats cannot be applied before
+        # configuration is defined
+        super().__init__(lmp)
+        # Setting _thermostat and _barostat allows apply_ensemble_fixes to be
+        # called when setting self.temperature and self.pressure
+        self._thermostat = None
+        self._barostat = None
+        self.temperature = temperature
+        self.pressure = pressure
+
+        self.time_step = settings.get('time_step', 1.0)
+        self.t_damp = settings.get('t_damp', 100)
+        self.p_damp = settings.get('p_damp', 1000)
+        self.t_window = settings.get('t_window')
+        self.t_fraction = settings.get('t_fraction')
+        self.rescale_step = settings.get('rescale_step')
+
+        self.thermostat = thermostat
+        self.barostat = barostat
+
+    @property
+    def time_step(self) -> float:
+        """
+        Get or set the simulation time step in ``fs``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``fs``
+        """
+
+        return self._time_step
+
+    @time_step.setter
+    @unit_decorator(unit=units.TIME)
+    def time_step(self, value):
+
+        self._time_step = value
+
+    @property
+    def temperature(self) -> float:
+        """
+        Get or set the temperature of the simulation in ``K``
+        """
+
+        return self._temperature
+
+    @temperature.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature(self, value: float) -> None:
+
+        self._temperature = value
+        self.apply_ensemble_fixes()
+
+    @property
+    def pressure(self) -> float:
+        """
+        Get or set the pressure of the simulation in ``atm``
+        """
+
+        return self._pressure
+
+    @pressure.setter
+    @unit_decorator(unit=units.PRESSURE)
+    def pressure(self, value: float) -> None:
+
+        self._pressure = value
+        self.apply_ensemble_fixes()
+
+    # Unit has to be applied to getter due to operation in setter
+    @property
+    @unit_decorator_getter(unit=units.TIME)
+    def t_damp(self) -> int:
+        """
+        Get or set the number of time steps over which the ``temperature`` is
+        relaxed
+
+        Required for ``Nose-Hoover``, ``Berendsen`` and ``Langevin``
+        thermostats. The ``time_step`` must have been set before ``t_damp``.
+
+        Returns
+        -------
+        `int`
+            Number of time steps
+
+        Raises
+        ------
+        AttributeError
+            If ``self.time_step`` has not been set.
+        """
+
+        # t_damp is stored in units of time - convert back to number of steps
+        # here
+        try:
+            return self._t_damp / self.time_step
+        except TypeError:
+            return self._t_damp
+
+    @t_damp.setter
+    def t_damp(self, value: int) -> None:
+
+        try:
+            # LAMMPS requires t_damp to be given in units of time, but it is
+            # more natural to give it in units of steps - convert between them
+            # here
+            self._t_damp = value * self.time_step
+        except TypeError as error:
+            if value is None:
+                self._t_damp = value
+            else:
+                raise AttributeError('the time_step attribute must be set'
+                                     ' before t_damp') from error
+
+    # Unit has to be applied to getter due to operation in setter
+    @property
+    @unit_decorator_getter(unit=units.TIME)
+    def p_damp(self) -> int:
+        """
+        Get or set the number of time steps over which the ``pressure`` is
+        relaxed
+
+        Required for ``Nose-Hoover`` or ``Berendsen`` barostats. The
+        ``time_step`` must have been set before ``p_damp``.
+
+        Returns
+        -------
+        `int`
+            Number of time steps
+
+        Raises
+        ------
+        AttributeError
+            If ``self.time_step`` has not been set.
+        """
+
+        # p_damp is stored in units of time - convert back to number of steps
+        # here
+        try:
+            return self._p_damp / self.time_step
+        except TypeError:
+            return self._p_damp
+
+    @p_damp.setter
+    def p_damp(self, value: int) -> None:
+
+        try:
+            # LAMMPS requires p_damp to be given in units of time, but it is
+            # more natural to give it in units of steps - convert between them
+            # here
+            self._p_damp = value * self.time_step
+        except TypeError as error:
+            if value is None:
+                self._p_damp = value
+            else:
+                raise AttributeError('the time_step attribute must be set'
+                                     ' before p_damp') from error
+
+    @property
+    def t_fraction(self) -> float:
+        """
+        Get or set the fraction by which the ``temperature`` is rescaled to the
+        target temperature
+
+        This is required for the rescale ``thermostat``.
+
+        Returns
+        -------
+        `float`
+            Fraction (i.e. between 0.0 and 1.0 inclusive) by which the
+            ``temperature`` is rescaled
+
+        Raises
+        ------
+        ValueError
+            If set to a value outside of 0.0 and 1.0 inclusive.
+        """
+
+        return self._t_fraction
+
+    @t_fraction.setter
+    def t_fraction(self, value: float) -> None:
+
+        # Must be a fraction
+        if value is None or 0. <= value <= 1.0:
+            self._t_fraction = value
+        else:
+            raise ValueError('the t_fraction must be between 0.0 and 1.0')
+
+    @property
+    def t_window(self) -> float:
+        """
+        Get or set the ``temperature`` range in ``K`` in which the
+        ``temperature`` is not rescaled
+
+        This only applies to rescale ``thermostats``.
+
+        Returns
+        -------
+        `float`
+            temperature range in ``K``
+        """
+
+        return self._t_window
+
+    @t_window.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def t_window(self, value: float) -> None:
+
+        self._t_window = value
+
+    @property
+    def thermostat(self) -> str:
+        """
+        Get or set the `str` which specifies the thermostat
+
+        Raises
+        ------
+        AttributeError
+            If ``self.temperature`` has not been set.
+        """
+
+        return self._thermostat
+
+    @thermostat.setter
+    def thermostat(self, value: str) -> None:
+
+        if value and not self.temperature:
+            raise AttributeError('all ensembles with a thermostat must have a'
+                                 ' temperature')
+        self._thermostat = value
+        # Set the thermostat and barostat in LAMMPS wrapper
+        self.apply_ensemble_fixes()
+
+    @property
+    def barostat(self) -> str:
+        """
+        Get or set the `str` which specifies the barostat
+
+        Raises
+        ------
+        AttributeError
+            If ``self.pressure`` has not been set.
+        """
+
+        return self._barostat
+
+    @barostat.setter
+    def barostat(self, value: str) -> None:
+
+        if value and not self.pressure:
+            raise AttributeError('all ensembles with a barostat must have a'
+                                 ' pressure')
+
+        self._barostat = value
+        # Set the thermostat and barostat in LAMMPS wrapper
+        self.apply_ensemble_fixes()
+
+    def remove_ensemble_fixes(self) -> None:
+        """
+        Removes all LAMMPS ``fixes`` relating to the ensemble i.e. removes all
+        thermostats and barostats
+
+        This must be done before thermostat and barostat fixes are added, so
+        that there is no conflict with existing thermostat and barostats
+        ``fixes``. It is also required for Shake and Rattle ``fixes`` which
+        cannot be added after barostat fixes have been applied.
+        """
+
+        for name in self.fix_names:
+            if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
+                        'p_berendsen', 'langevin', 'rescale']:
+                LOGGER.debug('%s Remove %s fix.',
+                             self.__class__,
+                             name)
+                self.lmp.unfix(name)
+
+    def apply_ensemble_fixes(self) -> None:
+        """
+        Passes the required LAMMPS ``fixes`` to apply a specific thermodynamic
+        ensemble to the simulation
+
+        Removes all pre-existing thermostat and barostat fixes
+        """
+
+        self.remove_ensemble_fixes()
+
+        LOGGER.debug('%s apply_ensemble_fixes before fixes applied:'
+                     ' {fixes: %s}',
+                     self.__class__,
+                     self.fixes)
+
+        if not self.thermostat and not self.barostat:
+            self.lmp.fix('nve', 'all', 'nve')
+        else:
+            if self.thermostat:
+                temp = convert_unit(self.temperature)
+                if self.thermostat != 'rescale':
+                    t_damp = convert_unit(self.t_damp)
+                    thermo_parameters = [temp, temp, t_damp]
+            if self.barostat:
+                press = convert_unit(self.pressure)
+                p_damp = convert_unit(self.p_damp)
+                press_parameters = ['iso', press, press, p_damp]
+
+            # Apply thermostat
+            # we create local funcs for each thermostat, and use a dict to get the correct one.
+            # think of this like a proto-factory pattern, or like a switch-case block in C++.
+
+            def nose():
+                if self.barostat == 'nose':
+                    self.lmp.fix('npt', 'all', 'npt', 'temp',
+                                 *thermo_parameters + press_parameters)
+                else:
+                    self.lmp.fix('nvt', 'all', 'nvt',
+                                 'temp', *thermo_parameters)
+
+            def berendsen():
+                # berendsen does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
+                             *thermo_parameters)
+
+            def langevin():
+                # langevin does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('langevin', 'all', 'langevin',
+                             *thermo_parameters + [randint(0, 9999)])
+
+            def rescale():
+                # temp/rescale does not do time integration so also requires nve
+                t_window = convert_unit(self.t_window)
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('rescale', 'all', 'temp/rescale',
+                             self.rescale_step, temp, temp, t_window,
+                             self.t_fraction)
+
+            def csvr():
+                # csvr does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('csvr', 'all', 'temp/csvr',
+                             *thermo_parameters + [randint(0, 9999)])
+
+            thermostat = {'nose': nose,
+                          'berendsen': berendsen,
+                          'langevin': langevin,
+                          'rescale': rescale,
+                          'csvr': csvr}
+
+            try:
+                thermostat[self.thermostat]()
+            except KeyError:
+                warnings.warn("Thermostat type not recognised. No thermostat will be applied."
+                              " Your thermostat type may be misspelt or not currently implemented.")
+
+            # Apply barostat
+            if self.barostat == 'berendsen':
+                self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
+                             *press_parameters)
+            elif self.barostat == 'nose' and self.thermostat != 'nose':
+                if 'nve' in self.fix_names:
+                    self.lmp.unfix('nve')
+                self.lmp.fix('nph', 'all', 'nph', *press_parameters)
+
+        LOGGER.debug('%s apply_ensemble_fixes after fixes applied:'
+                     ' {fixes: %s}',
+                     self.__class__,
+                     self.fixes)
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
@@ -1292,7 +1695,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                       'special',
                                       special)
 
-    def _update_bonded_interactions(self, lmp_name: str, bonded_interactions: List[BondedInteraction]) -> None:
+    def _update_bonded_interactions(self, lmp_name: str,
+                                    bonded_interactions: List[BondedInteraction]) -> None:
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
@@ -1700,414 +2104,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
                             ' an electrostatic solver')
 
 
-@repr_decorator('temperature', 'pressure', 'thermostat', 'barostat')
-class LAMMPSEnsemble(PyLammpsAttribute):
-    # Class has to maintain a lot of state (attributes) as PyLammps class does
-    # not
-    # pylint: disable=too-many-instance-attributes
-
-    """
-    A thermodynamic ensemble determined by applying a thermostat and/or barostat
-
-    Parameters
-    ----------
-    lmp : PyLammps
-        Set the ``lmp`` attribute to a ``PyLammps`` object.
-    temperature : float, optional
-        Thermostat temperature. Default is `None`, which is only valid if a
-        ``thermostat`` is also `None`.
-    pressure : float, optional
-        Barostat pressure. Default is `None`, which is only valid if a
-        ``barostat`` is also `None`.
-    thermostat : str
-        Name of a thermostat to be applied.
-    barostat : str
-        Name of a barostat to be applied.
-    **settings
-        ``time_step`` (`float`)
-        ``t_damp`` (`int`)
-        ``p_damp`` (`int`)
-        ``t_window`` (`float`)
-        ``t_fraction`` (`float`)
-        ``rescale_step`` (`int`)
-
-    Attributes
-    ----------
-    rescale_step : int
-        Number of steps between applying temperature rescaling. This only
-        applies to rescale thermostats.
-    """
-
-    def __init__(self, lmp, temperature: float = None, pressure: float = None,
-                 thermostat: str = None, barostat: str = None, **settings: dict):
-
-        # Requires a lmp object as thermostats cannot be applied before
-        # configuration is defined
-        super().__init__(lmp)
-        # Setting _thermostat and _barostat allows apply_ensemble_fixes to be
-        # called when setting self.temperature and self.pressure
-        self._thermostat = None
-        self._barostat = None
-        self.temperature = temperature
-        self.pressure = pressure
-
-        self.time_step = settings.get('time_step', 1.0)
-        self.t_damp = settings.get('t_damp', 100)
-        self.p_damp = settings.get('p_damp', 1000)
-        self.t_window = settings.get('t_window')
-        self.t_fraction = settings.get('t_fraction')
-        self.rescale_step = settings.get('rescale_step')
-
-        self.thermostat = thermostat
-        self.barostat = barostat
-
-    @property
-    def time_step(self) -> float:
-        """
-        Get or set the simulation time step in ``fs``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``fs``
-        """
-
-        return self._time_step
-
-    @time_step.setter
-    @unit_decorator(unit=units.TIME)
-    def time_step(self, value):
-
-        self._time_step = value
-
-    @property
-    def temperature(self) -> float:
-        """
-        Get or set the temperature of the simulation in ``K``
-        """
-
-        return self._temperature
-
-    @temperature.setter
-    @unit_decorator(unit=units.TEMPERATURE)
-    def temperature(self, value: float) -> None:
-
-        self._temperature = value
-        self.apply_ensemble_fixes()
-
-    @property
-    def pressure(self) -> float:
-        """
-        Get or set the pressure of the simulation in ``atm``
-        """
-
-        return self._pressure
-
-    @pressure.setter
-    @unit_decorator(unit=units.PRESSURE)
-    def pressure(self, value: float) -> None:
-
-        self._pressure = value
-        self.apply_ensemble_fixes()
-
-    # Unit has to be applied to getter due to operation in setter
-    @property
-    @unit_decorator_getter(unit=units.TIME)
-    def t_damp(self) -> int:
-        """
-        Get or set the number of time steps over which the ``temperature`` is
-        relaxed
-
-        Required for ``Nose-Hoover``, ``Berendsen`` and ``Langevin``
-        thermostats. The ``time_step`` must have been set before ``t_damp``.
-
-        Returns
-        -------
-        `int`
-            Number of time steps
-
-        Raises
-        ------
-        AttributeError
-            If ``self.time_step`` has not been set.
-        """
-
-        # t_damp is stored in units of time - convert back to number of steps
-        # here
-        try:
-            return self._t_damp / self.time_step
-        except TypeError:
-            return self._t_damp
-
-    @t_damp.setter
-    def t_damp(self, value: int) -> None:
-
-        try:
-            # LAMMPS requires t_damp to be given in units of time, but it is
-            # more natural to give it in units of steps - convert between them
-            # here
-            self._t_damp = value * self.time_step
-        except TypeError as error:
-            if value is None:
-                self._t_damp = value
-            else:
-                raise AttributeError('the time_step attribute must be set'
-                                     ' before t_damp') from error
-
-    # Unit has to be applied to getter due to operation in setter
-    @property
-    @unit_decorator_getter(unit=units.TIME)
-    def p_damp(self) -> int:
-        """
-        Get or set the number of time steps over which the ``pressure`` is
-        relaxed
-
-        Required for ``Nose-Hoover`` or ``Berendsen`` barostats. The
-        ``time_step`` must have been set before ``p_damp``.
-
-        Returns
-        -------
-        `int`
-            Number of time steps
-
-        Raises
-        ------
-        AttributeError
-            If ``self.time_step`` has not been set.
-        """
-
-        # p_damp is stored in units of time - convert back to number of steps
-        # here
-        try:
-            return self._p_damp / self.time_step
-        except TypeError:
-            return self._p_damp
-
-    @p_damp.setter
-    def p_damp(self, value: int) -> None:
-
-        try:
-            # LAMMPS requires p_damp to be given in units of time, but it is
-            # more natural to give it in units of steps - convert between them
-            # here
-            self._p_damp = value * self.time_step
-        except TypeError as error:
-            if value is None:
-                self._p_damp = value
-            else:
-                raise AttributeError('the time_step attribute must be set'
-                                     ' before p_damp') from error
-
-    @property
-    def t_fraction(self) -> float:
-        """
-        Get or set the fraction by which the ``temperature`` is rescaled to the
-        target temperature
-
-        This is required for the rescale ``thermostat``.
-
-        Returns
-        -------
-        `float`
-            Fraction (i.e. between 0.0 and 1.0 inclusive) by which the
-            ``temperature`` is rescaled
-
-        Raises
-        ------
-        ValueError
-            If set to a value outside of 0.0 and 1.0 inclusive.
-        """
-
-        return self._t_fraction
-
-    @t_fraction.setter
-    def t_fraction(self, value: float) -> None:
-
-        # Must be a fraction
-        if value is None or 0. <= value <= 1.0:
-            self._t_fraction = value
-        else:
-            raise ValueError('the t_fraction must be between 0.0 and 1.0')
-
-    @property
-    def t_window(self) -> float:
-        """
-        Get or set the ``temperature`` range in ``K`` in which the
-        ``temperature`` is not rescaled
-
-        This only applies to rescale ``thermostats``.
-
-        Returns
-        -------
-        `float`
-            temperature range in ``K``
-        """
-
-        return self._t_window
-
-    @t_window.setter
-    @unit_decorator(unit=units.TEMPERATURE)
-    def t_window(self, value: float) -> None:
-
-        self._t_window = value
-
-    @property
-    def thermostat(self) -> str:
-        """
-        Get or set the `str` which specifies the thermostat
-
-        Raises
-        ------
-        AttributeError
-            If ``self.temperature`` has not been set.
-        """
-
-        return self._thermostat
-
-    @thermostat.setter
-    def thermostat(self, value: str) -> None:
-
-        if value and not self.temperature:
-            raise AttributeError('all ensembles with a thermostat must have a'
-                                 ' temperature')
-        self._thermostat = value
-        # Set the thermostat and barostat in LAMMPS wrapper
-        self.apply_ensemble_fixes()
-
-    @property
-    def barostat(self) -> str:
-        """
-        Get or set the `str` which specifies the barostat
-
-        Raises
-        ------
-        AttributeError
-            If ``self.pressure`` has not been set.
-        """
-
-        return self._barostat
-
-    @barostat.setter
-    def barostat(self, value: str) -> None:
-
-        if value and not self.pressure:
-            raise AttributeError('all ensembles with a barostat must have a'
-                                 ' pressure')
-
-        self._barostat = value
-        # Set the thermostat and barostat in LAMMPS wrapper
-        self.apply_ensemble_fixes()
-
-    def remove_ensemble_fixes(self) -> None:
-        """
-        Removes all LAMMPS ``fixes`` relating to the ensemble i.e. removes all
-        thermostats and barostats
-
-        This must be done before thermostat and barostat fixes are added, so
-        that there is no conflict with existing thermostat and barostats
-        ``fixes``. It is also required for Shake and Rattle ``fixes`` which
-        cannot be added after barostat fixes have been applied.
-        """
-
-        for name in self.fix_names:
-            if name in ['nve', 'nvt', 'npt', 'nph', 't_berendsen',
-                        'p_berendsen', 'langevin', 'rescale']:
-                LOGGER.debug('%s Remove %s fix.',
-                             self.__class__,
-                             name)
-                self.lmp.unfix(name)
-
-    def apply_ensemble_fixes(self) -> None:
-        """
-        Passes the required LAMMPS ``fixes`` to apply a specific thermodynamic
-        ensemble to the simulation
-
-        Removes all pre-existing thermostat and barostat fixes
-        """
-
-        self.remove_ensemble_fixes()
-
-        LOGGER.debug('%s apply_ensemble_fixes before fixes applied:'
-                     ' {fixes: %s}',
-                     self.__class__,
-                     self.fixes)
-
-        if not self.thermostat and not self.barostat:
-            self.lmp.fix('nve', 'all', 'nve')
-        else:
-            if self.thermostat:
-                temp = convert_unit(self.temperature)
-                if self.thermostat != 'rescale':
-                    t_damp = convert_unit(self.t_damp)
-                    thermo_parameters = [temp, temp, t_damp]
-            if self.barostat:
-                press = convert_unit(self.pressure)
-                p_damp = convert_unit(self.p_damp)
-                press_parameters = ['iso', press, press, p_damp]
-
-            # Apply thermostat
-            # we create local funcs for each thermostat, and use a dict to get the correct one.
-            # think of this like a proto-factory pattern, or like a switch-case block in C++.
-
-            def nose():
-                if self.barostat == 'nose':
-                    self.lmp.fix('npt', 'all', 'npt', 'temp',
-                                 *thermo_parameters + press_parameters)
-                else:
-                    self.lmp.fix('nvt', 'all', 'nvt',
-                                 'temp', *thermo_parameters)
-
-            def berendsen():
-                # berendsen does not do time integration so also requires nve
-                self.lmp.fix('nve', 'all', 'nve')
-                self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
-                             *thermo_parameters)
-
-            def langevin():
-                # langevin does not do time integration so also requires nve
-                self.lmp.fix('nve', 'all', 'nve')
-                self.lmp.fix('langevin', 'all', 'langevin',
-                             *thermo_parameters + [randint(0, 9999)])
-
-            def rescale():
-                # temp/rescale does not do time integration so also requires nve
-                t_window = convert_unit(self.t_window)
-                self.lmp.fix('nve', 'all', 'nve')
-                self.lmp.fix('rescale', 'all', 'temp/rescale',
-                             self.rescale_step, temp, temp, t_window,
-                             self.t_fraction)
-
-            def csvr():
-                # csvr does not do time integration so also requires nve
-                self.lmp.fix('nve', 'all', 'nve')
-                self.lmp.fix('csvr', 'all', 'temp/csvr',
-                             *thermo_parameters + [randint(0, 9999)])
-
-            thermostat = {'nose': nose,
-                          'berendsen': berendsen,
-                          'langevin': langevin,
-                          'rescale': rescale,
-                          'csvr': csvr}
-
-            try:
-                thermostat[self.thermostat]()
-            except KeyError:
-                warnings.warn("Thermostat type not recognised. No thermostat will be applied."
-                              " Your thermostat type may be misspelt or not currently implemented.")
-
-            # Apply barostat
-            if self.barostat == 'berendsen':
-                self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
-                             *press_parameters)
-            elif self.barostat == 'nose' and self.thermostat != 'nose':
-                if 'nve' in self.fix_names:
-                    self.lmp.unfix('nve')
-                self.lmp.fix('nph', 'all', 'nph', *press_parameters)
-
-        LOGGER.debug('%s apply_ensemble_fixes after fixes applied:'
-                     ' {fixes: %s}',
-                     self.__class__,
-                     self.fixes)
 
 
 # Define the unit system used in LAMMPS
