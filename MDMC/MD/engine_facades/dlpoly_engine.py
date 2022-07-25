@@ -77,7 +77,7 @@ class DLPOLYAttribute(ABC):
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
                  statis: PathLike = None, output: PathLike = None, dest_config: PathLike = None,
-                 rdf: PathLike = None, workdir: PathLike = None) -> None:
+                 rdf: PathLike = None, workdir: PathLike = None):
 
         if dlpoly:
             self.dlpoly = dlpoly
@@ -117,7 +117,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
                  statis: PathLike = None, output: PathLike = None, dest_config: PathLike = None,
-                 rdf: PathLike = None, workdir: PathLike = None) -> None:
+                 rdf: PathLike = None, workdir: PathLike = None):
 
         super().__init__(dlpoly, control, config, field, statis, output,
                          dest_config, rdf, workdir)
@@ -507,7 +507,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
     There might be a lot of Attributes needed (see DL_POLYUniverse for example)
     """
 
-    def __init__(self, universe: 'Universe', dlpoly: DLPoly = None, **settings) -> None:
+    def __init__(self, universe: 'Universe', dlpoly: DLPoly = None, **settings):
 
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
@@ -888,7 +888,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
     """
 
     def __init__(self, universe: 'Universe', traj_step: int,
-                 time_step: float = 1., dlpoly=None, **settings) -> None:
+                 time_step: float = 1., dlpoly=None, **settings):
 
         super().__init__(dlpoly=dlpoly)
 
@@ -1043,7 +1043,7 @@ class DLPOLYEnsemble(DLPOLYAttribute):
     """
 
     def __init__(self, dlpoly: DLPoly, temperature: str = None, pressure: float = None,
-                 thermostat: str = None, barostat: str = None, **settings) -> None:
+                 thermostat: str = None, barostat: str = None, **settings):
 
         # Requires a ``dlpoly-py`` object as thermostats
         # cannot be applied before configuration is defined

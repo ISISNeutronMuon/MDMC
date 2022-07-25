@@ -92,7 +92,7 @@ class PyLammpsAttribute:
         The ``PyLammps`` object owned by this class
     """
 
-    def __init__(self, lmp: PyLammps = None, atom_style: str = 'full') -> None:
+    def __init__(self, lmp: PyLammps = None, atom_style: str = 'full'):
 
         # Set communicator to MPI predefined intracommunicator instance which
         # contains all processes
@@ -229,7 +229,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     style are set.
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         super().__init__()
         self.universe = None
         self.lmp_universe = None
@@ -1384,7 +1384,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
 
-    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings) -> None:
+    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
@@ -1734,7 +1734,7 @@ class LAMMPSEnsemble(PyLammpsAttribute):
     """
 
     def __init__(self, lmp, temperature: float = None, pressure: float = None,
-                 thermostat: str = None, barostat: str = None, **settings) -> None:
+                 thermostat: str = None, barostat: str = None, **settings):
 
         # Requires a lmp object as thermostats cannot be applied before
         # configuration is defined
