@@ -11,7 +11,6 @@ import typing
 from abc import ABC
 from copy import copy
 import logging
-from os import PathLike
 
 import dlpoly.control
 from ase import Atoms, Atom
@@ -76,8 +75,8 @@ class DLPOLYAttribute(ABC):
 
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
-                 statis: PathLike = None, output: PathLike = None, dest_config: PathLike = None,
-                 rdf: PathLike = None, workdir: PathLike = None):
+                 statis: str = None, output: str = None, dest_config: str = None,
+                 rdf: str = None, workdir: str = None):
 
         if dlpoly:
             self.dlpoly = dlpoly
@@ -116,8 +115,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
     def __init__(self, dlpoly: DLPoly = None, control: dlpoly.control.Control = None,
                  config: dlpoly.config.Config = None, field: dlpoly.field.Field = None,
-                 statis: PathLike = None, output: PathLike = None, dest_config: PathLike = None,
-                 rdf: PathLike = None, workdir: PathLike = None):
+                 statis: str = None, output: str = None, dest_config: str = None,
+                 rdf: str = None, workdir: str = None):
 
         super().__init__(dlpoly, control, config, field, statis, output,
                          dest_config, rdf, workdir)
@@ -839,7 +838,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         for all bonds and bond angles which are constrained
         """
 
-    def set_config(self, config: PathLike):
+    def set_config(self, config: str):
         """
         Set DL_POLY config file
         """
