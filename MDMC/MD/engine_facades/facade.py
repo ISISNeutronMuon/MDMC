@@ -94,7 +94,7 @@ class MDEngine(ABC):
             return None
 
     @abstractmethod
-    def setup_universe(self, universe: str, **settings) -> None:
+    def setup_universe(self, universe: str, **settings: dict) -> None:
         """
         Creates a ``Universe.configuration`` and populates with
         ``Structure``
@@ -112,7 +112,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def setup_simulation(self, **settings) -> None:
+    def setup_simulation(self, **settings: dict) -> None:
         """
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
@@ -130,7 +130,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimize(self, n_steps: int, **settings) -> None:
+    def minimize(self, n_steps: int, **settings: dict) -> None:
         """
         Minimizes the simulation energy
 
@@ -160,7 +160,7 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def convert_trajectory(self, start: int = 0, stop: int = None, step: int = 1, **settings) -> Trajectory:
+    def convert_trajectory(self, start: int = 0, stop: int = None, step: int = 1, **settings: dict) -> Trajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 

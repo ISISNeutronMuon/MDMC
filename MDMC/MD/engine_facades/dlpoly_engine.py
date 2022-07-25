@@ -237,7 +237,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         self.ensemble.barostat = value
 
-    def setup_universe(self, universe: 'Universe', **settings) -> None:
+    def setup_universe(self, universe: 'Universe', **settings: dict) -> None:
 
         """
         Creates the simulation box, the atomic configuration, and the topology
@@ -258,7 +258,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                               **settings)
         self._saved_config = None
 
-    def setup_simulation(self, **settings) -> None:
+    def setup_simulation(self, **settings: dict) -> None:
 
         """
         Sets the options required to perform a simulation on a setup
@@ -277,7 +277,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   dlpoly=self.dlpoly,
                                                   **settings)
 
-    def minimize(self, n_steps: int, output_log: str = None, work_dir: str = None, **settings) -> None:
+    def minimize(self, n_steps: int, output_log: str = None,
+                 work_dir: str = None, **settings: dict) -> None:
         """
         Minimizes the simulation energy
 
@@ -315,8 +316,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                  **settings)
         self.dlpoly.control['minimisation_criterion'] = 'off'
 
-    def run(self, n_steps: int, equilibration=False, output_log: str = None, work_dir: str = None,
-            **settings) -> None:
+    def run(self, n_steps: int, equilibration=False, output_log: str = None,
+            work_dir: str = None, **settings: dict) -> None:
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
@@ -364,7 +365,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.dest_config = 'minim.config'
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
 
-    def convert_trajectory(self, start: int = 0, stop: int = None, step: int = 1, **settings) -> Trajectory:
+    def convert_trajectory(self, start: int = 0, stop: int = None,
+                           step: int = 1, **settings: dict) -> Trajectory:
         """
         Parses the trajectory from the ``DL_POLY`` format into MDMC format.
 
@@ -506,7 +508,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
     There might be a lot of Attributes needed (see DL_POLYUniverse for example)
     """
 
-    def __init__(self, universe: 'Universe', dlpoly: DLPoly = None, **settings):
+    def __init__(self, universe: 'Universe', dlpoly: DLPoly = None, **settings: dict):
 
         super().__init__(dlpoly=dlpoly)
         self.universe = universe
@@ -538,7 +540,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         self._update_dispersions()
         self.dlpoly.field.write(self.dlpoly.control['io_file_field'])
 
-    def _define_simulation_details(self, **settings) -> None:
+    def _define_simulation_details(self, **settings: dict) -> None:
         """
         Defines a region and creates a simulation box that fills this region
 
@@ -603,7 +605,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         LOGGER.info('%s configuration written in %s',
                     self.__class__, config_filename)
 
-    def _add_topology(self, universe: 'Universe', **settings) -> None:
+    def _add_topology(self, universe: 'Universe', **settings: dict) -> None:
 
         """
         Add the bonded and nonbonded interactions to DL_POLY
@@ -632,7 +634,7 @@ class DLPOLYUniverse(DLPOLYAttribute):
         mx = max(i.cutoff for i in self.universe.nonbonded_interactions)
         self.dlpoly.control['cutoff'] = (mx, 'Ang')
 
-    def _create_field(self, universe: 'Universe', **settings) -> Field:
+    def _create_field(self, universe: 'Universe', **settings: dict) -> Field:
         """
         Creates a dlpoly Field object
 
@@ -887,7 +889,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
     """
 
     def __init__(self, universe: 'Universe', traj_step: int,
-                 time_step: float = 1., dlpoly=None, **settings):
+                 time_step: float = 1., dlpoly=None, **settings: dict):
 
         super().__init__(dlpoly=dlpoly)
 
@@ -1041,8 +1043,9 @@ class DLPOLYEnsemble(DLPOLYAttribute):
         applies to rescale thermostats.
     """
 
-    def __init__(self, dlpoly: DLPoly, temperature: str = None, pressure: float = None,
-                 thermostat: str = None, barostat: str = None, **settings):
+    def __init__(self, dlpoly: DLPoly, temperature: str = None,
+                 pressure: float = None, thermostat: str = None,
+                 barostat: str = None, **settings: dict):
 
         # Requires a ``dlpoly-py`` object as thermostats
         # cannot be applied before configuration is defined
@@ -1154,7 +1157,8 @@ SYSTEM = {
 # some extra utility methods. these might be obsolete or
 # importable from lammps_engine.py
 # (in which case they maybe should be refactored into a utility module)
-def convert_unit(value: typing.Union[np.ndarray, float], unit: Unit = None, to_dlpoly: bool = True):
+def convert_unit(value: typing.Union[np.ndarray, float],
+                 unit: Unit = None, to_dlpoly: bool = True):
 
     """
     Converts between MDMC units and DL_POLY real units
