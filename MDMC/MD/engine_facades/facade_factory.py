@@ -2,7 +2,7 @@
 
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
-
+from types import ModuleType
 from MDMC.MD.engine_facades.facade import MDEngine
 
 
@@ -15,7 +15,7 @@ class MDEngineFacadeFactory:
     """
 
     @staticmethod
-    def create_facade(module_name):
+    def create_facade(module_name: str) -> MDEngine:
         """
         Parameters
         ----------
@@ -41,7 +41,7 @@ class MDEngineFacadeFactory:
         return classes[0][1]()
 
     @staticmethod
-    def import_from_alias(alias):
+    def import_from_alias(alias: str) -> ModuleType:
         """
         Converts an ``alias`` into a module name
         """
