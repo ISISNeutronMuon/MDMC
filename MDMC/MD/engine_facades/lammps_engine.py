@@ -35,10 +35,10 @@ from itertools import chain, combinations, count, product
 import logging
 from random import randint
 from tempfile import NamedTemporaryFile
-import numpy
+from typing import Union
 
-from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
-from MDMC.common.units import Unit
+from mpi4py import MPI
+import numpy as np
 
 try:
     from lammps import PyLammps
@@ -47,15 +47,16 @@ except ModuleNotFoundError as err:
                               ' not in the PYTHONPATH. See LAMMPS documentation'
                               ' on Python to rectify this.'
                               ).with_traceback(err.__traceback__)
-from mpi4py import MPI
-import numpy as np
 
+from MDMC.common.units import Unit
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
+from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import Atom
-from MDMC.MD.interactions import BondedInteraction, Interaction, NonBondedInteraction, Bond, BondAngle
+from MDMC.MD.interactions import BondedInteraction, Interaction, \
+    NonBondedInteraction, Bond, BondAngle
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
@@ -236,7 +237,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_simulation = None
 
     @property
-    def saved_config(self) -> numpy.ndarray:
+    def saved_config(self) -> np.ndarray:
         """
         Get the saved configuration of the atomic positions
 
@@ -495,7 +496,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             If ``trajectory_file`` describes a triclinic universe.
         """
 
-        def create_atom(line: numpy.ndarray) -> Atom:
+        def create_atom(line: np.ndarray) -> Atom:
             """
             Create an MDMC ``Atom`` from a line in a LAMMPS dump (trajectory) file
 
@@ -938,7 +939,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                     lmp_atom_id = None
                 self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
 
-    def set_config(self, config: numpy.ndarray) -> None:
+    def set_config(self, config: np.ndarray) -> None:
         """
         Changes the positions of all of the atoms in the LAMMPS wrapper
 
@@ -976,7 +977,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              config[id_offset][index])
 
     @staticmethod
-    def _max_n_interaction(atoms: 'list[Atom]', name: str) -> int:
+    def _max_n_interaction(atoms: list[Atom], name: str) -> int:
         """
         Parameters
         ----------
@@ -1229,7 +1230,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.pair_modify('pair', *mod)
 
     def _create_bonded_interactions(self, lmp_name: str,
-                                    bonded_interactions: 'list[BondedInteraction]') -> None:
+                                    bonded_interactions: list[BondedInteraction]) -> None:
         """
         Creates coefficients and new bonded interactions in LAMMPS, and fills
         the relevant ``BondedInteraction`` ID (e.g. ``self.bond_ID`` for bonds,
@@ -1289,7 +1290,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                       special)
 
     def _update_bonded_interactions(self, lmp_name: str,
-                                    bonded_interactions: 'list[BondedInteraction]') -> None:
+                                    bonded_interactions: list[BondedInteraction]) -> None:
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
@@ -2656,7 +2657,7 @@ def parse_bonded_coefficients(interaction: BondedInteraction) -> 'list[str]':
     return [style] + ordered_parameters
 
 
-def parse_dispersion_coefficients(interactions: 'list[NonBondedInteraction]',
+def parse_dispersion_coefficients(interactions: list[NonBondedInteraction],
                                   nonbonded_styles: 'list[tuple]' = None) -> 'list[str]':
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``pair_coeff``
@@ -2769,8 +2770,8 @@ def parse_kspace_solver(solver: KSpaceSolver) -> list:
 
 
 def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
-                     bonds: 'list[Bond]' = None, bond_ID_dict: dict = None,
-                     angles: 'list[BondAngle]' = None, angle_ID_dict: dict = None) -> list:
+                     bonds: list[Bond] = None, bond_ID_dict: dict = None,
+                     angles: list[BondAngle] = None, angle_ID_dict: dict = None) -> list:
     # ID is an acronym
     # pylint: disable=invalid-name
     """

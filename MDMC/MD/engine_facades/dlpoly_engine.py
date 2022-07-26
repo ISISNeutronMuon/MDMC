@@ -54,6 +54,8 @@ BOND_CLASS_REF = {
     }
 
 
+# Disable pylint issues related to using 'dlpoly' as a name for the attribute
+# pylint: disable=redefined-outer-name
 class DLPOLYAttribute(ABC):
     # pylint: disable=too-few-public-methods
     """

@@ -160,7 +160,8 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def convert_trajectory(self, start: int = 0, stop: int = None, step: int = 1, **settings: dict) -> Trajectory:
+    def convert_trajectory(self, start: int = 0, stop: int = None,
+                           step: int = 1, **settings: dict) -> Trajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
