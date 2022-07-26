@@ -349,27 +349,7 @@ class GPR(Minimizer):
             A string presenting the parameters for which the calculated and predicted
             figures of merit are lowest. To be printed by Control to the user.
         """
-        last_param_row = self.history.iloc[-1]
-        last_FoM_value = last_param_row[0]
-
-        # Find lowest parameters & FoM
-        lowest_FoM_id = self.history["FoM"].idxmin()
-        lowest_FoM_row = self.history.iloc[lowest_FoM_id]
-        lowest_FoM_value = lowest_FoM_row.get("FoM")
-
-        history_params = self.history_columns
-        history_params.remove("FoM")
-        history_params.remove("Change state")
-
-        last_parameters_found = ()
-        for parameter in history_params:
-            last_parameters_found += (last_param_row[parameter],)
-
-        lowest_FoM_parameters = ()
-        for parameter in history_params:
-            lowest_FoM_parameters += (lowest_FoM_row[parameter],)
-
-        return self.format_result_string(last_parameters_found,
-                                         last_FoM_value,
-                                         lowest_FoM_parameters,
-                                         lowest_FoM_value)
+        fit, min_FOM_measured, min_parameters_measured = self.GPR_fit()
+        points, FoMs = self.GPR_predict(fit)
+        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
+        self.set_parameter_values(self.parameter_names, min_parameters_predicted)
