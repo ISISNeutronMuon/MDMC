@@ -33,10 +33,9 @@ from itertools import chain, combinations, count, product
 from random import randint
 from tempfile import NamedTemporaryFile
 
-import numpy
-import typing
-
 from typing import List, Dict
+
+import numpy
 
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.common.units import Unit
@@ -2122,7 +2121,7 @@ SYSTEM = {
 }
 
 
-def convert_unit(value: typing.Union[np.ndarray, float],
+def convert_unit(value: Union[np.ndarray, float],
                  unit: Unit = None, to_lammps: bool = True):
     """
     Converts between MDMC units and LAMMPS real units

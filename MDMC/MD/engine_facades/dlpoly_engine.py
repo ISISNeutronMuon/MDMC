@@ -7,7 +7,7 @@ the Python wrapper dlpoly-py that can interface with it.
 # pylint: disable=import-error
 # as it flags up dlpoly import errors outside of container
 
-import typing
+from typing import Union, TYPE_CHECKING
 from abc import ABC
 from copy import copy
 import logging
@@ -34,7 +34,7 @@ from MDMC.trajectory_analysis.trajectory import (Trajectory,
 from MDMC.utilities.partitioning import partition_interactions
 
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from . import DLPOLYEnsemble
     from MDMC.MD import Universe
 
@@ -1157,7 +1157,7 @@ SYSTEM = {
 # some extra utility methods. these might be obsolete or
 # importable from lammps_engine.py
 # (in which case they maybe should be refactored into a utility module)
-def convert_unit(value: typing.Union[np.ndarray, float],
+def convert_unit(value: Union[np.ndarray, float],
                  unit: Unit = None, to_dlpoly: bool = True):
 
     """
