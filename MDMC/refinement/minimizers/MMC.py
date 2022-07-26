@@ -222,3 +222,41 @@ class MMC(Minimizer):
                                          last_FoM_value,
                                          lowest_FoM_parameters,
                                          lowest_FoM_value)
+
+    def format_result_string(self, minimizer_output: list) -> str:
+        """
+        Formats a string output for the results of an MMC minimizer run
+
+        Parameters
+        ----------
+        minimizer_output
+            A list of the following values:
+            1. Coordinates of last accepted point
+            2. FoM value of the last accepted point
+            3. Coordinates of the best point
+            4. FoM value of the best point
+
+        Returns
+        -------
+        str
+            A string encompassing the output of the minimizer, in the following format:
+            1. Whether the minimizer has converged
+            2. The last parameters of the run
+            3. The last FoM value of the run
+            4. The optimal (lowest FoM) parameters
+            5. The optimal (lowest) FoM value
+        """
+        if self.has_converged():
+            converged_message = '\nThe refinement has converged.'
+        else:
+            converged_message = "\nThe refinement has not converged."
+
+        output_string = (f'{converged_message} \n \n'
+                         f'Last accepted point is: \n'
+                         f'{minimizer_output[0]} with a minimum '
+                         f'FoM of {minimizer_output[1]}. \n \n'
+                         f'Best point measured was: \n'
+                         f'{minimizer_output[2]} for a minimum FoM of '
+                         f'{minimizer_output[3]}.\n \n ')
+
+        return output_string

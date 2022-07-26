@@ -10,11 +10,11 @@ from sklearn.gaussian_process import GaussianProcessRegressor as skGPR
 from sklearn.gaussian_process import kernels
 from scipy.ndimage import minimum_position, minimum
 
-from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+from MDMC.refinement.minimizers.gaussian_abs import GaussianMinimizer
 from MDMC.MD.parameters import Parameters, Parameter
 
 
-class GPR(Minimizer):
+class GPR(GaussianMinimizer):
 
     """
     ``Minimizer`` employing Gaussian Process Regression. Creates a predefined array of points
@@ -41,7 +41,6 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-
     def __init__(self, parameters, **settings):
         super().__init__(parameters)
 
@@ -53,8 +52,7 @@ class GPR(Minimizer):
         self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
 
-
-    def create_parameter_point_array(self, parameters: Parameters) -> Tuple[list[str], list[Tuple]]:
+    def create_parameter_point_array(self, parameters: Parameters) -> Tuple['list[str]', 'list[Tuple]']:
         """
         Takes or creates the constraints of the parameters to be minimised, if
         self.use_hypercube=False this makes an array of length self.n_points and performs the
@@ -94,7 +92,6 @@ class GPR(Minimizer):
         point_array =  list(itertools.product(*bounds_array))
         # * is necessary for unpacking the arrays
         return parameter_names, point_array
-
 
     @staticmethod
     def create_bounds(parameter: Parameter, fraction: float=0.2) -> Tuple[float, float]:
@@ -136,7 +133,6 @@ class GPR(Minimizer):
                     have no constraints set for it. Please set constraints for it') from error
         return lower_bound, upper_bound
 
-
     def has_converged(self) -> bool:
         """
         Checks if the refinement process has finished, i.e. if all points across
@@ -149,12 +145,10 @@ class GPR(Minimizer):
         """
         return len(self.history) >= len(self.parameter_point_array)
 
-
     @property
-    def history_columns(self) -> list[str]:
+    def history_columns(self) -> 'list[str]':
 
         return ['FoM', 'Change state'] + list(self.parameters)
-
 
     def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
         """
@@ -171,7 +165,6 @@ class GPR(Minimizer):
         for name, value in zip(parameter_names, values):
             self.parameters[name].value = value
 
-
     def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
@@ -182,7 +175,6 @@ class GPR(Minimizer):
         if point_to_calculate <= len(self.parameter_point_array):
             coordinates = self.parameter_point_array[point_to_calculate]
             self.set_parameter_values(self.parameter_names, coordinates)
-
 
     def step(self, FoM: float) -> None:
         """
@@ -206,13 +198,11 @@ class GPR(Minimizer):
         if not self.has_converged():
             self.change_parameters()
 
-
     def reset_parameters(self) -> None:
         """Resets the Parameter values to the last set of values in parameter_point_array"""
 
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
-
 
     def GPR_fit(self, filename: Optional[str]=None,
                 alpha: Optional[float]=0.1, length_scale: Optional[float]=4):
@@ -270,7 +260,6 @@ class GPR(Minimizer):
 
         return fitted_GPR, min_FOM, min_pars
 
-
     @staticmethod
     def GPR_predict(input_regressor,
                     points: Optional[float]=100) -> Tuple[list[Tuple[float]], np.ndarray]:
@@ -303,16 +292,15 @@ class GPR(Minimizer):
             dense_array = np.linspace(min_point, max_point, points)
             predictive_coordinates.append(dense_array)
 
-        point_array =  list(itertools.product(*predictive_coordinates))
+        point_array = list(itertools.product(*predictive_coordinates))
         # predict method needs explicit array
         prediction = input_regressor.predict(point_array, return_std=False)
 
         return point_array, prediction
 
-
     @staticmethod
     def global_minimum_position(predicted_FOMs: np.ndarray,
-        measured_parameter_coordinates: list[float])-> Tuple[np.ndarray, float]:
+                                measured_parameter_coordinates: 'list[float]') -> Tuple[np.ndarray, float]:
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 
@@ -336,20 +324,3 @@ class GPR(Minimizer):
         minimum_parameters = measured_parameter_coordinates[min_coordinates]
 
         return minimum_parameters, min_FoM
-
-
-    def present_result(self) -> str:
-        """
-        Sets the parameters to those predicted to return the minimum FoM, returns
-        the coordinates of the minima and the predicted FoM.
-
-        Returns
-        -------
-        output_string : str
-            A string presenting the parameters for which the calculated and predicted
-            figures of merit are lowest. To be printed by Control to the user.
-        """
-        fit, min_FOM_measured, min_parameters_measured = self.GPR_fit()
-        points, FoMs = self.GPR_predict(fit)
-        min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
-        self.set_parameter_values(self.parameter_names, min_parameters_predicted)
