@@ -31,6 +31,8 @@ class MMC(Minimizer):
         list of the column titles for the minimizer history
     """
 
+
+
     DISTRIBUTION = {'uniform': np.random.uniform}
 
     def __init__(self, parameters, **settings):
@@ -183,18 +185,7 @@ class MMC(Minimizer):
         for parameter in self.parameters:
             self.parameters[parameter].value = self.parameters_old_values[parameter]
 
-    def present_result(self):
-        """
-        Sets the parameters to those predicted to return the last FoM, returns
-        coordinates of the minima and the predicted FoM.
-
-        Returns
-        -------
-        output_string : str
-            A string presenting the best measured parameters and the current ones, to be printed
-            by Control to the user.
-        """
-
+    def extract_result(self) -> 'list[str]':
         self.reset_parameters()
         history = self.history
 
@@ -218,10 +209,10 @@ class MMC(Minimizer):
         for parameter in columns:
             lowest_FoM_parameters += (lowest_FoM_row[parameter],)
 
-        return self.format_result_string(last_parameters_found,
-                                         last_FoM_value,
-                                         lowest_FoM_parameters,
-                                         lowest_FoM_value)
+        output_data = [last_parameters_found, last_FoM_value,
+                       lowest_FoM_parameters, lowest_FoM_value]
+
+        return output_data
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
