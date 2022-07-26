@@ -1,9 +1,9 @@
 """Module containing an abstract base class for MD engine facades"""
-import typing
+from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
 from MDMC.trajectory_analysis.trajectory import Configuration, Trajectory
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from MDMC.MD.simulation import Simulation
 
 class MDEngine(ABC):

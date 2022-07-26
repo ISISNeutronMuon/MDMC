@@ -34,9 +34,7 @@ from MDMC.trajectory_analysis.trajectory import (Trajectory,
                                                  TemporalConfiguration)
 from MDMC.utilities.partitioning import partition_interactions
 
-
 if TYPE_CHECKING:
-    from . import DLPOLYEnsemble
     from MDMC.MD import Universe
 
 LOGGER = logging.getLogger(__name__)
