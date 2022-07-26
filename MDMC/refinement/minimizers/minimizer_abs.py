@@ -170,60 +170,41 @@ class Minimizer(ABC):
 
         self.history.to_csv(filename)
 
-    @abstractmethod
-    def present_result(self):
+    def present_result(self) -> str:
         """
-        Calculates and returns the most appropriate output for the minimiser class
+        Extracts and returns the most appropriate output for the
+        minimiser class, in an appropriate format
         e.g. minimum FOM and parameter values
         """
-        raise NotImplementedError()
+        extracted_results = self.extract_result()
+        return self.format_result_string(extracted_results)
 
-    def format_result_string(self,
-                             last_parameters_found: tuple,
-                             last_FoM_value: float,
-                             lowest_FoM_parameters: tuple,
-                             lowest_FoM_value: float) -> str:
+    @abstractmethod
+    def extract_result(self) -> 'list[str]':
         """
-        Formats a string output for the results of the minimiser class
+        Obtains the result of the minimizer to be presented/formatted
+
+        Returns
+        -------
+        list[str]
+            A list of strings representing the data points
+            output by the minimizer to be formatted into a string
+        """
+
+    @abstractmethod
+    def format_result_string(self, minimizer_output: list) -> str:
+        """
+        Formats a string output for the results of the minimiser class.
 
         Parameters
         ----------
-        last_parameters_found: tuple
-            A tuple-like object containing the parameters of the last point
-            in the history
-
-        last_FoM_value: float
-            The FoM value of the last point in the history
-
-        lowest_FoM_parameters: tuple
-            A tuple-like object containing the parameters of the point with
-
-        lowest_FoM_value: float
-            The lowest FoM value of the history
+        minimizer_output
+            A list of printable values representing the data points
+            output by the minimizer to be formatted into a string
 
 
         Returns
         -------
         str
-            A string encompassing the output of the minimizer, in the following format:
-            1. Whether or not the minimizer has converged
-            2. The last parameters of the run
-            3. The last FoM value of the run
-            4. The optimal (lowest FoM) parameters
-            5. The optimal (lowest) FoM value
+            A string encompassing the output of the minimizer.
         """
-
-        if self.has_converged():
-            converged_message = '\nThe refinement has converged.'
-        else:
-            converged_message = "\nThe refinement has not converged."
-
-        output_string = (f'{converged_message} \n \n'
-                         f'Last accepted point is: \n'
-                         f'{last_parameters_found} with a minimum '
-                         f'FoM of {last_FoM_value}. \n \n'
-                         f'Best point measured was: \n'
-                         f'{lowest_FoM_parameters} for a minimum FoM of '
-                         f'{lowest_FoM_value}.\n \n ')
-
-        return output_string
