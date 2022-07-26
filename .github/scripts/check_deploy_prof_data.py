@@ -62,12 +62,14 @@ def main():
     # get all significantly slower tests
     # if we haven't got a change column (if getting master has failed)
     # pass an empty dataframe and pass 
-    try:
-        slower = summary[summary['change'] > summary['tottime'] * 0.05]
-    except KeyError:
-        slower = pd.DataFrame()
+    ### currently commented out this and the following if statement as 
+    ### the runner architecture is not consistent
+    #try:
+    #    slower = summary[summary['change'] > summary['tottime'] * 0.05]
+    #except KeyError:
+    #    slower = pd.DataFrame()
 
-    if slower.empty:
+    if True: #slower.empty:
         print("Profiling results:\n", summary)
         with open(f'{filename}.csv', 'w', encoding='utf-8') as file:
             # drop change column so this can be used as master summary
