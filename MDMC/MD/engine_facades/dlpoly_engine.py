@@ -6,6 +6,7 @@ the Python wrapper dlpoly-py that can interface with it.
 """
 # pylint: disable=import-error
 # as it flags up dlpoly import errors outside of container
+from __future__ import annotations
 
 from typing import Union, TYPE_CHECKING
 from abc import ABC

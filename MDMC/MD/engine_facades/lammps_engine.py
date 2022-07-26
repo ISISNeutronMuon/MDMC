@@ -26,6 +26,8 @@ only be done on rank 0, and broadcast to other ranks if necessary. This is also
 true of calls to PyLammps.eval, and may also occur in other cases (anything that
 ends up using the OutputCapture class).
 """
+from __future__ import annotations
+
 import warnings
 from collections import defaultdict, namedtuple
 from copy import copy
@@ -33,9 +35,6 @@ from itertools import chain, combinations, count, product
 import logging
 from random import randint
 from tempfile import NamedTemporaryFile
-
-from typing import List, Dict
-
 import numpy
 
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
@@ -63,8 +62,6 @@ from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
-if typing.TYPE_CHECKING:
-    from . import LAMMPSEnsemble
 
 # pylint: disable=c-extension-no-member, too-many-lines
 # to avoid MPI warnings
@@ -139,7 +136,7 @@ class PyLammpsAttribute:
         return namedtuple('System', system_state.keys())(*system_state.values())
 
     @property
-    def fixes(self) -> [dict]:
+    def fixes(self) -> "list[dict]":
         """
         Get the ``PyLammps`` wrapper `list` of ``fixes``
 
@@ -159,7 +156,7 @@ class PyLammpsAttribute:
         return self.comm.bcast(fixes, root=0)
 
     @property
-    def fix_styles(self) -> [str]:
+    def fix_styles(self) -> "list[str]":
         """
         Get the styles of the ``fixes`` applied in LAMMPS
 
@@ -172,7 +169,7 @@ class PyLammpsAttribute:
         return [fix['style'] for fix in self.fixes]
 
     @property
-    def fix_names(self) -> [str]:
+    def fix_names(self) -> "list[str]":
         """
         Get the names of the ``fixes`` applied in LAMMPS
 
@@ -979,7 +976,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              config[id_offset][index])
 
     @staticmethod
-    def _max_n_interaction(atoms: List[Atom], name: str) -> int:
+    def _max_n_interaction(atoms: 'list[Atom]', name: str) -> int:
         """
         Parameters
         ----------
@@ -1188,7 +1185,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 raise AttributeError('LAMMPS requires all atoms in the universe'
                                      ' to have a charge.') from error
 
-    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: List[str] = None) -> None:
+    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: 'list[str]' = None) -> None:
         """
         Updates ``Dispersion`` interactions in LAMMPS
 
@@ -1232,7 +1229,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.pair_modify('pair', *mod)
 
     def _create_bonded_interactions(self, lmp_name: str,
-                                    bonded_interactions: List[BondedInteraction]) -> None:
+                                    bonded_interactions: 'list[BondedInteraction]') -> None:
         """
         Creates coefficients and new bonded interactions in LAMMPS, and fills
         the relevant ``BondedInteraction`` ID (e.g. ``self.bond_ID`` for bonds,
@@ -1291,7 +1288,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                       'special',
                                       special)
 
-    def _update_bonded_interactions(self, lmp_name: str, bonded_interactions: List[BondedInteraction]) -> None:
+    def _update_bonded_interactions(self, lmp_name: str,
+                                    bonded_interactions: 'list[BondedInteraction]') -> None:
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
@@ -2420,7 +2418,7 @@ def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
     return lmp_str, parse_nonbonded_modifications(interaction)
 
 
-def parse_nonbonded_modifications(interaction: Interaction) -> List[str]:
+def parse_nonbonded_modifications(interaction: Interaction) -> 'list[str]':
     """
     Parses MDMC ``Interaction`` attributes into `list` that can be used with
     LAMMPS ``pair_modify`` command
@@ -2454,7 +2452,7 @@ def parse_nonbonded_modifications(interaction: Interaction) -> List[str]:
     return mods
 
 
-def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> Dict[tuple, List[str]]:
+def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> 'dict[tuple, list[str]]':
     """
     Converts all ``NonBondedInteractions`` to LAMMPS pair styles
 
@@ -2497,7 +2495,7 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> Dict[tuple
         range ``Coulombic``.
     """
 
-    def check_validity(pair_style: str, cutoffs: List[float] = None) -> List[str]:
+    def check_validity(pair_style: str, cutoffs: 'list[float]' = None) -> 'list[str]':
         """
         Tests the validity of a LAMMPS ``pair_style``.
 
@@ -2591,7 +2589,7 @@ def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> Dict[tuple
     return combined_parsed_inters
 
 
-def parse_bonded_coefficients(interaction: BondedInteraction) -> List[str]:
+def parse_bonded_coefficients(interaction: BondedInteraction) -> 'list[str]':
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``bond_coeff`` and
     ``angle_coeff``
@@ -2658,8 +2656,8 @@ def parse_bonded_coefficients(interaction: BondedInteraction) -> List[str]:
     return [style] + ordered_parameters
 
 
-def parse_dispersion_coefficients(interactions: List[NonBondedInteraction],
-                                  nonbonded_styles: List[tuple] = None) -> List[str]:
+def parse_dispersion_coefficients(interactions: 'list[NonBondedInteraction]',
+                                  nonbonded_styles: 'list[tuple]' = None) -> 'list[str]':
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``pair_coeff``
 
@@ -2771,8 +2769,8 @@ def parse_kspace_solver(solver: KSpaceSolver) -> list:
 
 
 def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
-                     bonds: List[Bond] = None, bond_ID_dict: dict = None,
-                     angles: List[BondAngle] = None, angle_ID_dict: dict = None) -> list:
+                     bonds: 'list[Bond]' = None, bond_ID_dict: dict = None,
+                     angles: 'list[BondAngle]' = None, angle_ID_dict: dict = None) -> list:
     # ID is an acronym
     # pylint: disable=invalid-name
     """
