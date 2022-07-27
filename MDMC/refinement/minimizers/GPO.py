@@ -1,6 +1,6 @@
 """The Gaussian-Process-Optimizer minimizer class"""
-import numpy as np
 from typing import TYPE_CHECKING
+import numpy as np
 
 from skopt import Optimizer
 
