@@ -21,10 +21,10 @@ def test_GPR_parameter_point_array():
                              Parameter(name='parameter2', value=2.)])
     gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
     points = gpr.parameter_point_array
-    assert np.allclose(points[0], (0.8, 1.6), rtol=1e-5)
-    assert np.allclose(points[1], (0.8, 2.4), rtol=1e-5)
-    assert np.allclose(points[2], (1.2, 1.6), rtol=1e-5)
-    assert np.allclose(points[3], (1.2, 2.4), rtol=1e-5)
+    assert np.allclose(points[0], (0.7, 1.4), rtol=1e-5)
+    assert np.allclose(points[1], (0.7, 2.6), rtol=1e-5)
+    assert np.allclose(points[2], (1.3, 1.4), rtol=1e-5)
+    assert np.allclose(points[3], (1.3, 2.6), rtol=1e-5)
 
     constrained_pars = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
                                    Parameter(name='parameter2', value=2.,  constraints=(1.0,4.0))])
@@ -58,11 +58,11 @@ def test_GPR_reset_parameters():
     gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
 
     parameter_values = [p.value for p in gpr.parameters.values()]
-    assert np.allclose(parameter_values, (0.8, 1.6), rtol=1e-5)
+    assert np.allclose(parameter_values, (0.7, 1.4), rtol=1e-5)
 
     gpr.reset_parameters()
     parameter_values = [p.value for p in gpr.parameters.values()]
-    assert np.allclose(parameter_values, (1.2, 2.4), rtol=1e-5)
+    assert np.allclose(parameter_values, (1.3, 2.6), rtol=1e-5)
 
 @pytest.mark.parametrize('FoMs,coordinates,expected',
     [([2, 3, 0, 1, 4], [[0,0], [0,1], [1,0], [1,1], [2,0]], [[1,0], 0]),
@@ -101,7 +101,7 @@ def test_GPR_create_bounds():
     assert np.allclose([lower_bound, upper_bound], [0.5,2.0], rtol=1e-5)
 
     lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter)
-    assert np.allclose([lower_bound, upper_bound], [0.8,1.2], rtol=1e-5)
+    assert np.allclose([lower_bound, upper_bound], [0.7,1.3], rtol=1e-5)
 
     with pytest.raises(ValueError):
         lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter_zero)

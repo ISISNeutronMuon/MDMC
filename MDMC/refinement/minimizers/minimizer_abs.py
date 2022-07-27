@@ -170,6 +170,12 @@ class Minimizer(ABC):
         self.history.to_csv(filename)
 
     @abstractmethod
+    def reset_parameters(self) -> None:
+        """Resets the parameters to a previous state"""
+
+        raise NotImplementedError
+
+    @abstractmethod
     def present_result(self):
         """
         Returns the most appropriate output for the minimiser class
