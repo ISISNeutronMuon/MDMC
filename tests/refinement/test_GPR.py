@@ -177,7 +177,6 @@ def test_GPR_present_results(mock_history, FoMs, expected):
     """
     Tests that the output of GPR contains the correct refined coordinates.
     """
-
     params = Parameters()
     with patch("MDMC.refinement.minimizers.GPR.GPR.history", new_callable=PropertyMock) as hist:
         hist.return_value = mock_history
@@ -189,3 +188,21 @@ def test_GPR_present_results(mock_history, FoMs, expected):
             assert str(FoMs[1]) in output_string
             assert str(expected[0]) in output_string
             assert str(expected[1]) in output_string
+
+# TODO: Check correct converge message is included in output (format_result_string)
+def test_converge_message_in_output_string():
+    """
+    Tests that the converge message is present in the final output
+    """
+    pass
+
+def test_correct_coords_in_output_message():
+    """
+    Tests that the correct coordinates are present in the final output
+    Returns
+    -------
+
+    """
+    pass
+
+# TODO: Check correct format is followed

@@ -38,6 +38,24 @@ def parameters():
                        Parameter(name='potential_strength', value=1234.),
                        Parameter(name='sigma', value=3.3)])
 
+# Parameterize fixture with all parameter names
+@pytest.fixture(scope="module", params=
+                [minimizer_name for minimizer_name in
+                 MinimizerFactory.get_minimizer_names()])
+def minimizer_with_history(request, parameters):
+    """
+    Creates an instance of all minimizer classes with a random, 5-step history
+
+    Returns
+    -------
+        A concrete subclass of `Minimizer` with a random history of 5 steps
+    """
+    minimizer = MinimizerFactory.create_minimizer(request.params, parameters)
+    randomizer = random.Random()
+    for i in range(5):
+        minimizer.step(FoM=randomizer.uniform(0.1, 1000))
+    return minimizer
+
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init(parameters):
     """
@@ -153,6 +171,7 @@ def test_correct_output(parameters, params_last, FoM_last, params_lowest, FoM_lo
     """
     Test that the output of a minimizer is returned in the correct format
     """
+    # TODO: Remove this test (Create alternatives in MMC & GPR testing)
     class MockMinimizer(Minimizer):
         def has_converged(self):
             return True if params_last == params_lowest else False
@@ -178,29 +197,31 @@ def test_correct_output(parameters, params_last, FoM_last, params_lowest, FoM_lo
 
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
-@pytest.mark.parametrize("params_last, FoM_last, params_lowest, FoM_lowest",
+@pytest.mark.parametrize("incorrect_data",
                          [
-                             ("abc", ["Wrong", "Value"], (1.026101, 3.381142), 405.601993),
-                             (2, {"Wrong": 123}, False, ("",)),
+                             ({"abc": ["Wrong", "Value"], (1.026101, 3.381142): 405.601993}),
+                             ([2, {"Wrong": 123}, False, object]),
                              ((1.309348, 2.87394, 10.3489), 456., (123, 23, 42), "FoM")
                           ])
-def test_incorrect_input_for_output_string(parameters, params_last, FoM_last, params_lowest, FoM_lowest):
+def test_incorrect_input_for_output_string(parameters, incorrect_data):
     """
     Test that a TypeError is raised if the wrong input type is provided to format_result_string
     """
+    # TODO: Change this test - add to GPR & MMC
     class MockMinimizer(Minimizer):
         def has_converged(self):
             return False
 
     minimizer = MockMinimizer(parameters)
     with pytest.raises(TypeError):
-        print(minimizer.format_result_string(params_last, FoM_last, params_lowest, FoM_lowest))
+        print(minimizer.format_result_string(incorrect_data))
 
 
 def test_each_minimizer_for_correct_output(parameters):
     """
     Tests each implemented minimizer to make sure that the output is given in the same format
     """
+    # TODO: Change this test not to test for a specific string - not all minimizers have the same format now
     for minimizer_name in MinimizerFactory.get_minimizer_names():
         minimizer = MinimizerFactory.create_minimizer(minimizer_name, parameters)
 
@@ -214,3 +235,10 @@ def test_each_minimizer_for_correct_output(parameters):
                              r".*\..*\.\n \n")
 
         assert re.match(pattern, obtained_history_string) is not None
+
+# Repeat for all minimizers
+
+
+# TODO: Test incorrect inputs produce an error
+# TODO: Create tests for extract result (make sure result is extracted correctly)
+# TODO: Create integration test for present_result

@@ -370,10 +370,11 @@ class GPR(Minimizer):
         and predicted points
         """
 
+        # TODO: Change this to more accurately represent how GPR works (Ask Jos if needed)
         if self.has_converged():
-            converged_message = '\nThe refinement has converged.'
+            converged_message = '\nThe refinement has finished.'
         else:
-            converged_message = "\nThe refinement has not converged."
+            converged_message = "\nThe refinement has not finished."
 
         output_string = (f'{converged_message} \n \n'
                          f'Minimum measured point is: \n'
