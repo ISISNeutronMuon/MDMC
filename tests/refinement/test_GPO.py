@@ -22,14 +22,12 @@ def test_GPO_has_converged(mock_history, min_steps, expected):
 
 
 def test_GPO_step():
-    """Tests GPO is able to find the minima of a single cycle of a sine function"""
-    def cosine_function(x: float) -> float:
-        return np.cos(x)
+    """Tests GPO is able to find the minima of a single cycle of a cosine function"""
 
     parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=100)
     gpo._history=[]
-    for i in range(25):
+    for _ in range(25):
         x = parameter['a'].value
         FoM=np.cos(x)+3.0
         gpo.step(FoM)

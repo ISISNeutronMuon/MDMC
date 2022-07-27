@@ -1,11 +1,14 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 import numpy as np
+from typing import TYPE_CHECKING
 
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
 
+if TYPE_CHECKING:
+    from MDMC.MD.parameters import Parameters
 
 class GPO(Minimizer):
     """
@@ -26,8 +29,13 @@ class GPO(Minimizer):
 
     Parameters
     ----------
+    parameters: Parameters
+        The parameters in the simulation Universe to be optimized
+
+    Settings
+    ----------
     n_points: int
-        The number of points to measure (in an ask/tell manner)
+        The number of points to measure
 
     Attributes
     ----------
@@ -36,7 +44,7 @@ class GPO(Minimizer):
     """
 
 
-    def __init__(self, parameters, **settings):
+    def __init__(self, parameters: 'Parameters', **settings: dict):
         super().__init__(parameters)
 
         self.parameters = parameters
@@ -151,6 +159,7 @@ class GPO(Minimizer):
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FOM_measured = np.min(FoMs)
         min_parameters_measured = self._history[np.where(FoMs==min_FOM_measured)[0][0]][3]
+        # the [0][0][3] is just to get the parameters from the _history
 
         output_string = (f'Best point measured was \n'
             f'{min_parameters_measured} for a minimum FoM of '
