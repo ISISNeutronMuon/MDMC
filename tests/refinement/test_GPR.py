@@ -1,7 +1,7 @@
 """
 Tests the GPR minimizer class
 """
-
+import random
 from unittest.mock import patch, ANY, PropertyMock
 
 import numpy as np
@@ -13,13 +13,39 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
 
 from MDMC.MD.parameters import Parameter, Parameters
+from MDMC.refinement.minimizers.GPR import GPR
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 
 
-def test_GPR_parameter_point_array():
+@pytest.fixture
+def parameters():
+    return Parameters([Parameter(name='parameter1', value=1.),
+                Parameter(name='parameter2', value=2.)])
+
+
+@pytest.fixture
+def constrained_parameters():
+    Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
+                Parameter(name='parameter2', value=2., constraints=(1.0, 4.0))])
+
+
+@pytest.fixture
+def GPR_with_history(parameters):
+    """
+    Creates an instance of GPR with a random, 10-step history
+
+    Returns
+    -------
+        A GPR object with a random history of 10 steps
+    """
+    minimizer = GPR(parameters)
+    randomizer = random.Random()
+    for i in range(10):
+        minimizer.step()
+
+
+def test_GPR_parameter_point_array(parameters, constrained_parameters):
     """Test that the array of points to be simulated is created correctly"""
-    parameters = Parameters([Parameter(name='parameter1', value=1.),
-                             Parameter(name='parameter2', value=2.)])
     gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
     points = gpr.parameter_point_array
     assert np.allclose(points[0], (0.8, 1.6), rtol=1e-5)
@@ -27,22 +53,18 @@ def test_GPR_parameter_point_array():
     assert np.allclose(points[2], (1.2, 1.6), rtol=1e-5)
     assert np.allclose(points[3], (1.2, 2.4), rtol=1e-5)
 
-    constrained_pars = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
-                                   Parameter(name='parameter2', value=2.,  constraints=(1.0,4.0))])
-    _, points = gpr.create_parameter_point_array(constrained_pars)
+    _, points = gpr.create_parameter_point_array(constrained_parameters)
     assert np.allclose(points[0], [0.5, 1.0], rtol=1e-5)
     assert np.allclose(points[1], [0.5, 4.0], rtol=1e-5)
     assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
     assert np.allclose(points[3], [2.0, 4.0], rtol=1e-5)
 
-def test_GPR_parameter_point_array_hypercube():
+def test_GPR_parameter_point_array_hypercube(constrained_parameters):
     """Test that the array of points to be simulated is created correctly for the latin hypercube"""
-    constrained_pars = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
-                                   Parameter(name='parameter2', value=2.,  constraints=(1.0,4.0))])
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_pars, n_points=4, use_hypercube=True)
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, use_hypercube=True)
     points = gpr.parameter_point_array
-    par1_constraints = constrained_pars['parameter1'].constraints
-    par2_constraints = constrained_pars['parameter2'].constraints
+    par1_constraints = constrained_parameters['parameter1'].constraints
+    par2_constraints = constrained_parameters['parameter2'].constraints
 
     assert len(points) == 4
     assert np.all([np.array(points)[:,0]>=par1_constraints[0],
@@ -52,10 +74,8 @@ def test_GPR_parameter_point_array_hypercube():
                    np.array(points)[:,1]<=par2_constraints[1]])
 
 
-def test_GPR_reset_parameters():
+def test_GPR_reset_parameters(parameters):
     """Test that parameters get reset"""
-    parameters = Parameters([Parameter(name='parameter1', value=1.),
-                Parameter(name='parameter2', value=2.)])
     gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
 
     parameter_values = [p.value for p in gpr.parameters.values()]
@@ -177,10 +197,25 @@ def test_GPR_present_results(mock_history, FoMs, expected):
     """
     Tests that the output of GPR contains the correct refined coordinates.
     """
+
+
+# TODO: Check correct converge message is included in output (format_result_string)
+def test_converge_message_in_output():
+    """
+    Tests that the converge message is present in the final output
+    """
+    pass
+
+def test_correct_coords_in_output():
+    """
+    Tests that the correct coordinates are present in the final output
+    """
+    # Change this test to conform with GPRs output of predicted/measured output
     params = Parameters()
     with patch("MDMC.refinement.minimizers.GPR.GPR.history", new_callable=PropertyMock) as hist:
         hist.return_value = mock_history
-        with patch("MDMC.refinement.minimizers.GPR.GPR.history_columns", new_callable=PropertyMock) as columns:
+        with patch("MDMC.refinement.minimizers.GPR.GPR.history_columns",
+                   new_callable=PropertyMock) as columns:
             columns.return_value = list(mock_history.columns)
             gpr = MinimizerFactory().create_minimizer("GPR", params)
             output_string = gpr.present_result()
@@ -189,20 +224,38 @@ def test_GPR_present_results(mock_history, FoMs, expected):
             assert str(expected[0]) in output_string
             assert str(expected[1]) in output_string
 
-# TODO: Check correct converge message is included in output (format_result_string)
-def test_converge_message_in_output_string():
-    """
-    Tests that the converge message is present in the final output
-    """
-    pass
 
-def test_correct_coords_in_output_message():
+def correct_FoM_values_in_output(minimizer_with_history):
     """
-    Tests that the correct coordinates are present in the final output
-    Returns
-    -------
-
+    Tests that the correct FoM values are present in the final output
     """
     pass
 
 # TODO: Check correct format is followed
+def test_each_minimizer_for_correct_output(parameters):
+    """
+    Tests each implemented minimizer to make sure that the output is given in the same format
+    """
+    # TODO: Change this test not to test for a specific string - not all minimizers have the same format now
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minimizer = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+
+        # It does not matter what FoM is - we just want some history to check the output
+        randomizer = random.Random()
+        for i in range(5):
+            minimizer.step(FoM=randomizer.uniform(0.1, 1000))
+        obtained_history_string = minimizer.present_result()
+        pattern = re.compile(r"\nThe refinement has not converged\. \n \nLast accepted point is: "
+                             r"\n\(.*\) with a minimum FoM of .*\..*\. \n "
+                             r"\nBest point measured was: \n\(.*\) "
+                             r"for a minimum FoM of .*\..*\.\n \n")
+
+        assert re.match(pattern, obtained_history_string) is not None
+
+# TODO: Create integration test for present_result
+def test_present_result():
+    """
+
+    """
+    pass
+
