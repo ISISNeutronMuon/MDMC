@@ -38,9 +38,16 @@ def parameters():
 
 @pytest.fixture
 def MMC_with_history(parameters):
+    """
+    Creates an instance of MMC with a random, 10-step history
+
+    Returns
+    -------
+        A MMC object with a random history of 10 steps
+    """
     minimizer = MMC(parameters)
     randomizer = random.Random()
-    for i in range(5):
+    for i in range(10):
         minimizer.step(FoM=randomizer.uniform(0.1, 1000))
     return minimizer
 
