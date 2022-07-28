@@ -32,7 +32,7 @@ class GPR(Minimizer):
         (if use_hypercube=True) or p^n_points (p = number of parameters) in a regular grid
         (if use_hypercube=False)
     use_hypercube : optional, bool
-        Boolian toggle for if the n_points should be placed in a latin hypercube, or as a grid
+        Boolean toggle for if the n_points should be placed in a latin hypercube, or as a grid
         across each parameter. Defaults to False
 
     Attributes
@@ -345,6 +345,8 @@ class GPR(Minimizer):
         min_parameters_predicted, min_FoM_predicted = self.global_minimum_position(FoMs, points)
         self.set_parameter_values(self.parameter_names, min_parameters_predicted)
 
+        min_parameters_measured = tuple(min_parameters_measured.iloc[0])
+
         list_of_outputs = [
             min_parameters_measured,
             min_FoM_measured,
@@ -381,7 +383,7 @@ class GPR(Minimizer):
                          f'{minimizer_output[0]} with an '
                          f'FoM of {minimizer_output[1]}. \n \n'
                          f'Minimum point predicted is: \n'
-                         f'{minimizer_output[2]} for an'
+                         f'{minimizer_output[2]} for an '
                          f'FoM of {minimizer_output[3]}.\n \n ')
 
         return output_string
