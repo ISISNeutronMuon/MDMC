@@ -197,17 +197,11 @@ class MMC(Minimizer):
         lowest_FoM_row = history.iloc[lowest_FoM_id]
         lowest_FoM_value = lowest_FoM_row.get("FoM")
 
-        columns = self.history_columns
-        columns.remove("FoM")
-        columns.remove("Change state")
+        last_param_row = last_param_row.drop("FoM").drop("Change state")
+        lowest_FoM_row = lowest_FoM_row.drop("FoM").drop("Change state")
 
-        last_parameters_found = ()
-        for parameter in columns:
-            last_parameters_found += (last_param_row[parameter],)
-
-        lowest_FoM_parameters = ()
-        for parameter in columns:
-            lowest_FoM_parameters += (lowest_FoM_row[parameter],)
+        last_parameters_found = tuple(last_param_row)
+        lowest_FoM_parameters = tuple(lowest_FoM_row)
 
         output_data = [last_parameters_found, last_FoM_value,
                        lowest_FoM_parameters, lowest_FoM_value]
