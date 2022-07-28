@@ -1,6 +1,8 @@
 """
 Tests the Metropolis-Hastings minimizer
 """
+import random
+import re
 from unittest.mock import patch, PropertyMock
 
 import numpy as np
@@ -32,6 +34,15 @@ def parameters():
                        Parameter(name='equilibrium_state', value=1.2),
                        Parameter(name='potential_strength', value=1234.),
                        Parameter(name='sigma', value=3.3)])
+
+
+@pytest.fixture
+def MMC_with_history(parameters):
+    minimizer = MMC(parameters)
+    randomizer = random.Random()
+    for i in range(5):
+        minimizer.step(FoM=randomizer.uniform(0.1, 1000))
+    return minimizer
 
 
 def mock_change_parameters(self):
@@ -149,48 +160,6 @@ def test_MMC_has_converged(mock_history, min_steps, expected):
     minim._history = mock_history
     assert minim.has_converged() == expected
 
-@pytest.mark.parametrize('mock_history, FoMs, expected',
-                         [(pandas.DataFrame(data=[
-                             [123.4, "Accepted", 23.453, 8.],
-                             [235.6, "Rejected", 23.567, 7.85],
-                             [100.2, "Accepted", 24.658, 6.5]
-                         ],
-                             columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                           (100.2, 100.2),
-                           ((24.658, 6.5), (24.658, 6.5))),
-                             (pandas.DataFrame(data=[
-                                 [123.4, "Accepted", 22.453, 8.],
-                                 [34.6, "Accepted", 23.567, 7.85],
-                                 [45.2, "Rejected", 20.655, 5.5]
-                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                              (34.6, 45.2),
-                              ((23.567, 7.85), (20.655, 5.5))
-                             ),
-                             (pandas.DataFrame(data=[
-                                 [123.4, "Accepted", 23.453, 8.],
-                                 [235.6, "Rejected", 23.567, 7.85],
-                                 [145.2, "Rejected", 24.658, 6.5]
-                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                              (123.4, 145.2),
-                              ((23.453, 8.), (24.658, 6.5))
-                             )])
-def test_MMC_present_results(mock_history, FoMs, expected):
-    """
-    Tests that the output of MMC contains the correct refined coordinates.
-    """
-
-    params = Parameters()
-    with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
-        hist.return_value = mock_history
-        with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns", new_callable=PropertyMock) as columns:
-            columns.return_value = list(mock_history.columns)
-            mmc = MinimizerFactory().create_minimizer("MMC", params)
-            output_string = mmc.present_result()
-            assert str(FoMs[0]) in output_string
-            assert str(FoMs[1]) in output_string
-            assert str(expected[0]) in output_string
-            assert str(expected[1]) in output_string
-
 
 def test_MMC_change_parameter(parameters):
     """
@@ -269,3 +238,105 @@ def test_MMC_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
     minim.FoM = FoM
     monkeypatch.setattr(np.random, 'random', mock_random)
     assert minim.change_state() is True
+
+def test_converge_message_in_output_string(MMC_with_history):
+    """
+    Tests that the converge message is present in the final output dependent on convergence output
+    """
+    converged = MMC_with_history.has_converged()
+    output_message = MMC_with_history.present_result()
+    if converged:
+        assert "The refinement has converged" in output_message
+    else:
+        assert "The refinement has not converged" in output_message
+
+
+def test_output_string_format(MMC_with_history):
+    """
+    Test to make sure that the output is given in the correct format
+    """
+    obtained_history_string = MMC_with_history.present_result()
+    pattern = re.compile(r"\nThe refinement (has|has not) converged\. "
+                         r"\n \nLast accepted point is: "
+                         r"\n\(.*\) with a minimum FoM of .*\..*\. \n "
+                         r"\nBest point measured was: \n\(.*\) "
+                         r"for a minimum FoM of .*\..*\.\n \n")
+
+    assert re.match(pattern, obtained_history_string) is not None
+
+@pytest.mark.parametrize('mock_history, FoMs, expected',
+                         [(pandas.DataFrame(data=[
+                             [123.4, "Accepted", 23.453, 8.],
+                             [235.6, "Rejected", 23.567, 7.85],
+                             [100.2, "Accepted", 24.658, 6.5]
+                         ],
+                             columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                           (100.2, 100.2),
+                           ((24.658, 6.5), (24.658, 6.5))),
+                             (pandas.DataFrame(data=[
+                                 [123.4, "Accepted", 22.453, 8.],
+                                 [34.6, "Accepted", 23.567, 7.85],
+                                 [45.2, "Rejected", 20.655, 5.5]
+                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (34.6, 45.2),
+                              ((23.567, 7.85), (20.655, 5.5))
+                             ),
+                             (pandas.DataFrame(data=[
+                                 [123.4, "Accepted", 23.453, 8.],
+                                 [235.6, "Rejected", 23.567, 7.85],
+                                 [145.2, "Rejected", 24.658, 6.5]
+                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (123.4, 145.2),
+                              ((23.453, 8.), (24.658, 6.5))
+                             )])
+class TestParametrized:
+    """
+    A class of tests that share parametrized data
+    """
+
+    def test_extract_result_works_correctly(self, mock_history, FoMs, expected):
+        """
+        Tests that the correct values are extracted from the history
+        """
+        params = Parameters()
+        with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
+            hist.return_value = mock_history
+            with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
+                       new_callable=PropertyMock) as columns:
+                columns.return_value = list(mock_history.columns)
+                mmc = MinimizerFactory().create_minimizer("MMC", params)
+                output_data = mmc.extract_result()
+                assert str(FoMs[0]) in output_data
+                assert str(FoMs[1]) in output_data
+                assert str(expected[0]) in output_data
+                assert str(expected[1]) in output_data
+
+    def test_correct_coords_in_output_message(self, mock_history, expected):
+        """
+        Tests that the correct coordinates are present in the final output
+        """
+        params = Parameters()
+        with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
+            hist.return_value = mock_history
+            with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
+                       new_callable=PropertyMock) as columns:
+                columns.return_value = list(mock_history.columns)
+                mmc = MinimizerFactory().create_minimizer("MMC", params)
+                output_string = mmc.present_result()
+                assert str(expected[0]) in output_string
+                assert str(expected[1]) in output_string
+
+    def test_correct_FoMs_in_output_message(self, mock_history, FoMs):
+        """
+        Tests that the correct coordinates are present in the final output
+        """
+        params = Parameters()
+        with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
+            hist.return_value = mock_history
+            with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
+                       new_callable=PropertyMock) as columns:
+                columns.return_value = list(mock_history.columns)
+                mmc = MinimizerFactory().create_minimizer("MMC", params)
+                output_string = mmc.present_result()
+                assert str(FoMs[0]) in output_string
+                assert str(FoMs[1]) in output_string
