@@ -2,6 +2,7 @@
 Tests the GPR minimizer class
 """
 import random
+import re
 from unittest.mock import patch, ANY, PropertyMock
 
 import numpy as np
@@ -59,6 +60,7 @@ def test_GPR_parameter_point_array(parameters, constrained_parameters):
     assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
     assert np.allclose(points[3], [2.0, 4.0], rtol=1e-5)
 
+
 def test_GPR_parameter_point_array_hypercube(constrained_parameters):
     """Test that the array of points to be simulated is created correctly for the latin hypercube"""
     gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, use_hypercube=True)
@@ -85,6 +87,7 @@ def test_GPR_reset_parameters(parameters):
     parameter_values = [p.value for p in gpr.parameters.values()]
     assert np.allclose(parameter_values, (1.2, 2.4), rtol=1e-5)
 
+
 @pytest.mark.parametrize('FoMs,coordinates,expected',
     [([2, 3, 0, 1, 4], [[0,0], [0,1], [1,0], [1,1], [2,0]], [[1,0], 0]),
     ([2], [[0,0,1]], [[0,0,1], 2]),
@@ -96,6 +99,7 @@ def test_GPR_global_minimum_position(FoMs, coordinates, expected):
     min_coord, min_FoM = gpr.global_minimum_position(FoMs, coordinates)
     assert np.allclose(min_coord, expected[0], rtol=1e-5)
     assert np.allclose(min_FoM, expected[1], rtol=1e-5)
+
 
 def test_GPR_create_bounds():
     """Tests bounds are created and returned correctly"""
@@ -112,6 +116,7 @@ def test_GPR_create_bounds():
 
     with pytest.raises(ValueError):
         lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter_zero)
+
 
 def test_GPR_set_parameter_values():
     """Tests set_parameter_values can set values correctly"""
@@ -130,6 +135,7 @@ def test_GPR_set_parameter_values():
     with pytest.raises(ValueError):
         gpr.set_parameter_values(['parameter2'], [7.0])
 
+
 def test_GPR_fit():
     """Tests that the GPR fit is called with the correct arguments given an input history"""
     mocked_df = pd.DataFrame(data=[[0,100.0,'Accepted',0.2,2.6],
@@ -145,6 +151,7 @@ def test_GPR_fit():
             # we just want to know that it was called correctly.
             mock_fit.assert_called_with(ANY, [[0.2, 2.6], [1.8, 2.6]], [100.0, 150.5])
 
+
 def test_GPR_predict():
     """Tests that the GPR prediction returns the right points and predictions"""
     gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
@@ -154,6 +161,7 @@ def test_GPR_predict():
     point_array, prediction = gpr.GPR_predict(input_regressor, points=2)
     assert np.allclose(point_array, [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]], rtol=1e-5)
     assert np.allclose(prediction, [0.03015209, 0.40226347, 0.40226347, 0.89999947], rtol=1e-5)
+
 
 def test_GPR_minimizer_change_constrained_parameter():
     """
@@ -168,89 +176,74 @@ def test_GPR_minimizer_change_constrained_parameter():
     minim.change_parameters()
     assert [p.value for p in minim.parameters.values()] == expected_values
 
-@pytest.mark.parametrize('mock_history, FoMs, expected',
-                         [(pandas.DataFrame(data=[
-                             [123.4, "Accepted", 23.453, 8.],
-                             [235.6, "Rejected", 23.567, 7.85],
-                             [100.2, "Accepted", 24.658, 6.5]
-                         ],
-                             columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                           (100.2, 100.2),
-                           ((24.658, 6.5), (24.658, 6.5))),
-                             (pandas.DataFrame(data=[
-                                 [123.4, "Accepted", 22.453, 8.],
-                                 [34.6, "Accepted", 23.567, 7.85],
-                                 [45.2, "Rejected", 20.655, 5.5]
-                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                              (34.6, 45.2),
-                              ((23.567, 7.85), (20.655, 5.5))
-                             ),
-                             (pandas.DataFrame(data=[
-                                 [123.4, "Accepted", 23.453, 8.],
-                                 [235.6, "Rejected", 23.567, 7.85],
-                                 [145.2, "Rejected", 24.658, 6.5]
-                             ], columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                              (123.4, 145.2),
-                              ((23.453, 8.), (24.658, 6.5))
-                             )])
-def test_GPR_present_results(mock_history, FoMs, expected):
-    """
-    Tests that the output of GPR contains the correct refined coordinates.
-    """
 
-
-# TODO: Check correct converge message is included in output (format_result_string)
-def test_converge_message_in_output():
+def test_converge_message_in_output(GPR_with_history):
     """
     Tests that the converge message is present in the final output
     """
-    pass
+    converged = GPR_with_history.has_converged()
+    output_message = GPR_with_history.present_result()
+    if converged:
+        assert "The refinement has finished" in output_message
+    else:
+        assert "The refinement has not finished" in output_message
 
-def test_correct_coords_in_output():
-    """
-    Tests that the correct coordinates are present in the final output
-    """
-    # Change this test to conform with GPRs output of predicted/measured output
-    params = Parameters()
-    with patch("MDMC.refinement.minimizers.GPR.GPR.history", new_callable=PropertyMock) as hist:
-        hist.return_value = mock_history
-        with patch("MDMC.refinement.minimizers.GPR.GPR.history_columns",
-                   new_callable=PropertyMock) as columns:
-            columns.return_value = list(mock_history.columns)
-            gpr = MinimizerFactory().create_minimizer("GPR", params)
-            output_string = gpr.present_result()
-            assert str(FoMs[0]) in output_string
-            assert str(FoMs[1]) in output_string
-            assert str(expected[0]) in output_string
-            assert str(expected[1]) in output_string
-
-
-def correct_FoM_values_in_output(minimizer_with_history):
-    """
-    Tests that the correct FoM values are present in the final output
-    """
-    pass
-
-# TODO: Check correct format is followed
-def test_each_minimizer_for_correct_output(parameters):
+def test_each_minimizer_for_correct_output(GPR_with_history):
     """
     Tests each implemented minimizer to make sure that the output is given in the same format
     """
-    # TODO: Change this test not to test for a specific string - not all minimizers have the same format now
-    for minimizer_name in MinimizerFactory.get_minimizer_names():
-        minimizer = MinimizerFactory.create_minimizer(minimizer_name, parameters)
+    obtained_history_string = GPR_with_history.present_result()
+    pattern = re.compile(r"\nThe refinement (has|has not) finished\. "
+                         r"\n \nLast accepted point is: "
+                         r"\n\(.*\) with a minimum FoM of .*\..*\. \n "
+                         r"\nBest point measured was: \n\(.*\) "
+                         r"for a minimum FoM of .*\..*\.\n \n")
 
-        # It does not matter what FoM is - we just want some history to check the output
-        randomizer = random.Random()
-        for i in range(5):
-            minimizer.step(FoM=randomizer.uniform(0.1, 1000))
-        obtained_history_string = minimizer.present_result()
-        pattern = re.compile(r"\nThe refinement has not converged\. \n \nLast accepted point is: "
-                             r"\n\(.*\) with a minimum FoM of .*\..*\. \n "
-                             r"\nBest point measured was: \n\(.*\) "
-                             r"for a minimum FoM of .*\..*\.\n \n")
+    assert re.match(pattern, obtained_history_string) is not None
 
-        assert re.match(pattern, obtained_history_string) is not None
+@pytest.mark.parametrize('mock_history, FoMs, expected',
+                         [
+                             (pandas.DataFrame(data=[
+                                 [453.5, "Accepted", 0.8194, 2.688],
+                                 [443.9, "Accepted", 0.8194, 3.36],
+                                 [1445, "Accepted", 0.8194, 4.032]
+                                ],
+                                 columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
+                              (339.75412936941234, 443.925233394768),
+                              ((0.8194400000000001, 3.1224242424242425),
+                               (0.8194400000000001, 3.3600000000000003))),
+                         ])
+class TestParametrized:
+
+    def test_correct_coords_in_output(self):
+        """
+        Tests that the correct coordinates are present in the final output
+        """
+        # Change this test to conform with GPRs output of predicted/measured output
+        params = Parameters()
+        with patch("MDMC.refinement.minimizers.GPR.GPR.history", new_callable=PropertyMock) as hist:
+            hist.return_value = mock_history
+            with patch("MDMC.refinement.minimizers.GPR.GPR.history_columns",
+                       new_callable=PropertyMock) as columns:
+                columns.return_value = list(mock_history.columns)
+                gpr = MinimizerFactory().create_minimizer("GPR", params)
+                output_string = gpr.present_result()
+                assert str(FoMs[0]) in output_string
+                assert str(FoMs[1]) in output_string
+                assert str(expected[0]) in output_string
+                assert str(expected[1]) in output_string
+
+    def correct_FoM_values_in_output(self,):
+        """
+        Tests that the correct FoM values are present in the final output
+        """
+        pass
+
+    def test_GPR_present_results(self, mock_history, FoMs, expected):
+        """
+        Tests that the output of GPR contains the correct refined coordinates.
+        """
+        pass
 
 # TODO: Create integration test for present_result
 def test_present_result():
@@ -258,4 +251,3 @@ def test_present_result():
 
     """
     pass
-
