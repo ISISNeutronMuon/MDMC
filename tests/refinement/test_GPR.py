@@ -3,10 +3,9 @@ Tests the GPR minimizer class
 """
 import random
 import re
-from unittest.mock import patch, ANY, PropertyMock
+from unittest.mock import patch, ANY
 
 import numpy as np
-import pandas
 import pandas as pd
 import pytest
 
@@ -42,7 +41,31 @@ def GPR_with_history(parameters):
     minimizer = GPR(parameters)
     randomizer = random.Random()
     for i in range(10):
-        minimizer.step()
+        minimizer.step(FoM=randomizer.uniform(0.1, 1000))
+    return minimizer
+
+
+@pytest.mark.skip
+def obtain_correct_output_values(GPR_with_history):
+    """
+    A function to obtain the correct values from a GPRs history
+    """
+    fitted_points, minimum_FoM_measured, minimum_parameters_measured \
+        = GPR_with_history.extract_result()
+
+    points, FoMs = GPR_with_history.GPR_predict(fitted_points)
+
+    minimum_predicted_parameters, minimum_FoM_predicted \
+        = GPR_with_history.global_minimum_positions(FoMs, points)
+
+    minimum_parameters_measured = tuple(minimum_parameters_measured.iloc[0])
+
+    return [
+        minimum_parameters_measured,
+        minimum_FoM_measured,
+        minimum_predicted_parameters,
+        minimum_FoM_predicted
+    ]
 
 
 def test_GPR_parameter_point_array(parameters, constrained_parameters):
@@ -203,29 +226,6 @@ def test_each_minimizer_for_correct_output(GPR_with_history):
     assert re.match(pattern, obtained_history_string) is not None
 
 
-@pytest.skip
-def obtain_correct_output_values(GPR_with_history):
-    """
-    A function to obtain the correct values from a GPRs history
-    """
-    fitted_points, minimum_FoM_measured, minimum_parameters_measured \
-        = GPR_with_history.extract_result()
-
-    points, FoMs = GPR_with_history.GPR_predict(fitted_points)
-
-    minimum_predicted_parameters, minimum_FoM_predicted \
-        = GPR_with_history.global_minimum_positions(FoMs, points)
-
-    minimum_parameters_measured = tuple(minimum_parameters_measured.iloc[0])
-
-    return [
-        minimum_parameters_measured,
-        minimum_FoM_measured,
-        minimum_predicted_parameters,
-        minimum_FoM_predicted
-    ]
-
-
 def test_correct_coordinates_in_output(GPR_with_history):
     """
     Tests that the correct coordinates present in the final output
@@ -236,7 +236,7 @@ def test_correct_coordinates_in_output(GPR_with_history):
     assert str(expected_data[2]) in output_string
 
 
-def correct_FoM_values_in_output(GPR_with_history):
+def test_correct_FoM_values_in_output(GPR_with_history):
     """
     Tests that the correct FoM values are present in the final output
     """
