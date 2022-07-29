@@ -2,12 +2,12 @@
 Tests the Minimizer base class
 """
 import random
-import re
 from tempfile import NamedTemporaryFile
 
 from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from MDMC.MD.parameters import Parameter, Parameters
@@ -17,7 +17,7 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 pytestmark = pytest.mark.mpi
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def parameters():
     """
     Returns
@@ -49,7 +49,10 @@ def minimizer_with_history(request, parameters):
     -------
         A concrete subclass of `Minimizer` with a random history of 10 steps
     """
-    minimizer = MinimizerFactory.create_minimizer(request.params, parameters)
+    name = request.param
+    if "fixed_parameter (#199)" in parameters.keys():
+        parameters.pop("fixed_parameter (#199)")
+    minimizer = MinimizerFactory.create_minimizer(name, parameters)
     randomizer = random.Random()
     for i in range(10):
         minimizer.step(FoM=randomizer.uniform(0.1, 1000))
@@ -162,14 +165,14 @@ def test_minimizer_tied_parameter():
 @pytest.mark.parametrize("incorrect_data",
                          [
                              ({"abc": ["Wrong", "Value"], (1.026101, 3.381142): 405.601993}),
-                             ([2, {"Wrong": 123}, False, object]),
-                             ((1.309348, 2.87394, 10.3489), 456., (123, 23, 42), str)
+                             ({"Wrong": 123}),
+                             (object())
                           ])
 def test_incorrect_inputs_to_format_string_raise_error(minimizer_with_history, incorrect_data):
     """
     Tests that a `TypeError` is thrown when incorrect data
     is put into the format_result_string function
     """
-    with pytest.raises(TypeError) or pytest.raises(IndexError):
+    with pytest.raises((TypeError, KeyError)):
         minimizer_with_history.format_result_string(incorrect_data)
 

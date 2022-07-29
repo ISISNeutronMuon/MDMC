@@ -3,6 +3,7 @@ Tests the GPR minimizer class
 """
 import random
 import re
+import tempfile
 from unittest.mock import patch, ANY
 
 import numpy as np
@@ -25,7 +26,7 @@ def parameters():
 
 @pytest.fixture
 def constrained_parameters():
-    Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
+    return Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
                 Parameter(name='parameter2', value=2., constraints=(1.0, 4.0))])
 
 
@@ -38,6 +39,7 @@ def GPR_with_history(parameters):
     -------
         A GPR object with a random history of 10 steps
     """
+
     minimizer = GPR(parameters)
     randomizer = random.Random()
     for i in range(10):
@@ -51,14 +53,19 @@ def obtain_correct_output_values(GPR_with_history):
     A function to obtain the correct values from a GPRs history
     """
     fitted_points, minimum_FoM_measured, minimum_parameters_measured \
-        = GPR_with_history.extract_result()
+        = GPR_with_history.GPR_fit()
 
     points, FoMs = GPR_with_history.GPR_predict(fitted_points)
 
     minimum_predicted_parameters, minimum_FoM_predicted \
-        = GPR_with_history.global_minimum_positions(FoMs, points)
+        = GPR_with_history.global_minimum_position(FoMs, points)
 
     minimum_parameters_measured = tuple(minimum_parameters_measured.iloc[0])
+
+    GPR_with_history.set_parameter_values(
+        GPR_with_history.parameter_names,
+        minimum_predicted_parameters
+    )
 
     return [
         minimum_parameters_measured,
@@ -178,7 +185,7 @@ def test_GPR_fit():
 def test_GPR_predict():
     """Tests that the GPR prediction returns the right points and predictions"""
     gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
-    kernel = RBF(length_scale = 4.0)
+    kernel = RBF(length_scale=4.0)
     input_regressor = GaussianProcessRegressor(kernel=kernel, alpha=0.1)
     input_regressor.fit([[0.0, 0.0], [1.0, 1.0]], [0.0, 1.0])
     point_array, prediction = gpr.GPR_predict(input_regressor, points=2)
@@ -204,6 +211,10 @@ def test_converge_message_in_output(GPR_with_history):
     """
     Tests that the converge message is present in the final output
     """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPR_with_history.results_filename = temporary_file
+    GPR_with_history.write_history(temporary_file)
+
     converged = GPR_with_history.has_converged()
     output_message = GPR_with_history.present_result()
     if converged:
@@ -216,12 +227,16 @@ def test_each_minimizer_for_correct_output(GPR_with_history):
     """
     Tests each implemented minimizer to make sure that the output is given in the same format
     """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPR_with_history.results_filename = temporary_file
+    GPR_with_history.write_history(temporary_file)
+
     obtained_history_string = GPR_with_history.present_result()
     pattern = re.compile(r"\nThe refinement (has|has not) finished\. "
-                         r"\n \nLast accepted point is: "
-                         r"\n\(.*\) with a minimum FoM of .*\..*\. \n "
-                         r"\nBest point measured was: \n\(.*\) "
-                         r"for a minimum FoM of .*\..*\.\n \n")
+                         r"\n \nMinimum measured point is: "
+                         r"\n\(.*\) with an FoM of .*\..*\. \n "
+                         r"\nMinimum point predicted is: \n\(.*\) "
+                         r"for an FoM of .*\..*\.\n \n")
 
     assert re.match(pattern, obtained_history_string) is not None
 
@@ -230,8 +245,12 @@ def test_correct_coordinates_in_output(GPR_with_history):
     """
     Tests that the correct coordinates present in the final output
     """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPR_with_history.results_filename = temporary_file
+    GPR_with_history.write_history(temporary_file)
+
     output_string = GPR_with_history.present_result()
-    expected_data = obtain_correct_output_values()
+    expected_data = obtain_correct_output_values(GPR_with_history)
     assert str(expected_data[0]) in output_string
     assert str(expected_data[2]) in output_string
 
@@ -240,7 +259,11 @@ def test_correct_FoM_values_in_output(GPR_with_history):
     """
     Tests that the correct FoM values are present in the final output
     """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPR_with_history.results_filename = temporary_file
+    GPR_with_history.write_history(temporary_file)
+
     output_string = GPR_with_history.present_result()
-    expected_data = obtain_correct_output_values()
+    expected_data = obtain_correct_output_values(GPR_with_history)
     assert str(expected_data[1]) in output_string
     assert str(expected_data[3]) in output_string
