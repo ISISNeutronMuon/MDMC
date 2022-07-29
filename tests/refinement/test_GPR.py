@@ -188,6 +188,7 @@ def test_converge_message_in_output(GPR_with_history):
     else:
         assert "The refinement has not finished" in output_message
 
+
 def test_each_minimizer_for_correct_output(GPR_with_history):
     """
     Tests each implemented minimizer to make sure that the output is given in the same format
@@ -201,53 +202,45 @@ def test_each_minimizer_for_correct_output(GPR_with_history):
 
     assert re.match(pattern, obtained_history_string) is not None
 
-@pytest.mark.parametrize('mock_history, FoMs, expected',
-                         [
-                             (pandas.DataFrame(data=[
-                                 [453.5, "Accepted", 0.8194, 2.688],
-                                 [443.9, "Accepted", 0.8194, 3.36],
-                                 [1445, "Accepted", 0.8194, 4.032]
-                                ],
-                                 columns=["FoM", "Change state", "A (#1)", "B (#2)"]),
-                              (339.75412936941234, 443.925233394768),
-                              ((0.8194400000000001, 3.1224242424242425),
-                               (0.8194400000000001, 3.3600000000000003))),
-                         ])
-class TestParametrized:
 
-    def test_correct_coords_in_output(self):
-        """
-        Tests that the correct coordinates are present in the final output
-        """
-        # Change this test to conform with GPRs output of predicted/measured output
-        params = Parameters()
-        with patch("MDMC.refinement.minimizers.GPR.GPR.history", new_callable=PropertyMock) as hist:
-            hist.return_value = mock_history
-            with patch("MDMC.refinement.minimizers.GPR.GPR.history_columns",
-                       new_callable=PropertyMock) as columns:
-                columns.return_value = list(mock_history.columns)
-                gpr = MinimizerFactory().create_minimizer("GPR", params)
-                output_string = gpr.present_result()
-                assert str(FoMs[0]) in output_string
-                assert str(FoMs[1]) in output_string
-                assert str(expected[0]) in output_string
-                assert str(expected[1]) in output_string
-
-    def correct_FoM_values_in_output(self,):
-        """
-        Tests that the correct FoM values are present in the final output
-        """
-        pass
-
-    def test_GPR_present_results(self, mock_history, FoMs, expected):
-        """
-        Tests that the output of GPR contains the correct refined coordinates.
-        """
-        pass
-
-# TODO: Create integration test for present_result
-def test_present_result():
+@pytest.skip
+def obtain_correct_output_values(GPR_with_history):
     """
-
+    A function to obtain the correct values from a GPRs history
     """
-    pass
+    fitted_points, minimum_FoM_measured, minimum_parameters_measured \
+        = GPR_with_history.extract_result()
+
+    points, FoMs = GPR_with_history.GPR_predict(fitted_points)
+
+    minimum_predicted_parameters, minimum_FoM_predicted \
+        = GPR_with_history.global_minimum_positions(FoMs, points)
+
+    minimum_parameters_measured = tuple(minimum_parameters_measured.iloc[0])
+
+    return [
+        minimum_parameters_measured,
+        minimum_FoM_measured,
+        minimum_predicted_parameters,
+        minimum_FoM_predicted
+    ]
+
+
+def test_correct_coordinates_in_output(GPR_with_history):
+    """
+    Tests that the correct coordinates present in the final output
+    """
+    output_string = GPR_with_history.present_result()
+    expected_data = obtain_correct_output_values()
+    assert str(expected_data[0]) in output_string
+    assert str(expected_data[2]) in output_string
+
+
+def correct_FoM_values_in_output(GPR_with_history):
+    """
+    Tests that the correct FoM values are present in the final output
+    """
+    output_string = GPR_with_history.present_result()
+    expected_data = obtain_correct_output_values()
+    assert str(expected_data[1]) in output_string
+    assert str(expected_data[3]) in output_string
