@@ -372,7 +372,6 @@ class GPR(Minimizer):
         and predicted points
         """
 
-        # TODO: Change this to more accurately represent how GPR works (Ask Jos if needed)
         if self.has_converged():
             converged_message = '\nThe refinement has finished.'
         else:
