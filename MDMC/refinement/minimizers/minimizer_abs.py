@@ -180,6 +180,12 @@ class Minimizer(ABC):
         return self.format_result_string(extracted_results)
 
     @abstractmethod
+    def reset_parameters(self) -> None:
+        """Resets the parameters to a previous state"""
+
+        raise NotImplementedError
+
+    @abstractmethod
     def extract_result(self) -> 'list[str]':
         """
         Obtains the result of the minimizer to be presented/formatted
@@ -190,6 +196,7 @@ class Minimizer(ABC):
             A list of strings representing the data points
             output by the minimizer to be formatted into a string
         """
+        raise NotImplementedError
 
     @abstractmethod
     def format_result_string(self, minimizer_output: list) -> str:
@@ -208,3 +215,4 @@ class Minimizer(ABC):
         str
             A string encompassing the output of the minimizer.
         """
+        raise NotImplementedError

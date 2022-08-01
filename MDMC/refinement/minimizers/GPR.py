@@ -15,7 +15,6 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 
 class GPR(Minimizer):
-
     """
     ``Minimizer`` employing Gaussian Process Regression. Creates a predefined array of points
     across all parameters and performs a simulation at each point. Then performs a Gaussian
@@ -96,10 +95,10 @@ class GPR(Minimizer):
         return parameter_names, point_array
 
     @staticmethod
-    def create_bounds(parameter: Parameter, fraction: float=0.2) -> Tuple[float, float]:
+    def create_bounds(parameter: Parameter, fraction: float=0.3) -> Tuple[float, float]:
         """
         Returns either the parameter constraints (bounds) or bounds for each parameter
-        equal to the parameter value =/- fraction*parameter.value, defaulting to +-20%.
+        equal to the parameter value =/- fraction*parameter.value, defaulting to +-30%.
         Raises a ValueError if value is zero and has no constraints since it is not possible
         to make a guess.
 
@@ -108,7 +107,7 @@ class GPR(Minimizer):
         parameter : Parameter
             A MDMC 'Parameter'
         fraction : optional, float
-            The fractional size of the bound, defaults to 0.2 == +-20%
+            The fractional size of the bound, defaults to 0.3 == +-30%
 
         Returns
         -------
@@ -133,6 +132,9 @@ class GPR(Minimizer):
             else:
                 raise ValueError(f'You have set parameter {parameter.name} value to zero and \
                     have no constraints set for it. Please set constraints for it') from error
+
+        parameter.constraints = [lower_bound, upper_bound]
+
         return lower_bound, upper_bound
 
     def has_converged(self) -> bool:
@@ -189,8 +191,7 @@ class GPR(Minimizer):
         """
 
         self.FoM = FoM
-        history = [self.FoM]
-        history.append('Accepted')
+        history = [self.FoM, 'Accepted']
         self.FoM_old = self.FoM
         self.state_changed = True
 
@@ -207,7 +208,7 @@ class GPR(Minimizer):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
     def GPR_fit(self, filename: Optional[str]=None,
-                alpha: Optional[float]=0.1, length_scale: Optional[float]=4):
+                alpha: Optional[float]=5, length_scale: Optional[float]=4):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement
         and can be read into a dataframe with the relevant parameters. Uses the recorded points
@@ -224,7 +225,7 @@ class GPR(Minimizer):
         alpha: float, optional
             Hyperparameter for the fitting, which can represent Gaussian noise in measurement
             points, e.g. how much variation in the output you expect between MD runs.
-            Defaults to 0.1.
+            Defaults to 5.
         length_scale: float, optional
             Hyperparameter for the fitting, which can represent how quickly the kernel is able
             to change/oscillate. Defaults to 4.0.

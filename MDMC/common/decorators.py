@@ -20,7 +20,7 @@ def unit_decorator(unit: Union[str, None]) -> Callable:
 
     Suitable for use with setter methods that either take `float` (or objects
     that can be cast to `float`), or NumPy `array` (or objects that can be cast
-    to NumPy `array`)
+    to NumPy `array`).
 
     Parameters
     ----------

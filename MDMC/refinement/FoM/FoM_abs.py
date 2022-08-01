@@ -392,9 +392,9 @@ class FigureOfMerit(ABC):
             If calculated value of Figure of Merit is negative
         """
 
-        total_weight = np.sum([obs_pair.weight for obs_pair in self.obs_pairs])
-        value_unreduced = np.sum([self.calculate_single_FoM(obs_pair)
-                                  for obs_pair in self.obs_pairs])
+        total_weight = sum(obs_pair.weight for obs_pair in self.obs_pairs)
+        value_unreduced = sum(self.calculate_single_FoM(obs_pair)
+                                  for obs_pair in self.obs_pairs)
         self.value = value_unreduced / total_weight
 
         assert self.value >= 0.

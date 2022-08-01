@@ -21,7 +21,7 @@ jobs:
     - name: Run tests
       run: |
         docker pull mdmc/mdmc:latest
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/ --cov="$(pwd)"/MDMC --cov-report xml; [ $? -eq 0 ]
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]      
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -51,9 +51,9 @@ jobs:
         sudo apt-get install -y libopenmpi-dev openmpi-bin
     - name: pip install
       run: |
-        pip3 install --upgrade pip
-        pip3 install -r requirements.txt
-        pip3 install -r .dev_requirements.txt
+        sudo pip3 install --upgrade pip
+        sudo pip3 install -r requirements.txt
+        sudo pip3 install -r .dev_requirements.txt
 
     - name: Run tests
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
@@ -143,7 +143,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Build documentation
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16 . && make -d -C $(pwd)/doc html"
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
     - name: Deploy
       env:
         token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
