@@ -33,47 +33,38 @@ def constrained_parameters():
 @pytest.fixture
 def GPR_with_history(parameters):
     """
-    Creates an instance of GPR with a random, 10-step history
+    Creates an instance of GPR with a 10-step history
 
     Returns
     -------
-        A GPR object with a random history of 10 steps
+        A GPR object with a history of 10 steps
     """
 
     minimizer = GPR(parameters)
-    randomizer = random.Random()
     for i in range(10):
-        minimizer.step(FoM=randomizer.uniform(0.1, 1000))
+        minimizer.step(FoM=i)
     return minimizer
 
 
 @pytest.mark.skip
-def obtain_correct_output_values(GPR_with_history):
+def obtain_correct_output_values(GPR_obj):
     """
     A function to obtain the correct values from a GPRs history
     """
-    fitted_regressor, minimum_FoM_measured, minimum_parameters_measured \
-        = GPR_with_history.GPR_fit()
+    fit, min_FoM_measured, min_parameters_measured = GPR_obj.GPR_fit()
+    points, FoMs = GPR_obj.GPR_predict(fit)
+    min_parameters_predicted, min_FoM_predicted = GPR_obj.global_minimum_position(FoMs, points)
+    GPR_obj.set_parameter_values(GPR_obj.parameter_names, min_parameters_predicted)
 
-    points, FoMs = GPR_with_history.GPR_predict(fitted_regressor)
+    min_parameters_measured = tuple(min_parameters_measured.iloc[0])
 
-    minimum_predicted_parameters, minimum_FoM_predicted \
-        = GPR_with_history.global_minimum_position(FoMs, points)
-
-    minimum_parameters_measured = tuple(minimum_parameters_measured.iloc[0])
-
-    GPR_with_history.set_parameter_values(
-        GPR_with_history.parameter_names,
-        minimum_predicted_parameters
-    )
-
-    return [
-        minimum_parameters_measured,
-        minimum_FoM_measured,
-        minimum_predicted_parameters,
-        minimum_FoM_predicted
+    list_of_outputs = [
+        min_parameters_measured,
+        min_FoM_measured,
+        min_parameters_predicted,
+        min_FoM_predicted
     ]
-
+    return list_of_outputs
 
 def test_GPR_parameter_point_array(parameters, constrained_parameters):
     """Test that the array of points to be simulated is created correctly"""
@@ -248,34 +239,36 @@ def test_correct_coordinates_in_output(GPR_with_history):
     temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
     GPR_with_history.results_filename = temporary_file
     GPR_with_history.write_history(temporary_file)
-
     output_string = GPR_with_history.present_result()
     expected_data = obtain_correct_output_values(GPR_with_history)
     assert str(expected_data[0]) in output_string
     assert str(expected_data[2]) in output_string
 
+# Set np.seed within class
 
 def test_correct_FoM_values_in_output(GPR_with_history):
     """
     Tests that the correct FoM values are present in the final output
     """
+    np.random.seed(0)
     temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
     GPR_with_history.results_filename = temporary_file
     GPR_with_history.write_history(temporary_file)
+    output_data = GPR_with_history.extract_result()
     expected_data = obtain_correct_output_values(GPR_with_history)
-    output_string = GPR_with_history.present_result()
 
     """
-    Ensures result is accurate to 3 d.p. 
+    Ensures result is definitely accurate to 2 d.p. 
     Sometimes calculating the regression may give very slightly different results
-    Therefore - check if result is +/- 0.0001 what is expected  
+    Therefore - check if result is +/- 0.001 what is expected  
     """
-    expected_data[1] = round(expected_data[1], 4)
-    expected_data[3] = round(expected_data[3], 4)
-    assert (str(expected_data[1]) in output_string
-            or str(round(expected_data[1]-0.0001, 4)) in output_string
-            or str(round(expected_data[1]+0.0001, 4)) in output_string)
+    assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
+    assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)
 
-    assert (str(expected_data[3]) in output_string
-            or str(round(expected_data[3]-0.0001, 4)) in output_string
-            or str(round(expected_data[3]+0.0001, 4)) in output_string)
+    # assert (str(expected_data[1]) in output_data
+    #         or str(round(expected_data[1]-accuracy, dp_precision)) in output_data
+    #         or str(round(expected_data[1]+accuracy, dp_precision)) in output_data)
+    #
+    # assert (str(expected_data[3]) in output_data
+    #         or str(round(expected_data[3]-accuracy, dp_precision)) in output_data
+    #         or str(round(expected_data[3]+accuracy, dp_precision)) in output_data)

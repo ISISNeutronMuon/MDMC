@@ -103,6 +103,8 @@ def test_minimizer_write_history(parameters):
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
+    if "fixed_parameter (#199)" in parameters.keys():
+        parameters.pop("fixed_parameter (#199)")
     minim = MockMinimizer(parameters)
     minim._history = [[10., 20., 30.],
                       ['Accepted', 'Rejected', 'Accepted'],

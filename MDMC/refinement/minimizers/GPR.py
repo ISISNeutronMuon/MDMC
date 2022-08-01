@@ -43,6 +43,7 @@ class GPR(Minimizer):
 
     def __init__(self, parameters, **settings):
         super().__init__(parameters)
+        np.random.seed(0)
 
         self.use_hypercube = settings.get('use_hypercube', False)
         self.n_points = settings.get('n_points', 4)
