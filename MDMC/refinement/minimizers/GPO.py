@@ -162,12 +162,13 @@ class GPO(Minimizer):
         min_FoM_measured = np.min(FoMs)
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][3]
         # the [0][0][3] is just to get the parameters from the _history
-
+        predicted_min_pos = tuple(self.predicted_min_pos)
+        min_parameters_measured = tuple([min_parameters_measured])
 
         list_of_outputs = [
             min_parameters_measured,
-            min_FoM_measured,
-            self.predicted_min_pos,
+            float(min_FoM_measured),
+            predicted_min_pos,
             self.predicted_FoM
         ]
         return list_of_outputs
