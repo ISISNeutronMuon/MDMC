@@ -52,10 +52,10 @@ def obtain_correct_output_values(GPR_with_history):
     """
     A function to obtain the correct values from a GPRs history
     """
-    fitted_points, minimum_FoM_measured, minimum_parameters_measured \
+    fitted_regressor, minimum_FoM_measured, minimum_parameters_measured \
         = GPR_with_history.GPR_fit()
 
-    points, FoMs = GPR_with_history.GPR_predict(fitted_points)
+    points, FoMs = GPR_with_history.GPR_predict(fitted_regressor)
 
     minimum_predicted_parameters, minimum_FoM_predicted \
         = GPR_with_history.global_minimum_position(FoMs, points)
@@ -262,8 +262,20 @@ def test_correct_FoM_values_in_output(GPR_with_history):
     temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
     GPR_with_history.results_filename = temporary_file
     GPR_with_history.write_history(temporary_file)
-
-    output_string = GPR_with_history.present_result()
     expected_data = obtain_correct_output_values(GPR_with_history)
-    assert str(expected_data[1]) in output_string
-    assert str(expected_data[3]) in output_string
+    output_string = GPR_with_history.present_result()
+
+    """
+    Ensures result is accurate to 3 d.p. 
+    Sometimes calculating the regression may give very slightly different results
+    Therefore - check if result is +/- 0.0001 what is expected  
+    """
+    expected_data[1] = round(expected_data[1], 4)
+    expected_data[3] = round(expected_data[3], 4)
+    assert (str(expected_data[1]) in output_string
+            or str(round(expected_data[1]-0.0001, 4)) in output_string
+            or str(round(expected_data[1]+0.0001, 4)) in output_string)
+
+    assert (str(expected_data[3]) in output_string
+            or str(round(expected_data[3]-0.0001, 4)) in output_string
+            or str(round(expected_data[3]+0.0001, 4)) in output_string)
