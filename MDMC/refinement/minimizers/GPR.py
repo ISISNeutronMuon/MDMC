@@ -151,7 +151,7 @@ class GPR(Minimizer):
 
         return ['FoM', 'Change state'] + list(self.parameters)
 
-    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
+    def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
         Assigns a new value to each parameter (specified by the parameter.name)
 
@@ -263,7 +263,7 @@ class GPR(Minimizer):
 
     @staticmethod
     def GPR_predict(input_regressor,
-                    points: Optional[float]=100) -> Tuple[list[Tuple[float]], np.ndarray]:
+                    points: Optional[float] = 100) -> 'tuple[list[tuple[float]], np.ndarray]':
         """
         Takes a fitted Gaussian process regressor from GPR_fit, creates an fine array of points
         between the minimum and maximum measured parameter values and predicts the FoM at each

@@ -97,7 +97,7 @@ class Minimizer(ABC):
 
     @property
     @abstractmethod
-    def history_columns(self) -> list[str]:
+    def history_columns(self) -> 'list[str]':
         """
         Get the column titles for the minimizer history
 
