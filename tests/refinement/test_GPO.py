@@ -87,22 +87,6 @@ def test_GPO_step():
     assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
 
 
-def test_GPO_create_bounds():
-    """Tests bounds are created and returned correctly"""
-    constrained_parameter = Parameter(name='parameter1', value=1., constraints=(0.5,2.0))
-    unconstrained_parameter = Parameter(name='parameter1', value=1.)
-    unconstrained_parameter_zero = Parameter(name='parameter1', value=0.0)
-
-    gpr = MinimizerFactory.create_minimizer('GPO', Parameters(), n_points=3)
-    lower_bound, upper_bound = gpr.create_bounds(constrained_parameter)
-    assert np.allclose([lower_bound, upper_bound], [0.5,2.0], rtol=1e-5)
-
-    lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter)
-    assert np.allclose([lower_bound, upper_bound], [0.7,1.3], rtol=1e-5)
-
-    with pytest.raises(ValueError):
-        lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter_zero)
-
 
 def test_GPO_set_parameter_values():
     """Tests set_parameter_values can set values correctly"""
