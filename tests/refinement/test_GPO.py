@@ -1,13 +1,62 @@
 """
 Tests the GPO minimizer class
 """
+import re
+import tempfile
+
 import numpy as np
-import pandas as pd
 import pytest
 
+
+from MDMC.refinement.minimizers.GPO import GPO
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.MD.parameters import Parameters, Parameter
 
+@pytest.fixture
+def parameters():
+    return Parameters([Parameter(name='parameter1', value=1.),
+                Parameter(name='parameter2', value=2.)])
+
+
+@pytest.fixture
+def constrained_parameters():
+    return Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
+                Parameter(name='parameter2', value=2., constraints=(1.0, 4.0))])
+
+
+@pytest.fixture
+def GPO_with_history(parameters):
+    """
+    Creates an instance of GPO with a 10-step history
+
+    Returns
+    -------
+        A GPO object with a history of 10 steps
+    """
+
+    minimizer = GPO(parameters)
+    for i in range(10):
+        minimizer.step(FoM=i)
+    return minimizer
+
+
+@pytest.mark.skip
+def obtain_correct_output_values(GPO_obj):
+    """
+    A function to obtain the correct values from a GPOs history
+    """
+    FoMs = [FoM[:][0] for FoM in GPO_obj.history]
+    min_FoM_measured = np.min(FoMs)
+    min_parameters_measured = GPO_obj.history[np.where(FoMs == min_FoM_measured)[0][0]][3]
+    # the [0][0][3] is to get the parameters from the _history
+
+    list_of_outputs = [
+        min_parameters_measured,
+        min_FoM_measured,
+        GPO_obj.predicted_min_pos,
+        GPO_obj.predicted_FoM
+    ]
+    return list_of_outputs
 
 @pytest.mark.parametrize('mock_history, min_steps, expected',
                          [([[3, 'Accepted', 1, 1, 4], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 4, False),
@@ -32,3 +81,130 @@ def test_GPO_step():
         FoM=np.cos(x)+3.0
         gpo.step(FoM)
     assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
+
+def test_GPO_reset_parameters(parameters):
+    """Test that parameters get reset"""
+    gpr = MinimizerFactory.create_minimizer('GPO', parameters, n_points=2)
+
+    parameter_values = [p.value for p in gpr.parameters.values()]
+    assert np.allclose(parameter_values, (0.7, 1.4), rtol=1e-5)
+
+    gpr.reset_parameters()
+    parameter_values = [p.value for p in gpr.parameters.values()]
+    assert np.allclose(parameter_values, (1.3, 2.6), rtol=1e-5)
+
+
+def test_GPO_create_bounds():
+    """Tests bounds are created and returned correctly"""
+    constrained_parameter = Parameter(name='parameter1', value=1., constraints=(0.5,2.0))
+    unconstrained_parameter = Parameter(name='parameter1', value=1.)
+    unconstrained_parameter_zero = Parameter(name='parameter1', value=0.0)
+
+    gpr = MinimizerFactory.create_minimizer('GPO', Parameters(), n_points=3)
+    lower_bound, upper_bound = gpr.create_bounds(constrained_parameter)
+    assert np.allclose([lower_bound, upper_bound], [0.5,2.0], rtol=1e-5)
+
+    lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter)
+    assert np.allclose([lower_bound, upper_bound], [0.7,1.3], rtol=1e-5)
+
+    with pytest.raises(ValueError):
+        lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter_zero)
+
+
+def test_GPO_set_parameter_values():
+    """Tests set_parameter_values can set values correctly"""
+    constrained_par = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
+                                 Parameter(name='parameter2', value=2., constraints=(0.3,6.0))])
+    gpr = MinimizerFactory.create_minimizer('GPO', constrained_par, n_points=3)
+    gpr.set_parameter_values(['parameter1'], [1.9])
+    assert gpr.parameters['parameter1'].value == 1.9
+
+    gpr.set_parameter_values(['parameter1', 'parameter2'], [0.6, 1.56])
+    assert gpr.parameters['parameter1'].value == 0.6
+    assert gpr.parameters['parameter2'].value == 1.56
+
+    with pytest.raises(ValueError):
+        gpr.set_parameter_values(['parameter1'], [0.0])
+    with pytest.raises(ValueError):
+        gpr.set_parameter_values(['parameter2'], [7.0])
+
+def test_GPO_minimizer_change_constrained_parameter():
+    """
+    Tests that constrained parameters do not exceed their max/min values.
+    """
+    parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
+                             Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
+
+    # Expect values to be set to the upper/lower limit
+    expected_values = [0.5, 0.5]
+    minim = MinimizerFactory.create_minimizer('GPO', parameters)
+    minim.change_parameters()
+    assert [p.value for p in minim.parameters.values()] == expected_values
+
+
+def test_converge_message_in_output(GPO_with_history):
+    """
+    Tests that the converge message is present in the final output
+    """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPO_with_history.results_filename = temporary_file
+    GPO_with_history.write_history(temporary_file)
+
+    converged = GPO_with_history.has_converged()
+    output_message = GPO_with_history.present_result()
+    if converged:
+        assert "The refinement has finished" in output_message
+    else:
+        assert "The refinement has not finished" in output_message
+
+
+def test_each_minimizer_for_correct_output(GPO_with_history):
+    """
+    Tests each implemented minimizer to make sure that the output is given in the same format
+    """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPO_with_history.results_filename = temporary_file
+    GPO_with_history.write_history(temporary_file)
+
+    obtained_history_string = GPO_with_history.present_result()
+    pattern = re.compile(r"\nThe refinement (has|has not) finished\. "
+                         r"\n \nMinimum measured point is: "
+                         r"\n\(.*\) with an FoM of .*\..*\. \n "
+                         r"\nMinimum point predicted is: \n\(.*\) "
+                         r"for an FoM of .*\..*\.\n \n")
+
+    assert re.match(pattern, obtained_history_string) is not None
+
+
+def test_correct_coordinates_in_output(GPO_with_history):
+    """
+    Tests that the correct coordinates present in the final output
+    """
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPO_with_history.results_filename = temporary_file
+    GPO_with_history.write_history(temporary_file)
+    output_string = GPO_with_history.present_result()
+    expected_data = obtain_correct_output_values(GPO_with_history)
+    assert str(expected_data[0]) in output_string
+    assert str(expected_data[2]) in output_string
+
+# Set np.seed within class
+
+def test_correct_FoM_values_in_output(GPO_with_history):
+    """
+    Tests that the correct FoM values are present in the final output
+    """
+    np.random.seed(0)
+    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
+    GPO_with_history.results_filename = temporary_file
+    GPO_with_history.write_history(temporary_file)
+    output_data = GPO_with_history.extract_result()
+    expected_data = obtain_correct_output_values(GPO_with_history)
+
+    """
+    Ensures result is definitely accurate to 3 d.p. 
+    Sometimes calculating the regression may give very slightly different results
+    Therefore - check if result is +/- 0.0001 what is expected  
+    """
+    assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
+    assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)

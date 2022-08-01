@@ -50,13 +50,18 @@ def minimizer_with_history(request, parameters):
         A concrete subclass of `Minimizer` with a random history of 10 steps
     """
     name = request.param
-    if "fixed_parameter (#199)" in parameters.keys():
-        parameters.pop("fixed_parameter (#199)")
+    remove_fixed_parameter(parameters)
     minimizer = MinimizerFactory.create_minimizer(name, parameters)
     randomizer = random.Random()
     for i in range(10):
         minimizer.step(FoM=randomizer.uniform(0.1, 1000))
     return minimizer
+@pytest.mark.skip
+def remove_fixed_parameter(params_obj):
+    for param_name in params_obj.keys():
+        if param_name.startswith("fixed_parameter"):
+            params_obj.pop(param_name)
+            break
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init(parameters):
@@ -103,8 +108,9 @@ def test_minimizer_write_history(parameters):
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
-    if "fixed_parameter (#199)" in parameters.keys():
-        parameters.pop("fixed_parameter (#199)")
+
+    remove_fixed_parameter(parameters)
+
     minim = MockMinimizer(parameters)
     minim._history = [[10., 20., 30.],
                       ['Accepted', 'Rejected', 'Accepted'],

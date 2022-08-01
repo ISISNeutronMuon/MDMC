@@ -68,7 +68,7 @@ class GPO(Minimizer):
 
 
     @property
-    def history_columns(self) -> list[str]:
+    def history_columns(self) -> 'list[str]':
 
         return ['FoM', 'Change state', 'Pred coords', 'Pred FoM'] + list(self.parameters)
 
@@ -86,7 +86,7 @@ class GPO(Minimizer):
         return len(self.history) >= self.n_points
 
 
-    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
+    def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
         Assigns a new value to each parameter (specified by the parameter.name)
 
@@ -145,26 +145,61 @@ class GPO(Minimizer):
         if not self.has_converged():
             self.change_parameters()
 
-
-    def present_result(self) -> str:
+    def extract_result(self) -> list:
         """
-        Returns the coordinates of the minima and the predicted FoM.
+        Extracts the measured & predicted FoM and point(s)
 
         Returns
         -------
-        output_string : str
-            A string presenting the parameters for which the calculated and predicted
-            figures of merit are lowest. To be printed by Control to the user.
+        list
+            A list of output values in the following order:
+            1. Coordinates of minimum measured point
+            2. Minimum value of FoM at measured point
+            3. Coordinates of minimum predicted point
+            4. Minimum value of FoM at predicted point
         """
         FoMs = [FoM[:][0] for FoM in self._history]
-        min_FOM_measured = np.min(FoMs)
-        min_parameters_measured = self._history[np.where(FoMs==min_FOM_measured)[0][0]][3]
+        min_FoM_measured = np.min(FoMs)
+        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][3]
         # the [0][0][3] is just to get the parameters from the _history
 
-        output_string = (f'Best point measured was \n'
-            f'{min_parameters_measured} for a minimum FoM of '
-            f'{min_FOM_measured}. \n\n '
-            f'Predicted minimum coordinate is {self.predicted_min_pos} for a minimum '
-            f'FoM of {self.predicted_FoM}. \n ')
+
+        list_of_outputs = [
+            min_parameters_measured,
+            min_FoM_measured,
+            self.predicted_min_pos,
+            self.predicted_FoM
+        ]
+        return list_of_outputs
+
+    def format_result_string(self, minimizer_output: list) -> str:
+        """
+        Parameters
+        ----------
+        minimizer_output
+            A list of values in the following order:
+            1. Coordinate of the lowest measured point (ideally tuple or string)
+            2. FoM value of lowest measured point
+            3. Coordinate of the lowest predicted point (ideally tuple or string)
+            4. FoM value of lowest predicted point
+
+        Returns
+        -------
+        An output string, formatted with the appropriate information about measured
+        and predicted points
+        """
+
+        if self.has_converged():
+            converged_message = '\nThe refinement has finished.'
+        else:
+            converged_message = "\nThe refinement has not finished."
+
+        output_string = (f'{converged_message} \n \n'
+                         f'Minimum measured point is: \n'
+                         f'{minimizer_output[0]} with an '
+                         f'FoM of {minimizer_output[1]}. \n \n'
+                         f'Minimum point predicted is: \n'
+                         f'{minimizer_output[2]} for an '
+                         f'FoM of {minimizer_output[3]}.\n \n ')
 
         return output_string

@@ -258,17 +258,9 @@ def test_correct_FoM_values_in_output(GPR_with_history):
     expected_data = obtain_correct_output_values(GPR_with_history)
 
     """
-    Ensures result is definitely accurate to 2 d.p. 
+    Ensures result is definitely accurate to 3 d.p. 
     Sometimes calculating the regression may give very slightly different results
-    Therefore - check if result is +/- 0.001 what is expected  
+    Therefore - check if result is +/- 0.0001 what is expected  
     """
     assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
     assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)
-
-    # assert (str(expected_data[1]) in output_data
-    #         or str(round(expected_data[1]-accuracy, dp_precision)) in output_data
-    #         or str(round(expected_data[1]+accuracy, dp_precision)) in output_data)
-    #
-    # assert (str(expected_data[3]) in output_data
-    #         or str(round(expected_data[3]-accuracy, dp_precision)) in output_data
-    #         or str(round(expected_data[3]+accuracy, dp_precision)) in output_data)
