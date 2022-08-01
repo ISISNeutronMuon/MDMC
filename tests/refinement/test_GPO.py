@@ -82,17 +82,6 @@ def test_GPO_step():
         gpo.step(FoM)
     assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
 
-def test_GPO_reset_parameters(parameters):
-    """Test that parameters get reset"""
-    gpr = MinimizerFactory.create_minimizer('GPO', parameters, n_points=2)
-
-    parameter_values = [p.value for p in gpr.parameters.values()]
-    assert np.allclose(parameter_values, (0.7, 1.4), rtol=1e-5)
-
-    gpr.reset_parameters()
-    parameter_values = [p.value for p in gpr.parameters.values()]
-    assert np.allclose(parameter_values, (1.3, 2.6), rtol=1e-5)
-
 
 def test_GPO_create_bounds():
     """Tests bounds are created and returned correctly"""
