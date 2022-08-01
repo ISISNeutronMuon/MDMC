@@ -45,15 +45,19 @@ def obtain_correct_output_values(GPO_obj):
     """
     A function to obtain the correct values from a GPOs history
     """
-    FoMs = [FoM[:][0] for FoM in GPO_obj.history]
+    FoMs = []
+    for FoM in GPO_obj.history.values:
+        FoMs.append(FoM[:][0])
     min_FoM_measured = np.min(FoMs)
-    min_parameters_measured = GPO_obj.history[np.where(FoMs == min_FoM_measured)[0][0]][3]
+    min_parameters_measured = GPO_obj.history.values[np.where(FoMs == min_FoM_measured)[0][0]][3]
     # the [0][0][3] is to get the parameters from the _history
+    predicted_min_pos = tuple(GPO_obj.predicted_min_pos)
+    min_parameters_measured = tuple([min_parameters_measured])
 
     list_of_outputs = [
         min_parameters_measured,
         min_FoM_measured,
-        GPO_obj.predicted_min_pos,
+        predicted_min_pos,
         GPO_obj.predicted_FoM
     ]
     return list_of_outputs
