@@ -105,18 +105,6 @@ def test_GPO_set_parameter_values():
     with pytest.raises(ValueError):
         gpr.set_parameter_values(['parameter2'], [7.0])
 
-def test_GPO_minimizer_change_constrained_parameter():
-    """
-    Tests that constrained parameters do not exceed their max/min values.
-    """
-    parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
-                             Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
-
-    # Expect values to be set to the upper/lower limit
-    expected_values = [0.5, 0.5]
-    minim = MinimizerFactory.create_minimizer('GPO', parameters)
-    minim.change_parameters()
-    assert [p.value for p in minim.parameters.values()] == expected_values
 
 
 def test_converge_message_in_output(GPO_with_history):
