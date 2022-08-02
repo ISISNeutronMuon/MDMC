@@ -14,12 +14,19 @@ from MDMC.MD.parameters import Parameters, Parameter
 
 @pytest.fixture
 def parameters():
+    """
+    A fixture returning two arbitrary `Parameter` objects wrapped in a `Parameters` collection.
+    """
     return Parameters([Parameter(name='parameter1', value=1.),
                 Parameter(name='parameter2', value=2.)])
 
 
 @pytest.fixture
 def constrained_parameters():
+    """
+    A fixture returning two arbitrary `Parameter` objects with constraints on their values,
+    wrapped in a `Parameters` collection.
+    """
     return Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
                 Parameter(name='parameter2', value=2., constraints=(1.0, 4.0))])
 
@@ -67,7 +74,9 @@ def obtain_correct_output_values(GPO_obj):
                           ([[3, 'Accepted', 1, 1, 4], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 3, True),
                           ([[2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 2, True)])
 def test_GPO_has_converged(mock_history, min_steps, expected):
-    """Test that the array of points to be simulated is created correctly"""
+    """
+    Test that the array of points to be simulated is created correctly
+    """
     parameter = Parameters(Parameter(name='A', value=1))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=min_steps)
     gpo._history = mock_history
@@ -75,8 +84,9 @@ def test_GPO_has_converged(mock_history, min_steps, expected):
 
 
 def test_GPO_step():
-    """Tests GPO is able to find the minima of a single cycle of a cosine function"""
-
+    """
+    Tests GPO is able to find the minima of a single cycle of a cosine function
+    """
     parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=100)
     gpo._history=[]
