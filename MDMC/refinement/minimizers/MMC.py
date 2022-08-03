@@ -186,6 +186,12 @@ class MMC(Minimizer):
             self.parameters[parameter].value = self.parameters_old_values[parameter]
 
     def extract_result(self) -> 'list[str]':
+        """
+
+        Returns
+        -------
+
+        """
         self.reset_parameters()
         history = self.history
 
@@ -215,21 +221,14 @@ class MMC(Minimizer):
         Parameters
         ----------
         minimizer_output
-            A list of the following values:
-            1. Coordinates of last accepted point
-            2. FoM value of the last accepted point
-            3. Coordinates of the best point
-            4. FoM value of the best point
+            A list of: last accepted point coordinates, last accepted point FoM value,
+            best point coordinates, best point FoM
 
         Returns
         -------
         str
-            A string encompassing the output of the minimizer, in the following format:
-            1. Whether the minimizer has converged
-            2. The last parameters of the run
-            3. The last FoM value of the run
-            4. The optimal (lowest FoM) parameters
-            5. The optimal (lowest) FoM value
+            A string containing the following: whether the minimizer has converged, last parameters,
+            last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
         """
         if self.has_converged():
             converged_message = '\nThe refinement has converged.'
