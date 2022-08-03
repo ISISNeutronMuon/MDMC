@@ -169,18 +169,3 @@ def test_minimizer_tied_parameter():
         for minimizer_name in MinimizerFactory.get_minimizer_names():
             minim = MinimizerFactory.create_minimizer(minimizer_name, parameters)
 
-# Repeat for all minimizers
-@pytest.mark.parametrize("incorrect_data",
-                         [
-                             ({"abc": ["Wrong", "Value"], (1.026101, 3.381142): 405.601993}),
-                             ({"Wrong": 123}),
-                             (object())
-                          ])
-def test_incorrect_inputs_to_format_string_raise_error(minimizer_with_history, incorrect_data):
-    """
-    Tests that a `TypeError` is thrown when incorrect data
-    is put into the format_result_string function
-    """
-    with pytest.raises((TypeError, KeyError)):
-        minimizer_with_history.format_result_string(incorrect_data)
-
