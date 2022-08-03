@@ -73,9 +73,7 @@ def obtain_correct_output_values(GPO_obj):
                           ([[3, 'Accepted', 1, 1, 4], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 3, True),
                           ([[2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 2, True)])
 def test_GPO_has_converged(mock_history, min_steps, expected):
-    """
-    Test that the array of points to be simulated is created correctly
-    """
+    """ Test that the array of points to be simulated is created correctly """
     parameter = Parameters(Parameter(name='A', value=1))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=min_steps)
     gpo._history = mock_history
@@ -83,9 +81,7 @@ def test_GPO_has_converged(mock_history, min_steps, expected):
 
 
 def test_GPO_step():
-    """
-    Tests GPO is able to find the minima of a single cycle of a cosine function
-    """
+    """ Tests GPO is able to find the minima of a single cycle of a cosine function """
     parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=100)
     gpo._history=[]
@@ -101,18 +97,18 @@ def test_GPO_set_parameter_values():
     """Tests set_parameter_values can set values correctly"""
     constrained_par = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
                                  Parameter(name='parameter2', value=2., constraints=(0.3,6.0))])
-    gpr = MinimizerFactory.create_minimizer('GPO', constrained_par, n_points=3)
-    gpr.set_parameter_values(['parameter1'], [1.9])
-    assert gpr.parameters['parameter1'].value == 1.9
+    gpo = MinimizerFactory.create_minimizer('GPO', constrained_par, n_points=3)
+    gpo.set_parameter_values(['parameter1'], [1.9])
+    assert gpo.parameters['parameter1'].value == 1.9
 
-    gpr.set_parameter_values(['parameter1', 'parameter2'], [0.6, 1.56])
-    assert gpr.parameters['parameter1'].value == 0.6
-    assert gpr.parameters['parameter2'].value == 1.56
+    gpo.set_parameter_values(['parameter1', 'parameter2'], [0.6, 1.56])
+    assert gpo.parameters['parameter1'].value == 0.6
+    assert gpo.parameters['parameter2'].value == 1.56
 
     with pytest.raises(ValueError):
-        gpr.set_parameter_values(['parameter1'], [0.0])
+        gpo.set_parameter_values(['parameter1'], [0.0])
     with pytest.raises(ValueError):
-        gpr.set_parameter_values(['parameter2'], [7.0])
+        gpo.set_parameter_values(['parameter2'], [7.0])
 
 
 
