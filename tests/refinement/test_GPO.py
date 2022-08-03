@@ -131,10 +131,5 @@ def test_GPO_FoM_and_coordinates_in_output(GPO_with_history):
     assert str(expected_data[0]) in output_string
     assert str(expected_data[2]) in output_string
 
-    """
-    Ensures result is definitely accurate to 3 d.p. 
-    Sometimes calculating the regression may give very slightly different results
-    Therefore - check if result is +/- 0.0001 what is expected  
-    """
     assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
     assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)
