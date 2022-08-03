@@ -11,7 +11,7 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.MD.parameters import Parameters, Parameter
 
 @pytest.fixture
-def parameters() -> Parameters:
+def parameters():
     """
     A fixture returning two arbitrary `Parameter` objects wrapped in a `Parameters` collection.
     """
@@ -20,7 +20,7 @@ def parameters() -> Parameters:
 
 
 @pytest.fixture
-def constrained_parameters() -> Parameters:
+def constrained_parameters():
     """
     A fixture returning two arbitrary `Parameter` objects with constraints on their values,
     wrapped in a `Parameters` collection.
@@ -30,7 +30,7 @@ def constrained_parameters() -> Parameters:
 
 
 @pytest.fixture
-def GPO_with_history(parameters) -> GPO:
+def GPO_with_history(parameters):
     """
     Creates an instance of GPO with a 10-step history
 

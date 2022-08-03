@@ -19,12 +19,28 @@ from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 
 @pytest.fixture
 def parameters():
+    """
+    Returns multiple constained parameters
+
+    Returns
+    -------
+    Parameters
+        A collection of constrained parameters
+    """
     return Parameters([Parameter(name='parameter1', value=1.),
                 Parameter(name='parameter2', value=2.)])
 
 
 @pytest.fixture
 def constrained_parameters():
+    """
+    Returns multiple constained parameters
+
+    Returns
+    -------
+    Parameters
+        A collection of constrained parameters
+    """
     return Parameters([Parameter(name='parameter1', value=1., constraints=(0.5, 2.0)),
                 Parameter(name='parameter2', value=2., constraints=(1.0, 4.0))])
 
@@ -36,6 +52,7 @@ def GPR_with_history(parameters):
 
     Returns
     -------
+    GPR
         A GPR object with a history of 10 steps
     """
 
