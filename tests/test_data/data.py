@@ -34,8 +34,8 @@ _GUI_PATH = '/gui'
 # reformatted into LAMP-style format for PDF data.
 
 READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
-               'MantidSQw':'/experimental_data/iris70429_graphite002_red',
-               'MantidSQw':'/experimental_data/IRIS_26176_water_data.dat',
+               'MantidSQw_two_files':'/experimental_data/iris70429_graphite002_red',
+               'MantidSQw_one_file':'/experimental_data/IRIS_26176_water_data.dat',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
                'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
 
