@@ -1,6 +1,6 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
-from typing import Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import scipy.stats as st
@@ -53,7 +53,7 @@ class GPR(Minimizer):
         self.change_parameters()
 
     def create_parameter_point_array(self,
-                                     parameters: Parameters) -> Tuple['list[str]', 'list[Tuple]']:
+                                     parameters: Parameters) -> 'tuple[list[str], list[tuple]]':
         """
         Takes or creates the constraints of the parameters to be minimised, if
         self.use_hypercube=False this makes an array of length self.n_points and performs the
@@ -95,7 +95,7 @@ class GPR(Minimizer):
         return parameter_names, point_array
 
     @staticmethod
-    def create_bounds(parameter: Parameter, fraction: float=0.3) -> Tuple[float, float]:
+    def create_bounds(parameter: Parameter, fraction: float=0.3) -> 'tuple[float, float]':
         """
         Returns either the parameter constraints (bounds) or bounds for each parameter
         equal to the parameter value =/- fraction*parameter.value, defaulting to +-30%.
@@ -304,7 +304,7 @@ class GPR(Minimizer):
     @staticmethod
     def global_minimum_position(predicted_FOMs: np.ndarray,
                                 measured_parameter_coordinates: 'list[float]') \
-            -> Tuple[np.ndarray, float]:
+            -> 'tuple[np.ndarray, float]':
         """
         Gives the coordinates of the global minimum of the predicted figure of merit surface.
 
