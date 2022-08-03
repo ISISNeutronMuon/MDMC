@@ -375,12 +375,10 @@ class GPR(Minimizer):
         else:
             converged_message = "\nThe refinement has not finished."
 
-        output_string = (f'{converged_message} \n \n'
-                         f'Minimum measured point is: \n'
-                         f'{minimizer_output[0]} with an '
-                         f'FoM of {minimizer_output[1]}. \n \n'
-                         f'Minimum point predicted is: \n'
-                         f'{minimizer_output[2]} for an '
-                         f'FoM of {minimizer_output[3]}.\n \n ')
-
-        return output_string
+        return (f'{converged_message} \n \n'
+                f'Minimum measured point is: \n'
+                f'{minimizer_output[0]} with an '
+                f'FoM of {minimizer_output[1]}. \n \n'
+                f'Minimum point predicted is: \n'
+                f'{minimizer_output[2]} for an '
+                f'FoM of {minimizer_output[3]}.\n \n ')
