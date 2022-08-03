@@ -210,7 +210,7 @@ class Minimizer(ABC):
 
         Parameters
         ----------
-        minimizer_output
+        minimizer_output: list
             A list of printable values representing the data points
             output by the minimizer to be formatted into a string
 
