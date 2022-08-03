@@ -349,24 +349,20 @@ class GPR(Minimizer):
 
         min_parameters_measured = tuple(min_parameters_measured.iloc[0])
 
-        list_of_outputs = [
+        return [
             min_parameters_measured,
             min_FoM_measured,
             min_parameters_predicted,
             min_FoM_predicted
         ]
-        return list_of_outputs
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
         Parameters
         ----------
         minimizer_output
-            A list of values in the following order:
-            1. Coordinate of the lowest measured point (ideally tuple or string)
-            2. FoM value of lowest measured point
-            3. Coordinate of the lowest predicted point (ideally tuple or string)
-            4. FoM value of lowest predicted point
+            A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
+            Minimum predicted FoM
 
         Returns
         -------
