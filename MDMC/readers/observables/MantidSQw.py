@@ -16,30 +16,29 @@ class MantidSQw(SQwReader):
         Q with ``file_name``
         or
       - A file containing the SQw data and error for the range of energy values measured at each
-        detector (or group of detectors) ID with ``file_name``
-      - A file giving the momentum value associated with each detector (or group of detectors) ID,
-        with the name given by ``file_name + '_detectors'``
+        detector (or group of detectors) ID with ``file_name`` and a file giving the momentum
+        value associated with each detector (or group of detectors) ID, with the name given by
+        ``file_name + '_detectors'``
     If a single file is supplied, then it is assumed that the Q values are included in the data,
-    this is the typical output of mantid reduced ISIS data using `ISISIndirectEnergyTransferWrapper`
-    and `SofQW` followed by `SaveAscii` with `WriteSpectrumID` and `WriteSpectrumAxisValue` both
-    set to True.
+    this is the typical output of Mantid reduced ISIS data. An example reduction script is included
+    in doc/tutorials/data/water_reduction_IRIS.py
     If there are two files then it is assumed that the second file links the detector ID's with the
     corresponding Q's
 
     Attributes
     ----------
-    detector_IDs : file
-        File containing the ID's of the detectors
-    file_detectors : file
-        File containing the errors on the dependent variables
+    ID_or_Q : file, optional
+        File containing the ID's of the detectors, default=None
+    file_detectors : file, optional
+        File containing the errors on the dependent variables, default=None
     file_variables : file
-        File containing the variables for each detector (group) ID
+        File containing the variables for each detector ID or Q
 
     """
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self.detector_IDs = None
+        self.detector_ID_or_Q = None
         self.file_detectors = None
         self.file_variables = None
 
@@ -77,7 +76,7 @@ class MantidSQw(SQwReader):
         if self.file_detectors is not None:
             self.Q = self.parse_detectors(self.file_detectors)
         else:
-            self.Q = self.detector_IDs
+            self.Q = self.detector_ID_or_Q
 
         # Explicitly sort data
         E_argsort = self.E.argsort()
@@ -95,8 +94,8 @@ class MantidSQw(SQwReader):
 
     def parse_variables(self, file: IO) -> 'tuple[float]':
         """
-        Parses the values for energy, SQw and its error for each detector, but not the momentum of
-        that detector.
+        Parses the values for energy, SQw and its error for each detector, or momentum value
+        if it is defined instead of detector_ID
 
         Parameters
         ----------
@@ -110,7 +109,7 @@ class MantidSQw(SQwReader):
             (SQw) and E is the errors of Y
         """
 
-        self.detector_IDs = []
+        self.detector_ID_or_Q = []
         data = []
         for line in file:
             line = line.strip()
@@ -120,7 +119,7 @@ class MantidSQw(SQwReader):
 
             strings = line.split(',')
             if len(strings) == 1:
-                self.detector_IDs.append(strings[0])
+                self.detector_ID_or_Q.append(strings[0])
                 data.append({'X': [], 'Y': [], 'E': []})
             else:
                 data[-1]['X'].append(self._make_float(strings[0]))
@@ -128,8 +127,8 @@ class MantidSQw(SQwReader):
                 data[-1]['E'].append(self._make_float(strings[2]))
 
         X = np.array(data[0]['X'])
-        Y = np.zeros((len(self.detector_IDs), len(X)))
-        E = np.zeros((len(self.detector_IDs), len(X)))
+        Y = np.zeros((len(self.detector_ID_or_Q), len(X)))
+        E = np.zeros((len(self.detector_ID_or_Q), len(X)))
         for i, datum in enumerate(data):
             # X data should be the same for each detector
             assert np.all(np.array(datum['X']) == X)
@@ -153,7 +152,7 @@ class MantidSQw(SQwReader):
             A 1D array of momenta values
         """
 
-        Q = np.zeros(len(self.detector_IDs))
+        Q = np.zeros(len(self.detector_ID_or_Q))
         for i, line in enumerate(file):
             if i == 0:
                 headings = line.split(', ')
@@ -175,7 +174,7 @@ class MantidSQw(SQwReader):
                 spectrum_no = values[spectrum_index]
                 Q_value = values[Q_index]
                 # Ensure that we assign Q values in the same order as detector_IDs
-                Q[self.detector_IDs.index(
+                Q[self.detector_ID_or_Q.index(
                     spectrum_no)] = self._make_float(Q_value)
 
         return Q
