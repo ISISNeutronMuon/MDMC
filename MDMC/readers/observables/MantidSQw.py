@@ -11,11 +11,20 @@ class MantidSQw(SQwReader):
     """
     A class for reading SQw files from Mantid
 
-    Mantid's ascii output uses two files:
+    Mantid's ascii output uses one or two files, either:
+      - A file containing the SQw data and error for the range of energy values measured at each
+        Q with ``file_name``
+        or
       - A file containing the SQw data and error for the range of energy values measured at each
         detector (or group of detectors) ID with ``file_name``
       - A file giving the momentum value associated with each detector (or group of detectors) ID,
         with the name given by ``file_name + '_detectors'``
+    If a single file is supplied, then it is assumed that the Q values are included in the data,
+    this is the typical output of mantid reduced ISIS data using `ISISIndirectEnergyTransferWrapper`
+    and `SofQW` followed by `SaveAscii` with `WriteSpectrumID` and `WriteSpectrumAxisValue` both
+    set to True.
+    If there are two files then it is assumed that the second file links the detector ID's with the
+    corresponding Q's
 
     Attributes
     ----------
@@ -35,20 +44,25 @@ class MantidSQw(SQwReader):
         self.file_variables = None
 
     def __enter__(self) -> None:
-        """
-        Open the files for variables and detector momenta
-        """
+        """Open the files for variables and detector momenta"""
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
         self.file_variables = open(self.file_name, encoding='UTF-8')
-        self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
+        try:
+            self.file_detectors = open(self.file_name + '_detectors', encoding='UTF-8')
+        except FileNotFoundError:
+            self.file_detectors = None
+
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes variable and detector files after parsing"""
 
         self.file_variables.close()
-        self.file_detectors.close()
+        try:
+            self.file_detectors.close()
+        except:
+            pass
 
     def parse(self, **settings: dict) -> None:
         """
@@ -60,7 +74,10 @@ class MantidSQw(SQwReader):
 
         self.E, self.SQw, self.SQw_err = self.parse_variables(
             self.file_variables)
-        self.Q = self.parse_detectors(self.file_detectors)
+        if self.file_detectors is not None:
+            self.Q = self.parse_detectors(self.file_detectors)
+        else:
+            self.Q = self.detector_IDs
 
         # Explicitly sort data
         E_argsort = self.E.argsort()
