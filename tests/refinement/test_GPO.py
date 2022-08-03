@@ -122,7 +122,7 @@ def test_converge_message_in_output(GPO_with_history):
         assert "The refinement has not finished" in output_message
 
 
-def test_correct_coordinates_in_output(GPO_with_history):
+def test_GPO_FoM_and_coordinates_in_output(GPO_with_history):
     """
     Tests that the correct coordinates present in the final output
     """
