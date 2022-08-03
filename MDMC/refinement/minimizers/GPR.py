@@ -357,14 +357,15 @@ class GPR(Minimizer):
         """
         Parameters
         ----------
-        minimizer_output
+        minimizer_output: list
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
             Minimum predicted FoM
 
         Returns
         -------
-        An output string, formatted with the appropriate information about measured
-        and predicted points
+        str
+            An output string, formatted with the appropriate information about measured
+            and predicted points
         """
 
         if self.has_converged():
