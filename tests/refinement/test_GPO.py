@@ -7,7 +7,6 @@ import tempfile
 import numpy as np
 import pytest
 
-
 from MDMC.refinement.minimizers.GPO import GPO
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.MD.parameters import Parameters, Parameter
