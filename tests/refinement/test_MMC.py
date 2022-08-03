@@ -318,7 +318,7 @@ class TestParametrized:
                 assert expected[0] == output_data[2]
                 assert expected[1] == output_data[0]
 
-    def test_correct_coords_in_output_message(self, mock_history, FoMs, expected):
+    def test_MMC_FoM_and_coordinates_in_output(self, mock_history, FoMs, expected):
         """
         Tests that the correct coordinates are present in the final output
         """
@@ -332,18 +332,5 @@ class TestParametrized:
                 output_string = mmc.present_result()
                 assert str(expected[0]) in output_string
                 assert str(expected[1]) in output_string
-
-    def test_correct_FoMs_in_output_message(self, mock_history, FoMs, expected):
-        """
-        Tests that the correct FoM values are present in the final output
-        """
-        params = Parameters()
-        with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
-            hist.return_value = mock_history
-            with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
-                       new_callable=PropertyMock) as columns:
-                columns.return_value = list(mock_history.columns)
-                mmc = MinimizerFactory().create_minimizer("MMC", params)
-                output_string = mmc.present_result()
                 assert str(FoMs[0]) in output_string
                 assert str(FoMs[1]) in output_string
