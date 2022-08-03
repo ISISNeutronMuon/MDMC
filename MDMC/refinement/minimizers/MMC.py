@@ -191,7 +191,7 @@ class MMC(Minimizer):
 
         Returns
         -------
-        output_data: list
+        output_data: list[str]
             A list of: last accepted point coordinates, last accepted point FoM value,
             best point coordinates, best point FoM
         """

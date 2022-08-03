@@ -90,7 +90,6 @@ def test_GPO_step():
     assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
 
 
-
 def test_GPO_set_parameter_values():
     """Tests set_parameter_values can set values correctly"""
     constrained_par = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
