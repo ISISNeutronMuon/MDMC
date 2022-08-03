@@ -258,19 +258,6 @@ def test_converge_message_in_output_string(MMC_with_history):
         assert "The refinement has not converged" in output_message
 
 
-def test_output_string_format(MMC_with_history):
-    """
-    Test to make sure that the output is given in the correct format
-    """
-    obtained_history_string = MMC_with_history.present_result()
-    pattern = re.compile(r"\nThe refinement (has|has not) converged\. "
-                         r"\n \nLast accepted point is: "
-                         r"\n\(.*\) with a minimum FoM of .*\..*\. \n "
-                         r"\nBest point measured was: \n\(.*\) "
-                         r"for a minimum FoM of .*\..*\.\n \n")
-
-    assert re.match(pattern, obtained_history_string) is not None
-
 @pytest.mark.parametrize('mock_history, FoMs, expected',
                          [(pandas.DataFrame(data=[
                              [123.4, "Accepted", 23.453, 8.],

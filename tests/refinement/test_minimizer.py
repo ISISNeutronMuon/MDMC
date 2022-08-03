@@ -56,6 +56,7 @@ def minimizer_with_history(request, parameters):
     for i in range(10):
         minimizer.step(FoM=randomizer.uniform(0.1, 1000))
     return minimizer
+
 @pytest.mark.skip
 def remove_fixed_parameter(params_obj):
     for param_name in params_obj.keys():
