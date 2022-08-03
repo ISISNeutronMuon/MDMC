@@ -30,12 +30,13 @@ def constrained_parameters() -> Parameters:
 
 
 @pytest.fixture
-def GPO_with_history(parameters) -> Minimizer:
+def GPO_with_history(parameters) -> GPO:
     """
     Creates an instance of GPO with a 10-step history
 
     Returns
     -------
+    GPO
         A GPO object with a history of 10 steps
     """
 
