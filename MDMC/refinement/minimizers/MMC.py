@@ -187,10 +187,13 @@ class MMC(Minimizer):
 
     def extract_result(self) -> 'list[str]':
         """
+        Extracts the result data from the history of the minimizer run
 
         Returns
         -------
-
+        output_data: list
+            A list of: last accepted point coordinates, last accepted point FoM value,
+            best point coordinates, best point FoM
         """
         self.reset_parameters()
         history = self.history
@@ -220,13 +223,13 @@ class MMC(Minimizer):
 
         Parameters
         ----------
-        minimizer_output
+        minimizer_output: list
             A list of: last accepted point coordinates, last accepted point FoM value,
             best point coordinates, best point FoM
 
         Returns
         -------
-        str
+        output_string: str
             A string containing the following: whether the minimizer has converged, last parameters,
             last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
         """
