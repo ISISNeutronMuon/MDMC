@@ -151,12 +151,9 @@ class GPO(Minimizer):
 
         Returns
         -------
-        list
-            A list of output values in the following order:
-            1. Coordinates of minimum measured point
-            2. Minimum value of FoM at measured point
-            3. Coordinates of minimum predicted point
-            4. Minimum value of FoM at predicted point
+        lost_of_outputs: list
+            A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
+            Minimum predicted FoM
         """
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
@@ -178,11 +175,8 @@ class GPO(Minimizer):
         Parameters
         ----------
         minimizer_output
-            A list of values in the following order:
-            1. Coordinate of the lowest measured point (ideally tuple or string)
-            2. FoM value of lowest measured point
-            3. Coordinate of the lowest predicted point (ideally tuple or string)
-            4. FoM value of lowest predicted point
+            A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
+            Minimum predicted FoM
 
         Returns
         -------
