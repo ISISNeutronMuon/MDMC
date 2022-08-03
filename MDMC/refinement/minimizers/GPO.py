@@ -180,8 +180,9 @@ class GPO(Minimizer):
 
         Returns
         -------
-        An output string, formatted with the appropriate information about measured
-        and predicted points
+        output_string: str
+            An output string, formatted with the appropriate information about measured
+            and predicted points
         """
 
         if self.has_converged():
