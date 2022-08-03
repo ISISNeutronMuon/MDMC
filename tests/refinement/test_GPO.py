@@ -123,29 +123,13 @@ def test_converge_message_in_output(GPO_with_history):
 
 
 def test_GPO_FoM_and_coordinates_in_output(GPO_with_history):
-    """
-    Tests that the correct coordinates present in the final output
-    """
-    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
-    GPO_with_history.results_filename = temporary_file
-    GPO_with_history.write_history(temporary_file)
-    output_string = GPO_with_history.present_result()
+    """ Tests that the correct values are  present in the final output """
+    output_data = GPO_with_history.extract_result()
+    output_string = GPO_with_history.format_result_string(output_data)
     expected_data = obtain_correct_output_values(GPO_with_history)
+
     assert str(expected_data[0]) in output_string
     assert str(expected_data[2]) in output_string
-
-# Set np.seed within class
-
-def test_correct_FoM_values_in_output(GPO_with_history):
-    """
-    Tests that the correct FoM values are present in the final output
-    """
-    np.random.seed(0)
-    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
-    GPO_with_history.results_filename = temporary_file
-    GPO_with_history.write_history(temporary_file)
-    output_data = GPO_with_history.extract_result()
-    expected_data = obtain_correct_output_values(GPO_with_history)
 
     """
     Ensures result is definitely accurate to 3 d.p. 
