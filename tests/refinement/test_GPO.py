@@ -113,12 +113,7 @@ def test_GPO_set_parameter_values():
 
 
 def test_converge_message_in_output(GPO_with_history):
-    """
-    Tests that the converge message is present in the final output
-    """
-    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
-    GPO_with_history.results_filename = temporary_file
-    GPO_with_history.write_history(temporary_file)
+    """ Tests that the convergence message is present in the final output """
 
     converged = GPO_with_history.has_converged()
     output_message = GPO_with_history.present_result()
