@@ -336,11 +336,8 @@ class GPR(Minimizer):
         Returns
         -------
         list
-            A list of output values in the following order:
-            1. Coordinates of minimum measured point
-            2. Minimum value of FoM at measured point
-            3. Coordinates of minimum predicted point
-            4. Minimum value of FoM at predicted point
+            A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
+            Minimum predicted FoM
         """
         fit, min_FoM_measured, min_parameters_measured = self.GPR_fit()
         points, FoMs = self.GPR_predict(fit)
