@@ -230,35 +230,15 @@ def test_converge_message_in_output(GPR_with_history):
         assert "The refinement has not finished" in output_message
 
 
-def test_correct_coordinates_in_output(GPR_with_history):
+def test_GPR_FoM_and_coordinates_in_output(GPR_with_history):
     """
     Tests that the correct coordinates present in the final output
     """
-    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
-    GPR_with_history.results_filename = temporary_file
-    GPR_with_history.write_history(temporary_file)
-    output_string = GPR_with_history.present_result()
+    output_data = GPR_with_history.extract_result()
+    output_string = GPR_with_history.format_result_string()
     expected_data = obtain_correct_output_values(GPR_with_history)
     assert str(expected_data[0]) in output_string
     assert str(expected_data[2]) in output_string
 
-# Set np.seed within class
-
-def test_correct_FoM_values_in_output(GPR_with_history):
-    """
-    Tests that the correct FoM values are present in the final output
-    """
-    np.random.seed(0)
-    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
-    GPR_with_history.results_filename = temporary_file
-    GPR_with_history.write_history(temporary_file)
-    output_data = GPR_with_history.extract_result()
-    expected_data = obtain_correct_output_values(GPR_with_history)
-
-    """
-    Ensures result is definitely accurate to 3 d.p. 
-    Sometimes calculating the regression may give very slightly different results
-    Therefore - check if result is +/- 0.0001 what is expected  
-    """
     assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
     assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)
