@@ -1,8 +1,6 @@
 """
 Tests the GPO minimizer class
 """
-import re
-import tempfile
 
 import numpy as np
 import pytest
