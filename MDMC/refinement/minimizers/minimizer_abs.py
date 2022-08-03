@@ -175,6 +175,11 @@ class Minimizer(ABC):
         Extracts and returns the most appropriate output for the
         minimiser class, in an appropriate format
         e.g. minimum FOM and parameter values
+
+        Returns
+        -------
+        str
+            A formatted string representing the output of the minimizer
         """
         extracted_results = self.extract_result()
         return self.format_result_string(extracted_results)
