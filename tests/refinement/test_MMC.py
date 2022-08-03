@@ -301,7 +301,7 @@ class TestParametrized:
     A class of tests that share parametrized data
     """
 
-    def test_extract_result_works_correctly(self, mock_history, FoMs, expected):
+    def test_MMC_extract_result(self, mock_history, FoMs, expected):
         """
         Tests that the correct values are extracted from the history
         """
