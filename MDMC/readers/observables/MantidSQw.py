@@ -61,7 +61,7 @@ class MantidSQw(SQwReader):
         self.file_variables.close()
         try:
             self.file_detectors.close()
-        except:
+        except AttributeError:
             pass
 
     def parse(self, **settings: dict) -> None:
