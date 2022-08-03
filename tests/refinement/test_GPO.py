@@ -111,7 +111,6 @@ def test_GPO_set_parameter_values():
         gpo.set_parameter_values(['parameter2'], [7.0])
 
 
-
 def test_converge_message_in_output(GPO_with_history):
     """ Tests that the convergence message is present in the final output """
 
@@ -121,24 +120,6 @@ def test_converge_message_in_output(GPO_with_history):
         assert "The refinement has finished" in output_message
     else:
         assert "The refinement has not finished" in output_message
-
-
-def test_each_minimizer_for_correct_output(GPO_with_history):
-    """
-    Tests each implemented minimizer to make sure that the output is given in the same format
-    """
-    temporary_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False).name
-    GPO_with_history.results_filename = temporary_file
-    GPO_with_history.write_history(temporary_file)
-
-    obtained_history_string = GPO_with_history.present_result()
-    pattern = re.compile(r"\nThe refinement (has|has not) finished\. "
-                         r"\n \nMinimum measured point is: "
-                         r"\n\(.*\) with an FoM of .*\..*\. \n "
-                         r"\nMinimum point predicted is: \n\(.*\) "
-                         r"for an FoM of .*\..*\.\n \n")
-
-    assert re.match(pattern, obtained_history_string) is not None
 
 
 def test_correct_coordinates_in_output(GPO_with_history):
