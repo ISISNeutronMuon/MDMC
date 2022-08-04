@@ -2,7 +2,6 @@
 Tests the Metropolis-Hastings minimizer
 """
 import random
-import re
 from unittest.mock import patch, PropertyMock
 
 import numpy as np

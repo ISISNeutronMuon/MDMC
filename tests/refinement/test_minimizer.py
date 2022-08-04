@@ -1,7 +1,6 @@
 """
 Tests the Minimizer base class
 """
-import random
 from tempfile import NamedTemporaryFile
 
 from unittest.mock import patch
