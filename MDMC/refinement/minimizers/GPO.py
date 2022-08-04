@@ -55,7 +55,7 @@ class GPO(Minimizer):
         self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) \
                                 for parameter in parameters.values()]
 
-        self.parameter_names =  [str(name) for name in parameters.keys()]
+        self.parameter_names = [str(name) for name in parameters.keys()]
 
         np.random.seed(7) # This should mean results are reproducible in tests
 
@@ -157,10 +157,9 @@ class GPO(Minimizer):
         """
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
-        # min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][3]
-        # the [0][0][3] is just to get the parameters from the _history
-
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][4:]
+        # the [0][0][4:] is just to get the parameters from the _history
+
 
         list_of_outputs = [
             tuple(min_parameters_measured),
