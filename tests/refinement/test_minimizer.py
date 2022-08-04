@@ -7,7 +7,6 @@ from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from MDMC.MD.parameters import Parameter, Parameters
@@ -37,25 +36,6 @@ def parameters():
                        Parameter(name='potential_strength', value=1234.),
                        Parameter(name='sigma', value=3.3)])
 
-# Parameterize fixture with all parameter names
-@pytest.fixture(scope="module", params=
-                [minimizer_name for minimizer_name in
-                 MinimizerFactory.get_minimizer_names()])
-def minimizer_with_history(request, parameters):
-    """
-    Creates an instance of all minimizer classes with a random, 10-step history
-
-    Returns
-    -------
-        A concrete subclass of `Minimizer` with a random history of 10 steps
-    """
-    name = request.param
-    remove_fixed_parameter(parameters)
-    minimizer = MinimizerFactory.create_minimizer(name, parameters)
-    randomizer = random.Random()
-    for i in range(10):
-        minimizer.step(FoM=randomizer.uniform(0.1, 1000))
-    return minimizer
 
 @pytest.mark.skip
 def remove_fixed_parameter(params_obj):
