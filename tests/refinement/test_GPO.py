@@ -1,12 +1,13 @@
 """
 Tests the GPO minimizer class
 """
+from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from MDMC.refinement.minimizers.GPO import GPO
-from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.MD.parameters import Parameters, Parameter
 
@@ -41,32 +42,34 @@ def GPO_with_history(parameters):
     """
 
     minimizer = GPO(parameters)
-    for i in range(10):
+    for i in range(1, 11):
         minimizer.step(FoM=i)
     return minimizer
 
+@pytest.fixture
+def mocked_df():
+    df = pd.DataFrame(
+        columns=["Unnamed: 0", "FoM", "Change state", "Pred coords",
+                 "Pred FoM", "parameter1 (#7)", "parameter2 (#8)"],
+        data=[
+            [0, 1, "Accepted", "[1.0, 2.0]", 1.0, 1.0, 2.0],
+            [1, 2, "Accepted", "[1.0, 2.0]", 1.0, 1.0263066427512766, 2.2784431236642697],
+            [2, 3, "Accepted", "[1.0, 2.0]", 1.0, 1.0563332898940743, 1.5261781662556804],
+            [3, 4, "Accepted", "[1.0, 2.0]", 1.0, 0.9517098265051485, 2.578890522713669],
+            [4, 5, "Accepted", "[1.0, 2.0]", 1.0, 1.2970476059280804, 2.203879231558817],
+            [5, 6, "Accepted", "[1.0, 2.0]", 1.0, 0.7892038323388955, 1.491195941884538],
+            [6, 7, "Accepted", "[1.0, 2.0]", 1.0, 0.93540608596101, 1.8776663534533826],
+            [7, 8, "Accepted", "[1.0, 2.0]", 1.0, 0.855686055831339, 2.4710408940692625],
+            [8, 9, "Accepted", "[1.0, 2.0]", 1.0, 0.7105919182646769, 1.9649678706679081],
+            [9, 10, "Accepted", "[1.0, 2.0]", 1.0, 1.1302665513264398, 1.4146366407329378]
+        ])
 
-@pytest.mark.skip
-def obtain_correct_output_values(GPO_obj):
-    """
-    A function to obtain the correct values from a GPOs history
-    """
-    FoMs = []
-    for FoM in GPO_obj.history.values:
-        FoMs.append(FoM[:][0])
-    min_FoM_measured = np.min(FoMs)
-    min_parameters_measured = GPO_obj.history.values[np.where(FoMs == min_FoM_measured)[0][0]][3]
-    # the [0][0][3] is to get the parameters from the _history
-    predicted_min_pos = tuple(GPO_obj.predicted_min_pos)
-    min_parameters_measured = tuple([min_parameters_measured])
+    return df
 
-    list_of_outputs = [
-        min_parameters_measured,
-        min_FoM_measured,
-        predicted_min_pos,
-        GPO_obj.predicted_FoM
-    ]
-    return list_of_outputs
+@pytest.fixture
+def correct_output_data():
+    return [(1.0,), 1.0, (1.0, 2.0), 1.0]
+
 
 @pytest.mark.parametrize('mock_history, min_steps, expected',
                          [([[3, 'Accepted', 1, 1, 4], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 4, False),
@@ -121,14 +124,14 @@ def test_converge_message_in_output(GPO_with_history):
         assert "The refinement has not finished" in output_message
 
 
-def test_GPO_FoM_and_coordinates_in_output(GPO_with_history):
+def test_GPO_FoM_and_coordinates_in_output(GPO_with_history, correct_output_data, mocked_df):
     """ Tests that the correct values are  present in the final output """
-    output_data = GPO_with_history.extract_result()
-    output_string = GPO_with_history.format_result_string(output_data)
-    expected_data = obtain_correct_output_values(GPO_with_history)
+    with patch("MDMC.refinement.minimizers.GPO.history", autospec=True, return_value=mocked_df):
+        output_data = GPO_with_history.extract_result()
+        output_string = GPO_with_history.format_result_string(output_data)
 
-    assert str(expected_data[0]) in output_string
-    assert str(expected_data[2]) in output_string
+        assert str(correct_output_data[0]) in output_string
+        assert str(correct_output_data[2]) in output_string
 
-    assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
-    assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)
+        assert np.allclose(correct_output_data[1], output_data[1], atol=0.0001, equal_nan=False)
+        assert np.allclose(correct_output_data[3], output_data[3], atol=0.0001, equal_nan=False)
