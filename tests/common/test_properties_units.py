@@ -129,16 +129,16 @@ def test_Parameter_units():
 Q_UNIT = units.LENGTH ** -1
 E_UNIT = units.ENERGY_TRANSFER
 READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
-                                  {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                                             {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
                       ),
                      ('MantidSQw', 'MantidSQw_one_file', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
-                                    {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                                                          {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
                       ),
                      ('MantidSQw', 'MantidSQw_two_files', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
-                                   {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                                                           {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
                       ),
-                     ('xml_SQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
-                                  {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                     ('xml_SQw', 'xml_SQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+                                             {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
                       )]
 
 
