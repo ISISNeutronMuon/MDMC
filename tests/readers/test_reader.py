@@ -22,10 +22,11 @@ READER_TEST_INFO contains the following:
 - Dependent data type
 """
 
-READERS_TEST_INFO = [('LAMPSQw', ['Q', 'E'], 'SQw'),
-                     ('MantidSQw', ['Q', 'E'], 'SQw'),
-                     ('xml_SQw', ['Q', 'E'], 'SQw'),
-                     ('LAMPPDF', ['r'], 'PDF')]
+READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', ['Q', 'E'], 'SQw'),
+                     ('MantidSQw', 'MantidSQw_one_file', ['Q', 'E'], 'SQw'),
+                     ('MantidSQw', 'MantidSQw_two_files', ['Q', 'E'], 'SQw'),
+                     ('xml_SQw','xml_SQw', ['Q', 'E'], 'SQw'),
+                     ('LAMPPDF','LAMPPDF', ['r'], 'PDF')]
 
 
 @pytest.fixture(params=READERS_TEST_INFO)
@@ -39,8 +40,9 @@ def reader_info(request):
     """
 
     return {'reader':request.param[0],
-            'indep_datatypes':request.param[1],
-            'dep_datatype':request.param[2]}
+            'data_lookup':request.param[1],
+            'indep_datatypes':request.param[2],
+            'dep_datatype':request.param[3]}
 
 
 def test_parse(reader_info):
@@ -55,7 +57,7 @@ def test_parse(reader_info):
     """
 
     reader = ObservableReaderFactory.create_reader(reader_info['reader'],
-                                                   data.READER_DATA[reader_info['reader']])
+                                                   data.READER_DATA[reader_info['data_lookup']])
     indep_datatypes = reader_info['indep_datatypes']
     dep_datatype = reader_info['dep_datatype']
 
