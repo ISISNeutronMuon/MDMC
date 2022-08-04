@@ -11,6 +11,7 @@ from MDMC.refinement.minimizers.GPO import GPO
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.MD.parameters import Parameters, Parameter
 
+
 @pytest.fixture
 def parameters():
     """
@@ -46,9 +47,10 @@ def GPO_with_history(parameters):
         minimizer.step(FoM=i)
     return minimizer
 
+
 @pytest.fixture
 def mocked_df():
-    df = pd.DataFrame(
+   return pd.DataFrame(
         columns=["Unnamed: 0", "FoM", "Change state", "Pred coords",
                  "Pred FoM", "parameter1 (#7)", "parameter2 (#8)"],
         data=[
@@ -64,7 +66,6 @@ def mocked_df():
             [9, 10, "Accepted", "[1.0, 2.0]", 1.0, 1.1302665513264398, 1.4146366407329378]
         ])
 
-    return df
 
 @pytest.fixture
 def correct_output_data():
@@ -126,6 +127,7 @@ def test_converge_message_in_output(GPO_with_history):
 
 def test_GPO_FoM_and_coordinates_in_output(GPO_with_history, correct_output_data, mocked_df):
     """ Tests that the correct values are  present in the final output """
+
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         output_data = GPO_with_history.extract_result()
         output_string = GPO_with_history.format_result_string(output_data)
