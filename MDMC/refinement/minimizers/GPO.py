@@ -157,8 +157,10 @@ class GPO(Minimizer):
         """
         FoMs = [FoM[:][0] for FoM in self._history]
         min_FoM_measured = np.min(FoMs)
-        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][3]
+        # min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][3]
         # the [0][0][3] is just to get the parameters from the _history
+
+        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][4:]
 
         list_of_outputs = [
             tuple([min_parameters_measured]),
