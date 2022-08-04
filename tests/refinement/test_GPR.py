@@ -62,25 +62,30 @@ def GPR_with_history(parameters):
     return minimizer
 
 
-@pytest.mark.skip
-def obtain_correct_output_values(GPR_obj):
-    """
-    A function to obtain the correct values from a GPRs history
-    """
-    fit, min_FoM_measured, min_parameters_measured = GPR_obj.GPR_fit()
-    points, FoMs = GPR_obj.GPR_predict(fit)
-    min_parameters_predicted, min_FoM_predicted = GPR_obj.global_minimum_position(FoMs, points)
-    GPR_obj.set_parameter_values(GPR_obj.parameter_names, min_parameters_predicted)
+@pytest.fixture
+def mocked_df():
+    df = pd.DataFrame(
+        columns=["Unnamed: 0", "FoM", "Change state", "parameter1 (#7)", "parameter2 (#8)"],
+        data=[
+            [0, 1, "Accepted", 1.0, 2.0],
+            [1, 2, "Accepted", 1.0263066427512766, 2.2784431236642697],
+            [2, 3, "Accepted", 1.0563332898940743, 1.5261781662556804],
+            [3, 4, "Accepted", 0.9517098265051485, 2.578890522713669],
+            [4, 5, "Accepted", 1.2970476059280804, 2.203879231558817],
+            [5, 6, "Accepted", 0.7892038323388955, 1.491195941884538],
+            [6, 7, "Accepted", 0.93540608596101, 1.8776663534533826],
+            [7, 8, "Accepted", 0.855686055831339, 2.4710408940692625],
+            [8, 9, "Accepted", 0.7105919182646769, 1.9649678706679081],
+            [9, 10, "Accepted", 1.1302665513264398, 1.4146366407329378]
+        ])
 
-    min_parameters_measured = tuple(min_parameters_measured.iloc[0])
+    print(df.dtypes)
 
-    list_of_outputs = [
-        min_parameters_measured,
-        min_FoM_measured,
-        min_parameters_predicted,
-        min_FoM_predicted
-    ]
-    return list_of_outputs
+    return df
+
+@pytest.fixture
+def correct_output_data():
+    return [(1.0, 2.0), 1.0, (1.2970476059280804, 2.578890522713669), 3.6666658956168403]
 
 def test_GPR_parameter_point_array(parameters, constrained_parameters):
     """Test that the array of points to be simulated is created correctly"""
@@ -230,15 +235,16 @@ def test_converge_message_in_output(GPR_with_history):
         assert "The refinement has not finished" in output_message
 
 
-def test_GPR_FoM_and_coordinates_in_output(GPR_with_history):
+def test_GPR_FoM_and_coordinates_in_output(GPR_with_history, correct_output_data, mocked_df):
     """
     Tests that the correct coordinates present in the final output
     """
-    output_data = GPR_with_history.extract_result()
-    output_string = GPR_with_history.format_result_string()
-    expected_data = obtain_correct_output_values(GPR_with_history)
-    assert str(expected_data[0]) in output_string
-    assert str(expected_data[2]) in output_string
+    with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
+        output_data = GPR_with_history.extract_result()
+        output_string = GPR_with_history.format_result_string(output_data)
 
-    assert np.allclose(expected_data[1], output_data[1], atol=0.0001, equal_nan=False)
-    assert np.allclose(expected_data[3], output_data[3], atol=0.0001, equal_nan=False)
+        assert str(correct_output_data[0]) in output_string
+        assert str(correct_output_data[2]) in output_string
+
+        assert np.allclose(correct_output_data[1], output_data[1], atol=0.0001, equal_nan=False)
+        assert np.allclose(correct_output_data[3], output_data[3], atol=0.0001, equal_nan=False)
