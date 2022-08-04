@@ -69,7 +69,7 @@ def mocked_df():
 
 @pytest.fixture
 def correct_output_data():
-    return [(1.0,), 1.0, (1.0, 2.0), 1.0]
+    return [(1.0, 2.0), 1.0, (1.0, 2.0), 1.0]
 
 
 @pytest.mark.parametrize('mock_history, min_steps, expected',
