@@ -76,7 +76,7 @@ class MantidSQw(SQwReader):
         if self.file_detectors is not None:
             self.Q = self.parse_detectors(self.file_detectors)
         else:
-            self.Q = self.detector_ID_or_Q
+            self.Q = self._make_float(self.detector_ID_or_Q)
 
         # Explicitly sort data
         E_argsort = self.E.argsort()

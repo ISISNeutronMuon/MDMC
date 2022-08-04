@@ -128,11 +128,14 @@ def test_Parameter_units():
 
 Q_UNIT = units.LENGTH ** -1
 E_UNIT = units.ENERGY_TRANSFER
-READERS_TEST_INFO = [('LAMPSQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
                                   {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
                       ),
-                     ('MantidSQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+                     ('MantidSQw', 'MantidSQw_one_file', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
                                     {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
+                      ),
+                     ('MantidSQw', 'MantidSQw_two_files', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
+                                   {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
                       ),
                      ('xml_SQw', [{'name': 'Q', 'value': LIST, 'unit': Q_UNIT},
                                   {'name': 'E', 'value': LIST, 'unit': E_UNIT}]
@@ -150,13 +153,13 @@ def reader_info(request):
     """
 
     reader = ObservableReaderFactory.create_reader(request.param[0],
-                                                   data.READER_DATA[request.param[0]])
-    for prop in request.param[1]:
+                                                   data.READER_DATA[request.param[1]])
+    for prop in request.param[2]:
         setattr(reader, prop['name'], prop['value'])
 
     return {'reader_name': request.param[0],
             'reader': reader,
-            'properties': request.param[1]}
+            'properties': request.param[2]}
 
 
 def test_Reader_units(reader_info):
