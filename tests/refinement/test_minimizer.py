@@ -1,7 +1,4 @@
-"""
-Tests the Minimizer base class
-"""
-
+"""Tests the Minimizer base class"""
 from tempfile import NamedTemporaryFile
 
 from unittest.mock import patch
@@ -16,7 +13,7 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 pytestmark = pytest.mark.mpi
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def parameters():
     """
     Returns
@@ -37,11 +34,16 @@ def parameters():
                        Parameter(name='sigma', value=3.3)])
 
 
+@pytest.mark.skip
+def remove_fixed_parameter(params_obj):
+    for param_name in params_obj.keys():
+        if param_name.startswith("fixed_parameter"):
+            params_obj.pop(param_name)
+            break
+
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init(parameters):
-    """
-    Test initializing ``Minimizer``
-    """
+    """Test initializing ``Minimizer``"""
     # it's not worth parametrising a fixture just for this, so we use a loop
     cases = [parameters, list(parameters.values())]
 
@@ -54,10 +56,7 @@ def test_minimizer_init(parameters):
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_init_invalid_parameters(parameters):
-    """
-    Test initializing ``Minimizer`` with fixed parameters, which should raise a
-    `ValueError`
-    """
+    """Test initializing ``Minimizer`` with fixed parameters, which should raise a `ValueError`"""
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
@@ -71,10 +70,7 @@ def test_minimizer_init_invalid_parameters(parameters):
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
 def test_minimizer_write_history(parameters):
-    """
-    Test history csv output of ``Minimizer``
-    """
-
+    """Test history csv output of ``Minimizer``"""
     class MockMinimizer(Minimizer):
 
         @property
@@ -83,6 +79,9 @@ def test_minimizer_write_history(parameters):
 
     # Ignore pylint error as abstract class is mocked
     # pylint: disable=abstract-class-instantiated
+
+    remove_fixed_parameter(parameters)
+
     minim = MockMinimizer(parameters)
     minim._history = [[10., 20., 30.],
                       ['Accepted', 'Rejected', 'Accepted'],
@@ -118,10 +117,9 @@ def test_minimizer_history_columns(parameters, p_slice, columns):
             assert np.any([expected_column in history_columns for \
                             history_columns in minim.history_columns])
 
+
 def test_minimizer_fixed_parameter():
-    """
-    Test that a ``ValueError`` is raised when passing a fixed ``Parameter``
-    """
+    """Test that a ``ValueError`` is raised when passing a fixed ``Parameter``"""
 
     parameters = [Parameter(name='fixed', value=1., fixed=True)]
     with pytest.raises(ValueError):
@@ -130,10 +128,7 @@ def test_minimizer_fixed_parameter():
 
 
 def test_minimizer_tied_parameter():
-    """
-    Test that a ``ValueError`` is raised when passing a tied ``Parameter``
-    """
-
+    """Test that a ``ValueError`` is raised when passing a tied ``Parameter``"""
     target_parameter = Parameter(name='target', value=1., )
     tied_parameter = Parameter(name='tied', value=1., )
     tied_parameter.set_tie(target_parameter, ' * 2')
