@@ -15,7 +15,8 @@ from MDMC.MD.parameters import Parameters, Parameter
 @pytest.fixture
 def parameters():
     """
-    A fixture returning two arbitrary `Parameter` objects wrapped in a `Parameters` collection.
+    A fixture returning two arbitrary `Parameter` objects
+    wrapped in a `Parameters` collection.
     """
     return Parameters([Parameter(name='parameter1', value=1.),
                 Parameter(name='parameter2', value=2.)])
@@ -77,7 +78,7 @@ def correct_output_data():
                           ([[3, 'Accepted', 1, 1, 4], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 3, True),
                           ([[2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3], [2, 'Accepted', 1, 1, 3]], 2, True)])
 def test_GPO_has_converged(mock_history, min_steps, expected):
-    """ Test that the array of points to be simulated is created correctly """
+    """Test that the array of points to be simulated is created correctly"""
     parameter = Parameters(Parameter(name='A', value=1))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=min_steps)
     gpo._history = mock_history
@@ -85,7 +86,7 @@ def test_GPO_has_converged(mock_history, min_steps, expected):
 
 
 def test_GPO_step():
-    """ Tests GPO is able to find the minima of a single cycle of a cosine function """
+    """Tests GPO is able to find the minima of a single cycle of a cosine function"""
     parameter = Parameters(Parameter(name='a', value=1.5, constraints=[-2., 4.]))
     gpo = MinimizerFactory.create_minimizer('GPO', parameter, n_points=100)
     gpo._history=[]
@@ -96,11 +97,10 @@ def test_GPO_step():
     assert np.allclose([gpo.predicted_min_pos], [np.pi], atol=1e-2)
 
 
-def test_GPO_set_parameter_values():
+def test_GPO_set_parameter_values(constrained_parameters):
     """Tests set_parameter_values can set values correctly"""
-    constrained_par = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
-                                 Parameter(name='parameter2', value=2., constraints=(0.3,6.0))])
-    gpo = MinimizerFactory.create_minimizer('GPO', constrained_par, n_points=3)
+
+    gpo = MinimizerFactory.create_minimizer('GPO', constrained_parameters, n_points=3)
     gpo.set_parameter_values(['parameter1'], [1.9])
     assert gpo.parameters['parameter1'].value == 1.9
 
@@ -115,7 +115,7 @@ def test_GPO_set_parameter_values():
 
 
 def test_converge_message_in_output(GPO_with_history):
-    """ Tests that the convergence message is present in the final output """
+    """Tests that the convergence message is present in the final output"""
 
     converged = GPO_with_history.has_converged()
     output_message = GPO_with_history.present_result()
@@ -126,7 +126,7 @@ def test_converge_message_in_output(GPO_with_history):
 
 
 def test_GPO_FoM_and_coordinates_in_output(GPO_with_history, correct_output_data, mocked_df):
-    """ Tests that the correct values are  present in the final output """
+    """Tests that the correct values are  present in the final output"""
 
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         output_data = GPO_with_history.extract_result()
