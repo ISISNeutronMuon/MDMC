@@ -214,11 +214,15 @@ def test_GPR_minimizer_change_constrained_parameter():
     assert [p.value for p in minim.parameters.values()] == expected_values
 
 
-def test_converge_message_in_output(GPR_with_history, mocked_df):
+@pytest.mark.parametrize("has_converged_value",
+                         [True, False])
+def test_converge_message_in_output(GPR_with_history, mocked_df, has_converged_value):
     """
     Tests that the convergence message is present in the final output
     """
-    with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
+    with patch("MDMC.refinement.minimizers.GPR.GPR.has_converged",
+               autospec=True,
+               return_value=has_converged_value):
         converged = GPR_with_history.has_converged()
         output_message = GPR_with_history.present_result()
         if converged:

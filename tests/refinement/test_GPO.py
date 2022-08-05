@@ -114,15 +114,21 @@ def test_GPO_set_parameter_values(constrained_parameters):
         gpo.set_parameter_values(['parameter2'], [7.0])
 
 
-def test_converge_message_in_output(GPO_with_history):
+@pytest.mark.parametrize("has_converged_value",
+                         [True, False])
+def test_converge_message_in_output(GPO_with_history, has_converged_value):
     """Tests that the convergence message is present in the final output"""
 
-    converged = GPO_with_history.has_converged()
-    output_message = GPO_with_history.present_result()
-    if converged:
-        assert "The refinement has finished" in output_message
-    else:
-        assert "The refinement has not finished" in output_message
+    with patch("MDMC.refinement.minimizers.GPO.GPO.has_converged",
+               autospec=True,
+               return_value=has_converged_value):
+
+        converged = GPO_with_history.has_converged()
+        output_message = GPO_with_history.present_result()
+        if converged:
+            assert "The refinement has finished" in output_message
+        else:
+            assert "The refinement has not finished" in output_message
 
 
 def test_GPO_FoM_and_coordinates_in_output(GPO_with_history, correct_output_data, mocked_df):

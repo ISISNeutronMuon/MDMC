@@ -245,16 +245,22 @@ def test_MMC_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
     monkeypatch.setattr(np.random, 'random', mock_random)
     assert minim.change_state() is True
 
-def test_converge_message_in_output_string(MMC_with_history):
+
+@pytest.mark.parametrize("has_converged_value",
+                         [True, False])
+def test_converge_message_in_output_string(MMC_with_history, has_converged_value):
     """
     Tests that the converge message is present in the final output dependent on convergence output
     """
-    converged = MMC_with_history.has_converged()
-    output_message = MMC_with_history.present_result()
-    if converged:
-        assert "The refinement has converged" in output_message
-    else:
-        assert "The refinement has not converged" in output_message
+    with patch("MDMC.refinement.minimizers.MMC.MMC.has_converged",
+               autospec=True,
+               return_value=has_converged_value):
+        converged = MMC_with_history.has_converged()
+        output_message = MMC_with_history.present_result()
+        if converged:
+            assert "The refinement has converged" in output_message
+        else:
+            assert "The refinement has not converged" in output_message
 
 
 @pytest.mark.parametrize('mock_history, FoMs, expected',
