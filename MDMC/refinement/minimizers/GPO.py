@@ -148,7 +148,7 @@ class GPO(Minimizer):
 
         Returns
         -------
-        lost_of_outputs: list
+        list_of_outputs: list
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
             Minimum predicted FoM
         """
