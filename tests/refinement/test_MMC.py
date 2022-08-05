@@ -249,9 +249,7 @@ def test_MMC_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
 @pytest.mark.parametrize("has_converged_value",
                          [True, False])
 def test_converge_message_in_output_string(MMC_with_history, has_converged_value):
-    """
-    Tests that the converge message is present in the final output dependent on convergence output
-    """
+    """Tests that the convergence message is correct in the final output"""
     with patch("MDMC.refinement.minimizers.MMC.MMC.has_converged",
                autospec=True,
                return_value=has_converged_value):
@@ -289,14 +287,10 @@ def test_converge_message_in_output_string(MMC_with_history, has_converged_value
                               ((23.453, 8.), (24.658, 6.5))
                              )])
 class TestParametrized:
-    """
-    A class of tests that share parametrized data
-    """
+    """A class of tests that shares parametrized data"""
 
     def test_MMC_extract_result(self, mock_history, FoMs, expected):
-        """
-        Tests that the correct values are extracted from the history
-        """
+        """Tests that the correct values are extracted from the history"""
         params = Parameters()
         with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
             hist.return_value = mock_history
@@ -311,9 +305,7 @@ class TestParametrized:
                 assert expected[1] == output_data[0]
 
     def test_MMC_FoM_and_coordinates_in_output(self, mock_history, FoMs, expected):
-        """
-        Tests that the correct coordinates are present in the final output
-        """
+        """Tests that the correct coordinates are present in the final output"""
         params = Parameters()
         with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
             hist.return_value = mock_history

@@ -10,6 +10,7 @@ from MDMC.refinement.minimizers.GPR import GPR
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
 
+
 class GPO(Minimizer):
     """
     ``Minimizer`` which uses Gaussian process regression to find the global minimum
@@ -72,7 +73,6 @@ class GPO(Minimizer):
 
         return ['FoM', 'Change state', 'Pred coords', 'Pred FoM'] + list(self.parameters)
 
-
     def has_converged(self) -> bool:
         """
         Checks if the refinement process has finished, i.e. if the number of points
@@ -84,7 +84,6 @@ class GPO(Minimizer):
             Whether or not the minimizer has converged.
         """
         return len(self.history) >= self.n_points
-
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
@@ -101,7 +100,6 @@ class GPO(Minimizer):
         for name, value in zip(parameter_names, values):
             self.parameters[name].value = value
 
-
     def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
@@ -111,7 +109,6 @@ class GPO(Minimizer):
         if len(self._history) <= self.n_points:
             coordinates = self.optimizer.ask()
             self.set_parameter_values(self.parameter_names, coordinates)
-
 
     def reset_parameters(self) -> None:
         """Not necessary for this minimizer"""

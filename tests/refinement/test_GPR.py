@@ -1,7 +1,6 @@
 """
 Tests the GPR minimizer class
 """
-import tempfile
 from unittest.mock import patch, ANY
 
 import numpy as np
@@ -201,9 +200,7 @@ def test_GPR_predict():
 
 
 def test_GPR_minimizer_change_constrained_parameter():
-    """
-    Tests that constrained parameters do not exceed their max/min values.
-    """
+    """Tests that constrained parameters do not exceed their max/min values."""
     parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
                              Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
 
@@ -217,9 +214,7 @@ def test_GPR_minimizer_change_constrained_parameter():
 @pytest.mark.parametrize("has_converged_value",
                          [True, False])
 def test_converge_message_in_output(GPR_with_history, mocked_df, has_converged_value):
-    """
-    Tests that the convergence message is present in the final output
-    """
+    """Tests that the convergence message is present in the final output"""
     with patch("MDMC.refinement.minimizers.GPR.GPR.has_converged",
                autospec=True,
                return_value=has_converged_value):
@@ -235,9 +230,7 @@ def test_converge_message_in_output(GPR_with_history, mocked_df, has_converged_v
 
 
 def test_GPR_FoM_and_coordinates_in_output(GPR_with_history, correct_output_data, mocked_df):
-    """
-    Tests that the correct coordinates present in the final output
-    """
+    """Tests that the correct coordinates present in the final output"""
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         output_data = GPR_with_history.extract_result()
         output_string = GPR_with_history.format_result_string(output_data)
