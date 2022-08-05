@@ -223,12 +223,15 @@ def test_converge_message_in_output(GPR_with_history, mocked_df, has_converged_v
     with patch("MDMC.refinement.minimizers.GPR.GPR.has_converged",
                autospec=True,
                return_value=has_converged_value):
-        converged = GPR_with_history.has_converged()
-        output_message = GPR_with_history.present_result()
-        if converged:
-            assert "The refinement has finished" in output_message
-        else:
-            assert "The refinement has not finished" in output_message
+        with patch("MDMC.refinement.minimizers.GPR.pd.read_csv",
+                   autospec=True,
+                   return_value=mocked_df):
+            converged = GPR_with_history.has_converged()
+            output_message = GPR_with_history.present_result()
+            if converged:
+                assert "The refinement has finished" in output_message
+            else:
+                assert "The refinement has not finished" in output_message
 
 
 def test_GPR_FoM_and_coordinates_in_output(GPR_with_history, correct_output_data, mocked_df):
