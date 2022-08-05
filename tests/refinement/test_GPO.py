@@ -126,7 +126,7 @@ def test_converge_message_in_output(GPO_with_history):
 
 
 def test_GPO_FoM_and_coordinates_in_output(GPO_with_history, correct_output_data, mocked_df):
-    """Tests that the correct values are  present in the final output"""
+    """Tests that the correct values are present in the final output"""
 
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         output_data = GPO_with_history.extract_result()
