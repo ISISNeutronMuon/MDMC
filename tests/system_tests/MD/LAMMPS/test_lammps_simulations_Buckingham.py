@@ -1,4 +1,4 @@
-"""System tests for LAMMPS MD simulations
+"""System tests for LAMMPS MD simulations using Buckingham potential interactions
 
 Compares the thermodynamic and simulation properties calculated from the MDMC
 run using LAMMPS with the same properties calculated from an equivalent LAMMPS
