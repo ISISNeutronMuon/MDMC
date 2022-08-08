@@ -1,0 +1,63 @@
+### This is the Dockerfile for mdmc/engines, which contains apt-get dependencies
+### and MD engines; i.e. the 'backend' of mdmc/mdmc.
+
+# Use an official Python runtime as a parent image
+FROM python:3.9.6-slim-buster
+
+# Define environment variable
+ENV NAME World
+ENV DEBIAN_FRONTEND noninteractive
+ENV LD_LIBRARY_PATH /lammps/build/
+ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
+ENV PYTHONUNBUFFERED 1
+
+# Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
+# scipy), and cmake for LAMMPS
+RUN apt-get update && apt-get install --upgrade -y \
+  python3-pip \
+  python3-dev \
+  libhdf5-dev \
+  libnetcdf-dev \
+  bash \
+  git \
+  gfortran \
+  libopenmpi-dev \
+  libblas-dev \
+  liblapack-dev \
+  libfreetype6-dev \
+  cmake \
+  wget \
+  python3-tk
+  
+# Get LAMMPS
+RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
+RUN mkdir /lammps \
+    && tar xvzf lammps-stable.tar.gz -C /lammps --strip-components=1
+RUN rm /lammps-stable.tar.gz
+
+# Build LAMMPS from source
+WORKDIR /lammps/build
+RUN cmake -C ../cmake/presets/all_on.cmake \
+          -C ../cmake/presets/nolib.cmake \
+          -D BUILD_LIB=on \
+          -D BUILD_SHARED_LIBS=on \
+          -D BUILD_MPI=on \
+          -D LAMMPS_EXCEPTIONS=on \
+          -D DOWNLOAD_VORO=on \
+          -D PKG_PYTHON=on \
+          -D PKG_VORONOI=on \
+          ../cmake
+RUN make
+RUN make install-python
+
+# get DLPOLY
+RUN git clone https://gitlab.com/ccp5/dl-poly.git
+RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
+RUN cd build-dlpoly && make install
+ 
+# Start in /home
+WORKDIR /home
+
+# Create aliases
+RUN echo alias python="python3" > ~/.bash_aliases
+RUN echo alias pip="pip3" >> ~/.bash_aliases

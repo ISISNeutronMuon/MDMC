@@ -26,13 +26,19 @@ only be done on rank 0, and broadcast to other ranks if necessary. This is also
 true of calls to PyLammps.eval, and may also occur in other cases (anything that
 ends up using the OutputCapture class).
 """
+from __future__ import annotations
 
+import warnings
 from collections import defaultdict, namedtuple
 from copy import copy
-from itertools import chain, combinations, count, product, tee
+from itertools import chain, combinations, count, product
 import logging
 from random import randint
 from tempfile import NamedTemporaryFile
+from typing import Union
+
+from mpi4py import MPI
+import numpy as np
 
 try:
     from lammps import PyLammps
@@ -41,20 +47,25 @@ except ModuleNotFoundError as err:
                               ' not in the PYTHONPATH. See LAMMPS documentation'
                               ' on Python to rectify this.'
                               ).with_traceback(err.__traceback__)
-from mpi4py import MPI
-import numpy as np
 
+from MDMC.common.units import Unit
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     repr_decorator
+from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.MD.engine_facades.facade import MDEngine
-from MDMC.MD.structural_units import Atom
-from MDMC.MD.interactions import BondedInteraction
+from MDMC.MD.structures import Atom
+from MDMC.MD.interactions import BondedInteraction, Interaction, \
+    NonBondedInteraction, Bond, BondAngle
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
-
+from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
+
+
+# pylint: disable=c-extension-no-member, too-many-lines
+# to avoid MPI warnings
 
 
 class PyLammpsAttribute:
@@ -80,7 +91,7 @@ class PyLammpsAttribute:
         The ``PyLammps`` object owned by this class
     """
 
-    def __init__(self, lmp=None, atom_style='full'):
+    def __init__(self, lmp: PyLammps = None, atom_style: str = 'full'):
 
         # Set communicator to MPI predefined intracommunicator instance which
         # contains all processes
@@ -104,8 +115,7 @@ class PyLammpsAttribute:
                      'added to class' if lmp else 'created by class')
 
     @property
-    def system_state(self):
-
+    def system_state(self) -> namedtuple:
         """
         Get the ``PyLammps`` wrapper system ``state`` `dict`
 
@@ -127,8 +137,7 @@ class PyLammpsAttribute:
         return namedtuple('System', system_state.keys())(*system_state.values())
 
     @property
-    def fixes(self):
-
+    def fixes(self) -> "list[dict]":
         """
         Get the ``PyLammps`` wrapper `list` of ``fixes``
 
@@ -148,8 +157,7 @@ class PyLammpsAttribute:
         return self.comm.bcast(fixes, root=0)
 
     @property
-    def fix_styles(self):
-
+    def fix_styles(self) -> "list[str]":
         """
         Get the styles of the ``fixes`` applied in LAMMPS
 
@@ -162,8 +170,7 @@ class PyLammpsAttribute:
         return [fix['style'] for fix in self.fixes]
 
     @property
-    def fix_names(self):
-
+    def fix_names(self) -> "list[str]":
         """
         Get the names of the ``fixes`` applied in LAMMPS
 
@@ -176,8 +183,7 @@ class PyLammpsAttribute:
         return [fix['name'] for fix in self.fixes]
 
     @property
-    def dumps(self):
-
+    def dumps(self) -> list:
         """
         Get the PyLammps wrapper list of dumps
 
@@ -222,9 +228,16 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     style are set.
     """
 
-    @property
-    def saved_config(self):
+    def __init__(self):
+        super().__init__()
+        self.universe = None
+        self.lmp_universe = None
+        self._saved_config = None
+        self.trajectory_file = None
+        self.lmp_simulation = None
 
+    @property
+    def saved_config(self) -> np.ndarray:
         """
         Get the saved configuration of the atomic positions
 
@@ -241,55 +254,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return self._saved_config
 
     @property
-    def time_step(self):
-
-        """
-        Get or set the simulation time step in ``fs``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``fs``
-        """
-
-        try:
-            return self.lmp_simulation.time_step
-        except AttributeError:
-            return None
-
-    @time_step.setter
-    @unit_decorator(unit=units.TIME)
-    def time_step(self, value):
-
-        self.lmp_simulation.time_step = value
-
-    @property
-    def traj_step(self):
-
-        """
-        Get or set the number of simulation steps between saving the
-        ``Trajectory``
-
-        Returns
-        -------
-        `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
-        """
-
-        try:
-            return self.lmp_simulation.traj_step
-        except AttributeError:
-            return None
-
-    @traj_step.setter
-    def traj_step(self, value):
-
-        self.lmp_simulation.traj_step = value
-
-    @property
-    def temperature(self):
-
+    def temperature(self) -> float:
         """
         Get or set the temperature of the simulation in ``K``
 
@@ -303,13 +268,12 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
-    def temperature(self, value):
+    def temperature(self, value: float) -> None:
 
         self.lmp_simulation.temperature = value
 
     @property
-    def pressure(self):
-
+    def pressure(self) -> float:
         """
         Get or set the pressure of the simulation in ``atm``
 
@@ -323,33 +287,31 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
-    def pressure(self, value):
+    def pressure(self, value: float) -> None:
 
         self.lmp_simulation.pressure = value
 
     @property
-    def ensemble(self):
-
+    def ensemble(self) -> 'LAMMPSEnsemble':
         """
         Get or set the ensemble object which applies a ``thermostat`` and/or
         ``barostat`` to LAMMPS
 
         Returns
         -------
-        Ensemble
+        LAMMPSEnsemble
             The simulation thermodynamic ensemble
         """
 
         return self.lmp_simulation.ensemble
 
     @ensemble.setter
-    def ensemble(self, value):
+    def ensemble(self, value: 'LAMMPSEnsemble') -> None:
 
         self.lmp_simulation.ensemble = value
 
     @property
-    def thermostat(self):
-
+    def thermostat(self) -> str:
         """
         Get or set the `str` which specifies the thermostat
 
@@ -362,13 +324,12 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return self.ensemble.thermostat
 
     @thermostat.setter
-    def thermostat(self, value):
+    def thermostat(self, value: str) -> None:
 
         self.ensemble.thermostat = value
 
     @property
-    def barostat(self):
-
+    def barostat(self) -> str:
         """
         Get or set the `str` which specifies the barostat
 
@@ -381,12 +342,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         return self.ensemble.barostat
 
     @barostat.setter
-    def barostat(self, value):
+    def barostat(self, value: str) -> None:
 
         self.ensemble.barostat = value
 
-    def setup_universe(self, universe, **settings):
-
+    def setup_universe(self, universe: Universe, **settings: dict) -> None:
         """
         Creates the simulation box, the atomic configuration, and the topology
         in LAMMPS
@@ -406,30 +366,24 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.lmp_universe = LAMMPSUniverse(self.universe, self.lmp, **settings)
         self._saved_config = None
 
-    def setup_simulation(self, traj_step: int, time_step: float, **settings):
-
+    def setup_simulation(self, **settings: dict) -> None:
         """
         Sets simulation parameters in LAMMPS, such as the thermodynamic
         variables, thermostat/barostat parameters and trajectory settings
 
         Parameters
         ----------
-        traj_step : int
-            How many steps the simulation should take between dumping each
-            ``Trajectory`` frame
-        time_step : float
-            Simulation timestep in ``fs``
         **settings
             Passed to ``LAMMPSSimulation``
         """
-
         self.lmp_simulation = LAMMPSSimulation(universe=self.universe,
-                                               time_step=time_step,
-                                               traj_step=traj_step,
+                                               time_step=self.time_step,
+                                               traj_step=self.traj_step,
                                                lmp=self.lmp,
                                                **settings)
 
-    def minimize(self, n_steps, **settings):
+    def minimize(self, n_steps: int, output_log: str = None,
+                 work_dir: str = None, **settings: dict) -> None:
 
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
@@ -460,21 +414,25 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.lmp_universe.apply_constraints()
             self.ensemble.apply_ensemble_fixes()
 
-
-    def run(self, n_steps, equilibration=False):
+    def run(self, n_steps: int, equilibration=False, output_log: str = None,
+            work_dir: str = None, **settings: dict):
         if not equilibration:
             # Remove previous dumps if they exist
             if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
             if self.comm.rank == 0:
+                # pylint: disable=consider-using-with
+                # the file has to persist outside out of this method
                 self.trajectory_file = NamedTemporaryFile()
                 f_name = self.trajectory_file.name
             else:
                 f_name = None
             f_name = self.comm.bcast(f_name, root=0)
             if self.comm.rank != 0:
-                self.trajectory_file = open(f_name)
+                # pylint: disable=consider-using-with
+                # the file has to persist outside out of this method
+                self.trajectory_file = open(f_name, encoding='UTF-8')
             # Custom trajectory output just saves the atom ID, type and
             # positions
             LOGGER.debug('%s set trajectory dump output to %s',
@@ -499,7 +457,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         if equilibration and reset_to_nve:
             self.thermostat = None
 
-    def convert_trajectory(self, start=0, stop=None, step=1, **settings):
+    def convert_trajectory(self, start: int = 0, stop: int = None,
+                           step: int = 1, **settings: dict) -> Trajectory:
         """
         Converts between a LAMMPS trajectory dump and an MDMC ``Trajectory``
 
@@ -537,8 +496,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             If ``trajectory_file`` describes a triclinic universe.
         """
 
-        def create_atom(line):
-
+        def create_atom(line: np.ndarray) -> Atom:
             """
             Create an MDMC ``Atom`` from a line in a LAMMPS dump (trajectory) file
 
@@ -575,15 +533,14 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 atom.universe = self.universe
             if i_vel is not None:
                 atom.velocity = [float(splt) for splt
-                                in line[i_vel:i_vel+3]]
+                                 in line[i_vel:i_vel+3]]
             return atom
-
 
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
 
         # ID is an acronym
-        #pylint: disable=invalid-name
+        # pylint: disable=invalid-name
         atom_IDs = settings.get('atom_IDs')
 
         configs = []
@@ -591,8 +548,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # Use count to create range so that stop can be undefined
         frame_indexes = count(start, step)
         # next_frame_n next attribute is assigned dynamically
-        next_frame_n = next(frame_indexes) #pylint: disable=no-member
-        with open(self.trajectory_file.name, 'r') as file_handler:
+        next_frame_n = next(frame_indexes)  # pylint: disable=no-member
+        with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
             line = file_handler.readline()
             while line:
 
@@ -609,7 +566,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     n_atoms = int(line.split()[0])
                     # Check that n_atoms is as expected, if a universe was passed
                     if self.universe:
-                        assert n_atoms == len(self.universe.atom_list)
+                        assert n_atoms == len(self.universe.atoms)
 
                 if 'ITEM: BOX BOUNDS' in line:
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
@@ -640,7 +597,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # Requires id, type and position to be defined, velocity is
                         # optional
                         i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
-                                            in ['id', 'type', pos_string]]
+                                               in ['id', 'type', pos_string]]
                         if 'vx' in splt:
                             i_vel = splt.index('vx')
                         else:
@@ -672,10 +629,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # Multiply the number of timesteps by dt to calculate the
                         # elapsed time
                         configs.append(TemporalConfiguration(frame * self.time_step,
-                                                            *atoms))
+                                                             *atoms))
 
                         # next_frame_n next attribute is assigned dynamically
-                        #pylint: disable=no-member
+                        # pylint: disable=no-member
                         next_frame_n = next(frame_indexes)
                     frame_n += 1
                     if stop is not None and frame_n >= stop:
@@ -684,11 +641,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 line = file_handler.readline()
         return Trajectory(*configs)
 
-    def update_parameters(self):
+    def update_parameters(self) -> None:
 
         self.lmp_universe.update_parameters()
 
-    def save_config(self):
+    def save_config(self) -> None:
 
         # So that the identical calculation is not performed for all processes,
         # only calculate for rank 0 process
@@ -705,9 +662,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             atoms = np.zeros([n_atoms, 5])
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = ([component for component
-                                        in atom.position]
-                                       + [atom.mass, atom.charge])
+                atoms[atom.id-1, :] = (list(atom.position) + [atom.mass, atom.charge])
             saved_config = atoms
         else:
             saved_config = None
@@ -718,7 +673,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         saved_config = self.comm.bcast(saved_config, root=0)
         self._saved_config = saved_config
 
-    def reset_config(self):
+    def reset_config(self) -> None:
 
         self.lmp_universe.set_config(self.saved_config)
 
@@ -727,7 +682,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 class LAMMPSUniverse(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
-    #pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     """
     A class with what would be the equivalent in LAMMPS to the universe (i.e.
@@ -787,7 +742,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         (with ``improper == True``) to a LAMMPS ``ID``.
     """
 
-    def __init__(self, universe, lmp=None, **settings):
+    def __init__(self, universe: Universe, lmp: PyLammps = None, **settings: dict):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
@@ -797,10 +752,13 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = []
         self.angles = []
+        self.dihedrals = []
+        self.disps = []
+        self.couls = []
         self.propers = []
         self.impropers = []
         # ID is an acronym
-        #pylint: disable=invalid-name
+        # pylint: disable=invalid-name
         self.bond_ID = {}
         self.angle_ID = {}
         self.proper_ID = {}
@@ -813,8 +771,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.update_parameters()
 
     @property
-    def nonbonded_mix(self):
-
+    def nonbonded_mix(self) -> str:
         """
         Get or set the formula used to calculate nonbonded interactions between
         different ``atom_types``
@@ -836,7 +793,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         return self._nonbonded_mix
 
     @nonbonded_mix.setter
-    def nonbonded_mix(self, value):
+    def nonbonded_mix(self, value: str) -> None:
 
         if not value:
             self._nonbonded_mix = value
@@ -847,8 +804,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                  ''.format(*supported))
             self._nonbonded_mix = value.lower()
 
-    def update_parameters(self):
-
+    def update_parameters(self) -> None:
         """
         Updates the LAMMPS force field parameters from the MDMC universe
         """
@@ -860,8 +816,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self._update_bonded_interactions('improper', self.impropers)
         self._update_dispersions(self.universe)
 
-    def _define_simulation_box(self, universe):
-
+    def _define_simulation_box(self, universe: Universe) -> None:
         """
         Defines a region and creates a simulation box that fills this region
 
@@ -872,7 +827,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         """
 
         # ID is an acronym
-        #pylint: disable=invalid-name
+        # pylint: disable=invalid-name
         region_ID = 'universe'
         self._create_lammps_region(universe, region_ID)
         n_atom_types = len(universe.atom_types)
@@ -884,14 +839,14 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # level
         dihedrals = partition_interactions(set(universe.interactions),
                                            ['DihedralAngle'])[0]
-        dihedral_types = [dihedral.improper for dihedral in dihedrals]
+        dihedral_types = [dihedral.improper for dihedral in list(dihedrals)]
         n_bond_types = bonded_interaction_types.count('Bond')
         n_angle_types = bonded_interaction_types.count('BondAngle')
         n_dihedral_types = dihedral_types.count(False)
         n_improper_types = dihedral_types.count(True)
 
         # Determine max number of bonds and angles per atom
-        atoms = universe.atom_list
+        atoms = universe.atoms
         max_bonds_per_atom = self._max_n_interaction(atoms, 'Bond')
         max_angles_per_atom = self._max_n_interaction(atoms, 'BondAngle')
         max_dihedrals_per_atom = self._max_n_interaction(atoms, 'proper')
@@ -921,12 +876,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
                             'extra/angle/per/atom', max_angles_per_atom,
                             'extra/dihedral/per/atom', max_dihedrals_per_atom,
                             'extra/improper/per/atom', max_impropers_per_atom
-                           )
+                            )
 
     # ID is an acronym
-    #pylint: disable=invalid-name
-    def _create_lammps_region(self, universe, region_ID):
-
+    # pylint: disable=invalid-name
+    def _create_lammps_region(self, universe: Universe, region_ID: str) -> None:
         """
         Create a geometry of the simulation box in LAMMPS
 
@@ -945,8 +899,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.lmp.region(region_ID, 'block', xlo, xhi, ylo, yhi, zlo, zhi,
                         units='box')
 
-    def _build_config(self, universe):
-
+    def _build_config(self, universe: Universe) -> None:
         """
         Adds atoms to LAMMPS
 
@@ -986,8 +939,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
                     lmp_atom_id = None
                 self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
 
-    def set_config(self, config):
-
+    def set_config(self, config: np.ndarray) -> None:
         """
         Changes the positions of all of the atoms in the LAMMPS wrapper
 
@@ -1024,8 +976,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 self.lmp.set('atom', id_offset+1, component,
                              config[id_offset][index])
 
-    def _max_n_interaction(self, atoms, name):
-
+    @staticmethod
+    def _max_n_interaction(atoms: list[Atom], name: str) -> int:
         """
         Parameters
         ----------
@@ -1044,17 +996,15 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for atom in atoms:
             # Filter interactions by name
             if name in ['proper', 'improper']:
-                improper = bool(name == 'improper')
                 inters = filter(lambda i: i.name == 'DihedralAngle' and
-                                i.improper == improper, atom.interactions)
+                                i.improper == bool(name == 'improper'), atom.interactions)
             else:
                 inters = filter(lambda i: i.name == name, atom.interactions)
             n_inters = len(list(inters))
             max_inters = n_inters if n_inters > max_inters else max_inters
         return max_inters
 
-    def _add_topology(self, universe, **settings):
-
+    def _add_topology(self, universe: Universe, **settings: dict) -> None:
         """
         Add the bonded and nonbonded interactions to LAMMPS
 
@@ -1075,7 +1025,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         LOGGER.info('%s Add topology to LAMMPS',
                     self.__class__)
-        bonds, angles, dihedrals, disps, couls, others = partition_interactions(
+        # *_ is for pylint as it does not know about the output of partition_interactions
+        bonds, angles, dihedrals, disps, couls, others, *_ = partition_interactions(
             set(universe.interactions),
             ['Bond', 'BondAngle', 'DihedralAngle', 'Dispersion', 'Coulombic'],
             unpartitioned=True,
@@ -1087,6 +1038,9 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         self.bonds = bonds
         self.angles = angles
+        self.dihedrals = dihedrals
+        self.disps = disps
+        self.couls = couls
 
         pair_styles, pair_mods, pair_coeff_cmds = self._pair_commands(universe)
         if pair_styles:
@@ -1110,8 +1064,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # Set used to remove duplicate bond styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid bond_style
             self.lmp.bond_style('hybrid',
-                                *set(tuple([parse_bonded_styles(b)
-                                            for b in bonds])))
+                                *set(tuple(parse_bonded_styles(b)
+                                           for b in list(bonds))))
             self._create_bonded_interactions('bond', bonds)
 
         if angles:
@@ -1119,9 +1073,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
                          self.__class__)
             # Set used to remove duplicate angle styles, which are not required
             # to be (and in fact cannot) be passed to LAMMPS hybrid angle_style
+            # pylint: disable=not-an-iterable
+            # false positive raised here
             self.lmp.angle_style('hybrid',
-                                 *set(tuple([parse_bonded_styles(a)
-                                             for a in angles])))
+                                 *set(tuple(parse_bonded_styles(a)
+                                            for a in angles)))
             self._create_bonded_interactions('angle', angles)
 
         if dihedrals:
@@ -1133,10 +1089,10 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # Set used to remove duplicate dihedral styles, which are not
             # required to be (and in fact cannot) be passed to LAMMPS hybrid
             # dihedral_style or improper_style
-            proper_styles = set(tuple([parse_bonded_styles(p) for p
-                                       in self.propers]))
-            improper_styles = set(tuple([parse_bonded_styles(i) for i
-                                         in self.impropers]))
+            proper_styles = set(tuple(parse_bonded_styles(p) for p
+                                      in self.propers))
+            improper_styles = set(tuple(parse_bonded_styles(i) for i
+                                        in self.impropers))
             if proper_styles:
                 self.lmp.dihedral_style('hybrid', *proper_styles)
                 self._create_bonded_interactions('dihedral', self.propers)
@@ -1147,8 +1103,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         if self.universe.constraint_algorithm:
             self.apply_constraints()
 
-    def _pair_commands(self, universe):
-
+    @staticmethod
+    def _pair_commands(universe: Universe) -> tuple:
         """
         Parses all the ``NonBondedInteractions`` for every appropriate
         combination of ``atom_type`` pairs in an MDMC ``Universe``, returning
@@ -1209,8 +1165,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         return pair_styles, pair_modifiers, pair_coeff_cmds
 
-    def _update_charges(self):
-
+    def _update_charges(self) -> None:
         """
         Updates the ``charges`` in LAMMPS
 
@@ -1227,12 +1182,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
                              lmp_atom_id,
                              'charge',
                              convert_unit(atom.charge))
-            except ValueError:
+            except ValueError as error:
                 raise AttributeError('LAMMPS requires all atoms in the universe'
-                                     ' to have a charge.')
+                                     ' to have a charge.') from error
 
-    def _update_dispersions(self, universe, pair_coeff_cmds=None):
-
+    def _update_dispersions(self, universe: Universe, pair_coeff_cmds: 'list[str]' = None) -> None:
         """
         Updates ``Dispersion`` interactions in LAMMPS
 
@@ -1255,8 +1209,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for cmd in pair_coeff_cmds:
             self.lmp.pair_coeff(cmd)
 
-    def _modify_nonbonded_styles(self, pair_mods):
-
+    def _modify_nonbonded_styles(self, pair_mods: list) -> None:
         """
         Applies modifications to nonbonded ``pair_styles``, such as the VdW tail
         correction or setting a mixing style for interactions acting on unlike
@@ -1276,8 +1229,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         for mod in pair_mods:
             self.lmp.pair_modify('pair', *mod)
 
-    def _create_bonded_interactions(self, lmp_name, bonded_interactions):
-
+    def _create_bonded_interactions(self, lmp_name: str,
+                                    bonded_interactions: list[BondedInteraction]) -> None:
         """
         Creates coefficients and new bonded interactions in LAMMPS, and fills
         the relevant ``BondedInteraction`` ID (e.g. ``self.bond_ID`` for bonds,
@@ -1304,7 +1257,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         special = 'no'
         ID_attr = getattr(self, '{0}_ID'.format(lmp_name)
                           if lmp_name != 'dihedral' else 'proper_ID')
-        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
+        coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # If bonds already exist, new bond IDs are generated from lowest unused
         # integer
         if ID_attr:
@@ -1327,7 +1280,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
             # LAMMPS create_bonds is used for creating all types of bonded
             # interactions, by appending the lmp_name to 'single/'
-            c_b_type = 'single/{0}'.format(lmp_name)
+            c_b_type = f'single/{lmp_name}'
             for atom_tpl in b_i.atoms:
                 atom_IDs = [self.atom_dict[atom] for atom in atom_tpl]
                 self.lmp.create_bonds(c_b_type,
@@ -1336,8 +1289,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
                                       'special',
                                       special)
 
-    def _update_bonded_interactions(self, lmp_name, bonded_interactions):
-
+    def _update_bonded_interactions(self, lmp_name: str,
+                                    bonded_interactions: list[BondedInteraction]) -> None:
         """
         Updates the bonded interaction coefficients, which are then applied to
         any bonded interactions which have previously been set
@@ -1357,15 +1310,14 @@ class LAMMPSUniverse(PyLammpsAttribute):
 
         # Get LAMMPS function for setting bonded interaction attributes (e.g.
         # bond_coeff)
-        coeff_function = getattr(self.lmp, '{0}_coeff'.format(lmp_name))
+        coeff_function = getattr(self.lmp, f'{lmp_name}_coeff')
         # Get ID dict attribute from self (e.g. bond_ID)
         b_i_IDs = getattr(self, '{0}_ID'.format(lmp_name)
                           if lmp_name != 'dihedral' else 'proper_ID')
         for b_i in bonded_interactions:
             coeff_function(b_i_IDs[b_i], *parse_bonded_coefficients(b_i))
 
-    def apply_constraints(self):
-
+    def apply_constraints(self) -> None:
         """
         Adds a constraint ``fix`` to LAMMPS for all bonds and bond angles which
         are constrained
@@ -1374,10 +1326,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # Sort bonded interactions in the Universe which are constrained into
         # bonds and angles
         b_inters = set(self.universe.bonded_interactions)
-        bonds, angles = partition_interactions([inter for inter
-                                                in b_inters
-                                                if inter.constrained],
-                                               ['Bond', 'BondAngle'], lst=True)
+        # *_ is for pylint as it does not know about the output of partition_interactions
+        bonds, angles, *_ = partition_interactions([inter for inter
+                                                    in b_inters
+                                                    if inter.constrained],
+                                                   ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
                                      angles=angles, angle_ID_dict=self.angle_ID)
@@ -1398,7 +1351,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
 class LAMMPSSimulation(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
-    #pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     """
     The attributes and methods related running a simulation in LAMMPS using a
@@ -1430,15 +1383,15 @@ class LAMMPSSimulation(PyLammpsAttribute):
     traj_step : int
         Number of simulation steps that elapse between the ``Trajectory`` being
         stored.
-    ensemble : Ensemble
+    ensemble : LAMMPSEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
 
-    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings):
+    def __init__(self, universe, traj_step: int, time_step: float = 1., lmp=None, **settings: dict):
 
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
-        self.ensemble = Ensemble(self.lmp, **settings)
+        self.ensemble = LAMMPSEnsemble(self.lmp, **settings)
         self.temperature = settings.get('temperature')
         self.traj_step = traj_step
         self.time_step = time_step
@@ -1457,8 +1410,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         self._set_kspace_solver()
 
     @property
-    def time_step(self):
-
+    def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
 
@@ -1472,7 +1424,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @time_step.setter
     @unit_decorator(unit=units.TIME)
-    def time_step(self, value):
+    def time_step(self, value: float) -> None:
 
         self._time_step = value
         try:
@@ -1482,8 +1434,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
             pass
 
     @property
-    def temperature(self):
-
+    def temperature(self) -> float:
         """
         Get or set the temperature of the simulation in ``K``
 
@@ -1497,7 +1448,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
-    def temperature(self, value):
+    def temperature(self, value: float) -> None:
 
         self._temperature = value
         self.ensemble.temperature = value
@@ -1505,7 +1456,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
             # Set the initial temperature in the LAMMPS wrapper
             if self.system_state.natoms > 0:
                 zero_velocity = [np.array_equal(atom.velocity, (0, 0, 0))
-                                for atom in self.universe.atom_list]
+                                 for atom in self.universe.atoms]
                 if all(zero_velocity):
                     # If we have not set any velocities (they are all the default value of zero)
                     # then "create" a velocity for each atom
@@ -1521,13 +1472,13 @@ class LAMMPSSimulation(PyLammpsAttribute):
                         print(msg)
                     # If we have set velocities then "scale" the velocities we have to the correct
                     # temperature
-                    self.lmp.velocity('all', 'scale', convert_unit(self._temperature))
+                    self.lmp.velocity(
+                        'all', 'scale', convert_unit(self._temperature))
         except ValueError:
             pass
 
     @property
-    def pressure(self):
-
+    def pressure(self) -> float:
         """
         Get or set the pressure of the simulation in ``atm``
 
@@ -1541,13 +1492,12 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
-    def pressure(self, value):
+    def pressure(self, value: float) -> None:
 
         self.ensemble.pressure = value
 
     @property
-    def thermostat(self):
-
+    def thermostat(self) -> str:
         """
         Get or set the string which specifies the thermostat
 
@@ -1560,13 +1510,12 @@ class LAMMPSSimulation(PyLammpsAttribute):
         return self.ensemble.thermostat
 
     @thermostat.setter
-    def thermostat(self, value):
+    def thermostat(self, value: str) -> None:
 
         self.ensemble.thermostat = value
 
     @property
-    def barostat(self):
-
+    def barostat(self) -> str:
         """
         Get or set the string which specifies the barostat
 
@@ -1579,13 +1528,12 @@ class LAMMPSSimulation(PyLammpsAttribute):
         return self.ensemble.barostat
 
     @barostat.setter
-    def barostat(self, value):
+    def barostat(self, value: str) -> None:
 
         self.ensemble.barostat = value
 
     @property
-    def skin(self):
-
+    def skin(self) -> float:
         """
         Get or set the skin distance in ``Ang``
 
@@ -1601,16 +1549,14 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
     @skin.setter
     @unit_decorator(unit=units.LENGTH)
-    def skin(self, value):
+    def skin(self, value: float) -> None:
 
         self._skin = value
         # Set the neighor list parameters in the LAMMPS wrapper
         self.lmp.neighbor(convert_unit(self._skin), 'bin')
 
-
     @property
-    def neighbor_steps(self):
-
+    def neighbor_steps(self) -> int:
         """
         Get or set the number of steps between neighbor list updates
 
@@ -1623,7 +1569,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         return self._neighbor_steps
 
     @neighbor_steps.setter
-    def neighbor_steps(self, value):
+    def neighbor_steps(self, value: int) -> None:
 
         self._neighbor_steps = value
         try:
@@ -1634,8 +1580,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
             pass
 
     @property
-    def lin_momentum_steps(self):
-
+    def lin_momentum_steps(self) -> int:
         """
         Get or set the number of steps between resetting the linear momentum
 
@@ -1648,15 +1593,14 @@ class LAMMPSSimulation(PyLammpsAttribute):
         return self._lin_momentum_steps
 
     @lin_momentum_steps.setter
-    def lin_momentum_steps(self, value):
+    def lin_momentum_steps(self, value: int) -> None:
 
         self._lin_momentum_steps = value
         # Set the momentum removers in the LAMMPS wrapper
         self._set_momentum_removers()
 
     @property
-    def ang_momentum_steps(self):
-
+    def ang_momentum_steps(self) -> int:
         """
         Get or set the number of steps between resetting the angular momentum
 
@@ -1669,14 +1613,13 @@ class LAMMPSSimulation(PyLammpsAttribute):
         return self._ang_momentum_steps
 
     @ang_momentum_steps.setter
-    def ang_momentum_steps(self, value):
+    def ang_momentum_steps(self, value: int) -> None:
 
         self._ang_momentum_steps = value
         # Set the momentum removers in the LAMMPS wrapper
         self._set_momentum_removers()
 
-    def _set_momentum_removers(self):
-
+    def _set_momentum_removers(self) -> None:
         """
         Creates the ``fixes`` in LAMMPS which remove the linear and angular
         momentum of the simulation
@@ -1701,8 +1644,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
                     self.lmp.fix('RemoveAngularMomentum', 'all', 'momentum',
                                  self.ang_momentum_steps, 'angular')
 
-    def _set_kspace_solver(self):
-
+    def _set_kspace_solver(self) -> None:
         """
         Creates a k-space solver in LAMMPS using ``kspace_style``, if one is
         required
@@ -1731,7 +1673,6 @@ class LAMMPSSimulation(PyLammpsAttribute):
         electrostatic = self.universe.electrostatic_solver
         dispersive = self.universe.dispersive_solver
 
-
         # LAMMPS supports a single kspace solver, which can be taken from kspace
         # electrostatic or dispersive solvers of the universe. If any other
         # solver is defined as well as kspace (which effecitvely defines both
@@ -1758,10 +1699,10 @@ class LAMMPSSimulation(PyLammpsAttribute):
 
 
 @repr_decorator('temperature', 'pressure', 'thermostat', 'barostat')
-class Ensemble(PyLammpsAttribute):
+class LAMMPSEnsemble(PyLammpsAttribute):
     # Class has to maintain a lot of state (attributes) as PyLammps class does
     # not
-    #pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes
 
     """
     A thermodynamic ensemble determined by applying a thermostat and/or barostat
@@ -1795,8 +1736,8 @@ class Ensemble(PyLammpsAttribute):
         applies to rescale thermostats.
     """
 
-    def __init__(self, lmp, temperature=None, pressure=None, thermostat=None,
-                 barostat=None, **settings):
+    def __init__(self, lmp, temperature: float = None, pressure: float = None,
+                 thermostat: str = None, barostat: str = None, **settings: dict):
 
         # Requires a lmp object as thermostats cannot be applied before
         # configuration is defined
@@ -1819,10 +1760,14 @@ class Ensemble(PyLammpsAttribute):
         self.barostat = barostat
 
     @property
-    def time_step(self):
-
+    def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``fs``
         """
 
         return self._time_step
@@ -1834,8 +1779,7 @@ class Ensemble(PyLammpsAttribute):
         self._time_step = value
 
     @property
-    def temperature(self):
-
+    def temperature(self) -> float:
         """
         Get or set the temperature of the simulation in ``K``
         """
@@ -1844,14 +1788,13 @@ class Ensemble(PyLammpsAttribute):
 
     @temperature.setter
     @unit_decorator(unit=units.TEMPERATURE)
-    def temperature(self, value):
+    def temperature(self, value: float) -> None:
 
         self._temperature = value
         self.apply_ensemble_fixes()
 
     @property
-    def pressure(self):
-
+    def pressure(self) -> float:
         """
         Get or set the pressure of the simulation in ``atm``
         """
@@ -1860,7 +1803,7 @@ class Ensemble(PyLammpsAttribute):
 
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
-    def pressure(self, value):
+    def pressure(self, value: float) -> None:
 
         self._pressure = value
         self.apply_ensemble_fixes()
@@ -1868,8 +1811,7 @@ class Ensemble(PyLammpsAttribute):
     # Unit has to be applied to getter due to operation in setter
     @property
     @unit_decorator_getter(unit=units.TIME)
-    def t_damp(self):
-
+    def t_damp(self) -> int:
         """
         Get or set the number of time steps over which the ``temperature`` is
         relaxed
@@ -1896,25 +1838,24 @@ class Ensemble(PyLammpsAttribute):
             return self._t_damp
 
     @t_damp.setter
-    def t_damp(self, value):
+    def t_damp(self, value: int) -> None:
 
         try:
             # LAMMPS requires t_damp to be given in units of time, but it is
             # more natural to give it in units of steps - convert between them
             # here
             self._t_damp = value * self.time_step
-        except TypeError:
+        except TypeError as error:
             if value is None:
                 self._t_damp = value
             else:
                 raise AttributeError('the time_step attribute must be set'
-                                     ' before t_damp')
+                                     ' before t_damp') from error
 
     # Unit has to be applied to getter due to operation in setter
     @property
     @unit_decorator_getter(unit=units.TIME)
-    def p_damp(self):
-
+    def p_damp(self) -> int:
         """
         Get or set the number of time steps over which the ``pressure`` is
         relaxed
@@ -1941,23 +1882,22 @@ class Ensemble(PyLammpsAttribute):
             return self._p_damp
 
     @p_damp.setter
-    def p_damp(self, value):
+    def p_damp(self, value: int) -> None:
 
         try:
             # LAMMPS requires p_damp to be given in units of time, but it is
             # more natural to give it in units of steps - convert between them
             # here
             self._p_damp = value * self.time_step
-        except TypeError:
+        except TypeError as error:
             if value is None:
                 self._p_damp = value
             else:
                 raise AttributeError('the time_step attribute must be set'
-                                     ' before p_damp')
+                                     ' before p_damp') from error
 
     @property
-    def t_fraction(self):
-
+    def t_fraction(self) -> float:
         """
         Get or set the fraction by which the ``temperature`` is rescaled to the
         target temperature
@@ -1979,7 +1919,7 @@ class Ensemble(PyLammpsAttribute):
         return self._t_fraction
 
     @t_fraction.setter
-    def t_fraction(self, value):
+    def t_fraction(self, value: float) -> None:
 
         # Must be a fraction
         if value is None or 0. <= value <= 1.0:
@@ -1988,8 +1928,7 @@ class Ensemble(PyLammpsAttribute):
             raise ValueError('the t_fraction must be between 0.0 and 1.0')
 
     @property
-    def t_window(self):
-
+    def t_window(self) -> float:
         """
         Get or set the ``temperature`` range in ``K`` in which the
         ``temperature`` is not rescaled
@@ -2006,13 +1945,12 @@ class Ensemble(PyLammpsAttribute):
 
     @t_window.setter
     @unit_decorator(unit=units.TEMPERATURE)
-    def t_window(self, value):
+    def t_window(self, value: float) -> None:
 
         self._t_window = value
 
     @property
-    def thermostat(self):
-
+    def thermostat(self) -> str:
         """
         Get or set the `str` which specifies the thermostat
 
@@ -2025,7 +1963,7 @@ class Ensemble(PyLammpsAttribute):
         return self._thermostat
 
     @thermostat.setter
-    def thermostat(self, value):
+    def thermostat(self, value: str) -> None:
 
         if value and not self.temperature:
             raise AttributeError('all ensembles with a thermostat must have a'
@@ -2035,8 +1973,7 @@ class Ensemble(PyLammpsAttribute):
         self.apply_ensemble_fixes()
 
     @property
-    def barostat(self):
-
+    def barostat(self) -> str:
         """
         Get or set the `str` which specifies the barostat
 
@@ -2049,7 +1986,7 @@ class Ensemble(PyLammpsAttribute):
         return self._barostat
 
     @barostat.setter
-    def barostat(self, value):
+    def barostat(self, value: str) -> None:
 
         if value and not self.pressure:
             raise AttributeError('all ensembles with a barostat must have a'
@@ -2059,8 +1996,7 @@ class Ensemble(PyLammpsAttribute):
         # Set the thermostat and barostat in LAMMPS wrapper
         self.apply_ensemble_fixes()
 
-    def remove_ensemble_fixes(self):
-
+    def remove_ensemble_fixes(self) -> None:
         """
         Removes all LAMMPS ``fixes`` relating to the ensemble i.e. removes all
         thermostats and barostats
@@ -2079,8 +2015,7 @@ class Ensemble(PyLammpsAttribute):
                              name)
                 self.lmp.unfix(name)
 
-    def apply_ensemble_fixes(self):
-
+    def apply_ensemble_fixes(self) -> None:
         """
         Passes the required LAMMPS ``fixes`` to apply a specific thermodynamic
         ensemble to the simulation
@@ -2109,29 +2044,55 @@ class Ensemble(PyLammpsAttribute):
                 press_parameters = ['iso', press, press, p_damp]
 
             # Apply thermostat
-            if self.thermostat == 'nose':
+            # we create local funcs for each thermostat, and use a dict to get the correct one.
+            # think of this like a proto-factory pattern, or like a switch-case block in C++.
+
+            def nose():
                 if self.barostat == 'nose':
                     self.lmp.fix('npt', 'all', 'npt', 'temp',
                                  *thermo_parameters + press_parameters)
                 else:
-                    self.lmp.fix('nvt', 'all', 'nvt', 'temp', *thermo_parameters)
-            elif self.thermostat == 'berendsen':
+                    self.lmp.fix('nvt', 'all', 'nvt',
+                                 'temp', *thermo_parameters)
+
+            def berendsen():
                 # berendsen does not do time integration so also requires nve
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('t_berendsen', 'all', 'temp/berendsen',
                              *thermo_parameters)
-            elif self.thermostat == 'langevin':
+
+            def langevin():
                 # langevin does not do time integration so also requires nve
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('langevin', 'all', 'langevin',
                              *thermo_parameters + [randint(0, 9999)])
-            elif self.thermostat == 'rescale':
+
+            def rescale():
                 # temp/rescale does not do time integration so also requires nve
                 t_window = convert_unit(self.t_window)
                 self.lmp.fix('nve', 'all', 'nve')
                 self.lmp.fix('rescale', 'all', 'temp/rescale',
                              self.rescale_step, temp, temp, t_window,
                              self.t_fraction)
+
+            def csvr():
+                # csvr does not do time integration so also requires nve
+                self.lmp.fix('nve', 'all', 'nve')
+                self.lmp.fix('csvr', 'all', 'temp/csvr',
+                             *thermo_parameters + [randint(0, 9999)])
+
+            thermostat = {'nose': nose,
+                          'berendsen': berendsen,
+                          'langevin': langevin,
+                          'rescale': rescale,
+                          'csvr': csvr}
+
+            try:
+                thermostat[self.thermostat]()
+            except KeyError:
+                warnings.warn("Thermostat type not recognised. No thermostat will be applied."
+                              " Your thermostat type may be misspelt or not currently implemented.")
+
             # Apply barostat
             if self.barostat == 'berendsen':
                 self.lmp.fix('p_berendsen', 'all', 'press/berendsen',
@@ -2146,24 +2107,25 @@ class Ensemble(PyLammpsAttribute):
                      self.__class__,
                      self.fixes)
 
+
 # Define the unit system used in LAMMPS
 # NB: LAMMPS uses deg for angle but radian for derived quantities of angle:
 # e.g. harmonic angle potential strength is in kcal / mol radian ^ 2
 SYSTEM = {
-    'LENGTH':units.Unit('Ang'),
-    'TIME':units.Unit('fs'),
-    'MASS':units.Unit('g') / units.Unit('mol'),
-    'CHARGE':units.Unit('e'),
-    'ANGLE':units.Unit('deg'),
-    'TEMPERATURE':units.Unit('K'),
-    'ENERGY':units.Unit('kcal') / units.Unit('mol'),
-    'FORCE':units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
-    'PRESSURE':units.Unit('atm')
+    'LENGTH': units.Unit('Ang'),
+    'TIME': units.Unit('fs'),
+    'MASS': units.Unit('g') / units.Unit('mol'),
+    'CHARGE': units.Unit('e'),
+    'ANGLE': units.Unit('deg'),
+    'TEMPERATURE': units.Unit('K'),
+    'ENERGY': units.Unit('kcal') / units.Unit('mol'),
+    'FORCE': units.Unit('kcal') / (units.Unit('Ang') * units.Unit('mol')),
+    'PRESSURE': units.Unit('atm')
 }
 
 
-def convert_unit(value, unit=None, to_lammps=True):
-
+def convert_unit(value: Union[np.ndarray, float],
+                 unit: Unit = None, to_lammps: bool = True):
     """
     Converts between MDMC units and LAMMPS real units
 
@@ -2187,8 +2149,7 @@ def convert_unit(value, unit=None, to_lammps=True):
         MDMC units. Return type is same as ``value`` type.
     """
 
-    def expand_components(unit, system):
-
+    def expand_components(unit: Unit, system: dict) -> tuple:
         """
         Expands out the ``components`` of a ``Unit``, so that the ``Unit`` is
         expressed purely in terms of ``base`` ``Unit`` objects. The only
@@ -2212,8 +2173,7 @@ def convert_unit(value, unit=None, to_lammps=True):
             `list` of all ``base`` ``Unit`` objects in the denominator
         """
 
-        def is_sublist_of_list(sub, lst):
-
+        def is_sublist_of_list(sub: list, lst: list) -> bool:
             """
             Determines if all of the elements in a sublist are in a `list`,
             including ensuring that any duplicates in the sublist have at least
@@ -2235,8 +2195,7 @@ def convert_unit(value, unit=None, to_lammps=True):
 
             return all(sub.count(x) <= lst.count(x) for x in set(sub))
 
-        def remove_components(remove_comps, comps):
-
+        def remove_components(remove_comps: list, comps: list) -> list:
             """
             Removes all elements of a `list` of ``components`` from another
             `list` of ``components``
@@ -2313,9 +2272,9 @@ def convert_unit(value, unit=None, to_lammps=True):
         # If value is unitless, no conversion is required
         try:
             unit = value.unit
-        except AttributeError:
+        except AttributeError as error:
             if value is None:
-                raise ValueError('Cannot convert NoneType value')
+                raise ValueError('Cannot convert NoneType value') from error
             return value
     # Expand the unit in terms of its base units (for numerator and denominator)
     if to_lammps:
@@ -2362,8 +2321,7 @@ def convert_unit(value, unit=None, to_lammps=True):
     return value
 
 
-def parse_bonded_styles(interaction):
-
+def parse_bonded_styles(interaction: BondedInteraction) -> str:
     """
     Converts MDMC ``InteractionFunction`` names for ``BondedInteractions`` to
     LAMMP bond styles
@@ -2387,7 +2345,8 @@ def parse_bonded_styles(interaction):
 
     if interaction.function_name == 'HarmonicPotential':
         if interaction.name == 'DihedralAngle' and not interaction.improper:
-            raise TypeError('LAMMPS does not support harmonic proper dihedrals')
+            raise TypeError(
+                'LAMMPS does not support harmonic proper dihedrals')
         return 'harmonic'
     if interaction.function_name == 'Periodic':
         if interaction.name != 'DihedralAngle':
@@ -2404,8 +2363,7 @@ def parse_bonded_styles(interaction):
                               ' implemented in the LAMMPS facade')
 
 
-def parse_nonbonded_styles(interaction):
-
+def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
     """
     Converts MDMC ``InteractionFunction`` names for ``NonBondedInteractions`` to
     LAMMPS pair styles
@@ -2461,8 +2419,7 @@ def parse_nonbonded_styles(interaction):
     return lmp_str, parse_nonbonded_modifications(interaction)
 
 
-def parse_nonbonded_modifications(interaction):
-
+def parse_nonbonded_modifications(interaction: Interaction) -> 'list[str]':
     """
     Parses MDMC ``Interaction`` attributes into `list` that can be used with
     LAMMPS ``pair_modify`` command
@@ -2496,8 +2453,7 @@ def parse_nonbonded_modifications(interaction):
     return mods
 
 
-def parse_all_nonbonded_styles(interactions):
-
+def parse_all_nonbonded_styles(interactions: NonBondedInteraction) -> 'dict[tuple, list[str]]':
     """
     Converts all ``NonBondedInteractions`` to LAMMPS pair styles
 
@@ -2540,8 +2496,7 @@ def parse_all_nonbonded_styles(interactions):
         range ``Coulombic``.
     """
 
-    def check_validity(pair_style, cutoffs=None):
-
+    def check_validity(pair_style: str, cutoffs: 'list[float]' = None) -> 'list[str]':
         """
         Tests the validity of a LAMMPS ``pair_style``.
 
@@ -2609,7 +2564,7 @@ def parse_all_nonbonded_styles(interactions):
                 else:
                     d_cut, c_cut = ((int1[1], int2[1]) if int1[0] == d_style
                                     else (int2[1], int1[1]))
-                    cutoffs = '{0} {1}'.format(d_cut, c_cut)
+                    cutoffs = f'{d_cut} {c_cut}'
 
                 # Add indiv_cmd to parsed_interactions dict instead. Use
                 # modifier from parsed_interactions as value. set is used to
@@ -2624,7 +2579,8 @@ def parse_all_nonbonded_styles(interactions):
                                    ' cannot have a vdw tail correction applied',
                                    indiv_cmd)
                     mod = set(md for md in mod if md != 'tail yes')
-                combined_parsed_inters[tuple(indiv_cmd + [cutoffs])] = list(mod)
+                combined_parsed_inters[tuple(
+                    indiv_cmd + [cutoffs])] = list(mod)
                 for key in [int1, int2]:
                     try:
                         del combined_parsed_inters[key]
@@ -2634,8 +2590,7 @@ def parse_all_nonbonded_styles(interactions):
     return combined_parsed_inters
 
 
-def parse_bonded_coefficients(interaction):
-
+def parse_bonded_coefficients(interaction: BondedInteraction) -> 'list[str]':
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``bond_coeff`` and
     ``angle_coeff``
@@ -2658,8 +2613,9 @@ def parse_bonded_coefficients(interaction):
         the LAMMPS facade.
     """
 
-    parameters = {p.name:convert_unit(p.value)
-                  for p in interaction.parameters}
+    parameters = {p.type: convert_unit(p.value)
+                  for p in interaction.parameters.as_array}
+
     style = parse_bonded_styles(interaction)
 
     if style == 'harmonic':
@@ -2673,8 +2629,8 @@ def parse_bonded_coefficients(interaction):
         ord_let = ('K', 'n', 'd')
         # Sort by fourier_order first and then by letter sequence
         ordered_p_names = sorted(parameters,
-                                 key=lambda p_name: (p_name[1],
-                                                     ord_let.index(p_name[0])))
+                                 key=lambda p_type: (p_type[1],
+                                                     ord_let.index(p_type[0])))
         # Get parameters values and prepend the order of the equation
         ordered_parameters = [fourier_order] + [parameters[p_name] for p_name
                                                 in ordered_p_names]
@@ -2701,8 +2657,8 @@ def parse_bonded_coefficients(interaction):
     return [style] + ordered_parameters
 
 
-def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
-
+def parse_dispersion_coefficients(interactions: list[NonBondedInteraction],
+                                  nonbonded_styles: 'list[tuple]' = None) -> 'list[str]':
     """
     Orders MDMC ``Parameter`` objects for input to LAMMPS ``pair_coeff``
 
@@ -2750,26 +2706,28 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
         if 'buck' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'Buckingham':
-                    parameters = {p.name:convert_unit(p.value)
-                              for p in inter.parameters}
+                    parameters = {p.type: convert_unit(p.value)
+                                  for p in inter.parameters.as_array}
+
             ordered_parameters = [parameters['A'],
-                              parameters['B'] ** -1,
-                              parameters['C']]
+                                  parameters['B'] ** -1,
+                                  parameters['C']]
             try:
                 assert ordered_parameters[1] > 0
-            except AssertionError:
+            except AssertionError as error:
                 raise ValueError('LAMMPS Buckingham parameter rho (= 1 / B)'
-                                 ' must be greater than 0')
+                                 ' must be greater than 0') from error
             coeff_cmd = (pair_style + ' '
                          + ' '.join(str(p) for p in ordered_parameters) + ' '
                          + cutoffs)
         elif 'lj' in pair_style:
             for inter in interactions:
                 if inter.function.name == 'LennardJones':
-                    parameters = {p.name:convert_unit(p.value)
-                              for p in inter.parameters}
+                    parameters = {p.type: convert_unit(p.value)
+                                  for p in inter.parameters.as_array}
+
             ordered_parameters = [parameters['epsilon'],
-                              parameters['sigma']]
+                                  parameters['sigma']]
             coeff_cmd = (pair_style + ' '
                          + ' '.join(str(p) for p in ordered_parameters) + ' '
                          + cutoffs)
@@ -2783,8 +2741,7 @@ def parse_dispersion_coefficients(interactions, nonbonded_styles=None):
     return coeff_cmds
 
 
-def parse_kspace_solver(solver):
-
+def parse_kspace_solver(solver: KSpaceSolver) -> list:
     """
     Converts an MDMC ``KSpaceSolver`` for input to LAMMPS ``kspace_style``
 
@@ -2804,27 +2761,19 @@ def parse_kspace_solver(solver):
         If ``solver`` type has has not been implemented in the LAMMPS facade.
     """
 
-    lmp_str = []
-
-    # Add algorithm name
-    if solver.name.lower() == 'ewald':
-        lmp_str.append('ewald')
-    elif solver.name.lower() == 'pppm':
-        lmp_str.append('pppm')
-    else:
-        raise NotImplementedError('This k-space solver has not been implemented'
+    solver_name = solver.name.lower()
+    if solver_name not in ('ewald', 'pppm'):
+        raise NotImplementedError(f'This k-space solver ({solver_name}) has not been implemented'
                                   ' in the LAMMPS facade')
 
-    # Add accuracy
-    lmp_str.append(solver.accuracy)
+    return [solver_name, solver.accuracy]
 
-    return lmp_str
 
-def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
-                     angles=None, angle_ID_dict=None):
+def parse_constraint(constraint_algorithm: ConstraintAlgorithm,
+                     bonds: list[Bond] = None, bond_ID_dict: dict = None,
+                     angles: list[BondAngle] = None, angle_ID_dict: dict = None) -> list:
     # ID is an acronym
-    #pylint: disable=invalid-name
-
+    # pylint: disable=invalid-name
     """
     Converts an MDMC ``ConstraintAlgorithm`` for input to LAMMPS fix
 
@@ -2901,86 +2850,3 @@ def parse_constraint(constraint_algorithm, bonds=None, bond_ID_dict=None,
                     if angle.constrained]
 
     return lmp_str
-
-
-def partition(items, predicate):
-
-    """
-    Partitions an ``iterable`` using a predicate
-
-    Parameters
-    ----------
-    items : iterable
-        An ``interable`` to be partitioned.
-    predicate : function
-        A predicate that can be applied to items to returned `True` or `False`.
-
-    Returns
-    -------
-    `tuple`
-        A `tuple` of (``gen_true``, ``gen_false``), where ``gen_true`` is a
-        generator of all items for which the ``predicate`` returned `True`, and
-        ``gen_false is a generator of all items for which the ``predicate``
-        returned `False`
-    """
-
-    iter_a, iter_b = tee((predicate(item), item) for item in items)
-    return ((item for pred, item in iter_a if pred),
-            (item for pred, item in iter_b if not pred))
-
-
-def partition_interactions(interactions, names, unpartitioned=False, lst=False):
-
-    """
-    Partitions an ``iterable`` of ``Interaction`` objects using a `list` of
-    ``Interaction`` ``names``
-
-    This occurs by using ``partition`` to filter out one ``Interaction`` type
-    for each loop, so previously identified ``Interactions`` are no longer
-    considered.
-
-    Parameters
-    ----------
-    interactions : iterable of Interactions
-        An ``interable`` of ``Interaction`` objects to be partitioned.
-    names : list of str
-        Names of ``Interaction`` classes.
-    unpartitioned : bool, optional
-        If `True`, then a generator containing any ``Interaction`` objects that
-        did not have a name in ``names`` is returned as an additional item in
-        the `tuple`. Default is `False`.
-    lst : bool, optional
-        If `True`, then the returned `tuple` contains `list` rather than
-        generators. ``Interaction`` objects which have the name specified by
-        ``names[n]``. Default is `False`.
-
-    Returns
-    -------
-    `tuple`
-        A `tuple` of length ``len(names)`` where ``index`` ``n`` is a generator
-        of all of the ``Interaction`` objects which have the name specified by
-        ``names[n]``. If ``unpartitioned`` is `True`, `tuple` is length ``n+1``.
-        If ``lst`` is `True`, the generators are replaced by `list`.
-
-    Example
-    -------
-    Partion ``interactions`` into ``Bonds`` and ``BondAngles``:
-
-        .. highlight:: python
-        .. code-block:: python
-
-            bonds, angles = partition_interactions(interactions,
-                                                   ['Bond, BondAngle'])
-    """
-
-    interaction_lst = [None] * len(names)
-    i = 0
-    for name in names:
-        predicate = lambda x, n=name: x.name == n
-        interaction_lst[i], interactions = partition(interactions, predicate)
-        i += 1
-    if unpartitioned:
-        interaction_lst += [interactions]
-    if lst:
-        interaction_lst = [list(i) for i in interaction_lst]
-    return tuple(interaction_lst)

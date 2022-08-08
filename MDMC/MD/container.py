@@ -2,6 +2,10 @@
 """
 
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Union
+
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
 
 
 class AtomContainer(ABC):
@@ -14,14 +18,13 @@ class AtomContainer(ABC):
 
     Attributes
     ----------
-    atom_list : list
+    atoms : list
         A list of the ``Atom`` objects that belong to the ``AtomContainer``
     """
 
     @property
     @abstractmethod
-    def atom_list(self):
-
+    def atoms(self) -> 'list[Atom]':
         """
         Returns
         -------
@@ -31,8 +34,7 @@ class AtomContainer(ABC):
 
         raise NotImplementedError
 
-    def __getitem__(self, index):
-
+    def __getitem__(self, index: Union[int, slice]) -> Union['Atom', 'list[Atom]']:
         """
         Returns
         -------
@@ -40,4 +42,4 @@ class AtomContainer(ABC):
             The atom (or atoms) for the specified index (or slice)
         """
 
-        return self.atom_list[index]
+        return self.atoms[index]

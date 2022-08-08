@@ -1,7 +1,10 @@
 """Module containing an abstract base class for MD engine facades"""
-
+from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
+from MDMC.trajectory_analysis.trajectory import Configuration, Trajectory
 
+if TYPE_CHECKING:
+    from MDMC.MD.simulation import Simulation
 
 class MDEngine(ABC):
 
@@ -9,7 +12,7 @@ class MDEngine(ABC):
     Abstract base class for MD engine facades
     """
 
-    def __repr__(self):
+    def __repr__(self) -> str:
 
         return ('<{0}\n'
                 ' {{MD_engine: {MD_engine},\n'
@@ -23,8 +26,7 @@ class MDEngine(ABC):
 
     @property
     @abstractmethod
-    def saved_config(self):
-
+    def saved_config(self) -> Configuration:
         """
         Get the saved configuration of the atomic positions
 
@@ -34,14 +36,68 @@ class MDEngine(ABC):
             The atomic positions
         """
 
-        pass
+        raise NotImplementedError
+
+    @property
+    def parent_simulation(self) -> 'Simulation':
+        """
+        Get or set the simulation that created this engine facade
+
+        Returns
+        -------
+        `Simulation`
+            The Simulation object that created this engine facade
+        """
+
+        try:
+            return self._parent_simulation
+        except AttributeError as error:
+            raise AttributeError("This MD engine does not belong to a simulation. "
+                                 "MD engines should be created through initialising Simulations."
+                                 "") from error
+
+    @parent_simulation.setter
+    def parent_simulation(self, value: 'Simulation') -> None:
+        # pylint: disable=attribute-defined-outside-init
+        # as this is internal and abstract
+        self._parent_simulation = value
+
+    @property
+    def time_step(self) -> float:
+        """
+        Get the simulation time step in ``fs`` from the parent simulation
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``fs``
+        """
+
+        return self.parent_simulation.time_step
+
+    @property
+    def traj_step(self) -> int:
+        """
+        Get the number of simulation steps between saving the
+        ``Trajectory`` from the parent simulation
+
+        Returns
+        -------
+        `int`
+            Number of simulation steps that elapse between the ``Trajectory``
+            being stored
+        """
+
+        try:
+            return self.parent_simulation.traj_step
+        except AttributeError:
+            return None
 
     @abstractmethod
-    def setup_universe(self, universe, **settings):
-
+    def setup_universe(self, universe: str, **settings: dict) -> None:
         """
         Creates a ``Universe.configuration`` and populates with
-        ``StructuralUnit``
+        ``Structure``
 
         Parameters
         ----------
@@ -53,11 +109,10 @@ class MDEngine(ABC):
             ``MDEngine`` that is being used.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def setup_simulation(self, traj_step: int, time_step: float, **settings):
-
+    def setup_simulation(self, **settings: dict) -> None:
         """
         Sets the options required to perform a simulation on a setup
         ``Universe``. Must follow a call to ``setup_universe()``.
@@ -67,21 +122,15 @@ class MDEngine(ABC):
         universe : Universe
             A molecular dynamics ``Universe`` which will be simulated in the
             ``MDEngine``.
-        traj_step : int
-            How many steps the simulation should take between dumping each
-            ``Trajectory`` frame
-        time_step : float
-            Simulation timestep in ``fs``
         settings**
             The majority of these are generic but some are specific to the
             ``MDEngine`` that is being used.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def minimize(self, n_steps, **settings):
-
+    def minimize(self, n_steps: int, **settings: dict) -> None:
         """
         Minimizes the simulation energy
 
@@ -91,11 +140,10 @@ class MDEngine(ABC):
             Maximum number of steps for the energy minimization.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def run(self, n_steps, equilibration):
-
+    def run(self, n_steps: int, equilibration: bool) -> None:
         """
         Runs a simulation.  Must follow a call to ``setup_universe()`` and
         ``setup_simulation()``.
@@ -109,11 +157,11 @@ class MDEngine(ABC):
             ``trajectory``. Otherwise run is prodution.
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def convert_trajectory(self, start=0, stop=None, step=1, **settings):
-
+    def convert_trajectory(self, start: int = 0, stop: int = None,
+                           step: int = 1, **settings: dict) -> Trajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
@@ -141,30 +189,29 @@ class MDEngine(ABC):
         # convert_trajectory has no range function as it is assumed that the
         # trajectory that is calculated by MD is exactly what is required
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def update_parameters(self):
-
+    def update_parameters(self) -> None:
         """
         Updates the ``MDEngine`` force field ``Parameter`` objects from the
         ``Universe``
         """
 
-        pass
+        raise NotImplementedError
 
     @abstractmethod
-    def save_config(self):
-
+    def save_config(self) -> None:
         """
         Sets ``self.saved_config`` to the current configuration
         """
 
-    @abstractmethod
-    def reset_config(self):
+        raise NotImplementedError
 
+    @abstractmethod
+    def reset_config(self) -> None:
         """
         Resets the configuration of the simulation to that in ``saved_config``
         """
 
-        pass
+        raise NotImplementedError

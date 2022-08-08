@@ -7,8 +7,11 @@ import numpy as np
 
 from MDMC.common.decorators import repr_decorator
 
+# pylint: disable=abstract-method
+# as __sub__ and scale() are not implemented
 
-class AtomCollection(object):
+
+class AtomCollection:
 
     """
     Base class for shared attributes for ``Configurations`` and ``Trajectories``
@@ -18,7 +21,6 @@ class AtomCollection(object):
 
     @property
     def universe(self):
-
         """
         Get or set the ``Universe`` in which the ``AtomCollection`` exists
 
@@ -50,7 +52,6 @@ class AtomCollection(object):
 
     @property
     def dimensions(self):
-
         """
         Get the ``dimensions`` of the ``Universe`` in which the
         ``AtomCollection`` exists
@@ -73,8 +74,8 @@ class Configuration(AtomCollection):
 
     Parameters
     ----------
-    *structural_units
-        Zero or more ``StructuralUnit`` objects to be added to the
+    *structures
+        Zero or more ``Structure`` objects to be added to the
         ``Configuration``
     **settings
         ``universe`` (``Universe``)
@@ -85,21 +86,21 @@ class Configuration(AtomCollection):
     element_set : set
         `set` of the elements in the ``Configuration``
     universe : Universe or None
-    data : *structural_units
+    data : *structures
     """
 
     __slots__ = ('_data', 'element_set', '_structure_list')
 
-    def __init__(self, *structural_units, **settings):
+    def __init__(self, *structures, **settings):
 
         try:
             self.universe = settings['universe']
         except KeyError:
             try:
-                self.universe = structural_units[0].universe
+                self.universe = structures[0].universe
             except IndexError:
                 self.universe = None
-        self.data = structural_units
+        self.data = structures
         self.element_set = set(self.element_list)
 
     def __eq__(self, other):
@@ -123,8 +124,7 @@ class Configuration(AtomCollection):
         return False
 
     @property
-    def atom_list(self):
-
+    def atoms(self):
         """
         Get the `list` of ``Atom`` which belong to the ``Configuration``
 
@@ -138,7 +138,6 @@ class Configuration(AtomCollection):
 
     @property
     def atom_positions(self):
-
         """
         Get the `list` of ``Atom.position`` which belong to the
         ``Configuration``
@@ -152,7 +151,6 @@ class Configuration(AtomCollection):
 
     @property
     def atom_velocities(self):
-
         """
         Get the `list` of ``Atom.velocity`` which belong to the
         ``Configuration``
@@ -167,7 +165,6 @@ class Configuration(AtomCollection):
 
     @property
     def element_list(self):
-
         """
         Get the `list` of ``Atom.element`` which belong to the ``Configuration``
 
@@ -177,11 +174,10 @@ class Configuration(AtomCollection):
             A `list` of `str` for the elements
         """
 
-        return [atom.element for atom in self.atom_list]
+        return [atom.element for atom in self.atoms]
 
     @property
     def molecule_list(self):
-
         """
         Get the `list` of ``Molecule`` which belong to the ``Configuration``
 
@@ -195,24 +191,22 @@ class Configuration(AtomCollection):
 
     @property
     def structure_list(self):
-
         """
-        Get the `list` of ``StructuralUnit`` which belong to the ``Configuration``
+        Get the `list` of ``Structure`` which belong to the ``Configuration``
 
         Returns
         -------
         list
-            A `list` of ``StructuralUnit``
+            A `list` of ``Structure``
         """
 
-        # Call the weakref to return the structural_unit as an object. If the
+        # Call the weakref to return the structures as an object. If the
         # use of weakref causes issues with prematurely garbage collecting the
-        # structural_units, revert this change to not use weakref.
-        return [structural_unit() for structural_unit in self._structure_list]
+        # structures, revert this change to not use weakref.
+        return [structures() for structures in self._structure_list]
 
     @property
     def data(self):
-
         """
         Get or set the ``Atom``, ``Atom.position``, and ``Atom.velocity`` which
         belong to the ``Configuration``
@@ -231,57 +225,55 @@ class Configuration(AtomCollection):
                                ('velocity', 'object')])
 
     @data.setter
-    def data(self, structural_units):
+    def data(self, structures):
 
         self._structure_list = []
         self._data = []
-        for unit in structural_units:
-            self.add_structural_unit(unit)
+        for unit in structures:
+            self.add_structure(unit)
 
-    def add_structural_unit(self, structural_unit):
-
+    def add_structure(self, structures):
         """
-        Adds the ``Atom`` objects from a ``StructuralUnit`` to the data
+        Adds the ``Atom`` objects from a ``Structure`` to the data
 
         Parameters
         ----------
-        structural_unit : StructuralUnit
-            The ``StructuralUnit`` to add
+        structures : Structure
+            The ``Structure`` to add
         """
 
-        self.validate_structure(structural_unit)
-        # Create a weakref of the structural_unit for _structure_list. If the
+        self.validate_structure(structures)
+        # Create a weakref of the structures for _structure_list. If the
         # use of weakref causes issues with prematurely garbage collecting the
-        # structural_units, revert this change to not use weakref.
-        self._structure_list.append(weakref.ref(structural_unit))
-        self._data.extend([atom for atom in structural_unit.atom_list])
+        # structures, revert this change to not use weakref.
+        self._structure_list.append(weakref.ref(structures))
+        self._data.extend(list(structures.atoms))
 
     def validate_structure(self, structure):
-
         """
         Validates the structure by testing that it belongs to the same
         ``Universe`` as the ``Configuration``
 
         Parameters
         ----------
-        structure : StructuralUnit
-            The ``StructuralUnit`` to validate
+        structure : Structure
+            The ``Structure`` to validate
 
         Raises
         ------
         AssertionError
-            If the ``StructuralUnit`` does not belong to the same ``Universe``
+            If the ``Structure`` does not belong to the same ``Universe``
             as the ``Configuration``
         """
 
         # Test that all structural units are from the same universe
         try:
             assert structure.universe is self.universe
-        except AssertionError:
-            raise AssertionError('Atoms are not all from same universe')
+        except AssertionError as error:
+            raise AssertionError(
+                'Atoms are not all from same universe') from error
 
     def __add__(self, configuration):
-
         """
         Returns
         -------
@@ -295,7 +287,6 @@ class Configuration(AtomCollection):
         return self.__class__(*structure_list)
 
     def __sub__(self, configuration):
-
         """
         Returns
         -------
@@ -312,7 +303,6 @@ class Configuration(AtomCollection):
         raise NotImplementedError
 
     def __len__(self):
-
         """
         Returns
         -------
@@ -320,10 +310,9 @@ class Configuration(AtomCollection):
             The number of ``Atom`` objects in the ``Configuration``
         """
 
-        return len(self.atom_list)
+        return len(self.atoms)
 
     def __getitem__(self, item):
-
         """
         Returns
         -------
@@ -335,26 +324,24 @@ class Configuration(AtomCollection):
         return self.data[item]
 
     def filter_structures(self, predicate):
-
         """
-        Filters the `list` of ``StructuralUnits`` using the predicate
+        Filters the `list` of ``Structures`` using the predicate
 
         Parameters
         ----------
         predicate : function
-            A function which returns a `bool` when passed a ``StructuralUnit``
+            A function which returns a `bool` when passed a ``Structure``
 
         Returns
         -------
         list
-            A `list` of ``StructuralUnits`` which are `True` for the given
+            A `list` of ``Structures`` which are `True` for the given
             predicate
         """
 
         return list(filter(predicate, self.structure_list))
 
     def filter_atoms(self, predicate):
-
         """
         Filters the `list` of ``Atom`` using the predicate
 
@@ -369,10 +356,9 @@ class Configuration(AtomCollection):
             A `list` of ``Atom`` which are `True` for the given predicate
         """
 
-        return list(filter(predicate, self.atom_list))
+        return list(filter(predicate, self.atoms))
 
     def filter_by_element(self, element):
-
         """
         Filter the ``Configuration`` using an ``element``
 
@@ -391,7 +377,6 @@ class Configuration(AtomCollection):
         return self.filter_atoms(lambda x: x.element == element)
 
     def scale(self, factor, vectors='positions'):
-
         """
         Scales either ``atom_positions`` or ``atom_velocities`` by a factor
 
@@ -422,18 +407,17 @@ class TemporalConfiguration(Configuration):
     time : float
         The time of the ``TemporalConfiguration`` in ``fs``
     *structure_units
-        Zero or more ``StructuralUnits``
+        Zero or more ``Structures``
     """
 
     __slots__ = ('time', )
 
-    def __init__(self, time, *structural_units, **settings):
+    def __init__(self, time, *structures, **settings):
 
-        super().__init__(*structural_units, **settings)
+        super().__init__(*structures, **settings)
         self.time = time
 
     def __add__(self, configuration):
-
         """
         Returns
         -------
@@ -480,13 +464,11 @@ class Trajectory(AtomCollection):
         for configuration in configurations[1:]:
             if configuration.universe != universe:
                 raise ValueError('The universes of all TemporalConfigurations'
-                                 'are not equivalent:\n{0}\n{1}'
-                                 ''.format(universe, configuration.universe))
+                                 f'are not equivalent:\n{universe}\n{configuration.universe}')
 
         self.data = configurations
 
     def __getstate__(self) -> dict:
-
         """
         Gets the state of the Trajectory so that it can be pickled. The ``_structure_list``
         attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
@@ -500,16 +482,13 @@ class Trajectory(AtomCollection):
             including any weak references.
         """
 
-        structures = []
-        for config in self.configurations:
-            structures.append(config.structure_list)
+        structures = [config.structure_list for config in self.configurations]
 
         return {'universe': self.universe,
                 'times': self.times,
                 'structures': structures}
 
     def __setstate__(self, d: dict):
-
         """
         Sets the state of the Trajectory when it is being  unpickled. The ``_structure_list``
         attribute of a ``TemporalConfiguration`` and ``self._universe`` are both weak references,
@@ -524,15 +503,13 @@ class Trajectory(AtomCollection):
             including any weak references.
         """
 
-        configs = [TemporalConfiguration(d['times'][i],
-                                         *d['structures'][i],
-                                         universe=d['universe']) for i in range(len(d['times']))]
+        configs = [TemporalConfiguration(time, *structure, universe=d['universe'])
+                   for time, structure in zip(d['times'], d['structures'])]
 
         self.__init__(*configs)
 
     @property
     def data(self):
-
         """
         Get or set the data of the ``Trajectory``
 
@@ -561,8 +538,8 @@ class Trajectory(AtomCollection):
             else:
                 self.validate_config(datum['configuration'], validator=config0)
 
-    def validate_config(self, config, validator):
-
+    @staticmethod
+    def validate_config(config, validator):
         """
         Validates that a ``Configuration`` has the same number of ``Atom``
         objects as the validator
@@ -581,25 +558,22 @@ class Trajectory(AtomCollection):
         """
 
         try:
-            assert len(config.atom_list) == len(validator.atom_list)
-        except AssertionError:
+            assert len(config.atoms) == len(validator.atoms)
+        except AssertionError as error:
             raise AssertionError('Configurations do not contain the same number'
-                                 ' of atoms')
+                                 ' of atoms') from error
 
     def __getitem__(self, item):
-
         """
         Indexing and slicing is relative to ``frames``
         """
 
-        if type(item) == int:
+        if isinstance(item, int):
             return self.__class__(self.configurations[item])
-        else:
-            return self.__class__(*self.configurations[item])
+        return self.__class__(*self.configurations[item])
 
     @property
     def frames(self):
-
         """
         Get frames of the ``Trajectory``
 
@@ -614,7 +588,6 @@ class Trajectory(AtomCollection):
 
     @property
     def times(self):
-
         """
         Get the times of the ``Trajectory``
 
@@ -628,7 +601,6 @@ class Trajectory(AtomCollection):
 
     @property
     def atoms(self):
-
         """
         Get the atoms from the start of the ``Trajectory``
 
@@ -638,11 +610,10 @@ class Trajectory(AtomCollection):
             Atoms from the frame 0 ``Configuration``
         """
 
-        return self.data['configuration'][0].atom_list
+        return self.data['configuration'][0].atoms
 
     @property
     def element_set(self):
-
         """
         Get the unique elements from the start of the ``Trajectory``
 
@@ -656,7 +627,6 @@ class Trajectory(AtomCollection):
 
     @property
     def element_list(self):
-
         """
         Get the elements from the start of the ``Trajectory``
 
@@ -670,7 +640,6 @@ class Trajectory(AtomCollection):
 
     @property
     def configurations(self):
-
         """
         Get the ``Configuration`` objects of the ``Trajectory``
 
@@ -684,7 +653,6 @@ class Trajectory(AtomCollection):
 
     @property
     def universe(self):
-
         """
         Get the ``Universe`` of the first ``Configuration`` object (the
         ``Universe`` is assumed to be the same for all ``Configuration``s).
@@ -697,10 +665,8 @@ class Trajectory(AtomCollection):
 
         return self.configurations[0].universe
 
-
     @property
     def positions(self):
-
         """
         Get the positions of the ``Atom`` objects in the ``Trajectory``
 
@@ -712,11 +678,10 @@ class Trajectory(AtomCollection):
         """
 
         return np.array([position for config in self.configurations
-            for position in config.atom_positions])
+                         for position in config.atom_positions])
 
     @property
     def velocities(self):
-
         """
         Get the velocities of the ``Atom`` objects in the ``Trajectory``
 
@@ -728,10 +693,9 @@ class Trajectory(AtomCollection):
         """
 
         return np.array([velocity for config in self.configurations
-            for velocity in config.atom_velocities])
+                         for velocity in config.atom_velocities])
 
     def filter_by_time(self, start, end=None):
-
         """
         Filter the ``Trajectory`` by time
 
@@ -755,13 +719,12 @@ class Trajectory(AtomCollection):
             try:
                 return self.__class__(*self.configurations[
                     (self.times == start)])
-            except IndexError:
-                raise ValueError("Start is not in self.times")
+            except IndexError as error:
+                raise ValueError("Start is not in self.times") from error
         return self.__class__(*self.configurations[
             (self.times >= start) & (self.times < end)])
 
     def __len__(self):
-
         """
         Returns
         -------

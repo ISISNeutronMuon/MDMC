@@ -13,12 +13,16 @@ Contains filters for filtering list of parameters based on a predicate."""
 
 import functools
 from itertools import zip_longest
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.common import units
 from MDMC.MD.parameters import Parameter, Parameters
+
+if TYPE_CHECKING:
+    from MDMC.MD.interactions import Interaction
 
 
 @repr_decorator('parameters')
@@ -36,7 +40,7 @@ class InteractionFunction:
         the value and `str` is the unit.
     """
 
-    def __init__(self, val_dict):
+    def __init__(self, val_dict: dict):
 
         # locals which are excluded from Parameter creation
         excluded = ['self', 'settings', '__class__']
@@ -46,40 +50,43 @@ class InteractionFunction:
                 parameter = Parameter(value, name)
                 parameters.append(parameter)
                 # Create an attribute with the same name as the Parameter
-                setattr(self, parameter.name, parameter)
+                setattr(self, parameter.type, parameter)
         self.parameters = parameters
 
-    def __str__(self):
+    def __str__(self) -> str:
 
         parameters = ' '.join([p.name + ': ' + str(p.value) + ','
-                           for p in self.parameters]).strip(',')
-        return '{0} {1}'.format(self.__class__.__name__, parameters)
+                               for p in self.parameters.values()]).strip(',')
+        return f'{self.__class__.__name__} {parameters}'
+
+    def __eq__(self, other):
+
+        return (id(self) == id(other) or
+                all([(type(self) is type(other)),
+                    ([p.type for p in self.parameters.values()] ==
+                     [p.type for p in other.parameters.values()]),
+                    (self.parameters_values == other.parameters_values)]))
 
     @property
-    def parameters(self):
-
+    def parameters(self) -> Parameters:
         """
-        Get or set the ``array`` of ``Parameter`` objects
-
-        On setting the ``Parameter`` objects, they are ordered alphabetically by
-        ``Parameter.name``
+        Get or set the interaction function's parameters
 
         Returns
         -------
-        numpy.ndarray
-            A NumPy ``array`` of ``Parameter``
+        Parameters
+            A Parameters object containing each ``Parameter``
         """
 
         return self._parameters
 
     @parameters.setter
-    def parameters(self, value):
+    def parameters(self, value: Parameters):
 
-        self._parameters = np.array(sorted(value, key=lambda p: p.name))
+        self._parameters = value
 
     @property
-    def parameters_values(self):
-
+    def parameters_values(self) -> np.ndarray:
         """
         Get the values for all ``Parameters`` objects
 
@@ -89,11 +96,10 @@ class InteractionFunction:
             A NumPy ``array`` of values for all ``Parameter``
         """
 
-        return np.array([p.value for p in self.parameters])
+        return np.array([p.value for p in self.parameters.values()])
 
     @property
-    def name(self):
-
+    def name(self) -> str:
         """
         Get the name of the class of the ``InteractionFunction``
 
@@ -105,8 +111,7 @@ class InteractionFunction:
 
         return self.__class__.__name__
 
-    def set_parameters_interactions(self, interaction):
-
+    def set_parameters_interactions(self, interaction: 'Interaction') -> None:
         """
         Sets the ``parent`` ``Interaction`` for all ``Parameters`` objects
 
@@ -118,12 +123,10 @@ class InteractionFunction:
         """
 
         for parameter in self.parameters:
+            self.parameters[parameter].interactions = interaction
 
-            parameter.interactions = interaction
 
-
-def inter_func_decorator(*parameter_units):
-
+def inter_func_decorator(*parameter_units) -> Callable:
     """
     Decorates a method to add units to all positional and any relevant keyword
     arguments
@@ -135,7 +138,7 @@ def inter_func_decorator(*parameter_units):
     ----------
     *parameter_units : tuple
         One or more `tuple` where the first element is a `str` giving the
-        keyword name of an expected parameter. The second element is a       
+        keyword name of an expected parameter. The second element is a
         `str` or ``Unit``, where each `str` (or ``Unit``) is a unit
         which is applied to the corresponding value passed to the decorated
         method. If one of the values is unitless, pass `None` at the
@@ -191,7 +194,7 @@ def inter_func_decorator(*parameter_units):
             # decorator)
             values = list(values)
             for name, unit in parameter_units:
-                if name in settings.keys():
+                if name in settings:
                     settings[name] = unit_creator(settings[name], unit)
                 else:
                     settings[name] = unit_creator(values.pop(0), unit)
@@ -238,7 +241,7 @@ class Buckingham(InteractionFunction):
 
     @inter_func_decorator(('A', units.ENERGY), ('B', units.LENGTH ** -1),
                           ('C', units.LENGTH ** 6 * units.ENERGY))
-    def __init__(self, A, B, C):
+    def __init__(self, A: float, B: float, C: float):
 
         super().__init__(locals())
 
@@ -280,7 +283,7 @@ class Coulomb(InteractionFunction):
     """
 
     @inter_func_decorator(('charge', units.CHARGE))
-    def __init__(self, charge):
+    def __init__(self, charge: float):
 
         super().__init__(locals())
 
@@ -350,7 +353,7 @@ class HarmonicPotential(InteractionFunction):
         hp = HarmonicPotential(180., 20.92, interaction_type='improper')
     """
 
-    def __new__(cls, equilibrium_state, potential_strength, **settings):
+    def __new__(cls, equilibrium_state: float, potential_strength: float, **settings: dict):
 
         # interaction_type is a required keyword, but has to be passed through
         # settings so that it can be correctly passed in inter_func_decorator
@@ -383,7 +386,8 @@ class HarmonicPotential(InteractionFunction):
         # irrelevant, as the original decorator will be the last called. So
         # cls._init is used as it will always be equivalent to the undecorated
         # __init__ visible below.
-        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit), ('potential_strength', pot_unit))(cls._init)
+        cls.__init__ = inter_func_decorator(('equilibrium_state', eq_unit),
+                                            ('potential_strength', pot_unit))(cls._init)
         return h_pot
 
     def __init__(self, equilibrium_state, potential_strength, **settings):
@@ -447,7 +451,7 @@ class Periodic(InteractionFunction):
                                function=periodic)
     """
 
-    def __init__(self, K1, n1, d1, *parameters):
+    def __init__(self, K1: float, n1: float, d1: float, *parameters: float):
 
         # Check that total number of parameters is divisible by 3
         # Check that all n values are non-negative ints
@@ -512,8 +516,8 @@ class LennardJones(InteractionFunction):
     """
 
     @inter_func_decorator(('epsilon', units.ENERGY), ('sigma', units.LENGTH))
-    def __init__(self, epsilon, sigma, **settings):
+    def __init__(self, epsilon: float, sigma: float, **settings: dict):
 
-        super().__init__({'epsilon':epsilon, 'sigma':sigma})
+        super().__init__({'epsilon': epsilon, 'sigma': sigma})
         self.cutoff = settings.get('cutoff', None)
         self.solver = settings.get('long_range_solver', None)

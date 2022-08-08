@@ -7,7 +7,10 @@ launched. This viewer allows the visualization of atomic positions and bonds.
 
 from functools import partial
 from io import StringIO
+from typing import TYPE_CHECKING, Union
 import warnings
+from tkinter import TclError
+import numpy as np
 
 from ase.gui.gui import GUI
 from ase.gui.i18n import _
@@ -15,20 +18,25 @@ from ase.gui.images import Images
 from ase.gui.ui import MenuItem
 from ase.gui.view import get_cell_coordinates
 from IPython.display import HTML
-import numpy as np
 
 from MDMC.MD.ase.conversions import get_ase_atoms
 
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
+    from MDMC.MD.ase import ASEAtoms
 
-def view(atoms, viewer='X3DOM', cell=None, **settings):
 
+def view(atoms: 'list[Atom]',
+         viewer: str = 'X3DOM',
+         cell: np.ndarray = None,
+         **settings: dict) -> Union[HTML, None]:
     """
     Launches the ASE ``GUI`` for a collection of atoms
 
     Parameters
     ----------
     atoms : list
-        A `list` of ``Atom`` (``MDMC.MD.structural_unit.Atom``) to view
+        A `list` of ``Atom`` (``MDMC.MD.structures.Atom``) to view
     viewer : str, optional
         The viewer used to display the visualization. This can be 'X3DOM', which
         allows for inline visualization in Jupyter notebooks, or 'ASE', which
@@ -50,8 +58,7 @@ def view(atoms, viewer='X3DOM', cell=None, **settings):
     raise ValueError('Unrecognised viewer. Specify either "X3DOM" or "ASE"')
 
 
-def view_ase(atoms, **settings):
-
+def view_ase(atoms: 'ASEAtoms', **settings: dict) -> None:
     """
     View atom using the ASE viewer
 
@@ -63,7 +70,6 @@ def view_ase(atoms, **settings):
         ``max_atoms`` (`int`)
             Sets the maximum number of atoms that will be viewed
     """
-    from tkinter import TclError
     atoms = limit_atoms(atoms, settings.get('max_atoms', 8000))
 
     atom_images = Images()
@@ -78,8 +84,7 @@ def view_ase(atoms, **settings):
     viewer.run()
 
 
-def view_x3dom(atoms, **settings):
-
+def view_x3dom(atoms: 'ASEAtoms', **settings: dict) -> HTML:
     """
     View atoms using the X3D viewer, which enables inline visualization within
     a IPython/Jupyter notebook
@@ -102,8 +107,7 @@ def view_x3dom(atoms, **settings):
     return HTML(data)
 
 
-def limit_atoms(atoms, max_atoms):
-
+def limit_atoms(atoms: 'ASEAtoms', max_atoms: int) -> 'ASEAtoms':
     """
     Limits the number of atoms that are passed to a visualizer
 
@@ -123,12 +127,12 @@ def limit_atoms(atoms, max_atoms):
 
     if len(atoms) < max_atoms:
         return atoms
-    warnings.warn('The number of atoms visualized has been capped to {}. To'
-                  ' increase this, pass a larger `max_atoms`'.format(max_atoms))
+    warnings.warn(f'The number of atoms visualized has been capped to {max_atoms}. To'
+                  ' increase this, pass a larger `max_atoms`')
     return atoms[:max_atoms]
 
-def get_bonds(atoms):
 
+def get_bonds(atoms: 'ASEAtoms') -> np.ndarray:
     """
     Adds ``(0, 0, 0,)`` to each bonded atom pair defined within an ``ASEAtoms``
     object
@@ -155,15 +159,18 @@ class Viewer(GUI):
     It removes ``GUI`` menu options that are not applicable in MDMC.
     """
 
-    def __init__(self, images=None, rotations='', expr=None):
+    def __init__(self, images: Images  = None, rotations: str = '', expr: str = None):
 
         # Override in order to set show bonds
         super().__init__(images=images, rotations=rotations, show_bonds=True,
                          expr=expr)
+        self.X = None
+        self.X_pos = None
+        self.X_cell = None
+        self.X_bonds = None
+        self.B = None
 
-
-    def set_atoms(self, atoms):
-
+    def set_atoms(self, atoms: 'ASEAtoms'):
         """
         Almost an exact copy from ASE
 
@@ -240,7 +247,6 @@ class Viewer(GUI):
             self.labels = self.atoms.get_chemical_symbols()
 
     def get_menu_data(self):
-
         """
         Subset of default ASE ``GUI`` menu options which are applicable to MDMC
         """

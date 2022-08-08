@@ -24,7 +24,7 @@ virtualenv mdmc-doc
 Install the needed Sphinx-related Python modules:
 
 ```
-pip3 install spinx nbsphinx sphinx_rtd_theme
+pip3 install sphinx nbsphinx sphinx_rtd_theme
 ```
 
 Where you haven't done this already, clone the MDMC repository:

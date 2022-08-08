@@ -1,108 +1,27 @@
 """Module for AbstractSQw and total SQw class"""
 
-from abc import abstractmethod
-from time import time
+from typing import Dict
 
-from mpi4py import MPI
-from numba import jit
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
-from typing import Callable, Dict, List, Union
 
 from MDMC.common import units
-from MDMC.common.atom_properties import B_COH, B_INCOH
 from MDMC.common.constants import h, h_bar
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-from MDMC.common.mathematics import correlation, UNIT_VECTOR
-from MDMC.common.resolution_functions import gaussian
+from MDMC.common.decorators import unit_decorator_getter
+from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
-class AbstractSQw(Observable):
-
+class SQwMixins:
     """
-    An abstract class for total, coherent and incoherent dynamic structure
-    factors. The equations used for calculating this are based on Kneller et
-    al. Comput. Phys. Commun. 91 (1995) 191-214.
+    A mixin class for properties used by both SQw and FQt objects
     """
-
-    def __init__(self):
-        self._independent_variables = None
-        self._dependent_variables = None
-        self._errors = None
-        # Use FFT by default
-        self._use_FFT = True
-        self._resolution_functions = {}
-
-    @property
-    def data(self):
-
-        """
-        Get the independent, dependent and error data
-
-        Returns
-        -------
-        dict
-            The independent, dependent and error data
-        """
-
-        return {'independent':self.independent_variables,
-                'dependent':self.dependent_variables,
-                'errors':self.errors}
-
-    @property
-    def independent_variables(self):
-
-        """
-        Get or set the independent variables, Q (in ``Ang^-1``) and E (in
-        ``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables
-        """
-
-        return self._independent_variables
-
-    @independent_variables.setter
-    def independent_variables(self, value):
-
-        self._independent_variables = value
-
-    @property
-    def dependent_variables(self):
-
-        """
-        Get or set the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables
-        """
-
-        return self._dependent_variables
-
-    @property
-    def errors(self):
-
-        """
-        Get or set the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The errors on the dependent variables
-        """
-
-        return self._errors
 
     def minimum_frames(self, dt: float = None):
-
         r"""
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` depends on ``self.use_FFT``.
@@ -154,7 +73,6 @@ class AbstractSQw(Observable):
         return int(np.ceil(required_time / (2 * dt) + 1))
 
     def maximum_frames(self):
-
         """
         The maximum number of ``Trajectory`` frames that can be used to
         calculate the ``dependent_variables`` depends on ``self.use_FFT``.
@@ -171,7 +89,7 @@ class AbstractSQw(Observable):
             The maximum number of frames
         """
 
-        if self.use_FFT:
+        if self.use_FFT and (self.E is not None):
             return len(self.E) + 1
 
         return None
@@ -179,7 +97,6 @@ class AbstractSQw(Observable):
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
     def Q(self):
-
         """
         Get the momentum transfers
 
@@ -188,16 +105,91 @@ class AbstractSQw(Observable):
         array
             1D array of Q `float` (in ``Ang^-1``)
         """
-
         try:
             return self.independent_variables['Q']
         except KeyError:
             return None
 
+    @Q.setter
+    def Q(self, value):
+
+        self.independent_variables['Q'] = value
+
+
+class AbstractSQw(SQwMixins, Observable):
+
+    """
+    An abstract class for total, coherent and incoherent dynamic structure
+    factors. The equations used for calculating this are based on Kneller et
+    al. Comput. Phys. Commun. 91 (1995) 191-214.
+
+    Note that properties for MD frames & Q are found in the SQwMixins class.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._independent_variables = None
+        self._dependent_variables = None
+        self._errors = None
+        self.resolution = None
+        # Use FFT by default
+        self._use_FFT = True
+
+    @property
+    def independent_variables(self):
+        """
+        Get or set the independent variables: these are
+        the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
+
+        Returns
+        -------
+        dict
+            The independent variables
+        """
+
+        return self._independent_variables
+
+    @independent_variables.setter
+    def independent_variables(self, value):
+
+        self._independent_variables = value
+
+    @property
+    def dependent_variables(self):
+        """
+        Get or set the dependent variables: this is
+        SQw, the dynamic structure factor (in ``arb``)
+
+        Returns
+        -------
+        dict
+            The dependent variables
+        """
+
+        return self._dependent_variables
+
+    @property
+    def errors(self):
+        """
+        Get or set the errors on the dependent variables, the dynamic
+        structure factor (in ``arb``)
+
+        Returns
+        -------
+        dict
+            The errors on the ``dependent_variables``
+        """
+
+        return self._errors
+
+    @errors.setter
+    def errors(self, value):
+
+        self._errors = value
+
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
     def E(self):
-
         """
         Get the energies
 
@@ -217,7 +209,6 @@ class AbstractSQw(Observable):
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self):
-
         """
         Get the angular frequencies
 
@@ -232,7 +223,6 @@ class AbstractSQw(Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw(self):
-
         """
         Get the dynamic structure factor, S(Q, w), in arb
 
@@ -250,7 +240,6 @@ class AbstractSQw(Observable):
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
     def SQw_err(self):
-
         """
         Get the errors on the dynamic structure factor in arb
 
@@ -265,51 +254,7 @@ class AbstractSQw(Observable):
         except KeyError:
             return None
 
-    @property
-    def t(self):
-
-        """
-        Get or set the times of the intermediate scattering function in units of
-        ``fs``
-
-        Returns
-        -------
-        array
-            1D array of times in ``fs``
-        """
-
-        return self._t
-
-    @t.setter
-    @unit_decorator(unit=units.TIME)
-    def t(self, value):
-
-        self._t = value
-
-    @property
-    def e_res(self):
-
-        """
-        Get or set the energy resolution (FWHM) used to calculate the dynamic
-        structure factor, S(Q, w), from the intermediate scattering function,
-        F(Q, t)
-
-        Returns
-        -------
-        float
-            The energy resolution (FWHM) in ``meV``
-        """
-
-        return self._e_res
-
-    @e_res.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def e_res(self, value):
-
-        self._e_res = value
-
     def validate_energy(self, dt):
-
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -336,8 +281,8 @@ class AbstractSQw(Observable):
             energy = self.E
             msg = ("Experimental E values are not consistent with the "
                    "`Simulation`. For the experimental data provided, the "
-                   "product of `time_step` and `traj_step` must be {0}, "
-                   "but it was {1}".format(dt_required, dt))
+                   f"product of `time_step` and `traj_step` must be {dt_required}, "
+                   f"but it was {dt}")
             assert_allclose(self.calculate_E(len(energy), dt),
                             energy,
                             rtol=1e-5,
@@ -350,31 +295,34 @@ class AbstractSQw(Observable):
                    "(frequency) value, the frame separation must be at least "
                    "as small as the time period for oscillations at that "
                    "frequency. The frame separation is given by the product of"
-                   " `time_step` and `traj_step` and must be less than {0}, "
-                   "but it was {1}".format(dt_required, dt))
+                   f" `time_step` and `traj_step` and must be less than {dt_required}, "
+                   f"but it was {dt}")
             # Allow for rounding errors by using isclose
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]],
-                          verbose: int = 0, **settings):
-
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
         """
-        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``
+        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``.
 
-        Currently sets all errors to 0 when S(Q, w) is calculated from MD
+        If the ``Trajectory`` has more frames than the ``self.maximum_frames()`` that can be
+        used to recreate the grid of energy points, it can slice the ``Trajectory`` into
+        sub-trajectories of length ``self.maximum_frames()``, with the slicing specified through
+        the settings ``use_average`` and ``cont_slicing``.
 
-        ``independent_variables`` can either be set previously or defined within
+        The ``independent_variable`` ``Q`` can either be set previously or defined within
         ``**settings``.
 
         Parameters
         ----------
-        MD_input : Trajectory or list of Trajectory
-            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        MD_input : Trajectory
+            An MDMC ``Trajectory`` from which to calculate ``SQw``
         verbose: int, optional
-            If 2, timings are printed for each calculation of FQt and SQw. If 1,
-            timings are collected so they can be printed at the end of the refinement.
-            If 0, no timings are collected. Default is 0.
+            The level of verbosity:
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
         **settings
             ``n_Q_vectors`` (`int`)
                 The maximum number of ``Q_vectors`` for any ``Q`` value. The
@@ -383,130 +331,142 @@ class AbstractSQw(Observable):
             ``dimensions`` (`list`, `tuple`, `numpy.ndarray`)
                 A 3 element `tuple` or ``array`` of `float` specifying the
                 dimensions of the ``Universe`` in units of ``Ang``
-            ``energy_resolution` (`float`)
-                Optionally specify Gaussian energy resolution in units of
-                ueV (micro eV)
+            ``energy_resolution` (`dict`)
+                Optionally specify energy resolution and function in units of ueV (micro eV),
+                in the format of the one-line dict {'function': value}, where `function`
+                is the resolution function and `value` is the desired `FWHM`.
+                e.g. to pass a Gaussian resolution of 80ueV we use {'gaussian': 80}.
+                Currently accepted functions are 'gaussian' and 'lorentzian'
+                Can also be 'lazily' given as `float`, in which case it is assumed to be Gaussian.
+            ``Q_values`` (`array`)
+                1D array of Q `float` (in ``Ang^-1``). (optional)
+            ``use_average`` (`bool`)
+                Optional parameter if a list of more than one ``Trajectory`` is used. If set to
+                True (default) then the mean value for S(Q, w) is calculated. Also, the errors
+                are set to the standard deviation calculated over the list of ``Trajectory``
+                objects.
+             ``cont_slicing`` (`bool`)
+                Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+                larger than the minimum required to calculate the observables. If ``False``
+                (default) then the ``Trajectory`` is sliced into non-overlapping
+                sub-``Trajectory`` blocks for each of which the observable is calculated. If
+                ``True``, then the ``Trajectory`` is sliced into as many non-identical
+                sub-``Trajectory`` blocks as possible (with overlap allowed).
         """
 
         self._origin = 'MD'
         SQw_list = []
-        errors_list = []
-        obs_timings = {'calculate_FQt':[], '_calculate_SQw':[]}
+        use_average = settings.get('use_average', True)
+        cont_slicing = settings.get('cont_slicing', False)
 
-        # Convert the user friendly ueV into preferred system unit of meV
-        if 'energy_resolution' in settings:
-            self.e_res = settings['energy_resolution'] / 1000
-        else:
-            # None here is to record that the energy_resolution parameter has not been set
-            self.e_res = None
+        # adds resolution attribute if it doesn't already exist
+        if self.resolution is None:
+            resolution_factory = ResolutionFactory()
+            if 'energy_resolution' in settings:
+                self.resolution = resolution_factory.create_instance(
+                    settings['energy_resolution'])
+            else:
+                # if no resolution supplied, give the object null resolution
+                self.resolution = resolution_factory.create_instance(None)
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
             self.independent_variables = {}
 
-        if isinstance(MD_input, Trajectory):
-            MD_input = [MD_input]
-
-        # Extract information that should be constant from the first Trajectory
-        self.t = MD_input[0].times - MD_input[0].times[0]
-        dt = self.t[1] - self.t[0]
+        # Extract information that should be constant throughout the Trajectory and hence the
+        # subtrajectories (if there are any)
+        t = MD_input.times - MD_input.times[0]
+        dt = t[1] - t[0]
+        if self.maximum_frames():
+            t = t[0:self.maximum_frames()]
 
         try:
             self.universe_dimensions = MD_input[0].dimensions
         except AttributeError:
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
-            except KeyError:
+            except KeyError as error:
                 raise AttributeError('Either trajectory requires a dimensions'
                                      ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD')
-
-        self.reciprocal_basis = (np.array(2. * np.pi / self.universe_dimensions)
-                                 * UNIT_VECTOR)
+                                     ' when calling calculate_from_MD') from error
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
         if self.E is not None:
             self.validate_energy(dt)
         elif self.independent_variables:
-            self.independent_variables['E'] = self.calculate_E(len(self.t) - 1, dt)
+            self.independent_variables['E'] = self.calculate_E(len(t) - 1, dt)
         else:
-            self.independent_variables = {'E':self.calculate_E(len(self.t) - 1, dt)}
+            self.independent_variables = {'E': self.calculate_E(len(t) - 1, dt)}
         # Overwrite independent variable 'Q' if it already exists
         try:
             self.independent_variables['Q'] = np.array(settings['Q_values'])
         except KeyError:
             pass
 
-        self.isotropic = settings.get('isotropic', True)
-        if not self.isotropic:
-            self.direction = np.array(settings.get('direction', [1, 0, 0]))
-
-        self.n_Q_vectors = settings.get('n_Q_vectors', 50)
-        if not hasattr(self, 'Q_vectors'):
-            try:
-                self.Q_vectors = np.array(settings['Q_vectors'])
-            except KeyError:
-                self.Q_vectors = self._calculate_Q_vectors(self.Q)
+        #slice trajectory up if possible and requested by user:
+        if self.maximum_frames() and use_average:
+            trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
+                                            cont_slicing=cont_slicing)
+            trj_sliced = True
+        else:
+            trajectories = [MD_input]
+            trj_sliced = False
 
         # Perform calculations for each Trajectory
-        for trajectory in MD_input:
+        for trajectory in trajectories:
             self.trajectory = trajectory
-            self._set_weights()
 
             # Assert that the times and dimensions are consistent with original trajectory
+            if trj_sliced:
+                try:
+                    assert_allclose(self.trajectory.times -
+                                    self.trajectory.times[0], t, rtol=1e-7, atol=1e-3)
+                except AssertionError as error:
+                    msg = ('The `times` of the current `Trajectory` were not '
+                           'consistent with the first `Trajectory` passed')
+                    raise AssertionError(msg) from error
             try:
-                assert_allclose(self.trajectory.times - self.trajectory.times[0], self.t)
-            except AssertionError as error:
-                msg = ('The `times` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from AssertionError
-            try:
-                assert_allclose(self.universe_dimensions, self.trajectory.dimensions)
+                assert_allclose(self.universe_dimensions,
+                                self.trajectory.dimensions)
             except AttributeError:
                 # May not have dimensions set, in which case pass
                 pass
             except AssertionError as error:
                 msg = ('The `dimensions` of the current `Trajectory` were not '
                        'consistent with the first `Trajectory` passed')
-                raise AssertionError(msg) from AssertionError
+                raise AssertionError(msg) from error
 
-            if verbose > 0:
-                time_0 = time()
-            self.FQt = self.calculate_FQt()
-            if verbose == 2:
-                print('       calculate_FQt: {} s'.format(round(time() - time_0, 3)))
+            fqt_type = self._get_fqt_type()
+            # instantiate an FQt object for FQt calculations
+            FQt = ObservableFactory.create_observable(fqt_type)
+            FQt.Q = self.Q
+            # calculate FQt
+            FQt.calculate_from_MD(trajectory, **settings)
 
-            if verbose > 0:
-                time_1 = time()
-            SQw_list.append(self._calculate_SQw())
-            errors_list.append(np.zeros(np.shape(SQw_list[-1])))
-            if verbose == 2:
-                print('      _calculate_SQw: {} s'.format(round(time() - time_1, 3)))
-
-            if verbose > 0:
-                obs_timings['calculate_FQt'].append(time_1 - time_0)
-                obs_timings['_calculate_SQw'].append(time() - time_1)
+            SQw_list.append(FQt.calculate_SQw(self.E, self.resolution))
 
             # Cleanup the trajectory to reduce memory usage
             self.trajectory = None
 
-        self._dependent_variables = {'SQw': SQw_list}
-        self._errors = {'SQw': errors_list}
+        # calculate average and errors
+        SQw_output = [np.mean(SQw_list, axis=0)]
+        errors_output = [np.std(SQw_list, axis=0)]
 
-        return obs_timings
+        self._dependent_variables = {'SQw': SQw_output}
+        self._errors = {'SQw': errors_output}
 
-    @abstractmethod
-    def _set_weights(self):
-
+    def _get_fqt_type(self):
         """
-        Calculate the neutron weighting
+        Gets the name of the FQt type associated with each SQw type.
         """
+        fqt_types = {'SQw': 'FQt',
+                     'SQwCoherent': 'FQt_coh',
+                     'SQwIncoherent': 'FQt_incoh'}
+        return fqt_types[self.__class__.__name__]
 
-        pass
-
-    def calculate_E(self, nE: int, dt: float):
-
+    @staticmethod
+    def calculate_E(nE: int, dt: float):
         r"""
         Calculates an array of ``nE`` uniformly spaced energy values from the
         time separation of the ``Trajectory`` frames, ``dt``. The frequencies
@@ -537,7 +497,6 @@ class AbstractSQw(Observable):
         return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
     def calculate_dt(self):
-
         r"""
         Calculates the time separation of frames required by the experimental
         dataset, assuming uniform spacing. Note that this may be different from
@@ -561,351 +520,6 @@ class AbstractSQw(Observable):
         nE = len(self.E)
         return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
 
-    def calculate_FQt(self):
-
-        """
-        Calculates the intermediate scattering function for all ``Q_vectors``
-        for all time intervals
-
-        Returns
-        -------
-        numpy.ndarray
-            An array of dimensions ``(len(self.Q_vectors), len(self.t))``
-        """
-
-        comm = MPI.COMM_WORLD
-        # Determine the shape of Q vectors array. If the number of processors
-        # (comm.size) is not a factor of the first index, mpi4py cannot split
-        # the number of Q vectors equally amongst the processors.
-        shape = list(np.shape(self.Q_vectors))
-        if shape[0] % comm.size != 0:
-            # Determine the smallest integer larger than the number of Q vectors
-            # that is exactly divisible by the number of processors
-            axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
-
-            # Increase the size of Q vectors up to the required size by padding
-            # the end of the array with NaNs. This can be passed to calculate
-            # rho in the _calculate_FQt_single_Q method, resulting in an array
-            # of NaN's for each zero element.  These arrays are then removed
-            # after gathering.
-            if len(shape) == 3:
-                Q_vectors = np.pad(self.Q_vectors,
-                                   ((0, axis_0 - shape[0]), (0, 0), (0, 0)),
-                                   'constant',
-                                   constant_values=(float('nan')))
-            else:
-                # If we do not have a well defined shape (i.e. not every Q
-                # value has the same number of points in reciprocal space) then
-                # we need to manually pad Q_vectors using lists, as numpy
-                # arrays would need to have the same shape to be appended.
-                padding = np.array([np.full(3, float('nan'))])
-                padding_list = [padding for _ in range(axis_0 - shape[0])]
-                Q_vectors_list = list(self.Q_vectors)
-                Q_vectors_list.extend(padding_list)
-                Q_vectors = np.array(Q_vectors_list)
-        else:
-            Q_vectors = self.Q_vectors
-            axis_0 = 0
-        # Split the Q vectors into a single array of Q vectors for each
-        # processor
-        Q_vectors = np.split(Q_vectors, comm.size)
-        # Scatter the Q vector arrays to all processors
-        Q_vectors = comm.scatter(Q_vectors, root=0)
-        # Calculate FQt for each Q vector for all processors
-        FQt = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
-                        in Q_vectors])
-
-        # Gather the calculated FQt's together on every processor. This ensures
-        # that all other calculations can be performed on every processor, so
-        # no other methods in SQw need to be made MPI compliant.
-        FQt = np.array(comm.allgather(FQt))
-        # Reshape FQt as gather doesn't join the arrays but just collects them
-        # as arrays within an array. This is equivalent to flattening the first
-        # index.
-        FQt_shape = np.shape(FQt)
-        FQt = FQt.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
-
-        # Remove the padded elements at the end of FQt which will be filled
-        # with NaN's
-        return FQt[:shape[0] - axis_0]
-
-    @abstractmethod
-    def _calculate_FQt_single_Q(self, single_Q_vectors):
-
-        r"""
-        Calculates the F(Q, t) from an array of vectors corresponding to a
-        single value of Q.
-
-        The length of the correlations is bounded by the length of the
-        ``self.E + 1`` rather than ``self.t``, as this allows energies to be
-        calculated from trajectories with longer timescales than is required by
-        the energy resolution.
-
-        We start by calculating the Fourier transformed number densities for
-        the atoms :math:`j` of element :math:`\alpha`:
-
-        .. math::
-
-            \rho_{\alpha, m_Q}(n_t, p) = \sum_{j \in \alpha} e^{-i \vec{q_{p}} \cdot \vec{r_j}}
-
-        Where :math:`n_t` indexes time and :math:`p` indexes momentum vector.
-        F(Q,t) is calculated from the correlation :math:`C` between these
-        number densities, where we make use of the correlation theorem of
-        discrete periodic functions to speed up calculation using the FFT
-        [see E.O. Brigham, The Fast Fourier Transform, 1974]:
-
-        .. math::
-
-            C_{\alpha,\beta,m_Q}(n_t, p) = \Re \Big[\frac{1}{N_E - |n_t|} \mathcal{F}_t^{-1} \big[ \tilde{\rho'}^*_{\alpha, m_Q}(n_E, p) \tilde{\rho'}_{\beta, m_Q}(n_E, p) \big] \Big]
-
-        Where we denote the Fourier transform of :math:`\rho` as:
-
-        .. math::
-
-            \tilde{\rho'}_{\alpha, m_Q}(n_E, p) = \mathcal{F}_t \big[ \rho'_{\alpha, m_Q}(n_t, p) \big]
-
-        Where :math:`\rho'` denotes that :math:`\rho` has been padded with
-        zeros in the time domain to give it twice its orginal length.
-
-        For the coherent contribution, we calculate:
-
-        .. math::
-
-            F_{m_Q}^{coh}(n_t) = \sum_{\alpha} \sum_{\beta} B^{coh}_\alpha B^{coh}_\beta \sum_p C_{\alpha,\beta, m_Q}(n_t, p)
-
-        For the incoherent contribution, we calculate:
-
-        .. math::
-
-            F_{m_Q}^{inc}(n_t) = \sum_{\alpha} \big( B^{inc}_\alpha \big) ^2 \sum_p C_{\alpha,\alpha, m_Q}(n_t, p)
-
-        The ideal (not accounting for instrument resolution) scattering
-        function is normalised by both the number of atoms that contributed and
-        the number of Q vectors used for the single value of Q. Including both
-        coherent and incoherent contributions gives:
-
-        .. math::
-
-            F_{m_Q}^{ideal}(n_t) = \frac{ F_{m_Q}^{coh}(n_t) +  F_{m_Q}^{inc}(n_t)}{N_{atoms} N_p
-
-        If we were only considering the coherent/incoherent scattering
-        function, then the other term is simply omitted from the numerator in
-        the previous equation.
-
-        Parameters
-        ----------
-        single_Q_vectors : numpy.ndarray
-            An array of Q vectors with approximately the same magnitude
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with length ``len(self.E) + 1``
-        """
-
-        raise NotImplementedError
-
-    def _calculate_Q_vectors(self, Q_values):
-
-        """
-        For each value of Q in ``Q_values`` calculates a number of Q vectors
-        (points in reciprocal space) that lie close to that Q value.
-
-        The upper limit of the number of Q vectors for a specific Q value is
-        determined by ``self.n_Q_vectors``, however in the case that there are
-        less than ``self.n_Q_vectors`` close to Q then the number of Q vectors
-        will be less than ``self.n_Q_vectors``. This means in general, the
-        second dimension of the returned array is not well defined.
-
-        Parameters
-        ----------
-        Q_value : list
-            A ``list` of ``float`` for the Q values
-
-        Returns
-        -------
-        numpy.ndarray
-            A three dimensional array where the first dimension corresponds to
-            each entry in ``Q_values``, the second dimension is of variable
-            length and contains a number of points in reciprocal space, which
-            are in turn length 3 arrays or "vectors" in reciprocal space.
-        """
-
-        # Only valid for uniform Q_values
-        Q_step = (Q_values[1] - Q_values[0]) / 2.
-
-        Q_vectors = []
-        updated_Q_values = []
-        for Q in Q_values:
-            # For each ``Q``, define a shell in momentum space bounded by
-            # ``Q_min`` and ``Q_max`` in which to search for vectors
-            Q_min = Q - Q_step
-            Q_max = Q + Q_step
-
-            vectors = self._calculate_vectors_single_Q(Q_min, Q_max)
-
-            if len(vectors) > 0:
-                Q_vectors.append(np.array(vectors))
-                updated_Q_values.append(Q)
-
-        self.Q_values = updated_Q_values
-
-        return np.array(Q_vectors)
-
-    def _calculate_vectors_single_Q(self, Q_min, Q_max):
-
-        """
-        Calculates a number of Q vectors that have a magnitude between
-        ``Q_min`` and ``Q_max``.
-
-        The upper limit of the number of Q vectors is determined by
-        ``self.n_Q_vectors``.
-
-        Parameters
-        ----------
-        Q_min : float
-            The minimum Q value for which a Q vector can be calculated
-        Q_max : float
-            The maximum Q value for which a Q vector can be calculated
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` of Q vectors which lie within the range defined by
-            ``Q_min`` and ``Q_max``
-        """
-
-        # Define a cube in reciprocal space from the limit of ``Q_max``
-        x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
-                               in self.reciprocal_basis)
-
-        vectors = []
-        for l in range(-x_max, x_max + 1):
-            for m in range(-y_max, y_max + 1):
-                for n in range(-z_max, z_max + 1):
-                    # Within this cube, iterate over reciprocal lattice points
-
-                    if l == m == n == 0:
-                        continue
-
-                    vector = np.array(l * self.reciprocal_basis[0]
-                                      + m * self.reciprocal_basis[1]
-                                      + n * self.reciprocal_basis[2])
-
-                    # If a point satisfies the requirements, append it to the
-                    # list
-                    if Q_min < np.linalg.norm(vector) <= Q_max:
-                        vectors.append(vector)
-
-                    # Return early if we reach our upper limit ``n_Q_vectors``
-                    if len(vectors) >= self.n_Q_vectors:
-                        return np.array(vectors)
-
-        return np.array(vectors)
-
-    def _calculate_SQw(self):
-
-        """
-        Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
-
-        In order to obtain ``len(self.E)`` values in energy, we reflect the
-        intermediate scattering function in time to give it dimensions of
-        ``(len(self.Q), 2 * (len(self.t)) - 2)``. This uses the fact it is even
-        in time, and the number of time points is chosen to be 1 greater than
-        the number of energy points [Rapaport, The Art of Molecular Dynamics
-        Simulation (2nd Edition), 2004, page 142].
-
-        The numpy implementation of the FFT gives frequencies arranged so that
-        the first ``len(self.E)`` points in the energy dimension correspond to
-        positive frequencies, and the remaining points have negative frequency.
-
-        Returns
-        -------
-        numpy.ndarray
-            The S(Q, w) calculated from F(Q, t)
-        """
-
-        nE = len(self.E)
-        if self.use_FFT:
-            # Ensure that if we recorded a longer trajectory than required by
-            # the FFT, we crop it to match the energy points. This should
-            # already be the case, but if the energy values and trajectories
-            # are manually provided it may not be.
-            self.FQt = self.FQt[:, :nE + 1]
-
-        FQt_res = self._apply_instrument_resolution(self.FQt)
-
-        # Reflect F(t) [except for both end points] for each Q value and append
-        # it to F(t) to form an array of shape (n_row, 2*n_col - 2)
-        FQt_mirror = np.append(FQt_res, FQt_res[:, -2:0:-1], axis=1)
-
-        if self.use_FFT:
-            # FFT and reduce the energy dimension to positive energies
-            SQw_cropped = np.fft.fft(FQt_mirror)[:, :nE]
-        else:
-            SQw_cropped = np.zeros((len(FQt_mirror), nE), dtype='complex')
-            for i, energy in enumerate(self.E):
-                # Create 1D array of exponential factors. Dotting with F(Q,t)
-                # sums over the time/energy dimension as required for a
-                # discrete Fourier transform
-                # h_bar is in units of eV s whereas system units are meV fs, so
-                # apply a factor of 1e3 * 1e15 to convert it
-                exp = np.exp(-1j * energy * self.t[:-1] / (h_bar * 1e18))
-                exp_neg = np.exp(1j * energy * self.t[-1:0:-1] / (h_bar * 1e18))
-                exp_mirror = np.append(exp, exp_neg)
-                SQw_cropped[:, i] = np.dot(FQt_mirror, exp_mirror)
-
-        # Normalisation requires factor of dt (in ps, so convert from fs)
-        # see Kneller et al. Comput. Phys. Commun. 91 (1995) 191-214
-        dt = (self.t[1] - self.t[0]) / 1000.
-        # The factor of 0.5 accounts for transforming over the reflected F(Q,t)
-        # By default numpy fft is unnormalized, so to have the same power as in
-        # FQt the transform should be normalized to the length of the spectra
-        return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
-
-    def _apply_instrument_resolution(self, FQt: np.ndarray,
-            function: Callable[..., np.ndarray] = gaussian) -> np.ndarray:
-
-        """
-        If a general ``self.resolution_functions['SQw']`` is defined, we use that to apply
-        resolution to the data. Otherwise, the ``function`` passed is applied to the S(Q,w) data.
-
-        As the S(Q,w) data is calculated from the time domain Fourier transform,
-        F(Q,t), the resolution function can be applied multiplicatively, rather
-        than by convolution by first converting it to the time domain.
-
-        Parameters
-        ----------
-        FQt : numpy.ndarray
-            The F(Q, t) to which the resolution function is applied
-        function : function, optional
-            The resolution function to apply. The default is gaussian.
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` of the same dimensions as ``FQt``
-        """
-
-        N_Q, N_T = np.shape(FQt)
-        resolution_function = self.resolution_functions.get('SQw')
-        if resolution_function is not None:
-            window = self._calculate_resolution_window(resolution_function)
-        elif self.e_res is not None:
-            # If we do not have a resolution function for SQw, use a Gaussian instead. We convert
-            # the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
-            # relationship between the width of a Gaussian and its Fourier
-            # transform rather than explicitly transforming it, applying a factor
-            # of 1e18 to convert from h / h_bar's units of eV s into system units
-            sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
-            window = function(self.t[:N_T], sigma_t, norm=False)
-        else:
-            # no resolution function to apply and just return back FQt
-            return FQt
-
-        # Broadcast the window so that it is applied for all Q values
-        return np.broadcast_to(window, (N_Q, N_T)) * FQt
-
     def calculate_resolution_functions(self, dt):
         """
         Generates a resolution function in momentum and time that can be used in the calculation of
@@ -923,7 +537,7 @@ class AbstractSQw(Observable):
         ----------
         dt : float
             The time spacing to use when performing the inverse Fourier transform in units of `fs`.
-            Ideally this should be the same as the frame seperation expected when applying this
+            Ideally this should be the same as the frame separation expected when applying this
             function.
 
         Returns
@@ -933,6 +547,12 @@ class AbstractSQw(Observable):
             and momentum (respectively) and returns a 2D array of values for the instrument
             resolution.
         """
+
+        # NB: this function is only used by methods in the FileResolution object
+        # (see MDMC.resolution.from_file)
+        # but it hasn't been moved to that file
+        # because it relies so heavily on the SQw object's attributes
+        # that moving it over is a nightmare
 
         # Remove any momentum values with infinite error, and the corresponding values from SQw
         error = self.SQw_err
@@ -961,14 +581,15 @@ class AbstractSQw(Observable):
         # h is in units of eV s whereas system units are meV fs, so
         # apply a factor of 1e3 * 1e15 to convert it
         max_energy_separation = np.amax(np.diff(E_sorted))
-        t_max = h  * 1e18 / (2 * max_energy_separation)
+        t_max = h * 1e18 / (2 * max_energy_separation)
         N_T = int(t_max / dt)
         t_array = np.linspace(- dt * N_T, dt * N_T, N_T)
         SQw_ift = np.zeros((len(SQw_sorted), N_T), dtype='complex')
 
         # In general we do not have equal energy spacing, multiply the exponential factor by this
         # before transposing and dotting to sum over the energy domain
-        exp = np.exp(1j * np.outer(t_array, E_sorted) / (h_bar * 1e18)) * widths
+        exp = np.exp(1j * np.outer(t_array, E_sorted) /
+                     (h_bar * 1e18)) * widths
         SQw_ift = np.dot(SQw_sorted, np.transpose(exp))
 
         # note: the interp2d interpolation function requires input of the form
@@ -987,43 +608,17 @@ class AbstractSQw(Observable):
 
         return {'SQw': data_interpol}
 
-    def _calculate_resolution_window(self, resolution_function: Callable) -> np.ndarray:
-        """
-        Calculate the resolution window in time from a general resolution function in the time
-        domain. Normalise this window so that the sum over energy for each Q
-        value is the same (this enforces that the static structure factor is constant for all Q).
-
-        Parameters
-        ----------
-        resolution_function : Callable
-            The resolution from which to calculate the window
-        N_T : int
-            The number of points in time for FQt
-
-        Returns
-        -------
-        numpy.ndarray
-            An ``array`` with the shape ``(len(self.Q), N_T)``
-        """
-
-        # By definition, the value of the resolution function in the time domain at t=0 is the
-        # integral over all elements in the energy domain (with a factor for normalisation).
-        # Setting this to one for all Q enforces that the static structure factor (the integral of
-        # S(Q,w) over all w) is the same for all Q values in the resolution sample.
-        window = resolution_function(self.t, self.Q)
-        norm = resolution_function([0], self.Q)
-        return window / norm
-
     @property
     def dependent_variables_structure(self) -> Dict[str, list]:
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
-        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for given indices of self.Q and self.E
+        Explicitly: we have that self.SQw[Q_index, E_index] is the data point for
+        given indices of self.Q and self.E
         It also means that:
         np.shape(self.SQw)=(np.size(self.Q), np.size(self.E))
 
-        The purpose of this method is to ensure consistency between different readers/methods which create ``SQw``
-        objects.
+        The purpose of this method is to ensure consistency
+        between different readers/methods which create ``SQw`` objects.
 
         Return
         ------
@@ -1059,107 +654,30 @@ class AbstractSQw(Observable):
 class SQw(AbstractSQw):
 
     """
-    A class for containing, calculating and reading the total dynamic structure
-    factor
+    A class for the total dynamic structure factor
+
+    Calculation is done in the respective FQt object, and this is
+    just a reference to get the correct FQt object.
     """
 
-    def _set_weights(self):
 
-        """
-        Calculate the neutron weighting for coherent and incoherent scattering
-        """
-
-        self.weights = {element:{'coh':B_COH[element],
-                                 'incoh':B_INCOH[element]}
-                        for element in self.trajectory.element_set}
-
-    def _calculate_FQt_single_Q(self, single_Q_vectors):
-        # Inherit docstring of abstract method
-
-        n_t = len(self.t)
-        elements = self.trajectory.element_set
-        FQt_single_Q = np.zeros(n_t)
-        rho_element = {}
-        n_atoms = 0
-
-        for element in elements:
-            # Get the positions of all atoms (the configuration) of each
-            # element over time such that ``element_configs`` has time as its
-            # first dimension and each atom of ``element`` as its second
-            indexes = np.where(np.array(self.trajectory.element_list)
-                               == element)
-            element_configs = [config.positions[indexes] for config
-                               in self.trajectory]
-
-            rho_config = np.zeros((len(element_configs),
-                                   len(single_Q_vectors)),
-                                  dtype=complex)
-            for i, positions in enumerate(element_configs):
-                # For each time frame ``i`` calculate the Fourier transformed
-                # number density and sum over all positions but preserve the
-                # second dimension, our array of Q vectors
-                rho_unsummed = calculate_rho(positions,
-                                             np.array(single_Q_vectors))
-                rho_config[i, :] = np.sum(rho_unsummed, axis=0)
-
-            rho_element[element] = rho_config
-            n_atoms += np.shape(indexes)[1]
-
-            # Incoherent contribution
-            incoh_weights = self.weights[element]['incoh']
-            for atom_positions in np.swapaxes(element_configs, 0, 1):
-                # Swapping the time and position axes lets us iterate over each
-                # atom of ``element``, and gives ``rho_atom`` dimensions of
-                # time and our array of Q vectors respectively.
-                rho_atom = calculate_rho(atom_positions,
-                                         np.array(single_Q_vectors))
-
-                # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q_atom = correlation(rho_atom, normalise=True)[:n_t]
-                FQt_single_Q += FQt_single_Q_atom * incoh_weights**2
-
-        # Calculates the coherent contribution to SQw
-        for element1 in elements:
-            for element2 in elements:
-                # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q += self.weights[element1]['coh'] \
-                                * self.weights[element2]['coh'] \
-                                * correlation(rho_element[element1],
-                                              rho_element[element2],
-                                              normalise=True)[:n_t]
-
-        # Normalise to the number of orthogonal vectors
-        try:
-            norm = np.shape(single_Q_vectors)[0]
-        except IndexError:
-            norm = 1.
-
-        return FQt_single_Q / (n_atoms * norm)
-
-
-@jit('float64[:,:], float64[:,:]', nopython=True)
-def calculate_rho(positions, Q_vector):
+@ObservableFactory.register(('CoherentDynamicStructureFactor',
+                             'SQwCoherent',
+                             'SQwCoh',
+                             'SQw_coh'))
+class SQwCoherent(AbstractSQw):
 
     """
-    Calculates ``t`` dependent number density in reciprocal space for all
-    Q vectors
-
-    As rho is the sum of the contributions for all of the specified Q
-    vectors, these Q vectors should have the same Q value.
-
-    Parameters
-    ----------
-    positions : numpy.ndarray
-        An ``array`` of atomic positions for which the reciprocal space number
-        density should be calculated
-    Q_vector : numpy.ndarray
-        An ``array`` of one or more Q vectors with the same Q value
-
-    Returns
-    -------
-    numpy.ndarray
-        The reciprocal space number density
+    A class for the coherent dynamic structure factor
     """
 
-    return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
-            in range(len(positions))]
+
+@ObservableFactory.register(('IncoherentDynamicStructureFactor',
+                             'SQwIncoherent'
+                             'SQwIncoh',
+                             'SQw_incoh'))
+class SQwIncoherent(AbstractSQw):
+
+    """
+    A class for the incoherent dynamic structure factor
+    """

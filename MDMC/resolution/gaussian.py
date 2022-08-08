@@ -1,0 +1,78 @@
+"""The Gaussian resolution subclass"""
+import numpy as np
+
+from MDMC.resolution.resolution import Resolution
+from MDMC.common.constants import h_bar
+from MDMC.common.resolution_functions import gaussian
+
+
+class GaussianResolution(Resolution):
+    """
+    A `Resolution` subclass for applying a Gaussian resolution
+    """
+
+    def __init__(self, e_res: float):
+        # converts energy resolution from user-friendly ueV to system unit meV
+        self.e_res = e_res / 1000
+
+    def apply(self, FQt, t, Q):
+        N_Q, N_T = np.shape(FQt)
+        window = self.window_in_t(t[:N_T])
+
+        return np.broadcast_to(window, (N_Q, N_T)) * FQt
+
+    def window_in_w(self, w: np.ndarray, mu: float = 0., norm: bool = True) -> np.ndarray:
+        """
+        The Gaussian window in frequency space
+
+        Parameters
+        ----------
+        w: array
+            An array of frequency points.
+        mu: float
+            the offset of the function (defaults to 0)
+        norm: bool
+            if True, normalises the distribution to unity.
+
+        Returns
+        -------
+        array
+            The window function in frequency space (i.e. the Gaussian with
+            FWHM self.e_res, centred on 0)
+        """
+
+        window = gaussian(w, self.e_res, mu, norm)
+
+        return window
+
+    def window_in_t(self, t: np.ndarray) -> np.ndarray:
+        """
+        The Gaussian window in time space
+
+        Parameters
+        ----------
+        t: array
+            An array of time points.
+
+        Returns
+        -------
+        array
+            The Gaussian window over the times in t.
+        """
+
+        # We convert the FWHM energy resolution (in meV) into sigma_t (in fs) using the inverse
+        # relationship between the width of a Gaussian and its Fourier transform,
+        # rather than explicitly transforming it, then applying a factor
+        # of 1e18 to convert from h / h_bar's units of eV s into system units.
+
+        sigma_t = (2 * np.sqrt(2 * np.log(2)) * h_bar * 1e18) / self.e_res
+        window = gaussian(t, sigma_t, norm=False)
+
+        return window
+
+    def __repr__(self):
+        """
+        Resolution objects are represented with the dictionary used to create them
+        """
+
+        return "Resolution" + str({'gaussian': self.e_res})

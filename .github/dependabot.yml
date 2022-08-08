@@ -10,7 +10,5 @@ updates:
     interval: "daily"
     time: "23:00"
   open-pull-requests-limit: 8
-  ignore:
-    - dependency-name: pytest
-      versions:
-        - "> 3.10.0, < 3.10.0"
+  pull-request-branch-name:
+    separator: "-"

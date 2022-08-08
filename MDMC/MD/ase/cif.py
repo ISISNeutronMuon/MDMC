@@ -8,18 +8,23 @@ into ``MDMC.readers.configurations.cif`` when an MDMC CIF reader is implemented.
 """
 
 from itertools import groupby
+from typing import TYPE_CHECKING, Callable
 
 from ase.io.cif import read_cif
 import numpy as np
 
 from MDMC.MD.ase.conversions import ASEAtoms, convert_from_ase_atom
-from MDMC.MD.structural_units import (BoundingBox, get_reduced_chemical_formula)
+from MDMC.MD.structures import (
+    BoundingBox, get_reduced_chemical_formula)
 from MDMC.MD.interactions import Coulombic, Bond, BondAngle, DihedralAngle
 from MDMC.MD.interaction_functions import Coulomb
 
+if TYPE_CHECKING:
+    from MDMC.MD.structures import Atom
+    import ase
 
-def ase_read_cif(file, **settings):
 
+def ase_read_cif(file: str, **settings: dict) -> 'list[Atom]':
     """
     Reads a configuration file and returns a list of ``Atom`` objects.
 
@@ -97,11 +102,14 @@ def ase_read_cif(file, **settings):
     try:
         ase_atoms = list(images)[0]
     except Exception as error:
-        msg = ('MDMC uses the ASE (Atomic Simulation Environment) module for reading your CIF file ({0}), '
-               'which failed. Please see the ASE CIF documentation for help with the CIF format ASE requires.'
-               ' Please note that the ASE CIF reader cannot parse CIF files with user defined text sections so these '
-               'must be stripped out before reading. The full Python stack error message should be shown '
-               'above.').format(file.name)
+        msg = ('MDMC uses the ASE (Atomic Simulation Environment) module '
+               f'for reading your CIF file ({file.name}), '
+               'which failed. Please see the ASE CIF documentation for help '
+               'with the CIF format ASE requires.'
+               ' Please note that the ASE CIF reader cannot parse CIF files '
+               'with user defined text sections so these '
+               'must be stripped out before reading. '
+               'The full Python stack error message should be shown above.')
         raise Exception(msg).with_traceback(error.__traceback__)
 
     ase_atoms = _reduce_ase_unit_cell(ase_atoms)
@@ -111,10 +119,10 @@ def ase_read_cif(file, **settings):
     atom_types = settings.get('atom_types', [None] * len(ase_atoms))
 
     # dict of CIF atom label to MDMC atom
-    atoms_labels = {label:convert_from_ase_atom(atom,
-                                                name=name,
-                                                atom_type=atom_type,
-                                                set_charge=False)
+    atoms_labels = {label: convert_from_ase_atom(atom,
+                                                 name=name,
+                                                 atom_type=atom_type,
+                                                 set_charge=False)
                     for label, atom, name, atom_type
                     in zip(ase_atoms.info['_atom_site_label'],
                            ase_atoms,
@@ -127,11 +135,15 @@ def ase_read_cif(file, **settings):
     # used, a single Coulombic interaction will be created for all atoms with
     # atom_type 1.
     if atom_types[0]:
-        coulombic_key = lambda atom: atom.atom_type
-        bonded_key = lambda atom_arr: [atom.atom_type for atom in atom_arr]
+        def coulombic_key(atom):
+            return atom.atom_type
+        def bonded_key(atom_arr):
+            return [atom.atom_type for atom in atom_arr]
     elif names[0]:
-        coulombic_key = lambda atom: atom.name
-        bonded_key = lambda atom_arr: [atom.name for atom in atom_arr]
+        def coulombic_key(atom):
+            return atom.name
+        def bonded_key(atom_arr):
+            return [atom.name for atom in atom_arr]
     else:
         coulombic_key = bonded_key = None
 
@@ -163,8 +175,9 @@ def ase_read_cif(file, **settings):
     return atoms
 
 
-def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
-
+def get_bonded_interactions_atoms(ase_atoms_info: dict,
+                                  cif_geom_def: str,
+                                  atoms_labels: dict) -> np.ndarray:
     """
     Gets the atoms for each bonded interaction
 
@@ -207,8 +220,8 @@ def get_bonded_interactions_atoms(ase_atoms_info, cif_geom_def, atoms_labels):
     return interactions_atoms
 
 
-def _create_coulombic_interactions(atoms, cutoff, key=None):
-
+def _create_coulombic_interactions(atoms: 'list[Atom]', cutoff: float,
+                                   key: Callable = None) -> None:
     """
     Creates ``Coulombic`` interactions
 
@@ -217,6 +230,8 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
     atoms : list of Atom
         The ``Atom`` objects for which a ``Coulombic`` interaction will be
         created
+    cutoff: float
+        The cutoff distance for the atom's Coulombic interaction.
     key : function
         The key which will be used to group ``Atom`` objects. Grouped ``Atom``
         objects will have a single ``Coulombic`` interaction.
@@ -230,8 +245,9 @@ def _create_coulombic_interactions(atoms, cutoff, key=None):
         Coulombic(atoms=atom_group, cutoff=cutoff, function=Coulomb(0.))
 
 
-def _create_bonded_interactions(interactions_atoms, key=None, **settings):
-
+def _create_bonded_interactions(interactions_atoms: np.ndarray,
+                                key: Callable = None,
+                                **settings: dict) -> None:
     """
     Creates ``BondedInteraction`` objects
 
@@ -272,8 +288,8 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
     elif n_inter_atoms == 4:
         bond_type = DihedralAngle
     else:
-        raise TypeError('{} is not a valid number of atoms for a bonded'
-                        ' interaction'.format(n_inter_atoms))
+        raise TypeError(f'{n_inter_atoms} is not a valid number of atoms for a bonded'
+                        ' interaction')
 
     # If no key is passed, group by id - this will result in each tuple of atoms
     # being in its own group (i.e. no tuples of atoms are grouped together).
@@ -289,8 +305,7 @@ def _create_bonded_interactions(interactions_atoms, key=None, **settings):
         bond_type(*tuple(map(tuple, interaction_atoms)), **settings)
 
 
-def _group_atoms(atoms, key):
-
+def _group_atoms(atoms: 'list[Atom]', key: Callable) -> 'list[tuple[Atom]]':
     """
     Groups atoms based on a key
 
@@ -312,8 +327,7 @@ def _group_atoms(atoms, key):
     return [tuple(group) for _, group in groupby(atoms, key=key)]
 
 
-def _reduce_ase_unit_cell(ase_atoms):
-
+def _reduce_ase_unit_cell(ase_atoms: 'ase.atoms.Atoms') -> ASEAtoms:
     """
     Reduces an ``ase.atoms.Atoms`` object from a unit cell of molecules to a
     single molecule
@@ -352,8 +366,7 @@ def _reduce_ase_unit_cell(ase_atoms):
                     info=ase_atoms.info)
 
 
-def _make_atom_positions_valid(atoms):
-
+def _make_atom_positions_valid(atoms: 'list[Atom]') -> None:
     """
     Sets the positions of all atoms are positive (including 0.)
 

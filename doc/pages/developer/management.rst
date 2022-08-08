@@ -7,8 +7,8 @@ MDMC Software Management
   This section is only relevant to active developers of MDMC, rather than
   general contributors.
 
-MDMC uses Git/GitHub for version control and ZenHub to implement aspects of the
-Agile methodology.
+Currently the agile development process of this package is most close to
+`Kanban <https://en.wikipedia.org/wiki/Kanban_(development)>`_.
 
 Priorities
 ----------
@@ -33,16 +33,6 @@ By default, all newly created issues will have priority **PT**.  Issue contribut
 are instructed not to assign priorities, as this should be done by active
 developers.
 
-Story points
-------------
-All issues are assigned a number of story points which attempt to quantify the
-expected development resources required for the issue. Story points are a
-relative measure and do no correspond to a specific amount of developer hours,
-as this will vary dependent on the currently active developers; however an
-attempt is made to equate 1 story point to ~0.5 developer days.
-
-As with priorities, story points should be specified by active developers.
-
 Pipelines
 ---------
 
@@ -52,7 +42,6 @@ All newly created issues should go here. An active developer should
 then determine:
 
 - the priority of the issue;
-- the number of story points of the issue;
 - and if it needs to be included in the current development cycle or not (move
   to **Backlog** if yes, move to **Icebox** if no).
 
@@ -67,9 +56,7 @@ Backlog
 ^^^^^^^
 Issues worked on during the current development cycle.  No issue with a priority
 lower than **P2** should be in the **Backlog**. Issues should be ordered based
-on priority i.e. all **P5** at the top, all **P2** at the bottom. During sprint
-planning, the **Backlog** should be surveyed to determine which issues will be
-included in the next sprint.
+on priority i.e. all **P5** at the top, all **P2** at the bottom.
 
 In Progress
 ^^^^^^^^^^^
@@ -87,10 +74,3 @@ Closed
 ^^^^^^
 Issues which are closed will automatically move to this pipeline.
 
-
-Sprints
--------
-Each sprint is represented by a Milestone; this allows ZenHub to provide
-burndown reports and velocity tracking. During sprint planning, any issues to be
-added to the sprint should have the relevant Milestone set. The issues within a
-specific sprint can then be viewed by filtering the ZenHub board by Milestone.

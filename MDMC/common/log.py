@@ -7,12 +7,14 @@ from typing import List, Union
 
 from mpi4py import MPI
 
+# pylint: disable=c-extension-no-member
+# to avoid MPI warnings
+
 
 def start_logging(logfile: str = "MDMC.log",
                   level: int = logging.INFO,
                   ranks: Union[int, List[int]] = 0,
                   capture_warnings: bool = True):
-
     """
     Start one or more loggers to capture log information from MDMC
 
@@ -48,7 +50,7 @@ def start_logging(logfile: str = "MDMC.log",
         if rank in ranks:
             # Prepends rank in front of .log extension if it exists, otherwise
             # appends to logfile
-            add = '_{0}_{1}'.format(platform.node(), rank)
+            add = f'_{platform.node()}_{rank}'
             logfile = ('{0}{1}'.format(logfile, add)).replace(
                 '.log{}'.format(add), '{}.log'.format(add))
             logger = _start_single_logger(logfile, level=level)
@@ -81,7 +83,6 @@ def _capture_warnings(logger: logging.Logger):
 def create_logger(name: str = "MDMC",
                   logfile: str = "MDMC.log",
                   level: int = logging.INFO) -> logging.Logger:
-
     """
     Create a formatter logger which outputs to a log file
 

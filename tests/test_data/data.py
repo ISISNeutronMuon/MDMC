@@ -11,6 +11,8 @@ _ABS_DIR_PATH = path.split(path.abspath(__file__))[0]
 _EXP_DATA_PATH = '/experimental_data'
 _CALC_OBS_PATH = '/calculated_observables'
 _OBJECT_PATH = '/MDMC_objects'
+_CONFIG_PATH = '/configurations'
+_GUI_PATH = '/gui'
 
 
 # Reader/experimental data
@@ -20,20 +22,33 @@ _OBJECT_PATH = '/MDMC_objects'
 # J. Chem. Phys. 134, 144508 (2011); https://doi.org/10.1063/1.3578472
 #
 # MantidSQw
-# TODO cite data once published, the Mantid data file was provided by Jeff Armstrong
+# TODO cite data once published, the Mantid data file iris70429_graphite002_red was provided by Jeff Armstrong
+# IRIS_26176_water_data was provided by Spencer Howells
 #
-# XML_SQw
+# xml_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
+#
+# LAMPPDF
+# Pair distribution function (PDF) imported from the netcdf PDF that was calculated with nMOLDYN
+# (OBS_DATA['netcdf_PDF'], using the same trajectory as all OBS_DATA). The data was
+# reformatted into LAMP-style format for PDF data.
 
-READER_DATA = {'LAMPSQw':'/263K05Awat_LAMP',
-               'MantidSQw':'/iris70429_graphite002_red',
-               'XML_SQw':'/Well_s_q_omega_Ar_data.xml'}
+READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
+               'MantidSQw_two_files':'/experimental_data/iris70429_graphite002_red',
+               'MantidSQw_one_file':'/experimental_data/IRIS_26176_water_data.dat',
+               'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
+               'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
+
+CONFIG_DATA = {'cif':'/Paracetamol.cif'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
 # Add paths to data values
 for key in READER_DATA:
-    READER_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + READER_DATA[key]
+    READER_DATA[key] = _ABS_DIR_PATH + READER_DATA[key]
+
+for key in CONFIG_DATA:
+    CONFIG_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + CONFIG_DATA[key]
 
 for key in RESOLUTION_DATA:
     RESOLUTION_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + RESOLUTION_DATA[key]
@@ -58,12 +73,14 @@ for key in RESOLUTION_DATA:
 # Pair distribution function (PDF)
 # Same simulation/trajectory as DISF. PDF calculated from time start:end:step of
 # 51:5001:1000, with rvalues start:end:step of 0.:1.05:0.01. File format is
-# netcdf.
+# netcdf ('netcdf_PDF'). In addition, the data was reformatted file in the style of LAMP output
+# and saved as another file ('lamp_pdf').
 
 OBS_DATA = {'SQw_incoh':'/nMOLDYN_DISF_water.nc',
             'SQw_coh':'/nMOLDYN_DCSF_water.nc',
             'Q_vectors':'/qVectors.dat',
-            'PDF':'/nMOLDYN_PDF_water.nc'}
+            'netcdf_PDF':'/nMOLDYN_PDF_water.nc',
+            'lamp_PDF':'/LAMP_from_nMOLDYN_PDF_water.ref'}
 
 # Add paths to data values
 for key in OBS_DATA:
@@ -81,3 +98,16 @@ OBJECT_DATA = {'trajectory':'/trajectory.zip'}
 # Add paths to data values
 for key in OBJECT_DATA:
     OBJECT_DATA[key] = _ABS_DIR_PATH + _OBJECT_PATH + OBJECT_DATA[key]
+
+# viewer data
+#
+# html files (for X3DOM viewer)
+
+GUI_DATA = {
+    'atoms_X3DOM': '/atoms.html',
+    'water_molecule_X3DOM': '/water_molecule.html',
+    'universe_X3DOM': '/universe.html'
+}
+
+for key in GUI_DATA:
+    GUI_DATA[key] = _ABS_DIR_PATH + _GUI_PATH + GUI_DATA[key]

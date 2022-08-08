@@ -7,6 +7,7 @@ __pycache__
 *.log
 
 *.html
+!tests/test_data/gui/*.html
 
 *.setup
 
@@ -15,3 +16,15 @@ __pycache__
 <fdopen>
 
 .vscode/
+
+log.lammps
+
+.idea/
+
+doc/_build/
+
+build/lib/
+
+results*.csv
+
+MDMC.egg-info/

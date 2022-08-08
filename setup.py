@@ -17,24 +17,27 @@ available on PyPI; therefore a ``requests.exceptions.HTPPError`` will be thrown.
 import sys
 
 from setuptools import setup, find_packages
+from pip._internal.req import parse_requirements
+from pip._internal.network.session import PipSession
 
 # Check for valid Python version
-if sys.version_info[:2] < (3, 0):
-    print('MDMC requires Python 3.0 or better. Python {0:d}.{1:d}'
+if sys.version_info[:2] < (3, 9):
+    print('MDMC requires Python 3.9 or better. Python {0:d}.{1:d}'
           ' detected'.format(*sys.version_info[:2]))
 
+packages_test=find_packages()
 setup(
     name="MDMC",
     version="0.2",
-    desription=('A package for optimising classical molecular dynamics'
+    description=('A package for optimising classical molecular dynamics'
                 ' parameters by refining against experimental data.'),
     packages=find_packages(),
     author="MDMC developers",
     author_email="support@mdmcproject.org",
     url="https://mdmcproject.org/",
     download_url="https://github.com/MDMCproject",
-    install_requires=["numpy", "scipy", "netCDF4", "pandas", "ase>=3.19",
-                      "numba", 'mpi4py', 'ipython'],
+    python_requires='>=3.9', # Python 3.8.9 gets stuck on type tips with brackets -> list[str], so 3.9 is needed
+    install_requires=[pr.requirement for pr in parse_requirements('requirements.txt', session= PipSession())],
     extras_require={"LAMMPS": ["lammps"]},
     entry_points={"console_scripts": ['MDMC = MDMC.utilities.cli:main']},
     include_package_data=True

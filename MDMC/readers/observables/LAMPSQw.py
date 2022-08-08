@@ -1,13 +1,12 @@
 """Readers for dynamic data"""
 
+from typing import IO, Iterable
 import numpy as np
 
-from MDMC.common import units
-from MDMC.common.decorators import unit_decorator
-from MDMC.readers.observables.obs_reader import ObservableReader
+from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class LAMPSQw(ObservableReader):
+class LAMPSQw(SQwReader):
 
     """
     A class for reading SQw files from LAMP
@@ -23,29 +22,38 @@ class LAMPSQw(ObservableReader):
         File containing the independent variables
     file_dep : file
         File containing the dependent variables
-    file_dep_err
+    file_dep_err: file
         File containing the errors on the dependent variables
     """
 
-    def open(self, file_name):
+    def __init__(self, file_name: str):
+        super().__init__(file_name)
+        self._Y_dim = None
+        self._X_dim = None
+        self.file_dep_err = None
+        self.file_dep = None
+        self.file_indep = None
 
+    def __enter__(self) -> None:
         """
         Open the files for independent variables, dependent variables and errors
         on the dependent variables
-
-        Parameters
-        ----------
-        file_name : str
-            The independent file name, which is the base file name for the three
-            files.
         """
+        # pylint: disable=consider-using-with
+        # as this is an abstracted open method
 
-        self.file_indep = open(file_name)
-        self.file_dep = open(file_name + 'ascii')
-        self.file_dep_err = open(file_name + 'ascii_e')
+        self.file_indep = open(self.file_name, encoding='UTF-8')
+        self.file_dep = open(self.file_name + 'ascii', encoding='UTF-8')
+        self.file_dep_err = open(self.file_name + 'ascii_e', encoding='UTF-8')
 
-    def parse(self, **settings):
+    def __exit__(self, exception_type, exception_value, traceback) -> None:
+        """Closes all three files after parsing"""
 
+        self.file_indep.close()
+        self.file_dep.close()
+        self.file_dep_err.close()
+
+    def parse(self, **settings: dict) -> None:
         """
         Parse into SQw format
 
@@ -62,90 +70,7 @@ class LAMPSQw(ObservableReader):
         # result in inf.
         self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
 
-    @property
-    def independent_variables(self):
-
-        """
-        Get the independent variables, Q (in ``Ang^-1``) and E (``meV``)
-
-        Returns
-        -------
-        dict
-            The independent variables Q and E
-        """
-
-        return {"Q":self.Q, "E":self.E}
-
-    @property
-    def dependent_variables(self):
-
-        """
-        Get the dependent variables, SQw (in ``arb``)
-
-        Returns
-        -------
-        dict
-            The dependent variables, SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw]}
-
-    @property
-    def errors(self):
-
-        """
-        Get the errors on the dependent variables
-
-        Returns
-        -------
-        dict
-            The error on SQw (in ``arb``)
-        """
-
-        return {"SQw": [self.SQw_err]}
-
-    @property
-    def E(self):
-
-        """
-        Get or set the energy transfer, E, in meV
-
-        Returns
-        -------
-        numpy.ndarray
-            Energy transfer, E, in ``meV``
-        """
-
-        return self._E
-
-    @E.setter
-    @unit_decorator(unit=units.ENERGY_TRANSFER)
-    def E(self, value):
-
-        self._E = value
-
-    @property
-    def Q(self):
-
-        """
-        Get or set the momentum transfer, Q, in ``Ang^-1``
-
-        Returns
-        -------
-        numpy.ndarray
-            Momentum transfer, Q, in ``Ang^-1``
-        """
-
-        return self._Q
-
-    @Q.setter
-    @unit_decorator(unit=units.LENGTH ** -1)
-    def Q(self, value):
-
-        self._Q = value
-
-    def parse_indep_var(self, file):
-
+    def parse_indep_var(self, file: IO) -> 'tuple[np.ndarray, np.ndarray]':
         """
         Parses the independent variables
 
@@ -163,6 +88,8 @@ class LAMPSQw(ObservableReader):
             (X, Y) where X and Y are arrays of the two independent variables
         """
 
+        # pylint: disable=inconsistent-return-statements
+        # as it breaks the function when changed to return None
         def get_n_elements(line):
             for i in line.split(" "):
                 try:
@@ -183,15 +110,14 @@ class LAMPSQw(ObservableReader):
                 break
 
         file_split = iter([str for line in file for str in line.split(" ")
-            if "Y_COORDINATES" not in line])
+                           if "Y_COORDINATES" not in line])
 
         X = self._get_data(file_split, self._X_dim)
         Y = self._get_data(file_split, self._Y_dim)
 
         return X, Y
 
-    def parse_dep_var(self, file):
-
+    def parse_dep_var(self, file: IO) -> np.ndarray:
         """
         Parses the dependent variables or their errors.
 
@@ -210,29 +136,7 @@ class LAMPSQw(ObservableReader):
         dep = self._get_data(file_split, self._Y_dim, self._X_dim)
         return dep
 
-    def _make_float(self, i):
-
-        """
-        Casts the input to a `float`, or passes if the input cannot be cast
-
-        Parameters
-        ----------
-        i : numeric
-            Input to be cast to `float`
-
-        Returns
-        -------
-        float
-            A non-negative `float`, if the input can be converted to a `float`.
-        """
-
-        try:
-            return np.float64(i)
-        except ValueError:
-            pass
-
-    def _get_data(self, str_iter, *dimensions):
-
+    def _get_data(self, str_iter: Iterable, *dimensions: float) -> np.ndarray:
         """
         Iterates over an iterator from a file and extracts the numerical values
         as data.
@@ -269,7 +173,7 @@ class LAMPSQw(ObservableReader):
         else:
             for k in range(dimensions[0]):
                 var[k] = get_row_data(dimensions[1])
-        # For the 263K05Awat_LAMP data file the outpout is SQw structured such that:
+        # For the 263K05Awat_LAMP data file the output is SQw structured such that:
         # np.shape(SQw) == (np.shape(Q), np.shape(E))
         # this is consistent with SQw as we currently calculate it from MD
         return var

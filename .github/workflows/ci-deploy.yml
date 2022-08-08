@@ -1,0 +1,61 @@
+name: deploy
+# deployment jobs for when master is updated
+
+on:
+  pull_request:
+    types: [closed]
+
+# note that the workflow will be triggered whenever a PR is closed, but the "if:" line of the job means the job will only run if it is closed due to merge
+jobs:
+  update-latest-image:
+    name: Update Docker image
+    if: github.event.pull_request.merged == true
+    # just need an env that include docker, here picked:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Login to Docker
+      env:
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: echo "$DOCKER_PASSWORD" | docker login -u "mdmc" --password-stdin
+
+    - name: Update frontend image for Python modules
+      env:
+        BRANCH: ${{ github.head_ref }} 
+      run: |
+        # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
+        docker pull mdmc/mdmc:ci-$BRANCH || exit 0
+        docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
+        docker push mdmc/mdmc:latest
+
+    - name: Update backend image for MD engines
+      env:
+        BRANCH: ${{ github.head_ref }} 
+      run: |
+        # If no image (mdmc/engines:ci-$BRANCH) was created for this PR, just exit as a success
+        docker pull mdmc/engines:ci-$BRANCH || exit 0
+        docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest
+        docker push mdmc/engines:latest
+
+  update-master-profiling:
+    name: Update master profiling data
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download master profiling for comparison
+      # regular download artifact can only get artifacts from latest run
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: ci-build.yml
+        name: ${{ github.head_ref }}-total-profiling
+
+    - name: Rename to master profiling
+      env:
+        BRANCH: ${{ github.head_ref }}
+      run: mv $BRANCH-total-profiling.csv master-profiling.csv
+    
+    - name: Upload as master profiling
+      uses: actions/upload-artifact@v3
+      with:
+        name: master-profiling
+        path: master-profiling.csv

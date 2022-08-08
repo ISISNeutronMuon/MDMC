@@ -1,20 +1,22 @@
 """A module for performing the refinement"""
-
+import statistics
 from copy import deepcopy
-from time import time
+from typing import List, Dict
+from contextlib import suppress
+from datetime import datetime
 
 import numpy as np
-from numpy.testing import assert_allclose
 import pandas as pd
-from typing import List
 from scipy.interpolate import interp1d, interp2d
-from typing import Dict
+from verbosemanager import VerboseManager
 
-from MDMC.common.constants import h, h_bar
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
-from MDMC.refinement import minimizer, FoM
+from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
+from MDMC.refinement.FoM.FoM_factory import FoMFactory
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -22,7 +24,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
-                'verbose', 'settings')
+                'verbose')
 class Control:
 
     """
@@ -41,10 +43,21 @@ class Control:
           - ``reader`` (`str`) the reader required for the file
           - ``weighting`` (`float`) the weighting of the dataset to be used in
             the Figure of Merit calculation
-          - ``resolution_file`` (`str`, optional, defaults to `None`) a file in
+          - ``resolution`` : (`dict`, but can be `str`, `float`, or None)
+            Should be a one-line dict of format {'file' : str} or {key : float}
+            if {'file' : str}, the str should be a file in
             the same format as ``file_name`` containing results of a vanadium
             sample which is used to determine instrument energy resolution for
-            this dataset (overriding the ``energy_resolution`` setting)
+            this dataset.
+            If {key : float}, the key should be the type of resolution function.
+            allowed types are 'gaussian' and 'lorentzian'
+            Can also be 'lazily' given as just a `str` or `float`.
+            If just a string is given, it is assumed to be a filename.
+            If just a float is given, it is assumed to be Gaussian.
+            The float should be the instrument energy resolution as the FWHM in ``ueV`` (micro eV).
+            If you have already accounted for instrument resolution in your dataset,
+            this field can be set to None, and resolution application will be skipped.
+            This must be done explicitly.
           - ``rescale_factor`` (`float`, optional, defaults to `1.`) applied to
             the experimental data when calculating the FoM to ensure it is on
             the same scale as the calculated observable
@@ -66,8 +79,6 @@ class Control:
         All parameters which will be refined. Note that any ``Parameter`` that is ``fixed``,
         ``tied`` or equal to 0 will not be passed to the minimizer as these cannot be refined.
         Those with ``constraints`` set are still passed.
-    MC_norm : float, optional
-        Determines the accept/reject ratio of the MC. Default is 1.
     minimizer_type : str, optional
         The ``Minimizer`` type. Default is 'MMC'.
     FoM_options : dict of {str : str}, optional
@@ -82,36 +93,38 @@ class Control:
     reset_config : bool, optional
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
-    max_parameter_change : float, optional
-        Maximum factor by which a Parameter can change each step of the
-        refinement. Defaults to `0.01`
     MD_steps : int, optional
         Number of molecular dynamics steps for each step of the refinement.
         When not provided, the minimum number of steps needed for successful
         calculation of the observables is used. If provided, the actual number
         of steps may be reduced to prevent running MD that won't be used when
-        calculting dependent variables. Default is `None`.
+        calculating dependent variables. Default is `None`.
     equilibration_steps : int, optional
         Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
         refinement step. When changes to the ``Parameters`` are small, this equilibration can be
         much shorter than the equilibration needed before starting the refinement process, but in
         general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
         is 0.
-    convergence_tol : float, optional
-        The relative tolerance used to determine if a refinement has converged. If the Figure of Merit and all
-        ``Parameters`` change less than this tolerance between two accepted refinement steps the refinement stops.
-        Default value is 1e-5.
-    min_refinement_steps : int, optional
-        The minimum number of refinement steps before the refinement process can stop if all parameters and the
-        Figure of Merit have converged. Default value is 2.
+     cont_slicing : bool, optional
+        Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+        larger than the minimum required to calculate the observables. If ``False`` (default) then
+        the ``Trajectory`` is sliced into non-overlapping sub-``Trajectory`` blocks for each of
+        which the observable is calculated. If ``True``, then the ``Trajectory`` is sliced into
+        as many non-identical sub-``Trajectory`` blocks as possible (with overlap allowed).
+    use_average : bool, optional
+        Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
+        and the MD ``Trajectory`` is sliced into sub-``Trajectory`` blocks. If ``True`` (
+        default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
+        they are not averaged.
     verbose: int, optional
-        If 2, timings are printed for every step of the refinement. If 1,
-        timings are printed at the end of the refinement. If 0, no timings
-        are printed. In all cases information about the FoM and parameter
-        values will still be printed. Default is 0.
-    **settings
-        ``energy_resolution`` : float
-            Instrument energy resolution as the FWHM in ``ueV`` (micro eV).
+        The level of verbosity:
+        Verbose level 0 gives no information.
+        Verbose level 1 gives final time for the whole method.
+        Verbose level 2 gives final time and also a progress bar.
+        Verbose level 3 gives final time, a progress bar, and time per step.
+    **settings: dict, optional
+        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
+        minimiser is used.
 
     Example
     -------
@@ -121,12 +134,13 @@ class Control:
           'type':'SQw',
           'reader':'LAMPSQw',
           'weight':1.,
-          'resolution_file':data.LAMP_SQW_VAN_FILE
+          'resolution':{'file':data.LAMP_SQW_VAN_FILE}
           'rescale_factor':0.5},
          {'file_name:data.ANOTHER_FILE',
           'type':'FQt',
           'reader':'GENERIC_READER',
           'weight':0.5,
+          'resolution':{'gaussian':2.35}
           'auto_scale':True}]
 
     Attributes
@@ -139,8 +153,6 @@ class Control:
         All ``Parameter`` objects which will be refined
     minimizer : Minimizer
         Refines the potential parameters.
-    settings : `dict`
-        Settings for the MD and minimization.
     observable_pairs : `list` of ``ObservablePairs``
         Experimental observable/MD observable pairs which are used to calculate
         the Figure of Merit
@@ -150,61 +162,67 @@ class Control:
         Number of molecular dynamics steps for each step of the refinement
     """
 
-    MINIMIZER_DICT = {"MMC":minimizer.MMC}
-    FOM_DICT = {"exp":FoM.ChiSquaredExpError, "none":FoM.ChiSquaredNoError}
-
     def __init__(self, simulation: Simulation, exp_datasets: List[dict],
-                 fit_parameters: Parameters, MC_norm: float=1.,
-                 minimizer_type: str='MMC', FoM_options: dict = None,
-                 reset_config: bool=True, MD_steps: int=None,
+                 fit_parameters: Parameters,
+                 minimizer_type: str = 'MMC', FoM_options: dict = None,
+                 reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
-                 convergence_tol: float = 1e-5,
-                 min_refinement_steps: int = 2,
-                 max_parameter_change: float=0.01,
-                 verbose: int=0,
-                 **settings):
+                 verbose: int = 0,
+                 **settings: dict):
 
+        self.step_timings = None
         self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.verbose = verbose
-        self.timings = {'equilibrate':[],
-                        '_run_MD':[],
-                        'convert_trajectory':[],
-                        'FoM_calculator':[],
-                        'minimizer':[],
-                        'TOTAL STEP':[]}
+        self.timings = {'equilibrate': [],
+                        '_run_MD': [],
+                        'convert_trajectory': [],
+                        'FoM_calculator': [],
+                        'minimizer': [],
+                        'TOTAL STEP': []}
 
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
-        fit_parameters = set([p for p in fit_parameters if (not (p.fixed or p.tied)
-                                                            and p.value != 0)])
+        # if a Parameters object, convert to list first for comprehension
+        if isinstance(fit_parameters, Parameters):
+            fit_parameters = list(fit_parameters.values())
+        fit_parameters = [p for p in fit_parameters
+                          if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
-        # Minimizer FoM_old is always initialised to infinity, so that first MC
-        # step (i.e. the setup) is always accepted.
-        self.minimizer = self.MINIMIZER_DICT[minimizer_type](MC_norm,
-                                                             self.fit_parameters,
-                                                             max_parameter_change=max_parameter_change)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
-        self.convergence_tol = convergence_tol
-        self.min_refine_steps = min_refinement_steps
         self.settings = settings
+
+        self.results_filename = settings.get('results_filename',
+                                f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
+        settings['results_filename'] = self.results_filename
+
+        # Minimizer FoM_old is always initialised to infinity, so that first MC
+        # step (i.e. the setup) is always accepted.
+        # pylint: disable=line-too-long
+        # disable this pylint warning as this can't be fixed in a way that looks good
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
+                                                           **settings)
+
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
-            use_FFT = dset.get('use_FFT', True)
+            try:
+                use_FFT = dset['use_FFT']
+            except KeyError:
+                use_FFT = True
+
             exp_observable = self._read_observable_from_file(dset['type'],
-                                                             dset['reader'],
-                                                             dset['file_name'])
-            exp_observable.use_FFT = use_FFT
+                                                        dset['reader'],
+                                                        dset['file_name'],
+                                                        use_FFT)
 
             if exp_observable.uniformity_requirements:
                 exp_observable = self._make_data_uniform(exp_observable)
 
-            MD_observable = self._create_empty_observable(exp_observable)
-            MD_observable.use_FFT = use_FFT
+            MD_observable = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
 
             self._validate_energy(MD_observable)
 
@@ -218,15 +236,16 @@ class Control:
             elif not rescale_factor:
                 rescale_factor = 1.
 
-            observable_pair = FoM.ObservablePair(exp_observable,
-                                                 MD_observable,
-                                                 dset['weight'],
-                                                 rescale_factor=rescale_factor,
-                                                 auto_scale=auto_scale)
+            observable_pair = ObservablePair(exp_observable,
+                                             MD_observable,
+                                             dset['weight'],
+                                             rescale_factor=rescale_factor,
+                                             auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
 
             # Take the largest minimum number of MD_steps needed by any dataset
-            min_MD_steps_dset = self._calculate_minimum_MD_steps(observable_pair)
+            min_MD_steps_dset = self._calculate_minimum_MD_steps(
+                observable_pair)
             minimum_MD_steps = max(minimum_MD_steps, min_MD_steps_dset)
 
         if FoM_options is None or FoM_options.get('error') is None:
@@ -239,63 +258,75 @@ class Control:
         else:
             FoM_norm = FoM_options.get('norm')
 
-        FoM_class = self.FOM_DICT[FoM_error]
-        self.FoM_calculator = FoM_class(self.observable_pairs,
-                                        norm=FoM_norm,
-                                        n_parameters=len(self.fit_parameters))
+        self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
+                                                    norm=FoM_norm,
+                                                    n_parameters=len(self.fit_parameters))
 
         # Use specified MD_steps if supplied, else calculate
+        # cont_slicing produces small sub-trajectories, so calculation is unnecessary
         if MD_steps:
             try:
                 assert MD_steps >= minimum_MD_steps
-                # Set self.MD_steps to be the largest number required by any of
-                # our observable pairs
-                maximum_MD_steps = minimum_MD_steps
-                for pair in self.observable_pairs:
-                    max_MD_steps_pair = self._calculate_maximum_MD_steps(MD_steps, pair)
-                    maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
-                self.MD_steps = maximum_MD_steps
+                if self.settings.get('cont_slicing', False):
+                    self.MD_steps = MD_steps
+                else:
+                    # Set self.MD_steps to be the largest number required by any of
+                    # our observable pairs
+                    maximum_MD_steps = minimum_MD_steps
+                    for pair in self.observable_pairs:
+                        max_MD_steps_pair = self._calculate_maximum_MD_steps(
+                            MD_steps, pair)
+                        maximum_MD_steps = max(maximum_MD_steps, max_MD_steps_pair)
+                    self.MD_steps = maximum_MD_steps
             except AssertionError as error:
                 raise ValueError('Experimental datasets provided require a '
-                                 'minimum MD_steps value of {} in order to '
-                                 'calculate observables'.format(minimum_MD_steps)
-                                 ) from error
+                                 f'minimum MD_steps value of {minimum_MD_steps} in order to '
+                                 'calculate observables') from error
         else:
             self.MD_steps = minimum_MD_steps
 
+        # read in resolutions for experimental datasets
         for i, dset in enumerate(exp_datasets):
-            if dset.get('resolution_file'):
-                resolution_functions = self._read_resolution_from_file(dset['type'],
-                                                                       dset['reader'],
-                                                                       dset['resolution_file'])
-                self.observable_pairs[i].exp_obs.resolution_functions = resolution_functions
-                self.observable_pairs[i].MD_obs.resolution_functions = resolution_functions
+            resolution_factory = ResolutionFactory()
+            dt = self.simulation.time_step * self.simulation.traj_step
 
+            if 'resolution' not in dset.keys():
+                # create list of user keys for resolutions to add to the error
+                userkeys = []
+                for key in resolution_factory.resolutions:
+                    userkeys.append(key.lower().replace('resolution', ''))
+                raise KeyError("A resolution function must be added. Recognised functions are " +
+                               str(userkeys) +
+                               ". If you meant to apply no resolution,"
+                               " then specify resolution as None for the exp_dataset parameters.")
+
+            resolution = resolution_factory.create_instance(dset['resolution'], dset['type'],
+                                                            dset['reader'], dt)
+
+            self.observable_pairs[i].exp_obs.resolution = resolution
+            self.observable_pairs[i].MD_obs.resolution = resolution
+
+        # setup the dataframe for stdout
         setup_frame = pd.DataFrame([[minimizer_type],
-                                    [MC_norm],
                                     [self.FoM_calculator.__class__.__name__],
                                     [len(self.observable_pairs)],
                                     [len(self.fit_parameters)]],
                                    index=['  Minimizer',
-                                          '  MC norm',
                                           '  FoM type',
                                           '  Number of observables',
                                           '  Number of parameters'])
 
-        print('Control created with:\n{}\n'
-              ''.format(setup_frame.to_string(index=True, header=False)))
+        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
-    def __str__(self):
-
+    def __str__(self) -> str:
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
-        return "{0} refining {1} {2} using {3} data types".format(
-            self.__class__.__name__,
-            len(self.fit_parameters),
-            'parameter' if len(self.fit_parameters) == 1 else 'parameters',
-            exp_dataset_types)
 
-    def refine(self, n_steps: int):
+        # plural adds "s" to end of "parameter" if there is more than one parameter
+        plural = ("" if len(self.fit_parameters) == 1 else "s")
+        return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
+                f"using {exp_dataset_types} data types")
 
+    def refine(self, n_steps: int) -> None:
         """
         Refines the specified potential parameters
 
@@ -314,26 +345,26 @@ class Control:
             control.refine(100)
         """
 
+        # calculate verbose steps
+        # 4 steps per refinement step, and n + 1 steps total
+        verbose_steps = (n_steps + 1) * 4
+        # initialise step timings list for average step timings at end
+        self.step_timings = []
+
         count = -1
 
-        self._print_header()
-        while count < n_steps and not self.minimizer.has_converged(conv_tol=self.convergence_tol,
-                                                                   min_steps=self.min_refine_steps):
-            if self.verbose > 0:
-                time_0 = time()
+        self._print_header()  # creates stdout header
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(verbose_steps, verbose=self.verbose)
+        while count < n_steps and not self.minimizer.has_converged():
             if count >= 0 and self.equilibration_steps > 0:
                 self.equilibrate()
-                if self. verbose == 1:
-                    self.timings['equilibrate'].append(time() - time_0)
-                if self.verbose == 2:
-                    print('         equilibrate: {} s'.format(round(time() - time_0, 3)))
 
-            self.step()
+            verbose_manager.header(f"Step {count + 1}")
+            self.step()  # advance the refinement by one step
             count += 1
-            if self.verbose == 1:
-                self.timings['TOTAL STEP'].append(time() - time_0)
-            elif self.verbose == 2:
-                print('          TOTAL STEP: {} s'.format(round(time() - time_0, 3)))
+            if self.verbose == 3:  # if progress bar is there, ensure data is on new line
+                print("")
             self._print_data()
 
         # Try/except accounts for n_steps <= -1
@@ -346,10 +377,8 @@ class Control:
             pass
 
         # print values of final parameters
-        parameter_df = pd.DataFrame({p.name:p.value for p in self.minimizer.parameters},
-                                    index=[0])
-        print('\nFinal Parameters\n{}'
-              ''.format(parameter_df.to_string(index=False)))
+        result_string = self.minimizer.present_result()
+        print(result_string)
 
         # If automatically scaling data print the scale factor for each dataset
         scaling_keys = []
@@ -362,28 +391,16 @@ class Control:
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
-            print('\nAutomatic Scale Factors\n{}'
-                  ''.format(scaling_df.to_string(index=True, header=False)))
+            print(
+                f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
 
-        # Average timings
-        if self.verbose == 1:
-            timing_keys = ['  ' + key for key in self.timings]
-            timing_values = [round(np.mean(values), 3)
-                             for values in self.timings.values()]
-            # Our first 6 timed operations are well defined in __init__, with the first 3 taking
-            # place before calculate_from_MD and the second 3 taking place after. We add
-            # additional entries to self.timings during calculate_from_MD, but as this depends on
-            # the observable we do not know how many, or what keys, beforehand. To preserve the
-            # chronological order of the timed operations, move keys/values 3:6 to the end of the
-            # lists.
-            timing_keys = timing_keys[:3] + timing_keys[6:] + timing_keys[3:6]
-            timing_values = timing_values[:3] + timing_values[6:] + timing_values[3:6]
-            timing_df = pd.DataFrame(timing_values, index=timing_keys)
-            print('\nAverage Timings (s)\n{}'
-                  ''.format(timing_df.to_string(index=True, header=False)))
+        if self.verbose >= 1:
+            average_timing = statistics.mean(self.step_timings)
+            print(f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
 
-    def equilibrate(self):
+        verbose_manager.finish("Refinement")
 
+    def equilibrate(self) -> None:
         """
         Run molecular dynamics to equilibrate the ``Universe``.
         """
@@ -391,19 +408,19 @@ class Control:
         self.simulation.run(self.equilibration_steps, equilibration=True,
                             verbose=False)
 
-    def step(self):
-
+    def step(self) -> None:
         """
         Do a full step: generate and run MD to calculate FoM for existing
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
         """
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(4, verbose=self.verbose)
 
         # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
 
-        if self.verbose > 0:
-            time_0 = time()
+        verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
@@ -418,14 +435,13 @@ class Control:
             else:
                 # Set MD engine to reset to old config
                 self.simulation.engine.reset_config()
-        if self.verbose == 1:
-            self.timings['minimizer'].append(time() - time_0)
-        elif self.verbose == 2:
-            print('           minimizer: {} s'.format(round(time() - time_0, 3)))
 
-        self.minimizer.write_history('results.csv')
+        self.minimizer.write_history(self.results_filename)
 
-    def _print_data(self):
+        step_timings = verbose_manager.finish("Refinement step")
+        self.step_timings.append(step_timings)
+
+    def _print_data(self) -> None:
 
         with pd.option_context('display.max_colwidth', 12,
                                'display.precision', 5,
@@ -436,7 +452,7 @@ class Control:
             data = '{:4d}'.format(n_step) + ''.join(output)
             print(data)
 
-    def _print_header(self):
+    def _print_header(self) -> None:
 
         def format_column(column):
             column = column if len(column) < 13 else column[:9] + '...'
@@ -447,68 +463,53 @@ class Control:
         header = 'Step' + columns
         print(header)
 
-    def _generate_FoM(self):
-
+    def _generate_FoM(self) -> float:
         """
         Run the MD for an iteration/step, calculate observable, compare with
-        observed observed and return the FoM
+        observed and return the FoM
 
         Returns
         -------
         `float`
             Non-negative `float` FoM
         """
-
-        if self.verbose > 0:
-            time_0 = time()
         self._run_MD()
-        if self.verbose == 1:
-            self.timings['_run_MD'].append(time() - time_0)
-        elif self.verbose == 2:
-            print('             _run_MD: {} s'.format(round(time() - time_0, 3)))
-
         self._calculate_observables(self.simulation, self.observable_pairs)
 
-        if self.verbose > 0:
-            time_1 = time()
         FoM_value = self.FoM_calculator.calculate()
-        if self.verbose == 1:
-            self.timings['FoM_calculator'].append(time() - time_1)
-        elif self.verbose == 2:
-            print('      FoM_calculator: {} s'.format(round(round(time() - time_1, 3), 3)))
 
         return FoM_value
 
-    def _run_MD(self):
-
+    def _run_MD(self) -> None:
         """
         Run a molecular dynamics simulation
         """
 
         self.simulation.run(self.MD_steps, verbose=False)
 
-    def _update_engine_parameters(self):
-
+    def _update_engine_parameters(self) -> None:
         """
         Update the force field parameters of the MD engine
         """
 
         self.simulation.engine.update_parameters()
 
-    def _read_observable_from_file(self, type: str, reader: str, file_name: str,
-                                   resolution_file_name: str = None):
-
+    @staticmethod
+    def _read_observable_from_file(obstype: str, reader: str, file_name: str,
+                                   use_FFT: bool = True) -> Observable:
         """
         Creates an Observable of the specified type and reads in data from file
 
         Parameters
         ----------
-        type : str
+        obstype : str
             The ``type`` of the ``Observable``.
         reader : str
             The ``type`` of the ``Reader``.
         file_name : str
             The absolute or relative path and the file name.
+        use_FFT: bool, optional
+            boolean determining if the FFT should be used, default is True
 
         Returns
         -------
@@ -516,49 +517,13 @@ class Control:
             An ``Observable`` of specified ``type``
         """
 
-        observable = ObservableFactory.create_observable(type)
+        observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
+        observable.use_FFT = use_FFT
         return observable
 
-    def _read_resolution_from_file(self, data_type: str, reader: str, file_name: str):
-
-        """
-        Reads resolution data for the specified ``data_type`` from file and interpolates it
-        to give a dictionary of general resolution functions in the time domain for each dependent
-        variable.
-
-        Note that if this resolution function is used on data outside its original range, then it
-        will use nearest neighbour extrapolation. Additionally, the input will be reflected in the
-        time/energy domain as symmetry about 0 is assumed. If for whatever reason this is not
-        appropriate for the data in question, this function should not be used.
-
-        This may not be supported for all ``Observable`` types.
-
-        Parameters
-        ----------
-        data_type : str
-            The ``type`` of the ``Observable``.
-        reader : str
-            The ``type`` of the ``Reader``.
-        file_name : str
-            The absolute or relative path of the resolution file name.
-
-        Returns
-        -------
-        dict
-            A dictionary with keys for each dependent variable, where the
-            values are resolution functions for that variable.
-        """
-
-        resolution_obs = self._read_observable_from_file(data_type,
-                                                         reader,
-                                                         file_name)
-
-        dt = self.simulation.time_step * self.simulation.traj_step
-        return resolution_obs.calculate_resolution_functions(dt)
-
-    def _create_empty_observable(self, exp_observable):
-
+    @staticmethod
+    def _create_empty_observable(exp_observable: Observable, use_FFT: bool = True) -> Observable:
         """
         Creates a ``Observable`` without data but with independent variables
         specified from another ``Observable``.  This is a placeholder in which
@@ -568,6 +533,8 @@ class Control:
         ----------
         exp_observable : Observable
             An ``Observable`` with defined independent variables.
+        use_FFT: bool, optional
+            boolean determining if the FFT should be used, default is True
 
         Returns
         -------
@@ -580,11 +547,12 @@ class Control:
         observable.origin = 'MD'
         observable.independent_variables = deepcopy(
             exp_observable.independent_variables)
-        observable.resolution_functions = exp_observable.resolution_functions
+        observable.use_FFT =  use_FFT
         return observable
 
-    def _calculate_observables(self, simulation, observable_pairs):
-
+    def _calculate_observables(self,
+                               simulation: Simulation,
+                               observable_pairs: 'list[ObservablePair]') -> None:
         """
         Calculates all of the ``Observable`` objects from the MD
         trajectory/configurations
@@ -597,42 +565,24 @@ class Control:
             ``ObservablesPairs`` for which the MD ``Observable`` will be
             calculated
         """
+        verbose_manager = VerboseManager.instance()
+        # this is a subprocess, so we don't bother giving maximum steps since it won't be used
+        verbose_manager.start(0, verbose=self.verbose)
 
-        if self.verbose > 0:
-            time_0 = time()
+        verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
-        if self.verbose == 1:
-            self.timings['convert_trajectory'].append(time() - time_0)
-        elif self.verbose == 2:
-            print('  convert_trajectory: {} s'.format(round(time() - time_0, 3)))
 
+        verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
-            maximum_frames = pair.MD_obs.maximum_frames()
-            if maximum_frames:
-                # If there is a limit on the number of frames the observable
-                # can use in calculations, split the trajectory into as many
-                # subsets of this length as we can
-                sub_trj = []
-                n_averages = len(trj) // maximum_frames
-                for i in range(n_averages):
-                    sub_trj.append(trj[i * maximum_frames : (i + 1) * maximum_frames])
-                obs_timings = pair.MD_obs.calculate_from_MD(sub_trj,
-                                                            verbose=self.verbose,
-                                                            **self.settings)
-            else:
-                # Otherwise, provide the whole trajectory
-                obs_timings = pair.MD_obs.calculate_from_MD([trj],
-                                                            verbose=self.verbose,
-                                                            **self.settings)
-
+            obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
                     if key not in self.timings:
                         self.timings[key] = []
                     self.timings[key] += value
+        verbose_manager.finish("Calculating observables")
 
-    def _calculate_minimum_MD_steps(self, observable_pair: FoM.ObservablePair):
-
+    def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
         """
         Calculates the minimum number of steps required for the MD engine in
         order to calculate MD ``Observables`` objects with the same independent
@@ -660,8 +610,7 @@ class Control:
         return traj_step * minimum_frames
 
     def _calculate_maximum_MD_steps(self, MD_steps: int,
-                                    observable_pair: FoM.ObservablePair):
-
+                                    observable_pair: ObservablePair) -> int:
         """
         Calculates the maximum number of steps that ``observable_pair`` will be
         able to use when calculating dependent variables whilst still being
@@ -699,7 +648,8 @@ class Control:
 
         return maximum_steps * (MD_steps // (maximum_steps))
 
-    def _is_data_uniform(self, observable: Observable) -> Dict[str, Dict[str, bool]]:
+    @staticmethod
+    def _is_data_uniform(observable: Observable) -> Dict[str, Dict[str, bool]]:
         """
         Checks if the values for each independent variable of an ``Observable`` are uniformly
         spaced and if they start at zero. This information is returned in a single dictionary.
@@ -720,34 +670,40 @@ class Control:
 
         Examples
         --------
-        >>> control._is_data_uniform(self, observable)
+        >>> _is_data_uniform(observable)
         {'E': {'uniform': True, 'zeroed': True}, 'Q': {'uniform': True, 'zeroed': False}}
         """
         uniformity_dict = {}
         for var_key, var_data in observable.independent_variables.items():
-            uniform_data = np.linspace(min(var_data), max(var_data), num=len(var_data))
+            uniform_data = np.linspace(
+                min(var_data), max(var_data), num=len(var_data))
             is_uniform = np.allclose(var_data, uniform_data, rtol=1e-5)
-            uniformity_dict[var_key] = {'uniform': is_uniform, 'zeroed': var_data[0] == 0}
+            uniformity_dict[var_key] = {
+                'uniform': is_uniform, 'zeroed': var_data[0] == 0}
         return uniformity_dict
 
     def _make_data_uniform(self, observable: Observable) -> Observable:
         """
-        Takes an ``Observable``, checks the requirements for its ``independent_variables`` to be uniform or start at
-        zero, creates uniform grids for the variables that do not satisfy their requirement, interpolates the
-        ``dependent_variables`` as needed, and returns an ``Observable`` with the uniform/interpolated variables.
-        Currently limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
+        Takes an ``Observable``, checks the requirements for its ``independent_variables``
+        to be uniform or start at zero, creates uniform grids for the variables that do not
+        satisfy their requirement, interpolates the ``dependent_variables`` as needed,
+        and returns an ``Observable`` with the uniform/interpolated variables.
+        Limited to ``Observables`` with two-dimensional ``dependent_variables`` (e.g. SQw).
+        This may change in future.
 
         Parameters
         ----------
         observable : Observable
-            An ``Observable`` for which the independent variables need to be made uniform / to start at zero. Currently
+            An ``Observable`` for which the independent variables
+            need to be made uniform / to start at zero. Currently
             limited to ``Observables`` for which the ``dependent_variables`` are two-dimensional.
 
         Returns
         -------
         ``Observable``
-            Returns a copy of the passed ``Observable`` with the independent variables put onto uniform grid (for the
-            variables where that is necessary) and the dependent variables interpolated onto the same grid
+            Returns a copy of the passed ``Observable`` with the independent variables put onto
+            uniform grid (for the variables where that is necessary)
+            and the dependent variables interpolated onto the same grid
         """
         # get the uniformity requirements from the Observable
         uniformity_required = observable.uniformity_requirements
@@ -761,13 +717,15 @@ class Control:
         # loop through requirements
         for var_key, var_required in uniformity_required.items():
             var_state = uniformity_state[var_key]
-            # if the variable has a requirement AND it is not satisfied (for either uniformity OR zero-start)
+            # if the variable has a requirement AND it is not satisfied
+            # (for either uniformity OR zero-start)
             # then add it to the list of variables that need to be changed
             if (var_required['uniform'] and not var_state['uniform']) or \
                     (var_required['zeroed'] and not var_state['zeroed']):
                 indep_vars_to_be_changed.append(var_key)
 
-        # if all uniformity requirements are already satisfied simply return the original observable
+        # if all uniformity requirements are already satisfied
+        # simply return the original observable
         if not indep_vars_to_be_changed:
             return observable
 
@@ -784,7 +742,8 @@ class Control:
                     minimum = min(data)
                 uniform_data = np.linspace(minimum, max(data), num=len(data))
                 indep_var_uniform[var_key] = uniform_data
-            # if uniformity requirements are satisfied already, add the data points to the helper dictionary
+            # if uniformity requirements are satisfied already,
+            # add the data points to the helper dictionary
             else:
                 indep_var_uniform[var_key] = observable.independent_variables[var_key]
 
@@ -798,10 +757,9 @@ class Control:
                 assert len(data_list) == 1
                 data = data_list[0]
             except AssertionError as error:
-                msg = ('Expected experimental dataset to only have one dependent '
-                       'variable entry for {0}, but found {1} instead'
-                       ''.format(var_key, len(data_list)))
-                raise AssertionError(msg) from error
+                raise AssertionError('Expected experimental dataset to only have one dependent '
+                                     f'variable entry for {var_key}, '
+                                     f'but found {len(data_list)} instead') from error
 
             # determine the dimension of the dependent variable
             var_dimension = data.ndim
@@ -823,13 +781,14 @@ class Control:
                 # interp2d(x, y, z)
                 # where if np.size(x)=m and np.size(y)=n then np.shape(z)=(n,m)
                 # E.g. if x = [0,1,2]; y = [0,3]; z = [[1,2,3], [4,5,6]]
-                # Because Observable.dependent_variables_structure gives the order in which the independent variables
-                # are represented in the np.shape of the data, we have to reverse the order of the x and y arrays
-                # for interp2d:
+                # Because Observable.dependent_variables_structure gives the order in which
+                # the independent variables are represented in the np.shape of the data,
+                # we have to reverse the order of the x and y arrays for interp2d:
                 x_data = observable.independent_variables[var_indexing[var_key][1]]
                 y_data = observable.independent_variables[var_indexing[var_key][0]]
                 data_interpol = interp2d(x_data, y_data, data)
-                # get the independent_variables that satisfy the uniformity requirements as created earlier
+                # get the independent_variables that satisfy the uniformity requirements
+                # as created earlier
                 x_uniform = indep_var_uniform[var_indexing[var_key][1]]
                 y_uniform = indep_var_uniform[var_indexing[var_key][0]]
                 uniform_data = data_interpol(x_uniform, y_uniform)
@@ -840,16 +799,16 @@ class Control:
                 err_uniform = err_interpol(x_uniform, y_uniform)
                 err_uniform[err_uniform == 0.] = float('inf')
             else:
-                raise NotImplementedError('Only 1D and 2D data can currently be made uniform')
+                raise NotImplementedError(
+                    'Only 1D and 2D data can currently be made uniform')
             # save the uniform data and errors back into the Observable
-            observable._dependent_variables[var_key] = [uniform_data]
-            observable._errors[var_key] = [err_uniform]
+            observable.dependent_variables[var_key] = [uniform_data]
+            observable.errors[var_key] = [err_uniform]
         # finally, set the independent variables of the ``Observable`` to the uniform ones
         observable.independent_variables = indep_var_uniform
         return observable
 
-    def _validate_energy(self, obs: Observable):
-
+    def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
         it does not have a ``validate_energy`` function itself
@@ -862,16 +821,10 @@ class Control:
         Returns
         -------
         None
-
-        Raises
-        ------
-        AssertionError
         """
 
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
-        try:
+        with suppress(AttributeError):
             obs.validate_energy(dt)
-        except AttributeError:
-            pass

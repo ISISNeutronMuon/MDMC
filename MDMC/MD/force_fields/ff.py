@@ -9,7 +9,6 @@ MD engine facades, so that a correspondence is established between the MDMC
 force field and the MD engine equivalent."""
 
 from abc import ABC, abstractmethod
-from functools import lru_cache
 from inspect import signature
 from itertools import chain, permutations
 import logging
@@ -18,7 +17,7 @@ from re import escape, sub
 
 import pandas as pd
 
-from MDMC.common.decorators import repr_decorator
+from MDMC.common.decorators import repr_decorator, weakref_cache
 from MDMC.common.df_operations import filter_dataframe, filter_ordered_dataframe
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.MD import interaction_functions
@@ -41,7 +40,6 @@ class ForceField(ABC):
     @property
     @abstractmethod
     def interaction_dictionary(self):
-
         """
         The `dict` of interactions that exist within the ``ForceField``
 
@@ -57,7 +55,6 @@ class ForceField(ABC):
         raise NotImplementedError
 
     def parameterize_interactions(self, interactions):
-
         """
         Parameterizes the interactions with the parameters speicifed in the
         ``interaction`` `dict`
@@ -72,7 +69,6 @@ class ForceField(ABC):
             self._parameterize_interaction(interaction)
 
     def _parameterize_interaction(self, interaction):
-
         """
         Parameterizes the interaction with the parameters specified in the
         ``interaction`` `dict`
@@ -88,9 +84,9 @@ class ForceField(ABC):
             interaction.function = self.interaction_dictionary[
                 (type(interaction), elements)]
             interaction.function.set_parameters_interactions(interaction)
-        except KeyError:
+        except KeyError as error:
             raise KeyError("This force field does not have defined interactions"
-                           " for these element types")
+                           " for these element types") from error
 
 
 @repr_decorator('interaction_dictionary', 'n_body')
@@ -103,7 +99,6 @@ class WaterModel(ForceField):
     @property
     @abstractmethod
     def n_body(self):
-
         """
         This is the number of bodies in the water model.
 
@@ -129,7 +124,8 @@ class FileForceField(ForceField):
     def __init__(self):
 
         self.data = {}
-        with open(self.absolute_path) as file:
+        self._interaction_dictionary = None
+        with open(self.absolute_path, encoding='UTF-8') as file:
             n_datatypes = self._parse_header(file.readline(), int)
             self.inter_functions = dict(self._parse_header(file.readline(),
                                                            str))
@@ -154,7 +150,6 @@ class FileForceField(ForceField):
 
     @property
     def absolute_path(self):
-
         """
         Get the absolute path of the data
 
@@ -176,7 +171,6 @@ class FileForceField(ForceField):
     @property
     @abstractmethod
     def file_name(self):
-
         """
         Get the file name of the data
         """
@@ -185,7 +179,6 @@ class FileForceField(ForceField):
 
     @property
     def atoms(self):
-
         """
         Get file parameters for the atoms defined within the force field
 
@@ -204,7 +197,6 @@ class FileForceField(ForceField):
 
     @property
     def bonds(self):
-
         """
         Get file parameters for the bonds of the force field
 
@@ -219,7 +211,6 @@ class FileForceField(ForceField):
 
     @property
     def bond_angles(self):
-
         """
         Get file parameters for the bond angles of the force field
 
@@ -234,7 +225,6 @@ class FileForceField(ForceField):
 
     @property
     def propers(self):
-
         """
         Get file parameters for the proper dihedrals of the force field
 
@@ -249,7 +239,6 @@ class FileForceField(ForceField):
 
     @property
     def impropers(self):
-
         """
         Get file parameters for the improper dihedrals of the force field
 
@@ -264,7 +253,6 @@ class FileForceField(ForceField):
 
     @property
     def dispersions(self):
-
         """
         Get file parameters for the dispersion interactions of the force field
 
@@ -288,7 +276,6 @@ class FileForceField(ForceField):
             return self._interaction_dictionary
 
     def filter_element(self, element):
-
         """
         Filters the atoms in the ``FileForceField`` by element
 
@@ -308,7 +295,6 @@ class FileForceField(ForceField):
         return filter_dataframe([element], self.atoms, column_names=['element'])
 
     def set_atom_mass(self, atom):
-
         """
         Sets ``Atom.mass`` to the mass defined in the force field for that atom
         type
@@ -325,7 +311,6 @@ class FileForceField(ForceField):
         atom.mass = ff_atom.mass
 
     def _parameterize_interaction(self, interaction):
-
         """
         Parameterizes the interaction with the parameters specified in the
         ``interaction`` `dict`
@@ -343,7 +328,6 @@ class FileForceField(ForceField):
             self._parametrize_dispersion(interaction)
 
     def _parametrize_bonded(self, bonded):
-
         """
         Parametrizes a ``BondedInteraction``
 
@@ -363,10 +347,9 @@ class FileForceField(ForceField):
                     tuple_groups.append(self.atom_name_group[(atom.name,
                                                               atom.element)])
                 except KeyError as error:
-                    msg = ('Unable to find atom of element "{0}" recorded with'
-                           ' the name "{1}" in the specified force field file.'
-                           ''.format(atom.element, atom.name))
-                    raise KeyError(msg) from error
+                    raise KeyError(f'Unable to find atom of element "{atom.element}" recorded with'
+                                   f' the name "{atom.name}" '
+                                   'in the specified force field file.') from error
 
             groups.add(tuple(tuple_groups))
 
@@ -378,9 +361,9 @@ class FileForceField(ForceField):
         # same regardless of the different atom groups, however this is not
         # implemented.
         if len(groups) != 1:
-            msg = ('The atom groups of this interaction are not consistent {0}.'
+            msg = (f'The atom groups of this interaction are not consistent {groups}.'
                    ' Atom tuples should have the same groups in the same'
-                   ' order.'.format(groups))
+                   ' order.')
             LOGGER.error('%s: %s',
                          self.__class__,
                          msg)
@@ -434,9 +417,7 @@ class FileForceField(ForceField):
             # If there are no matches in the file, then raise an error
             msg = 'Unable to find bond information for specified atoms: '
             for i, atom_type in enumerate(groups):
-                msg += ('atom_group{0} - {1} ({2}), '
-                        ''.format(i, atom_type,
-                                  self.atom_type_name[atom_type]))
+                msg += f'atom_group{i} - {atom_type} ({self.atom_type_name[atom_type]}), '
             raise ValueError(msg[:-2])
 
         # Get the parameter names for the InteractionFunction. This means that
@@ -460,7 +441,6 @@ class FileForceField(ForceField):
                                        settings)
 
     def _parametrize_coulombic(self, coulombic):
-
         """
         Assumes that all force fields have a ``Coulomb`` ``InteractionFunction``
 
@@ -472,10 +452,8 @@ class FileForceField(ForceField):
 
         # Check we have atoms to apply interaction to
         if len(coulombic.atoms) == 0:
-            msg = ('Unable to find any atoms of types {} in the Universe to '
-                   'apply the Coulombic interaction to'
-                   ''.format(coulombic.atom_types))
-            raise ValueError(msg)
+            raise ValueError(f'Unable to find any atoms of types {coulombic.atom_types} '
+                             'in the Universe to apply the Coulombic interaction to')
 
         # Different atom names could be defined within the same coulombic
         # Both atom name and element are required to uniquely identify the atom
@@ -496,7 +474,7 @@ class FileForceField(ForceField):
         if len(unique_charges) != 1:
             # If not, show the corresponding atom rows in the error message
             msg = ('All atoms of the Coulombic interaction must have the same'
-                   ' OPLS charge ({0})'.format(matching_atoms))
+                   f' OPLS charge ({matching_atoms})')
             LOGGER.error('%s %s',
                          self.__class__,
                          msg)
@@ -506,7 +484,6 @@ class FileForceField(ForceField):
                                        unique_charges)
 
     def _parametrize_dispersion(self, dispersion):
-
         """
         While dispersion interactions can be defined between unlike atom types,
         this is not the case for any major force field implementation (e.g.
@@ -536,11 +513,9 @@ class FileForceField(ForceField):
                     for (key, value) in dispersion.universe.atom_types.items():
                         if len(value) > 0:
                             existing_types.append(key)
-                    msg = ('No atoms of type "{0}" found, the Universe '
-                           'contains only the types {1}'
-                           ''.format(dispersion.atom_types[0][i],
-                                     existing_types))
-                    raise ValueError(msg)
+                    raise ValueError(f'No atoms of type "{dispersion.atom_types[0][i]}" '
+                                     'found, the Universe contains only the types '
+                                     f'{existing_types}')
 
                 atom_pair.append(atom_type_pair[0])
 
@@ -575,14 +550,13 @@ class FileForceField(ForceField):
 
         unique_parameters = list(chain.from_iterable([matching_disps[n].unique()
                                                       for n in parameter_names])
-                                )
+                                 )
         self._check_nonbonded_parameters(unique_parameters, parameter_names,
                                          matching_disps)
         self._set_interaction_function(dispersion, function_type,
                                        unique_parameters)
 
     def _get_interaction_function(self, interaction_type):
-
         """
         Gets the ``InteractionFunction`` for the corresponding ``Interaction``
 
@@ -602,10 +576,8 @@ class FileForceField(ForceField):
         function_name = self.inter_functions[interaction_type.lower()]
         return getattr(interaction_functions, function_name)
 
-
-    @lru_cache(maxsize=None)
+    @weakref_cache(maxsize=None)
     def _convert_atom_type_name(self, atom):
-
         """
         Converts all ``Atom`` objects with ``Atom.name`` that are a valid force
         field type (i.e. can be cast to an `int`) into the corresponding force
@@ -633,13 +605,12 @@ class FileForceField(ForceField):
         try:
             atom.name = self.atom_type_name[int(atom.name)]
         except (KeyError, ValueError) as err:
-
             # Check if atom.name is already a name in the atoms DataFrame
             if filter_dataframe([atom.name], self.atoms,
                                 column_names=['name']).empty:
                 msg = ('All atom names must be an OPLS atom type or an OPLS'
-                       ' atom name. {0} is not an OPLS atom type of atom'
-                       ' name.'.format(atom.name))
+                       f' atom name. {atom.name} is not an OPLS atom type of atom'
+                       ' name.')
                 LOGGER.error('%s %s',
                              self.__class__,
                              msg,
@@ -648,7 +619,6 @@ class FileForceField(ForceField):
 
     @staticmethod
     def _get_parameter_names(function, file_parameter_names=None):
-
         """
         Gets the names of the parameters of function, excluding ``self`` and
         ``**settings``
@@ -693,10 +663,10 @@ class FileForceField(ForceField):
             # signature agree with the order of the parameter names in the file.
             # If this is the case, assume file parameter names are correctly
             # ordered and use these, otherwise raise a ValueError
-            if any([parameter_names[i] != file_parameter_names[i] for i
-                    in range(len(parameter_names))]):
-                msg = ('The force field data file has incorrectly ordered {0}'
-                       ' parameters'.format(parameter_names))
+            if any(parameter_names[i] != file_parameter_names[i] for i
+                    in range(len(parameter_names))):
+                msg = (f'The force field data file has incorrectly ordered {parameter_names}'
+                       ' parameters')
                 LOGGER.error('FileForceField: %s',
                              msg)
                 raise ValueError(msg)
@@ -708,7 +678,6 @@ class FileForceField(ForceField):
     def _check_nonbonded_parameters(function_parameters,
                                     function_parameter_names,
                                     matching_inters):
-
         """
         Checks that the parameters for an ``InteractionFunction`` for a
         ``NonBondedInteraction`` are valid
@@ -734,7 +703,7 @@ class FileForceField(ForceField):
 
         if len(function_parameters) != len(function_parameter_names):
             msg = ('All atoms of the interaction must have the same OPLS'
-                   ' parameters ({0})'.format(matching_inters))
+                   f' parameters ({matching_inters})')
             LOGGER.error('FileForceField: %s',
                          msg)
             raise ValueError(msg)
@@ -742,7 +711,6 @@ class FileForceField(ForceField):
     @staticmethod
     def _set_interaction_function(interaction, function_type,
                                   function_parameters, function_settings=None):
-
         """
         Initialises an ``InteractionFunction`` with specified parameters and
         settings and sets it for an ``Interaction``
@@ -769,7 +737,6 @@ class FileForceField(ForceField):
 
     @staticmethod
     def _parse_header(header, dtype):
-
         """
         Parses a force field file header line
 
@@ -795,7 +762,6 @@ class FileForceField(ForceField):
 
     @staticmethod
     def _set_col_type(column):
-
         """
         Sets the type of a ``DataFrame`` column to either a `float` or an `int`,
         if possible

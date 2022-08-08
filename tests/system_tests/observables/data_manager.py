@@ -11,6 +11,7 @@ import pytest
 
 from tests.test_data import data
 
+pytestmark = [pytest.mark.lammps]
 
 @pytest.fixture(scope="session")
 def trajectory():

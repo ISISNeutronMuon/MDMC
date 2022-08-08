@@ -20,4 +20,33 @@ If on Linux, add your user to the ``docker`` permissions group with ``sudo userm
 
 Next, install `Visual Studio Code <https://code.visualstudio.com/>`_ and then install the `Remote Development extension pack <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>`_.
 
-Finally, with the MDMC project open in VSCode, open the Command Palette (by pressing F1) and run the command **Remote-Containers: Open Folder in Container...** to open the MDMC project inside the MDMC container.
+Finally, simply start VSCode within the MDMC repo using `code .` or open the
+MDMC repo in VSCode, after a moment, a box in the bottom right-hand corner
+pops up saying "Folder contains a Dev Container configuration file...". Then, click
+"Reopen in Container". If this box does not pop up then open the Command Palette
+(by pressing F1) and run the command **Remote-Containers: Open Folder in
+Container...** toopen the MDMC project inside the MDMC container.
+
+In addition, to run or debug the tutorials:
+
+* open terminal in VSCode
+* run `python -m pip install .` to install MDMC
+* Then simply open relevant jupyter notebook tutorial in VSCode to run or debug
+
+Note the way this works is that VSCode makes the MDMC repo visible inside the
+container. This means that when you `python -m pip install .` it will install
+MDMC with reference to that folder, including picking up (as per normal)
+any old build/lib files from previously installs. So if you experience that
+this setup appears to magically pick up an old version of MDMC then you need to
+delete the build/lib folder in your repo (as you would need to also if you
+didn't use containers).
+
+Finally to build the documentation:
+
+* run `apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16`
+* if not already done install MDMC with `python -m pip install .`
+* cd into `doc` folder and run `make html`. First time you run it will take a bit of time because it runs the code in all the tutorials
+
+Note the extra `apt-get install` packages needed to build the docs may change from time to time.
+Please the see the continious integration build instructions which builds the
+docs for up-to-date instructions on which `apt-get` packages are needed.

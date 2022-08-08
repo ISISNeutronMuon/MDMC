@@ -2,8 +2,9 @@
 
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
-
+from types import ModuleType
 from MDMC.MD.engine_facades.facade import MDEngine
+
 
 class MDEngineFacadeFactory:
 
@@ -14,8 +15,7 @@ class MDEngineFacadeFactory:
     """
 
     @staticmethod
-    def create_facade(module_name):
-
+    def create_facade(module_name: str) -> MDEngine:
         """
         Parameters
         ----------
@@ -32,7 +32,7 @@ class MDEngineFacadeFactory:
         try:
             module = import_module('.' + module_name, __package__)
         except ImportError:
-            module = MDEngineFacadeFactory._import_from_alias(module_name)
+            module = MDEngineFacadeFactory.import_from_alias(module_name)
 
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
@@ -41,15 +41,19 @@ class MDEngineFacadeFactory:
         return classes[0][1]()
 
     @staticmethod
-    def _import_from_alias(alias):
-
+    def import_from_alias(alias: str) -> ModuleType:
         """
         Converts an ``alias`` into a module name
         """
 
-        if alias.upper() == 'MMTK':
-            module_name = 'mmtk'
-        elif alias.upper() == 'LAMMPS' or alias.lower() == 'lammps_engine':
-            module_name = 'lammps_engine'
+        alias = alias.lower()
+        engines = ['lammps_engine', 'dlpoly_engine']
+        if not alias.endswith('_engine'):
+            alias += '_engine'
+        if alias in engines:
+            module_name = alias
+        else:
+            raise ImportError(f"The MD engine {alias} is not in the list of recognised engines, "
+                              f"which currently comprises: {engines}")
 
         return import_module('.' + module_name, __package__)

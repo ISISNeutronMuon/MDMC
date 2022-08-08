@@ -12,10 +12,11 @@ from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
                                            Periodic)
 from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
                                 Ewald, PPPM, KSpaceSolver, Simulation)
-from MDMC.MD.structural_units import (Atom)
+from MDMC.MD.structures import (Atom)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 from MDMC.trajectory_analysis.trajectory import Trajectory
 
+pytestmark = [pytest.mark.lammps]
 
 CUTOFF = 3.14
 COUL_CUTOFF = 8.0
@@ -49,7 +50,7 @@ def atoms():
 
     Ordering of atoms is to enable ease of comparison with atoms added to
     LAMMPS, as this is done ordered by atom_type, rather than necessary the
-    order which atoms appear in universe.atom_list
+    order which atoms appear in universe.atoms
     """
 
     symbols = ['C', 'H', 'N', 'O']
@@ -87,7 +88,7 @@ def universe_interactions(empty_universe, atoms):
     """
 
     for atom in atoms:
-        empty_universe.add_structural_unit(atom)
+        empty_universe.add_structure(atom)
 
     # Create InteractionFunctions for bonds, angles, dihedrals and dispersive
     # interactions
@@ -316,11 +317,18 @@ def ensemble(populated_lammps_simulation):
     """
 
     populated_lammps_simulation.lin_momentum_steps = None
-    return lmp_eng.Ensemble(populated_lammps_simulation.lmp,
-                            time_step=1.)
+    return lmp_eng.LAMMPSEnsemble(populated_lammps_simulation.lmp,
+                                  time_step=1.)
 
 @pytest.fixture
-def lammps_engine(universe):
+def simulation(universe):
+    """
+    A mock simulation to give the engine facade its necessary 'parent simulation'
+    """
+    return Simulation(universe, traj_step=1, time_step=1., engine='lammps')
+
+@pytest.fixture
+def lammps_engine(universe, simulation):
 
     """
     Returns:
@@ -329,8 +337,9 @@ def lammps_engine(universe):
     """
 
     lammps_engine = lmp_eng.LAMMPSEngine()
+    lammps_engine.parent_simulation = simulation
     lammps_engine.setup_universe(universe)
-    lammps_engine.setup_simulation(traj_step=1, time_step=1.)
+    lammps_engine.setup_simulation()
     return lammps_engine
 
 
@@ -439,9 +448,9 @@ def test_atom_type_mass(lammps_universe, universe):
     Tests that the mass of each atom type is set correctly in LAMMPS
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].mass
-                == universe.atom_list[i].mass)
+                == universe.atoms[i].mass)
 
 
 def test_atom_ID(lammps_universe, universe):
@@ -453,10 +462,10 @@ def test_atom_ID(lammps_universe, universe):
     # Atom IDs in universe are offset by some integer related to the number of
     # time the atoms fixture is called. If this offset is subtracted, the IDs
     # should agree exactly with the LAMMPS atom IDs
-    offset = universe.atom_list[0].ID - 1
-    for i in range(len(universe.atom_list)):
+    offset = universe.atoms[0].ID - 1
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].id
-                == universe.atom_list[i].ID - offset)
+                == universe.atoms[i].ID - offset)
 
 
 def test_atom_type(lammps_universe, universe):
@@ -465,9 +474,9 @@ def test_atom_type(lammps_universe, universe):
     Tests that atoms created in LAMMPS have the correct atom types
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].type
-                == universe.atom_list[i].atom_type)
+                == universe.atoms[i].atom_type)
 
 
 def test_atom_position(lammps_universe, universe):
@@ -476,9 +485,9 @@ def test_atom_position(lammps_universe, universe):
     Tests that atoms created in LAMMPS have the correct position
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (np.array(lammps_universe.lmp.atoms[i].position)
-                == universe.atom_list[i].position).all()
+                == universe.atoms[i].position).all()
 
 
 def test_unimplemented_interactions(lammps_universe, universe):
@@ -839,9 +848,9 @@ def test_atom_charge_set(lammps_universe, universe):
     Tests that atom charges are set correctly
     """
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].charge
-                == universe.atom_list[i].charge)
+                == universe.atoms[i].charge)
 
 
 def test_atom_charges_update(lammps_universe, universe):
@@ -854,13 +863,13 @@ def test_atom_charges_update(lammps_universe, universe):
     """
 
     # Change charges and update LAMMPSEngine
-    for atom in universe.atom_list:
+    for atom in universe.atoms:
         atom.charge *= 2.
     lammps_universe._update_charges()
 
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (lammps_universe.lmp.atoms[i].charge
-                == universe.atom_list[i].charge)
+                == universe.atoms[i].charge)
 
 
 @pytest.mark.parametrize('interaction_fixture, lmp_name',
@@ -891,7 +900,7 @@ def test_update_individual_interactions(lammps_universe, interaction_fixture,
     # Scale all parameters for all interactions
     for interaction in interactions:
         for parameter in interaction.parameters:
-            parameter.value *= 2
+            interaction.parameters[parameter].value *= 2
 
     if interaction_fixture == 'dispersions':
         lammps_universe._update_dispersions(lammps_universe.universe)
@@ -915,7 +924,7 @@ def test_update_all_interactions(lammps_universe, interactions):
     # Scale all parameters for all interactions
     for interaction in interactions:
         for parameter in interaction.parameters:
-            parameter.value *= 2
+            interaction.parameters[parameter].value *= 2
 
     lammps_universe.update_parameters()
 
@@ -928,7 +937,7 @@ def test_update_charges_error():
     """
 
     universe = Universe(10.)
-    universe.add_structural_unit(Atom('H'))
+    universe.add_structure(Atom('H'))
     with pytest.raises(AttributeError):
         lmp_eng.LAMMPSUniverse(universe)
 
@@ -1314,7 +1323,7 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
                                                  traj_step=10,
                                                  lmp=lammps_universe.lmp)
 
-    for i, atom in enumerate(universe.atom_list):
+    for i, atom in enumerate(universe.atoms):
         # MDMC atoms should be unchanged, but the LAMMPS atoms should have velocities
         assert np.all(np.array(atom.velocity) == 0)
         assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity) != 0)
@@ -1335,7 +1344,7 @@ def test_initialize_nonzero_velocities(universe, temperature):
 
     # Set the MDMC velocities
     velocity = []
-    for i, atom in enumerate(universe.atom_list):
+    for i, atom in enumerate(universe.atoms):
         velocity.append(np.array((-(i + 1), 0, i + 1)))
         atom.velocity = velocity[i]
 
@@ -1349,7 +1358,7 @@ def test_initialize_nonzero_velocities(universe, temperature):
     # LAMMPS should scale all velocities by the same amount to ensure the temperature is accurate.
     # Get this factor from the first atom, as it had an initial velocity of 1 in the z direction.
     scale_factor = lammps_simulation.lmp.atoms[0].velocity[2]
-    for i, atom in enumerate(universe.atom_list):
+    for i, atom in enumerate(universe.atoms):
         assert np.all(np.array(atom.velocity) == velocity[i])
         assert np.all(np.array(lammps_simulation.lmp.atoms[i].velocity)
                       == scale_factor * velocity[i])
@@ -1423,7 +1432,10 @@ def test_remove_momentum(populated_lammps_simulation, momentum_steps,
                            {'temperature':400., 't_damp':100}),
                           ('rescale', ['nve', 'temp/rescale'],
                            {'temperature':100., 't_fraction':0.5,
-                            't_window':10., 'rescale_step':100})])
+                            't_window':10., 'rescale_step':100}),
+                          ('csvr', ['nve', 'temp/csvr'],
+                           {'temperature': 400., 't_damp': 100})
+                          ])
 def test_apply_thermostat(ensemble, thermostat, styles, attributes):
 
     """
@@ -1542,9 +1554,9 @@ def test_save_config(lammps_engine, universe):
     lammps_engine.save_config()
     # Positions should be the same as those of the MDMC universe atoms, which
     # are also ordered by ID
-    for i in range(len(universe.atom_list)):
+    for i in range(len(universe.atoms)):
         assert (np.array(lammps_engine.saved_config[i][:3])
-                == universe.atom_list[i].position).all()
+                == universe.atoms[i].position).all()
 
 
 def test_reset_config(lammps_engine):
@@ -1612,23 +1624,6 @@ def test_minimize(args, lammps_engine):
     assert lammps_engine.lmp.eval('pe') < start_energy
 
 
-@pytest.mark.parametrize('verbose', [False, True])
-def test_minimize_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling minimize with different verbose arguments results in the
-    expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps')
-    sim.minimize(0, verbose=verbose)
-
-    verbose_msg = ('Starting minimization for 0 steps\n'
-                   'Minimization complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
-
-
 @pytest.mark.parametrize('thermostat, barostat, add_args',
                          [(None, None, {}),
                           ('nose', None, {}),
@@ -1645,9 +1640,8 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # it is not being used in this test
     # add_args is a dictionary of additional arguments that are required for the
     # specific ensemble
-    lammps_engine.setup_simulation(traj_step=1, time_step=1., temperature=300.,
-                                   thermostat=thermostat, barostat=barostat,
-                                   **add_args)
+    lammps_engine.setup_simulation(temperature=300., thermostat=thermostat,
+                                   barostat=barostat, **add_args)
 
     n_steps = 20
     lammps_engine.lmp.run(n_steps)
@@ -1655,40 +1649,6 @@ def test_setup_simulation_run(lammps_engine, thermostat, barostat,
     # Test that the largest step number in the LAMMPS wrapper runs attribute
     # (which records ThermoData from the previous run) is correct
     assert max(lammps_engine.lmp.runs[0][0].Step) == n_steps
-
-
-@pytest.mark.parametrize('verbose', [False, True])
-def test_run_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with different verbose arguments results in the
-    expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps')
-    sim.run(0, verbose=verbose)
-
-    verbose_msg = ('Starting simulation for 0 steps\n'
-                   'Simulation complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
-
-
-@pytest.mark.parametrize('verbose', [False, True])
-def test_equilibration_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with ``equilibration=True`` and different verbose
-    arguments results in the expected stdout
-    """
-
-    sim = Simulation(universe, 1, engine='lammps', temperature=1)
-    sim.run(0, equilibration=True, verbose=verbose)
-
-    verbose_msg = ('Starting equilibration for 0 steps\n'
-                   'Equilibration complete in ')
-    stdout = capsys.readouterr().out
-    assert (verbose_msg in stdout) == verbose
 
 
 @pytest.mark.parametrize("value", [1., 5, -100, -13.])

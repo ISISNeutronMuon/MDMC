@@ -6,7 +6,7 @@ import pytest
 
 from MDMC.MD.force_fields.force_field_factory import ForceFieldFactory
 from MDMC.MD.simulation import Universe
-from MDMC.MD.structural_units import (Atom, Molecule)
+from MDMC.MD.structures import (Atom, Molecule)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
 
 
@@ -21,16 +21,16 @@ def water_universe():
     """
 
     universe = Universe(10.0)
-    H1 = Atom('H', charge=0.)
+    H1 = Atom('H', charge=0., cutoff=10.)
     H2 = H1.copy(position=(0., 1.63298, 0.))
-    O = Atom('O', position=(0., 0.81649, 0.57736), charge=0.)
+    O = Atom('O', position=(0., 0.81649, 0.57736), charge=0., cutoff=10.)
     water_mol = Molecule(position=(0, 0, 0),
                          velocity=(0, 0, 0),
                          atoms=[H1, H2, O],
                          interactions=[Bond((H1, O), (H2, O), constrained=True),
                                        BondAngle(H1, O, H2, constrained=True)],
                          name='water')
-    universe.add_structural_unit(water_mol)
+    universe.add_structure(water_mol)
     O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                               vdw_tail_correction=True)
     H_dispersion = Dispersion(universe, (H1.atom_type, H1.atom_type),
@@ -53,14 +53,14 @@ def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
     assignment of virtual atoms, as these have not been implemented.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
         # Check that initial charges are 0.
         assert atom.charge == 0.
     water_universe.add_force_field('OPLSAA')
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         if atom.element == 'H':
             assert atom.charge == H_charge
         else:
@@ -79,14 +79,14 @@ def test_opls_water_model_masses(water_universe, model):
     All water models have the same H and O mass.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
         # Check that initial masses are not the same as model masses
         assert atom.mass not in [1.008, 15.999]
     water_universe.add_force_field('OPLSAA')
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         if atom.element == 'H':
             assert atom.mass == 1.008
         else:
@@ -110,7 +110,7 @@ def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
     parametrized.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -140,7 +140,7 @@ def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
     parametrization.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -167,7 +167,7 @@ def test_opls_water_model_bond_angle_parameters(water_universe, model,
     parametrization.
     """
 
-    for atom in water_universe.atom_list:
+    for atom in water_universe.atoms:
         name = model + ' Water '
         atom.name = name + 'H' if atom.element == 'H' else name + 'O'
     water_universe.add_force_field('OPLSAA')
@@ -414,7 +414,7 @@ def _validate_interaction_parameters(interaction, expected_parameters):
         If the interaction parameters are not equal to the expected_parameters
     """
 
-    for actual, expected in zip(interaction.parameters, expected_parameters):
+    for actual, expected in zip(interaction.parameters.as_array, expected_parameters):
         assert actual.value == expected
 
 
@@ -494,8 +494,8 @@ def test_name_element_error():
     # name=1 corresponds to a F atom in OPLSAA
     H1 = Atom('H', name=1)
     H2 = Atom('H', name=1)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     Bond((H1, H2))
     with pytest.raises(KeyError):
         uni.add_force_field('OPLSAA')
@@ -511,8 +511,8 @@ def test_undefined_bond_error():
     # There is no OPLSAA bond between two "7" atoms
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     Bond((H1, H2))
     with pytest.raises(ValueError):
         uni.add_force_field('OPLSAA')
@@ -528,8 +528,8 @@ def test_coulombic_error():
     uni = Universe(10.)
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     # We only have atom_type of 1
     Coulombic(uni, atom_types=[2])
     with pytest.raises(ValueError):
@@ -546,8 +546,8 @@ def test_dispersion_error():
     uni = Universe(10.)
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
-    uni.add_structural_unit(H1)
-    uni.add_structural_unit(H2)
+    uni.add_structure(H1)
+    uni.add_structure(H2)
     # We only have atom_type of 1
     Dispersion(uni, atom_types=[2])
     with pytest.raises(ValueError):

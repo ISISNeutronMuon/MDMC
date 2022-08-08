@@ -1,14 +1,16 @@
 """Module which defines decorators"""
 
 from functools import wraps
+import functools
 import textwrap
 from types import FunctionType
+from typing import Optional, Callable, Union
+import weakref
 
 from MDMC.common.units import UnitFloat, unit_array
 
 
-def unit_decorator(unit):
-
+def unit_decorator(unit: Union[str, None]) -> Callable:
     """
     Decorates ``property.setter`` methods to add units
 
@@ -18,7 +20,7 @@ def unit_decorator(unit):
 
     Suitable for use with setter methods that either take `float` (or objects
     that can be cast to `float`), or NumPy `array` (or objects that can be cast
-    to NumPy `array`)
+    to NumPy `array`).
 
     Parameters
     ----------
@@ -37,7 +39,7 @@ def unit_decorator(unit):
     -------
     Add a ``unit_decorator`` to the ``position`` ``property``::
 
-        >>> Class Atom(StructuralUnit):
+        >>> Class Atom(Structure):
         ...
         ...     @property
         ...     def position(self):
@@ -74,8 +76,7 @@ def unit_decorator(unit):
     return decorator
 
 
-def unit_decorator_getter(unit):
-
+def unit_decorator_getter(unit: Union[str, None]) -> Callable:
     """
     Decorates ``property.getter`` methods to add units
 
@@ -134,8 +135,7 @@ def unit_decorator_getter(unit):
     return decorator
 
 
-def set_docstring(docstring):
-
+def set_docstring(docstring: str) -> Callable:
     """
     Decorator for setting the docstring of a function, method, class or property
 
@@ -217,8 +217,7 @@ def set_docstring(docstring):
     return decorator
 
 
-def mod_docstring(replacements):
-
+def mod_docstring(replacements: 'dict[str, str]') -> Callable:
     """
     Decorator for modifying the docstring of a function, method, class or
     property
@@ -315,8 +314,7 @@ def mod_docstring(replacements):
     return decorator
 
 
-def wrap_docstring(docstring, line_length):
-
+def wrap_docstring(docstring: str, line_length: int) -> Callable:
     """
     Wraps a docstring to a specific line length.
 
@@ -383,8 +381,7 @@ def wrap_docstring(docstring, line_length):
     return ''.join(wrapped)
 
 
-def repr_decorator(attribute, *attributes):
-
+def repr_decorator(attribute: str, *attributes: Optional[str]):
     """
     Implements ``__repr__`` for a class using passed attributes (including
     properties)
@@ -422,7 +419,7 @@ def repr_decorator(attribute, *attributes):
     attribute and the ``position`` property::
 
         >>> @repr_decorator('name', 'position')
-        ... Class Atom(StructuralUnit):
+        ... Class Atom(Structure):
         ...
         ...     def __init__(self, element, name, position):
         ...         self.element = element
@@ -447,14 +444,37 @@ def repr_decorator(attribute, *attributes):
             attrs = (attribute,) + attributes
             # Using getattr rather than __dict__ avoids problems with __slots__
             # and properties
-            repr_dict = {attr:getattr(self, attr) for attr in attrs}
-            attributes_str = ''.join([key + ': ' + repr(value) +',\n  '
+            repr_dict = {attr: getattr(self, attr) for attr in attrs}
+            attributes_str = ''.join([key + ': ' + repr(value) + ',\n  '
                                       for key, value in repr_dict.items()])
             attributes_str = attributes_str.strip(',\n ')
-            return ('<{0}\n'
-                    ' {{{1}}}>').format(self.__class__.__name__, attributes_str)
+            return (f'<{self.__class__.__name__}\n'
+                    f' {{{attributes_str}}}>')
 
         cls.__repr__ = __repr__
 
         return cls
     return decorator
+
+
+def weakref_cache(maxsize=128) -> Callable:
+    """
+    Weakref LRU cache to avoid memory leaks
+
+    Caches on instance methods store `self`, which can
+    lead to excess memory use. This avoids it
+    by only holding a weakref to the instance.
+    """
+    def wrapper(func):
+
+        @functools.lru_cache(maxsize)  # create a 'semi-static' cached version of the method
+        def _func(_self, *args, **kwargs):
+            return func(_self(), *args, **kwargs)
+
+        @functools.wraps(func)  # call the 'semi-static' method with weakref
+        def inner(self, *args, **kwargs):
+            return _func(weakref.ref(self), *args, **kwargs)
+
+        return inner
+
+    return wrapper

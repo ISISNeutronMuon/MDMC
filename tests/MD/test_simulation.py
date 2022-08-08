@@ -8,12 +8,12 @@ import numpy.testing as npt
 import pytest
 from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
-from MDMC.MD import interactions
+from MDMC.MD import interactions, Parameters
 from MDMC.MD.force_fields.ff import WaterModel
-from MDMC.MD.interaction_functions import Parameter
+from MDMC.MD.interaction_functions import LennardJones, Parameter
 import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
-import MDMC.MD.structural_units as su
+import MDMC.MD.structures as su
 
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
@@ -63,7 +63,7 @@ def water_SPCE_universe(water_molecule):
     water_universe = sim.Universe(UNIVERSE_DIMENSIONS)
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
-    O_atom_type = next(atom.atom_type for atom in water_universe.atom_list
+    O_atom_type = next(atom.atom_type for atom in water_universe.atoms
                        if atom.element == 'O')
     O_dispersion = interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
     return water_universe
@@ -147,10 +147,10 @@ def test_create_atom(atom):
                             '_CoM_frame_positions'])
                          ]
                         )
-def test_copy_structural_unit(unit, changed_attr):
+def test_copy_structures(unit, changed_attr):
 
     """
-    Tests that structural_unit.copy copies the correct attributes and modifies
+    Tests that structures.copy copies the correct attributes and modifies
     the other attributes
 
     Checks that for all structural units which are not subunits (which is all
@@ -173,14 +173,14 @@ def test_copy_structural_unit(unit, changed_attr):
 def test_copy_composite_rotation(water_molecule):
 
     """
-    Tests that CompositeStructuralUnit.copy can have rotate passed
+    Tests that CompositeStructure.copy can have rotate passed
     """
 
     cpy_unit = water_molecule.copy(position=(5., 5., 5.),
                                    rotation=(90., 0., 270.))
     water_molecule.rotate(x=90., z=270.)
     position_diff = np.array([5., 5., 5.]) - np.array(WATER_POSITION)
-    for original, copied in zip(water_molecule.atom_list, cpy_unit.atom_list):
+    for original, copied in zip(water_molecule.atoms, cpy_unit.atoms):
         assert np.allclose(original.position,
                            (copied.position - position_diff),
                            5)
@@ -189,7 +189,7 @@ def test_copy_composite_rotation(water_molecule):
 def test_structure_unique_ID(water_SPCE_universe):
 
     """
-    Tests that each StructuralUnit in water_SPCE_universe has a unique ID
+    Tests that each Structure in water_SPCE_universe has a unique ID
 
     Also creates copies of an atom and a molecule and tests that their IDs are
     unique
@@ -201,7 +201,7 @@ def test_structure_unique_ID(water_SPCE_universe):
 
     assert len(IDs) == len(set(IDs))
 
-    cpy_atom = water_SPCE_universe.atom_list[0].copy([1., 1., 1.])
+    cpy_atom = water_SPCE_universe.atoms[0].copy([1., 1., 1.])
     assert cpy_atom.ID not in IDs
 
     cpy_molecule = water_SPCE_universe.molecule_list[0].copy([5., 5., 5.])
@@ -230,7 +230,7 @@ def test_structure_parent():
         assert atom.parent is molecule
 
     cpy_molecule = molecule.copy([5., 5., 5.])
-    for atom in cpy_molecule.atom_list:
+    for atom in cpy_molecule.atoms:
         assert atom.parent is cpy_molecule
 
 
@@ -247,13 +247,66 @@ def test_top_level_structure(water_molecule):
     assert atom.top_level_structure is atom
     assert water_molecule.top_level_structure is water_molecule
 
-    for atom in water_molecule.atom_list:
+    for atom in water_molecule.atoms:
         assert atom.top_level_structure is water_molecule
 
 
-def test_atom_list(atom):
+def test_equivalent_top_level_structures_dict(
+    universe: sim.Universe, water_molecule: su.Molecule,
+):
 
-    assert atom in atom.atom_list
+    """
+    Test that ``Universe.equivalent_top_level_structures_dict`` correctly
+    counts all equivalent structures and atoms.
+    """
+
+    H1 = su.Atom('H', mass=H_MASS)
+    H2 = su.Atom('H', position=H2_POSITION, mass=H_MASS)
+    O = su.Atom('O', position=O_POSITION, mass=O_MASS)
+    interactions.Coulombic(atoms=[H1, H2])
+    interactions.Coulombic(atoms=O)
+    water_copy = su.Molecule(position=[1,1,1], atoms=[H1, H2, O],
+                             interactions=[interactions.Bond((H1, O), (H2, O)),
+                                           interactions.BondAngle(H1, O, H2)],
+                             name='water_copy')
+
+    atom = su.Atom('Ar', charge=0., cutoff=10.)
+    interactions.Dispersion(universe=universe,
+                            atom_types=(atom.atom_type, atom.atom_type),
+                            cutoff=8.,
+                            vdw_tail_correction=True,
+                            function=LennardJones(1.0243, 3.36))
+
+    atom_copy = su.Atom('Ar', charge=0., position=[2, 2, 2], cutoff=10.)
+    interactions.Dispersion(universe=universe,
+                            atom_types=(atom_copy.atom_type, atom_copy.atom_type),
+                            cutoff=8.,
+                            vdw_tail_correction=True,
+                            function=LennardJones(1.0243, 3.36))
+
+    # Add a Molecule and atom that was created using the same parameters,
+    # but different Python objects
+    universe.fill(water_molecule, num_struc_units=27)
+    universe.add_structure(water_copy)
+    universe.fill(atom, num_struc_units=64)
+    universe.add_structure(atom_copy)
+
+    equivalent_dict = universe.equivalent_top_level_structures_dict
+    keys = list(equivalent_dict.keys())
+    assert len(keys) == 2
+
+    assert isinstance(keys[0], su.Molecule)
+    assert keys[0].formula == "H2O"
+    assert equivalent_dict[keys[0]] == 28
+
+    assert isinstance(keys[1], su.Atom)
+    assert keys[1].element == "Ar"
+    assert equivalent_dict[keys[1]] == 65
+
+
+def test_atoms(atom):
+
+    assert atom in atom.atoms
 
 
 def test_atom_type(atom):
@@ -272,7 +325,7 @@ def test_atom_type(atom):
 def test_add_atom(universe, atom):
 
     """
-    Tests that atom is added to Universe.atom_list
+    Tests that atom is added to Universe.atoms
 
     Tests that both Universe.atom_types and Atom.atom_type are updated
 
@@ -281,8 +334,8 @@ def test_add_atom(universe, atom):
 
     atom_coulombic = interactions.Coulombic(atoms=atom)
     assert len(universe.atom_types) == 0
-    universe.add_structural_unit(atom)
-    assert atom.atom_list == universe.atom_list
+    universe.add_structure(atom)
+    assert atom.atoms == universe.atoms
     assert atom.atom_type == 1
     assert atom in universe.atom_types[1]
     assert interactions.Coulombic == type(universe.interactions.pop())
@@ -290,10 +343,10 @@ def test_add_atom(universe, atom):
 
 def test_add_molecule(universe, water_molecule):
 
-    universe.add_structural_unit(water_molecule)
+    universe.add_structure(water_molecule)
     assert water_molecule.position.all() == np.array(WATER_POSITION).all()
-    assert (sorted(water_molecule.atom_list, key=id)
-            == sorted(universe.atom_list, key=id))
+    assert (sorted(water_molecule.atoms, key=id)
+            == sorted(universe.atoms, key=id))
 
     water_CoM = ((np.array(H1_POSITION) * H_MASS)
                  + (np.array(H2_POSITION) * H_MASS)
@@ -306,13 +359,13 @@ def test_add_molecule(universe, water_molecule):
 
     for i in range(len(atom_pos_water_CoM_frame)):
         assert atom_pos_water_CoM_frame[i].all() ==\
-                                    water_molecule.atom_list[i].position.all()
+                                    water_molecule.atoms[i].position.all()
 
     # Test interactions have expected element lists - 1 bond angle, 2 H-O bonds,
     # 1 dispersive on O, 1 Coulombic on O, and 2 Coulombic on H
 
     # Add Dispersion interaction
-    O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
+    O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
                        if atom.element == 'O')
     O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
@@ -324,9 +377,9 @@ def test_add_molecule(universe, water_molecule):
 
 def test_spce_water_molecule(universe, water_molecule):
 
-    universe.add_structural_unit(water_molecule)
+    universe.add_structure(water_molecule)
     # Add Dispersion interaction
-    O_atom_type = next(atom.atom_type for atom in water_molecule.atom_list
+    O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
                        if atom.element == 'O')
     O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
@@ -346,7 +399,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # and the correspoding Parameter value
     parameters = []
     for function in functions:
-        {p.name:p.value for p in function.parameters}
+        {p.name: p.value for p in function.parameters.values()}
 
     # Test interaction parameters
     SPCEparameters = [{'charge':-0.8476}, {'charge':0.4238}, {'charge':0.4238},
@@ -360,17 +413,17 @@ def test_spce_water_molecule(universe, water_molecule):
         SPCEparameters.remove(parameter)
 
 
-@parametrize('structural_unit', [fixture_ref(atom), fixture_ref(water_molecule)])
-def test_add_structural_unit_center(universe, structural_unit, request):
+@parametrize('structures', [fixture_ref(atom), fixture_ref(water_molecule)])
+def test_add_structure_center(universe, structures, request):
 
     """
-    Tests that passing center=True to Universe.add_structural_unit adds the
-    structural_unit to the center of the Universe
+    Tests that passing center=True to universe.add_structure adds the
+    structures to the center of the Universe
     """
 
-    assert all(structural_unit.position != universe.dimensions / 2)
-    universe.add_structural_unit(structural_unit, center=True)
-    assert all(structural_unit.position == universe.dimensions / 2)
+    assert all(structures.position != universe.dimensions / 2)
+    universe.add_structure(structures, center=True)
+    assert all(structures.position == universe.dimensions / 2)
 
 
 def test_spce_water_box(water_SPCE_universe):
@@ -392,12 +445,12 @@ def test_spce_water_box(water_SPCE_universe):
     # Dispersion = 1
     # Bond = 2N/3
     # BondAngle = N/3
-    N = len(water_SPCE_universe.atom_list)
+    N = len(water_SPCE_universe.atoms)
     assert len(water_SPCE_universe.interactions) == N + 3
 
     # TODO: Test for correct positions
-    # water_positions = sorted([list(structural_unit.position)
-    #                           for structural_unit
+    # water_positions = sorted([list(structures.position)
+    #                           for structures
     #                           in water_SPCE_universe.configuration])
     # intermol_dist = np.array(UNIVERSE_DIMENSIONS) / int(n_molecules**(1./3.))
     # calc_positions = []
@@ -417,8 +470,8 @@ def test_universe_membership(water_SPCE_universe):
     Tests that structures that have not been added to a universe have
     self.universe == None
 
-    Does not test for the effects of copying a StructuralUnit, as this is
-    tested in test_copy_structural_unit
+    Does not test for the effects of copying a Structure, as this is
+    tested in test_copy_structures
     """
 
     uni_false = sim.Universe(5.)
@@ -445,13 +498,13 @@ def test_translate(unit, universe):
             assert list(position) in uni_positions
 
     unit_position = unit.position
-    atom_positions = [atom.position for atom in unit.atom_list]
-    universe.add_structural_unit(unit)
+    atom_positions = [atom.position for atom in unit.atoms]
+    universe.add_structure(unit)
     positions_in_universe(atom_positions, universe)
 
     DISPLACEMENT = np.array([1.0, 1.5, -2.0])
     unit.translate(DISPLACEMENT)
-    atom_positions = [atom.position for atom in unit.atom_list]
+    atom_positions = [atom.position for atom in unit.atoms]
     assert np.all(unit.position == unit_position + DISPLACEMENT)
     positions_in_universe(atom_positions, universe)
 
@@ -459,7 +512,7 @@ def test_translate(unit, universe):
 def test_valid_position(atom):
 
     """
-    Tests if StructuralUnit.valid_position returns True if an atom is either not
+    Tests if Structure.valid_position returns True if an atom is either not
     in a universe or within the bounds of the universe, and False otherwise
     """
 
@@ -468,7 +521,7 @@ def test_valid_position(atom):
 
     atom.position = [0., 0., 0.]
     uni = sim.Universe(5.0)
-    uni.add_structural_unit(atom)
+    uni.add_structure(atom)
     assert atom.valid_position()
 
     atom.position = [3., 3., 3.]
@@ -517,11 +570,11 @@ def test_molecule_subunit_positions(water_molecule):
     """
 
     rel_pos = {}
-    for atom in water_molecule.atom_list:
+    for atom in water_molecule.atoms:
         rel_pos[atom] = (atom.position - water_molecule.position)
 
     water_molecule.translate([1.2, 1.4, 1.6])
-    for atom in water_molecule.atom_list:
+    for atom in water_molecule.atoms:
         assert all(atom.position == water_molecule.position + rel_pos[atom])
 
 
@@ -629,11 +682,11 @@ def test_universe_atom_types(water_molecule, universe):
     C = su.Atom('C', mass=12.0107, atom_type=2)
     assert C.atom_type == 2
     C_coulombic = interactions.Coulombic(atoms=C)
-    H1, H2, O = water_molecule.atom_list
+    H1, H2, O = water_molecule.atoms
 
     assert len(universe.atom_types) == 0
-    universe.add_structural_unit(C)
-    universe.add_structural_unit(water_molecule)
+    universe.add_structure(C)
+    universe.add_structure(water_molecule)
 
     for atom, atom_type in {C:2, H1:1, H2:1, O:3}.items():
         assert atom.atom_type == atom_type
@@ -682,7 +735,7 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     C_coulombic = interactions.Coulombic(atoms=C)
 
     for atom in [He, C]:
-        water_SPCE_universe.add_structural_unit(atom)
+        water_SPCE_universe.add_structure(atom)
 
     disp = interactions.Dispersion(water_SPCE_universe, *atom_types_init)
     assert disp.atom_types == atom_types_expected
@@ -727,7 +780,7 @@ def test_charge_setting(water_SPCE_universe):
     already has a Coulombic interaction
     """
 
-    atom = water_SPCE_universe.atom_list[0]
+    atom = water_SPCE_universe.atoms[0]
     atom.charge = 5.0
     assert atom.charge == 5.0
 
@@ -889,7 +942,7 @@ def test_universe_fill_orientations(universe):
 def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
 
     """
-    Tests that filling the universe with a StructuralUnit results in
+    Tests that filling the universe with a Structure results in
     no molecules being added outside the bounds of the universe.
 
     Parametrized to test for both cases where either num_density or
@@ -903,7 +956,7 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
 
     # Define a tolerance to allow for rounding errors
     tolerance = 1e-16
-    for atom in universe.atom_list:
+    for atom in universe.atoms:
         assert all(atom.position > [0, 0, 0] - np.array([tolerance] * 3))
         assert all(atom.position < universe.dimensions)
 
@@ -913,7 +966,7 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     """
     Tests that specifying either num_density or manually calling
-    add_structural_unit fills the universe and results in no difference in the
+    add_structure fills the universe and results in no difference in the
     actual number density achieved (other than rounding down to a cube number
     as fill does) or the types of atoms.
     """
@@ -923,12 +976,12 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
     universe_manual = sim.Universe(universe.dimensions)
     universe.fill(water_molecule, num_density=num_density)
     for i in range(num_strucs_rounded):
-        universe_manual.add_structural_unit(water_molecule)
+        universe_manual.add_structure(water_molecule)
 
-    assert len(universe.atom_list) == len(universe_manual.atom_list)
+    assert len(universe.atoms) == len(universe_manual.atoms)
 
     for u in [universe, universe_manual]:
-        for atom in u.atom_list:
+        for atom in u.atoms:
             if atom.element == 'H':
                 assert atom.atom_type == 1
             elif atom.element == 'O':
@@ -982,9 +1035,9 @@ def test_solvate_spce_with_solute(molecule):
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a large diatomic molecule.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
-    univ.add_structural_unit(molecule)
+    univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     tot_mass = 0
     for mol in univ.molecule_list:
@@ -1001,7 +1054,7 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
     atoms of those solvent moleules being outside the universe bounds.
     """
 
-    for atom in solvated_universe.atom_list:
+    for atom in solvated_universe.atoms:
         assert all(atom.position <= solvated_universe.dimensions)
         assert all(atom.position >= [0, 0, 0])
 
@@ -1013,16 +1066,16 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
-    
+
     univ = sim.Universe(SPCE_DIMENSIONS / 2)
-    univ.add_structural_unit(molecule)
+    univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     solute_bounds = molecule.bounding_box
     for mol in univ.molecule_list:
-        names = [atom.name for atom in mol.atom_list]
+        names = [atom.name for atom in mol.atoms]
         # Only compare bounding boxes of solute and SPCE water.
         if not np.array_equal(np.sort(names), np.sort(['H', 'O', 'H'])):
-            for atom in mol.atom_list:
+            for atom in mol.atoms:
                 pos = atom.position
                 assert not (all(pos > solute_bounds.min)
                             and all(pos < solute_bounds.max))
@@ -1055,7 +1108,7 @@ def test_solvate_spce_bond_lengths(dim_scalings):
 
     def _get_sorted_bond_lengths(molecule):
 
-        positions = [atom.position for atom in molecule.atom_list]
+        positions = [atom.position for atom in molecule.atoms]
         lengths = []
         for pair in combinations(positions, 2):
             lengths.append(abs(np.linalg.norm(pair[1] - pair[0])))
@@ -1081,7 +1134,7 @@ def test_solvate_spce_density_perfect_dimensions(dim_scaling):
     univ = sim.Universe(SPCE_DIMENSIONS * np.array(dim_scaling))
     univ.solvate(SPCE_DENSITY)
     total_mass = 0
-    for atom in univ.atom_list:
+    for atom in univ.atoms:
         total_mass += atom.mass
     assert (abs(((total_mass / univ.volume) - SPCE_DENSITY) / SPCE_DENSITY)
             < 1e-10)
@@ -1112,18 +1165,18 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
     # atom minus the universe dimension length in the z-direction.
     wrapped_pos = pos1 - univ_dimensions * np.array([0, 0, 1])
     # Check that no atoms in the universe have these positions.
-    for atom in univ.atom_list:
+    for atom in univ.atoms:
         for pos in [pos1, pos2, pos3, wrapped_pos]:
             assert all(atom.position != pos)
 
 
 @pytest.mark.parametrize("solvent, parameters", [('SPCE',
                                                  (('equilibrium_state', 1.),
+                                                  ('potential_strength',
+                                                   4637.),
                                                   ('potential_strength', 383.),
                                                   ('equilibrium_state',
                                                    109.47),
-                                                  ('potential_strength',
-                                                   4637.),
                                                   ('charge', 0.4238),
                                                   ('charge', -0.8476),
                                                   ('epsilon', 0.6502),
@@ -1135,21 +1188,11 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     the solvent has been selected from inbuilt solvents
     """
 
-    test_parameters = [Parameter(parameter[1], name=parameter[0], unit='arb')
-                       for parameter in parameters]
-    uni_parameters = list(solvated_universe.parameters)
+    uni_parameters = solvated_universe.parameters
 
-    # Check lists are same length, then remove all Parameters that have a
-    # matching name and value, finally check list of Parameters is empty (i.e.
-    # all Parameters have matched)
-    assert len(test_parameters) == len(uni_parameters)
-    from copy import copy
-    for test_p in test_parameters:
-        for uni_p in copy(uni_parameters):
-            if (test_p.value == uni_p.value and test_p.name == uni_p.name):
-                uni_parameters.remove(uni_p)
-                break
-    assert uni_parameters == []
+    assert len(parameters) == len(uni_parameters)
+    assert set(parameters) == {(p.type, p.value.real)
+                               for p in list(uni_parameters.values())}
 
 
 @pytest.mark.parametrize("density, tolerance", [(0.7, 20.),
@@ -1242,7 +1285,7 @@ def test_empty_universe_density(universe):
     assert universe.density == 0.
 
 
-@pytest.mark.parametrize("structural_units, expected",
+@pytest.mark.parametrize("structures, expected",
                          [([su.Atom('AA', mass=1.0)],
                            0.001),
                           ([su.Atom('BB', mass=15.0)],
@@ -1252,15 +1295,15 @@ def test_empty_universe_density(universe):
                            0.023),
                           ([su.Atom('AA', mass=1.0), su.Atom('DD', mass=21.0)],
                            0.022)])
-def test_universe_density(structural_units, expected, universe):
+def test_universe_density(structures, expected, universe):
 
     """
     Tests that the density property of Universe is correct
     """
 
     assert universe.density == 0.
-    for structural_unit in structural_units:
-        universe.add_structural_unit(structural_unit)
+    for structures in structures:
+        universe.add_structure(structures)
     assert universe.density == expected
 
 @pytest.mark.parametrize("dimensions, expected",
@@ -1303,7 +1346,7 @@ def test_add_force_field_dispersions_bool(universe):
              su.Atom('H', position=(1., 1., 1.), name='7', atom_type=2),
              su.Atom('N', position=(2., 2., 2.), name='204', atom_type=3)]
     for atom in atoms:
-        universe.add_structural_unit(atom)
+        universe.add_structure(atom)
     #pylint: disable=len-as-condition
     assert len(get_dispersions(universe.nonbonded_interactions)) == 0
 
@@ -1317,7 +1360,7 @@ def test_add_force_field_dispersions_bool(universe):
                                   ((3, 3), )]
 
 
-def test_add_force_field_dispersions_atom_list(universe, water_molecule):
+def test_add_force_field_dispersions_atoms(universe, water_molecule):
 
     """
     Tests that the correct Dispersion interactions are created when a list of
@@ -1326,11 +1369,11 @@ def test_add_force_field_dispersions_atom_list(universe, water_molecule):
     atom_types.
     """
 
-    universe.add_structural_unit(water_molecule)
+    universe.add_structure(water_molecule)
     #pylint: disable=len-as-condition
     assert len(get_dispersions(universe.nonbonded_interactions)) == 0
 
-    O_atoms = su.filter_atoms_element(water_molecule.atom_list, 'O')
+    O_atoms = su.filter_atoms_element(water_molecule.atoms, 'O')
     universe.add_force_field('SPCE', add_dispersions=O_atoms)
     dispersions = get_dispersions(universe.nonbonded_interactions)
     assert len(dispersions) == 1

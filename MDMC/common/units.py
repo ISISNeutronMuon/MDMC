@@ -8,12 +8,18 @@ As members of units.py are set dynamically, pylintrc excludes member checking
 for units.py using the generated-members keyword. Care must be taken to ensure
 members exist when importing from units.py, as these will not be linted."""
 
+from __future__ import annotations
+
 from collections import Counter, defaultdict
 from copy import deepcopy
 from numbers import Number
+from typing import Union
 
 import numpy as np
 
+
+# pylint: disable=no-member
+# as it raises a false positive for components
 
 CODATA_VERSION = '2014'
 
@@ -113,7 +119,7 @@ class Unit(str):
         ``1000.`` as the system units are femtoseconds.
     """
 
-    def __new__(cls, string, components=None):
+    def __new__(cls, string: str, components: defaultdict(list) = None) -> Unit:
 
         if string is None:
             return None
@@ -140,8 +146,7 @@ class Unit(str):
         unit.components = components
         return unit
 
-    def __mul__(self, other):
-
+    def __mul__(self, other: Unit) -> Unit:
         """
         Multiplies the ``Unit`` by another ``Unit``
 
@@ -158,12 +163,12 @@ class Unit(str):
 
         try:
             components = self._calculate_components(other, 'mul')
-        except AttributeError:
-            raise TypeError('A Unit can only be multipled by another Unit')
+        except AttributeError as error:
+            raise TypeError(
+                'A Unit can only be multipled by another Unit') from error
         return self.__class__(self._calculate_string(components), components)
 
-    def __truediv__(self, other):
-
+    def __truediv__(self, other: Unit) -> Unit:
         """
         Divides the ``Unit`` by another ``Unit``
 
@@ -180,18 +185,18 @@ class Unit(str):
 
         try:
             components = self._calculate_components(other, 'div')
-        except AttributeError:
-            raise TypeError('A Unit can only be divided by another Unit')
+        except AttributeError as error:
+            raise TypeError(
+                'A Unit can only be divided by another Unit') from error
         return self.__class__(self._calculate_string(components), components)
 
-    def __pow__(self, other):
-
+    def __pow__(self, exponent: Number) -> Unit:
         """
         Performs the power operation on the ``Unit``
 
         Parameter
         ---------
-        other : numeric (inherits from numbers.Number)
+        exponent : numeric (inherits from numbers.Number)
             The number the ``Unit`` is raised to the power of
 
         Returns
@@ -200,19 +205,18 @@ class Unit(str):
             A compound ``Unit``
         """
 
-        if not isinstance(other, Number):
+        if not isinstance(exponent, Number):
             try:
-                other = float(other)
-            except (TypeError, ValueError) as _:
+                exponent = float(exponent)
+            except (TypeError, ValueError) as error:
                 raise TypeError('Only numeric types can be used as a power for'
-                                ' Units')
+                                ' Units') from error
 
-        components = self._calculate_components(other, 'pow')
+        components = self._calculate_components(exponent, 'pow')
         return self.__class__(self._calculate_string(components), components)
 
     @property
-    def base(self):
-
+    def base(self) -> bool:
         """
         Get whether the ``Unit`` is a ``base`` or compound ``Unit``
 
@@ -229,8 +233,7 @@ class Unit(str):
         return False
 
     @property
-    def conversion_factor(self):
-
+    def conversion_factor(self) -> float:
         """
         Calculates the factor by which a value with this ``Unit`` should be
         multiplied in order to express it in system units. This takes into
@@ -264,14 +267,13 @@ class Unit(str):
                     factor /= factors_dict[str(unit)]
 
         except KeyError as error:
-            raise KeyError('Unknown unit {} provided, cannot convert to system'
-                           ' units'.format(str(unit))) from error
+            raise KeyError(f'Unknown unit {str(unit)} provided, cannot convert to system'
+                           ' units') from error
 
         return factor
 
     @property
     def physical_property(self) -> str:
-
         """
         The physical property (e.g. 'LENGTH', 'TIME', ...) that the unit measures.
 
@@ -288,12 +290,10 @@ class Unit(str):
         try:
             return properties_dict[str(self)]
         except KeyError as error:
-            raise KeyError('Unknown unit {} provided, cannot determine the '
-                           'physical property it measures '
-                           ''.format(str(self))) from error
+            raise KeyError(f'Unknown unit {str(self)} provided, cannot determine the '
+                           'physical property it measures ') from error
 
-    def _calculate_components(self, other, op):
-
+    def _calculate_components(self, other: Unit, op: str) -> defaultdict(list):
         """
         Calculates the ``components`` for a new ``Unit`` generated from an
         operation
@@ -338,13 +338,14 @@ class Unit(str):
                 components['denominator'] *= other
             else:
                 numerator = components['numerator']
-                components['numerator'] = components['denominator'] * abs(other)
+                components['numerator'] = components['denominator'] * \
+                    abs(other)
                 components['denominator'] = numerator * abs(other)
 
         return components
 
-    def _calculate_string(self, components):
-
+    @staticmethod
+    def _calculate_string(components: defaultdict(list)) -> str:
         """
         Calculates the `str` for a new ``Unit`` generated from an operation
 
@@ -360,7 +361,6 @@ class Unit(str):
         """
 
         def _calculate_expr_string(expr):
-
             """
             Calculates the `str` from a `list` of ``components``
 
@@ -373,7 +373,7 @@ class Unit(str):
             # List used rather than string so that sorting can be implemented
             component_list = []
             for comp, power in component_powers.items():
-                if power is 1:
+                if power == 1:
                     component_list.append(comp)
                 else:
                     component_list.append(comp + ' ^ ' + str(power))
@@ -386,14 +386,12 @@ class Unit(str):
         # denominator, and both
         if not components['numerator']:
             return '1 / ' + denominator
-        else:
-            if not components['denominator']:
-                return numerator
-            else:
-                return numerator + ' / ' + denominator
+        if not components['denominator']:
+            return numerator
+        return numerator + ' / ' + denominator
 
-    def _parse_unit_string(self, unit_string):
-
+    @staticmethod
+    def _parse_unit_string(unit_string: str) -> 'tuple[list[Unit]]':
         """
         Converts a ``Unit`` `str` into ``Unit`` objects
 
@@ -417,7 +415,6 @@ class Unit(str):
         """
 
         def parse_powers(string):
-
             """
             Parameters
             ----------
@@ -481,27 +478,27 @@ class Unit(str):
         num, inverse_num = parse_powers(num_string)
 
         # Combine the numerator with elements from the denominator that had
-        # negative powers, and vice versa 
+        # negative powers, and vice versa
         return num + inverse_denom, denom + inverse_num
+
 
 # Define the unit system used in MDMC
 SYSTEM = {
-    'LENGTH':Unit('Ang'),
-    'TIME':Unit('fs'),
-    'MASS':Unit('amu'),
-    'CHARGE':Unit('e'),
-    'ANGLE':Unit('deg'),
-    'TEMPERATURE':Unit('K'),
-    'ENERGY':Unit('kJ') / Unit('mol'),
-    'FORCE':Unit('kJ') / (Unit('Ang') * Unit('mol')),
-    'PRESSURE':Unit('Pa'),
-    'ENERGY_TRANSFER':Unit('meV'),
-    'ARBITRARY':Unit('arb')
+    'LENGTH': Unit('Ang'),
+    'TIME': Unit('fs'),
+    'MASS': Unit('amu'),
+    'CHARGE': Unit('e'),
+    'ANGLE': Unit('deg'),
+    'TEMPERATURE': Unit('K'),
+    'ENERGY': Unit('kJ') / Unit('mol'),
+    'FORCE': Unit('kJ') / (Unit('Ang') * Unit('mol')),
+    'PRESSURE': Unit('Pa'),
+    'ENERGY_TRANSFER': Unit('meV'),
+    'ARBITRARY': Unit('arb')
 }
 
 
-def create_units(codata_version):
-
+def create_units(codata_version: str) -> dict[Unit, float]:
     """
     Creates a `dict` of ``Unit`` based on the CODATA version.
 
@@ -518,8 +515,8 @@ def create_units(codata_version):
 
     # SYSTEM units are defined to 1.0, and have the physical properties they
     # measure defined (e.g. {'Ang': 'LENGTH', ...})
-    units = {unit:1.0 for unit in SYSTEM.values()}
-    unit_properties = {unit:property for property, unit in SYSTEM.items()}
+    units = {unit: 1.0 for unit in SYSTEM.values()}
+    unit_properties = {unit: property for property, unit in SYSTEM.items()}
 
     # CODATA version
     codata = CODATA[codata_version]
@@ -627,20 +624,19 @@ class UnitFloat(float):
     immaterial as no quantity which possesses units is complex.
     """
 
-    def __new__(cls, value, unit):
+    def __new__(cls, value: float, unit: Union[Unit, str]):
 
         if value is None:
             return None
         return float.__new__(cls, value)
 
-    def __init__(self, value, unit):
+    def __init__(self, value: float, unit: Union[Unit, str]):
 
         float.__init__(value)
         self.unit = unit
 
     @property
-    def unit(self):
-
+    def unit(self) -> Unit:
         """
         Get or set the ``unit``
 
@@ -655,14 +651,13 @@ class UnitFloat(float):
         return self._unit
 
     @unit.setter
-    def unit(self, value):
+    def unit(self, value: float) -> None:
 
         if not (isinstance(value, str) or value is None):
             raise TypeError('unit must be a string')
         self._unit = Unit(value)
 
-    def __deepcopy__(self, memo):
-
+    def __deepcopy__(self, memo: dict) -> None:
         """
         Copies the ``UnitFloat`` and all attributes
 
@@ -689,7 +684,7 @@ class UnitFloat(float):
 
     def __str__(self):
 
-        return  self.__repr__()
+        return self.__repr__()
 
 
 class UnitNDArray(np.ndarray):
@@ -727,8 +722,7 @@ class UnitNDArray(np.ndarray):
         self.unit = getattr(obj, 'unit', None)
 
     @property
-    def unit(self):
-
+    def unit(self) -> None:
         """
         Get or set the ``unit``
 
@@ -743,7 +737,7 @@ class UnitNDArray(np.ndarray):
         return self._unit
 
     @unit.setter
-    def unit(self, value):
+    def unit(self, value: float):
 
         if not (isinstance(value, str) or value is None):
             raise TypeError('unit must be a string')
@@ -762,8 +756,7 @@ class UnitNDArray(np.ndarray):
             return super().__str__()
 
 
-def unit_array(obj, unit, dtype=None):
-
+def unit_array(obj, unit: Union[Unit, str], dtype=None) -> UnitNDArray:
     """
     Helper function for creating a ``UnitNDArray`` from an ``array`` or any
     nested sequence
@@ -795,7 +788,7 @@ def unit_array(obj, unit, dtype=None):
         return None
 
     if not isinstance(unit, str):
-        raise TypeError('unit must be a string, but was {}'.format(unit))
+        raise TypeError(f'unit must be a string, but was {unit}')
 
     # Significantly faster to create np.array and view it than to loop
     if not isinstance(obj, np.ndarray):

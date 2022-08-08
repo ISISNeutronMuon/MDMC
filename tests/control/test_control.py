@@ -10,8 +10,9 @@ from typing import List
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
-from MDMC.MD.parameters import Parameter
+from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
+from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
 
 
@@ -35,7 +36,7 @@ class MockSimulation(Simulation):
     """
 
     def __init__(self, universe: Universe, traj_step: int,
-                 time_step: float = 1., engine: str = "mmtk", **settings):
+                 time_step: float = 1., engine: str = "lammps", **settings):
         self.universe = universe
         self.settings = settings
         self.traj_step = traj_step
@@ -48,6 +49,14 @@ class MockParameter:
 
         self.name = name
         self.value = value
+
+
+class MockParameters(dict):
+
+    def __init__(self, parameters_list):
+        for p in parameters_list:
+            self[p.name] = p
+
 
 class MockMinimizer:
 
@@ -73,6 +82,10 @@ class MockMinimizer:
     def reset_parameters(self):
 
         pass
+
+    def present_result(self):
+
+        return ""
 
 def mock_generate_FoM(self):
 
@@ -120,7 +133,7 @@ def exp_datasets() -> callable:
                       auto_scale: bool = None,
                       use_FFT: bool = None,
                       file_name: str = None,
-                      resolution_file: str = None) -> List[dict]:
+                      resolution: dict = None) -> List[dict]:
 
         datasets = []
         for k, v in data.READER_DATA.items():
@@ -134,7 +147,7 @@ def exp_datasets() -> callable:
                 # continue
                 continue
 
-            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.}
+            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1., 'resolution': {'gaussian': 84}}
             if rescale_factor:
                 dataset['rescale_factor'] = rescale_factor
             if auto_scale is not None:
@@ -143,9 +156,9 @@ def exp_datasets() -> callable:
                 dataset['use_FFT'] = use_FFT
 
             for resolution_v in data.RESOLUTION_DATA.values():
-                if (resolution_file is not None
-                        and re.search('{}$'.format(resolution_file), resolution_v)):
-                    dataset['resolution_file'] = resolution_v
+                if (resolution is not None
+                        and re.search('{}$'.format(resolution), resolution_v)):
+                    dataset['resolution'] = {'file': resolution_v}
 
             datasets.append(dataset)
 
@@ -158,14 +171,12 @@ def exp_datasets() -> callable:
                          [['exp',
                            ('Control created with:\n'
                             '  Minimizer                             MMC\n'
-                            '  MC norm                               1.0\n'
                             '  FoM type               ChiSquaredExpError\n'
                             '  Number of observables                   1\n'
                             '  Number of parameters                    0\n')],
                            ['none',
                             ('Control created with:\n'
                             '  Minimizer                            MMC\n'
-                            '  MC norm                              1.0\n'
                             '  FoM type               ChiSquaredNoError\n'
                             '  Number of observables                  1\n'
                             '  Number of parameters                   0\n')]])
@@ -191,10 +202,10 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                'int':[10, 100, 1000, 10000, 0.00001] * 3,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
+    minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
+                                       MockParameter('sigma', 0.339834),
+                                       MockParameter('A', 1),
+                                       MockParameter('B', 34743.233E6)])
 
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
@@ -221,101 +232,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                       '   8   1.324e+08     Rejected        1e+04            1\n'
                       '   9   1.535e+07        False        1e-05            1\n'
                       '  10       1.657         str1           10            1\n'
-                      '\n'
-                      'Final Parameters\n'
-                      ' epsilon    sigma  A            B\n'
-                      '3.134544 0.339834  1 3.474323e+10\n')
-
-
-@pytest.mark.parametrize('file_name',
-                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_refine_stdout_verbose_1(simulation, exp_datasets, monkeypatch,
-                                         file_name, capsys):
-
-    """
-    Tests that the stdout from Control.refine is in the expected format when `verbose=1`, i.e.
-    timings are printed after refinement. Note that because the times are variable, we only assert
-    on the stdout for operations that have a time of `NaN` (those that we didn't actually time). 
-    """
-
-    # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
-                        mock_update_engine_parameters)
-
-    # Set history and parameters of MockMinimizer, as these are both involved in
-    # output
-    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
-               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3,
-               'really_long_title':[1, 1, 1, 1, 1] * 3}
-    minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
-
-    datasets = exp_datasets(file_name=file_name)
-    dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False,
-                           verbose=1)
-
-    ctrl.minimizer = minim
-    ctrl.refine(10)
-
-    # Capture stdout using pytest fixure
-    stdout = capsys.readouterr().out
-    expected_timings = ('Average Timings (s)\n'
-                        '  equilibrate           NaN\n'
-                        '  _run_MD               NaN\n'
-                        '  convert_trajectory    NaN\n'
-                        '  FoM_calculator        NaN\n')
-    assert expected_timings in stdout
-
-
-@pytest.mark.parametrize('file_name',
-                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
-def test_control_refine_stdout_verbose_2(simulation, exp_datasets, monkeypatch,
-                                         file_name, capsys):
-
-    """
-    Tests that the stdout from Control.refine is in the expected format when `verbose=2`, i.e.
-    timings are printed after each refinement step. Note that because the times are variable,
-    we only assert on the stdout for the names of the operations that we're timing, not the times
-    themselves. 
-    """
-
-    # monkeypatch Control methods
-    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
-    monkeypatch.setattr(control.Control, "_update_engine_parameters",
-                        mock_update_engine_parameters)
-
-    # Set history and parameters of MockMinimizer, as these are both involved in
-    # output
-    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
-               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3,
-               'really_long_title':[1, 1, 1, 1, 1] * 3}
-    minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
-
-    datasets = exp_datasets(file_name=file_name)
-    dt = DATASET_INFO['use_FFT'][file_name]['dt']
-    ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False,
-                           verbose=2)
-
-    ctrl.minimizer = minim
-    ctrl.refine(10)
-
-    # Capture stdout using pytest fixure
-    stdout = capsys.readouterr().out
-    assert '           minimizer: ' in stdout
-    assert '          TOTAL STEP: ' in stdout
+                      '\n')
 
 
 @pytest.mark.parametrize('file_name',
@@ -340,10 +257,10 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                'int':[10, 100, 1000, 10000, 0.00001] * 3,
                'really_long_title':[1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
-    minim.parameters = [MockParameter('epsilon', 3.134544),
-                        MockParameter('sigma', 0.339834),
-                        MockParameter('A', 1),
-                        MockParameter('B', 34743.233E6)]
+    minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
+                                       MockParameter('sigma', 0.339834),
+                                       MockParameter('A', 1),
+                                       MockParameter('B', 34743.233E6)])
 
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
@@ -356,7 +273,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     stdout = capsys.readouterr().out
     assert stdout == ('Control created with:\n'
                       '  Minimizer                             MMC\n'
-                      '  MC norm                               1.0\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
                       '  Number of parameters                    0\n'
@@ -374,9 +290,6 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       '   9   1.535e+07        False        1e-05            1\n'
                       '  10       1.657         str1           10            1\n'
                       '\n'
-                      'Final Parameters\n'
-                      ' epsilon    sigma  A            B\n'
-                      '3.134544 0.339834  1 3.474323e+10\n'
                       '\n'
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
@@ -460,7 +373,6 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                       '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
                       '  Minimizer                             MMC\n'
-                      '  MC norm                               1.0\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
                       '  Number of parameters                    0\n'
@@ -503,16 +415,15 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
 
 
 def test_control_max_parameter_change():
-
     """
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
-    ctrl_default = control.Control(None, [], [], reset_config=False)
+    ctrl_default = control.Control(None, [], [], minimizer_type="MMC", reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
 
     ctrl = control.Control(None, [], [], reset_config=False,
-                           max_parameter_change=0.02)
+                           minimizer_type="MMC", max_parameter_change=0.02)
     assert ctrl.minimizer.max_parameter_change == 0.02
 
 
@@ -601,7 +512,7 @@ def test_control_is_data_uniform(mock_observable):
     """
     expected = mock_observable['exp']
     # create Control object without instantiating it to test one of its methods
-    cont = control.Control.__new__(control.Control)
+    cont = control.Control
     observed = cont._is_data_uniform(mock_observable['obs'])
     assert expected == observed
 
@@ -739,16 +650,16 @@ def test_control_fit_parameters(simulation):
     tie_target = Parameter(-1., 'tie_target')
     tied_param = Parameter(2., 'tied')
     tied_param.set_tie(tie_target, '')
-    fit_parameters = [Parameter(0., 'zero'),
+    fit_parameters = Parameters([Parameter(0., 'zero'),
                       Parameter(1., 'fixed', fixed=True),
                       tied_param,
-                      Parameter(3., 'constraints', constraints=(2.9, 3.1))]
+                      Parameter(3., 'constraints', constraints=(2.9, 3.1))])
 
     ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
                            reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
-    assert ctrl.fit_parameters[0].name == 'constraints'
+    assert 'constraints' in list(ctrl.fit_parameters.keys())[0] 
 
 
 def test_control_resolution_function(simulation, exp_datasets):
@@ -765,9 +676,9 @@ def test_control_resolution_function(simulation, exp_datasets):
     time_step = dt / traj_step
 
     ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
-                           exp_datasets(file_name=file_name, resolution_file=resolution_file),
+                           exp_datasets(file_name=file_name, resolution=resolution_file),
                            [],
                            reset_config=False)
 
-    assert ctrl.observable_pairs[0].exp_obs.resolution_functions['SQw'] is not None
-    assert ctrl.observable_pairs[0].MD_obs.resolution_functions['SQw'] is not None
+    assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
+    assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
