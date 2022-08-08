@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.simulation import Universe, Simulation, Shake, PPPM
-from MDMC.MD.structural_units import Atom, Molecule
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 from MDMC.MD.interaction_functions import Buckingham
 
@@ -199,12 +199,11 @@ def NVE_unconstrained(universe):
     # those interactions according to SPC/Fd water model
     for interaction in universe.bonded_interactions:
         interaction.constrained = False
-        for parameter in interaction.parameters:
-            if parameter.name == 'potential_strength':
-                if interaction.name == 'Bond':
-                    parameter.value = 4410.7728 / 2
-                elif interaction.name == 'BondAngle':
-                    parameter.value = 158.7828
+        for parameter in interaction.parameters.filter_name("potential_strength"):
+            if interaction.name == 'Bond':
+                parameter.value = 4410.7728 / 2
+            elif interaction.name == 'BondAngle':
+                parameter.value = 158.7828
     # Remove constraint algorithm from universe
     universe.constraint_algorithm = None
 
