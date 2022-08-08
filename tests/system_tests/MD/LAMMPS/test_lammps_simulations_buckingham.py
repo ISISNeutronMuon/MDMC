@@ -14,7 +14,7 @@ from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 from MDMC.MD.interaction_functions import Buckingham
 
-pytestmark = pytest.mark.mpi
+pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
 # STDEV_FAC is the number of standard deviations within which the calculated
 # property must lie for it to be considered equivalent to the expected value
@@ -201,9 +201,9 @@ def NVE_unconstrained(universe):
         interaction.constrained = False
         for parameter in interaction.parameters.filter_name("potential_strength"):
             if interaction.name == 'Bond':
-                parameter.value = 4410.7728 / 2
+                interaction.parameters[parameter].value = 4410.7728 / 2
             elif interaction.name == 'BondAngle':
-                parameter.value = 158.7828
+                interaction.parameters[parameter].value = 158.7828
     # Remove constraint algorithm from universe
     universe.constraint_algorithm = None
 
