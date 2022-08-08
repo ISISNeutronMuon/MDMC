@@ -63,7 +63,7 @@ jobs:
       run: pip3 uninstall -y MDMC
 
   windows:
-    name: Python 3.9.0 on Windows
+    name: Python 3.9.0 on Windows (installation check only)
     runs-on: windows-latest
     steps:
     - name: Setup Python
