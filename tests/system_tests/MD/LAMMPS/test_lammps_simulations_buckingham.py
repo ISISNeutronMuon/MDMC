@@ -1,10 +1,12 @@
-"""System tests for LAMMPS MD simulations using Buckingham potential interactions
+"""
+System tests for LAMMPS MD simulations using Buckingham potential interactions
 
 Compares the thermodynamic and simulation properties calculated from the MDMC
 run using LAMMPS with the same properties calculated from an equivalent LAMMPS
 setup run externally. This occurs for NVE, NVT and NPT ensembles.  The
 calculations of the properties in both cases are performed by LAMMPS, the only
-difference is whether the LAMMPS simulation was run through MDMC."""
+difference is whether the LAMMPS simulation was run through MDMC.
+"""
 
 import numpy as np
 import pytest
@@ -16,13 +18,16 @@ from MDMC.MD.interaction_functions import Buckingham
 
 pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
-# STDEV_FAC is the number of standard deviations within which the calculated
-# property must lie for it to be considered equivalent to the expected value
-# i.e. it is the tolerance of the assertion on the property
+""" 
+STDEV_FAC is the number of standard deviations within which the calculated
+property must lie for it to be considered equivalent to the expected value
+i.e. it is the tolerance of the assertion on the property 
+"""
 STDEV_FAC = 4.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
+
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
 EQUILIBRIUM_STEPS = 10000
@@ -81,10 +86,12 @@ NVE_UNCONSTRAINED_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
 def universe():
 
     """
-    Returns:
-    An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
-    molecules at 300K using LAMMPS.
-    The interaction potential used is the Buckingham potential.
+    Returns
+    -------
+    Universe
+        A `Universe` object setup to run an NVE simulation of 216 SPCE water
+        molecules at 300K using LAMMPS.
+        The interaction potential used is the Buckingham potential.
     """
 
     universe = Universe(dimensions=DIMENSION)
@@ -112,13 +119,15 @@ def universe():
 
     return universe
 
+
 @pytest.fixture(scope="module")
 def NVE(universe):
-
     """
-    Returns:
-    An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
-    molecules at 300K using LAMMPS
+    Returns
+    -------
+    Simulation
+        An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
+        molecules at 300K using LAMMPS
     """
 
     md_engine = Simulation(universe,
@@ -137,11 +146,12 @@ def NVE(universe):
 
 @pytest.fixture(scope="module")
 def NVT(universe):
-
     """
-    Returns:
-    An MDMC simulation object setup to run an NVT simulation of 216 SPCE water
-    molecules at 300K using LAMMPS
+    Returns
+    -------
+    Simulation
+        An MDMC simulation object setup to run an NVT simulation of 216 SPCE water
+        molecules at 300K using LAMMPS
     """
 
     md_engine = Simulation(universe,
@@ -161,11 +171,12 @@ def NVT(universe):
 
 @pytest.fixture(scope="module")
 def NPT(universe):
-
     """
-    Returns:
-    An MDMC simulation object setup to run an NPT simulation of 216 SPCE water
-    molecules at 300K using LAMMPS
+    Returns
+    -------
+    Simulation
+        An MDMC simulation object setup to run an NPT simulation of 216 SPCE water
+        molecules at 300K using LAMMPS
     """
 
     md_engine = Simulation(universe,
@@ -188,11 +199,12 @@ def NPT(universe):
 
 @pytest.fixture(scope="module")
 def NVE_unconstrained(universe):
-
     """
-    Returns:
-    An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
-    molecules at 300K using LAMMPS, without constrained bonds or bond angles
+    Returns
+    -------
+    Simulation
+        An MDMC simulation object setup to run an NVE simulation of 216 SPCE water
+        molecules at 300K using LAMMPS, without constrained bonds or bond angles
     """
 
     # Remove constraints from bonds and angles and set potential strengths for
@@ -223,10 +235,7 @@ def NVE_unconstrained(universe):
 
 
 def parameterize_decorator(func):
-
-    """
-    A decorator for parametrizing all tests with each ensemble
-    """
+    """A decorator for parametrizing all tests with each ensemble."""
 
     @pytest.mark.parametrize('ensemble, expected',
                              [('NVE', NVE_EXPECTED),
@@ -242,11 +251,7 @@ def parameterize_decorator(func):
 
 @pytest.mark.parametrize('verbose', [False, True])
 def test_simulation_stdout(universe, verbose, capsys):
-
-    """
-    Test that calling run with different verbose arguments results in the
-    expected stdout
-    """
+    """Test that calling run with different verbose arguments results in the expected stdout"""
 
     sim = Simulation(universe, engine='lammps', time_step=1.,
                      temperature=TEMPERATURE, pressure=101325.,
@@ -284,7 +289,6 @@ def test_simulation_stdout(universe, verbose, capsys):
 
 @parameterize_decorator
 def test_number_atoms(ensemble, expected, request):
-
     """
     Compare the total number of atoms in the simulation with that calculated
     directly from LAMMPS
@@ -295,7 +299,6 @@ def test_number_atoms(ensemble, expected, request):
 
 @parameterize_decorator
 def test_number_bonds(ensemble, expected, request):
-
     """
     Compare the total number of bonds in the simulation with that calculated
     directly from LAMMPS
@@ -306,7 +309,6 @@ def test_number_bonds(ensemble, expected, request):
 
 @parameterize_decorator
 def test_number_angles(ensemble, expected, request):
-
     """
     Compare the total number of angles in the simulation with that calculated
     directly from LAMMPS
@@ -317,79 +319,55 @@ def test_number_angles(ensemble, expected, request):
 
 @parameterize_decorator
 def test_kinetic_energy(ensemble, expected, request):
-
-    """
-    Compare the kinetic energy with that calculated directly from LAMMPS
-    """
+    """Compare the kinetic energy with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'KinEng')
 
 
 @parameterize_decorator
 def test_potential_energy(ensemble, expected, request):
-
-    """
-    Compare the potential energy with that calculated directly from LAMMPS
-    """
+    """Compare the potential energy with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'PotEng')
 
 
 @parameterize_decorator
 def test_temperature(ensemble, expected, request):
-
-    """
-    Compare the temperature with that calculated directly from LAMMPS
-    """
+    """Compare the temperature with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'Temp')
 
 
 @parameterize_decorator
 def test_pressure(ensemble, expected, request):
-
-    """
-    Compare the pressure with that calculated directly from LAMMPS
-    """
+    """Compare the pressure with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'Press')
 
 
 @parameterize_decorator
 def test_volume(ensemble, expected, request):
-
-    """
-    Compare the simulation box volume with that calculated directly from LAMMPS
-    """
+    """Compare the simulation box volume with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'Volume')
 
 
 @parameterize_decorator
 def test_bond_energy(ensemble, expected, request):
-
-    """
-    Compare the total energy of all bonds with that calculated directly from
-    LAMMPS
-    """
+    """Compare the total energy of all bonds with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'E_bond')
 
 
 @parameterize_decorator
 def test_angle_energy(ensemble, expected, request):
-
-    """
-    Compare the total energy of all bond angle with that calculated directly
-    from LAMMPS
-    """
+    """Compare the total energy of all bond angle with that calculated directly from LAMMPS"""
 
     assert_property(ensemble, expected, request, 'E_angle')
 
 
 @parameterize_decorator
 def test_vdw_energy(ensemble, expected, request):
-
     """
     Compare the total energy of the dispersive interactions with that calculated
     directly from LAMMPS
@@ -400,7 +378,6 @@ def test_vdw_energy(ensemble, expected, request):
 
 @parameterize_decorator
 def test_coul_energy(ensemble, expected, request):
-
     """
     Compare the total energy of the coulombic interactions with that calculated
     directly from LAMMPS
@@ -411,7 +388,6 @@ def test_coul_energy(ensemble, expected, request):
 
 @parameterize_decorator
 def test_kspace_correction_energy(ensemble, expected, request):
-
     """
     Compare the total energy of the kspace correction with that calculated
     directly from LAMMPS
@@ -422,32 +398,27 @@ def test_kspace_correction_energy(ensemble, expected, request):
 
 @parameterize_decorator
 def test_neighbor_builds(ensemble, expected, request):
-
-    """
-    Compare the number of times the neighbor list was built
-    """
+    """Compare the number of times the neighbor list was built"""
 
     assert_property(ensemble, expected, request, 'Nbuild')
 
 
 @parameterize_decorator
 def test_dangerous_neighbor_builds(ensemble, expected, request):
-
-    """
-    Compare the number of times a neighbor list build was dangerous
-    """
+    """Compare the number of times a neighbor list build was dangerous"""
 
     assert_property(ensemble, expected, request, 'Ndanger')
 
 
 def set_thermo_style(sim):
-
     """
     Applies a LAMMPS thermo_style to the LAMMPS wrapper in the MDMC Simulation
     object so that the required properties can be determined
 
-    Arguments:
-    sim - an MDMC Simulation object
+    Parameters
+    ----------
+    sim : Simulation
+        An MDMC Simulation object
     """
 
     sim.engine.lmp.thermo_style('custom', 'step', 'temp', 'press', 'ke', 'pe',
@@ -459,36 +430,43 @@ def set_thermo_style(sim):
 
 
 def average_property(sim, prop):
-
     """
-    Averages the property over all of the steps in the simulation
+    Averages the property over all the steps in the simulation
 
-    Arguments:
-    sim - a Simulation object
-    prop - a string specifying a LAMMPS simulation thermo_style property
+    Parameters
+    ----------
+    sim : Simulation
+        An MDMC Simulation object
+    prop : str
+        A string specifying a LAMMPS simulation thermo_style property
 
-    Returns:
-    A float average of all of the values of prop during the simulation run
+    Returns
+    -------
+    float
+        An average of all values of prop during the simulation run
     """
 
-    # runs[1] is the thermo_styles properties from the second time the run
-    # method of LAMMPS wrapper is called - this is the production run (index 0
-    # is the equilibration run)
+    """runs[1] is the thermo_styles properties from the second time the run
+    method of LAMMPS wrapper is called - this is the production run (index 0
+    is the equilibration run)"""
     return np.mean(getattr(sim.engine.lmp.runs[1].thermo, prop))
 
 
 def assert_property(ensemble, expected, request, prop):
-
     """
     Performs an assertion on a property using an ensemble returned using request
 
-    Arguments:
-    ensemble - an ensemble fixture (e.g. NVE, NPT)
-    expected - a dictionary of (name: value) where name is a string with the
-    thermodynamic/simulation property name and expected is the expected value of
-    that property
-    request - a pytest request object
-    prop - a string with the thermodynamic/simulation property to be tested
+    Parameters
+    ----------
+    ensemble : Simulation
+        A simulation object fixture (e.g. NVE, NPT)
+    expected : dict
+        a dictionary where key is a string with the thermodynamic/simulation property name and
+        the value is the expected value of that property
+    request : pytest.Request
+        A pytest request object
+    prop : str
+        a string with the thermodynamic/simulation property to be tested
     """
 
     # As fixtures cannot be included in parameterization, the names of the
