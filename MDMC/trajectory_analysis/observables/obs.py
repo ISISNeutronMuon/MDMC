@@ -283,7 +283,7 @@ class Observable(ABC):
 
         Return
         ------
-        Dict[str, Dict[str, bool]]
+        dict[str, dict[str, bool]]
             Dictionary of independent variables
             with their uniformity restrictions represented as booleans
         """
