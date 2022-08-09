@@ -59,7 +59,7 @@ class ObservablePair:
     def exp_obs(self, exp_obs: Observable) -> None:
         """
         Parameters
-        -------
+        ----------
         exp_obs : Observable
             The experimental ``Observable``
 
