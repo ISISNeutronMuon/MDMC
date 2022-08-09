@@ -1,12 +1,13 @@
 """The Metropolis-Hastings minimizer class"""
-from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+import numpy as np
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from MDMC.MD import Parameters
 
-import numpy as np
+from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
 
 
 class MMC(Minimizer):
