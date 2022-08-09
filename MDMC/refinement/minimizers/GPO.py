@@ -44,7 +44,6 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-
     def __init__(self, parameters: 'Parameters', **settings: dict):
         super().__init__(parameters)
 
@@ -70,6 +69,14 @@ class GPO(Minimizer):
 
     @property
     def history_columns(self) -> 'list[str]':
+        """
+        Returns column labels of the history
+
+        Returns
+        -------
+        list[str]
+            A ``list`` of ``str`` containing all the column labels in the history
+        """
 
         return ['FoM', 'Change state', 'Pred coords', 'Pred FoM'] + list(self.parameters)
 
@@ -157,14 +164,12 @@ class GPO(Minimizer):
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][4:]
         # the [0][0][4:] is just to get the parameters from the _history
 
-
-        list_of_outputs = [
+        return [
             tuple(min_parameters_measured),
             float(min_FoM_measured),
             tuple(self.predicted_min_pos),
             self.predicted_FoM
         ]
-        return list_of_outputs
 
     def format_result_string(self, minimizer_output: list) -> str:
         """
