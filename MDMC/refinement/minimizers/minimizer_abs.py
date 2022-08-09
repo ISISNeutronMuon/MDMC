@@ -3,7 +3,6 @@ parameters"""
 
 from abc import ABC, abstractmethod
 
-import pandas
 from mpi4py import MPI
 import pandas as pd
 
@@ -81,7 +80,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @property
-    def history(self) -> pandas.DataFrame:
+    def history(self) -> pd.DataFrame:
         """
         Get the history of the minimizer, with a single entry for each step of
         the minimizer
