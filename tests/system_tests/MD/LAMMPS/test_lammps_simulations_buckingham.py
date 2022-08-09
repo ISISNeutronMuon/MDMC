@@ -98,8 +98,8 @@ def universe():
     H1 = Atom('H')
     H2 = Atom('H', position=(0., 1.63298, 0.))
     O = Atom('O', position=(0., 0.81649, 0.57736))
-    H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
-    O_coulombic = Coulombic(atoms=O, cutoff=10.)
+    Coulombic(atoms=[H1, H2], cutoff=10.)
+    Coulombic(atoms=O, cutoff=10.)
     water_mol = Molecule(position=(0, 0, 0),
                          velocity=(0, 0, 0),
                          atoms=[H1, H2, O],
@@ -113,9 +113,10 @@ def universe():
     universe.electrostatic_solver = e_solver
     universe.fill(water_mol, num_density=0.03356718472021752)
     buck = Buckingham(3.65e-18, 6.71, 6.94e-22)
-    O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
-                              vdw_tail_correction=True, function=buck)
+
     universe.add_force_field('SPCE')
+    Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
+                              vdw_tail_correction=True, function=buck)
 
     return universe
 
