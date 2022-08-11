@@ -107,12 +107,14 @@ def universe():
     e_solver = PPPM(accuracy=1e-5)
     universe.electrostatic_solver = e_solver
     universe.fill(water_mol, num_density=0.03356718472021752)
-    universe.add_force_field('SPCE')
     O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
-                              vdw_tail_correction=True)
+                               vdw_tail_correction=True)
+    universe.add_force_field('SPCE')
+
     # Change LJ epsilon parameter slightly so that it is exactly the same as
     # LAMMPS value
     O_dispersion.parameters['epsilon'].value = 0.6501936
+
 
     return universe
 
