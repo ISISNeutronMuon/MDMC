@@ -17,45 +17,99 @@ import numpy as np
 from MDMC.common.units import Unit
 
 class CompactTrajectory:
-    def __init__(self):
+    def __init__(self, bytes_per_number: int = 8):
         """
         This is a bare constructor which initialises all the fields the basic trajectory
-        will have."""
+        will have.
+        Args:
+            bytes_per_number (int, optional): If 8, the arrays will use np.float64 to
+              store the positions, velocities and time at each step. Will always be rounded
+              up to the nearest multiple of 2."""
         # the idea is that all the numbers within the trajectory are given in the same units
         # and it will be our job to ensure that it is the case later in the code
         self.position_unit = Unit('Ang')
         self.time_unit = Unit('fs')
         self.velocity_unit = Unit('Ang')/Unit('fs')
         # some other information
+        self.dtype = self._get_dtype(bytes_per_number)
         # the underlying assumption is that the number of atoms,
         # and the atom types, stay CONSTANT within the trajectory
         self.n_atoms = -1
         self.n_steps = 0
         self.atom_types = []
+        self.atom_masses = []
+        self.dimensions = np.zeros(3)
         # key point: the data!
         # this is where we will keep the numpy arrays
         self.position = None
         self.velocity = None
-        self.time = None
+        self.times = None
         # now some state indicators
         self.is_allocated = False
         self.is_populated = False
         self.first_index = 0
         self.last_index = -1
-    def preAllocate(self, n_steps=1,n_atoms=1, useVelocity = False):
+    @staticmethod
+    def _get_dtype(bpn : int):
+        if bpn > 8:
+            return np.float128
+        elif bpn > 4:
+            return np.float64
+        elif bpn > 2:
+            return np.float32
+        else:
+            return np.float16
+    def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
+                    useVelocity: bool = False):
         """
-        In the case of 
+        For the best performance, we should already know how many
+        steps the trajectory has, and how many atoms are in it.
+        Then we can allocate the arrays immediately, and save ourselves
+        the overhead of increasing the size of the data step by step.
         Args:
-            n_steps (int, optional): _description_. Defaults to 1.
-            n_atoms (int, optional): _description_. Defaults to 1.
-            useVelocity (bool, optional): _description_. Defaults to False.
+            n_steps (int, optional): Number of simulation steps in the
+              trajectory. Defaults to 1.
+            n_atoms (int, optional): Number of atoms in the system.
+              Defaults to 1.
+            useVelocity (bool, optional): If the trajectory contains
+              velocities, set to True to allocate an additional array
+              for the velocity values. Defaults to False.
         """
-    def takeOneStep(self, atom_ids: np.array, atom_positions: np.array):
+        shape = (n_steps, n_atoms, 3)
+        self.times = np.empty(n_steps, dtype = self.dtype)
+        self.position = np.empty(shape, dtype = self.dtype)
+        if useVelocity:
+            self.velocity = np.empty(shape, dtype = self.dtype)
+    def writeOneStep(self, step_num: int = -1, time: float = -1.0,
+                     positions: np.array = None,
+                     velocities: np.array = None):
         """
-        The idea is to take one step of the simulation, and sort the atom
-        positions according to atom numbers
+        This function assumes that we have allocated the memory already,
+        and that we have sorted the atoms according to their IDs.
+        It will then put the numbers into the arrays at the correct index
         Args:
-            atom_ids (np.array): _description_
-            atom_positions (np.array): _description_
+            step_num (int, optional): the index at which the numbers will be written.
+               Defaults to -1.
+            time (float, optional): the time stamp of the simulation step, in the
+               correct time units (femtoseconds). Defaults to -1.0.
+            positions (np.array, optional): the array of the atom positions, shaped
+               (n_atoms, 3). Defaults to None.
+            velocities (np.array, optional): the array of the atom velocities, shaped
+               (n_atoms, 3). If we don't use velocities, it can be skipped.
+               Defaults to None.
         """
+        if not self.is_allocated:
+            pass # here I should use a fallback function later
+        else:
+            self.times[step_num] = time
+            self.position[step_num, : , :] = positions
+            if velocities is not None:
+                self.velocity[step_num, :, :] = velocities
+            # some housekeeping:
+            # we take note of the indices that have been written to.
+            # Just in case the simulation was cut short, we will know
+            # how many elements we can still use
+            self.first_index = min(step_num, self.first_index)
+            self.last_index = max(step_num, self.last_index)
+
         

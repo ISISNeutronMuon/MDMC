@@ -59,6 +59,7 @@ from MDMC.MD.interactions import BondedInteraction, Interaction, \
     NonBondedInteraction, Bond, BondAngle
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
     Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
@@ -458,9 +459,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.thermostat = None
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> Trajectory:
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
-        Converts between a LAMMPS trajectory dump and an MDMC ``Trajectory``
+        Converts between a LAMMPS trajectory dump and an MDMC 
+        ``CompactTrajectory``
 
         The LAMMPS dump must include at least ``id``, ``atom_type``, and ``xyz``
         ``positions``. The ``xyz`` ``positions`` must be consecutive and in that
@@ -484,8 +486,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         Returns
         -------
-        ``Trajectory``
-            The MDMC ``Trajectory`` corresponding to the LAMMPS ``trajectory_file``
+        ``CompactTrajectory``
+            The MDMC ``CompactTrajectory`` corresponding to the LAMMPS
+            ``trajectory_file``. 
 
         Raises
         ------
@@ -495,46 +498,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         TypeError
             If ``trajectory_file`` describes a triclinic universe.
         """
-
-        def create_atom(line: np.ndarray) -> Atom:
-            """
-            Create an MDMC ``Atom`` from a line in a LAMMPS dump (trajectory) file
-
-            At a minimum it will set the ``ID``, ``atom_type` and ``position`` of
-            the ``Atom``. It will also set the ``velocity`` if included in the line,
-            and the ``Universe``, if this was passed to ``convert_trajectory()``.
-
-            Parameters
-            ----------
-            line : numpy.ndarray
-                ``array`` containing a line from the ATOMS sections of a LAMMPS dump
-                file. The ``array`` must contain the atom ``ID``, the ``atom_type``,
-                and the ``x``, ``y``, and ``z`` (or scaled equivalents) components
-                of the ``position``, which are assumed to be adjacent. It will also
-                set the ``velocity`` of the atom if this is included in the line.
-
-            Returns
-            -------
-            ``Atom``
-                MDMC ``Atom`` object corresponding to the ``line``
-            """
-
-            atom_type = int(line[i_type])
-            # If distance units are same for MDMC and LAMMPS then
-            # don't call convert_units - currently hardcoded
-            # Same goes for velocity and time units
-            position = [float(splt) for splt in line[i_pos:i_pos+3]]
-            # Get symbol and mass from atom_type_properties
-            # Adjusted for 0 index
-            symbol, mass = self.lmp_universe.atom_type_properties[atom_type-1]
-            atom = Atom(symbol, position=position, mass=mass)
-            atom.atom_type = atom_type
-            if self.universe:
-                atom.universe = self.universe
-            if i_vel is not None:
-                atom.velocity = [float(splt) for splt
-                                 in line[i_vel:i_vel+3]]
-            return atom
 
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
@@ -549,6 +512,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         frame_indexes = count(start, step)
         # next_frame_n next attribute is assigned dynamically
         next_frame_n = next(frame_indexes)  # pylint: disable=no-member
+        
+        traj = CompactTrajectory() #the instance of our new trajectory object
+        
         with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
             line = file_handler.readline()
             while line:
@@ -602,6 +568,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             i_vel = splt.index('vx')
                         else:
                             i_vel = None
+                        
+                        traj.preAllocate(n_steps = stop, # this is very likely WRONG :TODO: check how many steps we expect
+                                         n_atoms = n_atoms,
+                                         useVelocity = i_vel is not None)
 
                     if frame_n == next_frame_n:
                         # Reads all atom lines before creating any atoms. By
@@ -619,12 +589,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # sort list of lists based on id
                         lines = sorted(lines, key=lambda x: x[i_id])
 
-                        atoms = []
-                        for line in lines:
-                            # Checks if only specific atom_IDs are required, and if
-                            # so, only creates atoms which have those IDs
-                            if not atom_IDs or line[i_id] in atom_IDs:
-                                atoms.append(create_atom(line))
+                        
 
                         # Multiply the number of timesteps by dt to calculate the
                         # elapsed time
