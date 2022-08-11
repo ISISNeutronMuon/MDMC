@@ -40,51 +40,57 @@ where both the mean value and the standard deviation have been calculated from
 simulation with the same simulation parameters.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
-NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(1440.28, 3.9),
-                'PotEng':(-1282.70, 3.5), 'Temp':(1121.08, 3.0),
-                'Press':(16911.42, 116.1), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(382.69, 3.2),
-                'E_coul':(11562.59, 4.5), 'E_long':(-13227.98, 0.45),
-                'Nbuild':(896.46, 3.2), 'Ndanger':(0, 0)}
+NVE_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
+                'KinEng': (1416.746153880597, 3.7354172931461607),
+                'PotEng': (-386.9053971741294, 2.6771308495720425),
+                'Temp': (1102.7586426865669, 2.9075524765940672),
+                'Press': (48792.35475273632, 129.3849406201805), 'Volume': (6434.856, 0.0),
+                'E_bond': (0.0, 0.0), 'E_angle': (0.0, 0.0),
+                'E_vdwl': (907.2063949800993, 4.625442989406503),
+                'E_coul': (11935.364917910449, 3.505790583024876),
+                'E_long': (-13229.476718905475, 0.40487535702667377),
+                'Nbuild': (891.4741293532339, 3.1977582817133685), 'Ndanger': (0.0, 0.0)}
 
-NVT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(385.43, 0.98),
-                'PotEng':(-2408.66, 4.2), 'Temp':(300.01, 0.77),
-                'Press':(168.6, 84.6), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(457.47, 2.6),
-                'E_coul':(10388.92, 5.6), 'E_long':(-13255.06, 0.11),
-                'Nbuild':(384.18, 3.4), 'Ndanger':(0, 0)}
+NVT_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
+                'KinEng': (382.4499767611941, 0.7109164462250214),
+                'PotEng': (-1296.7771849751243, 1.6332759412816056),
+                'Temp': (297.6891917064676, 0.5533589910133256),
+                'Press': (21835.118670646763, 95.76330891271319), 'Volume': (6434.856, 0.0),
+                'E_bond': (0.0, 0.0), 'E_angle': (0.0, 0.0),
+                'E_vdwl': (443.0671263134329, 3.5889789266942356),
+                'E_coul': (11514.907874626868, 3.7871089328673055),
+                'E_long': (-13254.752188557211, 0.1362245168071942),
+                'Nbuild': (430.2179104477612, 2.1080263646549375), 'Ndanger': (0.0, 0.0)}
 
-NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(384.85, 0.9),
-                'PotEng':(-2408.42, 6.4), 'Temp':(299.56, 0.70),
-                'Press':(3.87, 31.5), 'Volume':(6478.08, 30.3),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(455.36, 3.2),
-                'E_coul':(10390.32, 18.4), 'E_long':(-13254.11, 13.5),
-                'Nbuild':(415.84, 2.7), 'Ndanger':(0, 0)}
+NPT_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
+                'KinEng': (383.0610417761194, 0.8722296098018337),
+                'PotEng': (-1193.2133119900498, 2.59987021422615),
+                'Temp': (298.1648289900498, 0.6789209813207984),
+                'Press': (-3.4173811777860665, 43.05066881088412),
+                'Volume': (10981.601679104477, 54.8575141465732), 'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0), 'E_vdwl': (56.49998219945273, 2.0734293492831317),
+                'E_coul': (11803.296957711445, 20.82238856812951),
+                'E_long': (-13053.010258706468, 22.37345151248904),
+                'Nbuild': (485.8572139303483, 1.8986003528700628), 'Ndanger': (0.0, 0.0)}
 
-NVE_UNCONSTRAINED_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
-                              'Bonds':(N_MOLECULES*2, 0),
-                              'Angles':(N_MOLECULES, 0),
-                              'KinEng':(1657.53, 6.6),
-                              'PotEng':(-1176.07, 6.6),
-                              'Temp':(859.45, 3.4),
-                              'Press':(13672.83, 266.9),
-                              'Volume':(DIMENSION**3, 0),
-                              'E_bond':(180.66, 4.7),
-                              'E_angle':(294.60, 4.5),
-                              'E_vdwl':(424.56, 6.1),
-                              'E_coul':(11154.79, 9.4),
-                              'E_long':(-13230.68, 0.27),
-                              'Nbuild':(92.02, 1.2),
-                              'Ndanger':(0, 0)}
+NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
+                              'KinEng': (1602.0923289552238, 5.580040237658352),
+                              'PotEng': (-252.26176035174132, 5.590040660475537),
+                              'Temp': (830.709081766169, 2.8933351405976087),
+                              'Press': (44778.287628855716, 225.9730795606594),
+                              'Volume': (6434.856, 0.0),
+                              'E_bond': (129.51483600646765, 3.2251322657817227),
+                              'E_angle': (269.5281860746269, 4.127308177136364),
+                              'E_vdwl': (884.8944745820896, 7.921781312371781),
+                              'E_coul': (11695.374708955223, 9.753957036365723),
+                              'E_long': (-13231.57395472637, 0.383206708789476),
+                              'Nbuild': (91.35572139303484, 0.8547583670505459),
+                              'Ndanger': (0.0, 0.0)}
 
 
 # Use module scope so that the simulation only runs once for all functions
 @pytest.fixture(scope="module")
 def universe():
-
     """
     Returns
     -------
@@ -112,11 +118,10 @@ def universe():
     e_solver = PPPM(accuracy=1e-5)
     universe.electrostatic_solver = e_solver
     universe.fill(water_mol, num_density=0.03356718472021752)
-    buck = Buckingham(3.65e-18, 6.71, 6.94e-22)
-
     universe.add_force_field('SPCE')
+    buck = Buckingham(1194446.573277789, 3.6992957746478874, 4914.958810163367)
     Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
-                              vdw_tail_correction=True, function=buck)
+               vdw_tail_correction=True, function=buck)
 
     return universe
 
@@ -243,11 +248,12 @@ def parameterize_decorator(func):
                               ('NVT', NVT_EXPECTED),
                               ('NPT', NPT_EXPECTED),
                               ('NVE_unconstrained', NVE_UNCONSTRAINED_EXPECTED)]
-                            )
+                             )
     def wrapper(ensemble, expected, request):
         func(ensemble, expected, request)
 
     return wrapper
+
 
 @parameterize_decorator
 def test_number_atoms(ensemble, expected, request):
@@ -440,4 +446,4 @@ def assert_property(ensemble, expected, request, prop):
     # absolute tolerance is set to STDEV_FAC times this value.
     # Small relative tolerance accounts for rounding differences
     assert np.allclose(average, expected[prop][0],
-                       atol=expected[prop][1]*STDEV_FAC, rtol=1e-8)
+                       atol=expected[prop][1] * STDEV_FAC, rtol=1e-8)
