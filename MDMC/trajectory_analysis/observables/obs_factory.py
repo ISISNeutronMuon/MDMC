@@ -1,10 +1,12 @@
 """Factory class for generating observables"""
 
-from typing import Callable, Dict, Iterable, Type, Union
+from typing import TYPE_CHECKING
 
 from MDMC.trajectory_analysis.observables.obs import \
     Observable
 
+if TYPE_CHECKING:
+    from typing import Callable, Iterable, Type, Union
 
 class ObservableFactory:
 
@@ -14,10 +16,10 @@ class ObservableFactory:
     long as it is a subclass of ``Observable``.
     """
 
-    registry: Dict[str, Observable] = {}
+    registry: 'dict[str, Observable]' = {}
 
     @classmethod
-    def register(cls, names: Union[str, Iterable]) -> Callable:
+    def register(cls, names: 'Union[str, Iterable]') -> 'Callable':
         """
         A class level decorator for registering Observable classes
 
@@ -40,7 +42,7 @@ class ObservableFactory:
                 class SQw(Observable):
         """
 
-        def class_wrapper(wrapped_class: Observable) -> Callable:
+        def class_wrapper(wrapped_class: 'Observable') -> 'Callable':
 
             if isinstance(names, str):
                 cls.registry[names] = wrapped_class
@@ -52,7 +54,7 @@ class ObservableFactory:
         return class_wrapper
 
     @classmethod
-    def create_observable(cls, name: str) -> Observable:
+    def create_observable(cls, name: str) -> 'Observable':
         """
         Creates an ``Observable`` object from a module name
 
@@ -73,13 +75,13 @@ class ObservableFactory:
         return cls.get_observable(name)()
 
     @classmethod
-    def get_observable(cls, name: str) -> Type[Observable]:
+    def get_observable(cls, name: str) -> 'Type[Observable]':
         """
         Gets an ``Observable`` class from a registry name
 
         Parameters
         ----------
-        module_name : str
+        name : str
             The name of with which the ``Observable`` is registered
 
         Returns
