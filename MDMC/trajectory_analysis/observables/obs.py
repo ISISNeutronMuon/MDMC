@@ -2,10 +2,13 @@
 from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
+from typing import Union, TYPE_CHECKING
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
+if TYPE_CHECKING:
+    from MDMC.trajectory_analysis.trajectory import Trajectory
 
 @repr_decorator('origin', 'data')
 class Observable(ABC):
@@ -194,7 +197,7 @@ class Observable(ABC):
 
     @abstractmethod
     def calculate_from_MD(self,
-                          MD_input: object,
+                          MD_input: 'Union[Trajectory, list[Trajectory]]',
                           verbose: int = 0,
                           **parameters: dict) -> None:
         """
