@@ -27,7 +27,6 @@ STDEV_FAC = 4.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
-N_MOLECULES = 216
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
@@ -41,52 +40,69 @@ where both the mean value and the standard deviation have been calculated from
 simulation with the same simulation parameters.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
-NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0), 'Bonds': (N_MOLECULES*2, 0.0),
+
+NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
+                'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (1416.746153880597, 3.7354172931461607),
-                'PotEng': (-386.9053971741294, 2.6771308495720425),
-                'Temp': (1102.7586426865669, 2.9075524765940672),
-                'Press': (48792.35475273632, 129.3849406201805), 'Volume': (6434.856, 0.0),
-                'E_bond': (0.0, 0.0), 'E_angle': (0.0, 0.0),
-                'E_vdwl': (907.2063949800993, 4.625442989406503),
-                'E_coul': (11935.364917910449, 3.505790583024876),
-                'E_long': (-13229.476718905475, 0.40487535702667377),
-                'Nbuild': (891.4741293532339, 3.1977582817133685), 'Ndanger': (0.0, 0.0)}
+                'KinEng': (1441.19, 4.85),
+                'PotEng': (-222.99, 3.51),
+                'Temp': (1121.78, 3.78),
+                'Press': (54184.59, 94.68),
+                'Volume': (DIMENSION**3, 0.0),
+                'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0),
+                'E_vdwl': (1038.99, 2.54),
+                'E_coul': (11966.69, 3.42),
+                'E_long': (-13228.67, 0.32),
+                'Nbuild': (900.73, 3.3),
+                'Ndanger': (0.0, 0.0)}
 
-NVT_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
-                'KinEng': (382.4499767611941, 0.7109164462250214),
-                'PotEng': (-1296.7771849751243, 1.6332759412816056),
-                'Temp': (297.6891917064676, 0.5533589910133256),
-                'Press': (21835.118670646763, 95.76330891271319), 'Volume': (6434.856, 0.0),
-                'E_bond': (0.0, 0.0), 'E_angle': (0.0, 0.0),
-                'E_vdwl': (443.0671263134329, 3.5889789266942356),
-                'E_coul': (11514.907874626868, 3.7871089328673055),
-                'E_long': (-13254.752188557211, 0.1362245168071942),
-                'Nbuild': (430.2179104477612, 2.1080263646549375), 'Ndanger': (0.0, 0.0)}
+NVT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
+                'Bonds': (N_MOLECULES*2, 0.0),
+                'Angles': (N_MOLECULES, 0.0),
+                'KinEng': (383.18, 1.18),
+                'PotEng': (-1163.76, 2.27),
+                'Temp': (298.26, 0.92),
+                'Press': (26007.41, 129.86),
+                'Volume': (DIMENSION**3, 0.0),
+                'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0),
+                'E_vdwl': (535.73, 4.02),
+                'E_coul': (11555.23, 3.01),
+                'E_long': (-13254.73, 0.09),
+                'Nbuild': (431.3, 1.69),
+                'Ndanger': (0.0, 0.0)}
 
-NPT_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
-                'KinEng': (383.0610417761194, 0.8722296098018337),
-                'PotEng': (-1193.2133119900498, 2.59987021422615),
-                'Temp': (298.1648289900498, 0.6789209813207984),
-                'Press': (-3.4173811777860665, 43.05066881088412),
-                'Volume': (10981.601679104477, 54.8575141465732), 'E_bond': (0.0, 0.0),
-                'E_angle': (0.0, 0.0), 'E_vdwl': (56.49998219945273, 2.0734293492831317),
-                'E_coul': (11803.296957711445, 20.82238856812951),
-                'E_long': (-13053.010258706468, 22.37345151248904),
-                'Nbuild': (485.8572139303483, 1.8986003528700628), 'Ndanger': (0.0, 0.0)}
+NPT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
+                'Bonds': (N_MOLECULES*2, 0.0),
+                'Angles': (N_MOLECULES, 0.0),
+                'KinEng': (383.02, 0.79),
+                'PotEng': (-1087.25, 3.15),
+                'Temp': (298.13, 0.61),
+                'Press': (13.26, 42.9),
+                'Volume': (11985.33, 88.26),
+                'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0),
+                'E_vdwl': (55.24, 2.21),
+                'E_coul': (11911.1, 131.52),
+                'E_long': (-13053.59, 132.12),
+                'Nbuild': (493.74, 2.3),
+                'Ndanger': (0.0, 0.0)}
 
-NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
-                              'KinEng': (1602.0923289552238, 5.580040237658352),
-                              'PotEng': (-252.26176035174132, 5.590040660475537),
-                              'Temp': (830.709081766169, 2.8933351405976087),
-                              'Press': (44778.287628855716, 225.9730795606594),
-                              'Volume': (6434.856, 0.0),
-                              'E_bond': (129.51483600646765, 3.2251322657817227),
-                              'E_angle': (269.5281860746269, 4.127308177136364),
-                              'E_vdwl': (884.8944745820896, 7.921781312371781),
-                              'E_coul': (11695.374708955223, 9.753957036365723),
-                              'E_long': (-13231.57395472637, 0.383206708789476),
-                              'Nbuild': (91.35572139303484, 0.8547583670505459),
+NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
+                              'Bonds': (N_MOLECULES*2, 0.0),
+                              'Angles': (N_MOLECULES, 0.0),
+                              'KinEng': (1623.88, 2.37),
+                              'PotEng': (-85.4, 2.36),
+                              'Temp': (842.01, 1.23),
+                              'Press': (50210.5, 355.58),
+                              'Volume': (DIMENSION**3, 0.0),
+                              'E_bond': (125.92, 2.7),
+                              'E_angle': (273.51, 4.71),
+                              'E_vdwl': (1018.22, 11.22),
+                              'E_coul': (11728.32, 9.79),
+                              'E_long': (-13231.37, 0.4),
+                              'Nbuild': (92.74, 1.19),
                               'Ndanger': (0.0, 0.0)}
 
 
@@ -123,8 +139,8 @@ def universe():
     universe.add_force_field('SPCE')
 
     """
-    The following Buckingham potential parameters were derived from rearranging the equations
-    and parameters at: https://water.lsbu.ac.uk/water/water_models.html#af.
+    The following Buckingham potential parameters were first derived from rearranging the equations
+    and given parameters at: https://water.lsbu.ac.uk/water/water_models.html#af.
     
     These were then manually adjusted "by eye" to graphically "fit" that of the Lennard-Jones
     potential in the 3-12 angstrom range. (Hence the expected values should be similar to that 
