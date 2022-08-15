@@ -2,13 +2,14 @@
 from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
-from typing import Union, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
 if TYPE_CHECKING:
     from MDMC.trajectory_analysis.trajectory import Trajectory
+    from typing import Union
 
 @repr_decorator('origin', 'data')
 class Observable(ABC):
