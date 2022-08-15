@@ -45,7 +45,9 @@ class ObservablePair:
     @property
     def exp_obs(self) -> Observable:
         """
-        Get the experimental ``Observable``
+        Get or set the experimental ``Observable``
+
+        Setting the ``Observable`` checks its validity
 
         Returns
         -------
@@ -57,22 +59,15 @@ class ObservablePair:
 
     @exp_obs.setter
     def exp_obs(self, exp_obs: Observable) -> None:
-        """
-        Parameters
-        ----------
-        exp_obs : Observable
-            The experimental ``Observable``
-
-        Setting the ``Observable`` checks its validity
-        """
-
         self.validate_obs(exp_obs, 'experiment')
         self._exp_obs = exp_obs
 
     @property
     def MD_obs(self) -> Observable:
         """
-        Get the MD ``Observable``
+        Get or set the MD ``Observable``
+
+        Setting the ``Observable`` checks its validity
 
         Returns
         -------
@@ -84,43 +79,18 @@ class ObservablePair:
 
     @MD_obs.setter
     def MD_obs(self, MD_obs: Observable) -> None:
-        """
-        Set the MD ``Observable``
-
-        Setting the ``Observable`` checks its validity
-
-        Parameters
-        -------
-        MD_obs : Observable
-            An observable object to set the attribute to
-        """
-
         self.validate_obs(MD_obs, 'MD')
         self._MD_obs = MD_obs
 
     @property
     def weight(self) -> float:
         """
-        Get the relative weight of this pair on a total FoM
+        Get or set the relative weight of this pair on a total FoM
 
         Returns
         -------
         float
             The relative weight
-
-        """
-
-        return self._weight
-
-    @weight.setter
-    def weight(self, weight: float) -> None:
-        """
-        Set the relative weight of this pair on a total FoM
-
-        Parameters
-        -------
-        MD_obs : Observable
-            An observable object to set the attribute to
 
         Raises
         ------
@@ -128,6 +98,10 @@ class ObservablePair:
             If ``weight`` is set with a non-numeric
         """
 
+        return self._weight
+
+    @weight.setter
+    def weight(self, weight: float) -> None:
         try:
             weight = float(weight)
         except ValueError as error:
