@@ -75,6 +75,8 @@ class CompactTrajectory:
               velocities, set to True to allocate an additional array
               for the velocity values. Defaults to False.
         """
+        self.n_atoms = n_atoms
+        self.n_steps = n_steps
         shape = (n_steps, n_atoms, 3)
         self.times = np.empty(n_steps, dtype = self.dtype)
         self.position = np.empty(shape, dtype = self.dtype)
@@ -111,5 +113,32 @@ class CompactTrajectory:
             # how many elements we can still use
             self.first_index = min(step_num, self.first_index)
             self.last_index = max(step_num, self.last_index)
+    def validateTypes(self, atom_types: np.array):
+        """This function checks if the sorted array of atom types
+        from the new frame is the same as the original array
+        of atom types.
+        If the atom types have changed during the simulation,
+        we cannot process the results using the CompactTrajectory
+        object, and the validation will return False
+
+        Args:
+            atom_types (np.array): an array of all the atom
+            types, sorted by the atom ID.
+
+        Returns:
+            bool: True if the atom types are the same as in
+            the beginning, False otherwise.
+        """
+        if len(self.atom_types) == 0:
+            if len(atom_types) == self.n_atoms:
+                self.atom_types = atom_types
+                return True
+            else:
+                return False
+        else:
+            if np.all(self.atom_types == atom_types):
+                return True
+            else:
+                return False
 
         

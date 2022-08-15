@@ -515,6 +515,28 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         
         traj = CompactTrajectory() #the instance of our new trajectory object
         
+        def _make_gen(reader):
+            """A support function for splitting a binary file into buffers
+
+            Args:
+                reader (file descriptor): an open file or a file-like object
+
+            Yields:
+                bytes: a byte string read from the file
+            """
+            b = reader(1024 * 1024)
+            while b:
+                yield b
+                b = reader(1024*1024)
+        
+        # here we check how long the trajectory really is
+        with open(self.trajectory_file.name, 'rb') as file_handler:
+            file_generator = _make_gen(file_handler.raw.read)
+            line_count = sum( buf.count(b'\n') for buf in file_generator )
+        # And header_size will tell us how many lines per frame
+        # are added on top of the atom positions
+        header_size = 0
+        
         with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
             line = file_handler.readline()
             while line:
@@ -526,15 +548,18 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 if 'ITEM: TIMESTEP' in line:
                     line = file_handler.readline()
                     frame = int(line.split()[0])
+                    header_size += 2
 
                 if 'ITEM: NUMBER OF ATOMS' in line:
                     line = file_handler.readline()
                     n_atoms = int(line.split()[0])
+                    header_size += 2
                     # Check that n_atoms is as expected, if a universe was passed
                     if self.universe:
                         assert n_atoms == len(self.universe.atoms)
 
                 if 'ITEM: BOX BOUNDS' in line:
+                    header_size += 1
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
                     if 'xy' in line:
                         raise TypeError('triclinic simulation boxes have not'
@@ -544,6 +569,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                     if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
                         for i in range(3):
                             line = file_handler.readline()
+                            header_size += 1
                             dmin, dmax = [float(splt) for splt in line.split()]
                             assert dmin == 0.0
                             # unit is taken from universe dimensions (which is a
@@ -552,6 +578,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                         self.universe.dimensions.unit)
 
                 if 'ITEM: ATOMS' in line:
+                    header_size += 1
                     if frame_n == start:
                         # LAMMPS dump files contain order of LAMMPS atom properties,
                         # at each time step. As these should not change with time
@@ -569,7 +596,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         else:
                             i_vel = None
                         
-                        traj.preAllocate(n_steps = stop, # this is very likely WRONG :TODO: check how many steps we expect
+                        # now we try to get the correct number of frames in the trajectory
+                        real_n_steps = 1 + line_count // (n_atoms + header_size)
+                        
+                        traj.preAllocate(n_steps = real_n_steps,
                                          n_atoms = n_atoms,
                                          useVelocity = i_vel is not None)
 
@@ -580,6 +610,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # is required as by default LAMMPS does not sort by ID, so
                         # the same atom will not appear in the same place for each
                         # time step.
+                        header_size = 0
                         lines = []
                         for _ in range(n_atoms):
                             line = file_handler.readline().split()
@@ -589,12 +620,20 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # sort list of lists based on id
                         lines = sorted(lines, key=lambda x: x[i_id])
 
+                        sorted_lines = np.array(lines, dtype = traj.dtype)
                         
-
-                        # Multiply the number of timesteps by dt to calculate the
-                        # elapsed time
-                        configs.append(TemporalConfiguration(frame * self.time_step,
-                                                             *atoms))
+                        atom_types = sorted_lines[:,i_type]
+                        traj.validateTypes(atom_types)
+                        
+                        if i_vel is not None:
+                            traj.writeOneStep(step_num = frame_n,
+                                          time = frame * self.time_step,
+                                          positions = sorted_lines[:,i_pos:i_pos+3],
+                                          velocities = sorted_lines[:,i_vel:i_vel+3])
+                        else:
+                            traj.writeOneStep(step_num = frame_n,
+                                          time = frame * self.time_step,
+                                          positions = sorted_lines[:,i_pos:i_pos+3])
 
                         # next_frame_n next attribute is assigned dynamically
                         # pylint: disable=no-member
@@ -604,7 +643,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         break
 
                 line = file_handler.readline()
-        return Trajectory(*configs)
+        return traj
 
     def convert_trajectory_original(self, start: int = 0, stop: int = None,
                            step: int = 1, **settings: dict) -> Trajectory:
