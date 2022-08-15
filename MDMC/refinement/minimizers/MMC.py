@@ -119,7 +119,7 @@ class MMC(Minimizer):
 
         return change_state
 
-    def change_parameters(self) -> 'Parameters':
+    def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from a distribution centered
         around the current value.
