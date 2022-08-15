@@ -36,6 +36,7 @@ import logging
 from random import randint
 from tempfile import NamedTemporaryFile
 from typing import Union
+import gc as garbage
 
 from mpi4py import MPI
 import numpy as np
@@ -548,6 +549,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 if 'ITEM: TIMESTEP' in line:
                     line = file_handler.readline()
                     frame = int(line.split()[0])
+                    garbage.collect()
                     header_size += 2
 
                 if 'ITEM: NUMBER OF ATOMS' in line:
@@ -574,8 +576,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             assert dmin == 0.0
                             # unit is taken from universe dimensions (which is a
                             # UnitArray)
-                            assert dmax == convert_unit(self.universe.dimensions[i],
-                                                        self.universe.dimensions.unit)
+                            # how bad is this one for performance?
+                            # assert dmax == convert_unit(self.universe.dimensions[i],
+                            #                             self.universe.dimensions.unit)
 
                 if 'ITEM: ATOMS' in line:
                     header_size += 1
@@ -613,10 +616,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         header_size = 0
                         lines = []
                         for _ in range(n_atoms):
-                            line = file_handler.readline().split()
+                            spline = file_handler.readline().split()
                             # convert id to int
-                            line[i_id] = int(line[i_id])
-                            lines.append(line)
+                            spline[i_id] = int(spline[i_id])
+                            lines.append(spline)
                         # sort list of lists based on id
                         lines = sorted(lines, key=lambda x: x[i_id])
 

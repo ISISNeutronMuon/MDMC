@@ -82,6 +82,7 @@ class CompactTrajectory:
         self.position = np.empty(shape, dtype = self.dtype)
         if useVelocity:
             self.velocity = np.empty(shape, dtype = self.dtype)
+        self.is_allocated = True
     def writeOneStep(self, step_num: int = -1, time: float = -1.0,
                      positions: np.array = None,
                      velocities: np.array = None):
@@ -112,7 +113,7 @@ class CompactTrajectory:
             # Just in case the simulation was cut short, we will know
             # how many elements we can still use
             self.first_index = min(step_num, self.first_index)
-            self.last_index = max(step_num, self.last_index)
+            self.last_index = max(step_num + 1, self.last_index)
     def validateTypes(self, atom_types: np.array):
         """This function checks if the sorted array of atom types
         from the new frame is the same as the original array
@@ -140,5 +141,43 @@ class CompactTrajectory:
                 return True
             else:
                 return False
+    def postProcess(self):
+        """
+        This function can be called after the all the trajectory steps have
+        been read. It will discard the unnecessary rows of the arrays,
+        in case we had allocated too many due to some rounding error.
+        """
+        if not self.is_populated:
+            self.position = self.position[self.first_index:self.last_index]
+            self.times = self.times[self.first_index:self.last_index]
+            if self.velocity is not None:
+                self.velocity = self.velocity[self.first_index:self.last_index]
+            self.first_index = 0
+            self.last_index = len(self.position)
+            self.is_populated = True
+    def subtrajectory(self, start: int = 0, stop: int = -1, step: int = 1):
+        self.postProcess()
+        temp = CompactTrajectory()
+        # copy over all the transferable parts
+        temp.position_unit = self.position_unit
+        temp.time_unit = self.time_unit
+        temp.velocity_unit = self.velocity_unit
+        temp.dtype = self.dtype
+        temp.n_atoms = self.n_atoms = -1
+        self.n_steps = 0
+        temp.atom_types = self.atom_types = []
+        temp.atom_masses = self.atom_masses = []
+        temp.dimensions = self.dimensions
+        # key point: the data!
+        # this is where we will keep the numpy arrays
+        temp.position = self.position[start:stop:step, : , :]
+        temp.times = self.times[start:stop:step, : , :]
+        if self.velocity is not None:
+            temp.velocity = self.velocity[start:stop:step, : , :]
+        # now some state indicators
+        self.is_allocated = False
+        self.is_populated = False
+        self.first_index = 0
+        self.last_index = -1
 
         
