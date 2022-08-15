@@ -27,6 +27,7 @@ STDEV_FAC = 4.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
+N_MOLECULES = 216
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
@@ -40,7 +41,8 @@ where both the mean value and the standard deviation have been calculated from
 simulation with the same simulation parameters.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
-NVE_EXPECTED = {'Atoms': (648.0, 0.0), 'Bonds': (432.0, 0.0), 'Angles': (216.0, 0.0),
+NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0), 'Bonds': (N_MOLECULES*2, 0.0),
+                'Angles': (N_MOLECULES, 0.0),
                 'KinEng': (1416.746153880597, 3.7354172931461607),
                 'PotEng': (-386.9053971741294, 2.6771308495720425),
                 'Temp': (1102.7586426865669, 2.9075524765940672),
@@ -119,7 +121,18 @@ def universe():
     universe.electrostatic_solver = e_solver
     universe.fill(water_mol, num_density=0.03356718472021752)
     universe.add_force_field('SPCE')
-    buck = Buckingham(1194446.573277789, 3.6992957746478874, 4914.958810163367)
+
+    """
+    The following Buckingham potential parameters were derived from rearranging the equations
+    and parameters at: https://water.lsbu.ac.uk/water/water_models.html#af.
+    
+    These were then manually adjusted "by eye" to graphically "fit" that of the Lennard-Jones
+    potential in the 3-12 angstrom range. (Hence the expected values should be similar to that 
+    of Lennard-Jones, but not identical)
+    
+    The values have been rounded to 2 d.p. for readability
+    """
+    buck = Buckingham(1194446.57, 3.67, 4914.96)
     Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                vdw_tail_correction=True, function=buck)
 
