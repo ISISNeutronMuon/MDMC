@@ -36,7 +36,7 @@ class Observable(ABC):
     @property
     def name(self) -> str:
         """
-        Get the module name that used for factory instantiation
+        Get or set the module name that used for factory instantiation
 
         Returns
         -------
@@ -48,21 +48,12 @@ class Observable(ABC):
 
     @name.setter
     def name(self, name: str) -> None:
-        """
-        Set the module name that used for factory instantiation
-
-        Parameters
-        -------
-        str
-            The name of the module in which the ``Observable`` is located
-        """
-
         self._name = name
 
     @property
     def origin(self) -> str:
         """
-        Get the origin of the observable
+        Get or set the origin of the observable
 
         Returns
         -------
@@ -74,15 +65,6 @@ class Observable(ABC):
 
     @origin.setter
     def origin(self, origin: str) -> None:
-        """
-        Set the origin of the observable
-
-        Returns
-        -------
-        str
-            The origin of the ``Observable``, either ``'experiment'`` or ``'MD'``
-        """
-
         self._origin = origin
 
     @property
@@ -178,7 +160,7 @@ class Observable(ABC):
     @property
     def use_FFT(self) -> bool:
         """
-        Get whether to use FFT when calculating from MD
+        Get or set whether to use FFT when calculating from MD
 
         Returns
         -------
@@ -190,15 +172,6 @@ class Observable(ABC):
 
     @use_FFT.setter
     def use_FFT(self, use_FFT: bool) -> None:
-        """
-        Set whether to use FFT when calculating from MD
-
-        Parameters
-        -------
-        bool
-            Whether to use FFT
-        """
-
         self._use_FFT = use_FFT
 
     def read_from_file(self, reader: str, file_name: str) -> None:
