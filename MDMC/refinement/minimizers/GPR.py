@@ -40,7 +40,7 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, parameters, **settings):
+    def __init__(self, parameters: Parameters, **settings: dict):
         super().__init__(parameters)
         np.random.seed(0)
 
@@ -71,9 +71,9 @@ class GPR(Minimizer):
         Returns
         -------
         parameter_names : list
-                Ordered list of names of parameters
-        point_array : array
-                Array of parameter coordinates to be simulated
+                Ordered ``list`` of names of parameters
+        point_array : list
+                ``list`` of parameter coordinates to be simulated
         """
         parameter_names = [str(name) for name in parameters.keys()]
 
@@ -90,12 +90,12 @@ class GPR(Minimizer):
         bounds_grid = [self.create_bounds(parameter) for parameter in parameters.values()]
         bounds_array = [np.linspace(lower_bound, upper_bound, self.n_points) \
                         for lower_bound, upper_bound in bounds_grid]
-        point_array =  list(itertools.product(*bounds_array))
+        point_array = list(itertools.product(*bounds_array))
         # * is necessary for unpacking the arrays
         return parameter_names, point_array
 
     @staticmethod
-    def create_bounds(parameter: Parameter, fraction: float=0.3) -> 'tuple[float, float]':
+    def create_bounds(parameter: Parameter, fraction: float = 0.3) -> 'tuple[float, float]':
         """
         Returns either the parameter constraints (bounds) or bounds for each parameter
         equal to the parameter value =/- fraction*parameter.value, defaulting to +-30%.
@@ -105,7 +105,7 @@ class GPR(Minimizer):
         Parameters
         ----------
         parameter : Parameter
-            A MDMC 'Parameter'
+            A MDMC ``Parameter``
         fraction : optional, float
             The fractional size of the bound, defaults to 0.3 == +-30%
 
@@ -119,7 +119,7 @@ class GPR(Minimizer):
         Raises
         -----
         ValueError
-            If parameter.value is zero and no constraints have been set for it there
+            If `parameter.value` is zero and no constraints have been set for it there
             is no sensible way to guess bounds.
         """
         try:
@@ -151,7 +151,14 @@ class GPR(Minimizer):
 
     @property
     def history_columns(self) -> 'list[str]':
+        """
+        Returns column labels of the history
 
+        Returns
+        -------
+        list[str]
+            A ``list`` of ``str`` containing all the column labels in the history
+        """
         return ['FoM', 'Change state'] + list(self.parameters)
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
@@ -207,8 +214,8 @@ class GPR(Minimizer):
         for i, parameter in enumerate(self.parameters):
             self.parameters[parameter].value = self.parameter_point_array[-1][i]
 
-    def GPR_fit(self, filename: Optional[str]=None,
-                alpha: Optional[float]=5, length_scale: Optional[float]=4):
+    def GPR_fit(self, filename: Optional[str] = None,
+                alpha: Optional[float] = 5, length_scale: Optional[float] = 4):
         """
         Reads in the contents of the supplied filename, assumes it is the output of a refinement
         and can be read into a dataframe with the relevant parameters. Uses the recorded points
@@ -232,10 +239,12 @@ class GPR(Minimizer):
 
         Returns
         -------
-        GaussianProcessRegressor
+        GaussianProcessRegressor : GaussianProcessRegressor
             The fitted points using GPR
-        Minimum figure of merit
-        Minimum parameter values
+
+        Minimum figure of merit : float
+
+        Minimum parameter values : float
         """
 
         if not filename:
@@ -273,17 +282,17 @@ class GPR(Minimizer):
 
         Parameters
         ----------
-        input_regressor : GaussianProcessRegressor object
+        input_regressor : GaussianProcessRegressor
             A fitted Gaussian Process regressor object
         points: int, optional
             Number of points to predict the GPR over. Defaults to 100
 
         Returns
         -------
-        point_array : list
-            The list of coordinates at which the predictions are made
-        prediction : array
-            Array of predicted figure of merit surface at each coordinate in the point_array
+        point_array : list[tuple[float]]
+            The ``list`` of coordinates at which the predictions are made
+        prediction : numpy.ndarray
+            A ``list`` of predicted figure of merit surface at each coordinate in the point_array
         """
 
         regressor_points = input_regressor.X_train_
@@ -310,14 +319,14 @@ class GPR(Minimizer):
 
         Parameters
         ----------
-        predicted_FOMs : array
-            An array of the predicted figures of merit
+        predicted_FOMs : numpy.ndarray
+            A numpy ``array`` of the predicted figures of merit
         measured_parameter_coordinates: list
-            A list of the coordinates corresponding to the points at which the FoM was predicted
+            A ``list`` of the coordinates corresponding to the points at which the FoM was predicted
 
         Returns
         -------
-        minimum_parameters : array
+        minimum_parameters : numpy.ndarray
             The parameter coordinates where the minimum figure of merit is predicted to be
         min_FoM : float
             The predicted minimum figure of merit value

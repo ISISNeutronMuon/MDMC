@@ -4,12 +4,12 @@ from molecular dynamics trajectories."""
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
 if TYPE_CHECKING:
     from MDMC.trajectory_analysis.trajectory import Trajectory
+    from typing import Union
 
 
 @repr_decorator('origin', 'data')
@@ -41,7 +41,7 @@ class Observable(ABC):
     @property
     def name(self) -> str:
         """
-        Get the module name that was used for factory instantiation
+        Get or set the module name that used for factory instantiation
 
         Returns
         -------
@@ -53,14 +53,7 @@ class Observable(ABC):
 
     @name.setter
     def name(self, name: str) -> None:
-        """
-        Set the module name that was used for factory instantiation
-
-        Parameters
-        -------
-        name: str
-            The name of the module in which the ``Observable`` is located"
-        """
+        self._name = name
 
     @property
     def origin(self) -> str:
@@ -70,24 +63,13 @@ class Observable(ABC):
         Returns
         -------
         str
-            The origin of the ``Observable``, either ``'experiment'`` or
-            ``'MD'``
+            The origin of the ``Observable``, either ``'experiment'`` or ``'MD'``
         """
 
         return self._origin
 
     @origin.setter
     def origin(self, origin: str) -> None:
-        """
-        set the origin of the observable
-
-        Parameters
-        ----------
-        origin : str
-            The origin of the ``Observable``, either ``'experiment'`` or
-            ``'MD'``
-        """
-
         self._origin = origin
 
     @property
@@ -195,15 +177,6 @@ class Observable(ABC):
 
     @use_FFT.setter
     def use_FFT(self, use_FFT: bool) -> None:
-        """
-        Set whether to use FFT when calculating from MD
-
-        Parameters
-        -------
-        use_FFT: bool
-            Whether to use FFT
-        """
-
         self._use_FFT = use_FFT
 
     def read_from_file(self, reader: str, file_name: str) -> None:
@@ -225,7 +198,8 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input: 'Trajectory',
+
+    def calculate_from_MD(self, MD_input: 'Union[Trajectory, list[Trajectory]]',
                           verbose: int = 0, **parameters: dict) -> None:
         """
         Calculates the observable using input from an MD simulation
@@ -275,6 +249,7 @@ class Observable(ABC):
     @property
     @abstractmethod
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
+
         """
         Represents the current limitations on ``independent_variables`` of the ``Observable``.
         It captures if the ``independent_variables`` are required to be uniform or to start at zero
@@ -286,7 +261,7 @@ class Observable(ABC):
 
         Return
         ------
-        Dict[str, Dict[str, bool]]
+        dict[str, dict[str, bool]]
             Dictionary of independent variables
             with their uniformity restrictions represented as booleans
         """

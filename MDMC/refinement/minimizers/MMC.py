@@ -1,7 +1,13 @@
 """The Metropolis-Hastings minimizer class"""
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
+if TYPE_CHECKING:
+    from MDMC.MD import Parameters
+
 
 
 class MMC(Minimizer):
@@ -31,11 +37,9 @@ class MMC(Minimizer):
         list of the column titles for the minimizer history
     """
 
-
-
     DISTRIBUTION = {'uniform': np.random.uniform}
 
-    def __init__(self, parameters, **settings):
+    def __init__(self, parameters: 'Parameters', **settings: dict):
         super().__init__(parameters)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
@@ -52,10 +56,16 @@ class MMC(Minimizer):
             self.distribution = None
 
     @property
-    def history_columns(self):
+    def history_columns(self) -> 'list[str]':
+        """
+        Returns column labels of the history
 
+        Returns
+        -------
+        list[str]
+            A ``list`` of ``str`` containing all the column labels in the history
+        """
         return ['FoM', 'Change state'] + list(self.parameters)
-
 
     def step(self, FoM: float) -> None:
         """
@@ -87,7 +97,7 @@ class MMC(Minimizer):
         self._history.append(history)
         self.change_parameters()
 
-    def change_state(self):
+    def change_state(self) -> bool:
         """
         Stochastic determination of whether the state should change based on the
         FoM
@@ -109,7 +119,7 @@ class MMC(Minimizer):
 
         return change_state
 
-    def change_parameters(self):
+    def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from a distribution centered
         around the current value.
@@ -177,7 +187,7 @@ class MMC(Minimizer):
 
         return converged
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """
