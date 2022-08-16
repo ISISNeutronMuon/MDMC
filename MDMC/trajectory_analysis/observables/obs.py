@@ -52,7 +52,7 @@ class Observable(ABC):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name: str) -> None:
         """
         Set the module name that was used for factory instantiation
 
@@ -77,13 +77,13 @@ class Observable(ABC):
         return self._origin
 
     @origin.setter
-    def origin(self, origin):
+    def origin(self, origin: str) -> None:
         """
         set the origin of the observable
 
         Parameters
         ----------
-        origin :str
+        origin : str
             The origin of the ``Observable``, either ``'experiment'`` or
             ``'MD'``
         """
@@ -225,7 +225,8 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input: 'Trajectory', verbose: int = 0, **parameters: dict) -> None:
+    def calculate_from_MD(self, MD_input: 'Trajectory',
+                          verbose: int = 0, **parameters: dict) -> None:
         """
         Calculates the observable using input from an MD simulation
 
@@ -273,7 +274,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def uniformity_requirements(self) -> 'dict[str, dict[str, bool]]':
+    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
         Represents the current limitations on ``independent_variables`` of the ``Observable``.
         It captures if the ``independent_variables`` are required to be uniform or to start at zero
