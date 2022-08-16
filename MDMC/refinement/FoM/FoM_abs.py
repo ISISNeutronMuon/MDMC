@@ -1,7 +1,6 @@
 """A module for Figure of Merits"""
 
 from abc import ABC, abstractmethod
-from typing import Dict
 import numpy as np
 
 from MDMC.common.decorators import repr_decorator
@@ -44,7 +43,7 @@ class ObservablePair:
         self.auto_scale = auto_scale
 
     @property
-    def exp_obs(self):
+    def exp_obs(self) -> Observable:
         """
         Get or set the experimental ``Observable``
 
@@ -59,13 +58,12 @@ class ObservablePair:
         return self._exp_obs
 
     @exp_obs.setter
-    def exp_obs(self, exp_obs):
-
+    def exp_obs(self, exp_obs: Observable) -> None:
         self.validate_obs(exp_obs, 'experiment')
         self._exp_obs = exp_obs
 
     @property
-    def MD_obs(self):
+    def MD_obs(self) -> Observable:
         """
         Get or set the MD ``Observable``
 
@@ -80,13 +78,12 @@ class ObservablePair:
         return self._MD_obs
 
     @MD_obs.setter
-    def MD_obs(self, MD_obs):
-
+    def MD_obs(self, MD_obs: Observable) -> None:
         self.validate_obs(MD_obs, 'MD')
         self._MD_obs = MD_obs
 
     @property
-    def weight(self):
+    def weight(self) -> float:
         """
         Get or set the relative weight of this pair on a total FoM
 
@@ -104,8 +101,7 @@ class ObservablePair:
         return self._weight
 
     @weight.setter
-    def weight(self, weight):
-
+    def weight(self, weight: float) -> None:
         try:
             weight = float(weight)
         except ValueError as error:
@@ -114,7 +110,7 @@ class ObservablePair:
         self._weight = weight
 
     @property
-    def n_averages(self) -> Dict[str, int]:
+    def n_averages(self) -> 'dict[str, int]':
         """
         The number of separate, complete dependent variable calculations we
         have been able to perform for the ``Observable``
@@ -132,7 +128,7 @@ class ObservablePair:
 
         return n_averages
 
-    def validate_obs(self, obs, origin):
+    def validate_obs(self, obs: Observable, origin: str) -> None:
         """
         Performs checks to test the validity of an ``Observable``
 
@@ -219,7 +215,7 @@ class ObservablePair:
                                                       ' the same type')
 
     @staticmethod
-    def validate_weight(weight):
+    def validate_weight(weight: float) -> None:
         """
         Performs checks to test the validity of the ``weight``
 
@@ -238,14 +234,14 @@ class ObservablePair:
                                                         ' finite positive'
                                                         ' float')
 
-    def check_types(self):
+    def check_types(self) -> None:
         """
         Checks that ``Observable`` objects are of the same type
         """
 
         raise NotImplementedError
 
-    def check_indep_var(self):
+    def check_indep_var(self) -> None:
         """
         Checks that ``Observable`` objects have the same
         ``independent_variables`` and that are finite
@@ -253,7 +249,7 @@ class ObservablePair:
 
         raise NotImplementedError
 
-    def check_dep_var(self):
+    def check_dep_var(self) -> None:
         """
         Checks that ``Observable`` objects have the same ``dependent_variables``
         and that are finite
@@ -261,7 +257,7 @@ class ObservablePair:
 
         raise NotImplementedError
 
-    def check_errors(self):
+    def check_errors(self) -> None:
         """
         Checks that an ``Observable`` has errors on the ``dependent_variable``
         and that these are `float` and not `NaN`
@@ -269,15 +265,19 @@ class ObservablePair:
 
         raise NotImplementedError
 
-    def check_origin(self, origin):
+    def check_origin(self, origin: str) -> None:
         """
-        Checks that the ``Observable.origin`` (``'experiment'`` or ``'MD'``) is
-        correct
+        Checks that the ``Observable.origin`` is correct
+
+        Parameters
+        -------
+        origin : str
+            A string consisting of either ``'experiment'`` or  ``'MD'``
         """
 
         raise NotImplementedError
 
-    def calculate_difference(self):
+    def calculate_difference(self) -> np.ndarray:
         """
         Assumes a single dependent variable for each ``Observable``
 
@@ -296,7 +296,7 @@ class ObservablePair:
 
         return diff
 
-    def calculate_errors(self):
+    def calculate_errors(self) -> np.ndarray:
         """
         Assumes a single dependent variable error for each ``Observable``
 
@@ -314,7 +314,7 @@ class ObservablePair:
 
         return errors
 
-    def calculate_exp_errors(self):
+    def calculate_exp_errors(self) -> np.ndarray:
         """
         Assumes a single dependent variable error for each ``Observable``.
         Calculates only the experimental errors.
@@ -355,7 +355,10 @@ class FigureOfMerit(ABC):
         The Figure of Merit for all ``obs_pairs``
     """
 
-    def __init__(self, obs_pairs, norm: str = 'data_points', n_parameters: int = None):
+    def __init__(self,
+                 obs_pairs: 'list[ObservablePair]',
+                 norm: str = 'data_points',
+                 n_parameters: int = None):
 
         self.obs_pairs = list(obs_pairs)
         self.value = None
@@ -376,7 +379,7 @@ class FigureOfMerit(ABC):
                              'one of "data_points", "dof", "none", but it was '
                              f'"{norm}"')
 
-    def calculate(self):
+    def calculate(self) -> float:
         """
         Calculates the FoM value by calculating the FoM for every
         ``ObservablePair``
@@ -400,7 +403,7 @@ class FigureOfMerit(ABC):
         assert self.value >= 0.
         return self.value
 
-    def data_norm_factor(self, obs_pair: ObservablePair):
+    def data_norm_factor(self, obs_pair: ObservablePair) -> int:
         """
         Calculates the normalisation factor for ``obs_pair``. If ``self.norm`` is `True`, then
         returns the number of data points less the number of refinement parameters if `'dof'`
@@ -428,7 +431,7 @@ class FigureOfMerit(ABC):
         return norm_factor
 
     @abstractmethod
-    def calculate_single_FoM(self, obs_pair):
+    def calculate_single_FoM(self, obs_pair: ObservablePair) -> float:
         """
         Performs the FoM calculation specific to each FoM
 
