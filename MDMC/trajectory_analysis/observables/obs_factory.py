@@ -2,11 +2,10 @@
 
 from typing import TYPE_CHECKING
 
-from MDMC.trajectory_analysis.observables.obs import \
-    Observable
-
 if TYPE_CHECKING:
     from typing import Callable, Iterable, Type, Union
+    from MDMC.trajectory_analysis.observables.obs import Observable
+
 
 class ObservableFactory:
 
