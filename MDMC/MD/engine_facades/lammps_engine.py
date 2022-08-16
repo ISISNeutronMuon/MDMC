@@ -628,7 +628,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
                         sorted_lines = np.array(lines, dtype = traj.dtype)
                         
-                        atom_types = sorted_lines[:,i_type]
+                        atom_types = sorted_lines[:,i_type].astype(np.int64)
                         if not traj.validateTypes(atom_types):
                             raise TypeError("CompactTrajectory received wrong atom type array")
                         
