@@ -14,7 +14,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
@@ -189,7 +189,7 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]], verbose=0,
+    def calculate_from_MD(self, MD_input: Union[CompactTrajectory, List[CompactTrajectory]], verbose=0,
                           **settings):
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
@@ -306,7 +306,7 @@ class PairDistributionFunction(Observable):
 
         self.origin = 'MD'
 
-        if isinstance(MD_input, Trajectory):
+        if isinstance(MD_input, CompactTrajectory):
             MD_input = [MD_input]
 
         self._parse_calc_MD_settings(MD_input[0], settings)
@@ -390,7 +390,8 @@ class PairDistributionFunction(Observable):
         # If only a single frame then set frame_step > total_n_frames
         frame_step = (total_n_frames + 1 if n_frames == 1
                       else ((total_n_frames - 1) // n_frames) + 1)
-        self.trajectory = trajectory[0:total_n_frames:frame_step]
+        self.trajectory = trajectory.subtrajectory(0, total_n_frames, frame_step)
+        # trajectory[0:total_n_frames:frame_step]
 
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is
@@ -412,7 +413,7 @@ class PairDistributionFunction(Observable):
                                              or trajectory.universe.dimensions))
         self.universe_volume = np.prod(self.universe_dimensions)
         # PDF only valid where number of atoms is conserved over trajectories
-        self.n_atoms = len(self.trajectory[0].atoms)
+        self.n_atoms = self.trajectory.n_atoms
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):

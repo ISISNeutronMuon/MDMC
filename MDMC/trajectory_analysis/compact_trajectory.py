@@ -184,11 +184,12 @@ class CompactTrajectory:
         temp.time_unit = self.time_unit
         temp.velocity_unit = self.velocity_unit
         temp.dtype = self.dtype
-        temp.n_atoms = self.n_atoms = -1
-        self.n_steps = 0
-        temp.atom_types = self.atom_types = []
-        temp.atom_masses = self.atom_masses = []
+        temp.n_atoms = self.n_atoms
+        temp.atom_types = self.atom_types
+        temp.atom_masses = self.atom_masses
         temp.dimensions = self.dimensions
+        temp.element_list = self.element_list
+        temp.element_set = self.element_set
         # key point: the data!
         # this is where we will keep the numpy arrays
         temp.position = self.position[start:stop:step, : , :]
@@ -196,9 +197,9 @@ class CompactTrajectory:
         if self.velocity is not None:
             temp.velocity = self.velocity[start:stop:step, : , :]
         # now some state indicators
-        self.is_allocated = False
-        self.is_populated = False
-        self.first_index = 0
-        self.last_index = -1
+        temp.is_allocated = False
+        temp.is_populated = False
+        temp.first_index = 0
+        temp.last_index = -1
 
         

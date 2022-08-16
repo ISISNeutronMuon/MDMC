@@ -602,8 +602,9 @@ class FQt(AbstractFQt):
             # first dimension and each atom of ``element`` as its second
             indexes = np.where(np.array(self._trajectory.element_list)
                                == element)
-            element_configs = [config.positions[indexes] for config
-                               in self._trajectory]
+            element_configs = self._trajectory.position[:, indexes, :]
+            # element_configs = [config.positions[indexes] for config
+            #                    in self._trajectory]
 
             rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),

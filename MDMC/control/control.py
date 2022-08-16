@@ -578,7 +578,7 @@ class Control:
         print("Actual number of steps: ",
               trj.last_index - trj.first_index)
         
-        sys.exit(0)
+        # sys.exit(0)
         #
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:

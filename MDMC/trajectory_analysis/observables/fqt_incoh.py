@@ -32,12 +32,12 @@ class FQtIncoherent(AbstractFQt):
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
-        n_atoms = len(self._trajectory.atoms)
+        n_atoms = self._trajectory.n_atoms
         FQt_single_Q = np.zeros(n_t)
 
         # Arrange configs so that axes are [atoms, times, positions] i.e.
         # iterating over the first axis is iterating over each atom
-        configs = np.swapaxes([config.positions for config in self._trajectory],
+        configs = np.swapaxes(self._trajectory.position,
                               0,
                               1)
         for atom_positions, weight in zip(configs, self.weights):
