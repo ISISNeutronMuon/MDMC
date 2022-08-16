@@ -212,7 +212,7 @@ class Configuration(AtomCollection):
         return [structures() for structures in self._structure_list]
 
     @property
-    def data(self) -> 'np.ndarray':
+    def data(self) -> np.ndarray:
         """
         Get or set the ``Atom``, ``Atom.position``, and ``Atom.velocity`` which
         belong to the ``Configuration``
@@ -231,7 +231,7 @@ class Configuration(AtomCollection):
                                ('velocity', 'object')])
 
     @data.setter
-    def data(self, structures: 'np.ndarray') -> None:
+    def data(self, structures: np.ndarray) -> None:
         """
         Set the ``Atom``, ``Atom.position``, and ``Atom.velocity`` which belong
         to the ``Configuration``
@@ -328,7 +328,7 @@ class Configuration(AtomCollection):
 
         return len(self.atoms)
 
-    def __getitem__(self, item: str) -> 'np.ndarray':
+    def __getitem__(self, item: str) -> np.ndarray:
         """
         Returns
         -------
@@ -433,7 +433,7 @@ class TemporalConfiguration(Configuration):
         super().__init__(*structures, **settings)
         self.time = time
 
-    def __add__(self, configuration: 'TemporalConfiguration') -> "TemporalConfiguration":
+    def __add__(self, configuration: 'TemporalConfiguration') -> 'TemporalConfiguration':
         """
         Returns
         -------
@@ -468,7 +468,7 @@ class Trajectory(AtomCollection):
 
     __slots__ = ('_data', )
 
-    def __init__(self, *configurations: "TemporalConfiguration") -> None:
+    def __init__(self, *configurations: 'TemporalConfiguration') -> None:
 
         # Check that each configuration has the same universe
         try:
@@ -525,7 +525,7 @@ class Trajectory(AtomCollection):
         self.__init__(*configs)
 
     @property
-    def data(self) -> "np.ndarray":
+    def data(self) -> np.ndarray:
         """
         Get the data of the ``Trajectory``
 
@@ -539,7 +539,7 @@ class Trajectory(AtomCollection):
         return self._data
 
     @data.setter
-    def data(self, configurations: "np.ndarray") -> None:
+    def data(self, configurations: np.ndarray) -> None:
         """
         Set the data of the ``Trajectory``
 
@@ -565,7 +565,7 @@ class Trajectory(AtomCollection):
                 self.validate_config(datum['configuration'], validator=config0)
 
     @staticmethod
-    def validate_config(config: "Configuration", validator: "Configuration") -> None:
+    def validate_config(config: 'Configuration', validator: 'Configuration') -> None:
         """
         Validates that a ``Configuration`` has the same number of ``Atom``
         objects as the validator
@@ -597,7 +597,7 @@ class Trajectory(AtomCollection):
         return self.__class__(*self.configurations[item])
 
     @property
-    def frames(self) -> 'np.ndarray':
+    def frames(self) -> np.ndarray:
         """
         Get frames of the ``Trajectory``
 
@@ -611,7 +611,7 @@ class Trajectory(AtomCollection):
         return self.data['frame']
 
     @property
-    def times(self)-> 'np.ndarray':
+    def times(self) -> np.ndarray:
         """
         Get the times of the ``Trajectory``
 
@@ -690,7 +690,7 @@ class Trajectory(AtomCollection):
         return self.configurations[0].universe
 
     @property
-    def positions(self) -> 'np.ndarray':
+    def positions(self) -> np.ndarray:
         """
         Get the positions of the ``Atom`` objects in the ``Trajectory``
 
@@ -705,7 +705,7 @@ class Trajectory(AtomCollection):
                          for position in config.atom_positions])
 
     @property
-    def velocities(self) -> 'np.ndarray':
+    def velocities(self) -> np.ndarray:
         """
         Get the velocities of the ``Atom`` objects in the ``Trajectory``
 
