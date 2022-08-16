@@ -3,7 +3,7 @@
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement,
                        product)
-from typing import Dict, List, Union, Optional
+from typing import Dict, Union, Optional
 import warnings
 
 from numba import jit
@@ -629,7 +629,7 @@ class PairDistributionFunction(Observable):
 
         return pairs
 
-    def _calculate_partition_indexes(self, partition_components: np.ndarray) -> product[tuple]:
+    def _calculate_partition_indexes(self, partition_components: np.ndarray) -> 'product[tuple]':
 
         return product(*map(np.arange, (self.universe_dimensions
                                         / partition_components).astype('int32'))
