@@ -44,7 +44,7 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, parameters):
+    def __init__(self, parameters: Parameters):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
@@ -80,7 +80,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @property
-    def history(self):
+    def history(self) -> pd.DataFrame:
         """
         Get the history of the minimizer, with a single entry for each step of
         the minimizer
@@ -135,7 +135,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def _check_parameters(parameters: Parameters):
+    def _check_parameters(parameters: Parameters) -> None:
         """
         Checks the validity of the parameters on input
 

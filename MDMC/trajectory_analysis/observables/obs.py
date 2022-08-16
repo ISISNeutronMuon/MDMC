@@ -2,11 +2,14 @@
 from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import TYPE_CHECKING
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
+if TYPE_CHECKING:
+    from MDMC.trajectory_analysis.trajectory import Trajectory
+    from typing import Union
 
 @repr_decorator('origin', 'data')
 class Observable(ABC):
@@ -35,9 +38,9 @@ class Observable(ABC):
         self.universe_dimensions = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
-        Get or set the module name that was used for factory instantiation
+        Get or set the module name that used for factory instantiation
 
         Returns
         -------
@@ -48,31 +51,28 @@ class Observable(ABC):
         return self._name
 
     @name.setter
-    def name(self, name):
-
+    def name(self, name: str) -> None:
         self._name = name
 
     @property
-    def origin(self):
+    def origin(self) -> str:
         """
         Get or set the origin of the observable
 
         Returns
         -------
         str
-            The origin of the ``Observable``, either ``'experiment'`` or
-            ``'MD'``
+            The origin of the ``Observable``, either ``'experiment'`` or ``'MD'``
         """
 
         return self._origin
 
     @origin.setter
-    def origin(self, origin):
-
+    def origin(self, origin: str) -> None:
         self._origin = origin
 
     @property
-    def data(self):
+    def data(self) -> dict:
         """
         Get the independent, dependent and error data
 
@@ -88,7 +88,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         The independent variables
 
@@ -102,7 +102,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
         The dependent variables
 
@@ -116,7 +116,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def errors(self):
+    def errors(self) -> dict:
         """
         The errors on the dependent variables
 
@@ -129,7 +129,7 @@ class Observable(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimum_frames(self, dt: float = None):
+    def minimum_frames(self, dt: float = None) -> int:
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables``
@@ -148,7 +148,7 @@ class Observable(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def maximum_frames(self):
+    def maximum_frames(self) -> int:
         """
         The maximum number of ``Trajectory`` frames that can be used to
         calculate the ``dependent_variables``
@@ -162,7 +162,7 @@ class Observable(ABC):
         raise NotImplementedError
 
     @property
-    def use_FFT(self):
+    def use_FFT(self) -> bool:
         """
         Get or set whether to use FFT when calculating from MD
 
@@ -175,11 +175,10 @@ class Observable(ABC):
         return self._use_FFT
 
     @use_FFT.setter
-    def use_FFT(self, use_FFT):
-
+    def use_FFT(self, use_FFT: bool) -> None:
         self._use_FFT = use_FFT
 
-    def read_from_file(self, reader, file_name):
+    def read_from_file(self, reader: str, file_name: str) -> None:
         """
         Reads in experimental data from a file using a specified reader
 
@@ -198,7 +197,10 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input, verbose=0, **parameters):
+    def calculate_from_MD(self,
+                          MD_input: 'Union[Trajectory, list[Trajectory]]',
+                          verbose: int = 0,
+                          **parameters: dict) -> None:
         """
         Calculates the observable using input from an MD simulation
 
@@ -217,7 +219,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def dependent_variables_structure(self):
+    def dependent_variables_structure(self) -> dict:
         # ignore line too long linting as it is necessary for python code formatting
         # pylint: disable=line-too-long
         """
@@ -246,7 +248,7 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+    def uniformity_requirements(self) -> 'dict[str, dict[str, bool]]':
         """
         Represents the current limitations on ``independent_variables`` of the ``Observable``.
         It captures if the ``independent_variables`` are required to be uniform or to start at zero
@@ -258,7 +260,7 @@ class Observable(ABC):
 
         Return
         ------
-        Dict[str, Dict[str, bool]]
+        dict[str, dict[str, bool]]
             Dictionary of independent variables
             with their uniformity restrictions represented as booleans
         """
