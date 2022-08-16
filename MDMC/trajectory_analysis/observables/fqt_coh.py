@@ -18,7 +18,7 @@ class FQtCoherent(AbstractFQt):
     function for the coherent dynamic structure factor
     """
 
-    def _set_weights(self):
+    def _set_weights(self) -> None:
         """
         Calculate the neutron weighting for coherent scattering
         """
@@ -26,7 +26,7 @@ class FQtCoherent(AbstractFQt):
         self.weights = {element: B_COH[element] for element
                         in self._trajectory.element_set}
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors):
+    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
