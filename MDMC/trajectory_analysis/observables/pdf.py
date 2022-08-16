@@ -447,7 +447,7 @@ class PairDistributionFunction(Observable):
         # Release memory from full trajectory
         del trajectory
 
-    def _calculate_histogram(self, configuration: 'Configuration') -> None:
+    def _calculate_histogram(self, configuration: Configuration) -> None:
         """
         Partitions the atomic positions into regions where they are within
         ``r_max`` from all other atoms

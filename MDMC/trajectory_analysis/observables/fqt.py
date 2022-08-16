@@ -722,7 +722,7 @@ def get_point_group(dimensions: 'np.array') -> str:
     return 'mmm'  # orthorhombic
 
 
-def wyckoff_symmetries(point: tuple, point_group: str) -> set[tuple]:
+def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
     """
     Returns the Wyckoff symmetries for a point based on its point group.
 
@@ -743,7 +743,7 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> set[tuple]:
         A calculated set of the symmetries for the point
     """
 
-    def cubic(point: tuple) -> set[tuple]:
+    def cubic(point: tuple) -> 'set[tuple]':
         """The symmetries of a point in a cubic group."""
 
         x, y, z = point
@@ -762,21 +762,21 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> set[tuple]:
         """The symmetries of a point in a tetragonal group."""
 
         # slightly more complicated as we don't know what axis is unpermutable
-        def tetragonal_z(point: tuple) -> set[tuple]:
+        def tetragonal_z(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable z-axis"""
             x, y, z = point
             return ({(x,y,z), (-x,-y,z), (-y,x,z), (y,-x,z), (-x,y,-z), (x,-y,-z),
                     (y,x,-z), (-y,-x,-z), (-x,-y,-z), (x,y,-z), (y,-x,-z), (-y,x,-z),
                     (x,-y,z), (-x,y,z), (-y,-x,z), (y,x,z)})
 
-        def tetragonal_y(point: tuple) -> set[tuple]:
+        def tetragonal_y(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable y-axis"""
             x, y, z = point
             return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
                     (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
                     (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
 
-        def tetragonal_x(point: tuple) -> set[tuple]:
+        def tetragonal_x(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable x-axis"""
             x, y, z = point
             return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
@@ -790,7 +790,7 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> set[tuple]:
 
         return side[unique_side]
 
-    def orthorhombic(point: tuple) -> set[tuple]:
+    def orthorhombic(point: tuple) -> 'set[tuple]':
         """The symmetries of a point in an orthorhombic group."""
 
         x, y, z = point
