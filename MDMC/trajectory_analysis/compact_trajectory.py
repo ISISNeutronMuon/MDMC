@@ -39,6 +39,7 @@ class CompactTrajectory:
         self.atom_types = []
         self.atom_masses = []
         self.dimensions = np.zeros(3)
+        self.changing_dimensions = None
         # key point: the data!
         # this is where we will keep the numpy arrays
         self.position = None
@@ -47,6 +48,7 @@ class CompactTrajectory:
         # now some state indicators
         self.is_allocated = False
         self.is_populated = False
+        self.is_fixedbox = True
         self.first_index = 0
         self.last_index = -1
     @staticmethod
@@ -59,6 +61,11 @@ class CompactTrajectory:
             return np.float32
         else:
             return np.float16
+    def __len__(self):
+        if self.position is None:
+            return 0
+        else:
+            return len(self.position[self.first_index:self.last_index])
     def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
                     useVelocity: bool = False):
         """
@@ -83,6 +90,16 @@ class CompactTrajectory:
         if useVelocity:
             self.velocity = np.empty(shape, dtype = self.dtype)
         self.is_allocated = True
+        self.changing_dimensions = np.empty((n_steps,3), dtype = self.dtype)
+    def setDimensions(self, frame_dimensions: np.array = None,
+                      step_num: int = -1):
+        if np.all(self.dimensions == 0.0):
+            self.dimensions = frame_dimensions
+        elif np.allclose(frame_dimensions, self.dimensions, rtol = 1e-6, atol = 1e-4):
+            pass
+        else:
+            self.is_fixedbox = False
+            self.changing_dimensions[step_num] = frame_dimensions
     def writeOneStep(self, step_num: int = -1, time: float = -1.0,
                      positions: np.array = None,
                      velocities: np.array = None):
@@ -141,6 +158,10 @@ class CompactTrajectory:
                 return True
             else:
                 return False
+    def labelAtoms(self, atom_symbols: dict = None, atom_masses: dict = None):
+        self.element_list = [atom_symbols[xx] for xx in self.atom_types]
+        self.element_set = set(self.element_list)
+        
     def postProcess(self):
         """
         This function can be called after the all the trajectory steps have

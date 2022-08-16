@@ -36,7 +36,6 @@ import logging
 from random import randint
 from tempfile import NamedTemporaryFile
 from typing import Union
-import gc as garbage
 
 from mpi4py import MPI
 import numpy as np
@@ -507,6 +506,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # pylint: disable=invalid-name
         atom_IDs = settings.get('atom_IDs')
 
+        traj_dimensions = np.zeros(3)
         configs = []
         frame_n = start
         # Use count to create range so that stop can be undefined
@@ -549,7 +549,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 if 'ITEM: TIMESTEP' in line:
                     line = file_handler.readline()
                     frame = int(line.split()[0])
-                    garbage.collect()
                     header_size += 2
 
                 if 'ITEM: NUMBER OF ATOMS' in line:
@@ -562,6 +561,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
                 if 'ITEM: BOX BOUNDS' in line:
                     header_size += 1
+                    traj_dimensions = 0.0
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
                     if 'xy' in line:
                         raise TypeError('triclinic simulation boxes have not'
@@ -577,8 +577,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             # unit is taken from universe dimensions (which is a
                             # UnitArray)
                             # how bad is this one for performance?
-                            # assert dmax == convert_unit(self.universe.dimensions[i],
-                            #                             self.universe.dimensions.unit)
+                            assert dmax == convert_unit(self.universe.dimensions[i],
+                                                        self.universe.dimensions.unit)
+                            traj_dimensions[i] = dmax-dmin
 
                 if 'ITEM: ATOMS' in line:
                     header_size += 1
@@ -605,6 +606,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         traj.preAllocate(n_steps = real_n_steps,
                                          n_atoms = n_atoms,
                                          useVelocity = i_vel is not None)
+                        
+                        traj.setDimensions(traj_dimensions)
 
                     if frame_n == next_frame_n:
                         # Reads all atom lines before creating any atoms. By
@@ -639,6 +642,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                           time = frame * self.time_step,
                                           positions = sorted_lines[:,i_pos:i_pos+3])
 
+                        traj.setDimensions(traj_dimensions, step_num = frame_n)
                         # next_frame_n next attribute is assigned dynamically
                         # pylint: disable=no-member
                         next_frame_n = next(frame_indexes)
@@ -647,6 +651,14 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         break
 
                 line = file_handler.readline()
+        atom_symbols = {}
+        atom_masses = {}
+        for at_id in np.unique(traj.atom_types):
+            symbol, mass = self.lmp_universe.atom_type_properties[at_id-1]
+            atom_symbols[at_id] = symbol
+            atom_masses[at_id] = mass
+        traj.labelAtoms(atom_symbols, atom_masses)
+        traj.postProcess() 
         return traj
 
     def convert_trajectory_original(self, start: int = 0, stop: int = None,

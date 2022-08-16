@@ -57,7 +57,7 @@ def slice_trajectory(trj: "CompactTrajectory", subtrj_len: int, cont_slicing: bo
         slice_step = subtrj_len
 
     for i in range(first_frame, trj_len-subtrj_len+1, slice_step):
-        yield trj[i: i+subtrj_len]
+        yield trj.subtrajectory(i, i+subtrj_len)
         
 # the type hint for trj should be trj: Trajectory, but importing `Trajectory` would currently
 # lead to a circular import

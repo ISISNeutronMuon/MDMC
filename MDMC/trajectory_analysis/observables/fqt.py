@@ -181,7 +181,7 @@ class AbstractFQt(SQwMixins, Observable):
         self._set_weights()
 
         try:
-            self.universe_dimensions = MD_input[0].dimensions
+            self.universe_dimensions = MD_input.dimensions
         except AttributeError:
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])

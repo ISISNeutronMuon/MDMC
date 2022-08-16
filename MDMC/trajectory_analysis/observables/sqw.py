@@ -12,7 +12,7 @@ from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
@@ -301,9 +301,9 @@ class AbstractSQw(SQwMixins, Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
+    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0, **settings):
         """
-        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``.
+        Calculate the dynamic structure factor, S(Q, w) from a ``CompactTrajectory``.
 
         If the ``Trajectory`` has more frames than the ``self.maximum_frames()`` that can be
         used to recreate the grid of energy points, it can slice the ``Trajectory`` into
@@ -379,16 +379,27 @@ class AbstractSQw(SQwMixins, Observable):
         dt = t[1] - t[0]
         if self.maximum_frames():
             t = t[0:self.maximum_frames()]
-
-        try:
-            self.universe_dimensions = MD_input[0].dimensions
-        except AttributeError:
+        
+        if MD_input.is_fixedbox:
             try:
-                self.universe_dimensions = np.array(settings['dimensions'])
-            except KeyError as error:
-                raise AttributeError('Either trajectory requires a dimensions'
-                                     ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD') from error
+                self.universe_dimensions = MD_input.dimensions
+            except AttributeError:
+                try:
+                    self.universe_dimensions = np.array(settings['dimensions'])
+                except KeyError as error:
+                    raise AttributeError('Either trajectory requires a dimensions'
+                                        ' attribute or dimensions must be passed'
+                                        ' when calling calculate_from_MD') from error
+        else: # I have to decide later what to do with the case of changing dimensions
+            try:
+                self.universe_dimensions = MD_input.changing_dimensions[0]
+            except AttributeError:
+                try:
+                    self.universe_dimensions = np.array(settings['dimensions'])
+                except KeyError as error:
+                    raise AttributeError('Either trajectory requires a dimensions'
+                                        ' attribute or dimensions must be passed'
+                                        ' when calling calculate_from_MD') from error
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
