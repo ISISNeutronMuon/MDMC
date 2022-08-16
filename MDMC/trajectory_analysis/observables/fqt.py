@@ -183,6 +183,7 @@ class AbstractFQt(SQwMixins, Observable):
         try:
             self.universe_dimensions = MD_input.dimensions
         except AttributeError:
+            print("DEBUG: no universe dimensions in the CompactTrajectory")
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
             except KeyError as error:
@@ -613,7 +614,10 @@ class FQt(AbstractFQt):
                 # For each time frame ``i`` calculate the Fourier transformed
                 # number density and sum over all positions but preserve the
                 # second dimension, our array of Q vectors
-                rho_unsummed = calculate_rho(positions,
+                # print("BEFORE RHO: positions.shape=", positions.shape)
+                timelen, atomlen, dimlen = positions.shape # timelen should be 1,
+                # but we need to remove this dimension explicitly
+                rho_unsummed = calculate_rho(positions.reshape((atomlen, dimlen)),
                                              np.array(single_Q_vectors))
                 rho_config[i, :] = np.sum(rho_unsummed, axis=0)
 
@@ -622,10 +626,13 @@ class FQt(AbstractFQt):
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            for atom_positions in np.swapaxes(element_configs, 0, 1):
+            trajlen, timelen, atomlen, dimlen = element_configs.shape
+            for atom_positions in np.swapaxes(
+                element_configs.reshape(trajlen, atomlen, dimlen), 0, 1):
                 # Swapping the time and position axes lets us iterate over each
                 # atom of ``element``, and gives ``rho_atom`` dimensions of
                 # time and our array of Q vectors respectively.
+                # print("BEFORE RHO: atom_positions.shape=", atom_positions.shape)
                 rho_atom = calculate_rho(atom_positions,
                                          np.array(single_Q_vectors))
 

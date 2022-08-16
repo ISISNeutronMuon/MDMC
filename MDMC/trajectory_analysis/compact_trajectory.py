@@ -93,7 +93,7 @@ class CompactTrajectory:
         self.changing_dimensions = np.empty((n_steps,3), dtype = self.dtype)
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):
-        if np.all(self.dimensions == 0.0):
+        if np.all(np.abs(self.dimensions) < 1e-5):
             self.dimensions = frame_dimensions
         elif np.allclose(frame_dimensions, self.dimensions, rtol = 1e-6, atol = 1e-4):
             pass

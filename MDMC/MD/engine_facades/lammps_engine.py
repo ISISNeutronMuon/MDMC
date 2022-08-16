@@ -561,25 +561,29 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
                 if 'ITEM: BOX BOUNDS' in line:
                     header_size += 1
-                    traj_dimensions = 0.0
+                    traj_dimensions *= 0.0
+                    temp_dim = []
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
                     if 'xy' in line:
                         raise TypeError('triclinic simulation boxes have not'
                                         ' been implemented')
                     # Test dimensions are as expected, if a universe was passed
                     # and we are not using an NPT or NPH ensemble
+                    for i in range(3):
+                        line = file_handler.readline()
+                        header_size += 1
+                        dmin, dmax = [float(splt) for splt in line.split()]
+                        temp_dim.append((dmin, dmax))
+                        traj_dimensions[i] = dmax-dmin
                     if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
                         for i in range(3):
-                            line = file_handler.readline()
-                            header_size += 1
-                            dmin, dmax = [float(splt) for splt in line.split()]
+                            dmin, dmax = temp_dim[i]
                             assert dmin == 0.0
                             # unit is taken from universe dimensions (which is a
                             # UnitArray)
                             # how bad is this one for performance?
                             assert dmax == convert_unit(self.universe.dimensions[i],
                                                         self.universe.dimensions.unit)
-                            traj_dimensions[i] = dmax-dmin
 
                 if 'ITEM: ATOMS' in line:
                     header_size += 1

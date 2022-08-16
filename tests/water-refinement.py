@@ -78,7 +78,7 @@ control = Control(simulation=simulation,
                   MC_norm=1.0,
                   minimizer_type="MMC",
                   FoM_options = FoM_options,
-                  MD_steps=37400,
+                  MD_steps=424620,
                   equilibration_steps=1000,
                   results_filename='results_output_filename.csv')
 
