@@ -1,6 +1,6 @@
 """Module for AbstractSQw and total SQw class"""
 
-from typing import Dict
+from typing import Optional
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -21,7 +21,7 @@ class SQwMixins:
     A mixin class for properties used by both SQw and FQt objects
     """
 
-    def minimum_frames(self, dt: float = None):
+    def minimum_frames(self, dt: float = None) -> int:
         r"""
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` depends on ``self.use_FFT``.
@@ -72,7 +72,7 @@ class SQwMixins:
         # ensure we exceed the minimum number of frames needed
         return int(np.ceil(required_time / (2 * dt) + 1))
 
-    def maximum_frames(self):
+    def maximum_frames(self) -> Optional[int]:
         """
         The maximum number of ``Trajectory`` frames that can be used to
         calculate the ``dependent_variables`` depends on ``self.use_FFT``.
@@ -96,13 +96,13 @@ class SQwMixins:
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
-    def Q(self):
+    def Q(self) -> Optional[np.array]:
         """
-        Get the momentum transfers
+        Get or set the momentum transfers
 
         Returns
         -------
-        array
+        numpy.array
             1D array of Q `float` (in ``Ang^-1``)
         """
         try:
@@ -111,7 +111,7 @@ class SQwMixins:
             return None
 
     @Q.setter
-    def Q(self, value):
+    def Q(self, value: np.array) -> None:
 
         self.independent_variables['Q'] = value
 
@@ -136,7 +136,7 @@ class AbstractSQw(SQwMixins, Observable):
         self._use_FFT = True
 
     @property
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         Get or set the independent variables: these are
         the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
@@ -150,12 +150,12 @@ class AbstractSQw(SQwMixins, Observable):
         return self._independent_variables
 
     @independent_variables.setter
-    def independent_variables(self, value):
+    def independent_variables(self, value: dict) -> None:
 
         self._independent_variables = value
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
         Get or set the dependent variables: this is
         SQw, the dynamic structure factor (in ``arb``)
@@ -169,7 +169,7 @@ class AbstractSQw(SQwMixins, Observable):
         return self._dependent_variables
 
     @property
-    def errors(self):
+    def errors(self) -> dict:
         """
         Get or set the errors on the dependent variables, the dynamic
         structure factor (in ``arb``)
@@ -183,19 +183,19 @@ class AbstractSQw(SQwMixins, Observable):
         return self._errors
 
     @errors.setter
-    def errors(self, value):
+    def errors(self, value: dict) -> None:
 
         self._errors = value
 
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
-    def E(self):
+    def E(self) -> 'np.array':
         """
         Get the energies
 
         Returns
         -------
-        array
+        numpy.array
             1D array of energy `float` (in ``meV``)
         """
 
@@ -208,13 +208,13 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
-    def w(self):
+    def w(self) -> 'np.array':
         """
         Get the angular frequencies
 
         Returns
         -------
-        array
+        numpy.array
             1D array of angular frequency `float` in units of ``1 / ps``
         """
 
@@ -222,7 +222,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw(self):
+    def SQw(self) -> list[np.ndarray]:
         """
         Get the dynamic structure factor, S(Q, w), in arb
 
@@ -239,7 +239,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw_err(self):
+    def SQw_err(self) -> list[np.ndarray]:
         """
         Get the errors on the dynamic structure factor in arb
 
@@ -254,7 +254,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    def validate_energy(self, dt):
+    def validate_energy(self, dt: float) -> None:
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -301,7 +301,7 @@ class AbstractSQw(SQwMixins, Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings: dict) -> None:
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``.
 
@@ -456,7 +456,7 @@ class AbstractSQw(SQwMixins, Observable):
         self._dependent_variables = {'SQw': SQw_output}
         self._errors = {'SQw': errors_output}
 
-    def _get_fqt_type(self):
+    def _get_fqt_type(self) -> str:
         """
         Gets the name of the FQt type associated with each SQw type.
         """
@@ -466,7 +466,7 @@ class AbstractSQw(SQwMixins, Observable):
         return fqt_types[self.__class__.__name__]
 
     @staticmethod
-    def calculate_E(nE: int, dt: float):
+    def calculate_E(nE: int, dt: float) -> np.ndarray:
         r"""
         Calculates an array of ``nE`` uniformly spaced energy values from the
         time separation of the ``Trajectory`` frames, ``dt``. The frequencies
@@ -496,7 +496,7 @@ class AbstractSQw(SQwMixins, Observable):
         # factor of 1e3 * 1e15 to convert it
         return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
-    def calculate_dt(self):
+    def calculate_dt(self) -> float:
         r"""
         Calculates the time separation of frames required by the experimental
         dataset, assuming uniform spacing. Note that this may be different from
@@ -520,7 +520,7 @@ class AbstractSQw(SQwMixins, Observable):
         nE = len(self.E)
         return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
 
-    def calculate_resolution_functions(self, dt):
+    def calculate_resolution_functions(self, dt: float) -> dict:
         """
         Generates a resolution function in momentum and time that can be used in the calculation of
         SQw. Note that this uses the ``SQw`` values of the ``Observable`` it is called from, and so
@@ -609,7 +609,7 @@ class AbstractSQw(SQwMixins, Observable):
         return {'SQw': data_interpol}
 
     @property
-    def dependent_variables_structure(self) -> Dict[str, list]:
+    def dependent_variables_structure(self) -> dict[str, list]:
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
         Explicitly: we have that self.SQw[Q_index, E_index] is the data point for
@@ -628,7 +628,7 @@ class AbstractSQw(SQwMixins, Observable):
         return {'SQw': ['Q', 'E']}
 
     @property
-    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
         Captures the current limitations on the energy 'E' and reciprocal
         lattice points 'Q' within the dynamic structure factor ``Observables``.
