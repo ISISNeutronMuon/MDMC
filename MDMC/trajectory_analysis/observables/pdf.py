@@ -3,7 +3,7 @@
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement,
                        product)
-from typing import Dict, Union, Optional
+from typing import Union, Optional
 import warnings
 
 from numba import jit
@@ -775,7 +775,7 @@ class PairDistributionFunction(Observable):
 
         Return
         ------
-        Dict[str, Dict[str, bool]]
+        dict[str, dict[str, bool]]
             Dictionary of uniformity restrictions for 'r'.
         """
 
