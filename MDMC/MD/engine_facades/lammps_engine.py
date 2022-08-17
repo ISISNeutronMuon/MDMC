@@ -867,10 +867,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
                         self.__class__,
                         n_atoms)
-            atoms = np.zeros([n_atoms, 5])
+            atoms = np.zeros([n_atoms, 4])
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = (list(atom.position) + [atom.mass, atom.charge])
+                atoms[atom.id-1, :] = (list(atom.position) + [atom.charge])
             saved_config = atoms
         else:
             saved_config = None

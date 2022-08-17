@@ -193,13 +193,13 @@ class CompactTrajectory:
         # key point: the data!
         # this is where we will keep the numpy arrays
         temp.position = self.position[start:stop:step, : , :]
-        temp.times = self.times[start:stop:step, : , :]
+        temp.times = self.times[start:stop:step]
         if self.velocity is not None:
             temp.velocity = self.velocity[start:stop:step, : , :]
         # now some state indicators
-        temp.is_allocated = False
-        temp.is_populated = False
+        temp.is_allocated = True
+        temp.is_populated = True
         temp.first_index = 0
-        temp.last_index = -1
-
+        temp.last_index = len(temp.position)
+        return temp
         

@@ -55,7 +55,7 @@ simulation.run(n_steps=50000, equilibration=True)
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental
 # dataset
-exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
                  'weight':1.,
@@ -71,4 +71,4 @@ control = Control(simulation=simulation,
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
-control.refine(n_steps=3)
+control.refine(n_steps=30)
