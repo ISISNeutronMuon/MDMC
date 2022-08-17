@@ -10,7 +10,8 @@ from numba import jit
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
+    time_function_execution
 from MDMC.common.mathematics import correlation, UNIT_VECTOR
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -588,6 +589,7 @@ class FQt(AbstractFQt):
                                   'incoh': B_INCOH[element]}
                         for element in self._trajectory.element_set}
 
+    @time_function_execution
     def _calculate_FQt_single_Q(self, single_Q_vectors):
         # Inherit docstring of abstract method
 

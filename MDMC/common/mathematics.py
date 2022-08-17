@@ -3,12 +3,14 @@
 import numpy as np
 from numpy.fft import fft, ifft
 
+from MDMC.common.decorators import time_function_execution
 
 UNIT_VECTOR = np.array([[1., 0., 0.],
                         [0., 1., 0.],
                         [0., 0., 1.]])
 
 
+@time_function_execution
 def correlation(input1, input2=None, normalise=False) -> np.ndarray:
     """
     The correlation of two vectors

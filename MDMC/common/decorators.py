@@ -6,8 +6,10 @@ import textwrap
 from types import FunctionType
 from typing import Optional, Callable, Union
 import weakref
+from time import time
 
 from MDMC.common.units import UnitFloat, unit_array
+from MDMC.common.time_keeper import TimeKeeper
 
 
 def unit_decorator(unit: Union[str, None]) -> Callable:
@@ -478,3 +480,14 @@ def weakref_cache(maxsize=128) -> Callable:
         return inner
 
     return wrapper
+
+def time_function_execution(func) -> Callable:
+    def decorated_func(*args, **kwargs):
+        tk = TimeKeeper()
+        fname = func.__name__
+        tk.function_called(fname)
+        start_time = time()
+        func(*args, **kwargs)
+        end_time = time()
+        tk.time_passed(fname, abs(end_time-start_time))
+    return decorated_func
