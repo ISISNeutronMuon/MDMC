@@ -75,7 +75,7 @@ class Observable(ABC):
     @property
     def data(self) -> dict:
         """
-        Get or set the independent, dependent and error data
+        Get the independent, dependent and error data
 
         Returns
         -------
