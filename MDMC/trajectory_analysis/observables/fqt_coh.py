@@ -19,9 +19,7 @@ class FQtCoherent(AbstractFQt):
     """
 
     def _set_weights(self) -> None:
-        """
-        Calculate the neutron weighting for coherent scattering
-        """
+        """Calculate the neutron weighting for coherent scattering"""
 
         self.weights = {element: B_COH[element] for element
                         in self._trajectory.element_set}
