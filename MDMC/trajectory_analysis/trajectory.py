@@ -8,7 +8,7 @@ from MDMC.common.decorators import repr_decorator
 
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Universe
-    from MDMC.MD.structures import Atom, Molecule, Structure
+    from MDMC.MD.structures import Atom, Structure
     from typing import Any, Optional
     from builtins import function
 
