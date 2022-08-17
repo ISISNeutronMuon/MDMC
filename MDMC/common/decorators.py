@@ -485,9 +485,13 @@ def time_function_execution(func) -> Callable:
     def decorated_func(*args, **kwargs):
         tk = TimeKeeper()
         fname = func.__name__
+        print(fname)
+        print(args)
+        print(kwargs)
         tk.function_called(fname)
         start_time = time()
-        func(*args, **kwargs)
+        results = func(*args, **kwargs)
         end_time = time()
         tk.time_passed(fname, abs(end_time-start_time))
+        return results
     return decorated_func
