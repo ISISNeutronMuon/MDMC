@@ -70,7 +70,7 @@ class AbstractFQt(SQwMixins, Observable):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get or set the dependent variables: this is
+        Get the dependent variables: this is
         FQt, the intermediate scattering function (in ``arb``)
 
         Returns
