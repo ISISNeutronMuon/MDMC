@@ -484,7 +484,7 @@ def weakref_cache(maxsize=128) -> Callable:
 def time_function_execution(func) -> Callable:
     def decorated_func(*args, **kwargs):
         tk = TimeKeeper()
-        fname = func.__name__
+        fname = " ".join(str(x) for x in [func.__name__, 'in', func.__module__])
         # print(fname)
         # print(args)
         # print(kwargs)
