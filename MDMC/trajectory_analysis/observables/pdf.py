@@ -77,14 +77,12 @@ class PairDistributionFunction(Observable):
 
     @independent_variables.setter
     def independent_variables(self, value: dict) -> None:
-
         self._independent_variables = value
 
     @property
     def dependent_variables(self) -> dict:
         """
-        Get or set the dependent variables: these are
-        PDF, the pair distribution function (in ``barn``)
+        Get the dependent variables: these are PDF, the pair distribution function (in ``barn``)
 
         Returns
         -------
@@ -97,8 +95,8 @@ class PairDistributionFunction(Observable):
     @property
     def errors(self) -> dict:
         """
-        Get or set the errors on the dependent variables, the pair distribution
-        function (in ``arb``)
+        Get or set the errors on the dependent variables, the pair distribution function
+        (in ``arb``)
 
         Returns
         -------
@@ -110,7 +108,6 @@ class PairDistributionFunction(Observable):
 
     @errors.setter
     def errors(self, value: dict) -> None:
-
         self._errors = value
 
     def minimum_frames(self, dt: float = None) -> int:
@@ -146,10 +143,7 @@ class PairDistributionFunction(Observable):
 
     @property
     def r(self) -> Optional[float]:
-        """
-        Get or set the value of the atomic separation distance (in ``Ang``)
-        """
-
+        """Get or set the value of the atomic separation distance (in ``Ang``)"""
         try:
             return self.independent_variables['r']
         except KeyError:
@@ -158,7 +152,6 @@ class PairDistributionFunction(Observable):
     @r.setter
     @unit_decorator(unit=units.Unit('Ang'))
     def r(self, value: float) -> None:
-
         if (hasattr(self, '_independent_variables')
                 and self._independent_variables):
             self._independent_variables['r'] = value
@@ -168,10 +161,7 @@ class PairDistributionFunction(Observable):
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
     def PDF(self) -> Optional[float]:
-        """
-        Get the value of the total pair distribution function (in ``barn``)
-        """
-
+        """Get the value of the total pair distribution function (in ``barn``)"""
         try:
             return self.dependent_variables['PDF']
         except KeyError:
@@ -180,10 +170,7 @@ class PairDistributionFunction(Observable):
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
     def PDF_err(self) -> Optional[float]:
-        """
-        Get the errors on the total pair distribution function (in ``barn``)
-        """
-
+        """Get the errors on the total pair distribution function (in ``barn``)"""
         try:
             return self.errors['PDF']
         except KeyError:
@@ -317,9 +304,7 @@ class PairDistributionFunction(Observable):
         self._sum_partial_pairs()
 
     def _sum_partial_pairs(self) -> None:
-        """
-        Normalize the partial pairs and sum them to get the total PDF
-        """
+        """Normalize the partial pairs and sum them to get the total PDF"""
         # Partial independent prefactor (e.g. anything element independent)
         prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
                                             * self.r_step)
@@ -630,7 +615,6 @@ class PairDistributionFunction(Observable):
         return pairs
 
     def _calculate_partition_indexes(self, partition_components: np.ndarray) -> 'product[tuple]':
-
         return product(*map(np.arange, (self.universe_dimensions
                                         / partition_components).astype('int32'))
                        )
@@ -769,7 +753,7 @@ class PairDistributionFunction(Observable):
     @property
     def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
-        # Defines the current limitations on the atomic separation distance 'r'
+        Defines the current limitations on the atomic separation distance 'r'
         of the ``PairDistributionFunction`` ``Observable.
         The requirement is that 'r' must be uniform, but it does not have to start at zero.
 
