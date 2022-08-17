@@ -1,5 +1,5 @@
 """Module for ``Configuration`` and ``Trajectory`` classes, and related classes"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 import weakref
 
 import numpy as np
@@ -183,7 +183,7 @@ class Configuration(AtomCollection):
         return [atom.element for atom in self.atoms]
 
     @property
-    def molecule_list(self) -> 'list[Molecule]':
+    def molecule_list(self) -> 'list[Structure]':
         """
         Get the `list` of ``Molecule`` which belong to the ``Configuration``
 
@@ -567,7 +567,7 @@ class Trajectory(AtomCollection):
             raise AssertionError('Configurations do not contain the same number'
                                  ' of atoms') from error
 
-    def __getitem__(self, item: str) -> 'Any':
+    def __getitem__(self, item: Union[str, int]) -> 'Any':
         """Indexing and slicing is relative to ``frames``"""
 
         if isinstance(item, int):
