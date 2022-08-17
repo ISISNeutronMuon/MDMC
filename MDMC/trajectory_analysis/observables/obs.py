@@ -75,7 +75,7 @@ class Observable(ABC):
     @property
     def data(self) -> dict:
         """
-        Get the independent, dependent and error data
+        Get or set the independent, dependent and error data
 
         Returns
         -------
@@ -165,7 +165,7 @@ class Observable(ABC):
     @property
     def use_FFT(self) -> bool:
         """
-        Get whether to use FFT when calculating from MD
+        Get or set whether to use FFT when calculating from MD
 
         Returns
         -------
