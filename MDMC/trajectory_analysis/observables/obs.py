@@ -198,7 +198,6 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-
     def calculate_from_MD(self, MD_input: 'Union[Trajectory, list[Trajectory]]',
                           verbose: int = 0, **parameters: dict) -> None:
         """
