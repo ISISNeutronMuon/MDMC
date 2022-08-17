@@ -20,6 +20,7 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 
 if TYPE_CHECKING:
     from builtins import function
+    from typing import Optional
 
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
@@ -122,7 +123,7 @@ class AbstractFQt(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def FQt(self) -> 'list[np.ndarray]':
+    def FQt(self) -> 'Optional[list[np.ndarray]]':
         """
         Get or set the dynamic structure factor, F(Q, t), in arb
 
@@ -653,7 +654,7 @@ class FQt(AbstractFQt):
 
 
 @jit('float64[:,:], float64[:,:]', nopython=True)
-def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> 'np.ndarray':
+def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> list:
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors
@@ -671,7 +672,7 @@ def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> 'np.ndarra
 
     Returns
     -------
-    numpy.ndarray
+    list
         The reciprocal space number density
     """
 
