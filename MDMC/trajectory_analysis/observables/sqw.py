@@ -112,7 +112,6 @@ class SQwMixins:
 
     @Q.setter
     def Q(self, value: np.array) -> None:
-
         self.independent_variables['Q'] = value
 
 
@@ -151,21 +150,19 @@ class AbstractSQw(SQwMixins, Observable):
 
     @independent_variables.setter
     def independent_variables(self, value: dict) -> None:
-
         self._independent_variables = value
 
     @property
     def dependent_variables(self) -> dict:
         """
-        Get or set the dependent variables: this is
-        SQw, the dynamic structure factor (in ``arb``)
+        Get the dependent variables: this is SQw, the
+        dynamic structure factor (in ``arb``)
 
         Returns
         -------
         dict
             The dependent variables
         """
-
         return self._dependent_variables
 
     @property
@@ -179,12 +176,10 @@ class AbstractSQw(SQwMixins, Observable):
         dict
             The errors on the ``dependent_variables``
         """
-
         return self._errors
 
     @errors.setter
     def errors(self, value: dict) -> None:
-
         self._errors = value
 
     @property
@@ -222,7 +217,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw(self) -> list[np.ndarray]:
+    def SQw(self) -> Optional[list[np.ndarray]]:
         """
         Get the dynamic structure factor, S(Q, w), in arb
 
@@ -239,7 +234,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw_err(self) -> list[np.ndarray]:
+    def SQw_err(self) -> Optional[list[np.ndarray]]:
         """
         Get the errors on the dynamic structure factor in arb
 
@@ -404,7 +399,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             pass
 
-        #slice trajectory up if possible and requested by user:
+        # Slice trajectory up if possible and requested by user:
         if self.maximum_frames() and use_average:
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
                                             cont_slicing=cont_slicing)
