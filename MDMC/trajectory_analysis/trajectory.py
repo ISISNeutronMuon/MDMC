@@ -232,17 +232,6 @@ class Configuration(AtomCollection):
 
     @data.setter
     def data(self, structures: np.ndarray) -> None:
-        """
-        Set the ``Atom``, ``Atom.position``, and ``Atom.velocity`` which belong
-        to the ``Configuration``
-
-        Parameters
-        ----------
-        structures : numpy.ndarray
-            A structured NumPy ``array`` with ``'atom'``, ``'position'``, and
-            ``'velocity'`` fields
-        """
-
         self._structure_list = []
         self._data = []
         for unit in structures:
@@ -527,7 +516,7 @@ class Trajectory(AtomCollection):
     @property
     def data(self) -> np.ndarray:
         """
-        Get the data of the ``Trajectory``
+        Get or set the data of the ``Trajectory``
 
         Returns
         -------
@@ -540,17 +529,6 @@ class Trajectory(AtomCollection):
 
     @data.setter
     def data(self, configurations: np.ndarray) -> None:
-        """
-        Set the data of the ``Trajectory``
-
-        Parameters
-        ----------
-        configurations : numpy.ndarray
-            An ordered ``array`` of ``frames``, ``times`` (in ``fs``) and
-            ``TemporalConfigurations``
-
-        """
-
         self._data = np.array(
             [(i, config.time, config) for
              i, config in enumerate(configurations, 1)],
