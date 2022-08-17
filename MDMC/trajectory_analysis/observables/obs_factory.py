@@ -22,13 +22,13 @@ class ObservableFactory:
         """
         A class level decorator for registering Observable classes
 
-        The name with which the Observable is registered should be the parameter
-        passed to the decorator.
+        The names of the modules with which the Observable is registered
+        should be the parameter passed to the decorator.
 
         Parameters
         ----------
-        name : str
-            The name with which the Observable is registered
+        names : str
+            The names of the modules with which the Observable is registered
 
         Example
         -------
@@ -63,7 +63,7 @@ class ObservableFactory:
         Parameters
         ----------
         name : str
-            The name of with which the ``Observable`` is registered
+            The name of the module with which the ``Observable`` is registered
 
         Returns
         -------
@@ -81,7 +81,7 @@ class ObservableFactory:
         Parameters
         ----------
         name : str
-            The name of with which the ``Observable`` is registered
+            The name of the module with which the ``Observable`` is registered
 
         Returns
         -------
