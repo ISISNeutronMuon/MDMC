@@ -50,7 +50,6 @@ class AbstractFQt(SQwMixins, Observable):
         self.Q_values = None
         self.weights = None
 
-
     @property
     def independent_variables(self) -> dict:
         """
@@ -243,7 +242,7 @@ class AbstractFQt(SQwMixins, Observable):
         Q_vectors = comm.scatter(Q_vectors, root=0)
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
-                        in Q_vectors])
+                              in Q_vectors])
 
         # Gather the calculated FQt's together on every processor. This ensures
         # that all other calculations can be performed on every processor, so
@@ -326,7 +325,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # define a cube in reciprocal space
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
-                            in self.reciprocal_basis)
+                               in self.reciprocal_basis)
 
         # get the point group of the universe; we can use Wyckoff symmetries
         # to generate vectors more quickly
@@ -347,8 +346,8 @@ class AbstractFQt(SQwMixins, Observable):
         # the 'if' part of the generator comprehension ensures that we aren't generating
         # large numbers of duplicate vectors from multiple vectors within the same symmetry group
         vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z)
-                    if not any(v in Q_vectors for v in
-                               wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
+                   if not any(v in Q_vectors for v in
+                              wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
 
         # get all vectors that fit our requirements
         for vector in vectors:
@@ -359,7 +358,6 @@ class AbstractFQt(SQwMixins, Observable):
                 break
 
         return np.array(Q_vectors)
-
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
@@ -705,18 +703,18 @@ def get_point_group(dimensions: 'np.array') -> str:
     # if all sides equal, all are true; if two sides equal, one is true;
     # if no sides equal, zero are true;
 
-    equal_sides = sum([dimensions[0]==dimensions[1],
-                       dimensions[0]==dimensions[2],
-                       dimensions[1]==dimensions[2]])
+    equal_sides = sum([dimensions[0] == dimensions[1],
+                       dimensions[0] == dimensions[2],
+                       dimensions[1] == dimensions[2]])
 
     if equal_sides == 3:  # cubic
         return 'm-3m'
     if equal_sides == 1:  # tetragonal
         # False == 0 in duck typing, so this only keeps
         # the side equal to True
-        unique_side = ((dimensions[0]==dimensions[1]) * ' (z)'
-                       + (dimensions[0]==dimensions[2]) * ' (y)'
-                       + (dimensions[1]==dimensions[2]) * ' (x)')
+        unique_side = ((dimensions[0] == dimensions[1]) * ' (z)'
+                       + (dimensions[0] == dimensions[2]) * ' (y)'
+                       + (dimensions[1] == dimensions[2]) * ' (x)')
         return '4/mmm' + unique_side
     return 'mmm'  # orthorhombic
 
@@ -748,14 +746,14 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
         x, y, z = point
         # it's ugly, but an order of magnitude faster if we just list all the
         # symmetries out, calculate and return them
-        return ({(x,y,z), (-x,-y,z), (-x,y,-z), (x,-y,-z), (z,x,y), (z,-x,-y),
-               (-z,-x,y), (-z,x,-y), (y,z,x), (-y,z,-x), (y,-z,-x), (-y,-z,x),
-               (y,x,-z), (-y,-x,-z), (y,-x,z), (-y,x,z), (x,z,-y), (-x,z,y),
-               (-x,-z,-y), (x,-z,y), (z,y,-x), (z,-y,x), (-z,y,x), (-z,-y,-x),
-               (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z), (-z,-x,-y), (-z,x,y),
-               (z,x,-y), (z,-x,y), (-y,-z,-x), (y,-z,x), (-y,z,x), (y,z,-x),
-               (-y,-x,z), (y,x,z), (-y,x,-z), (y,-x,-z), (-x,-z,y), (x,-z,-y),
-               (x,z,y), (-x,z,-y), (-z,-y,x), (-z,y,-x), (z,-y,-x), (z,y,x)})
+        return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z), (z, x, y), (z, -x, -y),
+                 (-z, -x, y), (-z, x, -y), (y, z, x), (-y, z, -x), (y, -z, -x), (-y, -z, x),
+                 (y, x, -z), (-y, -x, -z), (y, -x, z), (-y, x, z), (x, z, -y), (-x, z, y),
+                 (-x, -z, -y), (x, -z, y), (z, y, -x), (z, -y, x), (-z, y, x), (-z, -y, -x),
+                 (-x, -y, -z), (x, y, -z), (x, -y, z), (-x, y, z), (-z, -x, -y), (-z, x, y),
+                 (z, x, -y), (z, -x, y), (-y, -z, -x), (y, -z, x), (-y, z, x), (y, z, -x),
+                 (-y, -x, z), (y, x, z), (-y, x, -z), (y, -x, -z), (-x, -z, y), (x, -z, -y),
+                 (x, z, y), (-x, z, -y), (-z, -y, x), (-z, y, -x), (z, -y, -x), (z, y, x)})
 
     def tetragonal(unique_side: str) -> 'function':
         """The symmetries of a point in a tetragonal group."""
@@ -764,9 +762,9 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
         def tetragonal_z(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable z-axis"""
             x, y, z = point
-            return ({(x,y,z), (-x,-y,z), (-y,x,z), (y,-x,z), (-x,y,-z), (x,-y,-z),
-                    (y,x,-z), (-y,-x,-z), (-x,-y,-z), (x,y,-z), (y,-x,-z), (-y,x,-z),
-                    (x,-y,z), (-x,y,z), (-y,-x,z), (y,x,z)})
+            return ({(x, y, z), (-x, -y, z), (-y, x, z), (y, -x, z), (-x, y, -z), (x, -y, -z),
+                    (y, x, -z), (-y, -x, -z), (-x, -y, -z), (x, y, -z), (y, -x, -z), (-y, x, -z),
+                    (x, -y, z), (-x, y, z), (-y, -x, z), (y, x, z)})
 
         def tetragonal_y(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable y-axis"""
@@ -793,8 +791,8 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
         """The symmetries of a point in an orthorhombic group."""
 
         x, y, z = point
-        return ({(x,y,z), (-x,-y,z), (-x,y,-z), (x,-y,-z),
-                (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z)})
+        return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z),
+                (-x, -y, -z), (x, y, -z), (x, -y, z), (-x, y, z)})
 
     groups = {'m-3m': cubic,
               '4/mmm (x)': tetragonal('x'),
