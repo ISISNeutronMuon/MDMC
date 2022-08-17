@@ -61,12 +61,10 @@ class AbstractFQt(SQwMixins, Observable):
         dict
             The independent variables
         """
-
         return self._independent_variables
 
     @independent_variables.setter
     def independent_variables(self, value: dict) -> None:
-
         self._independent_variables = value
 
     @property
@@ -126,7 +124,7 @@ class AbstractFQt(SQwMixins, Observable):
     @unit_decorator_getter(unit=units.ARBITRARY)
     def FQt(self) -> 'list[np.ndarray]':
         """
-        Get the dynamic structure factor, F(Q, t), in arb
+        Get or set the dynamic structure factor, F(Q, t), in arb
 
         Returns
         -------
