@@ -6,10 +6,12 @@ on:
 jobs:
   build:
     name: Build docker container
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: fetch  # grabs master to compare if Docker build files changed
@@ -24,7 +26,7 @@ jobs:
   tests:
     name: Docker tests
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -35,6 +37,8 @@ jobs:
       with:
         python-version: '3.8'
         architecture: x64
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -46,21 +50,32 @@ jobs:
         docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
         docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
         exit 0
-
+        
+    - name: Download master profiling for comparison
+      # regular download-artifact can only get artifacts from current run
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: ci-deploy.yml
+        name: master-profiling
+      continue-on-error: true
+        
     - name: Copy profiling info, download profile script reqs. and profile
       env:
         BRANCH: ${{ github.head_ref }}
         FILENAME: ${{ github.head_ref }}-profiling
       run: |
-          sudo docker cp $(docker ps -lq):/home/prof/ prof/
+          # clear directory of any existing prof files first
+          sudo rm -r /home/prof/
+          sudo docker cp $(docker ps -lq):home/prof/ /home/prof
           pip3 install pandas
-          python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+          python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
           
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: ${{ github.head_ref }}-profiling.csv
+        path: /home/ansible/_work/MDMCv0.2_pilot/MDMCv0.2_pilot/${{ github.head_ref }}-profiling.csv
         if-no-files-found: error
 
     - name: Copy coverage
@@ -76,12 +91,16 @@ jobs:
   profiling:
     name: Profiling
     needs: tests
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout and home to save files
+      run: |
+        sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
+        sudo chown -R ansible /home/
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Own repo to avoid npm bug
-      run: sudo chmod -R 777 /home/ 
+      run: sudo chmod -R 777 /home/
 
     - name: Download tests artifacts
       uses: actions/download-artifact@v3
@@ -108,13 +127,15 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{ github.head_ref }}-total-profiling
-        path: ${{ github.head_ref }}-total-profiling.csv
+        path: /home/ansible/_work/MDMCv0.2_pilot/MDMCv0.2_pilot/${{ github.head_ref }}-total-profiling.csv
 
   documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
 
@@ -128,8 +149,10 @@ jobs:
 
   linting:
     name: Pylint
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
+    - name: Own repo to clear before checkout
+      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: apt get
