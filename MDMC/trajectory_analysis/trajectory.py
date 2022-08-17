@@ -8,7 +8,7 @@ from MDMC.common.decorators import repr_decorator
 
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Universe
-    from MDMC.MD.structures import Atom, Structure
+    from MDMC.MD.structures import Atom, Molecule, Structure
     from typing import Any, Optional
     from builtins import function
 
@@ -19,14 +19,12 @@ if TYPE_CHECKING:
 
 class AtomCollection:
 
-    """
-    Base class for shared attributes for ``Configurations`` and ``Trajectories``
-    """
+    """Base class for shared attributes for ``Configurations`` and ``Trajectories``"""
 
     __slots__ = ('_universe', )
 
     @property
-    def universe(self) -> 'Universe':
+    def universe(self) -> 'Optional[Universe]':
         """
         Get or set the ``Universe`` in which the ``AtomCollection`` exists
 
@@ -183,7 +181,7 @@ class Configuration(AtomCollection):
         return [atom.element for atom in self.atoms]
 
     @property
-    def molecule_list(self) -> 'list[Structure]':
+    def molecule_list(self) -> 'list[Molecule]':
         """
         Get the `list` of ``Molecule`` which belong to the ``Configuration``
 
