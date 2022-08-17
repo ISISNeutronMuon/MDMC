@@ -19,9 +19,7 @@ class FQtIncoherent(AbstractFQt):
     """
 
     def _set_weights(self) -> None:
-        """
-        Calculate the neutron weighting for incoherent scattering
-        """
+        """Calculate the neutron weighting for incoherent scattering"""
 
         element_weights = {element: B_INCOH[element]**2 for element
                            in self._trajectory.element_set}
