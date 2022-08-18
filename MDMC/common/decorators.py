@@ -482,6 +482,14 @@ def weakref_cache(maxsize=128) -> Callable:
     return wrapper
 
 def time_function_execution(func) -> Callable:
+    """
+    Creates an instance of the TimeKeeper and stores the
+    function execution time in TimeKeeper's class attributes.
+
+    This decorator is meant to be used on functions that are
+    likely to be using up too much CPU time, so the scale
+    of the problem can be assessed.
+    """
     def decorated_func(*args, **kwargs):
         tk = TimeKeeper()
         fname = " ".join(str(x) for x in [func.__name__, 'in', func.__module__])
