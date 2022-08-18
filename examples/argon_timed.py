@@ -7,9 +7,13 @@ A copy of the data fitting against is assumed to be located in
 
 import numpy as np
 import os
+import mpi4py
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
 os.environ["OMP_NUM_THREADS"] = "4"
+# os.environ["OMP_PLACES"] = "cores"
+# os.environ["OMP_THREAD_LIMIT"] = "8"
+# os.environ["OMP_PROC_BIND"] = "false"
 from scipy.interpolate import interp2d
 
 from MDMC.control import Control
@@ -68,7 +72,7 @@ fit_parameters = universe.parameters
 control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
-                  MD_steps=57000)
+                  MD_steps=5700)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script

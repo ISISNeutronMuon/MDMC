@@ -17,6 +17,13 @@ import numpy as np
 from MDMC.common.units import Unit
 
 class CompactTrajectory:
+    """
+    This is a _nearly_ drop-in replacement for the Trajectory object.
+    The goal was to hold all the information we need using as little
+    memory as possible. This way, even if we don't use this class
+    directly in the code in the future, we can still use it as a
+    benchmark reference.
+    """
     def __init__(self, bytes_per_number: int = 8):
         """
         This is a bare constructor which initialises all the fields the basic trajectory
@@ -40,6 +47,8 @@ class CompactTrajectory:
         self.atom_masses = []
         self.dimensions = np.zeros(3)
         self.changing_dimensions = None
+        self.element_list = []
+        self.element_set = {}
         # key point: the data!
         # this is where we will keep the numpy arrays
         self.position = None
@@ -51,21 +60,22 @@ class CompactTrajectory:
         self.is_fixedbox = True
         self.first_index = 0
         self.last_index = -1
+
     @staticmethod
     def _get_dtype(bpn : int):
         if bpn > 8:
             return np.float128
-        elif bpn > 4:
+        if bpn > 4:
             return np.float64
-        elif bpn > 2:
+        if bpn > 2:
             return np.float32
-        else:
-            return np.float16
+        return np.float16
+
     def __len__(self):
         if self.position is None:
             return 0
-        else:
-            return len(self.position[self.first_index:self.last_index])
+        return len(self.position[self.first_index:self.last_index])
+
     def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
                     useVelocity: bool = False):
         """
@@ -91,8 +101,22 @@ class CompactTrajectory:
             self.velocity = np.empty(shape, dtype = self.dtype)
         self.is_allocated = True
         self.changing_dimensions = np.empty((n_steps,3), dtype = self.dtype)
+
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):
+        """
+        Writes the simulation box dimensions into the object header.
+        Additionally, if the simulation box dimensions change with time,
+        it will keep track of the new dimensions at each step in the
+        self.changing_dimensions object.
+
+        Args:
+            frame_dimensions (np.array): 3 float numbers defining the size
+            of the simulation box along x, y and z.
+
+            step_num (int): The number of the simulation frame at which
+            the frame_dimensions array was read.
+        """
         if np.all(np.abs(self.dimensions) < 1e-5):
             self.dimensions = frame_dimensions
         elif np.allclose(frame_dimensions, self.dimensions, rtol = 1e-6, atol = 1e-4):
@@ -100,6 +124,7 @@ class CompactTrajectory:
         else:
             self.is_fixedbox = False
             self.changing_dimensions[step_num] = frame_dimensions
+
     def writeOneStep(self, step_num: int = -1, time: float = -1.0,
                      positions: np.array = None,
                      velocities: np.array = None):
@@ -131,6 +156,7 @@ class CompactTrajectory:
             # how many elements we can still use
             self.first_index = min(step_num, self.first_index)
             self.last_index = max(step_num + 1, self.last_index)
+
     def validateTypes(self, atom_types: np.array):
         """This function checks if the sorted array of atom types
         from the new frame is the same as the original array
@@ -151,17 +177,30 @@ class CompactTrajectory:
             if len(atom_types) == self.n_atoms:
                 self.atom_types = atom_types
                 return True
-            else:
-                return False
-        else:
-            if np.all(self.atom_types == atom_types):
-                return True
-            else:
-                return False
+        elif np.all(self.atom_types == atom_types):
+            return True
+        return False
+
     def labelAtoms(self, atom_symbols: dict = None, atom_masses: dict = None):
+        """
+        Populates the self.element_list with the correct atom symbols
+        based on the list of atom_types from the trajectory file.
+        Also, populates the self.element_set, which will then contain
+        all the chemical elements present in the trajectory.
+
+        Args:
+            atom_symbols (dict): a dictionary which returns a 'str'
+            chemical element symbol for every 'int' atom_ID from
+            the LAMMPS trajectory.
+
+            atom_masses (dict): a dictionary of 'float' atom masses,
+            using as keys the 'int' atom_ID values from LAMMPS.
+
+        """
         self.element_list = [atom_symbols[xx] for xx in self.atom_types]
         self.element_set = set(self.element_list)
-        
+        self.atom_masses = [atom_masses[xx] for xx in self.atom_types]
+
     def postProcess(self):
         """
         This function can be called after the all the trajectory steps have
@@ -176,7 +215,25 @@ class CompactTrajectory:
             self.first_index = 0
             self.last_index = len(self.position)
             self.is_populated = True
+
     def subtrajectory(self, start: int = 0, stop: int = -1, step: int = 1):
+        """
+        Returns another CompactTrajectory instance, which contains the
+        same header information, and a subset of the original trajectory
+        steps. The arrays in the original trajectory will be sliced
+        following the pattern: new = old[start:stop:step]
+
+        Args:
+            start (int): number defining the beginning of the slicing range.
+
+            stop (int): number defining the end of the slicing range.
+
+            step (int): step size of the slicing operation
+
+        Returns:
+            CompactTrajectory: a trajectory containing the same header
+            and the same or less steps than the original.
+        """
         self.postProcess()
         temp = CompactTrajectory()
         # copy over all the transferable parts
