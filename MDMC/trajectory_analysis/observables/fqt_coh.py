@@ -52,8 +52,8 @@ class FQtCoherent(AbstractFQt):
                 # For each time frame ``i`` calculate the Fourier transformed
                 # number density and sum over all positions but preserve the
                 # second dimension, our array of Q vectors
-                rho_unsummed = calculate_rho(positions,
-                                             np.array(single_Q_vectors))
+                rho_unsummed = calculate_rho(positions.T,
+                                             np.array(single_Q_vectors)).T
                 rho_config[i, :] = np.sum(rho_unsummed, axis=0)
 
             rho_element[element] = rho_config

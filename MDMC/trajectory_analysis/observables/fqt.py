@@ -5,7 +5,7 @@ from typing import Dict
 
 import numpy as np
 from mpi4py import MPI
-from numba import jit
+from numba import jit, prange
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
@@ -619,8 +619,8 @@ class FQt(AbstractFQt):
                 # print("BEFORE RHO: positions.shape=", positions.shape)
                 timelen, atomlen, dimlen = positions.shape # timelen should be 1,
                 # but we need to remove this dimension explicitly
-                rho_unsummed = calculate_rho(positions.reshape((atomlen, dimlen)),
-                                             np.array(single_Q_vectors))
+                rho_unsummed = calculate_rho(positions.reshape((atomlen, dimlen)).T,
+                                             np.array(single_Q_vectors)).T
                 rho_config[i, :] = np.sum(rho_unsummed, axis=0)
 
             rho_element[element] = rho_config
@@ -635,8 +635,8 @@ class FQt(AbstractFQt):
                 # atom of ``element``, and gives ``rho_atom`` dimensions of
                 # time and our array of Q vectors respectively.
                 # print("BEFORE RHO: atom_positions.shape=", atom_positions.shape)
-                rho_atom = calculate_rho(atom_positions,
-                                         np.array(single_Q_vectors))
+                rho_atom = calculate_rho(atom_positions.T,
+                                         np.array(single_Q_vectors)).T
 
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q_atom = correlation(rho_atom, normalise=True)[:n_t]
@@ -660,9 +660,34 @@ class FQt(AbstractFQt):
 
         return FQt_single_Q / (n_atoms * norm)
 
+# I have re-written the function
+# and now the Numba jit does not improve it any further
+# @jit('float64[:,:], float64[:,:]', nopython=True)
+def calculate_rho(positions, Q_vector):
+    """
+    Calculates ``t`` dependent number density in reciprocal space for all
+    Q vectors
+
+    As rho is the sum of the contributions for all of the specified Q
+    vectors, these Q vectors should have the same Q value.
+
+    Parameters
+    ----------
+    positions : numpy.ndarray
+        An ``array`` of atomic positions for which the reciprocal space number
+        density should be calculated
+    Q_vector : numpy.ndarray
+        An ``array`` of one or more Q vectors with the same Q value
+
+    Returns
+    -------
+    numpy.ndarray
+        The reciprocal space number density
+    """
+    return np.exp(-1j * np.dot(Q_vector, positions))
 
 @jit('float64[:,:], float64[:,:]', nopython=True)
-def calculate_rho(positions, Q_vector):
+def calculate_rho_original(positions, Q_vector):
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors
@@ -686,7 +711,6 @@ def calculate_rho(positions, Q_vector):
 
     return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
             in range(len(positions))]
-
 
 def get_point_group(dimensions: np.array) -> str:
     """

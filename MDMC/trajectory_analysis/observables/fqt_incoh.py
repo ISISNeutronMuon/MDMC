@@ -41,8 +41,8 @@ class FQtIncoherent(AbstractFQt):
                               0,
                               1)
         for atom_positions, weight in zip(configs, self.weights):
-            rho_atom = calculate_rho(atom_positions,
-                                     np.array(single_Q_vectors))
+            rho_atom = calculate_rho(atom_positions.T,
+                                     np.array(single_Q_vectors)).T
 
             # A sum over the Q vectors is performed within ``correlation``.
             FQt_single_Q_atom = correlation(rho_atom,
