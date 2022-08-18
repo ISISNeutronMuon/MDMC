@@ -3,7 +3,7 @@
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement,
                        product)
-from typing import Dict, List, Union
+from typing import Union, Optional
 import warnings
 
 from numba import jit
@@ -14,7 +14,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.trajectory import Trajectory, Configuration
 
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
@@ -62,7 +62,7 @@ class PairDistributionFunction(Observable):
         self.partial_pdfs = None
 
     @property
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         Get or set the independent variable: this is
         the atomic separation distance r (in ``Ang``)
@@ -76,15 +76,13 @@ class PairDistributionFunction(Observable):
         return self._independent_variables
 
     @independent_variables.setter
-    def independent_variables(self, value):
-
+    def independent_variables(self, value: dict) -> None:
         self._independent_variables = value
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
-        Get or set the dependent variables: these are
-        PDF, the pair distribution function (in ``barn``)
+        Get the dependent variables: these are PDF, the pair distribution function (in ``barn``)
 
         Returns
         -------
@@ -95,10 +93,10 @@ class PairDistributionFunction(Observable):
         return self._dependent_variables
 
     @property
-    def errors(self):
+    def errors(self) -> dict:
         """
-        Get or set the errors on the dependent variables, the pair distribution
-        function (in ``arb``)
+        Get or set the errors on the dependent variables, the pair distribution function
+        (in ``arb``)
 
         Returns
         -------
@@ -109,11 +107,10 @@ class PairDistributionFunction(Observable):
         return self._errors
 
     @errors.setter
-    def errors(self, value):
-
+    def errors(self, value: dict) -> None:
         self._errors = value
 
-    def minimum_frames(self, dt: float = None):
+    def minimum_frames(self, dt: float = None) -> int:
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
         ``dependent_variables`` is 1
@@ -132,7 +129,7 @@ class PairDistributionFunction(Observable):
 
         return 1
 
-    def maximum_frames(self):
+    def maximum_frames(self) -> None:
         """
         There is no hard limit on the number of frames that can be used, so
         return None
@@ -145,11 +142,8 @@ class PairDistributionFunction(Observable):
         return None
 
     @property
-    def r(self):
-        """
-        Get or set the value of the atomic separation distance (in ``Ang``)
-        """
-
+    def r(self) -> Optional[float]:
+        """Get or set the value of the atomic separation distance (in ``Ang``)"""
         try:
             return self.independent_variables['r']
         except KeyError:
@@ -157,8 +151,7 @@ class PairDistributionFunction(Observable):
 
     @r.setter
     @unit_decorator(unit=units.Unit('Ang'))
-    def r(self, value):
-
+    def r(self, value: float) -> None:
         if (hasattr(self, '_independent_variables')
                 and self._independent_variables):
             self._independent_variables['r'] = value
@@ -167,11 +160,8 @@ class PairDistributionFunction(Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
-    def PDF(self):
-        """
-        Get the value of the total pair distribution function (in ``barn``)
-        """
-
+    def PDF(self) -> Optional[float]:
+        """Get the value of the total pair distribution function (in ``barn``)"""
         try:
             return self.dependent_variables['PDF']
         except KeyError:
@@ -179,18 +169,15 @@ class PairDistributionFunction(Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('barn'))
-    def PDF_err(self):
-        """
-        Get the errors on the total pair distribution function (in ``barn``)
-        """
-
+    def PDF_err(self) -> Optional[float]:
+        """Get the errors on the total pair distribution function (in ``barn``)"""
         try:
             return self.errors['PDF']
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, List[Trajectory]], verbose=0,
-                          **settings):
+    def calculate_from_MD(self, MD_input: Union[Trajectory, list[Trajectory]],
+                          verbose: int = 0, **settings: dict) -> None:
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``
@@ -316,10 +303,8 @@ class PairDistributionFunction(Observable):
 
         self._sum_partial_pairs()
 
-    def _sum_partial_pairs(self):
-        """
-        Normalize the partial pairs and sum them to get the total PDF
-        """
+    def _sum_partial_pairs(self) -> None:
+        """Normalize the partial pairs and sum them to get the total PDF"""
         # Partial independent prefactor (e.g. anything element independent)
         prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
                                             * self.r_step)
@@ -346,7 +331,7 @@ class PairDistributionFunction(Observable):
             self._dependent_variables['PDF'][0] += ((partial - 1) * fac
                                                     * weights * concentration)
 
-    def _parse_calc_MD_settings(self, trajectory, settings):
+    def _parse_calc_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
         """
         Parses the MD settings
 
@@ -447,13 +432,12 @@ class PairDistributionFunction(Observable):
         # Release memory from full trajectory
         del trajectory
 
-    def _calculate_histogram(self, configuration):
+    def _calculate_histogram(self, configuration: Configuration) -> None:
         """
         Partitions the atomic positions into regions where they are within
         ``r_max`` from all other atoms
         """
-
-        def get_component_lengths(universe_dim):
+        def get_component_lengths(universe_dim: float) -> np.ndarray:
             """
             Use ``r`` values for each component that are at least as big as
             ``r_max``, but that are a factor of the dimensions
@@ -531,7 +515,7 @@ class PairDistributionFunction(Observable):
             self.partial_pdfs[partial_string] += \
                 self._calculate_histogram_from_position_pairs(pos_pairs)
 
-    def _partition(self, positions, element_list, part_comps):
+    def _partition(self, positions: np.ndarray, element_list: list, part_comps: np.ndarray) -> dict:
         """
         Partitions the atomic positions into paritions of dimensions specified
         by ``part_comps``
@@ -591,7 +575,7 @@ class PairDistributionFunction(Observable):
                        for partition_index, positions in elem_partitions.items()}
                 for elem, elem_partitions in partitions.items()}
 
-    def _get_partition_pairs(self, partition_components):
+    def _get_partition_pairs(self, partition_components: np.ndarray) -> list[tuple]:
         """
         Calculates which partitions are neighbours and pairs them. This includes
         partitions that are neighbours due to periodic boundary conditions.
@@ -630,13 +614,12 @@ class PairDistributionFunction(Observable):
 
         return pairs
 
-    def _calculate_partition_indexes(self, partition_components):
-
+    def _calculate_partition_indexes(self, partition_components: np.ndarray) -> 'product[tuple]':
         return product(*map(np.arange, (self.universe_dimensions
                                         / partition_components).astype('int32'))
                        )
 
-    def _calculate_histogram_from_position_pairs(self, position_pairs):
+    def _calculate_histogram_from_position_pairs(self, position_pairs: np.ndarray) -> np.ndarray:
         """
         Returns a histogram of pair separations calculated from
         ``position_pairs``
@@ -690,7 +673,7 @@ class PairDistributionFunction(Observable):
 
     @staticmethod
     @jit('float64(float64[:])', nopython=True)
-    def _calculate_euclidean_norm(vector):
+    def _calculate_euclidean_norm(vector: np.ndarray) -> np.ndarray:
         """
         Calculates the Euclidean norm of a vector
 
@@ -706,7 +689,7 @@ class PairDistributionFunction(Observable):
         return np.sum(vector ** 2) ** 0.5
 
     @staticmethod
-    def _set_weights(unique_elements, b_coh):
+    def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
         """
         Sets the weights for each element
 
@@ -733,7 +716,7 @@ class PairDistributionFunction(Observable):
                 in unique_elements}
 
     @staticmethod
-    def _set_numbers(unique_elements, element_list):
+    def _set_numbers(unique_elements: list[str], element_list: list[str]) -> dict:
         """
         Sets the number of atoms of each element
 
@@ -755,7 +738,7 @@ class PairDistributionFunction(Observable):
                 in unique_elements}
 
     @property
-    def dependent_variables_structure(self) -> Dict[str, list]:
+    def dependent_variables_structure(self) -> dict[str, list]:
         """
         The shape of the 'PDF' dependent variable in terms of 'r'':
         np.shape(self.PDF)=(np.size(self.r))
@@ -768,15 +751,15 @@ class PairDistributionFunction(Observable):
         return {'PDF': ['r']}
 
     @property
-    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
-        # Defines the current limitations on the atomic separation distance 'r'
+        Defines the current limitations on the atomic separation distance 'r'
         of the ``PairDistributionFunction`` ``Observable.
         The requirement is that 'r' must be uniform, but it does not have to start at zero.
 
         Return
         ------
-        Dict[str, Dict[str, bool]]
+        dict[str, dict[str, bool]]
             Dictionary of uniformity restrictions for 'r'.
         """
 

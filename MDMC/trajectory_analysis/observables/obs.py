@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from MDMC.trajectory_analysis.trajectory import Trajectory
     from typing import Union
 
+
 @repr_decorator('origin', 'data')
 class Observable(ABC):
 
@@ -197,10 +198,8 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self,
-                          MD_input: 'Union[Trajectory, list[Trajectory]]',
-                          verbose: int = 0,
-                          **parameters: dict) -> None:
+    def calculate_from_MD(self, MD_input: 'Union[Trajectory, list[Trajectory]]',
+                          verbose: int = 0, **parameters: dict) -> None:
         """
         Calculates the observable using input from an MD simulation
 
@@ -248,7 +247,8 @@ class Observable(ABC):
 
     @property
     @abstractmethod
-    def uniformity_requirements(self) -> 'dict[str, dict[str, bool]]':
+    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
+
         """
         Represents the current limitations on ``independent_variables`` of the ``Observable``.
         It captures if the ``independent_variables`` are required to be uniform or to start at zero
