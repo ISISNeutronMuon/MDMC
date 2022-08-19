@@ -38,45 +38,76 @@ where both the mean value and the standard deviation have been calculated from
 simulation with the same simulation parameters.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
-NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(1440.28, 3.9),
-                'PotEng':(-1282.70, 3.5), 'Temp':(1121.08, 3.0),
-                'Press':(16911.42, 116.1), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(382.69, 3.2),
-                'E_coul':(11562.59, 4.5), 'E_long':(-13227.98, 0.45),
-                'Nbuild':(896.46, 3.2), 'Ndanger':(0, 0)}
+NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
+                'Bonds':(N_MOLECULES*2, 0),
+                'Angles':(N_MOLECULES, 0),
+                'KinEng': (1440.08, 4.97),
+                'PotEng': (-1284.02, 2.7),
+                'Temp': (1120.92, 3.87),
+                'Press': (16869.52, 131.4),
+                'Volume': (DIMENSION ** 3, 0.0),
+                'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0),
+                'E_vdwl': (381.63, 3.02),
+                'E_coul': (11562.6, 3.29),
+                'E_long': (-13228.25, 0.35),
+                'Nbuild': (893.74, 3.96),
+                'Ndanger': (0.0, 0.0)}
 
-NVT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(385.43, 0.98),
-                'PotEng':(-2408.66, 4.2), 'Temp':(300.01, 0.77),
-                'Press':(168.6, 84.6), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(457.47, 2.6),
-                'E_coul':(10388.92, 5.6), 'E_long':(-13255.06, 0.11),
-                'Nbuild':(384.18, 3.4), 'Ndanger':(0, 0)}
+NVT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
+                'Bonds':(N_MOLECULES*2, 0),
+                'Angles':(N_MOLECULES, 0),
+                'KinEng': (382.61, 0.93),
+                'PotEng': (-2416.22, 5.36),
+                'Temp': (297.81, 0.72),
+                'Press': (73.97, 82.34),
+                'Volume': (DIMENSION**3, 0.0),
+                'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0),
+                'E_vdwl': (458.45, 3.81),
+                'E_coul': (10380.53, 8.63),
+                'E_long': (-13255.2, 0.13),
+                'Nbuild': (381.53, 2.5),
+                'Ndanger': (0.0, 0.0)}
 
-NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(384.85, 0.9),
-                'PotEng':(-2408.42, 6.4), 'Temp':(299.56, 0.70),
-                'Press':(3.87, 31.5), 'Volume':(6478.08, 30.3),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(455.36, 3.2),
-                'E_coul':(10390.32, 18.4), 'E_long':(-13254.11, 13.5),
-                'Nbuild':(415.84, 2.7), 'Ndanger':(0, 0)}
+NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
+                'Bonds':(N_MOLECULES*2, 0),
+                'Angles':(N_MOLECULES, 0),
+                'KinEng': (382.7, 1.07),
+                'PotEng': (-2412.9, 3.62),
+                'Temp': (297.88, 0.83),
+                'Press': (3.45, 31.15),
+                'Volume': (6473.89, 35.17),
+                'E_bond': (0.0, 0.0),
+                'E_angle': (0.0, 0.0),
+                'E_vdwl': (457.49, 2.77),
+                'E_coul': (10378.14, 17.79),
+                'E_long': (-13248.54, 16.16),
+                'Nbuild': (415.66, 3.07),
+                'Ndanger': (0.0, 0.0)}
 
 NVE_UNCONSTRAINED_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
                               'Bonds':(N_MOLECULES*2, 0),
                               'Angles':(N_MOLECULES, 0),
-                              'KinEng':(1657.53, 6.6),
-                              'PotEng':(-1176.07, 6.6),
-                              'Temp':(859.45, 3.4),
-                              'Press':(13672.83, 266.9),
-                              'Volume':(DIMENSION**3, 0),
-                              'E_bond':(180.66, 4.7),
-                              'E_angle':(294.60, 4.5),
-                              'E_vdwl':(424.56, 6.1),
-                              'E_coul':(11154.79, 9.4),
-                              'E_long':(-13230.68, 0.27),
-                              'Nbuild':(92.02, 1.2),
-                              'Ndanger':(0, 0)}
+                              'KinEng': (1443.78, 6.9),
+                              'PotEng': (-1284.95, 4.63),
+                              'Temp': (1123.8, 5.37),
+                              'Press': (16903.53, 229.0),
+                              'Volume': (DIMENSION ** 3, 0.0),
+                              'E_bond': (0.0, 0.0),
+                              'E_angle': (0.0, 0.0),
+                              'E_vdwl': (382.68, 6.41),
+                              'E_coul': (11560.65, 8.44),
+                              'E_long': (-13228.29, 0.59),
+                              'Nbuild': (93.24, 1.58),
+                              'Ndanger': (0.0, 0.0)
+
+
+
+
+
+
+
 
 
 # Use module scope so that the simulation only runs once for all functions
