@@ -48,8 +48,8 @@ simulation = Simulation(universe,
                         traj_step=4000)
 
 # Energy Minimization and equilibration
-simulation.minimize(n_steps=500)
-simulation.run(n_steps=2500, equilibration=True)
+simulation.minimize(n_steps=5000)
+simulation.run(n_steps=25000, equilibration=True)
 
 # Setup refinement
 
