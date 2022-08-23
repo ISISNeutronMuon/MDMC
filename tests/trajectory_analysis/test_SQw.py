@@ -12,6 +12,7 @@ from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables.sqw import SQw
 import MDMC.trajectory_analysis.trajectory as trj
+import MDMC.trajectory_analysis.compact_trajectory as ctrj
 from MDMC.resolution.resolution import Resolution
 
 from tests.test_data import data

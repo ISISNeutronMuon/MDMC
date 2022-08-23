@@ -445,6 +445,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     pos = []
                     vel = []
                     atom_type = []
+                    # :TODO: here something has to be done about the time units
+                    # as it seems that DL_POLY uses ps units
                     time = float(f.readline().split()[-1])
                     # Just skip, unused for the moment, will need to be
                     # used for npt simulations

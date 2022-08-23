@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 
 from MDMC.MD.simulation import Universe
-from MDMC.trajectory_analysis.trajectory import Trajectory, \
-    TemporalConfiguration
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 
 
@@ -62,7 +62,7 @@ def trajectory(universe):
         A Trajectory with 1000 empty TemporalConfigurations
     """
 
-    trj = Trajectory(*[TemporalConfiguration(time, universe=universe)
+    trj = CompactTrajectory(*[TemporalConfiguration(time, universe=universe)
                        for time in range(0, 1000, 1)])
     trj.configurations[0].element_set = ELEMENTS
     return trj
