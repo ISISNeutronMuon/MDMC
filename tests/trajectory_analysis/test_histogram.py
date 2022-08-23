@@ -34,7 +34,9 @@ def trajectory(water_SPCE_universe):
     for time in TIMES:
         configurations.append(trj.TemporalConfiguration(
             time, *water_SPCE_universe.configuration.atoms))
-    return ctrj.CompactTrajectory(*configurations)
+    temp = ctrj.CompactTrajectory()
+    temp.fromConfigs(*configurations)
+    return temp
 
 def test_configuration(configuration):
 

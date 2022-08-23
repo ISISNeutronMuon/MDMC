@@ -104,6 +104,24 @@ class CompactTrajectory:
         self.is_allocated = True
         self.changing_dimensions = np.empty((n_steps,3), dtype = self.dtype)
 
+    def fromConfigs(self, *configs: TemporalConfiguration):
+        """
+        Populate the arrays of the CompactTrajectory using the input list
+        of ``TemporalConfiguration`` objects.
+        This method has been added to increase the compatibility between
+        the ``Trajectory`` and ``CompactTrajectory``.
+        """
+        self.preAllocate(n_steps = len(configs),
+                         n_atoms = len(configs[0].atoms),
+                         useVelocity = len(configs[0].atom_velocities) > 0)
+        for n, c in enumerate(configs):
+            atpos = np.row_stack(c.atom_positions)
+            atvel = np.row_stack(c.atom_velocities)
+            self.writeOneStep(step_num = n,
+                              time = c.time,
+                              positions = atpos,
+                              velocities = atvel)
+
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):
         """
@@ -282,12 +300,12 @@ class CompactTrajectory:
             ``start`` and ``end``
         """
 
-        index = np.where(self.times==start).ravel()
+        index = np.where(self.times==start)[0].ravel()
         if end is None:
             if len(index) < 1:
                 raise ValueError("Start is not in self.times")
             return self.subtrajectory(index[0],index[0]+1)
-        total = np.where(np.logical_and(self.times >= start, self.times < end)).ravel()
+        total = np.where(np.logical_and(self.times >= start, self.times < end))[0].ravel()
         if len(total) < 1:
             raise ValueError("The specified time range contains no MD frames")
         return self.subtrajectory(index[0], len(total))
