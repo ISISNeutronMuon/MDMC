@@ -10,7 +10,10 @@ import os
 import mpi4py
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
-os.environ["OMP_NUM_THREADS"] = "4"
+# os.environ["OMP_NUM_THREADS"] = "4"
+# import pyfftw
+# pyfftw.config.NUM_THREADS = 4
+# pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 # os.environ["OMP_PLACES"] = "cores"
 # os.environ["OMP_THREAD_LIMIT"] = "8"
 # os.environ["OMP_PROC_BIND"] = "false"

@@ -2,6 +2,9 @@
 
 import numpy as np
 from numpy.fft import fft, ifft
+from pyfftw.interfaces.numpy_fft import fft as fftw
+from pyfftw.interfaces.numpy_fft import ifft as ifftw
+from numba import jit
 
 from MDMC.common.decorators import time_function_execution
 
@@ -63,6 +66,92 @@ def correlation(input1, input2=None, normalise=False) -> np.ndarray:
 
     return corr
 
+# @jit('complex128[:,:], complex128[:,:]', nopython=True)
+# @jit
+def faster_correlation(input1, input2) -> np.ndarray:
+    """
+    The correlation of two vectors
+
+    The Fast Correlation Algorithm (FCA) is utilised.
+
+    I break it up into separate functions to allow numba to optimise the code.
+
+    Parameters
+    ----------
+    input1 : numpy.ndarray
+        A 1D ``array`` of data.
+    input2 :  numpy.ndarray, optional
+        A 1D ``array`` of data. If `None`, autocorrelation of ``input1`` is
+        calculated. Default is `None`.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 1D ``array`` of the same length as the ``input1`` containing the
+        correlation between ``input1`` and ``input2`` (or autocorrelation of
+        ``input1`` if ``input2`` is `None`)
+    """
+
+    N = len(input1)
+
+    fft1 = fftw(input1, n=(N * 2), axis=0)
+
+    fft2 = fftw(input2, n=(N * 2), axis=0)
+
+    # Calculate the cyclic correlation function
+    cyclic_corr = ifftw(np.conjugate(fft1) * fft2, axis=0)
+
+    # Normalise for variable number of contributions to each correlation:
+    # 1 / (N - m)
+    # where m is the number of each individual step
+    prefactor = 1. / (N - np.arange(N))
+    # I have to guarantee that the array is a 2D array on input
+    cyclic_corr = np.sum(cyclic_corr, axis=1)
+
+    corr = prefactor * np.real(cyclic_corr[0:N])
+
+    return corr
+
+# @jit('complex128[:,:]', nopython=True)
+# @jit
+def faster_autocorrelation(input1) -> np.ndarray:
+    """
+    The correlation of two vectors
+
+    The Fast Correlation Algorithm (FCA) is utilised.
+
+    I break it up into separate functions to allow numba to optimise the code.
+
+    Parameters
+    ----------
+    input1 : numpy.ndarray
+        A 1D ``array`` of data.
+
+    Returns
+    -------
+    numpy.ndarray
+        A 1D ``array`` of the same length as the ``input1`` containing the
+        correlation between ``input1`` and ``input2`` (or autocorrelation of
+        ``input1`` if ``input2`` is `None`)
+    """
+
+    N = len(input1)
+
+    fft1 = fftw(input1, n=(N * 2), axis=0)
+
+    # Calculate the cyclic correlation function
+    cyclic_corr = ifftw(np.conjugate(fft1) * fft1, axis=0)
+
+    # Normalise for variable number of contributions to each correlation:
+    # 1 / (N - m)
+    # where m is the number of each individual step
+    prefactor = 1. / (N - np.arange(N))
+    # I have to guarantee that the array is a 2D array on input
+    cyclic_corr = np.sum(cyclic_corr, axis=1)
+
+    corr = prefactor * np.real(cyclic_corr[0:N])
+
+    return corr
 
 def _convolution(input1, input2):
     """

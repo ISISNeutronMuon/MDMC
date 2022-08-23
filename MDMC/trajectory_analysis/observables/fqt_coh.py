@@ -3,7 +3,7 @@
 import numpy as np
 
 from MDMC.common.atom_properties import B_COH
-from MDMC.common.mathematics import correlation
+from MDMC.common.mathematics import faster_correlation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
@@ -64,9 +64,8 @@ class FQtCoherent(AbstractFQt):
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1] \
                     * self.weights[element2] \
-                    * correlation(rho_element[element1],
-                                  rho_element[element2],
-                                  normalise=True)[:n_t]
+                    * faster_correlation(rho_element[element1],
+                                  rho_element[element2])[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:

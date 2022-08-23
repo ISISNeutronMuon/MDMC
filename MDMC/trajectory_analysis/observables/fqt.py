@@ -12,12 +12,14 @@ from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
     time_function_execution
-from MDMC.common.mathematics import correlation, UNIT_VECTOR
+from MDMC.common.mathematics import faster_correlation,\
+     faster_autocorrelation, \
+     UNIT_VECTOR
 from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
@@ -142,7 +144,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings):
+    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,  **settings):
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -151,8 +153,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            a single ``Trajectory`` object.
+        MD_input : CompactTrajectory
+            a single ``CompactTrajectory`` object.
         verbose: int, optional
             The level of verbosity:
             Verbose level 0 gives no information.
@@ -639,7 +641,7 @@ class FQt(AbstractFQt):
                                          np.array(single_Q_vectors)).T
 
                 # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q_atom = correlation(rho_atom, normalise=True)[:n_t]
+                FQt_single_Q_atom = faster_autocorrelation(rho_atom)[:n_t]
                 FQt_single_Q += FQt_single_Q_atom * incoh_weights**2
 
         # Calculates the coherent contribution to SQw
@@ -648,9 +650,8 @@ class FQt(AbstractFQt):
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1]['coh'] \
                     * self.weights[element2]['coh'] \
-                    * correlation(rho_element[element1],
-                                  rho_element[element2],
-                                  normalise=True)[:n_t]
+                    * faster_correlation(rho_element[element1],
+                                  rho_element[element2])[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:

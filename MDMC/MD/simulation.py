@@ -26,7 +26,7 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 if TYPE_CHECKING:
     from MDMC.MD.structures import Molecule, Atom
     from MDMC.MD.interactions import Interaction
-    from MDMC.trajectory_analysis.trajectory import Trajectory
+    from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -1529,15 +1529,15 @@ class Simulation:
         verbose_manager.finish(f"{process.capitalize()}")
 
     @property
-    def trajectory(self) -> Union['Trajectory', None]:
+    def trajectory(self) -> Union['CompactTrajectory', None]:
         """
-        The ``Trajectory`` produced by the most recent production run of the
+        The ``CompactTrajectory`` produced by the most recent production run of the
         ``Simulation``.
 
         Returns
         -------
-        Trajectory
-            Most recent production run ``Trajectory``, or `None` if no
+        CompactTrajectory
+            Most recent production run ``CompactTrajectory``, or `None` if no
             production run has been performed
         """
 

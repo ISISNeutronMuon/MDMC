@@ -1,9 +1,13 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "4"
+import pyfftw
+pyfftw.config.NUM_THREADS = 4
+pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 # Import the Universe class
 from MDMC.MD import Universe
 # Initialise a Universe with dimensions in Ang
 from MDMC.MD import *
+from MDMC.common.time_keeper import TimeKeeper
 
 universe = Universe(dimensions=21.75, constraint_algorithm=Shake(1e-4, 100), electrostatic_solver=PPPM(accuracy=1e-5))
 H1 = Atom('H')
@@ -32,18 +36,18 @@ simulation.run(1000, equilibration=True)
 simulation.run(2000)
 
 # Dataset from: Johan Qvist et al, J. Chem. Phys. 134, 144508 (2011)
-QENS = {'file_name':'../doc/tutorials/data/263K05Awat_LAMP',
+QENS = {'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/263K05Awat_LAMP',
         'type':'SQw',
         'reader':'LAMPSQw',
         'weight':1.,
         'auto_scale':True,
         'use_FFT':False,
-        'resolution':{'file': '../doc/tutorials/data/262p7K0A5van_LAMP'}}
+        'resolution':{'file': '/workspaces/MDMCv0.2_pilot/doc/tutorials/data/262p7K0A5van_LAMP'}}
 
 
 exp_datasets = [QENS]
 
-n_diffraction = {'file_name':'../doc/tutorials/data/water_PDF',
+n_diffraction = {'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/water_PDF',
                  'type':'PDF',
                  'reader':'ASCII',
                  'weight':1.,
@@ -102,3 +106,10 @@ resolution_array = resolution_function(t, Q)
 
 control.refine(3)
 
+tk = TimeKeeper()
+print(f"Total time = {tk.total_time()}")
+timing_stats = tk.summarise_results()
+sorted_stats = sorted(timing_stats, key = lambda x: x[2], reverse = True)
+print("## Function     NumberOfCalls    TotalTime")
+for ll in sorted_stats:
+    print(f"## {ll[0]}   {ll[1]}   {ll[2]}")

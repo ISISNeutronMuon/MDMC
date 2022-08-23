@@ -5,6 +5,7 @@ import numpy as np
 from copy import deepcopy
 
 import MDMC.trajectory_analysis.trajectory as trj
+import MDMC.trajectory_analysis.compact_trajectory as ctrj
 
 from tests.MD.test_simulation import universe, atom, water_molecule, \
     water_SPCE_universe, UNIVERSE_DIMENSIONS
@@ -33,7 +34,7 @@ def trajectory(water_SPCE_universe):
     for time in TIMES:
         configurations.append(trj.TemporalConfiguration(
             time, *water_SPCE_universe.configuration.atoms))
-    return trj.Trajectory(*configurations)
+    return ctrj.CompactTrajectory(*configurations)
 
 def test_configuration(configuration):
 

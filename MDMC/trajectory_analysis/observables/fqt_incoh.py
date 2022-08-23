@@ -3,7 +3,7 @@
 import numpy as np
 
 from MDMC.common.atom_properties import B_INCOH
-from MDMC.common.mathematics import correlation
+from MDMC.common.mathematics import faster_autocorrelation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
@@ -45,8 +45,7 @@ class FQtIncoherent(AbstractFQt):
                                      np.array(single_Q_vectors)).T
 
             # A sum over the Q vectors is performed within ``correlation``.
-            FQt_single_Q_atom = correlation(rho_atom,
-                                            normalise=True)[:n_t]
+            FQt_single_Q_atom = faster_autocorrelation(rho_atom)[:n_t]
             FQt_single_Q += FQt_single_Q_atom * weight
 
         # Normalise to the number of orthogonal vectors

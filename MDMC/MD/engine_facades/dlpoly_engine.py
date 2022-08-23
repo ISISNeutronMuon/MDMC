@@ -30,8 +30,8 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import (Atom as MAtom,
                                 Molecule as MMolecule)
 from MDMC.common.units import Unit
-from MDMC.trajectory_analysis.trajectory import (Trajectory,
-                                                 TemporalConfiguration)
+from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition_interactions
 
 if TYPE_CHECKING:
@@ -367,7 +367,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> Trajectory:
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
         Parses the trajectory from the ``DL_POLY`` format into MDMC format.
 
@@ -382,8 +382,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         Returns
         -------
-        ``Trajectory``
-            The MDMC ``Trajectory`` from the most recent production simulation
+        ``CompactTrajectory``
+            The MDMC ``CompactTrajectory`` from the most recent production simulation
 
         """
 
@@ -416,14 +416,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 force = None
             _ = force
 
-            atom = MAtom(symbol, position=pos, mass=mass)
-            atom.atom_type = self.universe.element_dict[symbol].atom_type
+            # atom_type = self.universe.element_dict[symbol].atom_type
+            # it is not a float, so it is a little inconveniet to handle here
 
-            if self.universe:
-                atom.universe = self.universe
-            if vel is not None:
-                atom.velocity = vel
-            return atom
+            return np.concatenate([pos, vel, [mass]])
+
+        traj = CompactTrajectory()
 
         atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
@@ -438,25 +436,30 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
             take = range(start, end, step)
 
+            traj.preAllocate(n_steps = len(take), n_atoms = n_atoms, useVelocity = level_of_detail >=1)
+            traj_step = 0
+
             for iframe in range(frames):
                 if iframe in take:
+                    mass = []
+                    pos = []
+                    vel = []
+                    atom_type = []
                     time = float(f.readline().split()[-1])
                     # Just skip, unused for the moment, will need to be
                     # used for npt simulations
                     read_cell(f)
 
-                    atoms = filter(lambda atom: not atom_ids or atom.ID in atom_ids,
-                                   (create_atom(f, level_of_detail) for _ in range(n_atoms))
-                                   )
-                    configs.append(
-                        TemporalConfiguration(
-                            convert_unit(time, unit=units.Unit('ps'), to_dlpoly=False), *atoms
-                        ))
+                    tempdata = np.row_stack([create_atom(f, level_of_detail) for _ in range(n_atoms)])
+                    if level_of_detail:
+                        traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])
+                    else:
+                        traj.writeOneStep(traj_step, time, tempdata[:,0:3])
                 else:  # Skip time + cell + atoms
                     for _ in range(1 + 3 + n_atoms):
                         f.readline()
 
-        return Trajectory(*configs)
+        return traj
 
     def update_parameters(self) -> None:
 

@@ -259,4 +259,35 @@ class CompactTrajectory:
         temp.first_index = 0
         temp.last_index = len(temp.position)
         return temp
+    def filter_by_time(self, start, end=None):
+        """
+        Filter the ``CompactTrajectory`` by time.
+        Added only for compatibility with the original ``Trajectory``.
+
+        Parameters
+        ----------
+        start : float
+            The start time for filtering the ``Trajectory``
+        end : , optional
+            The end time for filtering the ``Trajectory``.  The default is
+            `None`, which means the new returned ``Trajectory`` has a single
+            time, defined by the ``start``
+
+        Returns
+        -------
+        CompactTrajectory
+            A ``CompactTrajectory`` with ``times`` in half open interval defined by
+            ``start`` and ``end``
+        """
+
+        index = np.where(self.times==start).ravel()
+        if end is None:
+            if len(index) < 1:
+                raise ValueError("Start is not in self.times")
+            return self.subtrajectory(index[0],index[0]+1)
+        total = np.where(np.logical_and(self.times >= start, self.times < end)).ravel()
+        if len(total) < 1:
+            raise ValueError("The specified time range contains no MD frames")
+        return self.subtrajectory(index[0], len(total))
+
         
