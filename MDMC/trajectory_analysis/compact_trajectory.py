@@ -15,6 +15,8 @@ by numpy.
 
 import numpy as np
 from MDMC.common.units import Unit
+from MDMC.MD.structures import Atom
+from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 
 class CompactTrajectory:
     """
@@ -289,5 +291,58 @@ class CompactTrajectory:
         if len(total) < 1:
             raise ValueError("The specified time range contains no MD frames")
         return self.subtrajectory(index[0], len(total))
+
+    def Atom(self, step_number: int = 0, atom_number: int = 0):
+        """
+        For compatibility with ``Trajectory``, creates an ``Atom`` object
+        for a chosen time step of the simulation and atom number.
+
+        Parameters
+        ----------
+        step_number : int
+            number of the simulation step at which the atom
+            position should be read
+        atom_number : int
+            number of the atom in the trajectory that will
+            be created as an ``Atom`` object
+
+        Returns
+        -------
+        Atom
+            a single ``Atom`` object, for whatever purpose the user
+            may need it.
+        """
+        try:
+            element = self.element_list[atom_number]
+        except AttributeError:
+            element = '?'
+        try:
+            velocity = self.velocity[step_number, atom_number, :]
+        except AttributeError:
+            velocity = (0.0, 0.0, 0.0)
+        # :TODO: some information about charge is needed
+        return Atom(element,
+            self.position[step_number, atom_number, :],
+            velocity)
+
+    def TemporalConfiguration(self, step_number: int = 0) -> TemporalConfiguration:
+        """
+        For compatibility, creates a TemporalConfiguration object
+        out of the numpy arrays of atom positions.
+
+        Parameters
+        ----------
+        step_number : int
+            The ``TemporalConfiguration`` will be created using the
+            positions and time from this step of the ``CompactTrajectory``
+
+        Returns
+        -------
+        TemporalConfiguration
+            A ``TemporalConfiguration`` object containing all the atoms at the
+            requested time step
+        """
+        return TemporalConfiguration(self.times[step_number],
+            [self.Atom(step_number, at_num) for at_num in range(self.n_atoms)])
 
         
