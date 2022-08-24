@@ -2,8 +2,8 @@
 
 import numpy as np
 from numpy.fft import fft, ifft
-from pyfftw.interfaces.numpy_fft import fft as fftw
-from pyfftw.interfaces.numpy_fft import ifft as ifftw
+# from pyfftw.interfaces.numpy_fft import fft as fft
+# from pyfftw.interfaces.numpy_fft import ifft as ifft
 from numba import jit
 
 from MDMC.common.decorators import time_function_execution
@@ -94,12 +94,12 @@ def faster_correlation(input1, input2) -> np.ndarray:
 
     N = len(input1)
 
-    fft1 = fftw(input1, n=(N * 2), axis=0)
+    fft1 = fft(input1, n=(N * 2), axis=0)
 
-    fft2 = fftw(input2, n=(N * 2), axis=0)
+    fft2 = fft(input2, n=(N * 2), axis=0)
 
     # Calculate the cyclic correlation function
-    cyclic_corr = ifftw(np.conjugate(fft1) * fft2, axis=0)
+    cyclic_corr = ifft(np.conjugate(fft1) * fft2, axis=0)
 
     # Normalise for variable number of contributions to each correlation:
     # 1 / (N - m)
@@ -137,10 +137,10 @@ def faster_autocorrelation(input1) -> np.ndarray:
 
     N = len(input1)
 
-    fft1 = fftw(input1, n=(N * 2), axis=0)
+    fft1 = fft(input1, n=(N * 2), axis=0)
 
     # Calculate the cyclic correlation function
-    cyclic_corr = ifftw(np.conjugate(fft1) * fft1, axis=0)
+    cyclic_corr = ifft(np.conjugate(fft1) * fft1, axis=0)
 
     # Normalise for variable number of contributions to each correlation:
     # 1 / (N - m)

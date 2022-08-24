@@ -50,7 +50,7 @@ class CompactTrajectory:
         self.n_steps = 0
         self.atom_types = []
         self.atom_masses = []
-        self.dimensions = np.ones(3)
+        self.dimensions = 0.1*np.ones(3) # avoids divide-by-zero errors
         self.changing_dimensions = None
         self.element_list = []
         self.element_set = {}
@@ -189,7 +189,7 @@ class CompactTrajectory:
             step_num (int): The number of the simulation frame at which
             the frame_dimensions array was read.
         """
-        if np.all(np.abs(self.dimensions) < 1e-5):
+        if np.all(np.abs(self.dimensions - 0.1) < 1e-5):
             self.dimensions = frame_dimensions
         elif np.allclose(frame_dimensions, self.dimensions, rtol = 1e-6, atol = 1e-4):
             pass

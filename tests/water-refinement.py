@@ -1,8 +1,8 @@
 import os
 os.environ["OMP_NUM_THREADS"] = "4"
-import pyfftw
-pyfftw.config.NUM_THREADS = 4
-pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
+# import pyfftw # this was not really faster than numpy FFT
+# pyfftw.config.NUM_THREADS = 4
+# pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
 # Import the Universe class
 from MDMC.MD import Universe
 # Initialise a Universe with dimensions in Ang
