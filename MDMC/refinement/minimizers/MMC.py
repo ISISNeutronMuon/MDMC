@@ -1,7 +1,13 @@
 """The Metropolis-Hastings minimizer class"""
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
+if TYPE_CHECKING:
+    from MDMC.MD import Parameters
+
 
 
 class MMC(Minimizer):
@@ -33,7 +39,7 @@ class MMC(Minimizer):
 
     DISTRIBUTION = {'uniform': np.random.uniform}
 
-    def __init__(self, parameters, **settings):
+    def __init__(self, parameters: 'Parameters', **settings: dict):
         super().__init__(parameters)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
@@ -50,10 +56,16 @@ class MMC(Minimizer):
             self.distribution = None
 
     @property
-    def history_columns(self):
+    def history_columns(self) -> 'list[str]':
+        """
+        Returns column labels of the history
 
+        Returns
+        -------
+        list[str]
+            A ``list`` of ``str`` containing all the column labels in the history
+        """
         return ['FoM', 'Change state'] + list(self.parameters)
-
 
     def step(self, FoM: float) -> None:
         """
@@ -85,7 +97,7 @@ class MMC(Minimizer):
         self._history.append(history)
         self.change_parameters()
 
-    def change_state(self):
+    def change_state(self) -> bool:
         """
         Stochastic determination of whether the state should change based on the
         FoM
@@ -107,7 +119,7 @@ class MMC(Minimizer):
 
         return change_state
 
-    def change_parameters(self):
+    def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from a distribution centered
         around the current value.
@@ -175,7 +187,7 @@ class MMC(Minimizer):
 
         return converged
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         """
         Resets the ``Parameter`` values to the values from the previous MMC step
         """
@@ -183,28 +195,65 @@ class MMC(Minimizer):
         for parameter in self.parameters:
             self.parameters[parameter].value = self.parameters_old_values[parameter]
 
-    def present_result(self):
+    def extract_result(self) -> 'list[str]':
         """
-        Sets the parameters to those predicted to return the last FoM, returns
-        coordinates of the minima and the predicted FoM.
+        Extracts the result data from the history of the minimizer run
 
         Returns
         -------
-        output_string : str
-            A string presenting the best measured parameters and the current ones, to be printed
-            by Control to the user.
+        output_data: list[str]
+            A list of: last accepted point coordinates, last accepted point FoM value,
+            best point coordinates, best point FoM
         """
-
         self.reset_parameters()
-        final_coordinate = np.array([self.parameters[p].value for p in self.parameters])
-        coordinate_names = list(p for p in self.parameters)
+        history = self.history
 
-        minimum_FoM, min_index = self.history['FoM'].min(), self.history['FoM'].idxmin()
-        minimum_parameters = self.history.iloc[min_index,2:]
+        last_param_row = history.iloc[-1]
+        last_FoM_value = last_param_row[0]
 
-        output_string = (f'Refined parameters {coordinate_names} have converged '
-        f'coordinate: {final_coordinate}\n with a FoM of {self.FoM}.\n '
-        f'Best point measured was \n {minimum_parameters} \n '
-        f'for a minimum FoM of {minimum_FoM}.')
+        # Find lowest parameters & FoM
+        lowest_FoM_id = history["FoM"].idxmin()
+        lowest_FoM_row = history.iloc[lowest_FoM_id]
+        lowest_FoM_value = lowest_FoM_row.get("FoM")
+
+        last_param_row = last_param_row.drop("FoM").drop("Change state")
+        lowest_FoM_row = lowest_FoM_row.drop("FoM").drop("Change state")
+
+        last_parameters_found = tuple(last_param_row)
+        lowest_FoM_parameters = tuple(lowest_FoM_row)
+
+        output_data = [last_parameters_found, last_FoM_value,
+                       lowest_FoM_parameters, lowest_FoM_value]
+
+        return output_data
+
+    def format_result_string(self, minimizer_output: list) -> str:
+        """
+        Formats a string output for the results of an MMC minimizer run
+
+        Parameters
+        ----------
+        minimizer_output: list
+            A list of: last accepted point coordinates, last accepted point FoM value,
+            best point coordinates, best point FoM
+
+        Returns
+        -------
+        output_string: str
+            A string containing the following: whether the minimizer has converged, last parameters,
+            last FoM value, optimal (lowest FoM) parameters, optimal (lowest) FoM value
+        """
+        if self.has_converged():
+            converged_message = '\nThe refinement has converged.'
+        else:
+            converged_message = "\nThe refinement has not converged."
+
+        output_string = (f'{converged_message} \n \n'
+                         f'Last accepted point is: \n'
+                         f'{minimizer_output[0]} with a minimum '
+                         f'FoM of {minimizer_output[1]}. \n \n'
+                         f'Best point measured was: \n'
+                         f'{minimizer_output[2]} for a minimum FoM of '
+                         f'{minimizer_output[3]}.\n \n ')
 
         return output_string
