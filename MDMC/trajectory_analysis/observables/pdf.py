@@ -311,8 +311,7 @@ class PairDistributionFunction(Observable):
 
         self._parse_calc_MD_settings(MD_input[0], settings)
 
-        for trajectory in self.trajectory:
-            self._calculate_histogram(trajectory.configurations[0])
+        self._calculate_histogram(self.trajectory)
 
         self._sum_partial_pairs()
 
@@ -469,7 +468,7 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        partitions = self._partition(configuration.atom_positions,
+        partitions = self._partition(configuration.position,
                                      configuration.element_list,
                                      part_comps)
         # Get the partition_indexes and the pairs of partitions. As well as

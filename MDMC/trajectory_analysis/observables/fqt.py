@@ -327,8 +327,13 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         # define a cube in reciprocal space
-        x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
+        try:
+            x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
                             in self.reciprocal_basis)
+        except ValueError:
+            print("ValueError in AbstractFQt")
+            print("Reciprocal basis:", self.reciprocal_basis)
+            print("Q_max", Q_max)
 
         # get the point group of the universe; we can use Wyckoff symmetries
         # to generate vectors more quickly

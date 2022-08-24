@@ -50,7 +50,7 @@ class CompactTrajectory:
         self.n_steps = 0
         self.atom_types = []
         self.atom_masses = []
-        self.dimensions = np.zeros(3)
+        self.dimensions = np.ones(3)
         self.changing_dimensions = None
         self.element_list = []
         self.element_set = {}
