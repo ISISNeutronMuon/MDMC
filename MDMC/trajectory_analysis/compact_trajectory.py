@@ -108,9 +108,19 @@ class CompactTrajectory:
         if self.position is None:
             return 0
         return len(self.position[self.first_index:self.last_index])
+    
+    def __getitem__(self, index: int):
+        return self.TemporalConfiguration(index)
 
     @property
     def configurations(self):
+        """
+        This is a bit of a hack, really. The code frequently uses
+        trajectory.configurations[0].universe, and such, but here
+        we store the header in the trajectory itself.
+        With this property, trajectory.configurations[0] evaluates
+        to trajectory.
+        """
         return [self]
 
     def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
@@ -159,6 +169,10 @@ class CompactTrajectory:
                                 time = c.time,
                                 positions = atpos,
                                 velocities = atvel)
+            else:
+                self.writeEmptyStep(step_num = n,
+                                time = c.time)
+        self.postProcess()
 
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):
@@ -212,6 +226,23 @@ class CompactTrajectory:
             # we take note of the indices that have been written to.
             # Just in case the simulation was cut short, we will know
             # how many elements we can still use
+            self.first_index = min(step_num, self.first_index)
+            self.last_index = max(step_num + 1, self.last_index)
+
+    def writeEmptyStep(self, step_num: int = -1, time: float = -1.0):
+        """
+        This function advances the iterators without writing any data.
+        Again, it was added to make the unit tests work.
+        Args:
+            step_num (int, optional): the index at which the numbers will be written.
+               Defaults to -1.
+            time (float, optional): the time stamp of the simulation step, in the
+               correct time units (femtoseconds). Defaults to -1.0.
+        """
+        if not self.is_allocated:
+            pass # here I should use a fallback function later
+        else:
+            self.times[step_num] = time
             self.first_index = min(step_num, self.first_index)
             self.last_index = max(step_num + 1, self.last_index)
 
@@ -317,6 +348,7 @@ class CompactTrajectory:
         temp.first_index = 0
         temp.last_index = len(temp.position)
         return temp
+
     def filter_by_time(self, start, end=None):
         """
         Filter the ``CompactTrajectory`` by time.
@@ -399,6 +431,7 @@ class CompactTrajectory:
             requested time step
         """
         return TemporalConfiguration(self.times[step_number],
-            [self.Atom(step_number, at_num) for at_num in range(self.n_atoms)])
+            *[self.Atom(step_number, at_num) for at_num in range(self.n_atoms)],
+            universe = self.universe)
 
         
