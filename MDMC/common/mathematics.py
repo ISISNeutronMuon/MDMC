@@ -4,7 +4,6 @@ import numpy as np
 from numpy.fft import fft, ifft
 # from pyfftw.interfaces.numpy_fft import fft as fft
 # from pyfftw.interfaces.numpy_fft import ifft as ifft
-from numba import jit
 
 from MDMC.common.decorators import time_function_execution
 

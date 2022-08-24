@@ -5,7 +5,7 @@ from typing import Dict
 
 import numpy as np
 from mpi4py import MPI
-from numba import jit, prange
+from numba import jit
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
@@ -624,7 +624,7 @@ class FQt(AbstractFQt):
                 # number density and sum over all positions but preserve the
                 # second dimension, our array of Q vectors
                 # print("BEFORE RHO: positions.shape=", positions.shape)
-                timelen, atomlen, dimlen = positions.shape # timelen should be 1,
+                _, atomlen, dimlen = positions.shape # timelen should be 1,
                 # but we need to remove this dimension explicitly
                 rho_unsummed = calculate_rho(positions.reshape((atomlen, dimlen)).T,
                                              np.array(single_Q_vectors)).T
@@ -635,7 +635,7 @@ class FQt(AbstractFQt):
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            trajlen, timelen, atomlen, dimlen = element_configs.shape
+            trajlen, _, atomlen, dimlen = element_configs.shape
             for atom_positions in np.swapaxes(
                 element_configs.reshape(trajlen, atomlen, dimlen), 0, 1):
                 # Swapping the time and position axes lets us iterate over each

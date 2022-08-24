@@ -189,8 +189,8 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: Union[CompactTrajectory, List[CompactTrajectory]], verbose=0,
-                          **settings):
+    def calculate_from_MD(self, MD_input: Union[CompactTrajectory, List[CompactTrajectory]],
+                          verbose=0, **settings):
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``

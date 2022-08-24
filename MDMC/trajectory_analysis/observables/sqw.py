@@ -380,7 +380,7 @@ class AbstractSQw(SQwMixins, Observable):
         dt = t[1] - t[0]
         if self.maximum_frames():
             t = t[0:self.maximum_frames()]
-        
+
         if MD_input.is_fixedbox:
             try:
                 self.universe_dimensions = MD_input.dimensions

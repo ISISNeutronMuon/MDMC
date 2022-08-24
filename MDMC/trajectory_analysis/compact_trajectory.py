@@ -108,7 +108,7 @@ class CompactTrajectory:
         if self.position is None:
             return 0
         return len(self.position[self.first_index:self.last_index])
-    
+
     def __getitem__(self, index: int):
         return self.TemporalConfiguration(index)
 
@@ -149,7 +149,7 @@ class CompactTrajectory:
         self.is_allocated = True
         self.changing_dimensions = np.empty((n_steps,3), dtype = self.dtype)
 
-    def fromConfigs(self, *configs: TemporalConfiguration):
+    def fromConfigs(self, *configs): # Pylint didn't like the type tip here.
         """
         Populate the arrays of the CompactTrajectory using the input list
         of ``TemporalConfiguration`` objects.
@@ -433,5 +433,3 @@ class CompactTrajectory:
         return TemporalConfiguration(self.times[step_number],
             *[self.Atom(step_number, at_num) for at_num in range(self.n_atoms)],
             universe = self.universe)
-
-        
