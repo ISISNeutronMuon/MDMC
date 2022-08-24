@@ -26,21 +26,24 @@ class CompactTrajectory:
     directly in the code in the future, we can still use it as a
     benchmark reference.
     """
-    def __init__(self, bytes_per_number: int = 8):
+    def __init__(self, *configurations, **settings):
         """
         This is a bare constructor which initialises all the fields the basic trajectory
         will have.
         Args:
-            bytes_per_number (int, optional): If 8, the arrays will use np.float64 to
-              store the positions, velocities and time at each step. Will always be rounded
-              up to the nearest multiple of 2."""
+            configurations : TemporalConfiguration
+            Any number of ``TemporalConfiguration`` objects can be passed to the constructor,
+            to create the CompactTrajectory in the same manner as the old Trajectory.
+            This is just an option added here for compatibility, and not to break the unit
+            tests. Please refrain from using ``TemporalConfiguration`` objects, and
+            just use the preAlloacte and writeOneStep methods."""
         # the idea is that all the numbers within the trajectory are given in the same units
         # and it will be our job to ensure that it is the case later in the code
         self.position_unit = Unit('Ang')
         self.time_unit = Unit('fs')
         self.velocity_unit = Unit('Ang')/Unit('fs')
         # some other information
-        self.dtype = self._get_dtype(bytes_per_number)
+        self.dtype = self._get_dtype(8) # this sets the data type to np.float64
         # the underlying assumption is that the number of atoms,
         # and the atom types, stay CONSTANT within the trajectory
         self.n_atoms = -1
@@ -62,6 +65,15 @@ class CompactTrajectory:
         self.is_fixedbox = True
         self.first_index = 0
         self.last_index = -1
+        if len(configurations) > 0:
+            self.fromConfigs(*configurations)
+        try:
+            self.universe = settings['universe']
+        except KeyError:
+            try:
+                self.universe = configurations[0].universe
+            except IndexError:
+                self.universe = None
 
     @staticmethod
     def _get_dtype(bpn : int):
@@ -73,10 +85,33 @@ class CompactTrajectory:
             return np.float32
         return np.float16
 
+    def setBytesPerNumber(self, bytes_per_number: int = 8):
+        """
+        Changes the number of bytes per number in the arrays storing atom positions,
+        velocities, the frame timestamps and simulation box dimensions.
+        The best approach is to set the correct value before populating the arrays,
+        but it is still possible to change the data type using this function
+        when the CompactTrajectory already contains some numbers.
+        Args:
+            bytes_per_number (int, optional): If 8, the arrays will use np.float64 to
+              store the positions, velocities and time at each step. Will always be rounded
+              up to the nearest multiple of 2."""
+        self.dtype = self._get_dtype(bytes_per_number)
+        if len(self) > 0:
+            self.times = self.times.astype(self.dtype)
+            self.position = self.position.astype(self.dtype)
+            if self.velocity is not None:
+                self.velocity = self.velocity.astype(self.dtype)
+            self.changing_dimensions = self.changing_dimensions.astype(self.dtype)
+
     def __len__(self):
         if self.position is None:
             return 0
         return len(self.position[self.first_index:self.last_index])
+
+    @property
+    def configurations(self):
+        return [self]
 
     def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
                     useVelocity: bool = False):
@@ -111,16 +146,19 @@ class CompactTrajectory:
         This method has been added to increase the compatibility between
         the ``Trajectory`` and ``CompactTrajectory``.
         """
+        # print(f"In fromConfigs: received {len(configs)} configurations.")
+        # print(configs[0])
         self.preAllocate(n_steps = len(configs),
                          n_atoms = len(configs[0].atoms),
                          useVelocity = len(configs[0].atom_velocities) > 0)
         for n, c in enumerate(configs):
-            atpos = np.row_stack(c.atom_positions)
-            atvel = np.row_stack(c.atom_velocities)
-            self.writeOneStep(step_num = n,
-                              time = c.time,
-                              positions = atpos,
-                              velocities = atvel)
+            if len(c.data) > 0:
+                atpos = np.row_stack(c.atom_positions)
+                atvel = np.row_stack(c.atom_velocities)
+                self.writeOneStep(step_num = n,
+                                time = c.time,
+                                positions = atpos,
+                                velocities = atvel)
 
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):

@@ -33,7 +33,9 @@ def altered_trajectory(water_SPCE_universe):
     for time in times:
         configurations.append(trj.TemporalConfiguration(
             time, *water_SPCE_universe.configuration.atoms))
-    return trj.Trajectory(*configurations)
+    temp = ctrj.CompactTrajectory()
+    temp.fromConfigs(*configurations)
+    return temp
 
 @pytest.fixture
 def SQw_from_data():
