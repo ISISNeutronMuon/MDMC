@@ -1,5 +1,4 @@
 """A module for performing the refinement"""
-import sys
 import statistics
 from copy import deepcopy
 from typing import List, Dict
@@ -577,7 +576,7 @@ class Control:
         # print("Expected number of steps: ",trj.n_steps)
         # print("Actual number of steps: ",
         #       trj.last_index - trj.first_index)
-        # 
+        #
         # sys.exit(0)
         #
         verbose_manager.step("Calculating observables from the MD trajectory")

@@ -54,7 +54,11 @@ exp_datasets = [{'file_name':data.READER_DATA['LAMPSQw'],
                  'type':'SQw',
                  'reader':'LAMPSQw',
                  'weight':1.}]
-
+exp_dataset_ISIS = [{'file_name':data.READER_DATA['MantidSQw_one_file'],
+                  'type':'SQw',
+                  'reader':'MantidSQw',
+                  'weight':1.,
+                  'resolution':data._ABS_DIR_PATH+'/experimental_data/IRIS_26173_water_data_resolution.dat'}]
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
 for p in universe.parameters:
     if p.name != 'epsilon':
@@ -62,7 +66,7 @@ for p in universe.parameters:
 
 fit_parameters = universe.parameters
 control = Control(simulation=simulation,
-                  exp_datasets=exp_datasets,
+                  exp_datasets=exp_dataset_ISIS,
                   fit_parameters=fit_parameters,
                   MC_norm=1,
                   minimizer_type="MMC",

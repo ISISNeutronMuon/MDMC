@@ -30,7 +30,7 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import (Atom as MAtom,
                                 Molecule as MMolecule)
 from MDMC.common.units import Unit
-from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
+# from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition_interactions
 
@@ -436,7 +436,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
             take = range(start, end, step)
 
-            traj.preAllocate(n_steps = len(take), n_atoms = n_atoms, useVelocity = level_of_detail >=1)
+            traj.preAllocate(n_steps = len(take), n_atoms = n_atoms,
+                useVelocity = level_of_detail >=1)
             traj_step = 0
 
             for iframe in range(frames):
@@ -452,7 +453,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     # used for npt simulations
                     read_cell(f)
 
-                    tempdata = np.row_stack([create_atom(f, level_of_detail) for _ in range(n_atoms)])
+                    tempdata = np.row_stack([create_atom(f, level_of_detail)
+                                            for _ in range(n_atoms)])
                     if level_of_detail:
                         traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])
                     else:
