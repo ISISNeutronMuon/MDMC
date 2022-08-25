@@ -23,7 +23,7 @@ _GUI_PATH = '/gui'
 #
 # MantidSQw
 # TODO cite data once published, the Mantid data file iris70429_graphite002_red was provided by Jeff Armstrong
-# IRIS_26176_water_data was provided by Spencer Howells
+# IRIS_26176_water_data was provided by Spencer Howells by (H2O at 280K on the IRIS spectrometer)
 #
 # xml_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
