@@ -686,33 +686,6 @@ def calculate_rho(positions, Q_vector):
     """
     return np.exp(-1j * np.dot(Q_vector, positions))
 
-@jit('float64[:,:], float64[:,:]', nopython=True)
-def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> list:
-    """
-    Calculates ``t`` dependent number density in reciprocal space for all
-    Q vectors
-
-    As rho is the sum of the contributions for all of the specified Q
-    vectors, these Q vectors should have the same Q value.
-
-    Parameters
-    ----------
-    positions : numpy.ndarray
-        An ``array`` of atomic positions for which the reciprocal space number
-        density should be calculated
-    Q_vector : numpy.ndarray
-        An ``array`` of one or more Q vectors with the same Q value
-
-    Returns
-    -------
-    list
-        The reciprocal space number density
-    """
-
-    return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
-            in range(len(positions))]
-
-
 def get_point_group(dimensions: 'np.array') -> str:
     """
     Gets the Hermann-Mauguin point group for the universe.

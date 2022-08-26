@@ -1,5 +1,5 @@
 import os
-os.environ["OMP_NUM_THREADS"] = "4"
+# os.environ["OMP_NUM_THREADS"] = "4"
 # import pyfftw # this was not really faster than numpy FFT
 # pyfftw.config.NUM_THREADS = 4
 # pyfftw.config.PLANNER_EFFORT = 'FFTW_MEASURE'
@@ -9,7 +9,7 @@ from MDMC.MD import Universe
 from MDMC.MD import *
 from MDMC.common.time_keeper import TimeKeeper
 
-universe = Universe(dimensions=21.75, constraint_algorithm=Shake(1e-4, 100), electrostatic_solver=PPPM(accuracy=1e-5))
+universe = Universe(dimensions=6.75, constraint_algorithm=Shake(1e-4, 100), electrostatic_solver=PPPM(accuracy=1e-5))
 H1 = Atom('H')
 H2 = Atom('H', position=(0., 1.63298, 0.))
 O = Atom('O', position=(0., 0.81649, 0.57736))
@@ -42,7 +42,9 @@ QENS = {'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/263K05Awat_LA
         'weight':1.,
         'auto_scale':True,
         'use_FFT':False,
-        'resolution':{'file': '/workspaces/MDMCv0.2_pilot/doc/tutorials/data/262p7K0A5van_LAMP'}}
+        'resolution': None
+        # 'resolution':{'file': '/workspaces/MDMCv0.2_pilot/doc/tutorials/data/262p7K0A5van_LAMP'}
+        }
 
 
 exp_datasets = [QENS]
@@ -99,10 +101,10 @@ control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
 
 exp_obs = control.observable_pairs[0].exp_obs
 #help(exp_obs.resolution)
-resolution_function = exp_obs.resolution.resolution_function
+# resolution_function = exp_obs.resolution.resolution_function
 # Note that for multidimensional resolution functions, the innermost independent variable should be passed first
-t = np.linspace(0, 1e5)
-resolution_array = resolution_function(t, Q)
+# t = np.linspace(0, 1e5)
+# resolution_array = resolution_function(t, Q)
 
 control.refine(3)
 
