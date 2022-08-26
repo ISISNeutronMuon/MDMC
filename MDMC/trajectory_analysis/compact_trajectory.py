@@ -172,6 +172,12 @@ class CompactTrajectory:
             else:
                 self.writeEmptyStep(step_num = n,
                                 time = c.time)
+            try:
+                dim = c.universe.dimensions
+            except AttributeError:
+                continue
+            else:
+                self.setDimensions(dim, step_num = n)
         self.postProcess()
 
     def setDimensions(self, frame_dimensions: np.array = None,
