@@ -73,7 +73,7 @@ print(fit_parameters['equilibrium_state'][0])
 from MDMC.refinement.FoM import ChiSquared_experror
 error = ChiSquared_experror.ChiSquaredExpError
 
-FoM_options = {'error':'exp', 'norm':'data_points', 'cont_slicing':False}
+FoM_options = {'error':'exp', 'norm':'data_points'}
 
 # Assuming a Universe called universe and a Simulation called simulation have been created
 from MDMC.control import Control
@@ -90,16 +90,16 @@ control = Control(simulation=simulation,
 
 # So that the MD simulation size can be minimized, the Q min is increased and
 # the Q resolution is reduced.
-import numpy as np
-exp_obs = control.observable_pairs[0].exp_obs
-Q_slice = slice(6, len(exp_obs.Q), 2)
-Q = exp_obs.Q[Q_slice]
-E = exp_obs.E
+#import numpy as np
+#exp_obs = control.observable_pairs[0].exp_obs
+#Q_slice = slice(6, len(exp_obs.Q), 2)
+#Q = exp_obs.Q[Q_slice]
+#E = exp_obs.E
 # copy the updated Q values back to the control.observable
-control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
-control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
+#control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
+#control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
 
-exp_obs = control.observable_pairs[0].exp_obs
+#exp_obs = control.observable_pairs[0].exp_obs
 #help(exp_obs.resolution)
 # resolution_function = exp_obs.resolution.resolution_function
 # Note that for multidimensional resolution functions, the innermost independent variable should be passed first
