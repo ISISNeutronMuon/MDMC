@@ -463,7 +463,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def convert_trajectory(self, start: int = 0, stop: int = None,
                            step: int = 1, **settings: dict) -> CompactTrajectory:
         """
-        Converts between a LAMMPS trajectory dump and an MDMC 
+        Converts between a LAMMPS trajectory dump and an MDMC
         ``CompactTrajectory``
 
         The LAMMPS dump must include at least ``id``, ``atom_type``, and ``xyz``
@@ -490,7 +490,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         -------
         ``CompactTrajectory``
             The MDMC ``CompactTrajectory`` corresponding to the LAMMPS
-            ``trajectory_file``. 
+            ``trajectory_file``.
 
         Raises
         ------
@@ -504,20 +504,15 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
 
-        # ID is an acronym
-        # pylint: disable=invalid-name
-        atom_IDs = settings.get('atom_IDs')
-
         traj_dimensions = np.zeros(3)
-        configs = []
         frame_n = start
         # Use count to create range so that stop can be undefined
         frame_indexes = count(start, step)
         # next_frame_n next attribute is assigned dynamically
         next_frame_n = next(frame_indexes)  # pylint: disable=no-member
-        
+
         traj = CompactTrajectory() #the instance of our new trajectory object
-        
+
         def _make_gen(reader):
             """A support function for splitting a binary file into buffers
 
@@ -531,7 +526,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             while b:
                 yield b
                 b = reader(1024*1024)
-        
+
         # here we check how long the trajectory really is
         with open(self.trajectory_file.name, 'rb') as file_handler:
             file_generator = _make_gen(file_handler.raw.read)
@@ -539,7 +534,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # And header_size will tell us how many lines per frame
         # are added on top of the atom positions
         header_size = 0
-        
+
         with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
             line = file_handler.readline()
             while line:
@@ -605,14 +600,14 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             i_vel = splt.index('vx')
                         else:
                             i_vel = None
-                        
+
                         # now we try to get the correct number of frames in the trajectory
                         real_n_steps = 1 + line_count // (n_atoms + header_size)
-                        
+
                         traj.preAllocate(n_steps = real_n_steps,
                                          n_atoms = n_atoms,
                                          useVelocity = i_vel is not None)
-                        
+
                         traj.setDimensions(traj_dimensions)
 
                     if frame_n == next_frame_n:
@@ -633,11 +628,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         lines = sorted(lines, key=lambda x: x[i_id])
 
                         sorted_lines = np.array(lines, dtype = traj.dtype)
-                        
+
                         atom_types = sorted_lines[:,i_type].astype(np.int64)
                         if not traj.validateTypes(atom_types):
                             raise TypeError("CompactTrajectory received wrong atom type array")
-                        
+
                         if i_vel is not None:
                             traj.writeOneStep(step_num = frame_n,
                                           time = frame * self.time_step,
@@ -664,7 +659,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             atom_symbols[at_id] = symbol
             atom_masses[at_id] = mass
         traj.labelAtoms(atom_symbols, atom_masses)
-        traj.postProcess() 
+        traj.postProcess()
         return traj
 
     def convert_trajectory_original(self, start: int = 0, stop: int = None,
@@ -870,10 +865,15 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
                         self.__class__,
                         n_atoms)
-            atoms = np.zeros([n_atoms, 4])
+            atoms = np.zeros([n_atoms, 5])
+            tmp_mass = {}
+            for type_ID, atom_type_group in self.lmp_universe.atom_types.items():
+                tmp_mass[type_ID] = float(atom_type_group[0].mass)
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = (list(atom.position) + [atom.charge])
+                atom_type = atom.type
+                # _, mass = self.lmp_universe.atom_type_properties[atom_type-1]
+                atoms[atom.id-1, :] = (list(atom.position) + [tmp_mass[atom_type], atom.charge])
             saved_config = atoms
         else:
             saved_config = None

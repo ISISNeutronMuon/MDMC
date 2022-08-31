@@ -14,8 +14,6 @@ from copy import copy
 import logging
 
 import dlpoly.control
-from ase import Atoms, Atom
-from ase.io import write
 
 from dlpoly import DLPoly
 from dlpoly.species import Species
@@ -23,6 +21,9 @@ from dlpoly.field import Field, Bond, Potential, Molecule
 from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.config import Config
 import numpy as np
+
+from ase import Atoms, Atom
+from ase.io import write
 
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
@@ -416,14 +417,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 force = None
             _ = force
 
-            # atom_type = self.universe.element_dict[symbol].atom_type
+            _ = self.universe.element_dict[symbol].atom_type
             # it is not a float, so it is a little inconveniet to handle here
 
             return np.concatenate([pos, vel, [mass]])
 
         traj = CompactTrajectory()
 
-        atom_ids = settings.get('atom_IDs')
+        # atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
             _ = f.readline()  # title
             level_of_detail, _, n_atoms, frames, *_ = read_line_as(f, int)  # imcon
@@ -431,7 +432,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
 
-            configs = []
+            # configs = []
             end = stop or frames + 1
 
             take = range(start, end, step)
@@ -442,10 +443,10 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
             for iframe in range(frames):
                 if iframe in take:
-                    mass = []
-                    pos = []
-                    vel = []
-                    atom_type = []
+                    # mass = []
+                    # pos = []
+                    # vel = []
+                    # atom_type = []
                     # :TODO: here something has to be done about the time units
                     # as it seems that DL_POLY uses ps units
                     time = float(f.readline().split()[-1])

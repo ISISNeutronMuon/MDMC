@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from mpi4py import MPI
-from numba import jit
+# from numba import jit
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
-from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    time_function_execution
+from MDMC.common.decorators import unit_decorator, unit_decorator_getter
+# from MDMC.common.decorators import time_function_execution
 from MDMC.common.mathematics import faster_correlation,\
      faster_autocorrelation, \
      UNIT_VECTOR
