@@ -330,7 +330,7 @@ class PairDistributionFunction(Observable):
             self._dependent_variables['PDF'][0] += ((partial - 1) * fac
                                                     * weights * concentration)
 
-    def _parse_calc_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
+    def _parse_calc_MD_settings(self, trajectory: CompactTrajectory, settings: dict) -> None:
         """
         Parses the MD settings
 

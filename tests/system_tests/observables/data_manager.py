@@ -10,6 +10,7 @@ import zlib
 import pytest
 
 from tests.test_data import data
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 pytestmark = [pytest.mark.lammps]
 
@@ -19,7 +20,7 @@ def trajectory():
     """
     Returns
     -------
-    Trajectory
+    CompactTrajectory
         A 50 configuration trajectory (from a 50000 step simulation) of 2048
         water molecules
     """
@@ -27,7 +28,9 @@ def trajectory():
     # Unzip and unpickle the trajectory
     compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'rb').read()
     pickled_trajectory = zlib.decompress(compressed_trajectory)
-    return pickle.loads(pickled_trajectory, encoding='latin-1')
+    temp = pickle.loads(pickled_trajectory, encoding='latin-1')
+    ctraj = CompactTrajectory(*temp.configurations)
+    return ctraj
 
 
 @pytest.fixture(scope="module")

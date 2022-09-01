@@ -178,6 +178,28 @@ class CompactTrajectory:
                 continue
             else:
                 self.setDimensions(dim, step_num = n)
+        elements = {}
+        masses, mass_per_type = {}, {}
+        types, id_values = [], []
+        has_types = True
+        for nat, atom in enumerate(c.atoms):
+            element = atom.element
+            mass = atom.mass
+            elements[nat] = element
+            masses[element] = mass
+            try:
+                types.append(atom.atom_type)
+            except AttributeError:
+                has_types = False
+                types.append(element)
+            id_values.append(atom.ID)
+        if not has_types:
+            all_elements = list(np.unique(types))
+            types = [all_elements.index(x) for x in types]
+        for x in range(nat):
+            mass_per_type[types[x]] = masses[elements[x]] 
+        self.validateTypes(np.array(types)[np.argsort(id_values)])
+        self.labelAtoms(elements, mass_per_type) # this is needed too, for tests.
         self.postProcess()
 
     def setDimensions(self, frame_dimensions: np.array = None,
