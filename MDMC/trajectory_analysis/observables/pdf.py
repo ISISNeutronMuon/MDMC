@@ -180,7 +180,7 @@ class PairDistributionFunction(Observable):
                           verbose: int = 0, **settings: dict):
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
-        ``Trajectory``
+        ``CompactTrajectory``
 
         The total pair distribution function (``pdf.PDF``) has the form:
 
@@ -212,8 +212,9 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory or list of Trajectory
-            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        MD_input : CompactTrajectory or list of CompactTrajectory
+            Either a `list` of MD ``CompactTrajectory``s or a
+            single ``CompactTrajectory`` object.
         verbose: int
             Verbose print settings. Not currently implemented for PDF.
         **settings

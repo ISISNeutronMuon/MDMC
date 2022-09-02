@@ -53,7 +53,7 @@ class CompactTrajectory:
         self.dimensions = 0.1*np.ones(3) # avoids divide-by-zero errors
         self.changing_dimensions = None
         self.element_list = []
-        self.element_set = {}
+        self.element_set = set()
         # key point: the data!
         # this is where we will keep the numpy arrays
         self.position = None
@@ -178,28 +178,36 @@ class CompactTrajectory:
                 continue
             else:
                 self.setDimensions(dim, step_num = n)
-        elements = {}
-        masses, mass_per_type = {}, {}
-        types, id_values = [], []
-        has_types = True
-        for nat, atom in enumerate(c.atoms):
+        # here a lengthy section of the code that is supposed to
+        # fill in the missing information
+        # if we are loading a pickled Trajectory
+        # instead of reading a proper trajectory file.
+        elements = [] # list of 'chemical_element_symbol', 1 per atom
+        masses = {} # dictionary of 'chemical_element_symbol' : mass (float) in a.m.u.
+        mass_per_type = {} # dictionary of 'atom_type' : mass (float) in a.m.u.
+        element_per_type = {} # dictionary of 'atom_type' : 'chemical_element_symbol'
+        types = [] # a list of 'atom_type', 1 entry for each atom
+        id_values = [] # a list of 'atom_ID', 1 entry for each atom
+        has_types = True # we assume -for now- that the Trajectory stores atom_type.
+        for nat, atom in enumerate(c.atoms): # we just iterate over Atom objects
             element = atom.element
             mass = atom.mass
-            elements[nat] = element
+            elements.append(element)
             masses[element] = mass
-            try:
-                types.append(atom.atom_type)
-            except AttributeError:
-                has_types = False
-                types.append(element)
+            if has_types:
+                try:
+                    types.append(atom.atom_type)
+                except AttributeError:
+                    has_types = False
             id_values.append(atom.ID)
         if not has_types:
-            all_elements = list(np.unique(types))
-            types = [all_elements.index(x) for x in types]
+            all_elements = sorted(list(np.unique(elements)))
+            types = [all_elements.index(x) for x in elements]
         for x in range(nat):
-            mass_per_type[types[x]] = masses[elements[x]] 
+            mass_per_type[types[x]] = masses[elements[x]]
+            element_per_type[types[x]] = elements[elements[x]]
         self.validateTypes(np.array(types)[np.argsort(id_values)])
-        self.labelAtoms(elements, mass_per_type) # this is needed too, for tests.
+        self.labelAtoms(element_per_type, mass_per_type)
         self.postProcess()
 
     def setDimensions(self, frame_dimensions: np.array = None,
@@ -284,7 +292,8 @@ class CompactTrajectory:
 
         Args:
             atom_types (np.array): an array of all the atom
-            types, sorted by the atom ID.
+            types, sorted by the atom ID. These are supposed
+            to be numbers, like in a LAMMPS simulation.
 
         Returns:
             bool: True if the atom types are the same as in
@@ -314,6 +323,8 @@ class CompactTrajectory:
             using as keys the 'int' atom_ID values from LAMMPS.
 
         """
+        if len(self.atom_types) == 0:
+            raise AttributeError("labelAtoms: atom_types have not been set.")
         self.element_list = [atom_symbols[xx] for xx in self.atom_types]
         self.element_set = set(self.element_list)
         self.atom_masses = [atom_masses[xx] for xx in self.atom_types]

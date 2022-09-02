@@ -312,8 +312,8 @@ class AbstractSQw(SQwMixins, Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            An MDMC ``Trajectory`` from which to calculate ``SQw``
+        MD_input : CompactTrajectory
+            An MDMC ``CompactTrajectory`` from which to calculate ``SQw``
         verbose: int, optional
             The level of verbosity:
             Verbose level 0 gives no information.
