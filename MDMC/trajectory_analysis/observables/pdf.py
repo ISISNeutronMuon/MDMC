@@ -299,8 +299,8 @@ class PairDistributionFunction(Observable):
 
         self._parse_calc_MD_settings(MD_input[0], settings)
 
-#         for trajectory in self.trajectory:
-#             self._calculate_histogram(trajectory.configurations[0])
+#         for configuration in self.trajectory:
+#             self._calculate_histogram(configuration)
 # 
         self._calculate_histogram(self.trajectory)
 
@@ -458,71 +458,69 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        # For some reason _calculate_histogram was only meant to take
-        # the first configuration out of the entire trajectory.
-        # I do it here, by selecting the first element of .position array.
-        partitions = self._partition(trajectory.position[0],
-                                     trajectory.element_list,
-                                     part_comps)
-        # Get the partition_indexes and the pairs of partitions. As well as
-        # calculating atom pairs within a partition, each partition will have 26
-        # neighbors for which atom pairs must be calculated.
-        partition_indexes = list(self._calculate_partition_indexes(part_comps))
-        partition_pair_indexes = self._get_partition_pairs(part_comps)
+        for step_n in range(len(trajectory)):
+            partitions = self._partition(trajectory.position[step_n],
+                                        trajectory.element_list,
+                                        part_comps)
+            # Get the partition_indexes and the pairs of partitions. As well as
+            # calculating atom pairs within a partition, each partition will have 26
+            # neighbors for which atom pairs must be calculated.
+            partition_indexes = list(self._calculate_partition_indexes(part_comps))
+            partition_pair_indexes = self._get_partition_pairs(part_comps)
 
-        # Calculate the histograms of all atoms in each partition for element
-        # combinations that are in self.partial_strings
-        for partial_string in self.partial_strings:
-            elem1, elem2 = partial_string
-            like_elems = elem1 == elem2
-            pos_pairs = []
+            # Calculate the histograms of all atoms in each partition for element
+            # combinations that are in self.partial_strings
+            for partial_string in self.partial_strings:
+                elem1, elem2 = partial_string
+                like_elems = elem1 == elem2
+                pos_pairs = []
 
-            # Get the atom pairs for atoms in the same partition
-            for part_i in partition_indexes:
-                if like_elems:
-                    # combinations avoids an atom and itself being an atom pair
-                    pos_pairs.append(combinations(
-                        partitions[elem1][part_i], 2))
-                else:
-                    # atom and itself as an atom pair not an issue for unlike
-                    # elements
-                    pos_pairs.append(product(partitions[elem1][part_i],
-                                             partitions[elem2][part_i]))
+                # Get the atom pairs for atoms in the same partition
+                for part_i in partition_indexes:
+                    if like_elems:
+                        # combinations avoids an atom and itself being an atom pair
+                        pos_pairs.append(combinations(
+                            partitions[elem1][part_i], 2))
+                    else:
+                        # atom and itself as an atom pair not an issue for unlike
+                        # elements
+                        pos_pairs.append(product(partitions[elem1][part_i],
+                                                partitions[elem2][part_i]))
 
-            # Get the atom pairs for atoms in different partitions
-            for part1, part2 in partition_pair_indexes:
-                # Correct for periodic boundary conditions, which will only
-                # occur if modulus of separation distance in any direction is
-                # greater than 1 (i.e. the partitions would not be neighbors
-                # without pdb)
-                wrap = np.zeros([3])
-                for i in range(3):
-                    component_separation = part1[i] - part2[i]
-                    if component_separation > 1:
-                        wrap[i] = 1
-                    elif component_separation < -1:
-                        wrap[i] = -1
-                wrap *= self.universe_dimensions
+                # Get the atom pairs for atoms in different partitions
+                for part1, part2 in partition_pair_indexes:
+                    # Correct for periodic boundary conditions, which will only
+                    # occur if modulus of separation distance in any direction is
+                    # greater than 1 (i.e. the partitions would not be neighbors
+                    # without pdb)
+                    wrap = np.zeros([3])
+                    for i in range(3):
+                        component_separation = part1[i] - part2[i]
+                        if component_separation > 1:
+                            wrap[i] = 1
+                        elif component_separation < -1:
+                            wrap[i] = -1
+                    wrap *= self.universe_dimensions
 
-                # try/excepts are in case partitions[elem1][part1] is empty
-                try:
-                    pos_pairs.append(product(partitions[elem1][part1] - wrap,
-                                             partitions[elem2][part2]))
-                except ValueError:
-                    pass
-                # For unlike elements, also consider other element/partition
-                # combination
-                if not like_elems:
+                    # try/excepts are in case partitions[elem1][part1] is empty
                     try:
-                        pos_pairs.append(product(partitions[elem2][part1] - wrap,
-                                                 partitions[elem1][part2]))
+                        pos_pairs.append(product(partitions[elem1][part1] - wrap,
+                                                partitions[elem2][part2]))
                     except ValueError:
                         pass
-            # pos_pairs is a list of iterators - flatten this to a single
-            # iterator
-            pos_pairs = chain(*pos_pairs)
-            self.partial_pdfs[partial_string] += \
-                self._calculate_histogram_from_position_pairs(pos_pairs)
+                    # For unlike elements, also consider other element/partition
+                    # combination
+                    if not like_elems:
+                        try:
+                            pos_pairs.append(product(partitions[elem2][part1] - wrap,
+                                                    partitions[elem1][part2]))
+                        except ValueError:
+                            pass
+                # pos_pairs is a list of iterators - flatten this to a single
+                # iterator
+                pos_pairs = chain(*pos_pairs)
+                self.partial_pdfs[partial_string] += \
+                    self._calculate_histogram_from_position_pairs(pos_pairs)
 
     def _partition(self, positions: np.ndarray, element_list: list, part_comps: np.ndarray) -> dict:
         """
