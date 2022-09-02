@@ -54,8 +54,8 @@ jobs:
         BRANCH: ${{ github.head_ref }}
       run: mv $BRANCH-total-profiling.csv master-profiling.csv
     
-#    - name: Upload as master profiling
-#      uses: actions/upload-artifact@v3
-#      with:
-#        name: master-profiling
-#        path: master-profiling.csv
+    - name: Upload as master profiling
+      uses: actions/upload-artifact@v3
+      with:
+        name: master-profiling
+        path: master-profiling.csv
