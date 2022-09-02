@@ -182,7 +182,6 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.t = MD_input.times - MD_input.times[0]
         self._trajectory = MD_input
-        print("On assignment, trajectory shape = ", self._trajectory.position.shape)
         self._set_weights()
 
         try:
@@ -257,8 +256,6 @@ class AbstractFQt(SQwMixins, Observable):
         # as arrays within an array. This is equivalent to flattening the first
         # index.
         FQt_shape = np.shape(FQt_array)
-        print("FQt_shape", FQt_shape)
-        print("Q_vectors shape", shape)
         FQt_array = FQt_array.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
         # Remove the padded elements at the end of FQt which will be filled
