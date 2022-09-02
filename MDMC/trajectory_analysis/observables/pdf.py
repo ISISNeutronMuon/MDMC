@@ -299,6 +299,9 @@ class PairDistributionFunction(Observable):
 
         self._parse_calc_MD_settings(MD_input[0], settings)
 
+#         for trajectory in self.trajectory:
+#             self._calculate_histogram(trajectory.configurations[0])
+# 
         self._calculate_histogram(self.trajectory)
 
         self._sum_partial_pairs()
@@ -455,7 +458,10 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        partitions = self._partition(trajectory.position,
+        # For some reason _calculate_histogram was only meant to take
+        # the first configuration out of the entire trajectory.
+        # I do it here, by selecting the first element of .position array.
+        partitions = self._partition(trajectory.position[0],
                                      trajectory.element_list,
                                      part_comps)
         # Get the partition_indexes and the pairs of partitions. As well as
@@ -563,18 +569,17 @@ class PairDistributionFunction(Observable):
         # Drop positions of atoms of elements not included
         mask = np.isin(element_list, list(self.elements))
         element_array = np.array(element_list)[mask]
-        for step_num in range(len(positions)):
-            t_positions = positions[step_num][mask]
+        t_positions = positions[mask]
 
-            # Get element and position of each atom
-            for elem, position in zip(element_array, t_positions):
-                partition_index = []
-                for component, part_comp in zip(position, part_comps):
-                    partition_index.append(component // part_comp)
-                # Add each position to correct partition
-                partitions[elem][tuple(partition_index)].append(position)
-            # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
-            # of positions from list to array)
+        # Get element and position of each atom
+        for elem, position in zip(element_array, t_positions):
+            partition_index = []
+            for component, part_comp in zip(position, part_comps):
+                partition_index.append(component // part_comp)
+            # Add each position to correct partition
+            partitions[elem][tuple(partition_index)].append(position)
+        # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
+        # of positions from list to array)
         return {elem: {partition_index: np.array(positions)
                        for partition_index, positions in elem_partitions.items()}
                 for elem, elem_partitions in partitions.items()}
