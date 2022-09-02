@@ -391,6 +391,7 @@ class CompactTrajectory:
         temp.is_populated = True
         temp.first_index = 0
         temp.last_index = len(temp.position)
+        temp.n_steps = len(temp.position)
         return temp
 
     def filter_by_time(self, start, end=None):

@@ -431,14 +431,16 @@ class PairDistributionFunction(Observable):
 
         self._dependent_variables = {}
         # Release memory from full trajectory
-        del trajectory
+        # del trajectory
+        # Maybe it was a good idea before, but now with the
+        # CompactTrajectory, I will wait an see if we need it.
 
-    def _calculate_histogram(self, configuration: Configuration) -> None:
+    def _calculate_histogram(self, trajectory: CompactTrajectory) -> None:
         """
         Partitions the atomic positions into regions where they are within
         ``r_max`` from all other atoms
         """
-        def get_component_lengths(universe_dim: float) -> np.ndarray:
+        def get_component_lengths(universe_dim: float) -> float:
             """
             Use ``r`` values for each component that are at least as big as
             ``r_max``, but that are a factor of the dimensions
@@ -453,8 +455,8 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        partitions = self._partition(configuration.position,
-                                     configuration.element_list,
+        partitions = self._partition(trajectory.position,
+                                     trajectory.element_list,
                                      part_comps)
         # Get the partition_indexes and the pairs of partitions. As well as
         # calculating atom pairs within a partition, each partition will have 26
@@ -526,8 +528,8 @@ class PairDistributionFunction(Observable):
         Parameters
         ----------
         positions : numpy.ndarray
-            ``array`` of `arrays`, where each ``array`` is 3 elements specifying
-            the ``Atom.position``
+            the full CompactTrajectory.positions array, with the
+            shape = (num_time_steps, num_atoms, 3)
         element_list : list
             A `list` of `str` with the same length as ``positions``. Each `str`
             specifies the ``Atom.element`` for the corresponding index in
@@ -561,17 +563,18 @@ class PairDistributionFunction(Observable):
         # Drop positions of atoms of elements not included
         mask = np.isin(element_list, list(self.elements))
         element_array = np.array(element_list)[mask]
-        positions = positions[mask]
+        for step_num in range(len(positions)):
+            t_positions = positions[step_num][mask]
 
-        # Get element and position of each atom
-        for elem, position in zip(element_array, positions):
-            partition_index = []
-            for component, part_comp in zip(position, part_comps):
-                partition_index.append(component // part_comp)
-            # Add each position to correct partition
-            partitions[elem][tuple(partition_index)].append(position)
-        # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
-        # of positions from list to array)
+            # Get element and position of each atom
+            for elem, position in zip(element_array, t_positions):
+                partition_index = []
+                for component, part_comp in zip(position, part_comps):
+                    partition_index.append(component // part_comp)
+                # Add each position to correct partition
+                partitions[elem][tuple(partition_index)].append(position)
+            # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
+            # of positions from list to array)
         return {elem: {partition_index: np.array(positions)
                        for partition_index, positions in elem_partitions.items()}
                 for elem, elem_partitions in partitions.items()}
