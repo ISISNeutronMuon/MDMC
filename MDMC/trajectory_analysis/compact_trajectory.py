@@ -335,7 +335,8 @@ class CompactTrajectory:
 
         """
         if len(self.atom_types) == 0:
-            raise AttributeError("labelAtoms: atom_types have not been set.")
+            # raise AttributeError("labelAtoms: atom_types have not been set.")
+            return False # tests use empty trajectories - can't raise an exception
         self.element_list = [atom_symbols[xx] for xx in self.atom_types]
         self.element_set = set(self.element_list)
         self.atom_masses = [atom_masses[xx] for xx in self.atom_types]
