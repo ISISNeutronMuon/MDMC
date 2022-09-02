@@ -182,6 +182,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.t = MD_input.times - MD_input.times[0]
         self._trajectory = MD_input
+        print("On assignment, trajectory shape = ", self._trajectory.position.shape)
         self._set_weights()
 
         try:
@@ -608,10 +609,9 @@ class FQt(AbstractFQt):
             # first dimension and each atom of ``element`` as its second
             indexes = np.where(np.array(self._trajectory.element_list)
                                == element)
-            element_configs = self._trajectory.position[:, indexes, :]
+            element_configs = self._trajectory.position[:, indexes[0], :]
             # element_configs = [config.positions[indexes] for config
             #                    in self._trajectory]
-
             rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),
                                   dtype=complex)
@@ -619,10 +619,7 @@ class FQt(AbstractFQt):
                 # For each time frame ``i`` calculate the Fourier transformed
                 # number density and sum over all positions but preserve the
                 # second dimension, our array of Q vectors
-                # print("BEFORE RHO: positions.shape=", positions.shape)
-                _, atomlen, dimlen = positions.shape # timelen should be 1,
-                # but we need to remove this dimension explicitly
-                rho_unsummed = calculate_rho(positions.reshape((atomlen, dimlen)).T,
+                rho_unsummed = calculate_rho(positions.T,
                                              np.array(single_Q_vectors)).T
                 rho_config[i, :] = np.sum(rho_unsummed, axis=0)
 
@@ -631,13 +628,10 @@ class FQt(AbstractFQt):
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            trajlen, _, atomlen, dimlen = element_configs.shape
-            for atom_positions in np.swapaxes(
-                element_configs.reshape(trajlen, atomlen, dimlen), 0, 1):
+            for atom_positions in np.swapaxes(element_configs, 0, 1):
                 # Swapping the time and position axes lets us iterate over each
                 # atom of ``element``, and gives ``rho_atom`` dimensions of
                 # time and our array of Q vectors respectively.
-                # print("BEFORE RHO: atom_positions.shape=", atom_positions.shape)
                 rho_atom = calculate_rho(atom_positions.T,
                                          np.array(single_Q_vectors)).T
 
