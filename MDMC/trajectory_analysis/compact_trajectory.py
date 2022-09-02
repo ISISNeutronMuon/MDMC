@@ -13,6 +13,7 @@ a 64-bit float if we use the default value normally picked
 by numpy.
 """
 
+from typing import Union
 import numpy as np
 from MDMC.common.units import Unit
 from MDMC.MD.structures import Atom
@@ -109,8 +110,13 @@ class CompactTrajectory:
             return 0
         return len(self.position[self.first_index:self.last_index])
 
-    def __getitem__(self, index: int):
-        return self.TemporalConfiguration(index)
+    def __getitem__(self, index: Union[int, slice]):
+        try:
+            start, stop, step = index.start, index.stop, index.step
+        except AttributeError:
+            return self.TemporalConfiguration(index)
+        else:
+            return self.subtrajectory(start, stop, step)
 
     @property
     def configurations(self):
