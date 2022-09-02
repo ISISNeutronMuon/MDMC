@@ -15,7 +15,6 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
-from MDMC.trajectory_analysis.trajectory import Trajectory, Configuration
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -301,7 +300,6 @@ class PairDistributionFunction(Observable):
 
 #         for configuration in self.trajectory:
 #             self._calculate_histogram(configuration)
-# 
         self._calculate_histogram(self.trajectory)
 
         self._sum_partial_pairs()
