@@ -158,6 +158,9 @@ class CompactTrajectory:
         """
         # print(f"In fromConfigs: received {len(configs)} configurations.")
         # print(configs[0])
+        if len(configs) < 1:
+            raise TypeError("At least one Configuration is needed"
+                                " for the CompactTrajectory.fromConfigs()")
         self.preAllocate(n_steps = len(configs),
                          n_atoms = len(configs[0].atoms),
                          useVelocity = len(configs[0].atom_velocities) > 0)
@@ -189,7 +192,8 @@ class CompactTrajectory:
         types = [] # a list of 'atom_type', 1 entry for each atom
         id_values = [] # a list of 'atom_ID', 1 entry for each atom
         has_types = True # we assume -for now- that the Trajectory stores atom_type.
-        for nat, atom in enumerate(c.atoms): # we just iterate over Atom objects
+        atom_counter = 0
+        for nat, atom in enumerate(configs[0].atoms): # we just iterate over Atom objects
             element = atom.element
             mass = atom.mass
             elements.append(element)
@@ -200,12 +204,13 @@ class CompactTrajectory:
                 except AttributeError:
                     has_types = False
             id_values.append(atom.ID)
+            atom_counter = nat + 1
         if not has_types:
             all_elements = sorted(list(np.unique(elements)))
             types = [all_elements.index(x) for x in elements]
-        for x in range(nat):
+        for x in range(atom_counter):
             mass_per_type[types[x]] = masses[elements[x]]
-            element_per_type[types[x]] = elements[elements[x]]
+            element_per_type[types[x]] = elements[x]
         self.validateTypes(np.array(types)[np.argsort(id_values)])
         self.labelAtoms(element_per_type, mass_per_type)
         self.postProcess()
