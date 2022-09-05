@@ -1,5 +1,5 @@
 netCDF4==1.6.0
-numpy==1.22.0 #currently kept to 1.22.0 due to numba not supporting higher versions
+numpy==1.23.2 #currently kept to 1.22.0 due to numba not supporting higher versions
 pandas==1.4.4
 scipy==1.9.1
 numba==0.56.2
