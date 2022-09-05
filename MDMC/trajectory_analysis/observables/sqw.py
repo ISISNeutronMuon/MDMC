@@ -356,6 +356,13 @@ class AbstractSQw(SQwMixins, Observable):
         use_average = settings.get('use_average', True)
         cont_slicing = settings.get('cont_slicing', False)
 
+        try:
+            override_dimensions = settings['dimensions']
+        except KeyError:
+            pass
+        else:
+            MD_input.setDimensions(np.array(override_dimensions))
+
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
             resolution_factory = ResolutionFactory()

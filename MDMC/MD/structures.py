@@ -81,11 +81,11 @@ class Structure(ABC):
         self.parent = self
         self._position_in_parent = None
 
-        #LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
-        #            self.__class__,
-        #            self.ID,
-        #            self.name,
-        #            self.position)
+        LOGGER.info('%s created: {ID:%s, name:%s, position:%s}',
+                    self.__class__,
+                    self.ID,
+                    self.name,
+                    self.position)
 
     @property
     def position(self) -> np.ndarray:

@@ -243,6 +243,7 @@ class CompactTrajectory:
         else:
             self.is_fixedbox = False
             self.changing_dimensions[step_num] = frame_dimensions
+            self.dimensions = self.changing_dimensions.mean(0)
 
     def writeOneStep(self, step_num: int = -1, time: float = -1.0,
                      positions: np.array = None,
@@ -340,6 +341,7 @@ class CompactTrajectory:
         self.element_list = [atom_symbols[xx] for xx in self.atom_types]
         self.element_set = set(self.element_list)
         self.atom_masses = [atom_masses[xx] for xx in self.atom_types]
+        return True
 
     def postProcess(self):
         """
