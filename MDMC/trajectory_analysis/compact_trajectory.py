@@ -119,6 +119,38 @@ class CompactTrajectory:
             return self.subtrajectory(start, stop, step)
 
     @property
+    def velocities(self):
+        """
+        Compatibility fix:
+        returns the velocity array.
+        """
+        return self.velocity
+
+    @property
+    def positions(self):
+        """
+        Compatibility fix:
+        returns the position array.
+        """
+        return self.position
+
+    @property
+    def data(self):
+        """
+        Compatibility fix:
+        returns the step numbers and time steps
+        in a single array.
+        I decided not to add the configurations here,
+        as it wastes resources and we are trying
+        to move away from this solution anyway.
+        """
+        return np.column_stack([
+            np.arange(self.n_steps),
+            self.times,
+            # [self.TemporalConfiguration(x) for x in np.arange(self.n_steps)]
+        ])
+
+    @property
     def configurations(self):
         """
         This is a bit of a hack, really. The code frequently uses
