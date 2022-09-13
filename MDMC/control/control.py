@@ -122,6 +122,8 @@ class Control:
         Verbose level 1 gives final time for the whole method.
         Verbose level 2 gives final time and also a progress bar.
         Verbose level 3 gives final time, a progress bar, and time per step.
+    print_full_settings: bool, optional
+        Whether or not to print all settings/attributes/parameters passed to this object
     **settings: dict, optional
         Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
         minimiser is used.
@@ -168,6 +170,7 @@ class Control:
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
                  verbose: int = 0,
+                 print_all_settings: bool = False,
                  **settings: dict):
 
         self.step_timings = None
@@ -293,8 +296,8 @@ class Control:
             if 'resolution' not in dset.keys():
                 # create list of user keys for resolutions to add to the error
                 userkeys = []
-                for key in resolution_factory.resolutions:
-                    userkeys.append(key.lower().replace('resolution', ''))
+                for setting in resolution_factory.resolutions:
+                    userkeys.append(setting.lower().replace('resolution', ''))
                 raise KeyError("A resolution function must be added. Recognised functions are " +
                                str(userkeys) +
                                ". If you meant to apply no resolution,"
@@ -307,14 +310,27 @@ class Control:
             self.observable_pairs[i].MD_obs.resolution = resolution
 
         # setup the dataframe for stdout
-        setup_frame = pd.DataFrame([[minimizer_type],
-                                    [self.FoM_calculator.__class__.__name__],
-                                    [len(self.observable_pairs)],
-                                    [len(self.fit_parameters)]],
-                                   index=['  Minimizer',
-                                          '  FoM type',
-                                          '  Number of observables',
-                                          '  Number of parameters'])
+        data_array = [
+            [minimizer_type],
+            [self.FoM_calculator.__class__.__name__],
+            [len(self.observable_pairs)],
+            [len(self.fit_parameters)],
+        ]
+
+        index_array = [
+            '  Minimizer',
+            '  FoM type',
+            '  Number of observables',
+            '  Number of parameters'
+        ]
+
+        if print_all_settings:
+            for setting in settings:
+                index_array.append(f'  {setting}')
+                data_array.append([settings[setting]])
+
+        setup_frame = pd.DataFrame(data=data_array,
+                                   index=index_array)
 
         print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
