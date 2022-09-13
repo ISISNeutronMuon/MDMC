@@ -328,6 +328,9 @@ class Control:
             for setting in settings:
                 index_array.append(f'  {setting}')
                 data_array.append([settings[setting]])
+            for parameter in fit_parameters:
+                index_array.append(f'  {parameter.name}')
+                data_array.append([parameter.value])
 
         setup_frame = pd.DataFrame(data=data_array,
                                    index=index_array)
