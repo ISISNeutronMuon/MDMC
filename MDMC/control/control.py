@@ -324,6 +324,7 @@ class Control:
             '  Number of parameters'
         ]
 
+        # Printing settings
         if print_all_settings:
             for setting in settings:
                 index_array.append(f'  {setting}')
@@ -331,6 +332,40 @@ class Control:
             for parameter in fit_parameters:
                 index_array.append(f'  {parameter.name}')
                 data_array.append([parameter.value])
+
+            if MD_steps is not None:
+                index_array.append('  MD Steps')
+                data_array.append([MD_steps])
+
+            if equilibration_steps is not None:
+                index_array.append('  Eq Steps')
+                data_array.append([equilibration_steps])
+
+            if exp_datasets is not None:
+                for dataset in exp_datasets:
+                    for key in dataset.keys():
+                        index_array.append(f'  {key}')
+                        data_array.append([dataset[key]])
+
+            if simulation is not None:
+                for key in simulation.__dict__.keys():
+                    index_array.append(f'  {key}')
+                    if key == "engine":
+                        data_array.append([type(simulation.__dict__[key])])
+                    else:
+                        data_array.append([simulation.__dict__[key]])
+
+            if FoM_options is not None:
+                print("FoM Options: \n")
+                for key in FoM_options.keys():
+                    index_array.append(f'  {key}')
+                    data_array.append([FoM_options[key]])
+
+            # Attributes
+            # What attributes?
+            # experimental dataset
+            # simulation parameters?
+            # FoM options?
 
         setup_frame = pd.DataFrame(data=data_array,
                                    index=index_array)
