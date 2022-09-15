@@ -396,12 +396,16 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         def read_line_as(f, typ):
             return list(map(typ, f.readline().split()))
 
-        def create_atom(f, level_of_detail):
+        def create_atom(f, level_of_detail, element_dict = None):
             # level_of_detail of information in the file, 0, indicates only positions,
             # 1 positions and velocities, 2 positions, velocities and forces
             # the first line gives the symbol, mass and atom_ID of the atom
-            _, _, mass_str, *_ = f.readline().split()
+            element, atom_ID_str, mass_str, charge_str, *_ = f.readline().split()
             mass = float(mass_str)
+            charge = float(charge_str)
+            atom_ID = int(atom_ID_str)
+            if element_dict is not None:
+                element_dict[atom_ID] = element
             # the next line gives the position of the atom
             pos = read_line_as(f, float)
             # the next line, if it exists, gives the velocity of the atom
@@ -413,11 +417,11 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             if level_of_detail > 1:
                 force = read_line_as(f, float)
             if vel is None:
-                return np.concatenate([pos, [mass]])
-            return np.concatenate([pos, vel, [mass]])
+                return np.concatenate([pos, [mass, charge, atom_ID]])
+            return np.concatenate([pos, vel, [mass, charge, atom_ID]])
 
         traj = CompactTrajectory()
-
+        element_dictionary = {}  # this one will store chemical element symbols per ID
         # atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
             _ = f.readline()  # title
@@ -448,12 +452,21 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     dim3x3 = read_cell(f)
                     dim = np.diagonal(dim3x3).copy()
 
-                    tempdata = np.row_stack([create_atom(f, level_of_detail)
+                    tempdata = np.row_stack([create_atom(f,
+                                                    level_of_detail,
+                                                    element_dictionary)
                                             for _ in range(n_atoms)])
                     if level_of_detail:
                         traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])
                     else:
                         traj.writeOneStep(traj_step, time, tempdata[:,0:3])
+                    mass_dictionary = {}
+                    for ind in range(len(tempdata)):
+                        mass_dictionary[int(tempdata[ind, -1])] = tempdata[ind, -3]
+                    traj.setCharge(tempdata[:, -2])
+                    traj.validateTypes(np.array([element_dictionary[int(x)]
+                                                 for x in tempdata[:, -1]]))
+                    traj.labelAtoms(element_dictionary, mass_dictionary)
                     traj.setDimensions(dim, step_num=traj_step)
                     traj_step += 1
                 else:  # Skip time + cell + atoms

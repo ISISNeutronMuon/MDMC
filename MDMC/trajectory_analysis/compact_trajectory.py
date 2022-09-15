@@ -54,6 +54,7 @@ class CompactTrajectory:
         self.n_steps = 0
         self.atom_types = []
         self.atom_masses = []
+        self.atom_charges = []
         # The initial value of self.dimensions is set to a number too low to be physical,
         # but different from 0. This way if an observable tried to calculate the Q vectors
         # or, more precisely, reciprocal space vectors
@@ -280,6 +281,7 @@ class CompactTrajectory:
         element_per_type = {}  # dictionary of 'atom_type' : 'chemical_element_symbol'
         types = []  # a list of 'atom_type', 1 entry for each atom
         id_values = []  # a list of 'atom_ID', 1 entry for each atom
+        atom_charge = []
         # we assume -for now- that the Trajectory stores atom_type.
         has_types = True
         atom_counter = 0
@@ -287,7 +289,9 @@ class CompactTrajectory:
         for nat, atom in enumerate(configs[0].atoms):
             element = atom.element
             mass = atom.mass
+            charge = atom.charge
             elements.append(element)
+            atom_charge.append(charge)
             masses[element] = mass
             if has_types:
                 try:
@@ -304,7 +308,31 @@ class CompactTrajectory:
             element_per_type[types[x]] = elements[x]
         self.validateTypes(np.array(types)[np.argsort(id_values)])
         self.labelAtoms(element_per_type, mass_per_type)
+        self.setCharge(atom_charge)
         self.postProcess()
+
+    def setCharge(self, charge_list: list[float] = None):
+        """
+        Sets the values of partial charge for each atom.
+        It assumes that the charges are constant within
+        the simulation.
+
+        Parameters
+        ----------
+            charge_list : list[float]
+                Fractional electrical charge of each atom,
+                given in a list with one floating point number
+                per atom.
+        """
+        # If need be, we can modify it to work the same
+        # as setDimensions, so it populates a time-dependent
+        # array if it turns out that the charge values
+        # change between the time frames.
+        if charge_list is None:
+            return False
+        if not (len(charge_list) == self.n_atoms):
+            raise ValueError("Wrong number of charges in setCharge.")
+        self.atom_charges = np.array(charge_list)
 
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):
@@ -314,12 +342,15 @@ class CompactTrajectory:
         it will keep track of the new dimensions at each step in the
         self.changing_dimensions object.
 
-        Args:
-            frame_dimensions (np.array): 3 float numbers defining the size
-            of the simulation box along x, y and z.
+        Parameters
+        ---------
+            frame_dimensions : np.array
+                3 float numbers defining the size
+                of the simulation box along x, y and z.
 
-            step_num (int): The number of the simulation frame at which
-            the frame_dimensions array was read.
+            step_num : int
+                The number of the simulation frame at which
+                the frame_dimensions array was read.
         """
         # The initial self.dimensions is set to 0.1 Angstrom.
         # This is too small to ever be used in a simulation, and at the same time
@@ -350,16 +381,22 @@ class CompactTrajectory:
         This function assumes that we have allocated the memory already,
         and that we have sorted the atoms according to their IDs.
         It will then put the numbers into the arrays at the correct index
-        Args:
-            step_num (int, optional): the index at which the numbers will be written.
-               Defaults to -1.
-            time (float, optional): the time stamp of the simulation step, in the
-               correct time units (femtoseconds). Defaults to -1.0.
-            positions (np.array, optional): the array of the atom positions, shaped
-               (n_atoms, 3). Defaults to None.
-            velocities (np.array, optional): the array of the atom velocities, shaped
-               (n_atoms, 3). If we don't use velocities, it can be skipped.
-               Defaults to None.
+
+        Parameters
+        ----------
+            step_num : int, optional
+                the index at which the numbers will be written.
+                Defaults to -1.
+            time : float, optional
+                the time stamp of the simulation step, in the
+                correct time units (femtoseconds). Defaults to -1.0.
+            positions : np.array, optional
+                the array of the atom positions, shaped
+                (n_atoms, 3). Defaults to None.
+            velocities : np.array, optional
+                the array of the atom velocities, shaped
+                (n_atoms, 3). If we don't use velocities, it can be skipped.
+                Defaults to None.
         """
         if not self.is_allocated:
             raise IndexError("Writing outside of the reserved array range.")
@@ -381,11 +418,15 @@ class CompactTrajectory:
         This function advances the iterators without writing any data.
         This was added since the tests/trajectory_analysis/test_PDF.py
         use a trajectory made of 1000 _empty_ configurations.
-        Args:
-            step_num (int, optional): the index at which the numbers will be written.
-               Defaults to -1.
-            time (float, optional): the time stamp of the simulation step, in the
-               correct time units (femtoseconds). Defaults to -1.0.
+
+        Parameters
+        ----------
+            step_num : int, optional
+                the index at which the numbers will be written.
+                Defaults to -1.
+            time : float, optional
+                the time stamp of the simulation step, in the
+                correct time units (femtoseconds). Defaults to -1.0.
         """
         if not self.is_allocated:
             raise IndexError("Writing outside of the reserved array range.")
@@ -401,14 +442,18 @@ class CompactTrajectory:
         we cannot process the results using the CompactTrajectory
         object, and the validation will return False
 
-        Args:
-            atom_types (np.array): an array of all the atom
-            types, sorted by the atom ID. These are supposed
-            to be numbers, like in a LAMMPS simulation.
+        Parameters
+        ----------
+            atom_types : np.array
+                an array of all the atom
+                types, sorted by the atom ID. These are supposed
+                to be numbers, like in a LAMMPS simulation.
 
-        Returns:
-            bool: True if the atom types are the same as in
-            the beginning, False otherwise.
+        Returns
+        -------
+            bool
+                True if the atom types are the same as in
+                the beginning, False otherwise.
         """
         # codes like LAMMPS make it possible to generate or destroy atoms/particles
         # in a simulation to simulate flow. It is unlikely to happen in an MDMC run.
@@ -429,13 +474,16 @@ class CompactTrajectory:
         Also, populates the self.element_set, which will then contain
         all the chemical elements present in the trajectory.
 
-        Args:
-            atom_symbols (dict): a dictionary which returns a 'str'
-            chemical element symbol for every 'int' atom_ID from
-            the LAMMPS trajectory.
+        Parameters
+        ----------
+            atom_symbols : dict
+                a dictionary which returns a 'str'
+                chemical element symbol for every 'int' atom_ID from
+                the LAMMPS trajectory.
 
-            atom_masses (dict): a dictionary of 'float' atom masses,
-            using as keys the 'int' atom_ID values from LAMMPS.
+            atom_masses : dict
+                a dictionary of 'float' atom masses,
+                using as keys the 'int' atom_ID values from LAMMPS.
 
         """
         if len(self.atom_types) == 0:
@@ -470,14 +518,19 @@ class CompactTrajectory:
         steps. The arrays in the original trajectory will be sliced
         following the pattern: new = old[start:stop:step]
 
-        Args:
-            start (int): number defining the beginning of the slicing range.
+        Parameters
+        ----------
+            start : int
+                number defining the beginning of the slicing range.
 
-            stop (int): number defining the end of the slicing range.
+            stop : int
+                number defining the end of the slicing range.
 
-            step (int): step size of the slicing operation
+            step : int
+                step size of the slicing operation
 
-        Returns:
+        Returns
+        -------
             CompactTrajectory: a trajectory containing the same header
             and the same or less steps than the original.
         """

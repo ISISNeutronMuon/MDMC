@@ -531,6 +531,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         with open(self.trajectory_file.name, 'rb') as file_handler:
             file_generator = _make_gen(file_handler.raw.read)
             line_count = sum( buf.count(b'\n') for buf in file_generator )
+            frame_count = sum( buf.count(b'TIMESTEP') for buf in file_generator )
         # And header_size will tell us how many lines per frame
         # are added on top of the atom positions
         header_size = 0
@@ -620,10 +621,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         header_size = 0
                         lines = []
                         for _ in range(n_atoms):
-                            spline = file_handler.readline().split()
+                            split_line = file_handler.readline().split()
                             # convert id to int
-                            spline[i_id] = int(spline[i_id])
-                            lines.append(spline)
+                            split_line[i_id] = int(split_line[i_id])
+                            lines.append(split_line)
                         # sort list of lists based on id
                         lines = sorted(lines, key=lambda x: x[i_id])
 
@@ -659,6 +660,17 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             atom_symbols[at_id] = symbol
             atom_masses[at_id] = mass
         traj.labelAtoms(atom_symbols, atom_masses)
+        # electric charges, for completeness
+        # (otherwise we cannot output an Atom from CompactTrajectory)
+        charge_list = []
+        for struc in self.parent_simulation.universe.structure_list:
+            if isinstance(struc, Atom):
+                charge_list.append([struc.ID, struc.charge])
+        charges = np.array(charge_list)
+        sequence = np.argsort(charges[:, 0])
+        charges = charges[sequence][:, 1]
+        traj.setCharge(charges)
+        # we conclude the creation of the trajectory
         traj.postProcess()
         return traj
 
