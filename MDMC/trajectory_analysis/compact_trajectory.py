@@ -19,12 +19,14 @@ from MDMC.common import units
 from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 
+
 class CompactTrajectory:
     """
     Stores an MD trajectory in numpy arrays.
     Please use it instead of Trajectory where possible.
     """
-    def __init__(self, *configurations : list[TemporalConfiguration], **settings : dict):
+
+    def __init__(self, *configurations: list[TemporalConfiguration], **settings: dict):
         """
         This is a bare constructor which initialises all the fields the basic trajectory
         will have.
@@ -40,23 +42,23 @@ class CompactTrajectory:
               and populate the trajectory using the writeOneStep method."""
         # The development plan is to use the units defined here to calculate conversion factors,
         # and use these factors when writing the numbers into the arrays.
-        # For now, we define the units here.
+        # For now, we define the units here:
         self.position_unit = units.SYSTEM['LENGTH']
         self.time_unit = units.SYSTEM['TIME']
-        self.velocity_unit = units.SYSTEM['VELOCITY']
-        # some other information
-        self.dtype = self._get_dtype(8) # this sets the data type to np.float64
+        self.velocity_unit = units.SYSTEM['LENGTH'] / units.SYSTEM['TIME']
+        self.dtype = self._get_dtype(8)  # this sets the data type to np.float64
         # The underlying assumption is that the number of atoms,
         # and the atom types, stay CONSTANT within the trajectory,
         # and so we define them as header data, and not separately for every frame:
-        self.n_atoms = -1 # this way we know that the trajectory has not been initialised
+        self.n_atoms = -1  # this way we know that the trajectory has not been initialised
         self.n_steps = 0
         self.atom_types = []
         self.atom_masses = []
         # The initial value of self.dimensions is set to a number too low to be physical,
         # but different from 0. This way if an observable tried to calculate the Q vectors
+        # or, more precisely, reciprocal space vectors
         # from an unpopulated CompactTrajectory, it would not divide by zero.
-        self.dimensions = 0.1*np.ones(3) # avoids divide-by-zero errors, explained above.
+        self.dimensions = 0.1*np.ones(3)  # avoids divide-by-zero errors, explained above.
         self.changing_dimensions = None
         self.element_list = []
         self.element_set = set()
@@ -67,14 +69,14 @@ class CompactTrajectory:
         self.velocity = None
         self.times = None
         # now some state indicators:
-        self.is_allocated = False # preAllocate has been run, numpy arrays exist
-        self.is_populated = False # we have written data into the numpy arrays; these are not empty
-        self.is_fixedbox = True # the dimensions of the simulation box are fixed;
+        self.is_allocated = False  # preAllocate has been run, numpy arrays exist
+        self.is_populated = False  # numpy arrays are not empty; some data have been written
+        self.is_fixedbox = True  # the dimensions of the simulation box are fixed;
         # ^^^^^^^^^^^^^^
         # the self.is_fixedbox could potentially be False for an NPT ensemble
         # in that case self.changing_dimensions will contain the box dimensions for each step.
-        self.first_index = 0 # the first array index at which we have written data
-        self.last_index = -1 # the last array index at which we have written data
+        self.first_index = 0  # the first array index at which we have written data
+        self.last_index = -1  # the last array index at which we have written data
         # ^^^^^^^^^^^^^
         # since we use np.empty, the elements of the array are _not_ initialised to any value,
         # so it is a precaution to slice the arrays at the end to cut off the empty parts.
@@ -100,10 +102,11 @@ class CompactTrajectory:
                 pass
             else:
                 if not conf_universe == self.universe:
-                    print("Warning: settings['universe'] is different to Configuration.universe.")
+                    print(
+                        "Warning: settings['universe'] is different to Configuration.universe.")
 
     @staticmethod
-    def _get_dtype(bpn : int):
+    def _get_dtype(bpn: int):
         if bpn > 8:
             return np.float128
         if bpn > 4:
@@ -132,7 +135,8 @@ class CompactTrajectory:
             self.position = self.position.astype(self.dtype)
             if self.velocity is not None:
                 self.velocity = self.velocity.astype(self.dtype)
-            self.changing_dimensions = self.changing_dimensions.astype(self.dtype)
+            self.changing_dimensions = self.changing_dimensions.astype(
+                self.dtype)
 
     def __len__(self):
         if self.position is None:
@@ -143,10 +147,14 @@ class CompactTrajectory:
         return len(self.position[self.first_index:self.last_index])
 
     def __getitem__(self, index: Union[int, slice]):
+        # different behaviour:
+        # a single index extracts a TemporalConfiguration,
+        # while a slice with produce a subtrajectory,
+        # which is another CompactTrajectory.
         try:
             start, stop, step = index.start, index.stop, index.step
         except AttributeError:
-            return self.TemporalConfiguration(index)
+            return self.exportTemporalConfiguration(index)
         else:
             return self.subtrajectory(start, stop, step)
 
@@ -214,21 +222,23 @@ class CompactTrajectory:
         """
         if self.is_allocated:
             print("WARNING: preAllocate has already been run on this CompactTrajectory.")
-        self.n_atoms = n_atoms # from now on we decide that each step will have n_atoms
-        self.n_steps = n_steps # and there will be n_steps in this trajectory.
-        shape = (n_steps, n_atoms, 3) # time steps are the first dimension of the arrays.
-        self.times = np.empty(n_steps, dtype = self.dtype)
-        self.position = np.empty(shape, dtype = self.dtype)
+        self.n_atoms = n_atoms  # from now on we decide that each step will have n_atoms
+        self.n_steps = n_steps  # and there will be n_steps in this trajectory.
+        # time steps are the first dimension of the arrays.
+        shape = (n_steps, n_atoms, 3)
+        self.times = np.empty(n_steps, dtype=self.dtype)
+        self.position = np.empty(shape, dtype=self.dtype)
         if useVelocity:
-            self.velocity = np.empty(shape, dtype = self.dtype)
-        self.is_allocated = True # First change of state: the arrays have been allocated.
-        self.changing_dimensions = np.empty((n_steps,3), dtype = self.dtype)
+            self.velocity = np.empty(shape, dtype=self.dtype)
+        # First change of state: the arrays have been allocated.
+        self.is_allocated = True
+        self.changing_dimensions = np.empty((n_steps, 3), dtype=self.dtype)
         # ^^^^^^^^^^^^^^^^^^^^^^
         # We are fairly confident that the dimensions of the simulation box will NOT change
         # during the simulation, but allocating this array does not really cost us anything,
         # and, if it turns out that the dimensions do change, we will be prepared.
 
-    def fromConfigs(self, *configs : list[TemporalConfiguration]):
+    def fromConfigs(self, *configs: list[TemporalConfiguration]):
         """
         Populate the arrays of the CompactTrajectory using the input list
         of ``TemporalConfiguration`` objects.
@@ -237,40 +247,44 @@ class CompactTrajectory:
         """
         if len(configs) < 1:
             raise TypeError("At least one Configuration is needed"
-                                " for the CompactTrajectory.fromConfigs()")
-        self.preAllocate(n_steps = len(configs),
-                         n_atoms = len(configs[0].atoms),
-                         useVelocity = len(configs[0].atom_velocities) > 0)
+                            " for the CompactTrajectory.fromConfigs()")
+        self.preAllocate(n_steps=len(configs),
+                         n_atoms=len(configs[0].atoms),
+                         useVelocity=len(configs[0].atom_velocities) > 0)
         for step_number, config in enumerate(configs):
             if len(config.data) > 0:
                 atpos = np.row_stack(config.atom_positions)
                 atvel = np.row_stack(config.atom_velocities)
-                self.writeOneStep(step_num = step_number,
-                                time = config.time,
-                                positions = atpos,
-                                velocities = atvel)
+                self.writeOneStep(step_num=step_number,
+                                  time=config.time,
+                                  positions=atpos,
+                                  velocities=atvel)
             else:
-                self.writeEmptyStep(step_num = step_number,
-                                time = config.time)
+                self.writeEmptyStep(step_num=step_number,
+                                    time=config.time)
             try:
                 dim = config.universe.dimensions
             except AttributeError:
                 continue
             else:
-                self.setDimensions(dim, step_num = step_number)
+                self.setDimensions(dim, step_num=step_number)
         # here a lengthy section of the code that is supposed to
         # fill in the missing information about the atom types and chemical elements,
         # if we are loading a pickled Trajectory
         # instead of reading a proper trajectory file.
-        elements = [] # list of 'chemical_element_symbol', 1 per atom
-        masses = {} # dictionary of 'chemical_element_symbol' : mass (float) in a.m.u.
-        mass_per_type = {} # dictionary of 'atom_type' : mass (float) in a.m.u.
-        element_per_type = {} # dictionary of 'atom_type' : 'chemical_element_symbol'
-        types = [] # a list of 'atom_type', 1 entry for each atom
-        id_values = [] # a list of 'atom_ID', 1 entry for each atom
-        has_types = True # we assume -for now- that the Trajectory stores atom_type.
+        elements = []  # list of 'chemical_element_symbol', 1 per atom
+        # dictionary of 'chemical_element_symbol' : mass (float) in a.m.u.
+        masses = {}
+        # dictionary of 'atom_type' : mass (float) in a.m.u.
+        mass_per_type = {}
+        element_per_type = {}  # dictionary of 'atom_type' : 'chemical_element_symbol'
+        types = []  # a list of 'atom_type', 1 entry for each atom
+        id_values = []  # a list of 'atom_ID', 1 entry for each atom
+        # we assume -for now- that the Trajectory stores atom_type.
+        has_types = True
         atom_counter = 0
-        for nat, atom in enumerate(configs[0].atoms): # we just iterate over Atom objects
+        # we just iterate over Atom objects
+        for nat, atom in enumerate(configs[0].atoms):
             element = atom.element
             mass = atom.mass
             elements.append(element)
@@ -315,13 +329,16 @@ class CompactTrajectory:
         if np.all(np.abs(self.dimensions - 0.1) < 1e-5):
             self.dimensions = frame_dimensions
             self.changing_dimensions[0] = frame_dimensions
-        elif np.allclose(frame_dimensions, self.dimensions, rtol = 1e-6, atol = 1e-4):
-            pass # If the new dimensions are the same as the current ones, we do nothing.
+        elif np.allclose(frame_dimensions, self.dimensions, rtol=1e-6, atol=1e-4):
+            # If the new dimensions are the same as the current ones, we do nothing.
+            pass
         else:
-            self.is_fixedbox = False # the dimensions of the box DO change in this trajectory!
-            self.changing_dimensions[step_num] = frame_dimensions # we save the dimensions
+            self.is_fixedbox = False  # the dimensions of the box DO change in this trajectory!
+            # we save the dimensions
+            self.changing_dimensions[step_num] = frame_dimensions
             # per simulation step now.
-            self.dimensions = self.changing_dimensions[self.first_index:self.last_index].mean(0)
+            self.dimensions = self.changing_dimensions[self.first_index:self.last_index].mean(
+                0)
             # ^^^^^^^^^^^^^
             # now that we have discovered that the dimensions change,
             # we use the mean value over time as the dimensions parameter.
@@ -347,7 +364,7 @@ class CompactTrajectory:
         if not self.is_allocated:
             raise IndexError("Writing outside of the reserved array range.")
         self.times[step_num] = time
-        self.position[step_num, : , :] = positions
+        self.position[step_num, :, :] = positions
         if velocities is not None:
             self.velocity[step_num, :, :] = velocities
         # some housekeeping:
@@ -397,13 +414,13 @@ class CompactTrajectory:
         # in a simulation to simulate flow. It is unlikely to happen in an MDMC run.
         # Since we cannot handle such a case,
         # we will return False to indicate that this trajectory is not suitable for MDMC.
-        if len(self.atom_types) == 0: # case 1: atom_types have not been set
+        if len(self.atom_types) == 0:  # case 1: atom_types have not been set
             if len(atom_types) == self.n_atoms:
-                self.atom_types = atom_types # and now they are set.
+                self.atom_types = atom_types  # and now they are set.
                 return True
-        elif np.all(self.atom_types == atom_types): # case 2: atom_types have been set
-            return True # and have not changed
-        return False # case 3: atom_types have been set and have changed.
+        elif np.all(self.atom_types == atom_types):  # case 2: atom_types have been set
+            return True  # and have not changed
+        return False  # case 3: atom_types have been set and have changed.
 
     def labelAtoms(self, atom_symbols: dict = None, atom_masses: dict = None):
         """
@@ -422,7 +439,7 @@ class CompactTrajectory:
 
         """
         if len(self.atom_types) == 0:
-            return False # tests/trajectory_analysis/test_PDF.py use empty Configurations
+            return False  # tests/trajectory_analysis/test_PDF.py use empty Configurations
             # so we accept a case of no atoms in the CompactTrajectory.
             # We just return False in case we wanted to check in real code if
             # we are trying to set labels on a CompactTrajectory with no atoms.
@@ -477,10 +494,10 @@ class CompactTrajectory:
         temp.dimensions = self.dimensions
         temp.element_list = self.element_list
         temp.element_set = self.element_set
-        temp.position = self.position[start:stop:step, : , :]
+        temp.position = self.position[start:stop:step, :, :]
         temp.times = self.times[start:stop:step]
         if self.velocity is not None:
-            temp.velocity = self.velocity[start:stop:step, : , :]
+            temp.velocity = self.velocity[start:stop:step, :, :]
         temp.is_allocated = True
         temp.is_populated = True
         temp.first_index = 0
@@ -509,17 +526,18 @@ class CompactTrajectory:
             ``start`` and ``end``
         """
 
-        index = np.where(self.times==start)[0].ravel()
+        index = np.where(self.times == start)[0].ravel()
         if end is None:
             if len(index) < 1:
                 raise ValueError("Start is not in self.times")
-            return self.subtrajectory(index[0],index[0]+1)
-        total = np.where(np.logical_and(self.times >= start, self.times < end))[0].ravel()
+            return self.subtrajectory(index[0], index[0]+1)
+        total = np.where(np.logical_and(
+            self.times >= start, self.times < end))[0].ravel()
         if len(total) < 1:
             raise ValueError("The specified time range contains no MD frames")
         return self.subtrajectory(index[0], len(total))
 
-    def Atom(self, step_number: int = 0, atom_number: int = 0):
+    def exportAtom(self, step_number: int = 0, atom_number: int = 0):
         """
         For compatibility with ``Trajectory``, creates an ``Atom`` object
         for a chosen time step of the simulation and atom number.
@@ -549,10 +567,10 @@ class CompactTrajectory:
             velocity = (0.0, 0.0, 0.0)
         # :TODO: some information about charge is needed
         return Atom(element,
-            self.position[step_number, atom_number, :],
-            velocity)
+                    self.position[step_number, atom_number, :],
+                    velocity)
 
-    def TemporalConfiguration(self, step_number: int = 0) -> TemporalConfiguration:
+    def exportTemporalConfiguration(self, step_number: int = 0) -> TemporalConfiguration:
         """
         For compatibility, creates a TemporalConfiguration object
         out of the numpy arrays of atom positions.
@@ -570,5 +588,6 @@ class CompactTrajectory:
             requested time step
         """
         return TemporalConfiguration(self.times[step_number],
-            *[self.Atom(step_number, at_num) for at_num in range(self.n_atoms)],
-            universe = self.universe)
+                                     *[self.exportAtom(step_number, at_num)
+                                       for at_num in range(self.n_atoms)],
+                                     universe=self.universe)

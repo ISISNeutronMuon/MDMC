@@ -31,7 +31,6 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import (Atom as MAtom,
                                 Molecule as MMolecule)
 from MDMC.common.units import Unit
-# from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition_interactions
 
@@ -389,7 +388,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         """
 
         def read_cell(f):
-            cell = np.zeros((3, 3))
+            cell = np.zeros((3, 3))  # The unit cell is a 3x3 array
             for i in range(3):
                 cell[i, :] = np.array([float(x) for x in f.readline().split()])
             return cell
@@ -401,7 +400,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             # level_of_detail of information in the file, 0, indicates only positions,
             # 1 positions and velocities, 2 positions, velocities and forces
             # the first line gives the symbol, mass and atom_ID of the atom
-            symbol, _, mass_str, *_ = f.readline().split()
+            _, _, mass_str, *_ = f.readline().split()
             mass = float(mass_str)
             # the next line gives the position of the atom
             pos = read_line_as(f, float)
@@ -413,13 +412,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
                 force = read_line_as(f, float)
-            else:
-                force = None
-            _ = force
-
-            _ = self.universe.element_dict[symbol].atom_type
-            # it is not a float, so it is a little inconveniet to handle here
-
+            if vel is None:
+                return np.concatenate([pos, [mass]])
             return np.concatenate([pos, vel, [mass]])
 
         traj = CompactTrajectory()
@@ -432,7 +426,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
 
-            # configs = []
             end = stop or frames + 1
 
             take = range(start, end, step)
@@ -440,19 +433,20 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             traj.preAllocate(n_steps = len(take), n_atoms = n_atoms,
                 useVelocity = level_of_detail >=1)
             traj_step = 0
-
+            dlpoly_time_unit = Unit('10 ^ -12 s')
+            time_conv = dlpoly_time_unit.conversion_factor
             for iframe in range(frames):
                 if iframe in take:
-                    # mass = []
-                    # pos = []
-                    # vel = []
-                    # atom_type = []
-                    # :TODO: here something has to be done about the time units
-                    # as it seems that DL_POLY uses ps units
-                    time = float(f.readline().split()[-1])
-                    # Just skip, unused for the moment, will need to be
-                    # used for npt simulations
-                    read_cell(f)
+                    timestep_line = f.readline().split()
+                    time = float(timestep_line[-1]) * time_conv
+                    # ^^^^^^^^^
+                    # This is confusing! In our DL_POLY, the timestep_line[-1]
+                    # is the time value of the simulation step,
+                    # but in the MDANSE example timestep_line[-1] is constant
+                    # and has to be multiplied by timestep_line[1]...
+                    # Our trajectory has 1 element more in the timestep line!
+                    dim3x3 = read_cell(f)
+                    dim = np.diagonal(dim3x3)
 
                     tempdata = np.row_stack([create_atom(f, level_of_detail)
                                             for _ in range(n_atoms)])
@@ -460,6 +454,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                         traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])
                     else:
                         traj.writeOneStep(traj_step, time, tempdata[:,0:3])
+                    traj.setDimensions(dim, step_num=traj_step)
+                    traj_step += 1
                 else:  # Skip time + cell + atoms
                     for _ in range(1 + 3 + n_atoms):
                         f.readline()

@@ -24,7 +24,7 @@ class FQtIncoherent(AbstractFQt):
         element_weights = {element: B_INCOH[element]**2 for element
                            in self._trajectory.element_set}
         self.weights = [element_weights[atom.element] for atom
-                        in [self._trajectory.Atom(atom_number=x) for x
+                        in [self._trajectory.exportAtom(atom_number=x) for x
                             in range(self._trajectory.n_atoms)]]
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':

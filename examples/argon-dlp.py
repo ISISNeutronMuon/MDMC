@@ -55,7 +55,7 @@ simulation.run(n_steps=1000, equilibration=True,output_log='equilibration.log',w
 #simulation.run(n_steps=10000, equilibration=False)
 #print(simulation.trajectory)
 ## dataset
-exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
                  'weight':1.,
