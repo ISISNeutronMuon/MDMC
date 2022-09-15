@@ -446,7 +446,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     # and has to be multiplied by timestep_line[1]...
                     # Our trajectory has 1 element more in the timestep line!
                     dim3x3 = read_cell(f)
-                    dim = np.diagonal(dim3x3)
+                    dim = np.diagonal(dim3x3).copy()
 
                     tempdata = np.row_stack([create_atom(f, level_of_detail)
                                             for _ in range(n_atoms)])
@@ -457,9 +457,12 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                     traj.setDimensions(dim, step_num=traj_step)
                     traj_step += 1
                 else:  # Skip time + cell + atoms
-                    for _ in range(1 + 3 + n_atoms):
+                    # I added the level_of_detail here, since we can have
+                    # multiple lines per atom.
+                    for _ in range(1 + 3 + n_atoms * (level_of_detail + 1)):
                         f.readline()
 
+        traj.postProcess()
         return traj
 
     def update_parameters(self) -> None:
