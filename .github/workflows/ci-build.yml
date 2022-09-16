@@ -161,8 +161,8 @@ jobs:
       uses: actions/checkout@v2
     - name: Setup X-Server
       run: |
-        sudo apt-get update
-        sudo apt-get install xorg
+        sudo apt-get update && \
+        sudo apt-get install xorg && \
         sudo apt-get install openbox
         startx
     - name: convert notebooks
