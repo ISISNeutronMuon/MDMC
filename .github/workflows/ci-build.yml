@@ -160,6 +160,8 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: convert notebooks
+      env:
+        BRANCH: ${{ github.head_ref }}
       run: |
         docker pull mdmc/mdmc:ci-$BRANCH &&
         docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb &&
