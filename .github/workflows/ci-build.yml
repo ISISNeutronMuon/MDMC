@@ -166,7 +166,7 @@ jobs:
         sudo chmod ugo+r ~/.Xauthority
         sudo apt-get install xorg
         sudo apt-get install openbox 
-        sudo startx
+        sudo xinit
     - name: convert notebooks
       env:
         BRANCH: ${{ github.head_ref }}
@@ -174,5 +174,5 @@ jobs:
         docker pull mdmc/mdmc:ci-$BRANCH
         docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
         docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb
-        pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
+        docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
         exit 0
