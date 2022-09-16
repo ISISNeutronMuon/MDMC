@@ -163,7 +163,7 @@ jobs:
       run: |
         sudo apt-get update
         sudo touch ~/.Xauthority
-        sudo chmod +ar ~/.Xauthority
+        sudo chmod ugo+r ~/.Xauthority
         sudo apt-get install xorg
         sudo apt-get install openbox 
         startx
