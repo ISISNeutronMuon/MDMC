@@ -454,7 +454,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
                     tempdata = np.row_stack([create_atom(f,
                                                     level_of_detail,
-                                                    element_dictionary)
+                                                    element_dict=element_dictionary)
                                             for _ in range(n_atoms)])
                     if level_of_detail:
                         traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])

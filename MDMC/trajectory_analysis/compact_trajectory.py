@@ -13,6 +13,8 @@ limits of performance that we can achieve within Python.
 # a 64-bit float if we use the default value normally picked
 # by numpy.
 
+from curses import raw
+from symbol import atom
 from typing import Union
 import numpy as np
 from MDMC.common import units
@@ -434,7 +436,29 @@ class CompactTrajectory:
         self.first_index = min(step_num, self.first_index)
         self.last_index = max(step_num + 1, self.last_index)
 
-    def validateTypes(self, atom_types: np.array):
+    def _create_types_from_elements(self, atom_types: list[str]):
+        """
+        Some engines (e.g. LAMMPS) like using numbers at atom types,
+        while others use letters. CompactTrajectory was written for
+        LAMMPS initially, and likes having numbers for types.
+        This function will check if the types are numbers,
+        and replace them with consitent positive numbers if it
+        turns out that they were not.
+        """
+        if len(atom_types) == 0:
+            return atom_types
+        try:
+            int(atom_types[0])
+        except ValueError:
+            all_types = np.unique(atom_types)
+            compare_types = np.array(atom_types, dtype=str)
+            number_types = np.zeros(len(atom_types), dtype=np.int64)
+            for number, at_type in enumerate(all_types):
+                number_types[np.where(compare_types == at_type)] = number +1
+            return number_types
+        return atom_types
+
+    def validateTypes(self, raw_atom_types: np.array):
         """This function checks if the sorted array of atom types
         from the new frame is the same as the original array
         of atom types.
@@ -459,6 +483,9 @@ class CompactTrajectory:
         # in a simulation to simulate flow. It is unlikely to happen in an MDMC run.
         # Since we cannot handle such a case,
         # we will return False to indicate that this trajectory is not suitable for MDMC.
+        atom_types = self._create_types_from_elements(raw_atom_types)
+        # ^^^^^^^^
+        # This ensures that the atom types are numers.
         if len(self.atom_types) == 0:  # case 1: atom_types have not been set
             if len(atom_types) == self.n_atoms:
                 self.atom_types = atom_types  # and now they are set.
@@ -618,10 +645,14 @@ class CompactTrajectory:
             velocity = self.velocity[step_number, atom_number, :]
         except AttributeError:
             velocity = (0.0, 0.0, 0.0)
-        # :TODO: some information about charge is needed
+        try:
+            charge = self.atom_charges[atom_number]
+        except IndexError:
+            charge = 0.0
         return Atom(element,
                     self.position[step_number, atom_number, :],
-                    velocity)
+                    velocity,
+                    charge=charge)
 
     def exportTemporalConfiguration(self, step_number: int = 0) -> TemporalConfiguration:
         """
