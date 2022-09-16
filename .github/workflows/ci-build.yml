@@ -163,7 +163,9 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
-        docker pull mdmc/mdmc:ci-$BRANCH &&
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb &&
-        pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
-        exit 0 ||
+        startx && \
+        docker pull mdmc/mdmc:ci-$BRANCH && \
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC && \
+        docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb && \
+        pytest --nbmake $(pwd)/doc/tutorials/*.ipynb && \
+        exit
