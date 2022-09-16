@@ -394,7 +394,7 @@ class AbstractSQw(SQwMixins, Observable):
                     raise AttributeError('Either trajectory requires a dimensions'
                                         ' attribute or dimensions must be passed'
                                         ' when calling calculate_from_MD') from error
-        else: # I have to decide later what to do with the case of changing dimensions
+        else: # If the dimensions of the simulation box are not fixed, we use the first value
             try:
                 self.universe_dimensions = MD_input.changing_dimensions[0]
             except AttributeError:

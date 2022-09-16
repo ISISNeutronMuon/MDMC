@@ -2,8 +2,14 @@
 
 import numpy as np
 from numpy.fft import fft, ifft
-# from pyfftw.interfaces.numpy_fft import fft as fft
-# from pyfftw.interfaces.numpy_fft import ifft as ifft
+
+# It may still be interesting for futre performance tuning
+# to try to replace numpy.fft with pyfftw.
+# The easiest way would be to use:
+# from pyfftw.interfaces.numpy_fft import fft
+# from pyfftw.interfaces.numpy_fft import ifft
+# However, probably the multiprocessing module is going
+# to be the best solution to improve the performance.
 
 from MDMC.common.decorators import time_function_execution
 
@@ -65,15 +71,12 @@ def correlation(input1, input2=None, normalise=False) -> np.ndarray:
 
     return corr
 
-# @jit('complex128[:,:], complex128[:,:]', nopython=True)
-# @jit
+# We could trying numba.jit here later to speed things up.
 def faster_correlation(input1, input2) -> np.ndarray:
     """
-    The correlation of two vectors
+    The correlation of two vectors.
 
     The Fast Correlation Algorithm (FCA) is utilised.
-
-    I break it up into separate functions to allow numba to optimise the code.
 
     Parameters
     ----------
@@ -111,15 +114,12 @@ def faster_correlation(input1, input2) -> np.ndarray:
 
     return corr
 
-# @jit('complex128[:,:]', nopython=True)
-# @jit
+# We could trying numba.jit here later to speed things up.
 def faster_autocorrelation(input1) -> np.ndarray:
     """
-    The correlation of two vectors
+    The autocorrelation of a vector.
 
     The Fast Correlation Algorithm (FCA) is utilised.
-
-    I break it up into separate functions to allow numba to optimise the code.
 
     Parameters
     ----------
