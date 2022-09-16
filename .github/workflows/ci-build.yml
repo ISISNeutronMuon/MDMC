@@ -159,11 +159,6 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: pip3 install
-      run: |
-        sudo pip3 install --upgrade pip
-        sudo pip3 install -r requirements.txt
-        sudo pip3 install -r dev_requirements.txt
     - name: convert notebooks
       run: |
         docker pull mdmc/mdmc:ci-$BRANCH &&
