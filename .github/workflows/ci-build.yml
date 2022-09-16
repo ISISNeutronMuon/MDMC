@@ -149,17 +149,24 @@ jobs:
 
   notebooks:
     name: notebooks
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      - name: pip3 install
-        run: |
-          sudo pip3 install --upgrade pip
-          sudo pip3 install -r requirements.txt
-          sudo pip3 install -r dev_requirements.txt
-      - name: convert notebooks
-        run: |
-          export DISPLAY=localhost:0.0
-          jupyter nbconvert --to notebook --execute doc/tutorials/*.ipynb
-          pytest --nbmake doc/tutorials/*.ipynb
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: pip3 install
+      run: |
+        sudo pip3 install --upgrade pip
+        sudo pip3 install -r requirements.txt
+        sudo pip3 install -r dev_requirements.txt
+    - name: convert notebooks
+      run: |
+        docker pull mdmc/mdmc:ci-$BRANCH &&
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb &&
+        pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
+        exit 0 ||
