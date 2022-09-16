@@ -147,3 +147,19 @@ jobs:
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
         exit $?
 
+  notebooks:
+    name: notebooks
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: pip3 install
+        run: |
+          sudo pip3 install --upgrade pip
+          sudo pip3 install -r requirements.txt
+          sudo pip3 install -r dev_requirements.txt
+      - name: convert notebooks
+        run: |
+          export DISPLAY=localhost:0.0
+          jupyter nbconvert --to notebook --execute doc/tutorials/*.ipynb
+          pytest --nbmake doc/tutorials/*.ipynb
