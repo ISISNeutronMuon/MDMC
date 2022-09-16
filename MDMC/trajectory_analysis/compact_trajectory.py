@@ -581,6 +581,7 @@ class CompactTrajectory:
             temp.velocity = self.velocity[start:stop:step, :, :]
         temp.is_allocated = True
         temp.is_populated = True
+        temp.is_fixedbox = self.is_fixedbox
         temp.first_index = 0
         temp.last_index = len(temp.position)
         temp.n_steps = len(temp.position)
