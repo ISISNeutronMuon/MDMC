@@ -148,7 +148,7 @@ jobs:
         exit $?
 
   notebooks:
-    name: notebooks
+    name: Notebooks
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     steps:
@@ -159,11 +159,15 @@ jobs:
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
+    - name: Setup X-Server
+      run: |
+        sudo apt-get install xorg
+        sudo apt-get install openbox
+        startx
     - name: convert notebooks
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
-        startx && \
         docker pull mdmc/mdmc:ci-$BRANCH && \
         docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC && \
         docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb && \
