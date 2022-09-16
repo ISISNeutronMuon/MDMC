@@ -13,8 +13,6 @@ limits of performance that we can achieve within Python.
 # a 64-bit float if we use the default value normally picked
 # by numpy.
 
-from curses import raw
-from symbol import atom
 from typing import Union
 import numpy as np
 from MDMC.common import units
@@ -332,9 +330,10 @@ class CompactTrajectory:
         # change between the time frames.
         if charge_list is None:
             return False
-        if not (len(charge_list) == self.n_atoms):
+        if not len(charge_list) == self.n_atoms:
             raise ValueError("Wrong number of charges in setCharge.")
         self.atom_charges = np.array(charge_list)
+        return True
 
     def setDimensions(self, frame_dimensions: np.array = None,
                       step_num: int = -1):

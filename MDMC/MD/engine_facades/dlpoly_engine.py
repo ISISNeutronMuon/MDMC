@@ -415,7 +415,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 vel = None
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
-                force = read_line_as(f, float)
+                _ = read_line_as(f, float)  # this is actually force acting on the atom, never used
             if vel is None:
                 return np.concatenate([pos, [mass, charge, atom_ID]])
             return np.concatenate([pos, vel, [mass, charge, atom_ID]])

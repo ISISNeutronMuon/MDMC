@@ -531,7 +531,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         with open(self.trajectory_file.name, 'rb') as file_handler:
             file_generator = _make_gen(file_handler.raw.read)
             line_count = sum( buf.count(b'\n') for buf in file_generator )
-            frame_count = sum( buf.count(b'TIMESTEP') for buf in file_generator )
         # And header_size will tell us how many lines per frame
         # are added on top of the atom positions
         header_size = 0
