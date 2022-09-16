@@ -166,7 +166,7 @@ jobs:
         sudo chmod ugo+r ~/.Xauthority
         sudo apt-get install xorg
         sudo apt-get install openbox 
-        startx
+        sudo startx
     - name: convert notebooks
       env:
         BRANCH: ${{ github.head_ref }}
