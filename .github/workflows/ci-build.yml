@@ -162,9 +162,10 @@ jobs:
     - name: Setup X-Server
       run: |
         sudo apt-get update && \
+        sudo touch ~/.Xauthority && \
         sudo apt-get install xorg && \
         sudo apt-get install openbox && \
-        touch ~/.Xauthority && \
+        echo "Done Installing"
         startx
     - name: convert notebooks
       env:
