@@ -13,7 +13,7 @@ limits of performance that we can achieve within Python.
 # a 64-bit float if we use the default value normally picked
 # by numpy.
 
-from typing import Union
+from typing import Union, List
 import numpy as np
 from MDMC.common import units
 from MDMC.MD.structures import Atom
@@ -26,7 +26,7 @@ class CompactTrajectory:
     Please use it instead of Trajectory where possible.
     """
 
-    def __init__(self, *configurations: list[TemporalConfiguration], **settings: dict):
+    def __init__(self, *configurations: List[TemporalConfiguration], **settings: dict):
         """
         This is a bare constructor which initialises all the fields the basic trajectory
         will have.
@@ -239,7 +239,7 @@ class CompactTrajectory:
         # during the simulation, but allocating this array does not really cost us anything,
         # and, if it turns out that the dimensions do change, we will be prepared.
 
-    def fromConfigs(self, *configs: list[TemporalConfiguration]):
+    def fromConfigs(self, *configs: List[TemporalConfiguration]):
         """
         Populate the arrays of the CompactTrajectory using the input list
         of ``TemporalConfiguration`` objects.
@@ -311,7 +311,7 @@ class CompactTrajectory:
         self.setCharge(atom_charge)
         self.postProcess()
 
-    def setCharge(self, charge_list: list[float] = None):
+    def setCharge(self, charge_list: List[float] = None):
         """
         Sets the values of partial charge for each atom.
         It assumes that the charges are constant within
@@ -435,7 +435,7 @@ class CompactTrajectory:
         self.first_index = min(step_num, self.first_index)
         self.last_index = max(step_num + 1, self.last_index)
 
-    def _create_types_from_elements(self, atom_types: list[str]):
+    def _create_types_from_elements(self, atom_types: List[str]):
         """
         Some engines (e.g. LAMMPS) like using numbers at atom types,
         while others use letters. CompactTrajectory was written for
@@ -570,11 +570,13 @@ class CompactTrajectory:
         temp.n_atoms = self.n_atoms
         temp.atom_types = self.atom_types
         temp.atom_masses = self.atom_masses
+        temp.atom_charges = self.atom_charges
         temp.dimensions = self.dimensions
         temp.element_list = self.element_list
         temp.element_set = self.element_set
         temp.position = self.position[start:stop:step, :, :]
         temp.times = self.times[start:stop:step]
+        temp.changing_dimensions = self.changing_dimensions[start:stop:step, :]
         if self.velocity is not None:
             temp.velocity = self.velocity[start:stop:step, :, :]
         temp.is_allocated = True

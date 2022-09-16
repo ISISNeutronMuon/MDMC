@@ -443,12 +443,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 if iframe in take:
                     timestep_line = f.readline().split()
                     time = float(timestep_line[-1]) * time_conv
-                    # ^^^^^^^^^
-                    # This is confusing! In our DL_POLY, the timestep_line[-1]
-                    # is the time value of the simulation step,
-                    # but in the MDANSE example timestep_line[-1] is constant
-                    # and has to be multiplied by timestep_line[1]...
-                    # Our trajectory has 1 element more in the timestep line!
+                    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    # CompactTrajectory uses the System units (fs), DL_POLY uses ps.
+                    # time_conv is the conversion factor to re-calculate time into fs.
                     dim3x3 = read_cell(f)
                     dim = np.diagonal(dim3x3).copy()
 
