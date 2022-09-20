@@ -151,6 +151,8 @@ jobs:
     name: Notebooks
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
+    strategy:
+      matrix: ["X-server", "Test"]
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -161,18 +163,19 @@ jobs:
       uses: actions/checkout@v2
     - name: Setup X-Server
       run: |
-        sudo apt-get update
-        sudo touch ~/.Xauthority
-        sudo chmod ugo+r ~/.Xauthority
-        sudo apt-get install xorg
-        sudo apt-get install openbox 
-        sudo xinit
+        sudo apt-get update && \
+        touch ~/.Xauthority && \
+        chmod ugo+r ~/.Xauthority && \
+        apt-get install xorg && \
+        apt-get install openbox && \
+        apt-get install xterm && \
+        xinit
     - name: convert notebooks
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
-        docker pull mdmc/mdmc:ci-$BRANCH
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
-        docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb
-        docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
+        sudo docker pull mdmc/mdmc:ci-$BRANCH && \
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC && \
+        docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb && \
+        docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb && \
         exit 0
