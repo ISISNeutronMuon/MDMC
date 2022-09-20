@@ -327,7 +327,8 @@ class Control:
 
         # Printing settings
         if print_all_settings:
-            for setting in settings.keys():
+            # pylint: disable=consider-using-dict-items
+            for setting in settings:
                 index_array.append(f'  {setting}')
                 data_array.append([settings[setting]])
 
