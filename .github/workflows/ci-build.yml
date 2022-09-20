@@ -149,27 +149,30 @@ jobs:
 
   notebooks:
     name: Notebooks
-    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
+    needs: build # so it can use new docker image if docker image has changed
     strategy:
-      matrix: ["X-server", "Test"]
+      matrix:
+        environment: [ "X-server", "Test" ]
+
+    if: matrix.environment == "X-server"
+      - name: Setup X-Server
+        run: |
+          sudo apt-get update && \
+          touch ~/.Xauthority && \
+          chmod ugo+r ~/.Xauthority && \
+          apt-get install xorg && \
+          apt-get install openbox && \
+          apt-get install xterm && \
+          xinit
     steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
         architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: Setup X-Server
-      run: |
-        sudo apt-get update && \
-        touch ~/.Xauthority && \
-        chmod ugo+r ~/.Xauthority && \
-        apt-get install xorg && \
-        apt-get install openbox && \
-        apt-get install xterm && \
-        xinit
     - name: convert notebooks
       env:
         BRANCH: ${{ github.head_ref }}
