@@ -154,12 +154,12 @@ jobs:
     steps:
     - name: Setup X-Server
       run: |
-        sudo apt-get update && \
-        touch ~/.Xauthority && \
-        chmod ugo+r ~/.Xauthority && \
-        apt-get install xorg && \
-        apt-get install openbox && \
-        apt-get install xterm && \
+        sudo apt-get update &&
+        touch ~/.Xauthority &&
+        chmod ugo+r ~/.Xauthority &&
+        apt-get install xorg &&
+        apt-get install openbox &&
+        apt-get install xterm &&
     - name: Checkout Repo
       uses: actions/checkout@v2
     - name: Setup Python
