@@ -123,7 +123,8 @@ class Control:
         Verbose level 2 gives final time and also a progress bar.
         Verbose level 3 gives final time, a progress bar, and time per step.
     print_full_settings: bool, optional
-        Whether or not to print all settings/attributes/parameters passed to this object
+        Whether to print all settings/attributes/parameters passed to this object,
+        defaults to False.
     **settings: dict, optional
         Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
         minimiser is used.
