@@ -163,20 +163,20 @@ jobs:
 
       - name: Setup X-Server
         run: |
-          sudo apt-get update && 
-          touch ~/.Xauthority && 
-          chmod ugo+r ~/.Xauthority && 
-          apt-get install xorg && 
-          apt-get install openbox && 
-          apt-get install xterm 
+          sudo apt-get update
+          sudo touch ~/.Xauthority
+          sudo chmod ugo+r ~/.Xauthority
+          sudo apt-get install xorg
+          sudo apt-get install openbox 
+          sudo apt-get install xterm 
 
       - name: Run X-server & Convert Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          sudo xinit && 
-          sudo docker pull mdmc/mdmc:ci-$BRANCH && 
-          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC && 
-          docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb && 
-          docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb && 
+          sudo xinit && \
+          sudo docker pull mdmc/mdmc:ci-$BRANCH
+          sudo docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
+          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb
+          sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
