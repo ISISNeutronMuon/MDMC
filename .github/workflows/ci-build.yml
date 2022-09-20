@@ -154,7 +154,6 @@ jobs:
     strategy:
       matrix:
         environment: [ "X-server", "Test" ]
-
     if: matrix.environment == "X-server"
       - name: Setup X-Server
         run: |
