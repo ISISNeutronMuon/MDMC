@@ -151,31 +151,27 @@ jobs:
     name: Notebooks
     runs-on: ubuntu-20.04
     needs: build # so it can use new docker image if docker image has changed
-    strategy:
-      matrix:
-        environment: [ "X-server", "Test" ]
-    if: matrix.environment == "X-server"
-      - name: Setup X-Server
-        run: |
-          sudo apt-get update && \
-          touch ~/.Xauthority && \
-          chmod ugo+r ~/.Xauthority && \
-          apt-get install xorg && \
-          apt-get install openbox && \
-          apt-get install xterm && \
-          xinit
     steps:
-    - name: Checkout repo
+    - name: Setup X-Server
+      run: |
+        sudo apt-get update && \
+        touch ~/.Xauthority && \
+        chmod ugo+r ~/.Xauthority && \
+        apt-get install xorg && \
+        apt-get install openbox && \
+        apt-get install xterm && \
+    - name: Checkout Repo
       uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.8'
         architecture: x64
-    - name: convert notebooks
+    - name: Run X-server & Convert Notebooks
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
+        sudo xinit && \
         sudo docker pull mdmc/mdmc:ci-$BRANCH && \
         docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC && \
         docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb && \
