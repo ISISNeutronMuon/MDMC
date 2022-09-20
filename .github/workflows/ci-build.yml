@@ -168,7 +168,7 @@ jobs:
           chmod ugo+r ~/.Xauthority && 
           apt-get install xorg && 
           apt-get install openbox && 
-          apt-get install xterm && 
+          apt-get install xterm 
 
       - name: Run X-server & Convert Notebooks
         env:
