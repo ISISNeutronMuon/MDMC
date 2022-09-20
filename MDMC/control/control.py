@@ -327,7 +327,7 @@ class Control:
 
         # Printing settings
         if print_all_settings:
-            for setting in settings.items():
+            for setting in settings.keys():
                 index_array.append(f'  {setting}')
                 data_array.append([settings[setting]])
 
