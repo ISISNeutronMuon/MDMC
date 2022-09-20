@@ -167,6 +167,69 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
+@pytest.mark.parametrize('print_value, expected_stdout',
+                         [[False,
+                           ('Control created with:\n'
+                            '  Minimizer                            MMC\n'
+                            '  FoM type               ChiSquaredNoError\n'
+                            '  Number of observables                  1\n'
+                            '  Number of parameters                   0\n'
+                            '\n')],
+
+                          [True,
+                           ('Control created with:\n'
+                            '  Minimizer                                                                                            MMC\n'
+                            '  FoM type                                                                               ChiSquaredNoError\n'
+                            '  Number of observables                                                                                  1\n'
+                            '  Number of parameters                                                                                   0\n'
+                            '  results_filename                                                        results_2022-09-20--13-29-45.csv\n'
+                            '  MD_steps                                                                                              38\n'
+                            '  equilibration_steps                                                                                    0\n'
+                            '  reset_config                                                                                       False\n'
+                            '  verbose                                                                                                0\n'
+                            '  type                                                                                                 SQw\n'
+                            '  reader                                                                                           xml_SQw\n'
+                            '  file_name              /home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml\n'
+                            '  weight                                                                                               1.0\n'
+                            '  resolution                                                                              {\'gaussian\': 84}\n'
+                            '  error                                                                                               none\n'
+                            '\n')]
+                          ])
+def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
+                             capsys, exp_datasets, simulation):
+    """ A test to make sure that the stdout when creating a control object
+    is as expected, both when a full output is requested, and when not .
+    """
+
+    # monkeypatch Control methods
+    monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
+    monkeypatch.setattr(control.Control, "_update_engine_parameters",
+                        mock_update_engine_parameters)
+
+    # Set history and parameters of MockMinimizer, as these are both involved in
+    # output
+    history = {'float': [1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
+               'str': ['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
+               'int': [10, 100, 1000, 10000, 0.00001] * 3,
+               'really_long_title': [1, 1, 1, 1, 1] * 3}
+    minim = MockMinimizer(history)
+    minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
+                                       MockParameter('sigma', 0.339834),
+                                       MockParameter('A', 1),
+                                       MockParameter('B', 34743.233E6)])
+
+    datasets = exp_datasets(file_name="Well_s_q_omega_Ar_data.xml")
+    dt = DATASET_INFO['use_FFT']["Well_s_q_omega_Ar_data.xml"]['dt']
+    control.Control(simulation(time_step=dt),
+                    datasets, [],
+                    FoM_options={'error': "none"},
+                    reset_config=False,
+                    results_filename="results_2022-09-20--13-29-45.csv",
+                    print_all_settings=print_value)
+
+    stdout = capsys.readouterr().out
+    assert stdout == expected_stdout
+
 @pytest.mark.parametrize('error', 
                          [['exp',
                            ('Control created with:\n'
