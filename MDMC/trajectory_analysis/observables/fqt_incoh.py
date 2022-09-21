@@ -18,17 +18,15 @@ class FQtIncoherent(AbstractFQt):
     function for the incoherent dynamic structure factor
     """
 
-    def _set_weights(self):
-        """
-        Calculate the neutron weighting for incoherent scattering
-        """
+    def _set_weights(self) -> None:
+        """Calculate the neutron weighting for incoherent scattering"""
 
         element_weights = {element: B_INCOH[element]**2 for element
                            in self._trajectory.element_set}
         self.weights = [element_weights[atom.element] for atom
                         in self._trajectory.atoms]
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors):
+    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)

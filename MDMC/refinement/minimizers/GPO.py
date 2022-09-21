@@ -10,6 +10,7 @@ from MDMC.refinement.minimizers.GPR import GPR
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
 
+
 class GPO(Minimizer):
     """
     ``Minimizer`` which uses Gaussian process regression to find the global minimum
@@ -43,7 +44,6 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-
     def __init__(self, parameters: 'Parameters', **settings: dict):
         super().__init__(parameters)
 
@@ -55,7 +55,7 @@ class GPO(Minimizer):
         self.parameter_bounds = [tuple(GPR.create_bounds(parameter)) \
                                 for parameter in parameters.values()]
 
-        self.parameter_names =  [str(name) for name in parameters.keys()]
+        self.parameter_names = [str(name) for name in parameters.keys()]
 
         np.random.seed(7) # This should mean results are reproducible in tests
 
@@ -69,10 +69,17 @@ class GPO(Minimizer):
 
 
     @property
-    def history_columns(self) -> list[str]:
+    def history_columns(self) -> 'list[str]':
+        """
+        Returns column labels of the history
+
+        Returns
+        -------
+        list[str]
+            A ``list`` of ``str`` containing all the column labels in the history
+        """
 
         return ['FoM', 'Change state', 'Pred coords', 'Pred FoM'] + list(self.parameters)
-
 
     def has_converged(self) -> bool:
         """
@@ -86,8 +93,7 @@ class GPO(Minimizer):
         """
         return len(self.history) >= self.n_points
 
-
-    def set_parameter_values(self, parameter_names: list[str], values: list[float]) -> None:
+    def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
         Assigns a new value to each parameter (specified by the parameter.name)
 
@@ -102,7 +108,6 @@ class GPO(Minimizer):
         for name, value in zip(parameter_names, values):
             self.parameters[name].value = value
 
-
     def change_parameters(self) -> None:
         """
         Selects a new value for each parameter from the array of parameter values to interrogate
@@ -112,7 +117,6 @@ class GPO(Minimizer):
         if len(self._history) <= self.n_points:
             coordinates = self.optimizer.ask()
             self.set_parameter_values(self.parameter_names, coordinates)
-
 
     def reset_parameters(self) -> None:
         """Not necessary for this minimizer"""
@@ -146,26 +150,54 @@ class GPO(Minimizer):
         if not self.has_converged():
             self.change_parameters()
 
-
-    def present_result(self) -> str:
+    def extract_result(self) -> list:
         """
-        Returns the coordinates of the minima and the predicted FoM.
+        Extracts the measured & predicted FoM and point(s)
 
         Returns
         -------
-        output_string : str
-            A string presenting the parameters for which the calculated and predicted
-            figures of merit are lowest. To be printed by Control to the user.
+        list_of_outputs: list
+            A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
+            Minimum predicted FoM
         """
         FoMs = [FoM[:][0] for FoM in self._history]
-        min_FOM_measured = np.min(FoMs)
-        min_parameters_measured = self._history[np.where(FoMs==min_FOM_measured)[0][0]][3]
-        # the [0][0][3] is just to get the parameters from the _history
+        min_FoM_measured = np.min(FoMs)
+        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][4:]
+        # the [0][0][4:] is just to get the parameters from the _history
 
-        output_string = (f'Best point measured was \n'
-            f'{min_parameters_measured} for a minimum FoM of '
-            f'{min_FOM_measured}. \n\n '
-            f'Predicted minimum coordinate is {self.predicted_min_pos} for a minimum '
-            f'FoM of {self.predicted_FoM}. \n ')
+        return [
+            tuple(min_parameters_measured),
+            float(min_FoM_measured),
+            tuple(self.predicted_min_pos),
+            self.predicted_FoM
+        ]
+
+    def format_result_string(self, minimizer_output: list) -> str:
+        """
+        Parameters
+        ----------
+        minimizer_output: list
+            A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
+            Minimum predicted FoM
+
+        Returns
+        -------
+        output_string: str
+            An output string, formatted with the appropriate information about measured
+            and predicted points
+        """
+
+        if self.has_converged():
+            converged_message = '\nThe refinement has finished.'
+        else:
+            converged_message = "\nThe refinement has not finished."
+
+        output_string = (f'{converged_message} \n \n'
+                         f'Minimum measured point is: \n'
+                         f'{minimizer_output[0]} with an '
+                         f'FoM of {minimizer_output[1]}. \n \n'
+                         f'Minimum point predicted is: \n'
+                         f'{minimizer_output[2]} for an '
+                         f'FoM of {minimizer_output[3]}.\n \n ')
 
         return output_string

@@ -2,6 +2,7 @@
 parameters"""
 
 from abc import ABC, abstractmethod
+
 from mpi4py import MPI
 import pandas as pd
 
@@ -43,7 +44,7 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, parameters):
+    def __init__(self, parameters: Parameters):
 
         # Use all available processors, as provided by MPI.COMM_WORLD
         self.comm = MPI.COMM_WORLD
@@ -79,7 +80,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @property
-    def history(self):
+    def history(self) -> pd.DataFrame:
         """
         Get the history of the minimizer, with a single entry for each step of
         the minimizer
@@ -96,7 +97,7 @@ class Minimizer(ABC):
 
     @property
     @abstractmethod
-    def history_columns(self) -> list[str]:
+    def history_columns(self) -> 'list[str]':
         """
         Get the column titles for the minimizer history
 
@@ -134,7 +135,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def _check_parameters(parameters: Parameters):
+    def _check_parameters(parameters: Parameters) -> None:
         """
         Checks the validity of the parameters on input
 
@@ -169,6 +170,20 @@ class Minimizer(ABC):
 
         self.history.to_csv(filename)
 
+    def present_result(self) -> str:
+        """
+        Extracts and returns the most appropriate output for the
+        minimiser class, in an appropriate format
+        e.g. minimum FOM and parameter values
+
+        Returns
+        -------
+        str
+            A formatted string representing the output of the minimizer
+        """
+        extracted_results = self.extract_result()
+        return self.format_result_string(extracted_results)
+
     @abstractmethod
     def reset_parameters(self) -> None:
         """Resets the parameters to a previous state"""
@@ -176,10 +191,32 @@ class Minimizer(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def present_result(self):
+    def extract_result(self) -> 'list[str]':
         """
-        Returns the most appropriate output for the minimiser class
-        e.g. minimum FOM and parameter values
-        """
+        Obtains the result of the minimizer to be presented/formatted
 
+        Returns
+        -------
+        list[str]
+            A list of strings representing the data points
+            output by the minimizer to be formatted into a string
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def format_result_string(self, minimizer_output: list) -> str:
+        """
+        Formats a string output for the results of the minimiser class.
+
+        Parameters
+        ----------
+        minimizer_output: list
+            A list of printable values representing the data points
+            output by the minimizer to be formatted into a string
+
+        Returns
+        -------
+        str
+            A string encompassing the output of the minimizer.
+        """
         raise NotImplementedError

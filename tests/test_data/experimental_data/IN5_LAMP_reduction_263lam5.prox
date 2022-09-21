@@ -1,0 +1,50 @@
+;Enter lines of IDL commands below. THE CALL will be @t263lam5
+;Use uniq line loops (ie FOR i=0,n DO BEGIN ... & ... & ENDFOR)
+;Prefer XBU input commands for more programming batch macros
+;Use variables A-Z ONLY (+ w1,x1,y1,z1,n1,e1,p1,pv1,w_tit(1),x_tit(1)...)
+
+RDSET, inst = 'IN5';
+RDSET, base = 'Current Path';
+
+; this is the best guess for how the reduced water data in 263K05Awat_LAMP was originally produced
+w1 = rdrun('run_68568_68571_ToF.hdf');  water 263 K 5 A
+w10 = rdrun('run_68550_68553_ToF.hdf');  empty capillaries 5 A
+w2 = rdrun('run_68536_68537_ToF.hdf');  Vanadium 5 A
+w20 = rdrun('run_68546_68548_ToF.hdf');  empty cryostat 5 A
+
+s = '1-39, 395'; remove spectra for these fi channels
+w1 = in5_remove_spectra(w1,BadSpectra=s,/verbose);
+w10 = in5_remove_spectra(w10,BadSpectra=s,/verbose);
+w2 = in5_remove_spectra(w2,BadSpectra=s,/verbose);
+w20 = in5_remove_spectra(w20,BadSpectra=s,/verbose);
+
+t1 = 0.97;  sample transmission
+w11 = w1 - t1*w10;
+e11 = sqrt(e1^2 + (t1*e10)^2);
+
+t2 = 0.65;  Vanadium transmission
+w21 = w2 - t2*w20;
+e21 = sqrt(e2^2 + (t2*e20)^2);
+
+w12 = in5_vnorm(w11,w21,/verbose);
+
+w13 = in5_corrtof(w12,/deteff,/psd,/verbose);
+
+w23 = in5_corrtof(w21,/deteff,/psd,/verbose);
+
+w14 = in5_t2e(w13,/verbose);
+
+w24 = in5_t2e(w23,/verbose);
+
+w15 = in5_sqw_rebin(w14,dq=0.05,Emin=-2.0,/verbose);
+w15 = transpose(w15);
+
+w25 = in5_sqw_rebin(w24,dq=0.05,Emin=-2.0,/verbose);
+w25 = transpose(w25);
+
+; cutting out the unphysically low/high Q-values done retrospectively was achieved via these two lines
+w16 = w15(*, 3-39)
+w26 = w25(*, 3-39)
+
+write_lamp, 'H2O_263K05Awat', w=16, format='ascii'
+write_lamp, 'H2O_262p7K05Avan', w=26, format='ascii'

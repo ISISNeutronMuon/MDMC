@@ -51,9 +51,9 @@ jobs:
         sudo apt-get install -y libopenmpi-dev openmpi-bin
     - name: pip install
       run: |
-        sudo pip3 install --upgrade pip
-        sudo pip3 install -r requirements.txt
-        sudo pip3 install -r .dev_requirements.txt
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install -r .dev_requirements.txt
 
     - name: Run tests
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
@@ -63,13 +63,13 @@ jobs:
       run: pip3 uninstall -y MDMC
 
   windows:
-    name: Python 3.8.0 on Windows
+    name: Python 3.9.0 on Windows (installation check only)
     runs-on: windows-latest
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.9'
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2

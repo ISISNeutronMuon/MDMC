@@ -1,7 +1,7 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
 from itertools import product
-from typing import Dict
+from typing import TYPE_CHECKING
 
 import numpy as np
 from mpi4py import MPI
@@ -17,6 +17,10 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.trajectory import Trajectory
+
+if TYPE_CHECKING:
+    from builtins import function
+    from typing import Optional
 
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
@@ -46,9 +50,8 @@ class AbstractFQt(SQwMixins, Observable):
         self.Q_values = None
         self.weights = None
 
-
     @property
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         Get or set the independent variables: these are
         the frequency Q (in ``Ang^-1``) and time t (in ``fs``)
@@ -58,18 +61,16 @@ class AbstractFQt(SQwMixins, Observable):
         dict
             The independent variables
         """
-
         return self._independent_variables
 
     @independent_variables.setter
-    def independent_variables(self, value):
-
+    def independent_variables(self, value: dict) -> None:
         self._independent_variables = value
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
-        Get or set the dependent variables: this is
+        Get the dependent variables: this is
         FQt, the intermediate scattering function (in ``arb``)
 
         Returns
@@ -81,7 +82,7 @@ class AbstractFQt(SQwMixins, Observable):
         return self._dependent_variables
 
     @property
-    def errors(self):
+    def errors(self) -> dict:
         """
         Get or set the errors on the dependent variables, the intermediate
         scattering function (in ``arb``)
@@ -95,19 +96,19 @@ class AbstractFQt(SQwMixins, Observable):
         return self._errors
 
     @errors.setter
-    def errors(self, value):
+    def errors(self, value: dict) -> None:
 
         self._errors = value
 
     @property
-    def t(self):
+    def t(self) -> 'np.array':
         """
         Get or set the times of the intermediate scattering function in units of
         ``fs``
 
         Returns
         -------
-        array
+        numpy.array
             1D array of times in ``fs``
         """
 
@@ -115,15 +116,15 @@ class AbstractFQt(SQwMixins, Observable):
 
     @t.setter
     @unit_decorator(unit=units.TIME)
-    def t(self, value):
+    def t(self, value: 'np.array') -> None:
 
         self.independent_variables['t'] = value
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def FQt(self):
+    def FQt(self) -> 'Optional[list[np.ndarray]]':
         """
-        Get the dynamic structure factor, F(Q, t), in arb
+        Get or set the dynamic structure factor, F(Q, t), in arb
 
         Returns
         -------
@@ -137,11 +138,11 @@ class AbstractFQt(SQwMixins, Observable):
             return None
 
     @FQt.setter
-    def FQt(self, value):
+    def FQt(self, value: 'list[np.ndarray]') -> None:
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings):
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings: dict) -> None:
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -241,7 +242,7 @@ class AbstractFQt(SQwMixins, Observable):
         Q_vectors = comm.scatter(Q_vectors, root=0)
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
-                        in Q_vectors])
+                              in Q_vectors])
 
         # Gather the calculated FQt's together on every processor. This ensures
         # that all other calculations can be performed on every processor, so
@@ -257,7 +258,7 @@ class AbstractFQt(SQwMixins, Observable):
         # with NaN's
         self.FQt = FQt_array[:shape[0] - axis_0]
 
-    def _calculate_Q_vectors(self, Q_values):
+    def _calculate_Q_vectors(self, Q_values: list) -> 'np.ndarray':
         """
         For each value of Q in ``Q_values`` calculates a number of Q vectors
         (points in reciprocal space) that lie close to that Q value.
@@ -303,7 +304,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         return np.array(Q_vectors)
 
-    def _calculate_vectors_single_Q(self, Q_min, Q_max):
+    def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> 'np.ndarray':
         """
         Calculates a number of Q vectors that have a magnitude between
         ``Q_min`` and ``Q_max``.
@@ -324,7 +325,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         # define a cube in reciprocal space
         x_max, y_max, z_max = (int(Q_max / np.linalg.norm(r_b)) for r_b
-                            in self.reciprocal_basis)
+                               in self.reciprocal_basis)
 
         # get the point group of the universe; we can use Wyckoff symmetries
         # to generate vectors more quickly
@@ -345,8 +346,8 @@ class AbstractFQt(SQwMixins, Observable):
         # the 'if' part of the generator comprehension ensures that we aren't generating
         # large numbers of duplicate vectors from multiple vectors within the same symmetry group
         vectors = ((x[0] + x[1] + x[2]) for x in product(vector_x, vector_y, vector_z)
-                    if not any(v in Q_vectors for v in
-                               wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
+                   if not any(v in Q_vectors for v in
+                              wyckoff_symmetries((tuple(x[0] + x[1] + x[2])), point_group)))
 
         # get all vectors that fit our requirements
         for vector in vectors:
@@ -358,9 +359,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         return np.array(Q_vectors)
 
-
     @abstractmethod
-    def _calculate_FQt_single_Q(self, single_Q_vectors):
+    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
         # ignore line too long linting as it is necessary for LaTeX formatting
         # pylint: disable=line-too-long
         r"""
@@ -437,14 +437,14 @@ class AbstractFQt(SQwMixins, Observable):
         raise NotImplementedError
 
     @abstractmethod
-    def _set_weights(self):
+    def _set_weights(self) -> None:
         """
         Calculate the neutron weighting
         """
 
         raise NotImplementedError
 
-    def calculate_SQw(self, energy, resolution: Resolution = None):
+    def calculate_SQw(self, energy: 'list[float]', resolution: Resolution = None) -> 'np.ndarray':
         """
         Calculates S(Q, w) from F(Q, t), accounting for instrument resolution.
 
@@ -511,7 +511,7 @@ class AbstractFQt(SQwMixins, Observable):
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
-    def apply_resolution(self, resolution: Resolution):
+    def apply_resolution(self, resolution: Resolution) -> FQt:
         """
         Apply instrument resolution to an FQt object.
 
@@ -530,7 +530,7 @@ class AbstractFQt(SQwMixins, Observable):
         return self.FQt
 
     @property
-    def dependent_variables_structure(self) -> Dict[str, list]:
+    def dependent_variables_structure(self) -> dict[str, list]:
         """
         The order in which the 'FQt' dependent variable is indexed in terms of 'Q' and 't'.
         Explicitly: we have that self.FQt[Q_index, t_index] is the data point
@@ -543,13 +543,13 @@ class AbstractFQt(SQwMixins, Observable):
 
         Return
         ------
-        Dict[str, list]
+        dict[str, list]
             The shape of the SQw dependent variable
         """
         return {'FQt': ['Q', 't']}
 
     @property
-    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
         Captures the current limitations on the time 't' and reciprocal
         lattice points 'Q' within the intermediate scattering function ``Observables``.
@@ -559,7 +559,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         Return
         ------
-        Dict[str, Dict[str, bool]]
+        dict[str, dict[str, bool]]
             Dictionary of uniformity restrictions for 't' and 'Q'.
         """
 
@@ -578,7 +578,7 @@ class FQt(AbstractFQt):
     function for the total dynamic structure factor
     """
 
-    def _set_weights(self):
+    def _set_weights(self) -> None:
         """
         Calculate the neutron weighting for coherent and incoherent scattering
         """
@@ -587,7 +587,7 @@ class FQt(AbstractFQt):
                                   'incoh': B_INCOH[element]}
                         for element in self._trajectory.element_set}
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors):
+    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
@@ -652,7 +652,7 @@ class FQt(AbstractFQt):
 
 
 @jit('float64[:,:], float64[:,:]', nopython=True)
-def calculate_rho(positions, Q_vector):
+def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> list:
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors
@@ -670,7 +670,7 @@ def calculate_rho(positions, Q_vector):
 
     Returns
     -------
-    numpy.ndarray
+    list
         The reciprocal space number density
     """
 
@@ -678,7 +678,7 @@ def calculate_rho(positions, Q_vector):
             in range(len(positions))]
 
 
-def get_point_group(dimensions: np.array) -> str:
+def get_point_group(dimensions: 'np.array') -> str:
     """
     Gets the Hermann-Mauguin point group for the universe.
     Currently, MDMC can only create universes with mutually orthogonal
@@ -703,27 +703,27 @@ def get_point_group(dimensions: np.array) -> str:
     # if all sides equal, all are true; if two sides equal, one is true;
     # if no sides equal, zero are true;
 
-    equal_sides = sum([dimensions[0]==dimensions[1],
-                       dimensions[0]==dimensions[2],
-                       dimensions[1]==dimensions[2]])
+    equal_sides = sum([dimensions[0] == dimensions[1],
+                       dimensions[0] == dimensions[2],
+                       dimensions[1] == dimensions[2]])
 
     if equal_sides == 3:  # cubic
         return 'm-3m'
     if equal_sides == 1:  # tetragonal
         # False == 0 in duck typing, so this only keeps
         # the side equal to True
-        unique_side = ((dimensions[0]==dimensions[1]) * ' (z)'
-                       + (dimensions[0]==dimensions[2]) * ' (y)'
-                       + (dimensions[1]==dimensions[2]) * ' (x)')
+        unique_side = ((dimensions[0] == dimensions[1]) * ' (z)'
+                       + (dimensions[0] == dimensions[2]) * ' (y)'
+                       + (dimensions[1] == dimensions[2]) * ' (x)')
         return '4/mmm' + unique_side
     return 'mmm'  # orthorhombic
 
 
-def wyckoff_symmetries(point: tuple, point_group: str):
+def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
     """
     Returns the Wyckoff symmetries for a point based on its point group.
 
-    Parameters:
+    Parameters
     -----------
     point: tuple
         A tuple of length 3 which corresponds to the coordinates (x, y, z) of a point.
@@ -733,42 +733,47 @@ def wyckoff_symmetries(point: tuple, point_group: str):
             'm-3m' (cubic)
             '4/mmm' (tetragonal)
             'mmm' (orthorhombic)
+
+    Returns
+    -------
+    set[tuple]
+        A calculated set of the symmetries for the point
     """
 
-    def cubic(point: tuple):
+    def cubic(point: tuple) -> 'set[tuple]':
         """The symmetries of a point in a cubic group."""
 
         x, y, z = point
         # it's ugly, but an order of magnitude faster if we just list all the
         # symmetries out, calculate and return them
-        return ({(x,y,z), (-x,-y,z), (-x,y,-z), (x,-y,-z), (z,x,y), (z,-x,-y),
-               (-z,-x,y), (-z,x,-y), (y,z,x), (-y,z,-x), (y,-z,-x), (-y,-z,x),
-               (y,x,-z), (-y,-x,-z), (y,-x,z), (-y,x,z), (x,z,-y), (-x,z,y),
-               (-x,-z,-y), (x,-z,y), (z,y,-x), (z,-y,x), (-z,y,x), (-z,-y,-x),
-               (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z), (-z,-x,-y), (-z,x,y),
-               (z,x,-y), (z,-x,y), (-y,-z,-x), (y,-z,x), (-y,z,x), (y,z,-x),
-               (-y,-x,z), (y,x,z), (-y,x,-z), (y,-x,-z), (-x,-z,y), (x,-z,-y),
-               (x,z,y), (-x,z,-y), (-z,-y,x), (-z,y,-x), (z,-y,-x), (z,y,x)})
+        return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z), (z, x, y), (z, -x, -y),
+                 (-z, -x, y), (-z, x, -y), (y, z, x), (-y, z, -x), (y, -z, -x), (-y, -z, x),
+                 (y, x, -z), (-y, -x, -z), (y, -x, z), (-y, x, z), (x, z, -y), (-x, z, y),
+                 (-x, -z, -y), (x, -z, y), (z, y, -x), (z, -y, x), (-z, y, x), (-z, -y, -x),
+                 (-x, -y, -z), (x, y, -z), (x, -y, z), (-x, y, z), (-z, -x, -y), (-z, x, y),
+                 (z, x, -y), (z, -x, y), (-y, -z, -x), (y, -z, x), (-y, z, x), (y, z, -x),
+                 (-y, -x, z), (y, x, z), (-y, x, -z), (y, -x, -z), (-x, -z, y), (x, -z, -y),
+                 (x, z, y), (-x, z, -y), (-z, -y, x), (-z, y, -x), (z, -y, -x), (z, y, x)})
 
-    def tetragonal(unique_side: str):
+    def tetragonal(unique_side: str) -> 'function':
         """The symmetries of a point in a tetragonal group."""
 
         # slightly more complicated as we don't know what axis is unpermutable
-        def tetragonal_z(point: tuple):
+        def tetragonal_z(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable z-axis"""
             x, y, z = point
-            return ({(x,y,z), (-x,-y,z), (-y,x,z), (y,-x,z), (-x,y,-z), (x,-y,-z),
-                    (y,x,-z), (-y,-x,-z), (-x,-y,-z), (x,y,-z), (y,-x,-z), (-y,x,-z),
-                    (x,-y,z), (-x,y,z), (-y,-x,z), (y,x,z)})
+            return ({(x, y, z), (-x, -y, z), (-y, x, z), (y, -x, z), (-x, y, -z), (x, -y, -z),
+                    (y, x, -z), (-y, -x, -z), (-x, -y, -z), (x, y, -z), (y, -x, -z), (-y, x, -z),
+                    (x, -y, z), (-x, y, z), (-y, -x, z), (y, x, z)})
 
-        def tetragonal_y(point: tuple):
+        def tetragonal_y(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable y-axis"""
             x, y, z = point
             return ({(x, y, z), (x, -y, z), (x, y, -z), (x, -y, -z), (-x, y, z), (-x, -y, z),
                     (-x, y, -z), (-x, -y, -z), (z, y, x), (z, -y, x), (z, y, -x), (z, -y, -x),
                     (-z, y, x), (-z, -y, x), (-z, y, -x), (-z, -y, -x)})
 
-        def tetragonal_x(point: tuple):
+        def tetragonal_x(point: tuple) -> 'set[tuple]':
             """Tetragonal symmetries for unpermutable x-axis"""
             x, y, z = point
             return ({(x, y, z), (-x, y, z), (x, y, -z), (-x, y, -z), (x, -y, z), (-x, -y, z),
@@ -782,12 +787,12 @@ def wyckoff_symmetries(point: tuple, point_group: str):
 
         return side[unique_side]
 
-    def orthorhombic(point: tuple):
+    def orthorhombic(point: tuple) -> 'set[tuple]':
         """The symmetries of a point in an orthorhombic group."""
 
         x, y, z = point
-        return ({(x,y,z), (-x,-y,z), (-x,y,-z), (x,-y,-z),
-                (-x,-y,-z), (x,y,-z), (x,-y,z), (-x,y,z)})
+        return ({(x, y, z), (-x, -y, z), (-x, y, -z), (x, -y, -z),
+                (-x, -y, -z), (x, y, -z), (x, -y, z), (-x, y, z)})
 
     groups = {'m-3m': cubic,
               '4/mmm (x)': tetragonal('x'),

@@ -1,4 +1,3 @@
-
 """Factory class for generating minimizers"""
 
 from glob import glob
@@ -18,7 +17,7 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name, parameter,**settings: dict):
+    def create_minimizer(module_name: str, parameter: 'list[str]', **settings: dict) -> Minimizer:
         """
         Checks that the module is a supported minimzer and instantiates it as a minimizer.
 
@@ -49,7 +48,7 @@ class MinimizerFactory:
         return classes[0][1](parameter, **settings)
 
     @staticmethod
-    def get_minimizer_names():
+    def get_minimizer_names() -> 'list[str]':
         """
         Get the names of available minimizer
 
@@ -58,7 +57,7 @@ class MinimizerFactory:
 
         Returns
         -------
-        list
+        list[str]
             A `list` of `str` with the names of the available ``Minimizer``
             objects
         """
