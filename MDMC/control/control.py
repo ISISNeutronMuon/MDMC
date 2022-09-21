@@ -445,7 +445,7 @@ class Control:
 
     @staticmethod
     def _expected_minimum_random_sampling(res: OptimizeResult,
-                    n_random_starts: int=100000) -> tuple[list, float, list, list[list]]:
+                    n_random_starts: int=100000) -> 'tuple[list, float, list, list[list]]':
         """
         This is almost verbatim a copy of code from scikit-optimize but with the samples as
         an additional output:
@@ -483,8 +483,8 @@ class Control:
         return min_x, y_random[index_best_objective], y_random, random_samples
 
     @staticmethod
-    def _remove_points(chi_squared: list[float], coords: list[list],
-                       MC_norm: float=20.0) -> tuple[list, list]:
+    def _remove_points(chi_squared: 'list[float]', coords: 'list[list]',
+                       MC_norm: float=20.0) -> 'tuple[list, list]':
         """
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
         where the likelihood of keeping a point is dependant on the exponent of the difference
