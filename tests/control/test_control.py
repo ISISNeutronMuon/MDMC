@@ -2,6 +2,7 @@
 """
 
 import numpy as np
+import pandas
 import pandas as pd
 import pytest
 import re
@@ -14,7 +15,6 @@ from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
-
 
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
@@ -29,7 +29,6 @@ DATASET_INFO = {
 
 
 class MockSimulation(Simulation):
-
     """
     Mock the ``Simulation`` so that we do not setup the MD engine so we can run
     the tests without having an MD engine installed.
@@ -46,7 +45,6 @@ class MockSimulation(Simulation):
 class MockParameter:
 
     def __init__(self, name, value):
-
         self.name = name
         self.value = value
 
@@ -61,38 +59,32 @@ class MockParameters(dict):
 class MockMinimizer:
 
     def __init__(self, history):
-
         df = pd.DataFrame(history)
         self._history = (row for _, row in df.iterrows())
         self.history = pd.DataFrame(columns=df.columns)
 
     def has_converged(self, conv_tol=None, min_steps=None):
-
         return False
 
     def step(self, FoM):
-
         self.history = self.history.append(next(self._history),
                                            ignore_index=True)
 
     def write_history(self, fn):
-
         pass
 
     def reset_parameters(self):
-
         pass
 
     def present_result(self):
-
         return ""
 
-def mock_generate_FoM(self):
 
+def mock_generate_FoM(self):
     return 1000
 
-def mock_update_engine_parameters(self):
 
+def mock_update_engine_parameters(self):
     pass
 
 
@@ -110,7 +102,6 @@ def simulation() -> callable:
 
     def _simulation(traj_step: int = 1,
                     time_step: float = 1.) -> MockSimulation:
-
         return MockSimulation(uni, traj_step=traj_step, time_step=time_step)
 
     return _simulation
@@ -147,7 +138,8 @@ def exp_datasets() -> callable:
                 # continue
                 continue
 
-            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1., 'resolution': {'gaussian': 84}}
+            dataset = {'type': 'SQw', 'reader': k, 'file_name': v, 'weight': 1.,
+                       'resolution': {'gaussian': 84}}
             if rescale_factor:
                 dataset['rescale_factor'] = rescale_factor
             if auto_scale is not None:
@@ -169,32 +161,86 @@ def exp_datasets() -> callable:
 
 @pytest.mark.parametrize('print_value, expected_stdout',
                          [[False,
-                           ('Control created with:\n'
-                            '  Minimizer                            MMC\n'
-                            '  FoM type               ChiSquaredNoError\n'
-                            '  Number of observables                  1\n'
-                            '  Number of parameters                   0\n'
-                            '\n')],
+                           ('Control created with:\n' +
+                                 pandas.DataFrame(
+                                     index=[
+                                         "- Attributes",
+                                         "  Minimizer",
+                                         "  FoM type",
+                                         "  Number of observables",
+                                         "  Number of parameters"],
+                                     data=[
+                                         "-",
+                                         "MMC",
+                                         "ChiSquaredNoError",
+                                         1,
+                                         0
+                                     ]
+                                 ).to_string(index=True, header=False)+"\n\n"
+                           )],
 
                           [True,
-                           ('Control created with:\n'
-                            '  Minimizer                                                                                            MMC\n'
-                            '  FoM type                                                                               ChiSquaredNoError\n'
-                            '  Number of observables                                                                                  1\n'
-                            '  Number of parameters                                                                                   0\n'
-                            '  results_filename                                                        results_2022-09-20--13-29-45.csv\n'
-                            '  MD_steps                                                                                              38\n'
-                            '  equilibration_steps                                                                                    0\n'
-                            '  reset_config                                                                                       False\n'
-                            '  verbose                                                                                                0\n'
-                            '  type                                                                                                 SQw\n'
-                            '  reader                                                                                           xml_SQw\n'
-                            '  file_name              /home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml\n'
-                            '  weight                                                                                               1.0\n'
-                            '  resolution                                                                              {\'gaussian\': 84}\n'
-                            '  error                                                                                               none\n'
-                            '\n')]
-                          ])
+                           (('Control created with:\n'
+                             '- '
+                             'Attributes                                                                                             '
+                             '-\n'
+                             '  '
+                             'Minimizer                                                                                            '
+                             'MMC\n'
+                             '  FoM '
+                             'type                                                                               '
+                             'ChiSquaredNoError\n'
+                             '  Number of '
+                             'observables                                                                                  '
+                             '1\n'
+                             '  Number of '
+                             'parameters                                                                                   '
+                             '0\n'
+                             '  '
+                             'MD_steps                                                                                              '
+                             '38\n'
+                             '  '
+                             'equilibration_steps                                                                                    '
+                             '0\n'
+                             '  '
+                             'reset_config                                                                                       '
+                             'False\n'
+                             '  '
+                             'verbose                                                                                                '
+                             '0\n'
+                             '- Control '
+                             'Settings                                                                                       '
+                             '-\n'
+                             '  results_filename                                                        '
+                             'results_2022-09-20--13-29-45.csv\n'
+                             '- '
+                             'Parameters                                                                                             '
+                             '-\n'
+                             '- Experimental '
+                             'Datasets                                                                                  '
+                             '-\n'
+                             '  '
+                             'type                                                                                                 '
+                             'SQw\n'
+                             '  '
+                             'reader                                                                                           '
+                             'xml_SQw\n'
+                             '  file_name              '
+                             '/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml\n'
+                             '  '
+                             'weight                                                                                               '
+                             '1.0\n'
+                             '  '
+                             'resolution                                                                              '
+                             "{'gaussian': 84}\n"
+                             '- FoM '
+                             'Options                                                                                            '
+                             '-\n'
+                             '  '
+                             'error                                                                                               '
+                             'none\n'
+                             '\n'))]])
+
 def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
                              capsys, exp_datasets, simulation):
     """ A test to make sure that the stdout when creating a control object
@@ -221,24 +267,28 @@ def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
     datasets = exp_datasets(file_name="Well_s_q_omega_Ar_data.xml")
     dt = DATASET_INFO['use_FFT']["Well_s_q_omega_Ar_data.xml"]['dt']
     control.Control(simulation(time_step=dt),
-                    datasets, [],
+                    datasets,
+                    [],
                     FoM_options={'error': "none"},
                     reset_config=False,
-                    results_filename="results_2022-09-20--13-29-45.csv",
-                    print_all_settings=print_value)
+                    print_all_settings=print_value,
+                    **{"results_filename": "results_2022-09-20--13-29-45.csv"})
 
     stdout = capsys.readouterr().out
     assert stdout == expected_stdout
 
-@pytest.mark.parametrize('error', 
+
+@pytest.mark.parametrize('error',
                          [['exp',
                            ('Control created with:\n'
+                            '- Attributes                              -\n'
                             '  Minimizer                             MMC\n'
                             '  FoM type               ChiSquaredExpError\n'
                             '  Number of observables                   1\n'
                             '  Number of parameters                    0\n')],
-                           ['none',
-                            ('Control created with:\n'
+                          ['none',
+                           ('Control created with:\n'
+                            '- Attributes                             -\n'
                             '  Minimizer                            MMC\n'
                             '  FoM type               ChiSquaredNoError\n'
                             '  Number of observables                  1\n'
@@ -247,7 +297,6 @@ def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                                file_name, error, capsys):
-
     """
     Tests that the stdout from Control.refine is in the expected format. Test
     considers float, str, int all of variable lengths.
@@ -260,10 +309,10 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
-    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
-               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3,
-               'really_long_title':[1, 1, 1, 1, 1] * 3}
+    history = {'float': [1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
+               'str': ['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
+               'int': [10, 100, 1000, 10000, 0.00001] * 3,
+               'really_long_title': [1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
     minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
                                        MockParameter('sigma', 0.339834),
@@ -302,7 +351,6 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                                           monkeypatch, file_name, capsys):
-
     """
     Tests that the stdout from Control.refine is in the expected format. Test
     considers float, str, int all of variable lengths.
@@ -315,10 +363,10 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
-    history = {'float':[1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
-               'str':['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
-               'int':[10, 100, 1000, 10000, 0.00001] * 3,
-               'really_long_title':[1, 1, 1, 1, 1] * 3}
+    history = {'float': [1.657, 2., 3.873859, 1.32423E8, 15.347E6] * 3,
+               'str': ['str1', 'test', 'Accepted', 'Rejected', 'False'] * 3,
+               'int': [10, 100, 1000, 10000, 0.00001] * 3,
+               'really_long_title': [1, 1, 1, 1, 1] * 3}
     minim = MockMinimizer(history)
     minim.parameters = MockParameters([MockParameter('epsilon', 3.134544),
                                        MockParameter('sigma', 0.339834),
@@ -335,6 +383,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     # Capture stdout using pytest fixture
     stdout = capsys.readouterr().out
     assert stdout == ('Control created with:\n'
+                      '- Attributes                              -\n'
                       '  Minimizer                             MMC\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
@@ -435,6 +484,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
     assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
                       '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
+                      '- Attributes                              -\n'
                       '  Minimizer                             MMC\n'
                       '  FoM type               ChiSquaredExpError\n'
                       '  Number of observables                   1\n'
@@ -500,15 +550,16 @@ def mock_nonuniform_SQw() -> SQw:
         A mocked ``SQw`` object.
     """
     observable = SQw()
-    observable._origin='experiment'
+    observable._origin = 'experiment'
     E_array = np.array([0., 0.24, 0.5, 0.75, 1.0])
     Q_array = np.array([1., 2., 2.9, 4.])
-    SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
-    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    SQw_array = np.array([[E + Q for E in E_array] for Q in Q_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array)) + 0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
     observable._dependent_variables = {'SQw': [SQw_array]}
     observable._errors = {'SQw': [SQw_err_array]}
     return observable
+
 
 def mock_uniform_SQw() -> SQw:
     """
@@ -523,12 +574,13 @@ def mock_uniform_SQw() -> SQw:
     observable._origin = 'experiment'
     E_array = np.array([0., 0.25, 0.5, 0.75, 1.0])
     Q_array = np.array([1., 2., 3., 4.])
-    SQw_array = np.array([[E+Q for E in E_array] for Q in Q_array])
-    SQw_err_array = np.zeros(np.shape(SQw_array))+0.01
+    SQw_array = np.array([[E + Q for E in E_array] for Q in Q_array])
+    SQw_err_array = np.zeros(np.shape(SQw_array)) + 0.01
     observable.independent_variables = {'E': E_array, 'Q': Q_array}
     observable._dependent_variables = {'SQw': [SQw_array]}
     observable._errors = {'SQw': [SQw_err_array]}
     return observable
+
 
 def mock_nonuniform_PDF() -> PairDistributionFunction:
     """
@@ -542,9 +594,10 @@ def mock_nonuniform_PDF() -> PairDistributionFunction:
     observable = PairDistributionFunction()
     r_array = np.array([1., 1.9, 3.1, 4.])
     observable.independent_variables = {'r': r_array}
-    observable._dependent_variables = {'PDF': [r_array*2]}
-    observable._errors = {'PDF': [r_array/10]}
+    observable._dependent_variables = {'PDF': [r_array * 2]}
+    observable._errors = {'PDF': [r_array / 10]}
     return observable
+
 
 def mock_uniform_PDF() -> PairDistributionFunction:
     """
@@ -558,17 +611,22 @@ def mock_uniform_PDF() -> PairDistributionFunction:
     observable = PairDistributionFunction()
     r_array = np.array([1., 2., 3., 4.])
     observable.independent_variables = {'r': r_array}
-    observable._dependent_variables = {'PDF': [r_array*2]}
-    observable._errors = {'PDF': [r_array/10]}
+    observable._dependent_variables = {'PDF': [r_array * 2]}
+    observable._errors = {'PDF': [r_array / 10]}
     return observable
 
+
 @pytest.mark.parametrize('mock_observable',
-                         [{'obs': mock_nonuniform_SQw(), 'exp': {'E': {'uniform': False, 'zeroed': True},
-                                                                 'Q': {'uniform': False, 'zeroed': False}}},
-                         {'obs': mock_uniform_SQw(), 'exp': {'E': {'uniform': True, 'zeroed': True},
-                                                             'Q': {'uniform': True, 'zeroed': False}}},
-                          {'obs': mock_nonuniform_PDF(), 'exp': {'r': {'uniform': False, 'zeroed': False}}},
-                          {'obs': mock_uniform_PDF(), 'exp': {'r': {'uniform': True, 'zeroed': False}}}])
+                         [{'obs': mock_nonuniform_SQw(),
+                           'exp': {'E': {'uniform': False, 'zeroed': True},
+                                   'Q': {'uniform': False, 'zeroed': False}}},
+                          {'obs': mock_uniform_SQw(),
+                           'exp': {'E': {'uniform': True, 'zeroed': True},
+                                   'Q': {'uniform': True, 'zeroed': False}}},
+                          {'obs': mock_nonuniform_PDF(),
+                           'exp': {'r': {'uniform': False, 'zeroed': False}}},
+                          {'obs': mock_uniform_PDF(),
+                           'exp': {'r': {'uniform': True, 'zeroed': False}}}])
 def test_control_is_data_uniform(mock_observable):
     """
     Tests that the Control._is_data_uniform method returns the correct boolean for the mocked observables.
@@ -578,6 +636,7 @@ def test_control_is_data_uniform(mock_observable):
     cont = control.Control
     observed = cont._is_data_uniform(mock_observable['obs'])
     assert expected == observed
+
 
 @pytest.mark.parametrize('mock_observable',
                          [{'obs': mock_nonuniform_SQw(), 'exp': mock_uniform_SQw()},
@@ -591,11 +650,14 @@ def test_control_make_data_uniform(mock_observable):
     cont = control.Control.__new__(control.Control)
     observed = cont._make_data_uniform(mock_observable['obs'])
     for var_key in observed.independent_variables:
-        assert np.allclose(expected.independent_variables[var_key], observed.independent_variables[var_key], atol=1e-5)
+        assert np.allclose(expected.independent_variables[var_key],
+                           observed.independent_variables[var_key], atol=1e-5)
     for var_key in observed.dependent_variables:
-        assert np.allclose(expected.dependent_variables[var_key], observed.dependent_variables[var_key], atol=1e-5)
+        assert np.allclose(expected.dependent_variables[var_key],
+                           observed.dependent_variables[var_key], atol=1e-5)
     for var_key in observed.errors:
         assert np.allclose(expected.errors[var_key], observed.errors[var_key], atol=1e-5)
+
 
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
@@ -714,15 +776,15 @@ def test_control_fit_parameters(simulation):
     tied_param = Parameter(2., 'tied')
     tied_param.set_tie(tie_target, '')
     fit_parameters = Parameters([Parameter(0., 'zero'),
-                      Parameter(1., 'fixed', fixed=True),
-                      tied_param,
-                      Parameter(3., 'constraints', constraints=(2.9, 3.1))])
+                                 Parameter(1., 'fixed', fixed=True),
+                                 tied_param,
+                                 Parameter(3., 'constraints', constraints=(2.9, 3.1))])
 
     ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
                            reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
-    assert 'constraints' in list(ctrl.fit_parameters.keys())[0] 
+    assert 'constraints' in list(ctrl.fit_parameters.keys())[0]
 
 
 def test_control_resolution_function(simulation, exp_datasets):
