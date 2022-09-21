@@ -312,6 +312,7 @@ class Control:
 
         # setup the dataframe for stdout
         data_array = [
+            ["-"],
             [minimizer_type],
             [self.FoM_calculator.__class__.__name__],
             [len(self.observable_pairs)],
@@ -319,6 +320,7 @@ class Control:
         ]
 
         index_array = [
+            '- Attributes',
             '  Minimizer',
             '  FoM type',
             '  Number of observables',
@@ -327,25 +329,33 @@ class Control:
 
         # Printing settings
         if print_all_settings:
-            # pylint: disable=consider-using-dict-items
-            for setting in settings:
-                index_array.append(f'  {setting}')
-                data_array.append([settings[setting]])
-
-            for parameter in fit_parameters:
-                index_array.append(f'  {parameter.name}')
-                data_array.append([parameter.value])
-
             for item in ["MD_steps", "equilibration_steps", "reset_config", "verbose"]:
                 index_array.append(f'  {item}')
                 data_array.append([self.__dict__[item]])
 
+            # pylint: disable=consider-using-dict-items
+            index_array.append("- Control Settings")
+            data_array.append("-")
+            for setting in settings:
+                index_array.append(f'  {setting}')
+                data_array.append([settings[setting]])
+
+            index_array.append("- Parameters")
+            data_array.append("-")
+            for parameter in fit_parameters:
+                index_array.append(f'  {parameter.name}')
+                data_array.append([parameter.value])
+
+            index_array.append("- Experimental Datasets")
+            data_array.append("-")
             if exp_datasets is not None:
                 for dataset in exp_datasets:
                     for key in dataset.keys():
                         index_array.append(f'  {key}')
                         data_array.append([dataset[key]])
 
+            index_array.append("- FoM Options")
+            data_array.append("-")
             if FoM_options is not None:
                 for key in FoM_options.keys():
                     index_array.append(f'  {key}')
