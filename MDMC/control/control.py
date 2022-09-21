@@ -513,7 +513,9 @@ class Control:
             if np.random.random() > np.exp((lowest_chi - chi)/(lowest_chi/MC_norm)):
                 deletable_points.append(i)
         reduced_chi = np.delete(chi_squared, deletable_points)
-        reduced_coords = np.delete(coords, deletable_points)
+        reduced_coords = list(coords)
+        for i in sorted(deletable_points, reverse=True):
+            reduced_coords.pop(i)  # I don't like this, any advice?
 
         return reduced_chi, reduced_coords
 
