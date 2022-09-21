@@ -7,7 +7,9 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import corner
 from scipy.interpolate import interp1d, interp2d
+from scipy.optimize import OptimizeResult
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
@@ -440,6 +442,115 @@ class Control:
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
+
+    @staticmethod
+    def _expected_minimum_random_sampling(res: OptimizeResult,
+                    n_random_starts: int=100000) -> tuple[list, float, list, list[list]]:
+        """
+        This is almost verbatim a copy of code from scikit-optimize but with the samples as
+        an additional output:
+        https://github.com/scikit-optimize/scikit-optimize/blob/de32b5fd2205a1e58526f3cacd0422a26d315d0f/skopt/utils.py#L259
+
+        Parameters
+        ----------
+        res : `OptimizeResult`, scipy object
+            The optimization result returned by a `skopt` minimizer.
+        n_random_starts : int, default=100000
+            The number of random points for the minimization of the surrogate
+            model.
+
+        Returns
+        -------
+        min_x : list
+            location of the minimum.
+        y_random[index_best_objective] : float
+            the surrogate function value at the minimum.
+        y_random : list
+            A list of length "n_random_starts" containing surrogate function values at each point
+        random_samples : list[list]
+            A list of length "n_random_starts" containing the coordinates of each prediction
+        """
+
+        # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
+        random_samples = res.space.rvs(n_random_starts, random_state=7)
+
+        # make estimations with surrogate
+        model = res.models[-1]
+        y_random = model.predict(res.space.transform(random_samples))
+        index_best_objective = np.argmin(y_random)
+        min_x = random_samples[index_best_objective]
+
+        return min_x, y_random[index_best_objective], y_random, random_samples
+
+    @staticmethod
+    def _remove_points(chi_squared: list[float], coords: list[list],
+                       MC_norm: float=20.0) -> tuple[list, list]:
+        """
+        Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
+        where the likelihood of keeping a point is dependant on the exponent of the difference
+        between its figure of merit, and that of the best one found, divided by MC_norm.
+
+        Parameters
+        ----------
+        chi_squared : list[float]
+            A list of the predicted chi-squared value at each coordinate
+        coords : list[list]
+            A list of the cordinates at which all of the chi-squared predictions are made
+        MC_norm : float, optional
+            The denominator of the exponent used to control the liklihood of keeping a point,
+            defaults to 20.0
+
+        Returns
+        -------
+        reuced_chi : list
+            A list of the remaining chi-squared points
+        coords : list[list]
+            A list of the remaining coordinates
+        """
+        lowest_chi = min(chi_squared)
+        deletable_points = []
+        for i, chi in enumerate(chi_squared):
+            if np.random.random() > np.exp((lowest_chi - chi)/(lowest_chi/MC_norm)):
+                deletable_points.append(i)
+        reduced_chi = np.delete(chi_squared, deletable_points)
+        reduced_coords = np.delete(coords, deletable_points)
+
+        return reduced_chi, reduced_coords
+
+    def plot_results(self, points: int=100000, MC_norm: float=20.0) -> None:
+        """
+        Performs a random sample across the coordinate space giving a predicted figure of merit at
+        every point. Then removes points with poor figures of merit, according to a
+        Metropolis-Hastings type rule, where the likelihood of keeping a point is dependant on the
+        exponent of the difference between its figure of merit, and that of the best one found,
+        divided by MC_norm. A corner plot is then returned (a matplotlib figure object), which can
+        be displayed or exported.
+
+        Parameters
+        ----------
+        points : int, optional
+            The number of samples to initially generate, defaults to 100,000
+        MC_norm : float, optional
+            The denominator of the exponent, controlling how likley points are to be kept,
+            defaults to 20.0
+
+        Returns
+        -------
+        corner plot : Matplotlib.figure.Figure
+            A plot displaying every parameter combination with their variances and covariances
+        """
+        _, _, y_random, coords = self._expected_minimum_random_sampling(self.minimizer.optimizer,
+                                                                        n_random_starts=points)
+        _, less_coords = self._remove_points(y_random, coords, MC_norm)
+
+        data = np.empty(shape=np.array(less_coords).shape)
+        for i in range(np.array(less_coords).shape[1]):
+            data[:,i] = np.array(less_coords)[:,i]
+
+        labels = [str(name) for name in self.fit_parameters]
+        cornerplot = corner.corner(data, labels = labels, quantiles = [0.34, 0.5, 0.68])
+
+        return cornerplot
 
     def _print_data(self) -> None:
 

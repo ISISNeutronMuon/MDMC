@@ -64,7 +64,8 @@ class GPO(Minimizer):
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
         self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
-                acq_optimizer="sampling", initial_point_generator="lhs", n_initial_points=20)
+                acq_optimizer="sampling", initial_point_generator="lhs", n_initial_points=20,
+                model_queue_size=1)
 
 
     @property
