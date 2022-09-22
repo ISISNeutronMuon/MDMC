@@ -206,7 +206,7 @@ def exp_datasets() -> callable:
                                          ],
                                      data=[
                                          "-",
-                                         "                          MMC",
+                                         "MMC",
                                          "ChiSquaredNoError",
                                          1,
                                          0,
