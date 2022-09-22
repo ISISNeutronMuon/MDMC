@@ -180,66 +180,54 @@ def exp_datasets() -> callable:
                            )],
 
                           [True,
-                           (('Control created with:\n'
-                             '- '
-                             'Attributes                                                                                             '
-                             '-\n'
-                             '  '
-                             'Minimizer                                                                                            '
-                             'MMC\n'
-                             '  FoM '
-                             'type                                                                               '
-                             'ChiSquaredNoError\n'
-                             '  Number of '
-                             'observables                                                                                  '
-                             '1\n'
-                             '  Number of '
-                             'parameters                                                                                   '
-                             '0\n'
-                             '  '
-                             'MD_steps                                                                                              '
-                             '38\n'
-                             '  '
-                             'equilibration_steps                                                                                    '
-                             '0\n'
-                             '  '
-                             'reset_config                                                                                       '
-                             'False\n'
-                             '  '
-                             'verbose                                                                                                '
-                             '0\n'
-                             '- Control '
-                             'Settings                                                                                       '
-                             '-\n'
-                             '  results_filename                                                        '
-                             'results_2022-09-20--13-29-45.csv\n'
-                             '- '
-                             'Parameters                                                                                             '
-                             '-\n'
-                             '- Experimental '
-                             'Datasets                                                                                  '
-                             '-\n'
-                             '  '
-                             'type                                                                                                 '
-                             'SQw\n'
-                             '  '
-                             'reader                                                                                           '
-                             'xml_SQw\n'
-                             '  file_name              '
-                             '/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml\n'
-                             '  '
-                             'weight                                                                                               '
-                             '1.0\n'
-                             '  '
-                             'resolution                                                                              '
-                             "{'gaussian': 84}\n"
-                             '- FoM '
-                             'Options                                                                                            '
-                             '-\n'
-                             '  '
-                             'error                                                                                               '
-                             'none\n'
-                             '\n'))]])
+                            ('Control created with:\n' +
+                                 pandas.DataFrame(
+                                     index=[
+                                         "- Attributes",
+                                         "  Minimizer",
+                                         "  FoM type",
+                                         "  Number of observables",
+                                         "  Number of parameters",
+                                         "  MD_steps",
+                                         "  equilibration_steps",
+                                         "  reset_config",
+                                         "  verbose",
+                                         "- Control Settings",
+                                         "  results_filename",
+                                         "- Parameters",
+                                         "- Experimental Datasets",
+                                         "  type",
+                                         "  reader",
+                                         "  file_name",
+                                         "  weight",
+                                         "  resolution",
+                                         "- FoM Options",
+                                         "  error"
+                                         ],
+                                     data=[
+                                         "-",
+                                         "MMC",
+                                         "ChiSquaredNoError",
+                                         1,
+                                         0,
+                                         38,
+                                         0,
+                                         False,
+                                         0,
+                                         "-",
+                                         "results_2022-09-20--13-29-45.csv",
+                                         "-",
+                                         "-",
+                                         "SQw",
+                                         "xml_SQw",
+                                         "/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
+                                         "1.0",
+                                         "{gaussian: 84}",
+                                         "-",
+                                         "none"
+                                     ]
+                                 ).to_string(index=True, header=False)+"\n\n")
+                            ]])
 
 def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
                              capsys, exp_datasets, simulation):
