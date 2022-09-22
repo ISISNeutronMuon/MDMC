@@ -222,7 +222,7 @@ def exp_datasets() -> callable:
                                          "xml_SQw",
                                          "/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
                                          "1.0",
-                                         "{gaussian: 84}",
+                                         "{\'gaussian\': 84}",
                                          "-",
                                          "none"
                                      ]
