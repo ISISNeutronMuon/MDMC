@@ -174,7 +174,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          sudo xinit && \
+          sudo startx && \
           sudo docker pull mdmc/mdmc:ci-$BRANCH
           sudo docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
           sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb
