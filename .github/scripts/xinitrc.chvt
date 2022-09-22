@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "New X session running on vt$X_FGCONSOLE" >"$ORIGINAL_TTY"
+chvt "$ORIGINAL_FGCONSOLE"
+exec ~/.xinitrc

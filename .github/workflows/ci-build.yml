@@ -170,11 +170,14 @@ jobs:
           sudo apt-get install openbox 
           sudo apt-get install xterm 
 
-      - name: Run X-server & Convert Notebooks
+      - name: Run X-server
+        run: |
+          ORIGINAL_FGCONSOLE=$(fgconsole) ORIGINAL_TTY=$(tty) openvt -s -- sh -c 'export X_FGCONSOLE=$(fgconsole); startx .github/scripts/.xinitrc.chvt -- vt$X_FGCONSOLE'
+
+      - name: Convert Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          sudo startx && \
           sudo docker pull mdmc/mdmc:ci-$BRANCH
           sudo docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
           sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb
