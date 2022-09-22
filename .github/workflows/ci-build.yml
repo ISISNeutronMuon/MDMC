@@ -172,7 +172,7 @@ jobs:
 
       - name: Run X-server
         run: |
-          ORIGINAL_FGCONSOLE=$(fgconsole) ORIGINAL_TTY=$(tty) openvt -s -- sh -c 'export X_FGCONSOLE=$(fgconsole); startx .github/scripts/.xinitrc.chvt -- vt$X_FGCONSOLE'
+          sudo ORIGINAL_FGCONSOLE=$(fgconsole) ORIGINAL_TTY=$(tty) openvt -s -- sh -c 'export X_FGCONSOLE=$(fgconsole); startx .github/scripts/.xinitrc.chvt -- vt$X_FGCONSOLE'
 
       - name: Convert Notebooks
         env:
