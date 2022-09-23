@@ -159,75 +159,26 @@ def exp_datasets() -> callable:
     return _exp_datasets
 
 
-@pytest.mark.parametrize('print_value, expected_stdout',
+@pytest.mark.parametrize('print_value, expected_indexes, expected_data',
                          [[False,
-                           ('Control created with:\n' +
-                                 pandas.DataFrame(
-                                     index=[
-                                         "- Attributes",
-                                         "  Minimizer",
-                                         "  FoM type",
-                                         "  Number of observables",
-                                         "  Number of parameters"],
-                                     data=[
-                                         "-",
-                                         "MMC",
-                                         "ChiSquaredNoError",
-                                         1,
-                                         0
-                                     ]
-                                 ).to_string(index=True, header=False)+"\n\n"
-                           )],
+                           ["- Attributes", "  Minimizer", "  FoM type",
+                            "  Number of observables", "  Number of parameters"],
+                           ["-", "MMC", "ChiSquaredNoError", 1, 0]
+                           ]
 
                           [True,
-                            ('Control created with:\n' +
-                                 pandas.DataFrame(
-                                     index=[
-                                         "- Attributes",
-                                         "  Minimizer",
-                                         "  FoM type",
-                                         "  Number of observables",
-                                         "  Number of parameters",
-                                         "  MD_steps",
-                                         "  equilibration_steps",
-                                         "  reset_config",
-                                         "  verbose",
-                                         "- Control Settings",
-                                         "  results_filename",
-                                         "- Parameters",
-                                         "- Experimental Datasets",
-                                         "  type",
-                                         "  reader",
-                                         "  file_name",
-                                         "  weight",
-                                         "  resolution",
-                                         "- FoM Options",
-                                         "  error"
-                                         ],
-                                     data=[
-                                         "-",
-                                         "MMC",
-                                         "ChiSquaredNoError",
-                                         1,
-                                         0,
-                                         38,
-                                         0,
-                                         False,
-                                         0,
-                                         "-",
-                                         "results_2022-09-20--13-29-45.csv",
-                                         "-",
-                                         "-",
-                                         "SQw",
-                                         "xml_SQw",
-                                         "/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
-                                         "1.0",
-                                         "{\'gaussian\': 84}",
-                                         "-",
-                                         "none"
-                                     ]
-                                 ).to_string(index=True, header=False)+"\n\n")
-                            ]])
+                            ["- Attributes", "  Minimizer", "  FoM type", "  Number of observables",
+                             "  Number of parameters", "  MD_steps", "  equilibration_steps",
+                             "  reset_config", "  verbose", "- Control Settings",
+                             "  results_filename", "- Parameters", "- Experimental Datasets",
+                             "  type", "  reader", "  file_name", "  weight", "  resolution",
+                             "- FoM Options", "  error"],
+
+                            ["-", "MMC", "ChiSquaredNoError", 1, 0, 38, 0, False, 0, "-",
+                             "results_2022-09-20--13-29-45.csv", "-", "-", "SQw", "xml_SQw",
+                             "/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
+                             "1.0", "{\'gaussian\': 84}", "-", "none"]
+                           ]])
 
 def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
                              capsys, exp_datasets, simulation):
