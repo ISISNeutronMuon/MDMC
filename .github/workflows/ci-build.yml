@@ -167,6 +167,6 @@ jobs:
         run: |
           sudo docker pull mdmc/mdmc:ci-$BRANCH
           sudo docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
-          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute >> ls -d $(pwd)/doc/tutorials/*.ipynb | grep -v "molecular-visualization"
+          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(find $(pwd)/doc/tutorials -name "*.ipynb" | grep -v "$(pwd)/doc/tutorials/molecular-visualization.ipynb")
           sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
