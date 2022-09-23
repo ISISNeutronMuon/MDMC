@@ -161,25 +161,12 @@ jobs:
           python-version: '3.8'
           architecture: x64
 
-      - name: Setup X-Server
-        run: |
-          sudo apt-get update
-          sudo touch ~/.Xauthority
-          sudo chmod ugo+r ~/.Xauthority
-          sudo apt-get install xorg
-          sudo apt-get install openbox 
-          sudo apt-get install xterm 
-
-      - name: Run X-server
-        run: |
-          sudo ORIGINAL_FGCONSOLE=$(fgconsole) ORIGINAL_TTY=$(tty) openvt -s -- sh -c 'export X_FGCONSOLE=$(fgconsole); startx .github/scripts/.xinitrc.chvt -- vt$X_FGCONSOLE'
-
       - name: Convert Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
           sudo docker pull mdmc/mdmc:ci-$BRANCH
           sudo docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" pip install MDMC
-          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/*.ipynb
+          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute | grep -v "visualization" $(pwd)/doc/tutorials/*.ipynp
           sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
