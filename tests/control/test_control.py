@@ -160,27 +160,25 @@ def exp_datasets() -> callable:
 
 
 @pytest.mark.parametrize('print_value, expected_indexes, expected_data',
-                         [[False,
+                         [(False,
                            ["- Attributes", "  Minimizer", "  FoM type",
                             "  Number of observables", "  Number of parameters"],
-                           ["-", "MMC", "ChiSquaredNoError", 1, 0]
-                           ]
+                           ["-", "MMC", "ChiSquaredNoError", "1", "0"]),
 
-                          [True,
-                            ["- Attributes", "  Minimizer", "  FoM type", "  Number of observables",
+                          (True,
+                          ["- Attributes", "  Minimizer", "  FoM type", "  Number of observables",
                              "  Number of parameters", "  MD_steps", "  equilibration_steps",
                              "  reset_config", "  verbose", "- Control Settings",
                              "  results_filename", "- Parameters", "- Experimental Datasets",
                              "  type", "  reader", "  file_name", "  weight", "  resolution",
                              "- FoM Options", "  error"],
-
-                            ["-", "MMC", "ChiSquaredNoError", 1, 0, 38, 0, False, 0, "-",
+                            ["-", "MMC", "ChiSquaredNoError", "1", "0", "38", "0", "False", "0", "-",
                              "results_2022-09-20--13-29-45.csv", "-", "-", "SQw", "xml_SQw",
-                             "/home/MDMCv0.2_pilot/tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
-                             "1.0", "{\'gaussian\': 84}", "-", "none"]
-                           ]])
+                             "test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
+                             "1.0", "{\'gaussian\': 84}", "-", "none"])
+                         ])
 
-def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
+def test_control_init_stdout(print_value, expected_indexes, expected_data, monkeypatch,
                              capsys, exp_datasets, simulation):
     """ A test to make sure that the stdout when creating a control object
     is as expected, both when a full output is requested, and when not .
@@ -214,7 +212,9 @@ def test_control_init_stdout(print_value, expected_stdout, monkeypatch,
                     **{"results_filename": "results_2022-09-20--13-29-45.csv"})
 
     stdout = capsys.readouterr().out
-    assert stdout == expected_stdout
+    for expected_items_list in [expected_indexes, expected_data]:
+        for expected_value in expected_items_list:
+            assert expected_value in stdout
 
 
 @pytest.mark.parametrize('error',
