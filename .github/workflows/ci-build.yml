@@ -165,7 +165,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          cd doc/tutorials
-          jupyter nbconvert --to notebook --execute units.ipynb 
-          pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
+          docker pull mdmc/mdmc:ci-$BRANCH
+          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(pwd)/doc/tutorials/units.ipynb 
+          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
