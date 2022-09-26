@@ -167,6 +167,8 @@ jobs:
         run: |
           sudo docker pull mdmc/mdmc:ci-$BRANCH
           cd doc/tutorials 
-          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --config notebook_test_config.py
+          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook "applying-a-forcefield.ipynb" "Argon-a-to-z.ipynb" \
+          "building-a-universe.ipynb" "creating-an-observable.ipynb" "running-a-refinement.ipynb" "running-a-simulation.ipynb"\ 
+          "selecting-fitting-parameters.ipynb" "solvating-a-universe.ipynb" "units.ipynb" --execute
           sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
