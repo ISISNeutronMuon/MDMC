@@ -166,7 +166,8 @@ jobs:
           BRANCH: ${{ github.head_ref }}
         run: |
           sudo docker pull mdmc/mdmc:ci-$BRANCH
-          cd doc/tutorials 
+          cd doc/tutorials
+          ls
           sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook units.ipynb --execute
           sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
