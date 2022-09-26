@@ -167,6 +167,7 @@ jobs:
         run: |
           sudo docker pull mdmc/mdmc:ci-$BRANCH
           cd doc/tutorials 
+          ls .
           sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(find $(pwd) -name "*.ipynb" | grep -v "$(pwd)/*.nbconvert.*" | grep -v "$(pwd)/molecular-visualization.ipynb" | grep -v "$(pwd)/read-configurations.ipynb")
           sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
