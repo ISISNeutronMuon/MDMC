@@ -2,7 +2,6 @@
 """
 
 import numpy as np
-import pandas
 import pandas as pd
 import pytest
 import re
