@@ -165,7 +165,8 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          sudo docker pull mdmc/mdmc:ci-$BRANCH &&
-          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(find $(pwd)/doc/tutorials -name "*.ipynb" | grep -v "$(pwd)/doc/tutorials/*.nbconvert.*" | grep -v "$(pwd)/doc/tutorials/molecular-visualization.ipynb" | grep -v "$(pwd)/doc/tutorials/read-configurations.ipynb") &&
-          sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb &&
+          sudo docker pull mdmc/mdmc:ci-$BRANCH
+          cd MDMCv0.2_pilot/doc/tutorials
+          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute $(find $(pwd) -name "*.ipynb" | grep -v "$(pwd)/*.nbconvert.*" | grep -v "$(pwd)/molecular-visualization.ipynb" | grep -v "$(pwd)/read-configurations.ipynb")
+          sudo docker run pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
