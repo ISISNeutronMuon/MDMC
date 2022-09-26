@@ -150,7 +150,6 @@ jobs:
   notebooks:
     name: Notebooks
     runs-on: ubuntu-20.04
-    needs: build # so it can use new docker image if docker image has changed
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v2
@@ -165,8 +164,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          sudo docker pull mdmc/mdmc:ci-$BRANCH
-          sudo docker run mdmc/mdmc:ci-$BRANCH ls
-          sudo docker run mdmc/mdmc:ci-$BRANCH jupyter nbconvert --to notebook --execute units.ipynb 
-          sudo docker run mdmc/mdmc:ci-$BRANCH pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
+          cd doc/tutorials
+          jupyter nbconvert --to notebook --execute units.ipynb 
+          pytest --nbmake $(pwd)/doc/tutorials/*.ipynb
           exit 0
