@@ -165,5 +165,7 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          docker pull mdmc/mdmc:ci-$BRANCH && docker run -it -d --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash "pip list && pip install MDMC && pip list && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake *.nbconvert.ipynb"
+          docker pull mdmc/mdmc:ci-$BRANCH && docker run -it -d --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH pip list && pip install MDMC && pip list && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake *.nbconvert.ipynb
+          docker logs *
           exit 0
+
