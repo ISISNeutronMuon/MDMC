@@ -9,6 +9,8 @@ Jupyter notebook in order to display correctly.
 from types import MethodType
 import warnings
 
+import MDMC.control
+
 try:
     import matplotlib.pyplot as plt
     from matplotlib.ticker import MaxNLocator
@@ -27,7 +29,7 @@ CNVS_WIDTH = 800
 
 # pylint: disable=import-outside-toplevel, protected-access
 # we are importing things out-of-order and copying variables on purpose here
-def plot_progress(inst, ynames):
+def plot_progress(inst: "MDMC.control.Control", ynames: str) -> "MDMC.control.Control":
     """
     Modifies an instance of ``MDMC.control.Control`` so that the progress of 1
     or more variables is plotted with each step when ``refine`` is called.
@@ -53,14 +55,19 @@ def plot_progress(inst, ynames):
     Parameters
     ----------
     inst : MDMC.control.Control
-        An instance of the ``MDMC.control.Control`` class, which will be
-        modified so that a plot is displayed when ``inst.refine`` is called.
+        An instance of the ``MDMC.control.Control`` class.
     ynames : str, list of str
         One or more str with the name of the variable to be displayed with each
         step of the refinement. These variables must correspond to the column
         names in ``inst.minimizer.history``, for example the names of the
         parameters that are being refined. It is recommended that a maximum of
         8 names is provided, as otherwise the graph sizes become too small.
+
+    Returns
+    -------
+    MDMC.control.Control
+        An instance of the ``MDMC.control.Control`` class, which is
+        modified so that a plot is displayed when ``inst.refine`` is called.
 
     Examples
     --------
