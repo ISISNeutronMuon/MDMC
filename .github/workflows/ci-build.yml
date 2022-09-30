@@ -166,5 +166,6 @@ jobs:
           BRANCH: ${{ github.head_ref }}
         run: |
           docker pull mdmc/mdmc:ci-$BRANCH
-          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:ci-$BRANCH /bin/bash -c "pip install . && pip install nbconvert && pip install nbmake && pip install pytest && pip install -r requirements.txt && pip list && apt-get install pandoc -y && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake $(find --path doc/tutorials/ --name *.nbconvert.ipynb)"
+          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:ci-$BRANCH /bin/bash -c "pip install . && pip install nbconvert && pip install nbmake && pip install pytest && pip install -r requirements.txt && apt-get install pandoc -y && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake $(find --path doc/tutorials/ --name *.nbconvert.ipynb)"
           exit 0
+
