@@ -43,9 +43,7 @@ class InstlTestBase(ABC):
 
     @property
     def success(self) -> str:
-        """
-        Get whether or not the test has PASSED, FAILED or is INCOMPLETE
-        """
+        """Get whether or not the test has PASSED, FAILED or is INCOMPLETE"""
 
         if self._success is True:
             return 'PASSED'
@@ -56,10 +54,8 @@ class InstlTestBase(ABC):
         raise ValueError('The success value of this test has been incorrectly'
                          ' set. Please run the test again.')
 
-    def log_test_passed(self):
-        """
-        Logs that the test passed
-        """
+    def log_test_passed(self) -> None:
+        """Logs that the test passed"""
 
         LOGGER.info('%s %s installation test passed',
                     self.__class__,
@@ -67,9 +63,7 @@ class InstlTestBase(ABC):
 
     @abstractmethod
     def run(self):
-        """
-        Runs the test and sets the value of ''self.success''
-        """
+        """Runs the test and sets the value of ''self.success''"""
 
         raise NotImplementedError
 
@@ -147,11 +141,9 @@ def run_installation_tests():
 @InstlTestFactory.register('core')
 class InstlTestCore(InstlTestBase):
 
-    """
-    Class to test if all MDMC subpackages can be imported
-    """
+    """Class to test if all MDMC subpackages can be imported"""
 
-    def run(self):
+    def run(self) -> None:
 
         import MDMC
         fs_objects = glob(join(dirname(MDMC.__file__), "*"))
@@ -200,7 +192,7 @@ class InstlTestLAMMPS(InstlTestBase):
                           ' simulations with LAMMPS as the MD engine. Other MD'
                           ' engines may still be available.')
 
-    def run(self):
+    def run(self) -> None:
 
         try:
             from lammps import PyLammps
@@ -270,7 +262,7 @@ class InstlTestX11Forwarding(InstlTestBase):
                           ' options, such as the X3DOM viewer, can still be'
                           ' used.')
 
-    def run(self):
+    def run(self) -> None:
 
         try:
             from tkinter import Tk, TclError
@@ -314,7 +306,7 @@ class InstlTestDynamicPlottingDependencies(InstlTestBase):
     LOG_ERROR_MSG = ('Due to this, dynamic plotting of the refinement will not'
                      ' be possible.')
 
-    def run(self):
+    def run(self) -> None:
 
         try:
             import jupyter
