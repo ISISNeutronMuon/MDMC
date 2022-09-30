@@ -6,10 +6,10 @@ This is only used to provide a simple method for users to run installation tests
 from argparse import ArgumentParser, RawTextHelpFormatter
 import sys
 from textwrap import dedent
+from typing import TYPE_CHECKING
 
 from MDMC.utilities.installation_tests import run_installation_tests
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import argparse
 

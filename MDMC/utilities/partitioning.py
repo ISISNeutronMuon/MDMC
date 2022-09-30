@@ -7,13 +7,12 @@ Notes
 -----
 
 """
-from typing import Callable, Iterable, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from itertools import tee
-
-import MDMC.MD
 
 if TYPE_CHECKING:
     from MDMC.MD import Interaction
+    from typing import Callable, Iterable
 
 
 def partition(items: iter, predicate: "Callable[[any], bool]") -> tuple:

@@ -1,4 +1,5 @@
-"""Plotting related utilities
+"""
+Plotting related utilities
 
 These are additional functions which can be used to plot specific MDMC data,
 e.g. dynamic plotting during a refinement.  All plotting requires matplotlib to
@@ -9,7 +10,9 @@ Jupyter notebook in order to display correctly.
 from types import MethodType
 import warnings
 
-import MDMC.control
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from MDMC.control import Control
 
 try:
     import matplotlib.pyplot as plt
@@ -29,7 +32,7 @@ CNVS_WIDTH = 800
 
 # pylint: disable=import-outside-toplevel, protected-access
 # we are importing things out-of-order and copying variables on purpose here
-def plot_progress(inst: "MDMC.control.Control", ynames: str) -> "MDMC.control.Control":
+def plot_progress(inst: "Control", ynames: str) -> "Control":
     """
     Modifies an instance of ``MDMC.control.Control`` so that the progress of 1
     or more variables is plotted with each step when ``refine`` is called.
