@@ -11,6 +11,9 @@ from types import MethodType
 import warnings
 
 from typing import TYPE_CHECKING
+
+from MDMC.common.df_operations import filter_dataframe
+
 if TYPE_CHECKING:
     from MDMC.control import Control
 
@@ -21,7 +24,6 @@ except ModuleNotFoundError as error:
     raise ModuleNotFoundError('MDMC plotting utilities require matplotlib to be'
                               ' installed.') from error
 
-from MDMC.common.df_operations import filter_dataframe
 
 # Defaults for text and plot output sizes
 VBOX_HEIGHT = '73%'
