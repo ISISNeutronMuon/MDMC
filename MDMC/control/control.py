@@ -442,9 +442,10 @@ class Control:
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
+        
 
     @staticmethod
-    def _expected_minimum_random_sampling(res: OptimizeResult,
+    def _expected_minimum_random_sampling(optimized_result: OptimizeResult,
                     n_random_starts: int=100000) -> 'tuple[list, float, list, list[list]]':
         """
         This is almost verbatim a copy of code from scikit-optimize but with the samples as
@@ -453,7 +454,7 @@ class Control:
 
         Parameters
         ----------
-        res : `OptimizeResult`, scipy object
+        optimized_result : `OptimizeResult`, scipy object
             The optimization result returned by a `skopt` minimizer.
         n_random_starts : int, default=100000
             The number of random points for the minimization of the surrogate
@@ -472,11 +473,11 @@ class Control:
         """
 
         # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
-        random_samples = res.space.rvs(n_random_starts, random_state=7)
+        random_samples = optimized_result.space.rvs(n_random_starts, random_state=7)
 
         # make estimations with surrogate
-        model = res.models[-1]
-        y_random = model.predict(res.space.transform(random_samples))
+        model = optimized_result.models[-1]
+        y_random = model.predict(optimized_result.space.transform(random_samples))
         index_best_objective = np.argmin(y_random)
         min_x = random_samples[index_best_objective]
 
@@ -487,7 +488,7 @@ class Control:
                        MC_norm: float=20.0) -> 'tuple[list, list]':
         """
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
-        where the likelihood of keeping a point is dependant on the exponent of the difference
+        where the likelihood of keeping a point is dependent on the exponent of the difference
         between its figure of merit, and that of the best one found, divided by MC_norm.
 
         Parameters
@@ -495,27 +496,24 @@ class Control:
         chi_squared : list[float]
             A list of the predicted chi-squared value at each coordinate
         coords : list[list]
-            A list of the cordinates at which all of the chi-squared predictions are made
+            A list of the coordinates at which all of the chi-squared predictions are made
         MC_norm : float, optional
             The denominator of the exponent used to control the liklihood of keeping a point,
             defaults to 20.0
 
         Returns
         -------
-        reuced_chi : list
+        reduced_chi : list
             A list of the remaining chi-squared points
-        coords : list[list]
+        reduced_coords : list[list]
             A list of the remaining coordinates
         """
+        np.random.seed(16)  # Set for reproducible output - will always retain same points
         lowest_chi = min(chi_squared)
-        deletable_points = []
-        for i, chi in enumerate(chi_squared):
-            if np.random.random() > np.exp((lowest_chi - chi)/(lowest_chi/MC_norm)):
-                deletable_points.append(i)
-        reduced_chi = np.delete(chi_squared, deletable_points)
-        reduced_coords = list(coords)
-        for i in sorted(deletable_points, reverse=True):
-            reduced_coords.pop(i)  # I don't like this, any advice?
+
+        points_to_keep = np.random.random(size=chi_squared.shape) < np.exp((lowest_chi - chi_squared)/(lowest_chi/MC_norm))
+        reduced_chi=chi_squared[points_to_keep]
+        reduced_coords = np.array(coords)[points_to_keep]
 
         return reduced_chi, reduced_coords
 
@@ -543,11 +541,11 @@ class Control:
         """
         _, _, y_random, coords = self._expected_minimum_random_sampling(self.minimizer.optimizer,
                                                                         n_random_starts=points)
-        _, less_coords = self._remove_points(y_random, coords, MC_norm)
+        _, reduced_coordinate_list = self._remove_points(y_random, coords, MC_norm)
 
-        data = np.empty(shape=np.array(less_coords).shape)
-        for i in range(np.array(less_coords).shape[1]):
-            data[:,i] = np.array(less_coords)[:,i]
+        data = np.empty(shape=np.array(reduced_coordinate_list).shape)
+        for i in range(np.array(reduced_coordinate_list).shape[1]):
+            data[:,i] = np.array(reduced_coordinate_list)[:,i]
 
         labels = [str(name) for name in self.fit_parameters]
         cornerplot = corner.corner(data, labels = labels, quantiles = [0.34, 0.5, 0.68])
