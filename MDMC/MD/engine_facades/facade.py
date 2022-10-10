@@ -80,13 +80,13 @@ class MDEngine(ABC):
     def traj_step(self) -> int:
         """
         Get the number of simulation steps between saving the
-        ``Trajectory`` from the parent simulation
+        ``CompactTrajectory`` from the parent simulation
 
         Returns
         -------
         `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
+            Number of simulation steps that elapse between the
+            ``CompactTrajectory`` being stored
         """
 
         try:

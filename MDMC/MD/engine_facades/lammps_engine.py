@@ -57,8 +57,6 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction, Interaction, \
     NonBondedInteraction, Bond, BondAngle
-from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
-    Trajectory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
 
@@ -672,190 +670,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         # we conclude the creation of the trajectory
         traj.postProcess()
         return traj
-
-    def convert_trajectory_original(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> Trajectory:
-        """
-        Converts between a LAMMPS trajectory dump and an MDMC ``Trajectory``
-
-        The LAMMPS dump must include at least ``id``, ``atom_type``, and ``xyz``
-        ``positions``. The ``xyz`` ``positions`` must be consecutive and in that
-        order. The same is true of the ``xyz`` components of the ``velocity``, if
-        they are provided.
-
-        Parameters
-        ----------
-        start : int
-            The index of the first trajectory, inclusive.
-        stop : int
-            The index of the last trajectory, exclusive.
-        step : int
-            The step size between trajectories.
-        **settings
-            ``scaled_positions`` (`bool`)
-                If the ``trajectory_file`` has scaled ``positions``
-            ``atom_IDs`` (`list`)
-                LAMMPS ``ID`` of the atoms which should be included. If not passed
-                then all atoms are included in the converted trajectory.
-
-        Returns
-        -------
-        ``Trajectory``
-            The MDMC ``Trajectory`` corresponding to the LAMMPS ``trajectory_file``
-
-        Raises
-        ------
-        AssertionError
-            If ``universe`` is passed, and the number of atoms in the
-            ``trajectory_file`` is not the same as in the ``universe``.
-        TypeError
-            If ``trajectory_file`` describes a triclinic universe.
-        """
-
-        def create_atom(line: np.ndarray) -> Atom:
-            """
-            Create an MDMC ``Atom`` from a line in a LAMMPS dump (trajectory) file
-
-            At a minimum it will set the ``ID``, ``atom_type` and ``position`` of
-            the ``Atom``. It will also set the ``velocity`` if included in the line,
-            and the ``Universe``, if this was passed to ``convert_trajectory()``.
-
-            Parameters
-            ----------
-            line : numpy.ndarray
-                ``array`` containing a line from the ATOMS sections of a LAMMPS dump
-                file. The ``array`` must contain the atom ``ID``, the ``atom_type``,
-                and the ``x``, ``y``, and ``z`` (or scaled equivalents) components
-                of the ``position``, which are assumed to be adjacent. It will also
-                set the ``velocity`` of the atom if this is included in the line.
-
-            Returns
-            -------
-            ``Atom``
-                MDMC ``Atom`` object corresponding to the ``line``
-            """
-
-            atom_type = int(line[i_type])
-            # If distance units are same for MDMC and LAMMPS then
-            # don't call convert_units - currently hardcoded
-            # Same goes for velocity and time units
-            position = [float(splt) for splt in line[i_pos:i_pos+3]]
-            # Get symbol and mass from atom_type_properties
-            # Adjusted for 0 index
-            symbol, mass = self.lmp_universe.atom_type_properties[atom_type-1]
-            atom = Atom(symbol, position=position, mass=mass)
-            atom.atom_type = atom_type
-            if self.universe:
-                atom.universe = self.universe
-            if i_vel is not None:
-                atom.velocity = [float(splt) for splt
-                                 in line[i_vel:i_vel+3]]
-            return atom
-
-        # Change expected position string if scaled positions are used
-        pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
-
-        # ID is an acronym
-        # pylint: disable=invalid-name
-        atom_IDs = settings.get('atom_IDs')
-
-        configs = []
-        frame_n = start
-        # Use count to create range so that stop can be undefined
-        frame_indexes = count(start, step)
-        # next_frame_n next attribute is assigned dynamically
-        next_frame_n = next(frame_indexes)  # pylint: disable=no-member
-        with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
-            line = file_handler.readline()
-            while line:
-
-                # LAMMPS TIMESTEP is the number of time steps that have elapsed. To
-                # avoid confusion with time_step (the amount of time that elapses in
-                # a single simulation step, i.e. dt), these are referred to as
-                # frames.
-                if 'ITEM: TIMESTEP' in line:
-                    line = file_handler.readline()
-                    frame = int(line.split()[0])
-
-                if 'ITEM: NUMBER OF ATOMS' in line:
-                    line = file_handler.readline()
-                    n_atoms = int(line.split()[0])
-                    # Check that n_atoms is as expected, if a universe was passed
-                    if self.universe:
-                        assert n_atoms == len(self.universe.atoms)
-
-                if 'ITEM: BOX BOUNDS' in line:
-                    # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
-                    if 'xy' in line:
-                        raise TypeError('triclinic simulation boxes have not'
-                                        ' been implemented')
-                    # Test dimensions are as expected, if a universe was passed
-                    # and we are not using an NPT or NPH ensemble
-                    if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
-                        for i in range(3):
-                            line = file_handler.readline()
-                            dmin, dmax = [float(splt) for splt in line.split()]
-                            assert dmin == 0.0
-                            # unit is taken from universe dimensions (which is a
-                            # UnitArray)
-                            assert dmax == convert_unit(self.universe.dimensions[i],
-                                                        self.universe.dimensions.unit)
-
-                if 'ITEM: ATOMS' in line:
-                    if frame_n == start:
-                        # LAMMPS dump files contain order of LAMMPS atom properties,
-                        # at each time step. As these should not change with time
-                        # step only determine this order for first required time
-                        # step. Assumes that position components (x y z) and
-                        # velocity components (vx vy vz) are always adjacent and
-                        # ordered as shown.
-                        splt = line.split()
-                        # Requires id, type and position to be defined, velocity is
-                        # optional
-                        i_id, i_type, i_pos = [splt.index(prop) - 2 for prop
-                                               in ['id', 'type', pos_string]]
-                        if 'vx' in splt:
-                            i_vel = splt.index('vx')
-                        else:
-                            i_vel = None
-
-                    if frame_n == next_frame_n:
-                        # Reads all atom lines before creating any atoms. By
-                        # creating a list of tuples of (LAMMPS_ID, atom), this
-                        # allows the lines to be reordered based on LAMMPS_ID. This
-                        # is required as by default LAMMPS does not sort by ID, so
-                        # the same atom will not appear in the same place for each
-                        # time step.
-                        lines = []
-                        for _ in range(n_atoms):
-                            line = file_handler.readline().split()
-                            # convert id to int
-                            line[i_id] = int(line[i_id])
-                            lines.append(line)
-                        # sort list of lists based on id
-                        lines = sorted(lines, key=lambda x: x[i_id])
-
-                        atoms = []
-                        for line in lines:
-                            # Checks if only specific atom_IDs are required, and if
-                            # so, only creates atoms which have those IDs
-                            if not atom_IDs or line[i_id] in atom_IDs:
-                                atoms.append(create_atom(line))
-
-                        # Multiply the number of timesteps by dt to calculate the
-                        # elapsed time
-                        configs.append(TemporalConfiguration(frame * self.time_step,
-                                                             *atoms))
-
-                        # next_frame_n next attribute is assigned dynamically
-                        # pylint: disable=no-member
-                        next_frame_n = next(frame_indexes)
-                    frame_n += 1
-                    if stop is not None and frame_n >= stop:
-                        break
-
-                line = file_handler.readline()
-        return Trajectory(*configs)
 
     def update_parameters(self) -> None:
 
@@ -1585,7 +1399,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         The MDMC ``Universe`` used to create the ``LAMMPSUniverse``.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame
+        ``CompactTrajectory`` frame
     time_step : float, optional
         Simulation timestep in ``fs``, default is ``1.``
     lmp : PyLammps, optional
@@ -1603,8 +1417,8 @@ class LAMMPSSimulation(PyLammpsAttribute):
     universe : Universe
         An MDMC ``Universe`` object.
     traj_step : int
-        Number of simulation steps that elapse between the ``Trajectory`` being
-        stored.
+        Number of simulation steps that elapse between the ``CompactTrajectory``
+        being stored.
     ensemble : LAMMPSEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """

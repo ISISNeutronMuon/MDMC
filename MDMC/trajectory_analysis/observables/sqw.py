@@ -23,7 +23,7 @@ class SQwMixins:
 
     def minimum_frames(self, dt: float = None) -> int:
         r"""
-        The minimum number of ``Trajectory`` frames needed to calculate the
+        The minimum number of ``CompactTrajectory`` frames needed to calculate the
         ``dependent_variables`` depends on ``self.use_FFT``.
 
         If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
@@ -74,7 +74,7 @@ class SQwMixins:
 
     def maximum_frames(self) -> Optional[int]:
         """
-        The maximum number of ``Trajectory`` frames that can be used to
+        The maximum number of ``CompactTrajectory`` frames that can be used to
         calculate the ``dependent_variables`` depends on ``self.use_FFT``.
 
         If `True`, it is the number of energy steps + 1, in order to allow for
@@ -302,10 +302,10 @@ class AbstractSQw(SQwMixins, Observable):
         """
         Calculate the dynamic structure factor, S(Q, w) from a ``CompactTrajectory``.
 
-        If the ``Trajectory`` has more frames than the ``self.maximum_frames()`` that can be
-        used to recreate the grid of energy points, it can slice the ``Trajectory`` into
-        sub-trajectories of length ``self.maximum_frames()``, with the slicing specified through
-        the settings ``use_average`` and ``cont_slicing``.
+        If the ``CompactTrajectory`` has more frames than the ``self.maximum_frames()``
+        that can be used to recreate the grid of energy points, it can slice the
+        ``CompactTrajectory`` into sub-trajectories of length ``self.maximum_frames()``,
+        with the slicing specified through the settings ``use_average`` and ``cont_slicing``.
 
         The ``independent_variable`` ``Q`` can either be set previously or defined within
         ``**settings``.
@@ -340,15 +340,15 @@ class AbstractSQw(SQwMixins, Observable):
             ``use_average`` (`bool`)
                 Optional parameter if a list of more than one ``Trajectory`` is used. If set to
                 True (default) then the mean value for S(Q, w) is calculated. Also, the errors
-                are set to the standard deviation calculated over the list of ``Trajectory``
-                objects.
+                are set to the standard deviation calculated over the list of
+                ``CompactTrajectory`` objects.
              ``cont_slicing`` (`bool`)
                 Flag to decide between two possible behaviours when the number of ``MD_steps`` is
                 larger than the minimum required to calculate the observables. If ``False``
-                (default) then the ``Trajectory`` is sliced into non-overlapping
-                sub-``Trajectory`` blocks for each of which the observable is calculated. If
-                ``True``, then the ``Trajectory`` is sliced into as many non-identical
-                sub-``Trajectory`` blocks as possible (with overlap allowed).
+                (default) then the ``CompactTrajectory`` is sliced into non-overlapping
+                sub-``CompactTrajectory`` blocks for each of which the observable is calculated.
+                If ``True``, then the ``CompactTrajectory`` is sliced into as many non-identical
+                sub-``CompactTrajectory`` blocks as possible (with overlap allowed).
         """
 
         self._origin = 'MD'
@@ -377,7 +377,7 @@ class AbstractSQw(SQwMixins, Observable):
         if not hasattr(self, 'independent_variables'):
             self.independent_variables = {}
 
-        # Extract information that should be constant throughout the Trajectory and hence the
+        # Extract information that should be constant throughout the trajectory and hence the
         # subtrajectories (if there are any)
         t = MD_input.times - MD_input.times[0]
         dt = t[1] - t[0]
@@ -428,7 +428,7 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
             trj_sliced = False
 
-        # Perform calculations for each Trajectory
+        # Perform calculations for each trajectory
         for trajectory in trajectories:
             self.trajectory = trajectory
 
@@ -438,8 +438,8 @@ class AbstractSQw(SQwMixins, Observable):
                     assert_allclose(self.trajectory.times -
                                     self.trajectory.times[0], t, rtol=1e-7, atol=1e-3)
                 except AssertionError as error:
-                    msg = ('The `times` of the current `Trajectory` were not '
-                           'consistent with the first `Trajectory` passed')
+                    msg = ('The `times` of the current `CompactTrajectory` were not '
+                           'consistent with the first `CompactTrajectory` passed')
                     raise AssertionError(msg) from error
             try:
                 assert_allclose(self.universe_dimensions,
@@ -448,8 +448,8 @@ class AbstractSQw(SQwMixins, Observable):
                 # May not have dimensions set, in which case pass
                 pass
             except AssertionError as error:
-                msg = ('The `dimensions` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
+                msg = ('The `dimensions` of the current `CompactTrajectory` were not '
+                       'consistent with the first `CompactTrajectory` passed')
                 raise AssertionError(msg) from error
 
             fqt_type = self._get_fqt_type()
@@ -484,11 +484,12 @@ class AbstractSQw(SQwMixins, Observable):
     def calculate_E(nE: int, dt: float) -> np.ndarray:
         r"""
         Calculates an array of ``nE`` uniformly spaced energy values from the
-        time separation of the ``Trajectory`` frames, ``dt``. The frequencies
-        are determined by the Fast Fourier Transform, as implemented by numpy,
-        for ``2 * nE`` points in time which we then crop to only include ``nE``
-        positive frequencies. As we are dealing with frequency rather than
-        angular frequency here, the relation to between energy is given by:
+        time separation of the ``CompactTrajectory`` frames, ``dt``. The
+        frequencie are determined by the Fast Fourier Transform, as implemented
+        by numpy, for ``2 * nE`` points in time which we then crop to only
+        include ``nE`` positive frequencies. As we are dealing with frequency
+        rather than angular frequency here, the relation to between energy
+        is given by:
 
         .. math::
 

@@ -882,7 +882,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
         which results in a new ``dlpoly-py`` object being initialised.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame
+        ``CompactTrajectory`` frame
     time_step : float, optional
         Simulation timestep in ``fs``, default is ``1.``
     **settings
@@ -897,7 +897,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
         The time difference between MD simulation steps in fs.
     traj_step : int
         Number of simulation steps that elapse
-        between the ``Trajectory`` being stored.
+        between the ``CompactTrajectory`` being stored.
     ensemble : DLPOLYEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     **settings

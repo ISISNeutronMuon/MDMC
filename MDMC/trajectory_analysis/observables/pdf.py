@@ -111,8 +111,8 @@ class PairDistributionFunction(Observable):
 
     def minimum_frames(self, dt: float = None) -> int:
         """
-        The minimum number of ``Trajectory`` frames needed to calculate the
-        ``dependent_variables`` is 1
+        The minimum number of ``CompactTrajectory`` frames needed to
+        calculate the ``dependent_variables`` is 1
 
         Parameters
         ----------
@@ -354,7 +354,7 @@ class PairDistributionFunction(Observable):
         ------
         ValueError
             If ``n_frames`` is less than 1 or greater than the number of frames
-            in the ``Trajectory``
+            in the ``CompactTrajectory``
         TypeError
             If ``r`` is in settings as well any of ``r_min``, ``r_max``, and
             ``r_step``
@@ -730,7 +730,7 @@ class PairDistributionFunction(Observable):
         unique_elements : list of str
             Where each `str` specifies an element
         element_list : list of str
-            A `list` of the elements for every ``Atom`` in the ``Trajectory``
+            A `list` of the elements for every ``Atom`` in the ``CompactTrajectory``
 
         Returns
         -------

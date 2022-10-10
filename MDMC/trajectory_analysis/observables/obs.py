@@ -8,7 +8,7 @@ from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 
 if TYPE_CHECKING:
-    from MDMC.trajectory_analysis.trajectory import Trajectory
+    from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
     from typing import Union
 
 
@@ -132,8 +132,8 @@ class Observable(ABC):
     @abstractmethod
     def minimum_frames(self, dt: float = None) -> int:
         """
-        The minimum number of ``Trajectory`` frames needed to calculate the
-        ``dependent_variables``
+        The minimum number of ``CompactTrajectory`` frames needed to
+        calculate the ``dependent_variables``
 
         Parameters
         ----------
@@ -151,8 +151,8 @@ class Observable(ABC):
     @abstractmethod
     def maximum_frames(self) -> int:
         """
-        The maximum number of ``Trajectory`` frames that can be used to
-        calculate the ``dependent_variables``
+        The maximum number of ``CompactTrajectory`` frames that can be
+        used to calculate the ``dependent_variables``
 
         Returns
         -------
@@ -198,7 +198,8 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input: 'Union[Trajectory, list[Trajectory]]',
+    def calculate_from_MD(self,
+                          MD_input: 'Union[CompactTrajectory, list[CompactTrajectory]]',
                           verbose: int = 0, **parameters: dict) -> None:
         """
         Calculates the observable using input from an MD simulation
@@ -206,7 +207,7 @@ class Observable(ABC):
         Parameters
         ----------
         MD_input : Object
-            Some input from an MD simulation, commonly a ``Trajectory``
+            Some input from an MD simulation, commonly a ``CompactTrajectory``
         verbose : int
             Enables verbose printing of the calculation
         **parameters

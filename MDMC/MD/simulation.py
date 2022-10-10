@@ -1328,8 +1328,8 @@ class Simulation:
         The ``Universe`` on which the simulation is performed.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame. Along with ``time_step`` determines the time
-        separation of calculated variables such as energy.
+        ``CompactTrajectory`` frame. Along with ``time_step`` determines
+        the time separation of calculated variables such as energy.
     time_step : float, optional
         Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
@@ -1364,8 +1364,8 @@ class Simulation:
         The ``Universe`` on which the simulation is performed.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame. Along with ``time_step`` determines the time
-        separation of calculated variables such as energy.
+        ``CompactTrajectory`` frame. Along with ``time_step`` determines
+        the time separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
         library. Default is ``'lammps'``.
@@ -1417,13 +1417,13 @@ class Simulation:
     def traj_step(self) -> int:
         """
         Get or set the number of simulation steps between saving the
-        ``Trajectory``
+        ``CompactTrajectory``
 
         Returns
         -------
         `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
+            Number of simulation steps that elapse between the
+            ``CompactTrajectory`` being stored
         """
 
         return self._traj_step
