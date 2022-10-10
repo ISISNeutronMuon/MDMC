@@ -42,7 +42,7 @@ def partition(items: iter, predicate: "Callable[[any], bool]") -> tuple:
 
 
 def partition_interactions(interactions: "Iterable[Interaction]",
-                           names: list[str],
+                           names: "list[str]",
                            unpartitioned: bool = False,
                            lst: bool = False) -> tuple:
 
