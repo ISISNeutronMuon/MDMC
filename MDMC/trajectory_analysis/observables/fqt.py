@@ -20,7 +20,7 @@ from MDMC.trajectory_analysis.trajectory import Trajectory
 
 if TYPE_CHECKING:
     from builtins import function
-    from typing import Optional
+    from typing import Optional, Union
 
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
@@ -101,7 +101,7 @@ class AbstractFQt(SQwMixins, Observable):
         self._errors = value
 
     @property
-    def t(self) -> 'np.array':
+    def t(self) -> 'np.ndarray':
         """
         Get or set the times of the intermediate scattering function in units of
         ``fs``
@@ -116,7 +116,7 @@ class AbstractFQt(SQwMixins, Observable):
 
     @t.setter
     @unit_decorator(unit=units.TIME)
-    def t(self, value: 'np.array') -> None:
+    def t(self, value: 'np.ndarray') -> None:
 
         self.independent_variables['t'] = value
 
@@ -142,7 +142,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0,  **settings: dict) -> None:
+    def calculate_from_MD(self, MD_input: "Trajectory", verbose: int = 0,  **settings: dict) -> None:
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -341,7 +341,7 @@ class AbstractFQt(SQwMixins, Observable):
         vector_z = (np.array(list(range(0, z_max + 1))).reshape(-1, 1)
                     * self.reciprocal_basis[2])
 
-        Q_vectors = []
+        Q_vectors: list = []
         # combine to create overall vectors for each lattice point in the cube
         # the 'if' part of the generator comprehension ensures that we aren't generating
         # large numbers of duplicate vectors from multiple vectors within the same symmetry group
@@ -511,7 +511,7 @@ class AbstractFQt(SQwMixins, Observable):
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
-    def apply_resolution(self, resolution: Resolution) -> FQt:
+    def apply_resolution(self, resolution: Resolution) -> "np.ndarray":
         """
         Apply instrument resolution to an FQt object.
 
@@ -646,7 +646,7 @@ class FQt(AbstractFQt):
         try:
             norm = np.shape(single_Q_vectors)[0]
         except IndexError:
-            norm = 1.
+            norm = 1
 
         return FQt_single_Q / (n_atoms * norm)
 
@@ -678,7 +678,7 @@ def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> list:
             in range(len(positions))]
 
 
-def get_point_group(dimensions: 'np.array') -> str:
+def get_point_group(dimensions: 'np.ndarray') -> str:
     """
     Gets the Hermann-Mauguin point group for the universe.
     Currently, MDMC can only create universes with mutually orthogonal
@@ -690,7 +690,7 @@ def get_point_group(dimensions: 'np.array') -> str:
 
     Parameters
     ----------
-    dimensions: numpy.array
+    dimensions: numpy.ndarray
         An array of length 3, containing the dimensions of the universe.
 
     Returns
