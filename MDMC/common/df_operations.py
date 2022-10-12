@@ -2,11 +2,11 @@
 functions
 """
 
-from typing import Iterable
+from typing import Sequence
 import pandas as pd
 
 
-def filter_dataframe(values: Iterable,
+def filter_dataframe(values: Sequence,
                      dataframe: pd.DataFrame,
                      column_names: 'list[str]' = None,
                      column_regex: str = None) -> pd.DataFrame:
@@ -16,7 +16,7 @@ def filter_dataframe(values: Iterable,
 
     Parameters
     ----------
-    values : iterable
+    values : Sequence
         The values for which to filter. If any of these values occur in any of
         the columns defined by ``column_names`` or ``column_regex``, the row
         will be included in the filtered return.
@@ -60,16 +60,16 @@ def filter_dataframe(values: Iterable,
                                             == values[0]])
     # Concat the list of filtered dataframes (1 for each matching column)
     # into a single dataframe
-    filtered_dataframe = pd.concat(filtered_dataframe)
+    concat_filtered_dataframe = pd.concat(filtered_dataframe)
     # If there is more than one value in values, call _filter_df_multi
     # recursively to further filter by the remaining values
     if len(values) > 1:
-        filtered_dataframe = filter_dataframe(values[1:], filtered_dataframe,
+        concat_filtered_dataframe = filter_dataframe(values[1:], concat_filtered_dataframe,
                                               column_names=column_names)
-    return filtered_dataframe.drop_duplicates()
+    return concat_filtered_dataframe.drop_duplicates()
 
 
-def filter_ordered_dataframe(values: Iterable,
+def filter_ordered_dataframe(values: Sequence,
                              dataframe: pd.DataFrame,
                              column_names: 'list[str]' = None,
                              column_regex: str = None,
@@ -85,7 +85,7 @@ def filter_ordered_dataframe(values: Iterable,
 
     Parameters
     ----------
-    values : iterable
+    values : Sequence
         The values for which to filter. If any of these values occur in any of
         the columns defined by ``column_names`` or ``column_regex``, the row
         will be included in the filtered return.
