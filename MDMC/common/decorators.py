@@ -314,7 +314,7 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
     return decorator
 
 
-def wrap_docstring(docstring: str, line_length: int) -> Callable:
+def wrap_docstring(docstring: str, line_length: int) -> str:
     """
     Wraps a docstring to a specific line length.
 

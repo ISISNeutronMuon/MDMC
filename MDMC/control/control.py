@@ -174,11 +174,11 @@ class Control:
                  print_all_settings: bool = False,
                  **settings: dict):
 
-        self.step_timings = None
+        self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.verbose = verbose
-        self.timings = {'equilibrate': [],
+        self.timings: dict = {'equilibrate': [],
                         '_run_MD': [],
                         'convert_trajectory': [],
                         'FoM_calculator': [],
@@ -335,19 +335,19 @@ class Control:
 
             # pylint: disable=consider-using-dict-items
             index_array.append("- Control Settings")
-            data_array.append("-")
+            data_array.append(["-"])
             for setting in settings:
                 index_array.append(f'  {setting}')
                 data_array.append([settings[setting]])
 
             index_array.append("- Parameters")
-            data_array.append("-")
+            data_array.append(["-"])
             for parameter in fit_parameters:
                 index_array.append(f'  {parameter.name}')
                 data_array.append([parameter.value])
 
             index_array.append("- Experimental Datasets")
-            data_array.append("-")
+            data_array.append(["-"])
             if exp_datasets is not None:
                 for dataset in exp_datasets:
                     for key in dataset.keys():
@@ -355,7 +355,7 @@ class Control:
                         data_array.append([dataset[key]])
 
             index_array.append("- FoM Options")
-            data_array.append("-")
+            data_array.append(["-"])
             if FoM_options is not None:
                 for key in FoM_options.keys():
                     index_array.append(f'  {key}')
