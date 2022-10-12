@@ -17,7 +17,6 @@ from typing import Union, List, Any
 import numpy as np
 from MDMC.common import units
 from MDMC.MD.structures import Atom
-from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 
 
 class CompactTrajectory:
@@ -176,14 +175,8 @@ class CompactTrajectory:
         return np.column_stack([
             np.arange(self.n_steps),
             self.times,
-            # [self.TemporalConfiguration(x) for x in np.arange(self.n_steps)]
+            # there used to be a TemporalConfiguration here as well.
         ])
-        # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        # I decided not to add the TemporalConfigurations here,
-        # as it wastes resources and we are trying
-        # to move away from this solution anyway.
-        # I left the TemporalConfigurations there, but commented out,
-        # to show where they _should_ appear if we later decided that we needed them.
 
     def preAllocate(self, n_steps: int = 1, n_atoms: int = 1,
                     useVelocity: bool = False):
@@ -603,24 +596,3 @@ class CompactTrajectory:
                     velocity,
                     charge=charge)
 
-    def exportTemporalConfiguration(self, step_number: int = 0) -> TemporalConfiguration:
-        """
-        For compatibility, creates a TemporalConfiguration object
-        out of the numpy arrays of atom positions.
-
-        Parameters
-        ----------
-        step_number : int
-            The ``TemporalConfiguration`` will be created using the
-            positions and time from this step of the ``CompactTrajectory``
-
-        Returns
-        -------
-        TemporalConfiguration
-            A ``TemporalConfiguration`` object containing all the atoms at the
-            requested time step
-        """
-        return TemporalConfiguration(self.times[step_number],
-                                     *[self.exportAtom(step_number, at_num)
-                                       for at_num in range(self.n_atoms)],
-                                     universe=self.universe)
