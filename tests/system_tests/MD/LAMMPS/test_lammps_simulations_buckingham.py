@@ -101,10 +101,10 @@ NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                               'Press': (28387.19, 292.63),
                               'Volume': (VOLUME, 0.0),
                               'E_bond': (59.26, 1.58),
-                              'E_angle': (138.19, 1.48),
+                              'E_angle': (138.19, 2.10), # Changed Value
                               'E_vdwl': (627.93, 8.18),
                               'E_coul': (11402.58, 7.06),
-                              'E_long': (-13252.19, 0.25) # Changed Value,
+                              'E_long': (-13252.19, 0.25), # Changed Value,
                               'Nbuild': (51.21, 0.78),
                               'Ndanger': (0.0, 0.0)}
 
