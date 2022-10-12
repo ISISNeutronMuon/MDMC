@@ -67,7 +67,7 @@ class CompactTrajectory:
         self.dimensions = 0.1*np.ones(3)  # avoids divide-by-zero errors, explained above.
         self.changing_dimensions = None
         self.element_list = []  # chemical element (str) defined for each atom
-        self.element_set = set()  # set of chemical elements (str) present in the trajectory 
+        self.element_set = set()  # set of chemical elements (str) present in the trajectory
         # key point: the data!
         # this is where we will keep the numpy arrays
         # vvvvvvvvvvvvvvvvvv
@@ -490,8 +490,8 @@ class CompactTrajectory:
             temp.times = self.times[start:stop:step]
             temp.changing_dimensions = self.changing_dimensions[start:stop:step, :]
             if self.velocity is not None:
-                temp.velocity = self.velocity[start:stop:step, element_filter, :]     
-            temp.atom_types = self.atom_types[element_filter]       
+                temp.velocity = self.velocity[start:stop:step, element_filter, :]
+            temp.atom_types = self.atom_types[element_filter]
             temp.n_atoms = len(temp.atom_types)
             temp.atom_charges = self.atom_charges[element_filter]
             temp.atom_masses = self.atom_masses[element_filter]
@@ -595,4 +595,3 @@ class CompactTrajectory:
                     self.position[step_number, atom_number, :],
                     velocity,
                     charge=charge)
-
