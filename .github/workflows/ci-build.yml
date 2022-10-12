@@ -164,5 +164,5 @@ jobs:
     - name: mypy
       run: |
         cd MDMC
-        mypy .
+        mypy . || mypy-exit $?
         exit $?
