@@ -58,17 +58,17 @@ class CompactTrajectory:
         # and so we define them as header data, and not separately for every frame:
         self.n_atoms = -1  # this way we know that the trajectory has not been initialised
         self.n_steps = 0
-        self.atom_types = []
-        self.atom_masses = []
-        self.atom_charges = []
+        self.atom_types = []  # atom types defined as numbers, following the MD engine definition
+        self.atom_masses = []  # atom masses, floating point numbers, one for each atom
+        self.atom_charges = []  # atom charges, floating point numbers, one for each atom
         # The initial value of self.dimensions is set to a number too low to be physical,
         # but different from 0. This way if an observable tried to calculate the Q vectors
         # or, more precisely, reciprocal space vectors
         # from an unpopulated CompactTrajectory, it would not divide by zero.
         self.dimensions = 0.1*np.ones(3)  # avoids divide-by-zero errors, explained above.
         self.changing_dimensions = None
-        self.element_list = []
-        self.element_set = set()
+        self.element_list = []  # chemical element (str) defined for each atom
+        self.element_set = set()  # set of chemical elements (str) present in the trajectory 
         # key point: the data!
         # this is where we will keep the numpy arrays
         # vvvvvvvvvvvvvvvvvv
@@ -356,7 +356,7 @@ class CompactTrajectory:
         turns out that they were not.
         """
         if len(atom_types) == 0:
-            return atom_types
+            return np.array([])
         try:
             int(atom_types[0])
         except ValueError:
@@ -366,7 +366,7 @@ class CompactTrajectory:
             for number, at_type in enumerate(all_types):
                 number_types[np.where(compare_types == at_type)] = number +1
             return number_types
-        return atom_types
+        return np.array(atom_types)
 
     def validateTypes(self, raw_atom_types: np.array):
         """This function checks if the sorted array of atom types
@@ -430,7 +430,7 @@ class CompactTrajectory:
             # we are trying to set labels on a CompactTrajectory with no atoms.
         self.element_list = [atom_symbols[xx] for xx in self.atom_types]
         self.element_set = set(self.element_list)
-        self.atom_masses = [atom_masses[xx] for xx in self.atom_types]
+        self.atom_masses = np.array([atom_masses[xx] for xx in self.atom_types])
         return True
 
     def postProcess(self):
@@ -448,7 +448,8 @@ class CompactTrajectory:
             self.last_index = len(self.position)
             self.is_populated = True
 
-    def subtrajectory(self, start: int = 0, stop: int = -1, step: int = 1):
+    def subtrajectory(self, start: int = 0, stop: int = -1, step: int = 1,
+                            element_filter: List = None):
         """
         Returns another CompactTrajectory instance, which contains the
         same header information, and a subset of the original trajectory
@@ -478,18 +479,31 @@ class CompactTrajectory:
         temp.time_unit = self.time_unit
         temp.velocity_unit = self.velocity_unit
         temp.dtype = self.dtype
-        temp.n_atoms = self.n_atoms
-        temp.atom_types = self.atom_types
-        temp.atom_masses = self.atom_masses
-        temp.atom_charges = self.atom_charges
         temp.dimensions = self.dimensions
-        temp.element_list = self.element_list
-        temp.element_set = self.element_set
-        temp.position = self.position[start:stop:step, :, :]
-        temp.times = self.times[start:stop:step]
-        temp.changing_dimensions = self.changing_dimensions[start:stop:step, :]
-        if self.velocity is not None:
-            temp.velocity = self.velocity[start:stop:step, :, :]
+        if element_filter is None:
+            temp.position = self.position[start:stop:step, :, :]
+            temp.times = self.times[start:stop:step]
+            temp.changing_dimensions = self.changing_dimensions[start:stop:step, :]
+            if self.velocity is not None:
+                temp.velocity = self.velocity[start:stop:step, :, :]
+            temp.n_atoms = self.n_atoms
+            temp.atom_types = self.atom_types.copy()
+            temp.atom_masses = self.atom_masses.copy()
+            temp.atom_charges = self.atom_charges.copy()
+            temp.element_list = self.element_list
+            temp.element_set = self.element_set
+        else:
+            temp.position = self.position[start:stop:step, element_filter, :]
+            temp.times = self.times[start:stop:step]
+            temp.changing_dimensions = self.changing_dimensions[start:stop:step, :]
+            if self.velocity is not None:
+                temp.velocity = self.velocity[start:stop:step, element_filter, :]     
+            temp.atom_types = self.atom_types[element_filter]       
+            temp.n_atoms = len(temp.atom_types)
+            temp.atom_charges = self.atom_charges[element_filter]
+            temp.atom_masses = self.atom_masses[element_filter]
+            temp.element_list = [self.element_list[x] for x in element_filter]
+            temp.element_set = set(temp.element_list)
         temp.is_allocated = True
         temp.is_populated = True
         temp.is_fixedbox = self.is_fixedbox
@@ -501,7 +515,6 @@ class CompactTrajectory:
     def filter_by_time(self, start, end=None):
         """
         Filter the ``CompactTrajectory`` by time.
-        Added only for compatibility with the original ``Trajectory``.
 
         Parameters
         ----------
@@ -532,8 +545,7 @@ class CompactTrajectory:
 
     def filter_by_type(self, element: Any):
         """
-        Filter the ``CompactTrajectory`` by time.
-        Added only for compatibility with the original ``Trajectory``.
+        Filter the ``CompactTrajectory`` by atom type.
 
         Parameters
         ----------
@@ -546,17 +558,13 @@ class CompactTrajectory:
             A ``CompactTrajectory`` containing only the atoms of
             the specified type.
         """
-
-        index = np.where(self.times == start)[0].ravel()
-        if end is None:
-            if len(index) < 1:
-                raise ValueError("Start is not in self.times")
-            return self.subtrajectory(index[0], index[0]+1)
-        total = np.where(np.logical_and(
-            self.times >= start, self.times < end))[0].ravel()
-        if len(total) < 1:
-            raise ValueError("The specified time range contains no MD frames")
-        return self.subtrajectory(index[0], len(total))
+        if element in self.atom_types:
+            index = np.where(self.atom_types == element)[0].ravel()
+        elif element in self.element_list:
+            index = np.where(np.array(self.element_list) == element)[0].ravel()
+        else:
+            raise ValueError("Atom type not found in the trajectory.")
+        return self.subtrajectory(0, len(self), step = 1, element_filter = index)
 
     def exportAtom(self, step_number: int = 0, atom_number: int = 0):
         """
