@@ -147,3 +147,22 @@ jobs:
         pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
         exit $?
 
+  type-checking:
+    name: Mypy
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: apt get
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
+    - name: pip3 install
+      run: |
+        sudo pip3 install --upgrade pip
+        sudo pip3 install -r requirements.txt
+    - name: mypy
+      run: |
+        cd MDMC
+        mypy .
+        exit $?
