@@ -44,10 +44,10 @@ def start_logging(logfile: str = "MDMC.log",
             _capture_warnings(logger)
     if ranks:
         if ranks == -1:
-            ranks = range(0, MPI.COMM_WORLD.Get_size(), 1)
+            ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
         elif isinstance(ranks, str):
-            ranks = [ranks]
-        if rank in ranks:
+            ranks_list = [ranks]
+        if rank in ranks_list:
             # Prepends rank in front of .log extension if it exists, otherwise
             # appends to logfile
             add = f'_{platform.node()}_{rank}'
@@ -55,7 +55,7 @@ def start_logging(logfile: str = "MDMC.log",
                 '.log{}'.format(add), '{}.log'.format(add))
             logger = _start_single_logger(logfile, level=level)
             # Only capture warnings on lowest rank
-            if capture_warnings and rank == min(ranks):
+            if capture_warnings and rank == min(ranks_list):
                 _capture_warnings(logger)
 
 
