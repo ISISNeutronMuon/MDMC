@@ -16,11 +16,12 @@ from MDMC.resolution import Resolution
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
-from MDMC.trajectory_analysis.trajectory import Trajectory
 
 if TYPE_CHECKING:
     from builtins import function
-    from typing import Optional, Union
+    from typing import Optional
+    from MDMC.trajectory_analysis.trajectory import Trajectory
+
 
 # pylint: disable=c-extension-no-member
 # to avoid MPI warnings
@@ -142,7 +143,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: "Trajectory", verbose: int = 0,  **settings: dict) -> None:
+    def calculate_from_MD(self, MD_input: "Trajectory", verbose: int = 0, **settings: dict) -> None:
         """
         Calculates the intermediate scattering function from a trajectory.
 
