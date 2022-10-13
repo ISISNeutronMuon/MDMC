@@ -51,7 +51,7 @@ def correlation(input1, input2=None, normalise=False) -> np.ndarray:
     # 1 / (N - m)
     # where m is the number of each individual step
     if normalise:
-        prefactor = float(1. / (N - np.arange(N)))
+        prefactor = 1. / (N - np.arange(N))
         if len(np.shape(cyclic_corr)) > 1:
             cyclic_corr = np.sum(cyclic_corr, axis=1)
     else:
