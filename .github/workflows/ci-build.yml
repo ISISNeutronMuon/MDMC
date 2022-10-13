@@ -164,5 +164,4 @@ jobs:
     - name: mypy
       run: |
         cd MDMC
-        mypy . || mypy-exit $? --strict --show-error-codes --pretty
-        exit $?
+        mypy . --show-error-codes --pretty
