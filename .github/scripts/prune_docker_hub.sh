@@ -64,7 +64,7 @@ do
            then
               echo "This image ${UNAME}/${i}:${j} is older than 60 days, deleting this image"
               ## Please uncomment below line to delete docker hub images of docker hub repositories
-              #curl -s  -X DELETE  -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/${UNAME}/${i}/tags/${j}/
+              curl -s  -X DELETE  -H "Authorization: JWT ${TOKEN}" https://hub.docker.com/v2/repositories/${UNAME}/${i}/tags/${j}/
            else
               echo "This image ${UNAME}/${i}:${j} is within 60 days time range, keep this image"
            fi
