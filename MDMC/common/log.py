@@ -48,11 +48,11 @@ def start_logging(logfile: str = "MDMC.log",
         elif isinstance(ranks, int):
             ranks_list = [ranks]
         else:
+            # Try to convert given ranks into int format, otherwise just use all ranks
             try:
                 ranks_list = [int(ranks)]
             except ValueError:
-                raise TypeError("The ranks are not provided in the form"
-                                " of integers/list of integers")
+                ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
 
         if rank in ranks_list:
             # Prepends rank in front of .log extension if it exists, otherwise
