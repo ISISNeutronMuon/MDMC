@@ -45,8 +45,15 @@ def start_logging(logfile: str = "MDMC.log",
     if ranks:
         if ranks == -1:
             ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
-        elif isinstance(ranks, str):
+        elif isinstance(ranks, int):
             ranks_list = [ranks]
+        else:
+            try:
+                ranks_list = [int(ranks)]
+            except ValueError:
+                raise TypeError("The ranks are not provided in the form"
+                                " of integers/list of integers")
+
         if rank in ranks_list:
             # Prepends rank in front of .log extension if it exists, otherwise
             # appends to logfile
