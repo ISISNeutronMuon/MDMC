@@ -161,10 +161,10 @@ jobs:
           python-version: '3.9'
           architecture: x64
 
-      - name: Convert Notebooks
+      - name: Convert & Test Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
           docker pull mdmc/mdmc:ci-$BRANCH
-          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:ci-$BRANCH /bin/bash -c "pip install . && pip install nbconvert && pip install nbmake && pip install pytest && pip install -r requirements.txt && apt-get install pandoc -y && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2100 -k ".nbconvert.ipynb"
+          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:ci-$BRANCH /bin/bash -c "pip install . && pip install nbconvert && pip install nbmake && pip install pytest && pip install -r requirements.txt && apt-get install pandoc -y && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2100 -k ".nbconvert.ipynb""
           exit 0

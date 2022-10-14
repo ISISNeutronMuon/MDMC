@@ -10,4 +10,3 @@ c.NbConvertApp.notebooks = [
     "doc/tutorials/solvating-a-universe.ipynb",
     "doc/tutorials/units.ipynb"
 ]
-c.ExecutePreprocessor.enabled = True
