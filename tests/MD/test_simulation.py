@@ -497,7 +497,7 @@ def test_translate(unit, universe):
         for position in positions:
             assert list(position) in uni_positions
 
-    unit_position = unit.position
+    unit_position = unit.position  # I misunderstand what 'unit' means here.
     atom_positions = [atom.position for atom in unit.atoms]
     universe.add_structure(unit)
     positions_in_universe(atom_positions, universe)
