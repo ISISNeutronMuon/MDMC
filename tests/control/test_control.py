@@ -746,6 +746,7 @@ def test_control_resolution_function(simulation, exp_datasets):
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
 
+
 def test_control_remove_points():
     """Tests that points with poor figures of merit are likely to be removed"""
     chi_squared =  np.append(np.ones(500), np.ones(500)*2.0)
