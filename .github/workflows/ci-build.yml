@@ -153,10 +153,6 @@ jobs:
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: apt get
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
     - name: pip3 install
       run: |
         sudo pip3 install --upgrade pip
