@@ -490,7 +490,7 @@ class Control:
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
-        
+
 
     @staticmethod
     def _expected_minimum_random_sampling(optimized_result: OptimizeResult,
@@ -559,7 +559,8 @@ class Control:
         np.random.seed(16)  # Set for reproducible output - will always retain same points
         lowest_chi = min(chi_squared)
 
-        points_to_keep = np.random.random(size=chi_squared.shape) < np.exp((lowest_chi - chi_squared)/(lowest_chi/MC_norm))
+        points_to_keep = np.random.random(size=chi_squared.shape) < \
+                         np.exp((lowest_chi - chi_squared)/(lowest_chi/MC_norm))
         reduced_chi=chi_squared[points_to_keep]
         reduced_coords = np.array(coords)[points_to_keep]
 
