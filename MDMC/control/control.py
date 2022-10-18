@@ -592,7 +592,6 @@ class Control:
         try:
             _, _, y_random, coords = \
             self._expected_minimum_random_sampling(self.minimizer.optimizer, n_random_starts=points)
-
         except IndexError:
             print("\n \n Your model has not been run for enough iterations to make a reasonable ")
             print("guess at the best figure of merit. Please run for at least 20 steps. \n")
