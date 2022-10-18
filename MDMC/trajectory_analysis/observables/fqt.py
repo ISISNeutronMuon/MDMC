@@ -19,7 +19,7 @@ from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 
 if TYPE_CHECKING:
     from builtins import function
-    from typing import Union
+    from typing import Optional
     from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
