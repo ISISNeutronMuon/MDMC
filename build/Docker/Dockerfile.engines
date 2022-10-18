@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install --upgrade -y \
   libblas-dev \
   liblapack-dev \
   libfreetype6-dev \
-  fftw3-dev \
+  libfftw3-dev \
   cmake \
   wget \
   python3-tk
