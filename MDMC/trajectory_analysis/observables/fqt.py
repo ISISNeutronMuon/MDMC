@@ -19,7 +19,7 @@ from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 
 if TYPE_CHECKING:
     from builtins import function
-    from typing import Optional
+    from typing import Union
     from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
@@ -512,7 +512,7 @@ class AbstractFQt(SQwMixins, Observable):
         # FQt the transform should be normalized to the length of the spectra
         return 0.5 * dt * np.real(SQw_cropped) / len(FQt_mirror)
 
-    def apply_resolution(self, resolution: Resolution) -> "np.ndarray":
+    def apply_resolution(self, resolution: Resolution) -> "FQt": # type: ignore
         """
         Apply instrument resolution to an FQt object.
 
