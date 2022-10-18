@@ -514,8 +514,8 @@ class Control:
             location of the minimum.
         y_random[index_best_objective] : float
             the surrogate function value at the minimum.
-        y_random : list
-            A list of length "n_random_starts" containing surrogate function values at each point
+        y_random : np.array
+            An array of length "n_random_starts" containing surrogate function values at each point
         random_samples : list[list]
             A list of length "n_random_starts" containing the coordinates of each prediction
         """
@@ -530,6 +530,7 @@ class Control:
         min_x = random_samples[index_best_objective]
 
         return min_x, y_random[index_best_objective], y_random, random_samples
+
 
     @staticmethod
     def _remove_points(chi_squared: 'list[float]', coords: 'list[list]',
@@ -588,8 +589,16 @@ class Control:
         corner plot : Matplotlib.figure.Figure
             A plot displaying every parameter combination with their variances and covariances
         """
-        _, _, y_random, coords = self._expected_minimum_random_sampling(self.minimizer.optimizer,
-                                                                        n_random_starts=points)
+        try:
+            _, _, y_random, coords = \
+            self._expected_minimum_random_sampling(self.minimizer.optimizer, n_random_starts=points)
+
+        except IndexError:
+            print("\n \n Your model has not been run for enough iterations to make a reasonable ")
+            print("guess at the best figure of merit. Please run for at least 20 steps. \n")
+
+            return None
+
         _, reduced_coordinate_list = self._remove_points(y_random, coords, MC_norm)
 
         data = np.empty(shape=np.array(reduced_coordinate_list).shape)
