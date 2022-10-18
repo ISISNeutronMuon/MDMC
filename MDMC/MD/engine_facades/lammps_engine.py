@@ -36,6 +36,7 @@ import logging
 from random import randint
 from tempfile import NamedTemporaryFile
 from typing import Union
+import os
 
 from mpi4py import MPI
 import numpy as np
@@ -764,6 +765,17 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.proper_ID = {}
         self.improper_ID = {}
         self.nonbonded_mix = None
+        
+        if "OMP_NUM_THREADS" in os.environ.keys():
+            omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
+            try:
+                omp_num_threads = int(omp_num_threads_str)
+            except ValueError:
+                pass
+            else:
+                if omp_num_threads > 1:
+                    self.lmp.command("package omp 0")  # use OMP_NUM_THREADS
+                    self.lmp.command("suffix omp")  # add /omp to relevant styles
 
         self._define_simulation_box(self.universe)
         self._build_config(self.universe)

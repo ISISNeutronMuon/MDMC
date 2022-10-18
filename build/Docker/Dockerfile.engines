@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install --upgrade -y \
   libblas-dev \
   liblapack-dev \
   libfreetype6-dev \
+  fftw3-dev \
   cmake \
   wget \
   python3-tk
@@ -37,15 +38,20 @@ RUN rm /lammps-stable.tar.gz
 
 # Build LAMMPS from source
 WORKDIR /lammps/build
+RUN find /usr/lib -name libgomp\*
 RUN cmake -C ../cmake/presets/all_on.cmake \
           -C ../cmake/presets/nolib.cmake \
+          -C ../cmake/presets/gcc.cmake \
           -D BUILD_LIB=on \
           -D BUILD_SHARED_LIBS=on \
           -D BUILD_MPI=on \
+          -D BUILD_OMP=on \
           -D LAMMPS_EXCEPTIONS=on \
           -D DOWNLOAD_VORO=on \
+          -D PKG_OPENMP=on \
           -D PKG_PYTHON=on \
           -D PKG_VORONOI=on \
+          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/8/libgomp.so \
           ../cmake
 RUN make
 RUN make install-python
