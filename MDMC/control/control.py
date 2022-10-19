@@ -7,7 +7,9 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import corner
 from scipy.interpolate import interp1d, interp2d
+from scipy.optimize import OptimizeResult
 from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
@@ -122,6 +124,9 @@ class Control:
         Verbose level 1 gives final time for the whole method.
         Verbose level 2 gives final time and also a progress bar.
         Verbose level 3 gives final time, a progress bar, and time per step.
+    print_full_settings: bool, optional
+        Whether to print all settings/attributes/parameters passed to this object,
+        defaults to False.
     **settings: dict, optional
         Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
         minimiser is used.
@@ -168,13 +173,14 @@ class Control:
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
                  verbose: int = 0,
+                 print_all_settings: bool = False,
                  **settings: dict):
 
-        self.step_timings = None
+        self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.verbose = verbose
-        self.timings = {'equilibrate': [],
+        self.timings: dict = {'equilibrate': [],
                         '_run_MD': [],
                         'convert_trajectory': [],
                         'FoM_calculator': [],
@@ -293,8 +299,8 @@ class Control:
             if 'resolution' not in dset.keys():
                 # create list of user keys for resolutions to add to the error
                 userkeys = []
-                for key in resolution_factory.resolutions:
-                    userkeys.append(key.lower().replace('resolution', ''))
+                for setting in resolution_factory.resolutions:
+                    userkeys.append(setting.lower().replace('resolution', ''))
                 raise KeyError("A resolution function must be added. Recognised functions are " +
                                str(userkeys) +
                                ". If you meant to apply no resolution,"
@@ -307,14 +313,58 @@ class Control:
             self.observable_pairs[i].MD_obs.resolution = resolution
 
         # setup the dataframe for stdout
-        setup_frame = pd.DataFrame([[minimizer_type],
-                                    [self.FoM_calculator.__class__.__name__],
-                                    [len(self.observable_pairs)],
-                                    [len(self.fit_parameters)]],
-                                   index=['  Minimizer',
-                                          '  FoM type',
-                                          '  Number of observables',
-                                          '  Number of parameters'])
+        data_array = [
+            ["-"],
+            [minimizer_type],
+            [self.FoM_calculator.__class__.__name__],
+            [len(self.observable_pairs)],
+            [len(self.fit_parameters)],
+        ]
+
+        index_array = [
+            '- Attributes',
+            '  Minimizer',
+            '  FoM type',
+            '  Number of observables',
+            '  Number of parameters'
+        ]
+
+        # Printing settings
+        if print_all_settings:
+            for item in ["MD_steps", "equilibration_steps", "reset_config", "verbose"]:
+                index_array.append(f'  {item}')
+                data_array.append([self.__dict__[item]])
+
+            # pylint: disable=consider-using-dict-items
+            index_array.append("- Control Settings")
+            data_array.append(["-"])
+            for setting in settings:
+                index_array.append(f'  {setting}')
+                data_array.append([settings[setting]])
+
+            index_array.append("- Parameters")
+            data_array.append(["-"])
+            for parameter in fit_parameters:
+                index_array.append(f'  {parameter.name}')
+                data_array.append([parameter.value])
+
+            index_array.append("- Experimental Datasets")
+            data_array.append(["-"])
+            if exp_datasets is not None:
+                for dataset in exp_datasets:
+                    for key in dataset.keys():
+                        index_array.append(f'  {key}')
+                        data_array.append([dataset[key]])
+
+            index_array.append("- FoM Options")
+            data_array.append(["-"])
+            if FoM_options is not None:
+                for key in FoM_options.keys():
+                    index_array.append(f'  {key}')
+                    data_array.append([FoM_options[key]])
+
+        setup_frame = pd.DataFrame(data=data_array,
+                                   index=index_array)
 
         print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
@@ -440,6 +490,125 @@ class Control:
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
+
+
+    @staticmethod
+    def _expected_minimum_random_sampling(optimized_result: OptimizeResult,
+                    n_random_starts: int=100000) -> 'tuple[list, float, list, list[list]]':
+        """
+        This is almost verbatim a copy of code from scikit-optimize but with the samples as
+        an additional output:
+        https://github.com/scikit-optimize/scikit-optimize/blob/de32b5fd2205a1e58526f3cacd0422a26d315d0f/skopt/utils.py#L259
+
+        Parameters
+        ----------
+        optimized_result : `OptimizeResult`, scipy object
+            The optimization result returned by a `skopt` minimizer.
+        n_random_starts : int, default=100000
+            The number of random points for the minimization of the surrogate
+            model.
+
+        Returns
+        -------
+        min_x : list
+            location of the minimum.
+        y_random[index_best_objective] : float
+            the surrogate function value at the minimum.
+        y_random : np.array
+            An array of length "n_random_starts" containing surrogate function values at each point
+        random_samples : list[list]
+            A list of length "n_random_starts" containing the coordinates of each prediction
+        """
+
+        # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
+        random_samples = optimized_result.space.rvs(n_random_starts, random_state=7)
+
+        # make estimations with surrogate
+        model = optimized_result.models[-1]
+        y_random = model.predict(optimized_result.space.transform(random_samples))
+        index_best_objective = np.argmin(y_random)
+        min_x = random_samples[index_best_objective]
+
+        return min_x, y_random[index_best_objective], y_random, random_samples
+
+
+    @staticmethod
+    def _remove_points(chi_squared: 'list[float]', coords: 'list[list]',
+                       MC_norm: float=20.0) -> 'tuple[list, list]':
+        """
+        Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
+        where the likelihood of keeping a point is dependent on the exponent of the difference
+        between its figure of merit, and that of the best one found, divided by MC_norm.
+
+        Parameters
+        ----------
+        chi_squared : list[float]
+            A list of the predicted chi-squared value at each coordinate
+        coords : list[list]
+            A list of the coordinates at which all of the chi-squared predictions are made
+        MC_norm : float, optional
+            The denominator of the exponent used to control the liklihood of keeping a point,
+            defaults to 20.0
+
+        Returns
+        -------
+        reduced_chi : list
+            A list of the remaining chi-squared points
+        reduced_coords : list[list]
+            A list of the remaining coordinates
+        """
+        np.random.seed(16)  # Set for reproducible output - will always retain same points
+        lowest_chi = min(chi_squared)
+
+        points_to_keep = np.random.random(size=chi_squared.shape) < \
+                         np.exp((lowest_chi - chi_squared)/(lowest_chi/MC_norm))
+        reduced_chi=chi_squared[points_to_keep]
+        reduced_coords = np.array(coords)[points_to_keep]
+
+        return reduced_chi, reduced_coords
+
+    def plot_results(self, points: int=100000, MC_norm: float=20.0) -> None:
+        """
+        Performs a random sample across the coordinate space giving a predicted figure of merit at
+        every point. Then removes points with poor figures of merit, according to a
+        Metropolis-Hastings type rule, where the likelihood of keeping a point is dependant on the
+        exponent of the difference between its figure of merit, and that of the best one found,
+        divided by MC_norm. A corner plot is then returned (a matplotlib figure object), which can
+        be displayed or exported.
+
+        Parameters
+        ----------
+        points : int, optional
+            The number of samples to initially generate, defaults to 100,000
+        MC_norm : float, optional
+            The denominator of the exponent, controlling how likley points are to be kept,
+            defaults to 20.0
+
+        Returns
+        -------
+        corner plot : Matplotlib.figure.Figure
+            A plot displaying every parameter combination with their variances and covariances
+        """
+        try:
+            _, _, y_random, coords = \
+            self._expected_minimum_random_sampling(self.minimizer.optimizer, n_random_starts=points)
+        except IndexError:
+            msg = ("\n \n Your model has not been run for enough iterations to make a reasonable "
+                   "guess at the best figure of merit. Please run for at least 20 steps. \n")
+            print(msg)
+
+            return None
+
+        _, reduced_coordinate_list = self._remove_points(y_random, coords, MC_norm)
+
+        data = np.empty(shape=np.array(reduced_coordinate_list).shape)
+        for i in range(np.array(reduced_coordinate_list).shape[1]):
+            data[:,i] = np.array(reduced_coordinate_list)[:,i]
+
+        labels = [str(name) for name in self.fit_parameters]
+        cornerplot = corner.corner(data, labels = labels, quantiles = [0.34, 0.5, 0.68])
+
+        return cornerplot
 
     def _print_data(self) -> None:
 

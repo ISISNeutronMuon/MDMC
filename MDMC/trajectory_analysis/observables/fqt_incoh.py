@@ -51,6 +51,6 @@ class FQtIncoherent(AbstractFQt):
         try:
             norm = np.shape(single_Q_vectors)[0]
         except IndexError:
-            norm = 1.
+            norm = 1
 
         return FQt_single_Q / (n_atoms * norm)
