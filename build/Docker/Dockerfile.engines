@@ -30,11 +30,11 @@ RUN apt-get update && apt-get install --upgrade -y \
   wget \
   python3-tk
   
-# Get LAMMPS
-RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
+# Get LAMMPS # used to be lammps-stable.tar.gz
+RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
 RUN mkdir /lammps \
-    && tar xvzf lammps-stable.tar.gz -C /lammps --strip-components=1
-RUN rm /lammps-stable.tar.gz
+    && tar xvzf lammps-29Sep2021.tar.gz -C /lammps --strip-components=1
+RUN rm /lammps-29Sep2021.tar.gz
 
 # Build LAMMPS from source
 WORKDIR /lammps/build

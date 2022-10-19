@@ -765,8 +765,8 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.proper_ID = {}
         self.improper_ID = {}
         self.nonbonded_mix = None
-        
-        if "OMP_NUM_THREADS" in os.environ.keys():
+
+        if "OMP_NUM_THREADS" in os.environ:
             omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
             try:
                 omp_num_threads = int(omp_num_threads_str)
