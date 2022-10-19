@@ -198,7 +198,7 @@ class Observable(ABC):
             self.reader.assign(observable=self)
 
     @abstractmethod
-    def calculate_from_MD(self, MD_input: 'Union[Trajectory, list[Trajectory]]',
+    def calculate_from_MD(self, MD_input: 'Trajectory',
                           verbose: int = 0, **parameters: dict) -> None:
         """
         Calculates the observable using input from an MD simulation
