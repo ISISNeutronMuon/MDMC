@@ -122,8 +122,9 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || \
-          docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || exit 1
+          docker pull mdmc/mdmc:ci-$BRANCH || docker pull mdmc/mdmc:latest
+          export IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")
+          docker pull mdmc/mdmc:$IMG_NAME && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
           exit 0
 
   linting:
@@ -165,6 +166,8 @@ jobs:
         run: |
           docker pull mdmc/mdmc:ci-$BRANCH || docker pull mdmc/mdmc:latest
           export IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")
+          echo $IMG_NAME
+          echo "mdmc/mdmc:$IMG_NAME"
           docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:$IMG_NAME /bin/bash -c " apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
           exit 0
 
