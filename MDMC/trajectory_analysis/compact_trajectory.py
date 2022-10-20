@@ -26,7 +26,7 @@ class CompactTrajectory:
     The units are system units.
     """
 
-    def __init__(self, n_steps: int = 1,
+    def __init__(self, n_steps: int = 0,
                     n_atoms: int = 1,
                     useVelocity: bool = False,
                     bits_per_number: int = 8,
@@ -90,7 +90,8 @@ class CompactTrajectory:
         # -------------
         # now we allocate the arrays
         # vvvvvvvvvvvvv
-        self.preAllocate(n_steps=n_steps, n_atoms=n_atoms, useVelocity=useVelocity)
+        if n_steps > 0:
+            self.preAllocate(n_steps=n_steps, n_atoms=n_atoms, useVelocity=useVelocity)
         try:
             self.universe = settings['universe']
         except KeyError:
@@ -597,72 +598,82 @@ class CompactTrajectory:
                     velocity,
                     charge=charge)
 
-    def fromConfigs(self, *configs: List[TemporalConfiguration]):
-        """
-        Populate the arrays of the CompactTrajectory using the input list
-        of ``TemporalConfiguration`` objects.
-        This method has been added to increase the compatibility between
-        the ``Trajectory`` and ``CompactTrajectory``.
-        """
-        if len(configs) < 1:
-            raise TypeError("At least one Configuration is needed"
-                            " for the CompactTrajectory.fromConfigs()")
-        self.preAllocate(n_steps=len(configs),
-                         n_atoms=len(configs[0].atoms),
-                         useVelocity=len(configs[0].atom_velocities) > 0)
-        for step_number, config in enumerate(configs):
-            if len(config.data) > 0:
-                atpos = np.row_stack(config.atom_positions)
-                atvel = np.row_stack(config.atom_velocities)
-                self.writeOneStep(step_num=step_number,
-                                  time=config.time,
-                                  positions=atpos,
-                                  velocities=atvel)
-            else:
-                self.writeEmptyStep(step_num=step_number,
-                                    time=config.time)
+def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])->CompactTrajectory:
+    """
+    Populate the arrays of the CompactTrajectory using the input list
+    of ``TemporalConfiguration`` objects.
+
+    Arguments
+    ---------
+        config -- A TemporalConfiguration object, most likely containing atoms
+
+    Returns
+    -------
+        A CompactTrajectory with atom types and positions matching those in the
+        input configuration.
+    """
+    if len(configs) < 1:
+        raise TypeError("At least one Configuration is needed"
+                        " for the CompactTrajectory.fromConfigs()")
+
+    traj = CompactTrajectory(n_steps=len(configs),
+                        n_atoms=len(configs[0].atoms),
+                        useVelocity=len(configs[0].atom_velocities) > 0)
+
+    for step_number, config in enumerate(configs):
+        if len(config.data) > 0:
+            atpos = np.row_stack(config.atom_positions)
+            atvel = np.row_stack(config.atom_velocities)
+            traj.writeOneStep(step_num=step_number,
+                                time=config.time,
+                                positions=atpos,
+                                velocities=atvel)
+        else:
+            traj.writeEmptyStep(step_num=step_number,
+                                time=config.time)
+        try:
+            dim = config.universe.dimensions
+        except AttributeError:
+            continue
+        else:
+            traj.setDimensions(dim, step_num=step_number)
+    # here we extract as much header information as possible
+    # from the TemporalConfiguration
+    elements = []  # list of 'chemical_element_symbol', 1 per atom
+    # dictionary of 'chemical_element_symbol' : mass (float) in a.m.u.
+    masses = {}
+    # dictionary of 'atom_type' : mass (float) in a.m.u.
+    mass_per_type = {}
+    element_per_type = {}  # dictionary of 'atom_type' : 'chemical_element_symbol'
+    types = []  # a list of 'atom_type', 1 entry for each atom
+    id_values = []  # a list of 'atom_ID', 1 entry for each atom
+    atom_charge = []
+    # we assume -for now- that the Trajectory stores atom_type.
+    has_types = True
+    atom_counter = 0
+    # we just iterate over Atom objects
+    for nat, atom in enumerate(configs[0].atoms):
+        element = atom.element
+        mass = atom.mass
+        charge = atom.charge
+        elements.append(element)
+        atom_charge.append(charge)
+        masses[element] = mass
+        if has_types:
             try:
-                dim = config.universe.dimensions
+                types.append(atom.atom_type)
             except AttributeError:
-                continue
-            else:
-                self.setDimensions(dim, step_num=step_number)
-        # here we extract as much header information as possible
-        # from the TemporalConfiguration
-        elements = []  # list of 'chemical_element_symbol', 1 per atom
-        # dictionary of 'chemical_element_symbol' : mass (float) in a.m.u.
-        masses = {}
-        # dictionary of 'atom_type' : mass (float) in a.m.u.
-        mass_per_type = {}
-        element_per_type = {}  # dictionary of 'atom_type' : 'chemical_element_symbol'
-        types = []  # a list of 'atom_type', 1 entry for each atom
-        id_values = []  # a list of 'atom_ID', 1 entry for each atom
-        atom_charge = []
-        # we assume -for now- that the Trajectory stores atom_type.
-        has_types = True
-        atom_counter = 0
-        # we just iterate over Atom objects
-        for nat, atom in enumerate(configs[0].atoms):
-            element = atom.element
-            mass = atom.mass
-            charge = atom.charge
-            elements.append(element)
-            atom_charge.append(charge)
-            masses[element] = mass
-            if has_types:
-                try:
-                    types.append(atom.atom_type)
-                except AttributeError:
-                    has_types = False
-            id_values.append(atom.ID)
-            atom_counter = nat + 1
-        if not has_types:
-            all_elements = sorted(list(np.unique(elements)))
-            types = [all_elements.index(x) for x in elements]
-        for x in range(atom_counter):
-            mass_per_type[types[x]] = masses[elements[x]]
-            element_per_type[types[x]] = elements[x]
-        self.validateTypes(np.array(types)[np.argsort(id_values)])
-        self.labelAtoms(element_per_type, mass_per_type)
-        self.setCharge(atom_charge)
-        self.postProcess()
+                has_types = False
+        id_values.append(atom.ID)
+        atom_counter = nat + 1
+    if not has_types:
+        all_elements = sorted(list(np.unique(elements)))
+        types = [all_elements.index(x) for x in elements]
+    for x in range(atom_counter):
+        mass_per_type[types[x]] = masses[elements[x]]
+        element_per_type[types[x]] = elements[x]
+    traj.validateTypes(np.array(types)[np.argsort(id_values)])
+    traj.labelAtoms(element_per_type, mass_per_type)
+    traj.setCharge(atom_charge)
+    traj.postProcess()
+    return traj
