@@ -164,12 +164,13 @@ jobs:
         run: |
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")" >> $GITHUB_ENV
+          echo $(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")
       - name: Convert & Test Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          echo "mdmc/mdmc:${{ env.IMG_NAME }}"
-          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:${{ env.IMG_NAME }} /bin/bash -c " apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
+          echo "mdmc/mdmc:$IMG_NAME"
+          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:$IMG_NAME /bin/bash -c " apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
           exit 0
 
   type-checking:
