@@ -163,8 +163,7 @@ jobs:
       - name: Pull Docker Image
         run: |
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-          echo "$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}")" || echo "$(docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")"
-          echo "IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}")" >> $GITHUB_ENV || echo "IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")" >> $GITHUB_ENV
+          echo "IMG_NAME=$($(docker images --format "{{.Tag}}")" | [ -z "$(grep "ci-.*" "-")" ] && echo "latest" || echo "$(docker images --format "{{.Tag}}" | grep "ci-.*" "-"))" >> $GITHUB_ENV
       - name: Convert & Test Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
