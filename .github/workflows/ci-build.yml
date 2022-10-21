@@ -171,7 +171,7 @@ jobs:
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Create Docker Container
         run: |
-          echo "CONTAINER_HASH=docker run --name notebook container -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }}" >> $GITHUB_ENV
+          echo "CONTAINER_HASH=$(docker run --name notebook container -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }})" >> $GITHUB_ENV
       - name: Install Requirements
         run: docker exec -it ${{ env.CONTAINER_HASH }} apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt
       - name: Convert Notebooks
