@@ -164,15 +164,20 @@ jobs:
           python-version: '3.9'
           architecture: x64
       - name: Pull Docker Image
-        run: |
-          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
-      - name: Convert & Test Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }} /bin/bash -c " apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
-          exit 0
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Create Docker Container
+        run: |
+          echo "CONTAINER_HASH=docker run --name notebook container -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }}" >> $GITHUB_ENV
+      - name: Install Requirements
+        run: docker exec -it ${{ env.CONTAINER_HASH }} apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt
+      - name: Convert Notebooks
+        run: docker exec -it ${{ env.CONTAINER_HASH }} jupyter nbconvert --config doc/tutorials/notebook-test-config.py
+      - name: Test Notebooks
+        run: docker exec -it ${{ env.CONTAINER_HASH }} pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
 
   type-checking:
     name: Mypy
