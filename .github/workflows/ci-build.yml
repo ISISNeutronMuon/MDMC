@@ -162,10 +162,9 @@ jobs:
           architecture: x64
       - name: Pull Docker Image
         run: |
-          docker pull mdmc/mdmc:ci-$BRANCH || docker pull mdmc/mdmc:latest
-          echo "$(docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")"
-          echo "$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")"
-          echo "IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")" >> $GITHUB_ENV
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}")" || echo "$(docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")"
+          echo "IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}")" >> $GITHUB_ENV || echo "IMG_NAME=$(docker images --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")" >> $GITHUB_ENV
       - name: Convert & Test Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
