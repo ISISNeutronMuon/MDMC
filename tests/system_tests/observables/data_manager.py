@@ -26,11 +26,9 @@ def trajectory():
     """
 
     # Unzip and unpickle the trajectory
-    compressed_trajectory = open(data.OBJECT_DATA['trajectory'], 'rb').read()
+    compressed_trajectory = open(data.OBJECT_DATA['compact_trajectory'], 'rb').read()
     pickled_trajectory = zlib.decompress(compressed_trajectory)
-    temp = pickle.loads(pickled_trajectory, encoding='latin-1')
-    ctraj = CompactTrajectory(*temp.configurations)
-    return ctraj
+    return pickle.loads(pickled_trajectory, encoding='latin-1')
 
 
 @pytest.fixture(scope="module")
