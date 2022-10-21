@@ -165,6 +165,8 @@ jobs:
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(docker image ls --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker image ls --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")" >> $GITHUB_ENV
           echo $(docker image ls --filter=reference="mdmc/mdmc:ci-*" --format "{{.Tag}}" || docker image ls --filter=reference="mdmc/mdmc:latest" --format "{{.Tag}}")
+          docker --help
+          man docker
       - name: Convert & Test Notebooks
         env:
           BRANCH: ${{ github.head_ref }}
