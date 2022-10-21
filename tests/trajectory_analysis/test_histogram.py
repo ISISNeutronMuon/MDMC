@@ -32,8 +32,8 @@ def trajectory(water_SPCE_universe):
     
     n_atoms = len(water_SPCE_universe.configuration.atoms)
     n_steps = len(TIMES)
-    temp_traj = ctrj.configurations_as_compact_trajectory([water_SPCE_universe.configuration])
-    traj = ctrj.CompactTrajectory(n_steps, n_atoms, universe = water_SPCE_universe)
+    temp_traj = ctrj.configurations_as_compact_trajectory(*[water_SPCE_universe.configuration])
+    traj = ctrj.CompactTrajectory(n_steps, n_atoms)
     for step_num, time in enumerate(TIMES):
         traj.writeOneStep(step_num= step_num,
                           time= time,

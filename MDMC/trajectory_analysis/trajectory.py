@@ -1,5 +1,5 @@
-"""Module for ``Configuration`` and ``Trajectory`` classes, and related classes"""
-from typing import TYPE_CHECKING, Union
+"""Module for ``Configuration`` and related classes"""
+from typing import TYPE_CHECKING
 import weakref
 
 import numpy as np
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 class AtomCollection:
 
-    """Base class for shared attributes for ``Configurations`` and ``Trajectories``"""
+    """Base class for ``Configurations``"""
 
     __slots__ = ('_universe', )
 

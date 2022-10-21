@@ -618,19 +618,24 @@ def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])-
 
     traj = CompactTrajectory(n_steps=len(configs),
                         n_atoms=len(configs[0].atoms),
-                        useVelocity=len(configs[0].atom_velocities) > 0)
+                        useVelocity=len(configs[0].atom_velocities) > 0,
+                        universe = configs[0].universe)
 
     for step_number, config in enumerate(configs):
+        try:
+            current_time = config.time
+        except AttributeError:
+            current_time = 0.0
         if len(config.data) > 0:
             atpos = np.row_stack(config.atom_positions)
             atvel = np.row_stack(config.atom_velocities)
             traj.writeOneStep(step_num=step_number,
-                                time=config.time,
+                                time=current_time,
                                 positions=atpos,
                                 velocities=atvel)
         else:
             traj.writeEmptyStep(step_num=step_number,
-                                time=config.time)
+                                time=current_time)
         try:
             dim = config.universe.dimensions
         except AttributeError:
