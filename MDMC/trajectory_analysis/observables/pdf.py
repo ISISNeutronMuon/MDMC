@@ -6,6 +6,7 @@ from itertools import (chain, combinations, combinations_with_replacement,
 from typing import Union, Optional
 import warnings
 
+import numpy
 from numba import jit
 import numpy as np
 
@@ -15,6 +16,7 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory, Configuration
+from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
@@ -176,7 +178,7 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, list[Trajectory]],
+    def calculate_from_MD(self, MD_input: "Trajectory",
                           verbose: int = 0, **settings: dict) -> None:
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
@@ -212,8 +214,8 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory or list of Trajectory
-            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        MD_input : Trajectory
+            A single ``Trajectory`` object.
         verbose: int
             Verbose print settings. Not currently implemented for PDF.
         **settings
@@ -258,6 +260,18 @@ class PairDistributionFunction(Observable):
             dimensions : array-like
                 A 3 element `array-like` (`list`, `tuple`) with the dimensions
                 of the ``Universe``.
+            use_average : bool
+                Optional parameter if a list of more than one ``Trajectory`` is used. If set to
+                True (default) then the mean value for PDF is calculated. Also, the errors
+                are set to the standard deviation calculated over the list of ``Trajectory``
+                objects.
+            cont_slicing : bool
+                Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+                larger than the minimum required to calculate the observables. If ``False``
+                (default) then the ``Trajectory`` is sliced into non-overlapping
+                sub-``Trajectory`` blocks for each of which the observable is calculated. If
+                ``True``, then the ``Trajectory`` is sliced into as many non-identical
+                sub-``Trajectory`` blocks as possible (with overlap allowed).
 
         Examples
         --------
@@ -292,16 +306,30 @@ class PairDistributionFunction(Observable):
         """
 
         self.origin = 'MD'
+        use_average = settings.get('use_average', True)
+        cont_slicing = settings.get('cont_slicing', False)
 
         if isinstance(MD_input, Trajectory):
             MD_input = [MD_input]
 
         self._parse_calc_MD_settings(MD_input[0], settings)
 
-        for trajectory in self.trajectory:
-            self._calculate_histogram(trajectory.configurations[0])
+        PDF_list = []
 
-        self._sum_partial_pairs()
+        if use_average:
+            trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
+                                            cont_slicing=cont_slicing)
+            for trajectory in trajectories:
+                self._calculate_histogram(trajectory.configurations[0])
+                self._sum_partial_pairs()
+                PDF_list.append(self.PDF)
+
+            self.PDF = numpy.average(PDF_list)
+
+        else:
+            self._calculate_histogram(MD_input.configurations[0])
+            self._sum_partial_pairs()
+
 
     def _sum_partial_pairs(self) -> None:
         """Normalize the partial pairs and sum them to get the total PDF"""
