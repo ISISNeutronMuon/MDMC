@@ -710,6 +710,19 @@ def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
     with pytest.raises(ValueError):
         lmp_eng.parse_all_nonbonded_styles(interactions)
 
+def test_parse_nonbonded_styles_no_cutoff_error(request):
+
+    """
+    Tests that an AttributeError is raised when trying to create LAMMPS pair_styles from
+    nonbonded interactions which have no `cutoff` attribute set.
+    """
+
+    interactions = [request.getfixturevalue('dispersions')[0],
+                    request.getfixturevalue('coulombics')[0]]
+    for interaction in interactions:
+        interaction.cutoff = None
+    with pytest.raises(AttributeError):
+        lmp_eng.parse_all_nonbonded_styles(interactions)
 
 @pytest.mark.parametrize('interaction, arguments, parser',
                          [(Bond, ['atom_pair'], 'parse_bonded_styles'),

@@ -2413,7 +2413,7 @@ def parse_nonbonded_styles(interaction: NonBondedInteraction) -> tuple:
                 lmp_str[-1] += '/cut'
         lmp_str.append(cutoff)
     else:
-        raise NotImplementedError(f'You have not specified a `cutoff` for the'
+        raise AttributeError(f'You have not specified a `cutoff` for the'
                                   f'{interaction} InteractionFunction.')
 
     return lmp_str, parse_nonbonded_modifications(interaction)
