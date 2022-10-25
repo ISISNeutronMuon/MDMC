@@ -1329,7 +1329,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # *_ is for pylint as it does not know about the output of partition_interactions
         bonds, angles, *_ = partition_interactions([inter for inter
                                                     in b_inters
-                                                    if inter.constrained],
+                                                    if getattr(inter, 'constrained', False)],
                                                    ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
@@ -2363,7 +2363,7 @@ def parse_bonded_styles(interaction: BondedInteraction) -> str:
                               ' implemented in the LAMMPS facade')
 
 
-def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
+def parse_nonbonded_styles(interaction: NonBondedInteraction) -> tuple:
     """
     Converts MDMC ``InteractionFunction`` names for ``NonBondedInteractions`` to
     LAMMPS pair styles
@@ -2413,8 +2413,8 @@ def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
                 lmp_str[-1] += '/cut'
         lmp_str.append(cutoff)
     else:
-        raise NotImplementedError('This InteractionFunction has not been'
-                                  ' implemented in the LAMMPS facade')
+        raise AttributeError(f'You have not specified a `cutoff` for the'
+                                  f'{interaction} InteractionFunction.')
 
     return lmp_str, parse_nonbonded_modifications(interaction)
 
