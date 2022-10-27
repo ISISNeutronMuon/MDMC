@@ -4,7 +4,7 @@ Merit and minimizers
 Contents
 --------
 FoM
-minimizer
+minimizers
 """
 
 from . import FoM
