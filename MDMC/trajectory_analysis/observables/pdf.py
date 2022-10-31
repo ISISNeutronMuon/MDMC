@@ -309,22 +309,52 @@ class PairDistributionFunction(Observable):
         use_average = settings.get('use_average', True)
         cont_slicing = settings.get('cont_slicing', False)
 
-        if isinstance(MD_input, Trajectory):
-            MD_input = [MD_input]
-
-        self._parse_calc_MD_settings(MD_input[0], settings)
-
-        PDF_list = []
+        self._parse_calc_MD_settings(MD_input, settings)
 
         if use_average:
-            trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
+            partial_dict = {}
+
+
+            # For testing purposes
+            subtraj_len = settings.get("n_frames", len(MD_input)//2)
+
+            print("before breakpoint")
+            trajectories = slice_trajectory(trj=MD_input, subtrj_len=subtraj_len,
                                             cont_slicing=cont_slicing)
+            print("after breakpoint")
+
+            PDF_list = np.array(len(MD_input)//subtraj_len)
+
+            # Calculate & save total & partial PDF for each sub-trajectory
             for trajectory in trajectories:
                 self._calculate_histogram(trajectory.configurations[0])
                 self._sum_partial_pairs()
-                PDF_list.append(self.PDF)
+                PDF_list = numpy.append(PDF_list, self.PDF)
+                for partial_str in self.partial_pdfs.keys():
+                    partial_dict[partial_str] = self.partial_pdfs[partial_str]
 
-            self.PDF = numpy.average(PDF_list)
+                # Done to save memory
+                # self.dependent_variables["PDF"] = np.array([0. for i in range(subtraj_len)])
+                # for partial_str in self.partial_pdfs.keys():
+                #     self.partial_pdfs[partial_str] = np.array([0. for i in range(subtraj_len)])
+
+
+            # Average total PDF element-wise over all lists
+            while len(PDF_list) > 1:
+                PDF_list[0] = numpy.add(PDF_list[0], PDF_list[1])
+                PDF_list = numpy.delete(PDF_list, 1)
+            numpy.divide(PDF_list, subtraj_len)
+
+            # Average partials
+            for partial_str in partial_dict:
+                while len(partial_dict[partial_str]) > 1:
+                    numpy.add(partial_dict[partial_str][0], partial_dict[partial_str][1])
+                    numpy.delete(partial_dict[partial_str], 1)
+                numpy.divide(partial_dict[partial_str], subtraj_len)
+
+            # Assign back to class variables
+            self.dependent_variables["PDF"] = PDF_list
+            self.partial_pdfs = partial_dict
 
         else:
             self._calculate_histogram(MD_input.configurations[0])
