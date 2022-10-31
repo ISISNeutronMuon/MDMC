@@ -272,6 +272,8 @@ class PairDistributionFunction(Observable):
                 sub-``Trajectory`` blocks for each of which the observable is calculated. If
                 ``True``, then the ``Trajectory`` is sliced into as many non-identical
                 sub-``Trajectory`` blocks as possible (with overlap allowed).
+            n_subtraj : int, optional
+                 The number of subtrajectories used to average over. Defaults to 2.
 
         Examples
         --------
@@ -313,36 +315,57 @@ class PairDistributionFunction(Observable):
 
         if use_average:
             partial_dict = {}
-
-            subtraj_len = settings.get("n_frames", 1)
+            n_subtraj = settings.get("n_subtraj", 2)
+            subtraj_len = len(MD_input)//n_subtraj
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=subtraj_len,
                                             cont_slicing=cont_slicing)
-            PDF_list = np.array(len(MD_input)//subtraj_len)
+            PDF_list = []
+            # TODO: Create tests for incorrect and correct values of n_subtraj
 
+            print("Length of input traj: ", len(MD_input))
+            print("Length of subtrajectories: ", subtraj_len)
+            print("Theoretical num. of sub_trajectories: ", len(MD_input)//subtraj_len)
+
+            actual_traj_count = 0
             # Calculate & save total & partial PDF for each sub-trajectory
             for trajectory in trajectories:
+                print("New trajectory")
                 self._calculate_histogram(trajectory.configurations[0])
                 self._sum_partial_pairs()
-                PDF_list = numpy.append(PDF_list, self.PDF)
-                for partial_str in self.partial_pdfs.keys():
-                    partial_dict[partial_str] = self.partial_pdfs[partial_str]
 
+                if len(PDF_list) == 0:
+                    PDF_list = self.PDF
+                else:
+                    PDF_list = numpy.append(PDF_list, self.PDF)
+
+                for partial_str in self.partial_pdfs.keys():
+                    if partial_str in partial_dict.keys():
+                        partial_dict[partial_str] = numpy.add(partial_dict[partial_str], self.partial_pdfs[partial_str])
+                    else:
+                        partial_dict[partial_str] = self.partial_pdfs[partial_str]
+
+                actual_traj_count += 1
+
+            print("Actual number of sub_trajectories: ", actual_traj_count)
+
+            print("Averaging total PDF")
             # Average total PDF element-wise over all lists
             while len(PDF_list) > 1:
                 PDF_list[0] = numpy.add(PDF_list[0], PDF_list[1])
                 PDF_list = numpy.delete(PDF_list, 1)
-            numpy.divide(PDF_list, subtraj_len)
+            PDF_list = numpy.divide(PDF_list, actual_traj_count)
 
+            print("Averaging partials")
             # Average partials
             for partial_str in partial_dict:
                 while len(partial_dict[partial_str]) > 1:
                     partial_dict[partial_str][0] = numpy.add(partial_dict[partial_str][0], partial_dict[partial_str][1])
                     partial_dict[partial_str] = numpy.delete(partial_dict[partial_str], 1)
-                numpy.divide(partial_dict[partial_str], subtraj_len)
+                partial_dict[partial_str] = numpy.divide(partial_dict[partial_str], subtraj_len)
 
             # Assign back to class variables
             self.dependent_variables["PDF"] = PDF_list
-            self.partial_pdfs = partial_dict
+            #self.partial_pdfs = partial_dict
 
         else:
             self._calculate_histogram(MD_input.configurations[0])
@@ -422,6 +445,12 @@ class PairDistributionFunction(Observable):
         frame_step = (total_n_frames + 1 if n_frames == 1
                       else ((total_n_frames - 1) // n_frames) + 1)
         self.trajectory = trajectory[0:total_n_frames:frame_step]
+
+        # Ensures n_subtraj is within the correct range
+        n_subtraj = settings.get("n_subtraj", 2)
+        if n_subtraj > total_n_frames or n_subtraj < 0:
+            raise ValueError("n_subtraj must be between 1 and the total number of"
+                             " frames in the trajectory (inclusive)")
 
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is

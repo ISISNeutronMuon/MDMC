@@ -59,5 +59,8 @@ def test_partial_PDFs(PDF, PDF_file, partial_str):
     ref_str = 'pdf-{0}-{1}'.format(partial_str[0], partial_str[1])
     ref_partial = np.array(PDF_file.variables[ref_str][:])
     partial = PDF.partial_pdfs[partial_str]
+    print(ref_partial)
+    print(partial)
+    print(partial == ref_partial)
     assert len(ref_partial) == len(partial)
     assert np.all(np.isclose(ref_partial, partial, atol=ATOL, rtol=RTOL))
