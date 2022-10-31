@@ -660,10 +660,15 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
                         self.__class__,
                         n_atoms)
-            atoms = np.zeros([n_atoms, 5])
+            atoms = np.zeros([n_atoms, 5])            
+            tmp_mass = {}
+            for type_ID, atom_type_group in self.lmp_universe.atom_types.items():
+                tmp_mass[type_ID] = float(atom_type_group[0].mass)
             for i in range(n_atoms):
                 atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = (list(atom.position) + [atom.mass, atom.charge])
+                atom_type = atom.type
+                # _, mass = self.lmp_universe.atom_type_properties[atom_type-1]
+                atoms[atom.id-1, :] = (list(atom.position) + [tmp_mass[atom_type], atom.charge])
             saved_config = atoms
         else:
             saved_config = None
