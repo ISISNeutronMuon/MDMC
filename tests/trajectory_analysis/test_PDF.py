@@ -68,8 +68,6 @@ def trajectory(universe):
     return trj
 
 
-
-
 @pytest.mark.parametrize('n_frames',
                          [None, 1, 10, 30, 100])
 def test_set_n_frames(PDF_setup, trajectory, n_frames):

@@ -314,50 +314,32 @@ class PairDistributionFunction(Observable):
         if use_average:
             partial_dict = {}
 
-            # For testing purposes
-            subtraj_len = settings.get("n_frames", len(MD_input)//2)
-
+            subtraj_len = settings.get("n_frames", 1)
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=subtraj_len,
                                             cont_slicing=cont_slicing)
-
             PDF_list = np.array(len(MD_input)//subtraj_len)
-
-            print("Input trajectory length: ", len(MD_input))
-            print("subtraj_len: ", subtraj_len)
-            print("Theoretical number of sub-trajectories: ", len(MD_input)//subtraj_len)
 
             # Calculate & save total & partial PDF for each sub-trajectory
             for trajectory in trajectories:
-                print("New sub trajectory")
                 self._calculate_histogram(trajectory.configurations[0])
                 self._sum_partial_pairs()
                 PDF_list = numpy.append(PDF_list, self.PDF)
                 for partial_str in self.partial_pdfs.keys():
                     partial_dict[partial_str] = self.partial_pdfs[partial_str]
 
-                # Done to save memory
-                # self.dependent_variables["PDF"] = np.array([0. for i in range(subtraj_len)])
-                # for partial_str in self.partial_pdfs.keys():
-                #     self.partial_pdfs[partial_str] = np.array([0. for i in range(subtraj_len)])
-
-            print("Averaging total PDF")
             # Average total PDF element-wise over all lists
             while len(PDF_list) > 1:
                 PDF_list[0] = numpy.add(PDF_list[0], PDF_list[1])
                 PDF_list = numpy.delete(PDF_list, 1)
             numpy.divide(PDF_list, subtraj_len)
 
-            print("Averaging partials")
             # Average partials
             for partial_str in partial_dict:
-                print("Partial being averaged: ", partial_str)
                 while len(partial_dict[partial_str]) > 1:
-                    print("Length of partial list: ", len(partial_dict[partial_str]))
                     partial_dict[partial_str][0] = numpy.add(partial_dict[partial_str][0], partial_dict[partial_str][1])
                     partial_dict[partial_str] = numpy.delete(partial_dict[partial_str], 1)
                 numpy.divide(partial_dict[partial_str], subtraj_len)
 
-            print("Assigning")
             # Assign back to class variables
             self.dependent_variables["PDF"] = PDF_list
             self.partial_pdfs = partial_dict
