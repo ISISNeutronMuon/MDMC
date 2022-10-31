@@ -38,12 +38,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
         run: |
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Run tests
         env:
-          BRANCH: ${{ github.head_ref }}
           TESTSET: ${{ matrix.testset }}
         run: |
           docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
@@ -51,7 +52,6 @@ jobs:
 
       - name: Copy profiling info, download profile script reqs. and profile
         env:
-          BRANCH: ${{ github.head_ref }}
           FILENAME: ${{ github.head_ref }}-profiling
         run: |
           sudo docker cp $(docker ps -lq):/home/prof/ prof/
@@ -134,6 +134,8 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
         run: |
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
