@@ -660,7 +660,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
                         self.__class__,
                         n_atoms)
-            atoms = np.zeros([n_atoms, 5])            
+            atoms = np.zeros([n_atoms, 5])
             tmp_mass = {}
             for type_ID, atom_type_group in self.lmp_universe.atom_types.items():
                 tmp_mass[type_ID] = float(atom_type_group[0].mass)
