@@ -46,10 +46,17 @@ def PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-    pdf.calculate_from_MD(trajectory, n_frames=1, r=r,
-                          dimensions=[39.4221067]*3, use_average=True)
+    pdf.calculate_from_MD(trajectory, n_frames=5, r=r,
+                          dimensions=[39.4221067]*3, use_average=False, cont_slicing=False)
     return pdf
 
+def test_total_PDF(PDF, PDF_file):
+    expected = np.array(PDF_file.variables["pdf-total"])
+    actual = np.array(PDF.PDF)
+    print("Expected total: ", expected)
+    print("Actual total: ", actual)
+    print("Diffference: ", np.subtract(actual, expected))
+    assert np.all(np.isclose(np.array(PDF_file.variables["pdf-total"]), np.array(PDF.PDF), atol=ATOL, rtol=RTOL))
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
 def test_partial_PDFs(PDF, PDF_file, partial_str):
