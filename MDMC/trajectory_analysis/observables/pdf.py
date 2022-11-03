@@ -430,7 +430,7 @@ class PairDistributionFunction(Observable):
 
         self._dependent_variables = {}
         # Release memory from full trajectory
-        del trajectory
+        # del trajectory
 
     def _calculate_histogram(self, configuration: Configuration) -> None:
         """
