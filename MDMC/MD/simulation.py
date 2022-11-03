@@ -50,7 +50,7 @@ class Universe(AtomContainer):
     dimensions : numpy.ndarray, list, float
         Dimensions of the ``Universe``, in units of ``Ang``. A `float` can be
         used for a cubic universe.
-    force_field : ForceField, optional
+    force_fields : ForceField, optional
         A force field to apply to the Universe. The force fields available are:
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
     structures : list, optional
@@ -74,8 +74,8 @@ class Universe(AtomContainer):
         Dimensions of the ``Universe`` in units of ``Ang``.
     configuration : Configuration
         Stores the content, i.e. configuration of atoms etc within the universe
-    force_field : ForceField or None
-        Force field to apply to the Universe
+    force_fields : ForceField or None
+        Force field applied to apply to the Universe
     kspace_solver : KSpaceSolver
         The k-space solver to be used for both electrostatic and dispersive
         interactions.
@@ -86,10 +86,34 @@ class Universe(AtomContainer):
     constraint_algorithm : ConstraintAlgorithm
         The constraint algorithm which will be applied to constrained
         ``BondedInteractions``.
+    interactions
+    bonded_interactions
+    nonbonded_interactions
+    bonded_interaction_pairs
+    n_bonded
+    n_nonbonded
+    n_interactions
+    parameters
+    volume
+    element_list
+    element_dict
+    element_lookup
+    atoms
+    n_atoms
+    molecule_list
+    n_molecules
+    structure_list
+    top_level_structure_list
+    equivalent_top_level_structures_dict
+    force_fields
+    atom_types
+    atom_type_interactions
+    density
+    solvent_density
+    nbis_by_atom_type_pairs
     """
 
-    def __init__(self, dimensions, force_field=None, structures=None,
-                 **settings):
+    def __init__(self, dimensions, force_field=None, structures=None, **settings):
 
         self.dimensions = dimensions
         self._atom_types = defaultdict(list)
@@ -403,12 +427,12 @@ class Universe(AtomContainer):
     @property
     def atoms(self) -> 'list[Atom]':
         """
-        Get a list of the atoms in the Universe
+        Get a list of the atoms in the ``Universe``
 
         Returns
         -------
         list
-            The atoms in the Universe
+            The atoms in the ``Universe``
         """
 
         return self.configuration.atoms
@@ -539,7 +563,7 @@ class Universe(AtomContainer):
     @mod_docstring(_FF_DOCSTRING)
     def force_fields(self) -> None:
         """
-        Get or set the ``ForceField`` acting on the Universe
+        Get the ``ForceField`` acting on the ``Universe``
 
         The available force fields are:
         DYNAMIC_FORCE_FIELD_LIST
@@ -1372,6 +1396,8 @@ class Simulation:
     settings : dict
         The settings passed to the ``Simulation``.  See the Parameters section
         for details.
+    time_step
+    trajectory
     """
 
     # TODO: Potentially separate out universe and simulation setup

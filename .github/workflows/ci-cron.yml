@@ -157,3 +157,14 @@ jobs:
         git merge -X ours master
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
 
+
+  prune-images:
+    name: Prune Old Docker Hub Images
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Prune images
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: source .github/scripts/prune_docker_hub.sh

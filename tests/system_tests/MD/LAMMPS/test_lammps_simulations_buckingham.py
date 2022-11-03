@@ -32,7 +32,7 @@ TEMPERATURE = 300.
 THERMO_STEPS = 100
 EQUILIBRIUM_STEPS = 10000
 MD_STEPS = 20000
-
+VOLUME = round(DIMENSION**3, 2)
 """Each EXPECTED dictionary contains all of the required properties as keys. The
 corresponding values are a tuple of (mean value, standard deviation),
 where both the mean value and the standard deviation have been calculated from
@@ -44,65 +44,68 @@ The NVE temperature differs from the set value due to the effects of SHAKE"""
 NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (1442.2, 4.32),
-                'PotEng': (-223.61, 2.94),
-                'Temp': (1122.57, 3.36),
-                'Press': (54231.3, 106.51),
-                'Volume': (DIMENSION**3, 0.0),
+                'KinEng': (382.48, 3.5), # Changed Value
+                'PotEng': (-1164.74, 4.5), # Changed Value
+                'Temp': (297.71, 2.68), # Changed Value
+                'Press': (26000.7, 156.55), # Changed Value
+                'Volume': (VOLUME, 0.0),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (1041.53, 3.1),
-                'E_coul': (11963.71, 3.17),
-                'E_long': (-13228.85, 0.37),
-                'Nbuild': (900.96, 3.9),
+                'E_vdwl': (536.29, 3.73),
+                'E_coul': (11553.7, 5.2), # Changed Value
+                'E_long': (-13254.73, 0.1), # Changed Value
+                'Nbuild': (433.67, 2.52),
                 'Ndanger': (0.0, 0.0)}
+
 
 NVT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (382.67, 1.27),
-                'PotEng': (-1164.64, 2.44),
-                'Temp': (297.86, 0.99),
-                'Press': (25978.54, 124.53),
-                'Volume': (DIMENSION**3, 0.0),
+                'KinEng': (383.28, 1.2), # Changed Value
+                'PotEng': (-1164.4, 3.0),
+                'Temp': (298.33, 1.2), # Changed Value
+                'Press': (26014.23, 180.65),
+                'Volume': (VOLUME, 0.0),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (535.22, 4.01),
-                'E_coul': (11554.9, 3.13),
-                'E_long': (-13254.76, 0.11),
-                'Nbuild': (431.76, 2.54),
+                'E_vdwl': (536.17, 6.08),
+                'E_coul': (11554.08, 4.01),
+                'E_long': (-13254.66, 0.11),
+                'Nbuild': (433.49, 3.81),
                 'Ndanger': (0.0, 0.0)}
+
 
 NPT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (382.97, 0.83),
-                'PotEng': (-1089.87, 2.95),
-                'Temp': (298.09, 0.65),
-                'Press': (-1.29, 43.98),
-                'Volume': (11983.8, 94.82),
+                'KinEng': (382.5, 1.4), # Changed Value
+                'PotEng': (-1090.95, 4.),
+                'Temp': (297.72, 1.1), # Changed Value
+                'Press': (1.59, 29.34),
+                'Volume': (11926.95, 80.35),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (55.13, 2.61),
-                'E_coul': (11918.41, 134.36),
-                'E_long': (-13063.41, 133.72),
-                'Nbuild': (491.63, 2.73),
+                'E_vdwl': (54.38, 2.37),
+                'E_coul': (11842.14, 94.69),
+                'E_long': (-12987.47, 93.22),
+                'Nbuild': (493.96, 2.65),
                 'Ndanger': (0.0, 0.0)}
+
 
 NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                               'Bonds': (N_MOLECULES*2, 0.0),
                               'Angles': (N_MOLECULES, 0.0),
-                              'KinEng': (1624.92, 3.63),
-                              'PotEng': (-86.4, 3.64),
-                              'Temp': (842.55, 1.88),
-                              'Press': (50218.52, 368.08),
-                              'Volume': (DIMENSION ** 3, 0.0),
-                              'E_bond': (126.85, 3.08),
-                              'E_angle': (272.07, 5.16),
-                              'E_vdwl': (1018.19, 11.41),
-                              'E_coul': (11727.88, 9.61),
-                              'E_long': (-13231.39, 0.68),
-                              'Nbuild': (93.29, 1.07),
+                              'KinEng': (586.04, 3.8), # Changed Value
+                              'PotEng': (-1024.23, 5.0),
+                              'Temp': (303.87, 2.), # Changed Value
+                              'Press': (28387.19, 292.63),
+                              'Volume': (VOLUME, 0.0),
+                              'E_bond': (59.26, 1.58),
+                              'E_angle': (138.19, 2.10), # Changed Value
+                              'E_vdwl': (627.93, 8.18),
+                              'E_coul': (11402.58, 7.06),
+                              'E_long': (-13252.19, 0.25), # Changed Value,
+                              'Nbuild': (51.21, 0.78),
                               'Ndanger': (0.0, 0.0)}
 
 
@@ -174,7 +177,8 @@ def NVE(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     return md_engine
 
@@ -199,7 +203,8 @@ def NVT(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     return md_engine
 
@@ -227,7 +232,8 @@ def NPT(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     return md_engine
 
@@ -264,7 +270,8 @@ def NVE_unconstrained(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     return md_engine
 
@@ -471,6 +478,7 @@ def assert_property(ensemble, expected, request, prop):
     # recovered using request.getfixturevalue
     average = average_property(request.getfixturevalue(ensemble), prop)
 
+    average = round(average, 2)
     # expected[property][1] is the standard_deviation of the property. The
     # absolute tolerance is set to STDEV_FAC times this value.
     # Small relative tolerance accounts for rounding differences

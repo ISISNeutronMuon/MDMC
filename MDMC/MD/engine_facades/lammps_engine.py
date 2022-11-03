@@ -36,6 +36,7 @@ import logging
 from random import randint
 from tempfile import NamedTemporaryFile
 from typing import Union
+import os
 
 from mpi4py import MPI
 import numpy as np
@@ -801,6 +802,17 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.improper_ID = {}
         self.nonbonded_mix = None
 
+        if "OMP_NUM_THREADS" in os.environ:
+            omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
+            try:
+                omp_num_threads = int(omp_num_threads_str)
+            except ValueError:
+                pass
+            else:
+                if omp_num_threads > 1:
+                    self.lmp.command("package omp 0")  # use OMP_NUM_THREADS
+                    self.lmp.command("suffix omp")  # add /omp to relevant styles
+
         self._define_simulation_box(self.universe)
         self._build_config(self.universe)
         self._add_topology(self.universe, **settings)
@@ -1365,7 +1377,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # *_ is for pylint as it does not know about the output of partition_interactions
         bonds, angles, *_ = partition_interactions([inter for inter
                                                     in b_inters
-                                                    if inter.constrained],
+                                                    if getattr(inter, 'constrained', False)],
                                                    ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
@@ -2399,7 +2411,7 @@ def parse_bonded_styles(interaction: BondedInteraction) -> str:
                               ' implemented in the LAMMPS facade')
 
 
-def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
+def parse_nonbonded_styles(interaction: NonBondedInteraction) -> tuple:
     """
     Converts MDMC ``InteractionFunction`` names for ``NonBondedInteractions`` to
     LAMMPS pair styles
@@ -2449,8 +2461,8 @@ def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
                 lmp_str[-1] += '/cut'
         lmp_str.append(cutoff)
     else:
-        raise NotImplementedError('This InteractionFunction has not been'
-                                  ' implemented in the LAMMPS facade')
+        raise AttributeError(f'You have not specified a `cutoff` for the'
+                                  f'{interaction} InteractionFunction.')
 
     return lmp_str, parse_nonbonded_modifications(interaction)
 

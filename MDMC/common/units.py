@@ -119,7 +119,7 @@ class Unit(str):
         ``1000.`` as the system units are femtoseconds.
     """
 
-    def __new__(cls, string: str, components: defaultdict(list) = None) -> Unit:
+    def __new__(cls, string: str, components: defaultdict[list] = None) -> Unit:
 
         if string is None:
             return None
@@ -146,7 +146,7 @@ class Unit(str):
         unit.components = components
         return unit
 
-    def __mul__(self, other: Unit) -> Unit:
+    def __mul__(self, other: Unit) -> Unit: #type: ignore
         """
         Multiplies the ``Unit`` by another ``Unit``
 
@@ -293,7 +293,7 @@ class Unit(str):
             raise KeyError(f'Unknown unit {str(self)} provided, cannot determine the '
                            'physical property it measures ') from error
 
-    def _calculate_components(self, other: Unit, op: str) -> defaultdict(list):
+    def _calculate_components(self, other: Unit, op: str) -> defaultdict[list]:
         """
         Calculates the ``components`` for a new ``Unit`` generated from an
         operation

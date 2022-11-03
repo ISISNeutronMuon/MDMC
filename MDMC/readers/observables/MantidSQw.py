@@ -7,7 +7,6 @@ from MDMC.readers.observables.obs_reader import SQwReader
 
 
 class MantidSQw(SQwReader):
-
     """
     A class for reading SQw files from Mantid
 
@@ -33,7 +32,6 @@ class MantidSQw(SQwReader):
         File containing the errors on the dependent variables, default=None
     file_variables : file
         File containing the variables for each detector ID or Q
-
     """
 
     def __init__(self, file_name: str):
