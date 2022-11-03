@@ -3,7 +3,9 @@
 Compares the calculated partial PDFs against PDFs calculated using nMOLDYN. The
 total PDF is a simple sum of these partials, but nMOLDYn uses a different
 scaling, so this is not tested here."""
+import sys
 
+import numpy
 from netCDF4 import Dataset
 import numpy as np
 import pytest
@@ -45,7 +47,7 @@ def PDF(trajectory, PDF_file):
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
     pdf.calculate_from_MD(trajectory, n_frames=1, r=r,
-                          dimensions=[39.4221067]*3)
+                          dimensions=[39.4221067]*3, use_average=True)
     return pdf
 
 
@@ -59,8 +61,8 @@ def test_partial_PDFs(PDF, PDF_file, partial_str):
     ref_str = 'pdf-{0}-{1}'.format(partial_str[0], partial_str[1])
     ref_partial = np.array(PDF_file.variables[ref_str][:])
     partial = PDF.partial_pdfs[partial_str]
-    print(ref_partial)
-    print(partial)
-    print(partial == ref_partial)
+    numpy.set_printoptions(threshold=sys.maxsize, linewidth=sys.maxsize, precision=None, )
+    print("Actual: ", partial)
+    print("Expected: ", ref_partial)
     assert len(ref_partial) == len(partial)
     assert np.all(np.isclose(ref_partial, partial, atol=ATOL, rtol=RTOL))

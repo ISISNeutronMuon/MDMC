@@ -315,16 +315,15 @@ class PairDistributionFunction(Observable):
 
         if use_average:
             partial_dict = {}
-            n_subtraj = settings.get("n_subtraj", 2)
-            subtraj_len = len(MD_input)//n_subtraj
-            trajectories = slice_trajectory(trj=MD_input, subtrj_len=subtraj_len,
+            n_frames = settings.get("n_frames", len(MD_input))
+            subtraj_num = len(MD_input)//n_frames
+            trajectories = slice_trajectory(trj=MD_input, subtrj_len=n_frames,
                                             cont_slicing=cont_slicing)
             PDF_list = []
-            # TODO: Create tests for incorrect and correct values of n_subtraj
 
             print("Length of input traj: ", len(MD_input))
-            print("Length of subtrajectories: ", subtraj_len)
-            print("Theoretical num. of sub_trajectories: ", len(MD_input)//subtraj_len)
+            print("Length of subtrajectories: ", n_frames)
+            print("Theoretical num. of sub_trajectories: ", subtraj_num)
 
             actual_traj_count = 0
             # Calculate & save total & partial PDF for each sub-trajectory
@@ -336,7 +335,7 @@ class PairDistributionFunction(Observable):
                 if len(PDF_list) == 0:
                     PDF_list = self.PDF
                 else:
-                    PDF_list = numpy.append(PDF_list, self.PDF)
+                    PDF_list = numpy.add(PDF_list, self.PDF)
 
                 for partial_str in self.partial_pdfs.keys():
                     if partial_str in partial_dict.keys():
@@ -350,22 +349,16 @@ class PairDistributionFunction(Observable):
 
             print("Averaging total PDF")
             # Average total PDF element-wise over all lists
-            while len(PDF_list) > 1:
-                PDF_list[0] = numpy.add(PDF_list[0], PDF_list[1])
-                PDF_list = numpy.delete(PDF_list, 1)
             PDF_list = numpy.divide(PDF_list, actual_traj_count)
 
             print("Averaging partials")
             # Average partials
             for partial_str in partial_dict:
-                while len(partial_dict[partial_str]) > 1:
-                    partial_dict[partial_str][0] = numpy.add(partial_dict[partial_str][0], partial_dict[partial_str][1])
-                    partial_dict[partial_str] = numpy.delete(partial_dict[partial_str], 1)
-                partial_dict[partial_str] = numpy.divide(partial_dict[partial_str], subtraj_len)
+                partial_dict[partial_str] = numpy.divide(partial_dict[partial_str], actual_traj_count)
 
             # Assign back to class variables
             self.dependent_variables["PDF"] = PDF_list
-            #self.partial_pdfs = partial_dict
+            self.partial_pdfs = partial_dict
 
         else:
             self._calculate_histogram(MD_input.configurations[0])
