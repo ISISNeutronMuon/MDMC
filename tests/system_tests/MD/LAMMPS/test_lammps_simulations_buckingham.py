@@ -425,13 +425,6 @@ def test_dangerous_neighbor_builds(ensemble, expected, request):
 
     assert_property(ensemble, expected, request, 'Ndanger')
 
-@parameterize_decorator
-def test_teardown_lammps(ensemble, expected, request):
-    """Explicitly tear down the LAMMPS simulations to avoid potential
-    segmentation faults due to asynchronous garbage collection."""
-    sim=request.getfixturevalue(ensemble)
-    sim.engine.lmp.close()
-
 
 def set_thermo_style(sim):
     """
