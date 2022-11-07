@@ -182,6 +182,9 @@ def NVE(universe):
     md_engine.run(MD_STEPS)
     yield md_engine
 
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
+
 
 @pytest.fixture(scope="module")
 def NVT(universe):
@@ -207,6 +210,9 @@ def NVT(universe):
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -236,6 +242,9 @@ def NPT(universe):
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -274,6 +283,9 @@ def NVE_unconstrained(universe):
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 def parameterize_decorator(func):
@@ -418,7 +430,7 @@ def test_teardown_lammps(ensemble, expected, request):
     """Explicitly tear down the LAMMPS simulations to avoid potential
     segmentation faults due to asynchronous garbage collection."""
     sim=request.getfixturevalue(ensemble)
-    sim.engine.lmp.__del__()
+    sim.engine.lmp.close()
 
 
 def set_thermo_style(sim):
