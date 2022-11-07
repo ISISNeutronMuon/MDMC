@@ -56,7 +56,8 @@ def test_total_PDF(PDF, PDF_file):
     print("Expected total: ", expected)
     print("Actual total: ", actual)
     print("Diffference: ", np.subtract(actual, expected))
-    assert np.all(np.isclose(np.array(PDF_file.variables["pdf-total"]), np.array(PDF.PDF), atol=ATOL, rtol=RTOL))
+    assert np.all(np.isclose(np.array(PDF_file.variables["pdf-total"]), np.array(PDF.PDF), atol=ATOL,
+                             rtol=RTOL))
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
 def test_partial_PDFs(PDF, PDF_file, partial_str):
