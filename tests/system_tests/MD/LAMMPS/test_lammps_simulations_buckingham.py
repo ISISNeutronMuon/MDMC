@@ -346,7 +346,7 @@ def test_potential_energy(ensemble, expected, request):
 
     assert_property(ensemble, expected, request, 'PotEng')
 
-#
+
 @parameterize_decorator
 def test_temperature(ensemble, expected, request):
     """Compare the temperature with that calculated directly from LAMMPS"""
