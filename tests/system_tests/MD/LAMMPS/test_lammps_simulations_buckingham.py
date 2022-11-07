@@ -155,7 +155,7 @@ def universe():
     Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                vdw_tail_correction=True, function=buck)
 
-    return universe
+    yield universe
 
 
 @pytest.fixture(scope="module")
@@ -180,7 +180,7 @@ def NVE(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
 
 
 @pytest.fixture(scope="module")
@@ -206,7 +206,7 @@ def NVT(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
 
 
 @pytest.fixture(scope="module")
@@ -235,7 +235,7 @@ def NPT(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
 
 
 @pytest.fixture(scope="module")
@@ -273,7 +273,7 @@ def NVE_unconstrained(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
 
 
 def parameterize_decorator(func):
@@ -334,7 +334,7 @@ def test_potential_energy(ensemble, expected, request):
 
     assert_property(ensemble, expected, request, 'PotEng')
 
-
+#
 @parameterize_decorator
 def test_temperature(ensemble, expected, request):
     """Compare the temperature with that calculated directly from LAMMPS"""
@@ -412,6 +412,13 @@ def test_dangerous_neighbor_builds(ensemble, expected, request):
     """Compare the number of times a neighbor list build was dangerous"""
 
     assert_property(ensemble, expected, request, 'Ndanger')
+
+@parameterize_decorator
+def test_teardown_lammps(ensemble, expected, request):
+    """Explicitly tear down the LAMMPS simulations to avoid potential
+    segmentation faults due to asynchronous garbage collection."""
+    sim=request.getfixturevalue(ensemble)
+    sim.engine.lmp.__del__()
 
 
 def set_thermo_style(sim):
