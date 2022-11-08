@@ -149,7 +149,12 @@ def test_number_of_elements(water_trajectory):
     assert np.sum(element_array == 'H') == 1024
 
 def test_lammps_trajectory(water_trajectory):
+    """
+    A LAMMPS 'run 0' command generates a trajectory
+    with length 1. For this reason the trajectory
+    has to be 1 step longer than the number of steps.
+    """
     traj = water_trajectory
     print("First index = ", traj.first_index)
     print("Last index = ", traj.last_index)
-    assert len(traj) == NUMBER_OF_STEPS
+    assert len(traj) == NUMBER_OF_STEPS + 1

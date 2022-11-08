@@ -82,7 +82,7 @@ class CompactTrajectory:
         # ^^^^^^^^^^^^^^
         # the self.is_fixedbox could potentially be False for an NPT ensemble
         # in that case self.changing_dimensions will contain the box dimensions for each step.
-        self.first_index = 0  # the first array index at which we have written data
+        self.first_index = 1e5  # the first array index at which we have written data
         self.last_index = 0  # the last array index at which we have written data
         # ^^^^^^^^^^^^^
         # since we use np.empty, the elements of the array are _not_ initialised to any value,
