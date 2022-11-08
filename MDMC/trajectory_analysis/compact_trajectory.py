@@ -83,7 +83,7 @@ class CompactTrajectory:
         # the self.is_fixedbox could potentially be False for an NPT ensemble
         # in that case self.changing_dimensions will contain the box dimensions for each step.
         self.first_index = 0  # the first array index at which we have written data
-        self.last_index = -1  # the last array index at which we have written data
+        self.last_index = 0  # the last array index at which we have written data
         # ^^^^^^^^^^^^^
         # since we use np.empty, the elements of the array are _not_ initialised to any value,
         # so it is a precaution to slice the arrays at the end to cut off the empty parts.
@@ -136,7 +136,7 @@ class CompactTrajectory:
         # Since it is not guaranteed that the postProcess method has been run,
         # we explicitly limit the indices to those which have been written into.
         # The length corresponds to the number of simulation steps.
-        return len(self.position[self.first_index:self.last_index])
+        return len(self.position[self.first_index:self.last_index + 1])
 
     def __getitem__(self, index: Union[int, slice]):
         # different behaviour:
@@ -275,7 +275,7 @@ class CompactTrajectory:
             # we save the dimensions
             self.changing_dimensions[step_num] = frame_dimensions
             # per simulation step now.
-            self.dimensions = self.changing_dimensions[self.first_index:self.last_index].mean(
+            self.dimensions = self.changing_dimensions[self.first_index:self.last_index+1].mean(
                 0)
             # ^^^^^^^^^^^^^
             # now that we have discovered that the dimensions change,
@@ -318,7 +318,7 @@ class CompactTrajectory:
         # so we can discard the unused part later,
         # as the uninitalised part of the array will contain random numbers.
         self.first_index = min(step_num, self.first_index)
-        self.last_index = max(step_num + 1, self.last_index)
+        self.last_index = max(step_num, self.last_index)
 
     def writeEmptyStep(self, step_num: int = -1, time: float = -1.0):
         """
@@ -339,7 +339,7 @@ class CompactTrajectory:
             raise IndexError("Writing outside of the reserved array range.")
         self.times[step_num] = time
         self.first_index = min(step_num, self.first_index)
-        self.last_index = max(step_num + 1, self.last_index)
+        self.last_index = max(step_num, self.last_index)
 
     def _create_types_from_elements(self, atom_types: List[str]):
         """
@@ -435,12 +435,12 @@ class CompactTrajectory:
         in case we had allocated too many due to some rounding error.
         """
         if not self.is_populated:
-            self.position = self.position[self.first_index:self.last_index]
-            self.times = self.times[self.first_index:self.last_index]
+            self.position = self.position[self.first_index:self.last_index+1]
+            self.times = self.times[self.first_index:self.last_index+1]
             if self.velocity is not None:
-                self.velocity = self.velocity[self.first_index:self.last_index]
+                self.velocity = self.velocity[self.first_index:self.last_index+1]
             self.first_index = 0
-            self.last_index = len(self.position)
+            self.last_index = len(self.position)-1
             self.is_populated = True
 
     def subtrajectory(self, start: int = 0, stop: int = -1, step: int = 1,
@@ -503,7 +503,7 @@ class CompactTrajectory:
         temp.is_populated = True
         temp.is_fixedbox = self.is_fixedbox
         temp.first_index = 0
-        temp.last_index = len(temp.position)
+        temp.last_index = len(temp.position)-1
         temp.n_steps = len(temp.position)
         return temp
 
@@ -605,12 +605,13 @@ def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])-
 
     Arguments
     ---------
-        config -- A TemporalConfiguration object, most likely containing atoms
+        configs -- A list of TemporalConfiguration objects,
+                   most likely containing atoms
 
     Returns
     -------
         A CompactTrajectory with atom types and positions matching those in the
-        input configuration.
+        input configurations.
     """
     if len(configs) < 1:
         raise TypeError("At least one Configuration is needed"
