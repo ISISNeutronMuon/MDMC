@@ -90,6 +90,18 @@ def test_number_of_atoms(water_trajectory):
     traj = water_trajectory
     assert traj.n_atoms == 1536
 
+def test_name_masking(water_trajectory):
+    """Test that the number of atoms in the trajectory
+    is the same as in the simulation.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
+    traj = water_trajectory
+    assert traj.time is traj.times
+    assert traj.position is traj.positions
+    assert traj.velocity is traj.velocities
+
 def test_number_of_elements(water_trajectory):
     """Test that the number of atoms in the trajectory
     is correct for each chemical element.
