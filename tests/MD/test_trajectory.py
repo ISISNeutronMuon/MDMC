@@ -19,87 +19,26 @@ from MDMC.MD.structures import (Atom, BoundingBox, Molecule,
 from tests.system_tests.observables.data_manager import trajectory
 
 
-
-ATOM_TYPES = [1, 2, 3]
-POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
-TEST_CHARGE_1 = 3.14
-TEST_CHARGE_2 = -2.71
-UNIVERSE_DIMENSIONS = (10., 10., 10.)
 NUMBER_OF_STEPS = 2000
 
-@pytest.fixture
-def atom():
-
-    """
-    Creates an Atom object.
-    """
-
-    return Atom('H',cutoff=10.)
-
-@pytest.fixture
-def universe():
-
-    """
-    Initializes an empty universe object.
-    """
-
-    return Universe(UNIVERSE_DIMENSIONS)
-
-@pytest.fixture
-def atoms():
-
-    """
-    Generates a 3-body atom list with positions and masses defined by a
-    global variable.
-    """
-
-    return [Atom('H', position=pos, mass=mass) for (pos, mass) in POS_MASS]
-
-@pytest.fixture
-def atom_types_universe(atoms, universe):
-
-    """
-    Generates a list of atom_types for atoms added to a universe.
-    Returns the atom_types and the universe.
-    """
-
-    for atom in atoms:
-        universe.add_structure(atom)
-    return ([atom.atom_type for atom in atoms], universe)
-
-@pytest.fixture
-def atom_charge():
-
-    """
-    Creates an Atom object initialised with a charge.
-    """
-
-    return Atom('H', charge=TEST_CHARGE_1, cutoff=10.)
-
-@pytest.fixture
-def water_molecule():
-
-    """
-    Returns
-    -------
-    Molecule
-        A water molecule with no interactions (i.e. just atoms defined)
-    """
-
-    return Molecule(position=(0, 0, 0),
-                    atoms=[Atom('H'),
-                           Atom('H', position=(0., 1.63298, 0.)),
-                           Atom('O', position=(0., 0.81649, 0.57736))],
-                    name='water')
 
 @pytest.fixture(scope='module')
 def water_trajectory():
+    """Runs a short simulation of water using LAMMPS.
+    The main features of the simulation are:
+    - it has a finite number of steps
+    - it has a finite number of atoms
+    - it has 3 atom types, but only 2 chemical elements
+
+    Yields:
+        a CompactTrajectory produced by LAMMPSEngine.
+    """
     # Build universe
     # Cubic universe of side:
     # 24.83602653 is 512 water molecules
     universe = Universe(dimensions=24.836)
-    H1 = Atom('H')
-    H2 = Atom('H', position=(0., 1.63298, 0.))
+    H1 = Atom('H', name = 'H1')
+    H2 = Atom('H', position=(0., 1.63298, 0.), name = 'H2')
     O = Atom('O', position=(0., 0.81649, 0.57736))
     H_coulombic = Coulombic(atoms=[H1, H2], cutoff=10.)
     O_coulombic = Coulombic(atoms=O, cutoff=10.)
@@ -135,14 +74,29 @@ def water_trajectory():
 
 
 def test_empty_trajectory():
+    """Test that we can create an empty trajectory,
+    and it really is empty.
+    """
     traj = CompactTrajectory()
     assert len(traj) == 0
 
 def test_number_of_atoms(water_trajectory):
+    """Test that the number of atoms in the trajectory
+    is the same as in the simulation.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
     traj = water_trajectory
     assert traj.n_atoms == 1536
 
 def test_number_of_elements(water_trajectory):
+    """Test that the number of atoms in the trajectory
+    is correct for each chemical element.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
     traj = water_trajectory
     element_array = np.array(traj.element_list)
     assert np.sum(element_array == 'O') == 512
@@ -150,24 +104,82 @@ def test_number_of_elements(water_trajectory):
 
 def test_lammps_trajectory_length(water_trajectory):
     """
+    Test that the number of the simulation frames in the
+    trajectory is correct.
+
     A LAMMPS 'run 0' command generates a trajectory
     with length 1. For this reason the trajectory
     has to be 1 step longer than the number of steps.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
     """
     traj = water_trajectory
     assert len(traj) == NUMBER_OF_STEPS + 1
 
 def test_lammps_trajectory_slicing(water_trajectory):
     """
-    A LAMMPS 'run 0' command generates a trajectory
-    with length 1. For this reason the trajectory
-    has to be 1 step longer than the number of steps.
+    Check that the time array is sliced correctly,
+    and the last element of the slice is the same
+    and element 80 of the original trajectory.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
     """
     traj = water_trajectory
     sliced = traj[5:81:5]
     assert sliced.time[-1] == traj.time[80]
 
 def test_trajectory_identity(water_trajectory):
+    """Test that a subtrajectory containing all the frames
+    is identical to the original trajectory.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
     traj = water_trajectory
     identical_slice = traj[traj.first_index : traj.last_index + 1: 1]
     assert traj == identical_slice
+
+def test_trajectory_identity_filter_by_element(water_trajectory):
+    """Test that a subtrajectory containing all the chemical elements
+    is identical to the original trajectory.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
+    subtraj = water_trajectory.filter_by_element(['H', 'O'])
+    assert subtraj == water_trajectory
+
+def test_trajectory_filter_by_element(water_trajectory):
+    """Test that filtering by chemical element returns
+    the correct number of atoms.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
+    subtraj = water_trajectory.filter_by_element(['H'])
+    assert subtraj.n_atoms == 1024
+    assert len(subtraj.element_set) == 1
+
+def test_trajectory_filter_by_type(water_trajectory):
+    """Test that filtering by atom type returns
+    the correct number of atoms.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
+    subtraj = water_trajectory.filter_by_type([1])
+    assert subtraj.n_atoms == 512
+    assert len(subtraj.element_set) == 1
+
+def test_trajectory_identity_two_filters(water_trajectory):
+    """Test that filtering by atom types 1 and 2 (H1, H2),
+    and by chemical element H produces the same subtrajectory.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
+    subtraj1 = water_trajectory.filter_by_type([1, 2])
+    subtraj2 = water_trajectory.filter_by_element(['H'])
+    assert subtraj1 == subtraj2

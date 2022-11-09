@@ -683,7 +683,7 @@ class CompactTrajectory:
             raise ValueError("The specified time range contains no MD frames")
         return self.subtrajectory(index[0], len(total))
 
-    def filter_by_element(self, elements: List(str)):
+    def filter_by_element(self, elements: List[str]):
         """
         Create a subtrajectory out of the original CompactTrajectory,
         containing only the chemical elements specified in the input
@@ -709,7 +709,7 @@ class CompactTrajectory:
         index = np.sort(index)
         return self.subtrajectory(0, len(self), step = 1, atom_filter = index)
 
-    def filter_by_type(self, types: List(int)):
+    def filter_by_type(self, types: List[int]):
         """
         Create a subtrajectory out of the original CompactTrajectory,
         containing only the atoms with the atom_type specified in the input
