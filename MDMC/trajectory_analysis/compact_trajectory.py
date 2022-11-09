@@ -24,6 +24,27 @@ class CompactTrajectory:
     """
     Stores an MD trajectory in numpy arrays.
     The units are system units.
+
+    The normal workflow for a CompactTrajectory is:
+
+    1. Create and allocate memory.
+    traj = CompactTrajectory(n_step, n_atoms, useVelocity)
+    or
+    traj = CompactTrajectory()
+    traj.preAllocate(n_step, n_atoms, useVelocity)
+
+    2. Write values into arrays.
+    for n in frame_numbers:
+        if not traj.validateTypes(atom_types):
+            traj.WriteOneStep(step_number = n, time = time_value, positions = pos_values)
+            traj.setDimensions(box_dimensions, step_number = n)
+
+    3. Add chemical element information
+    traj.labelAtoms(atom_symbols, atom_masses)
+    traj.setCharges(atom_charges)
+
+    4. Check internal consistency, trim arrays
+    traj.postProcess()
     """
 
     def __init__(self, n_steps: int = 0,
@@ -187,7 +208,8 @@ class CompactTrajectory:
             print(f"Dimensions  other: {other.dimensions.shape}, self: {self.dimensions.shape}")
             print(f"Position    other: {other.position.shape}, self: {self.position.shape}")
             print(f"Time        other: {other.time.shape}, self: {self.time.shape}")
-            print(f"CDim        other: {other.changing_dimensions.shape}, self: {self.changing_dimensions.shape}")
+            print(f"CDim        other: {other.changing_dimensions.shape}"
+                  f"self: {self.changing_dimensions.shape}")
         if are_the_same:
             if self.is_fixedbox:
                 are_the_same = np.all([
