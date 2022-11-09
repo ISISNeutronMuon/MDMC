@@ -116,7 +116,7 @@ def universe():
     O_dispersion.parameters['epsilon'].value = 0.6501936
 
 
-    return universe
+    yield universe
 
 @pytest.fixture(scope="module")
 def NVE(universe):
@@ -139,7 +139,10 @@ def NVE(universe):
 
     md_engine.run(EQUILIBRIUM_STEPS)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -164,7 +167,10 @@ def NVT(universe):
 
     md_engine.run(EQUILIBRIUM_STEPS)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -192,7 +198,10 @@ def NPT(universe):
 
     md_engine.run(EQUILIBRIUM_STEPS)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -229,7 +238,10 @@ def NVE_unconstrained(universe):
 
     md_engine.run(EQUILIBRIUM_STEPS)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 def parameterize_decorator(func):
