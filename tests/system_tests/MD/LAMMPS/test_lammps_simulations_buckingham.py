@@ -155,7 +155,7 @@ def universe():
     Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                vdw_tail_correction=True, function=buck)
 
-    return universe
+    yield universe
 
 
 @pytest.fixture(scope="module")
@@ -180,7 +180,10 @@ def NVE(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -206,7 +209,10 @@ def NVT(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -235,7 +241,10 @@ def NPT(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -273,7 +282,10 @@ def NVE_unconstrained(universe):
     md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 def parameterize_decorator(func):
