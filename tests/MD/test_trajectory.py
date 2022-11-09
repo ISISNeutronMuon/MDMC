@@ -25,7 +25,7 @@ POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
 TEST_CHARGE_1 = 3.14
 TEST_CHARGE_2 = -2.71
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
-NUMBER_OF_STEPS = 5000
+NUMBER_OF_STEPS = 2000
 
 @pytest.fixture
 def atom():
@@ -125,8 +125,8 @@ def water_trajectory():
                             traj_step=1)
 
     # Energy Minimization and equilibration
-    simulation.minimize(n_steps=5000)
-    simulation.run(n_steps=10000, equilibration=True)
+    simulation.minimize(n_steps=2000)
+    simulation.run(n_steps=2000, equilibration=True)
     simulation.run(n_steps=NUMBER_OF_STEPS)
     traj = simulation.trajectory
 
@@ -148,13 +148,26 @@ def test_number_of_elements(water_trajectory):
     assert np.sum(element_array == 'O') == 512
     assert np.sum(element_array == 'H') == 1024
 
-def test_lammps_trajectory(water_trajectory):
+def test_lammps_trajectory_length(water_trajectory):
     """
     A LAMMPS 'run 0' command generates a trajectory
     with length 1. For this reason the trajectory
     has to be 1 step longer than the number of steps.
     """
     traj = water_trajectory
-    print("First index = ", traj.first_index)
-    print("Last index = ", traj.last_index)
     assert len(traj) == NUMBER_OF_STEPS + 1
+
+def test_lammps_trajectory_slicing(water_trajectory):
+    """
+    A LAMMPS 'run 0' command generates a trajectory
+    with length 1. For this reason the trajectory
+    has to be 1 step longer than the number of steps.
+    """
+    traj = water_trajectory
+    sliced = traj[5:81:5]
+    assert sliced.time[-1] == traj.time[80]
+
+def test_trajectory_identity(water_trajectory):
+    traj = water_trajectory
+    identical_slice = traj[traj.first_index : traj.last_index + 1: 1]
+    assert traj == identical_slice
