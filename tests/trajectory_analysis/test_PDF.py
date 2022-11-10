@@ -64,7 +64,7 @@ def trajectory(universe):
 
     trj = configurations_as_compact_trajectory(*[TemporalConfiguration(time, universe=universe)
                        for time in range(0, 1000, 1)])
-    # trj.configurations[0].element_set = ELEMENTS
+    trj.element_set = ELEMENTS  # it was already done this way for the old Trajectory
     return trj
 
 
