@@ -40,8 +40,6 @@ class FQtCoherent(AbstractFQt):
             indexes = np.where(np.array(self._trajectory.element_list)
                                == element)
             element_configs = self._trajectory.position[:, indexes[0], :]
-            # element_configs = [config.positions[indexes] for config
-            #                    in self._trajectory]
             rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),
                                   dtype=complex)

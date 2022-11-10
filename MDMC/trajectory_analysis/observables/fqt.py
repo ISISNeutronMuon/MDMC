@@ -5,13 +5,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from mpi4py import MPI
-# from numba import jit
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-# from MDMC.common.decorators import time_function_execution
 from MDMC.common.mathematics import faster_correlation,\
      faster_autocorrelation, \
      UNIT_VECTOR
@@ -654,9 +652,6 @@ class FQt(AbstractFQt):
 
         return FQt_single_Q / (n_atoms * norm)
 
-# I have re-written the function
-# and now the Numba jit does not improve it any further
-# @jit('float64[:,:], float64[:,:]', nopython=True)
 def calculate_rho(positions, Q_vector):
     """
     Calculates ``t`` dependent number density in reciprocal space for all
