@@ -16,11 +16,6 @@ from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic
 
 pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
-""" 
-STDEV_FAC is the number of standard deviations within which the calculated
-property must lie for it to be considered equivalent to the expected value
-i.e. it is the tolerance of the assertion on the property 
-"""
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
@@ -32,10 +27,7 @@ EQUILIBRIUM_STEPS = 10000
 MD_STEPS = 20000
 
 """Each EXPECTED dictionary contains all of the required properties as keys. The
-corresponding values are a tuple of (mean value, standard deviation),
-where both the mean value and the standard deviation have been calculated from
-10 repeats (with different random velocity seeds) of an external LAMMPS
-simulation with the same simulation parameters.
+corresponding values were computed with the `velocity_seed=1234` for the LAMMPS simulations.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
 NVE_EXPECTED = {'Atoms': N_MOLECULES*3,
