@@ -472,5 +472,4 @@ def assert_property(ensemble, expected, request, prop):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     average = average_property(request.getfixturevalue(ensemble), prop)
-    print(f'{ensemble}, {prop}, {average}')
     assert np.allclose(average, expected[prop])
