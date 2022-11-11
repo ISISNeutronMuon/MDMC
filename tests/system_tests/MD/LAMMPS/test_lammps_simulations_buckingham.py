@@ -27,7 +27,7 @@ VELOCITY_SEED = 1234
 THERMO_STEPS = 100
 EQUILIBRIUM_STEPS = 10000
 MD_STEPS = 20000
-VOLUME = round(DIMENSION**3, 2)
+
 """Each EXPECTED dictionary contains all of the required properties as keys. The
 corresponding values were computed with the `velocity_seed=1234` for the LAMMPS simulations.
 
@@ -40,7 +40,7 @@ NVE_EXPECTED = {'Atoms': N_MOLECULES*3,
                 'PotEng': -1152.0357564356434,
                 'Temp': 303.95728094059405,
                 'Press': 26268.298821782177,
-                'Volume': VOLUME,
+                'Volume': DIMENSION**3,
                 'E_bond': 0.0,
                 'E_angle': 0.0,
                 'E_vdwl': 538.6323241089109,
@@ -57,7 +57,7 @@ NVT_EXPECTED = {'Atoms': N_MOLECULES*3,
                 'PotEng': -1158.4371202970297,
                 'Temp': 300.1078448019802,
                 'Press': 26182.276029702967,
-                'Volume': VOLUME,
+                'Volume': DIMENSION**3,
                 'E_bond': 0.0,
                 'E_angle': 0.0,
                 'E_vdwl': 539.4427616831683,
@@ -91,7 +91,7 @@ NVE_UNCONSTRAINED_EXPECTED = {'Atoms': N_MOLECULES*3,
                               'PotEng': -1022.8606712871288,
                               'Temp': 305.929624009901,
                               'Press': 27994.17161386139,
-                              'Volume': VOLUME,
+                              'Volume': DIMENSION**3,
                               'E_bond': 59.90467928712871,
                               'E_angle': 140.02266336633664,
                               'E_vdwl': 612.6358357425743,
