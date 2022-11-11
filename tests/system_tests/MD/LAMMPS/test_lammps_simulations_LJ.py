@@ -21,10 +21,10 @@ STDEV_FAC is the number of standard deviations within which the calculated
 property must lie for it to be considered equivalent to the expected value
 i.e. it is the tolerance of the assertion on the property 
 """
-STDEV_FAC = 4.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
+VELOCITY_SEED = 1234
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
@@ -38,45 +38,69 @@ where both the mean value and the standard deviation have been calculated from
 simulation with the same simulation parameters.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
-NVE_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(1440.28, 3.9),
-                'PotEng':(-1282.70, 3.5), 'Temp':(1121.08, 3.0),
-                'Press':(16911.42, 116.1), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(382.69, 3.2),
-                'E_coul':(11562.59, 4.5), 'E_long':(-13227.98, 0.45),
-                'Nbuild':(896.46, 3.2), 'Ndanger':(0, 0)}
+NVE_EXPECTED = {'Atoms': N_MOLECULES*3,
+                'Bonds': N_MOLECULES*2,
+                'Angles': N_MOLECULES,
+                'KinEng': 1450.1292606965173,
+                'PotEng': -1287.25257960199,
+                'Temp': 1128.7431910447763,
+                'Press': 17003.36811940298,
+                'Volume': DIMENSION**3,
+                'E_bond': 0,
+                'E_angle': 0,
+                'E_vdwl': 384.4791304975124,
+                'E_coul': 11556.497870646765,
+                'E_long': -13228.229537313433,
+                'Nbuild': 894.9651741293533,
+                'Ndanger': 0}
 
-NVT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(385.43, 0.98),
-                'PotEng':(-2408.66, 4.2), 'Temp':(300.01, 0.77),
-                'Press':(168.6, 84.6), 'Volume':(DIMENSION**3, 0),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(457.47, 2.6),
-                'E_coul':(10388.92, 5.6), 'E_long':(-13255.06, 0.11),
-                'Nbuild':(384.18, 3.4), 'Ndanger':(0, 0)}
+NVT_EXPECTED = {'Atoms': N_MOLECULES*3,
+                'Bonds': N_MOLECULES*2,
+                'Angles': N_MOLECULES,
+                'KinEng': 385.87995358208957,
+                'PotEng': -2405.83192238806,
+                'Temp': 300.35899691542295,
+                'Press': -17.967678981592037,
+                'Volume': DIMENSION**3,
+                'E_bond': 0,
+                'E_angle': 0,
+                'E_vdwl': 451.95439154228853,
+                'E_coul': 10397.282179104479,
+                'E_long': -13255.068542288556,
+                'Nbuild': 388.27363184079604,
+                'Ndanger': 0}
 
-NPT_EXPECTED = {'Atoms':(N_MOLECULES*3, 0), 'Bonds':(N_MOLECULES*2, 0),
-                'Angles':(N_MOLECULES, 0), 'KinEng':(384.85, 0.9),
-                'PotEng':(-2408.42, 6.4), 'Temp':(299.56, 0.70),
-                'Press':(3.87, 31.5), 'Volume':(6478.08, 30.3),
-                'E_bond':(0, 0), 'E_angle':(0, 0), 'E_vdwl':(455.36, 3.2),
-                'E_coul':(10390.32, 18.4), 'E_long':(-13254.11, 13.5),
-                'Nbuild':(415.84, 2.7), 'Ndanger':(0, 0)}
+NPT_EXPECTED = {'Atoms': N_MOLECULES*3,
+                'Bonds': N_MOLECULES*2,
+                'Angles': N_MOLECULES,
+                'KinEng': 386.47587308457713,
+                'PotEng': -2407.1223930348256,
+                'Temp': 300.8228455223881,
+                'Press': -15.38297941442786,
+                'Volume': 6521.432873631841,
+                'E_bond': 0,
+                'E_angle': 0,
+                'E_vdwl': 457.94879502487566,
+                'E_coul': 10363.568492537313,
+                'E_long': -13228.639721393034,
+                'Nbuild': 419.90547263681594,
+                'Ndanger': 0}
 
-NVE_UNCONSTRAINED_EXPECTED = {'Atoms':(N_MOLECULES*3, 0),
-                              'Bonds':(N_MOLECULES*2, 0),
-                              'Angles':(N_MOLECULES, 0),
-                              'KinEng':(1657.53, 6.6),
-                              'PotEng':(-1176.07, 6.6),
-                              'Temp':(859.45, 3.4),
-                              'Press':(13672.83, 266.9),
-                              'Volume':(DIMENSION**3, 0),
-                              'E_bond':(180.66, 4.7),
-                              'E_angle':(294.60, 4.5),
-                              'E_vdwl':(424.56, 6.1),
-                              'E_coul':(11154.79, 9.4),
-                              'E_long':(-13230.68, 0.27),
-                              'Nbuild':(92.02, 1.2),
-                              'Ndanger':(0, 0)}
+NVE_UNCONSTRAINED_EXPECTED = {'Atoms': N_MOLECULES*3,
+                              'Bonds': N_MOLECULES*2,
+                              'Angles': N_MOLECULES,
+                              'KinEng': 1657.7250517412936,
+                              'PotEng': -1176.2447587064678,
+                              'Temp': 859.5554876119403,
+                              'Press': 13163.268101990052,
+                              'Volume': DIMENSION**3,
+                              'E_bond': 183.35702835820896,
+                              'E_angle': 299.8637463681592,
+                              'E_vdwl': 414.8129166666667,
+                              'E_coul': 11156.430432835821,
+                              'E_long': -13230.708805970147,
+                              'Nbuild': 91.93532338308458,
+                              'Ndanger': 0}
 
 
 # Use module scope so that the simulation only runs once for all functions
@@ -115,7 +139,6 @@ def universe():
     # LAMMPS value
     O_dispersion.parameters['epsilon'].value = 0.6501936
 
-
     yield universe
 
 @pytest.fixture(scope="module")
@@ -132,7 +155,8 @@ def NVE(universe):
                            engine='lammps',
                            time_step=1.,
                            temperature=TEMPERATURE,
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -160,7 +184,8 @@ def NVT(universe):
                            time_step=1.,
                            temperature=TEMPERATURE,
                            thermostat='nose',
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -191,7 +216,8 @@ def NPT(universe):
                            thermostat='nose',
                            barostat='nose',
                            p_damp=100,
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -231,7 +257,8 @@ def NVE_unconstrained(universe):
                            engine='lammps',
                            time_step=0.1,
                            temperature=TEMPERATURE,
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -445,9 +472,5 @@ def assert_property(ensemble, expected, request, prop):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     average = average_property(request.getfixturevalue(ensemble), prop)
-
-    # expected[property][1] is the standard_deviation of the property. The
-    # absolute tolerance is set to STDEV_FAC times this value.
-    # Small relative tolerance accounts for rounding differences
-    assert np.allclose(average, expected[prop][0],
-                       atol=expected[prop][1]*STDEV_FAC, rtol=1e-8)
+    print(f'{ensemble}, {prop}, {average}')
+    assert np.allclose(average, expected[prop])
