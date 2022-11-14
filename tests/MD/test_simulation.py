@@ -37,12 +37,12 @@ SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
 @pytest.fixture
 def universe():
 
-    return sim.Universe(UNIVERSE_DIMENSIONS, verbose=False)
+    yield sim.Universe(UNIVERSE_DIMENSIONS, verbose=False)
 
 @pytest.fixture
 def atom():
 
-    return su.Atom('H', mass=H_MASS)
+    yield su.Atom('H', mass=H_MASS)
 
 @pytest.fixture
 def water_molecule():
@@ -56,7 +56,7 @@ def water_molecule():
                                  interactions=[interactions.Bond((H1, O), (H2, O)),
                                                interactions.BondAngle(H1, O, H2)],
                                  name='water')
-    return water_molecule
+    yield water_molecule
 
 @pytest.fixture
 def water_SPCE_universe(water_molecule):
@@ -67,12 +67,12 @@ def water_SPCE_universe(water_molecule):
     O_atom_type = next(atom.atom_type for atom in water_universe.atoms
                        if atom.element == 'O')
     O_dispersion = interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
-    return water_universe
+    yield water_universe
 
 @pytest.fixture
 def kspace_solver():
 
-    return sim.Ewald(accuracy=0.0001)
+    yield sim.Ewald(accuracy=0.0001)
 
 @pytest.fixture
 def small_diatomic():
@@ -81,7 +81,7 @@ def small_diatomic():
     and therefore a small bounding box relative to the size of the universe.
     """
 
-    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+    yield su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
                               su.Atom('H', position=([np.sqrt(3)] * 3))])
 
 @pytest.fixture
@@ -92,7 +92,7 @@ def large_diatomic():
     the universe.
     """
 
-    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+    yield su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
                               su.Atom('H',
                                       position=(np.array(UNIVERSE_DIMENSIONS)/2)
                                      )])
@@ -103,7 +103,7 @@ def solvated_universe():
     uni = sim.Universe(SPCE_DIMENSIONS, verbose=False)
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
 
-    return uni
+    yield uni
 
 def get_dispersions(inters):
     """
@@ -942,7 +942,7 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
 
 
 @pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar, verbose=False)
-                                 for scalar in [0.9, 1.0, 1.1]])
+                                 for scalar in [0.9, 1.0, 1.05]])
 def test_solvate_spce_no_solute(uni):
     """
     Tests that the achieved density is within the tolerance for solvating
@@ -1009,8 +1009,8 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
                             and all(pos < solute_bounds.max))
 
 
-@pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
-def test_solvate_spce_bond_lengths(dim_scalings):
+
+def test_solvate_spce_bond_lengths():
     """
     Tests that solvating 2 empty universes of different dimensions results
     in no change of the intramolecular nuclear separation lengths in the
@@ -1018,8 +1018,8 @@ def test_solvate_spce_bond_lengths(dim_scalings):
     """
 
     # Solvate 2 universes of different dimensions.
-    univ1 = sim.Universe(SPCE_DIMENSIONS * dim_scalings[0], verbose=False)
-    univ2 = sim.Universe(SPCE_DIMENSIONS * dim_scalings[1], verbose=False)
+    univ1 = sim.Universe(SPCE_DIMENSIONS*0.5, verbose=False)
+    univ2 = sim.Universe(SPCE_DIMENSIONS*0.7, verbose=False)
     univ1.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     univ2.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
 
