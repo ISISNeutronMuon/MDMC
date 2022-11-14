@@ -12,7 +12,6 @@ ATOM_COLLECTIONS = ['universe', 'molecule']
 
 @pytest.fixture
 def atoms():
-
     """
     Returns
     -------
@@ -25,7 +24,6 @@ def atoms():
 
 @pytest.fixture
 def universe(atoms):
-
     """
     Returns
     -------
@@ -33,14 +31,13 @@ def universe(atoms):
         A Universe containing the list of atoms in the ``atoms`` fixture
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
     for atom in atoms:
         uni.add_structure(atom)
     return uni
 
 @pytest.fixture
 def molecule(atoms):
-
     """
     Returns
     -------
@@ -52,8 +49,7 @@ def molecule(atoms):
 
 
 @pytest.mark.parametrize('atom_collection', ATOM_COLLECTIONS)
-def test_atom_collection_index(atoms, atom_collection, request):
-
+def test_atom_collection_index(atom_collection, atoms, request):
     """
     Tests that indexing into a subclass of AtomCollection returns an Atom
     """
@@ -63,8 +59,7 @@ def test_atom_collection_index(atoms, atom_collection, request):
 
 
 @pytest.mark.parametrize('atom_collection', ATOM_COLLECTIONS)
-def test_atom_collection_slice(atoms, atom_collection, request):
-
+def test_atom_collection_slice(atom_collection, request):
     """
     Tests that slicing a subclass of AtomCollection returns a list of Atoms
     """
