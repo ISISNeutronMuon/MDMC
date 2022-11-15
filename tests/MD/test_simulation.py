@@ -2,7 +2,6 @@
 
 from collections import Counter
 from itertools import combinations, permutations
-from copy import deepcopy
 
 import numpy as np
 import numpy.testing as npt
@@ -27,11 +26,11 @@ O_MASS = 16.000
 WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
-TOLERANCE = 1
+TOLERANCE = 1.2
 SPCE_MASS = 18.01499
 SPCE_DIMENSIONS = np.array([18.6206, 18.6206, 18.6206])
-SPCE_NUM_MOL = len(SPC216['molecules'])
-SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
+SPCE_NUM_MOL = 216  # len(SPC216['molecules'])
+SPCE_DENSITY = 0.6027077333221875  # SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
 
 
 @pytest.fixture
@@ -942,12 +941,12 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
 
 
 @pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar, verbose=False)
-                                 for scalar in [0.9, 1.0, 1.05]])
+                                 for scalar in [0.3, 1.02]])
 def test_solvate_spce_no_solute(uni):
     """
     Tests that the achieved density is within the tolerance for solvating
-    with SPCE water an empty universe of dimensions smaller, equal to, and
-    larger than those of the SPCE configuration box.
+    with SPCE water an empty universe of dimensions smaller, and
+    larger than those of the SPCE configuration box, equal is in another test.
     """
 
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
