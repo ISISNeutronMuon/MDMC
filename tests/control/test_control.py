@@ -97,7 +97,7 @@ def simulation() -> callable:
         to `1`. Returns a ``MockedSimulation`` for testing.
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
 
     def _simulation(traj_step: int = 1,
                     time_step: float = 1.) -> MockSimulation:
@@ -179,7 +179,8 @@ def exp_datasets() -> callable:
 
 def test_control_init_stdout(print_value, expected_indexes, expected_data, monkeypatch,
                              capsys, exp_datasets, simulation):
-    """ A test to make sure that the stdout when creating a control object
+    """ 
+    A test to make sure that the stdout when creating a control object
     is as expected, both when a full output is requested, and when not .
     """
 
