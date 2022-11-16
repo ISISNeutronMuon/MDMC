@@ -89,7 +89,7 @@ def universe():
     molecules at 300K using LAMMPS
     """
 
-    universe = Universe(dimensions=DIMENSION)
+    universe = Universe(dimensions=DIMENSION, verbose=False)
     H1 = Atom('H')
     H2 = Atom('H', position=(0., 1.63298, 0.))
     O = Atom('O', position=(0., 0.81649, 0.57736))
@@ -132,7 +132,8 @@ def NVE(universe):
                            engine='lammps',
                            time_step=1.,
                            temperature=TEMPERATURE,
-                           traj_step=10)
+                           traj_step=10,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -160,7 +161,8 @@ def NVT(universe):
                            time_step=1.,
                            temperature=TEMPERATURE,
                            thermostat='nose',
-                           traj_step=10)
+                           traj_step=10,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -191,7 +193,8 @@ def NPT(universe):
                            thermostat='nose',
                            barostat='nose',
                            p_damp=100,
-                           traj_step=10)
+                           traj_step=10,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -231,7 +234,8 @@ def NVE_unconstrained(universe):
                            engine='lammps',
                            time_step=0.1,
                            temperature=TEMPERATURE,
-                           traj_step=10)
+                           traj_step=10,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)

@@ -30,8 +30,8 @@ TEMPERATURE = 300.
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
-EQUILIBRIUM_STEPS = 10000
-MD_STEPS = 20000
+EQUILIBRIUM_STEPS = int(7000)
+MD_STEPS = int(20000/4)
 VOLUME = round(DIMENSION**3, 2)
 """Each EXPECTED dictionary contains all of the required properties as keys. The
 corresponding values are a tuple of (mean value, standard deviation),
@@ -51,10 +51,10 @@ NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Volume': (VOLUME, 0.0),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (536.29, 3.73),
-                'E_coul': (11553.7, 5.2), # Changed Value
-                'E_long': (-13254.73, 0.1), # Changed Value
-                'Nbuild': (433.67, 2.52),
+                'E_vdwl': (536.29, 3.73*2),
+                'E_coul': (11553.7, 5.2*2), # Changed Value
+                'E_long': (-13254.73, 0.1*2), # Changed Value
+                'Nbuild': (433.67/4, 2.52/2),
                 'Ndanger': (0.0, 0.0)}
 
 
@@ -68,10 +68,10 @@ NVT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Volume': (VOLUME, 0.0),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (536.17, 6.08),
-                'E_coul': (11554.08, 4.01),
-                'E_long': (-13254.66, 0.11),
-                'Nbuild': (433.49, 3.81),
+                'E_vdwl': (536.17, 6.08*2),
+                'E_coul': (11554.08, 4.01*2),
+                'E_long': (-13254.66, 0.11*2),
+                'Nbuild': (433.49/4, 3.81/2),
                 'Ndanger': (0.0, 0.0)}
 
 
@@ -85,10 +85,10 @@ NPT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Volume': (11926.95, 80.35),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (54.38, 2.37),
-                'E_coul': (11842.14, 94.69),
-                'E_long': (-12987.47, 93.22),
-                'Nbuild': (493.96, 2.65),
+                'E_vdwl': (54.38, 2.37*2),
+                'E_coul': (11842.14, 94.69*2),
+                'E_long': (-12987.47, 93.22*2),
+                'Nbuild': (493.96/4, 2.65/2),
                 'Ndanger': (0.0, 0.0)}
 
 
@@ -100,12 +100,12 @@ NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                               'Temp': (303.87, 2.), # Changed Value
                               'Press': (28387.19, 292.63),
                               'Volume': (VOLUME, 0.0),
-                              'E_bond': (59.26, 1.58),
-                              'E_angle': (138.19, 2.10), # Changed Value
-                              'E_vdwl': (627.93, 8.18),
-                              'E_coul': (11402.58, 7.06),
-                              'E_long': (-13252.19, 0.25), # Changed Value,
-                              'Nbuild': (51.21, 0.78),
+                              'E_bond': (59.26, 1.58*2),
+                              'E_angle': (138.19, 2.10*2), # Changed Value
+                              'E_vdwl': (627.93, 8.18*2),
+                              'E_coul': (11402.58, 7.06*2),
+                              'E_long': (-13252.19, 0.25*2), # Changed Value,
+                              'Nbuild': (51.21/4, 0.78/2),
                               'Ndanger': (0.0, 0.0)}
 
 
@@ -121,7 +121,7 @@ def universe():
         The interaction potential used is the Buckingham potential.
     """
 
-    universe = Universe(dimensions=DIMENSION)
+    universe = Universe(dimensions=DIMENSION, verbose=False)
     H1 = Atom('H')
     H2 = Atom('H', position=(0., 1.63298, 0.))
     O = Atom('O', position=(0., 0.81649, 0.57736))
