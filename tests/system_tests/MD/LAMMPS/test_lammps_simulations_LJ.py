@@ -178,8 +178,7 @@ def NVT(universe):
                            temperature=TEMPERATURE,
                            thermostat='nose',
                            traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
-                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED,
                            verbose=False)
 
     # Manually select which properties to output from LAMMPS
@@ -211,8 +210,7 @@ def NPT(universe):
                            thermostat='nose',
                            barostat='nose',
                            p_damp=100,
-                           traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
+                           velocity_seed=VELOCITY_SEED,
                            traj_step=10,
                            verbose=False)
 
@@ -255,8 +253,7 @@ def NVE_unconstrained(universe):
                            time_step=0.1,
                            temperature=TEMPERATURE,
                            traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
-                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED,
                            verbose=False)
 
     # Manually select which properties to output from LAMMPS

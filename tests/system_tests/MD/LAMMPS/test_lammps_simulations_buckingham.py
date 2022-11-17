@@ -25,8 +25,8 @@ VELOCITY_SEED = 1234
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
-EQUILIBRIUM_STEPS = int(7000)
-MD_STEPS = int(20000/4)
+EQUILIBRIUM_STEPS = int(10000)
+MD_STEPS = int(20000)
 VOLUME = round(DIMENSION**3, 2)
 EQUILIBRIUM_STEPS = 10000
 MD_STEPS = 20000
@@ -228,7 +228,8 @@ def NVE(universe):
                            time_step=1.,
                            temperature=TEMPERATURE,
                            traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -258,7 +259,8 @@ def NVT(universe):
                            temperature=TEMPERATURE,
                            thermostat='nose',
                            traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -291,7 +293,8 @@ def NPT(universe):
                            barostat='nose',
                            p_damp=100,
                            traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
@@ -333,7 +336,8 @@ def NVE_unconstrained(universe):
                            time_step=0.1,
                            temperature=TEMPERATURE,
                            traj_step=10,
-                           velocity_seed=VELOCITY_SEED)
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
