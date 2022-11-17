@@ -25,9 +25,6 @@ VELOCITY_SEED = 1234
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
-EQUILIBRIUM_STEPS = int(10000)
-MD_STEPS = int(20000)
-VOLUME = round(DIMENSION**3, 2)
 EQUILIBRIUM_STEPS = 10000
 MD_STEPS = 20000
 
@@ -51,21 +48,6 @@ NVE_EXPECTED = {'Atoms': N_MOLECULES*3,
                 'E_long': -13254.602336633663,
                 'Nbuild': 437.9059405940594,
                 'Ndanger': 0.0}
-NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
-                'Bonds': (N_MOLECULES*2, 0.0),
-                'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (382.48, 3.5), # Changed Value
-                'PotEng': (-1164.74, 4.5), # Changed Value
-                'Temp': (297.71, 2.68), # Changed Value
-                'Press': (26000.7, 156.55), # Changed Value
-                'Volume': (VOLUME, 0.0),
-                'E_bond': (0.0, 0.0),
-                'E_angle': (0.0, 0.0),
-                'E_vdwl': (536.29, 3.73*2),
-                'E_coul': (11553.7, 5.2*2), # Changed Value
-                'E_long': (-13254.73, 0.1*2), # Changed Value
-                'Nbuild': (433.67/4, 2.52/2),
-                'Ndanger': (0.0, 0.0)}
 
 
 NVT_EXPECTED = {'Atoms': N_MOLECULES*3,
@@ -83,21 +65,6 @@ NVT_EXPECTED = {'Atoms': N_MOLECULES*3,
                 'E_long': -13254.648643564356,
                 'Nbuild': 434.6930693069307,
                 'Ndanger': 0.0}
-NVT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
-                'Bonds': (N_MOLECULES*2, 0.0),
-                'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (383.28, 1.2), # Changed Value
-                'PotEng': (-1164.4, 3.0),
-                'Temp': (298.33, 1.2), # Changed Value
-                'Press': (26014.23, 180.65),
-                'Volume': (VOLUME, 0.0),
-                'E_bond': (0.0, 0.0),
-                'E_angle': (0.0, 0.0),
-                'E_vdwl': (536.17, 6.08*2),
-                'E_coul': (11554.08, 4.01*2),
-                'E_long': (-13254.66, 0.11*2),
-                'Nbuild': (433.49/4, 3.81/2),
-                'Ndanger': (0.0, 0.0)}
 
 
 NPT_EXPECTED = {'Atoms': N_MOLECULES*3,
@@ -115,21 +82,6 @@ NPT_EXPECTED = {'Atoms': N_MOLECULES*3,
                 'E_long': -12973.995465346534,
                 'Nbuild': 493.4950495049505,
                 'Ndanger': 0.0}
-NPT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
-                'Bonds': (N_MOLECULES*2, 0.0),
-                'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (382.5, 1.4), # Changed Value
-                'PotEng': (-1090.95, 4.),
-                'Temp': (297.72, 1.1), # Changed Value
-                'Press': (1.59, 29.34),
-                'Volume': (11926.95, 80.35),
-                'E_bond': (0.0, 0.0),
-                'E_angle': (0.0, 0.0),
-                'E_vdwl': (54.38, 2.37*2),
-                'E_coul': (11842.14, 94.69*2),
-                'E_long': (-12987.47, 93.22*2),
-                'Nbuild': (493.96/4, 2.65/2),
-                'Ndanger': (0.0, 0.0)}
 
 
 NVE_UNCONSTRAINED_EXPECTED = {'Atoms': N_MOLECULES*3,
@@ -147,22 +99,6 @@ NVE_UNCONSTRAINED_EXPECTED = {'Atoms': N_MOLECULES*3,
                               'E_long': -13251.919118811878,
                               'Nbuild': 51.5,
                               'Ndanger': 0.0}
-NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
-                              'Bonds': (N_MOLECULES*2, 0.0),
-                              'Angles': (N_MOLECULES, 0.0),
-                              'KinEng': (586.04, 3.8), # Changed Value
-                              'PotEng': (-1024.23, 5.0),
-                              'Temp': (303.87, 2.), # Changed Value
-                              'Press': (28387.19, 292.63),
-                              'Volume': (VOLUME, 0.0),
-                              'E_bond': (59.26, 1.58*2),
-                              'E_angle': (138.19, 2.10*2), # Changed Value
-                              'E_vdwl': (627.93, 8.18*2),
-                              'E_coul': (11402.58, 7.06*2),
-                              'E_long': (-13252.19, 0.25*2), # Changed Value,
-                              'Nbuild': (51.21/4, 0.78/2),
-                              'Ndanger': (0.0, 0.0)}
-
 
 # Use module scope so that the simulation only runs once for all functions
 @pytest.fixture(scope="module")
