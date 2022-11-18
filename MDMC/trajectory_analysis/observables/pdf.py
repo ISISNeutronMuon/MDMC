@@ -222,7 +222,11 @@ class PairDistributionFunction(Observable):
             n_frames : int
                 The number of frames from which the pdf and its error are
                 calculated. If this is not passed, 1% of the total number of
-                frames are used (rounded up to nearest int).
+                frames are used (rounded up to the nearest int).
+            use_average : bool
+                Optional parameter. If set to True (default) then the mean value for PDF is
+                calculated across selected frames from the trajectory. Also, the errors
+                are set to the standard deviation calculated over the multiple frames.
             subset : list of tuples
                 The subset of element pairs from which the PDF is calculated.
                 This can be used to calculate the partial PDFs of a
@@ -260,20 +264,7 @@ class PairDistributionFunction(Observable):
             dimensions : array-like
                 A 3 element `array-like` (`list`, `tuple`) with the dimensions
                 of the ``Universe``.
-            use_average : bool
-                Optional parameter if a list of more than one ``Trajectory`` is used. If set to
-                True (default) then the mean value for PDF is calculated. Also, the errors
-                are set to the standard deviation calculated over the list of ``Trajectory``
-                objects.
-            cont_slicing : bool
-                Flag to decide between two possible behaviours when the number of ``MD_steps`` is
-                larger than the minimum required to calculate the observables. If ``False``
-                (default) then the ``Trajectory`` is sliced into non-overlapping
-                sub-``Trajectory`` blocks for each of which the observable is calculated. If
-                ``True``, then the ``Trajectory`` is sliced into as many non-identical
-                sub-``Trajectory`` blocks as possible (with overlap allowed).
-            n_subtraj : int, optional
-                 The number of subtrajectories used to average over. Defaults to 2.
+
 
         Examples
         --------
@@ -307,91 +298,98 @@ class PairDistributionFunction(Observable):
             pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08})
         """
 
-        #Original code:
         self.origin = 'MD'
+        use_average = settings.get('use_average', False)
 
-        if isinstance(MD_input, Trajectory):
-            MD_input = [MD_input]
+        self._parse_calc_MD_settings(MD_input, settings)
 
-        self._parse_calc_MD_settings(MD_input[0], settings)
+        trajectories = MD_input
 
-        for trajectory in self.trajectory:
-            self._calculate_histogram(trajectory.configurations[0])
+        if use_average:
+            trajectories = self._slice_trajectory(MD_input, settings)
 
-        self._sum_partial_pairs()
 
-        # self.origin = 'MD'
-        # use_average = settings.get('use_average', True)
-        #
-        # self._parse_calc_MD_settings(MD_input, settings)
-        #
-        # if use_average:
-        #     cont_slicing = settings.get('cont_slicing', False)
-        #     n_frames = settings.get("n_frames", len(self.trajectory))
-        #
-        #     print("Length of traj: ", len(self.trajectory))
-        #     print("Length of subtrajectories: ", n_frames)
-        #     print("Theoretical num. of sub_trajectories: ", len(self.trajectory)//n_frames)
-        #     trajectories = slice_trajectory(trj=self.trajectory,
-        #                                     subtrj_len=n_frames,
-        #                                     cont_slicing=cont_slicing)
-        #     PDF_list = []
-        #     partial_dict = {}
-        #
-        #     actual_traj_count = 0
-        #     # Calculate & save total & partial PDF for each sub-trajectory
-        #     for trajectory in trajectories:
-        #         print("New trajectory")
-        #         self._calculate_histogram(trajectory.configurations[0])
-        #         self._sum_partial_pairs()
-        #
-        #         PDF_list = numpy.add(PDF_list, self.PDF)
-        #
-        #         for partial_str in self.partial_pdfs.keys():
-        #             if partial_str in partial_dict.keys():
-        #                 partial_dict[partial_str] = numpy.add(partial_dict[partial_str], self.partial_pdfs[partial_str])
-        #             else:
-        #                 partial_dict[partial_str] = self.partial_pdfs[partial_str]
-        #
-        #         actual_traj_count += 1
-        #
-        #     print("Actual number of sub_trajectories: ", actual_traj_count)
-        #
-        #     print("Averaging total PDF")
-        #     # Average total PDF element-wise over all lists
-        #     PDF_list = numpy.divide(PDF_list, actual_traj_count)
-        #
-        #     print("Averaging partials")
-        #     # Average partials
-        #     for partial_str in partial_dict:
-        #         partial_dict[partial_str] = numpy.divide(partial_dict[partial_str], actual_traj_count)
-        #
-        #     # Assign back to class variables
-        #     self.dependent_variables["PDF"] = PDF_list
-        #     self.partial_pdfs = partial_dict
-        #
-        # else:
-        #     for trajectory in self.trajectory:
-        #         self._calculate_histogram(trajectory.configurations[0])
-        #     self._sum_partial_pairs()
+        self._calculate_partial_pdfs(trajectories)
+        self._calculate_total_pdf()
+
+    def _calculate_partial_pdfs(self, trajectories: list[Trajectory]) -> None:
+        """
+        Calculate the partial PDFs for each partial pairing
+
+        This uses the following equation:
+
+        with an additional normalisation factor to achieve proper normalisation behaviour
+
+        Parameters
+        ----------
+        trajectories: list of Trajectory
+            The sliced up trajectories to be used to calculate PDFs
+        """
+        # Calculate histograms for each sub-trajectory
+        for trajectory in trajectories:
+            self._calculate_histogram(trajectory.configurations[-1])
+        # Apply weighting/factors to each partial PDF
+        prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
+
+        for partial_string, partial in self.partial_pdfs.items():
+            numbers = np.multiply(*[self.numbers[elem] for elem in partial_string])
+            # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
+            if len(set(partial_string)) == 1:
+                partial *= 2
+
+            partial *= prefactor / (numbers * len(self.trajectory))
+
+    def _calculate_total_pdf(self) -> None:
+        """
+        Calculate the total pdf from the partial pairs
+
+        This function calculates the total PDF in accordance with equation (10)
+        and adds normalising behaviour of equations (16)-(18)
+        """
+        self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
+        total_number_of_particles = np.sum(list(self.numbers.values()))
+        # Calculate proportion and scattering length factors of elements in each pair
+        for partial_string, partial in self.partial_pdfs.items():
+            ci_cj = np.ones(shape=np.shape(self.r))
+            bi_bj = np.ones(shape=np.shape(self.r))
+            for elem in partial_string:
+                ci_cj *= (self.numbers[elem] / total_number_of_particles)  # Proportion of element
+                bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
+
+            # Unlike partials need to be scaled by 2 when added to total, as only one of the
+            # indentical pairs is considered (e.g. for water H-O is added but not O-H)
+            if len(set(partial_string)) == 1:
+                norm_fac = 1.
+            else:
+                norm_fac = 2.
+
+            self._dependent_variables['PDF'] += ci_cj * bi_bj * partial * norm_fac
+
+        #Extra normalisation (see equations 16-18 in the publication)
+        extra_norm = 0
+        for elem in self.elements:
+            ci = self.numbers[elem]/total_number_of_particles
+            bi = self.weights[elem]
+            extra_norm += ci * bi
+
+        extra_norm = extra_norm**-2
+        self._dependent_variables['PDF'] /= extra_norm
 
 
     def _sum_partial_pairs(self) -> None:
         """Normalize the partial pairs and sum them to get the total PDF"""
         # Partial independent prefactor (e.g. anything element independent)
-        prefactor = self.universe_volume / (4.0 * np.pi * self.r**2
-                                            * self.r_step)
         self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
         concentration_norm = np.sum(list(self.numbers.values())) ** 2
+
         for partial_string, partial in self.partial_pdfs.items():
-            numbers = np.multiply(*[self.numbers[elem] for elem
-                                    in partial_string])
+            numbers = np.multiply(*[self.numbers[elem] for elem in partial_string])
             concentration = numbers / concentration_norm
-            weights = np.multiply(*[self.weights[elem] for elem
-                                    in partial_string])
+            weights = np.multiply(*[self.weights[elem] for elem in partial_string])
+
             # Also need to normalise by the number of trajectories used for
             # averaging
-            partial *= prefactor / (numbers * len(self.trajectory))
+
             # Like partials need to be scaled by 2 so that they tend to 1 as r
             # tends to infinity. Unlike partials need to be scaled by 2 when
             # added to total, as only one of the indentical pairs is considered
