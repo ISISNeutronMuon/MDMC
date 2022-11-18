@@ -184,15 +184,12 @@ class PairDistributionFunction(Observable):
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``
 
-        The total pair distribution function (``pdf.PDF``) has the form:
+        We derive our definitions for this from the following publication:
+        "A comparison of various commonly used correlation functions for describing total scattering"
+        Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
+        DOI: https://doi.org/10.1107/S0021889800019993
 
-        .. math::
-
-            G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
-
-        where :math:`c_i` is the number concentration of element :math:`i`,
-        :math:`b_i` is the (coherent) scattering length of element :math:`i`,
-        and the partial pair distribution, :math:`g_{ij}`, is:
+        The partial pair distribution for a pair i-j, :math:`g_{ij}`, is:
 
         .. math::
 
@@ -203,6 +200,18 @@ class PairDistributionFunction(Observable):
         :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
         atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
         :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
+
+        This corresponds to the equation (8) in the above paper
+
+        The total pair distribution function (``pdf.PDF``) has the form:
+
+        .. math::
+
+            G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
+
+        where :math:`c_i` is the proportion of element :math:`i` in the material,
+        :math:`b_i` is the (coherent) scattering length of element :math:`i`
+        This corresponds to the equation (10) in the above paper.
 
         Independent variables can either be set previously or defined within
         settings.
