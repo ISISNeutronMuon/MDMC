@@ -408,8 +408,21 @@ class PairDistributionFunction(Observable):
                 fac = 1.
             else:
                 fac = 2.
-            self._dependent_variables['PDF'][0] += ((partial - 1) * fac
-                                                    * weights * concentration)
+
+            self._dependent_variables['PDF'] += ((partial-1) * fac * concentration * weights)
+
+    def _slice_trajectory(self, trajectory: Trajectory, settings: dict) -> list:
+        # np.max ensures that n_frames is at least 1 (relevant if
+        # total_n_frames < 100)
+        total_n_frames = len(trajectory)
+        n_frames = settings.get('n_frames', np.max([1, total_n_frames // 100]))
+        if n_frames < 1 or n_frames > total_n_frames:
+            raise ValueError('n_frames must be between 1 and the total number'
+                             ' of frames in the trajectory (inclusive)')
+        # If only a single frame then set frame_step > total_n_frames
+        frame_step = (total_n_frames + 1 if n_frames == 1
+                      else ((total_n_frames - 1) // n_frames) + 1)
+        return trajectory[0:total_n_frames:frame_step]
 
     def _parse_calc_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
         """
@@ -444,25 +457,6 @@ class PairDistributionFunction(Observable):
             If one or two of ``r_min``, ``r_max``, and ``r_step`` have been
             passed, user is warned that three are required to set ``r``.
         """
-
-        # np.max ensures that n_frames is at least 1 (relevant if
-        # total_n_frames < 100)
-        total_n_frames = len(trajectory)
-        n_frames = settings.get('n_frames', np.max([1, total_n_frames // 100]))
-        if n_frames < 1 or n_frames > total_n_frames:
-            raise ValueError('n_frames must be between 1 and the total number'
-                             ' of frames in the trajectory (inclusive)')
-        # If only a single frame then set frame_step > total_n_frames
-        frame_step = (total_n_frames + 1 if n_frames == 1
-                      else ((total_n_frames - 1) // n_frames) + 1)
-        self.trajectory = trajectory[0:total_n_frames:frame_step]
-
-        # Ensures n_subtraj is within the correct range
-        # n_subtraj = settings.get("n_subtraj", 2)
-        # if n_subtraj > total_n_frames or n_subtraj < 0:
-        #     raise ValueError("n_subtraj must be between 1 and the total number of"
-        #                      " frames in the trajectory (inclusive)")
-
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is
         # sorted so that partial pair strings will always be ordered
