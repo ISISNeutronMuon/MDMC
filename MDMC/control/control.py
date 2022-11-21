@@ -236,7 +236,7 @@ class Control:
 
             auto_scale = dset.get('auto_scale', False)
             rescale_factor = dset.get('rescale_factor')
-            if auto_scale and rescale_factor and not self.verbose == -1:
+            if auto_scale and rescale_factor and self.verbose != -1:
                 print('Both `rescale_factor` and `auto_scale` set for file {};'
                       ' scaling will be automated to minimise FoM'
                       ''.format(dset['file_name']))

@@ -100,7 +100,7 @@ def coulombic(coulomb):
         InteractionFunction object, an empty universe, and one atom.
     """
 
-    return Coulombic(atom_types=[1], universe=Universe(1.0), function=coulomb)
+    return Coulombic(atom_types=[1], universe=Universe(1.0, verbose=False), function=coulomb)
 
 @pytest.fixture
 def harmonic():

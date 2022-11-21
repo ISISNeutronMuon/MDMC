@@ -1136,7 +1136,7 @@ class Universe(AtomContainer):
                                                          Shake(1e-4, 100))
 
             if self.verbose:
-                    print(f'Force field created by solvent {solvent}')
+                print(f'Force field created by solvent {solvent}')
 
         except ImportError:
             pass

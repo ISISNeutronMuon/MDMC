@@ -58,7 +58,7 @@ def coulombic(coulomb):
         InteractionFunction object, an empty universe, and one atom.
     """
 
-    return Coulombic(atom_types=[1], universe=Universe(1.0), function=coulomb)
+    return Coulombic(atom_types=[1], universe=Universe(1.0, verbose=False), function=coulomb)
 
 @pytest.fixture
 def parameter_inter(parameter, coulombic):
@@ -190,7 +190,7 @@ def test_interaction_setting_name(parameter_inter, coulomb):
     """
 
     with pytest.raises(ValueError):
-        parameter_inter.interactions = Dispersion(Universe(1.0), [1, 1],
+        parameter_inter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
                                               function=coulomb)
 
 
@@ -202,7 +202,7 @@ def test_interaction_setting_function_name(parameter_inter):
     """
 
     with pytest.raises(ValueError):
-        parameter_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
+        parameter_inter.interactions = Coulombic(Universe(1.0, verbose=False), atom_types=[1],
                                              function=LennardJones((1., 'arb'),
                                                                    (1., 'arb')))
 
@@ -305,7 +305,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
         if index % 2:
             parameter.interactions = coulombic
         else:
-            parameter.interactions = Dispersion(Universe(1.0), [1, 1],
+            parameter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
                                             function=LennardJones((1., 'arb'),
                                                                   (1., 'arb')))
 
@@ -332,7 +332,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
             function = coulomb
-        parameter.interactions = Dispersion(Universe(1.0), [1, 1],
+        parameter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
                                         function=function)
 
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
