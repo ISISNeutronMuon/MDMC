@@ -420,6 +420,13 @@ class Control:
                     print("")
                 self._print_data()
 
+        else:
+            while count < n_steps and not self.minimizer.has_converged():
+                if count >= 0 and self.equilibration_steps > 0:
+                    self.equilibrate()
+                self.step()  # advance the refinement by one step
+                count += 1
+
         # Try/except accounts for n_steps <= -1
         try:
             # Reset the minimizer parameters to those from the final FoM:

@@ -990,7 +990,7 @@ class Universe(AtomContainer):
     @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
     def solvate(self, density: float,
                 tolerance: float = 1., solvent: str = 'SPCE',
-                **settings: dict) -> None:
+                max_iterations: int = 100, **settings: dict) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
         coordinates.
@@ -1008,6 +1008,9 @@ class Universe(AtomContainer):
             A `str` specifying an inbuilt ``Solvent`` from the following:
             DYNAMIC_SOLVENT_LIST.
             The default is 'SPCE'.
+        max_iterations: int, optional
+            The maximum number of times to try to solvate the universe to
+            within the required density before stopping. Defaults to 100.
         **settings
             ``constraint_algorithm`` (`ConstraintAlgorithm`)
                 A ``ConstraintAlgorithm`` which is applied to the ``Universe``.
@@ -1108,6 +1111,11 @@ class Universe(AtomContainer):
             actual = (len(mols) * solvent_mass) / self.volume
             difference = (actual - density) / density
             scale_factor = difference / counter
+            if counter > max_iterations:
+                msg = ('100 Iterations have been tried but the universe is not solvated'
+                   ' to within tolerance. Try increasing the tolerance or Universe size')
+                LOGGER.error(msg)
+                raise ValueError(msg)
 
         # Once the correct density is achieved, add molecules to universe
         # and get all bonded interactions

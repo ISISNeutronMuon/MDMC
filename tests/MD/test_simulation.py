@@ -26,7 +26,7 @@ O_MASS = 16.000
 WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
-TOLERANCE = 1.2
+TOLERANCE = 1.5
 SPCE_MASS = 18.01499
 SPCE_DIMENSIONS = np.array([18.6206, 18.6206, 18.6206])
 SPCE_NUM_MOL = 216  # len(SPC216['molecules'])
@@ -941,7 +941,7 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
 
 
 @pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar, verbose=False)
-                                 for scalar in [0.3, 1.02]])
+                                 for scalar in [0.5, 1.02]])
 def test_solvate_spce_no_solute(uni):
     """
     Tests that the achieved density is within the tolerance for solvating
@@ -951,9 +951,17 @@ def test_solvate_spce_no_solute(uni):
 
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     actual_dens = len(uni.molecule_list) * SPCE_MASS / uni.volume
-    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
-    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens and \
+           actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
+def test_solvation_fail():
+    """
+    Tests that a ValueError is raised when the universe has not been solvated
+    to within tolerance after a given number of iterations.
+    """
+    uni = sim.Universe(SPCE_DIMENSIONS * 0.3, verbose=False)
+    with pytest.raises(ValueError):
+        uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE, max_iterations=2)
 
 @parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
 def test_solvate_spce_with_solute(molecule):
