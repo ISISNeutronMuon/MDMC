@@ -336,7 +336,7 @@ class PairDistributionFunction(Observable):
             self._calculate_partial_pdfs(trajectories)
             self._calculate_total_pdf()
 
-    def _calculate_partial_pdfs(self, trajectories: list[Trajectory]) -> None:
+    def _calculate_partial_pdfs(self, trajectories: Trajectory) -> None:
         """
         Calculate the partial PDFs for each partial pairing
 
@@ -354,21 +354,20 @@ class PairDistributionFunction(Observable):
             self._calculate_histogram(trajectory.configurations[-1])
         # Apply weighting/factors to each partial PDF
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
-
         for partial_string, partial in self.partial_pdfs.items():
             numbers = np.multiply(*[self.numbers[elem] for elem in partial_string])
             # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
             if len(set(partial_string)) == 1:
                 partial *= 2
 
-            partial *= prefactor / (numbers * len(self.trajectory))
+            partial *= prefactor / (numbers * len(trajectories))
 
     def _calculate_total_pdf(self) -> None:
         """
         Calculate the total pdf from the partial pairs
 
         This function calculates the total PDF in accordance with equation (10)
-        and adds normalising behaviour of equations (16)-(18)
+        and adds normalising behaviour explained by equations (16) to (18)
         """
         self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
         total_number_of_particles = np.sum(list(self.numbers.values()))
@@ -472,6 +471,7 @@ class PairDistributionFunction(Observable):
             If one or two of ``r_min``, ``r_max``, and ``r_step`` have been
             passed, user is warned that three are required to set ``r``.
         """
+        self.trajectory = trajectory
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is
         # sorted so that partial pair strings will always be ordered
