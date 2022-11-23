@@ -6,7 +6,6 @@ scaling, so this is not tested here."""
 import sys
 
 import numpy
-import scipy.signal
 from netCDF4 import Dataset
 import numpy as np
 import pytest
