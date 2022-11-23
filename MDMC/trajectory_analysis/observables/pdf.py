@@ -311,15 +311,30 @@ class PairDistributionFunction(Observable):
         use_average = settings.get('use_average', False)
 
         self._parse_calc_MD_settings(MD_input, settings)
-
-        trajectories = MD_input
+        trajectories = self._slice_trajectory(self.trajectory, settings)
 
         if use_average:
-            trajectories = self._slice_trajectory(MD_input, settings)
+            running_partial_total = {}
+            pdf_running_total = np.zeros(shape=len(self.r))
 
+            for subtrajectory in trajectories:
+                self._calculate_partial_pdfs(subtrajectory)
+                for partial_str in self.partial_pdfs:
+                    if partial_str in running_partial_total.keys():
+                        running_partial_total[partial_str] += self.partial_pdfs[partial_str]
+                    else:
+                        running_partial_total[partial_str] = self.partial_pdfs[partial_str]
+                self._calculate_total_pdf()
+                pdf_running_total += self.PDF
 
-        self._calculate_partial_pdfs(trajectories)
-        self._calculate_total_pdf()
+            for partial_str in running_partial_total:
+                self.partial_pdfs[partial_str] = np.divide(running_partial_total[partial_str], len(trajectories))
+            self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(trajectories))
+            pass
+
+        else:
+            self._calculate_partial_pdfs(trajectories)
+            self._calculate_total_pdf()
 
     def _calculate_partial_pdfs(self, trajectories: list[Trajectory]) -> None:
         """
