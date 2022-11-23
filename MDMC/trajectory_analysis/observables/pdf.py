@@ -24,6 +24,12 @@ class PairDistributionFunction(Observable):
 
     r"""
     A class for containing, calculating and reading a pair distribution function (PDF).
+
+    We derive our definitions for this from the following publication:
+    "A comparison of various commonly used correlation functions for describing total scattering"
+    Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
+    DOI: https://doi.org/10.1107/S0021889800019993
+
     We employ the following mathematical form for the total pair distribution function (``PDF``):
 
         .. math::
@@ -184,11 +190,6 @@ class PairDistributionFunction(Observable):
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``
 
-        We derive our definitions for this from the following publication:
-        "A comparison of various commonly used correlation functions for describing total scattering"
-        Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
-        DOI: https://doi.org/10.1107/S0021889800019993
-
         The partial pair distribution for a pair i-j, :math:`g_{ij}`, is:
 
         .. math::
@@ -309,16 +310,15 @@ class PairDistributionFunction(Observable):
 
         self.origin = 'MD'
         use_average = settings.get('use_average', False)
-
         self._parse_calc_MD_settings(MD_input, settings)
         trajectories = self._slice_trajectory(self.trajectory, settings)
 
         if use_average:
             running_partial_total = {}
             pdf_running_total = np.zeros(shape=len(self.r))
-
-            for subtrajectory in trajectories:
-                self._calculate_partial_pdfs(subtrajectory)
+            # Calculate partial and total PDF for each frame in the sliced trajectory
+            for frame in trajectories:
+                self._calculate_partial_pdfs(frame)
                 for partial_str in self.partial_pdfs:
                     if partial_str in running_partial_total.keys():
                         running_partial_total[partial_str] += self.partial_pdfs[partial_str]
@@ -327,10 +327,10 @@ class PairDistributionFunction(Observable):
                 self._calculate_total_pdf()
                 pdf_running_total += self.PDF
 
+            # Average over number of trajectories used
             for partial_str in running_partial_total:
                 self.partial_pdfs[partial_str] = np.divide(running_partial_total[partial_str], len(trajectories))
             self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(trajectories))
-            pass
 
         else:
             self._calculate_partial_pdfs(trajectories)
@@ -340,9 +340,8 @@ class PairDistributionFunction(Observable):
         """
         Calculate the partial PDFs for each partial pairing
 
-        This uses the following equation:
-
-        with an additional normalisation factor to achieve proper normalisation behaviour
+        This uses equation (8) in the paper with an additional normalisation factor
+        to achieve proper normalisation behaviour.
 
         Parameters
         ----------
@@ -359,7 +358,7 @@ class PairDistributionFunction(Observable):
             # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
             if len(set(partial_string)) == 1:
                 partial *= 2
-
+            # Need to normalise by number of trajectories used
             partial *= prefactor / (numbers * len(trajectories))
 
     def _calculate_total_pdf(self) -> None:
@@ -388,7 +387,8 @@ class PairDistributionFunction(Observable):
 
             self._dependent_variables['PDF'] += ci_cj * bi_bj * partial * norm_fac
 
-        #Extra normalisation (see equations 16-18 in the publication)
+        # Extra normalisation to get desired limiting behaviour
+        # (see equations 16-18 in the publication)
         extra_norm = 0
         for elem in self.elements:
             ci = self.numbers[elem]/total_number_of_particles
@@ -399,33 +399,25 @@ class PairDistributionFunction(Observable):
         self._dependent_variables['PDF'] /= extra_norm
 
 
-    def _sum_partial_pairs(self) -> None:
-        """Normalize the partial pairs and sum them to get the total PDF"""
-        # Partial independent prefactor (e.g. anything element independent)
-        self._dependent_variables['PDF'] = [np.zeros(np.shape(self.r))]
-        concentration_norm = np.sum(list(self.numbers.values())) ** 2
-
-        for partial_string, partial in self.partial_pdfs.items():
-            numbers = np.multiply(*[self.numbers[elem] for elem in partial_string])
-            concentration = numbers / concentration_norm
-            weights = np.multiply(*[self.weights[elem] for elem in partial_string])
-
-            # Also need to normalise by the number of trajectories used for
-            # averaging
-
-            # Like partials need to be scaled by 2 so that they tend to 1 as r
-            # tends to infinity. Unlike partials need to be scaled by 2 when
-            # added to total, as only one of the indentical pairs is considered
-            # (e.g. for water H-O is added but not O-H)
-            if len(set(partial_string)) == 1:
-                partial *= 2
-                fac = 1.
-            else:
-                fac = 2.
-
-            self._dependent_variables['PDF'] += ((partial-1) * fac * concentration * weights)
-
     def _slice_trajectory(self, trajectory: Trajectory, settings: dict) -> list:
+        """
+        Slice the trajectory into frames used to calculate an average total PDF
+
+        Parameters
+        ----------
+        trajectory: Trajectory
+            The trajectory to slice
+        settings: dict
+            A dictionary of kwargs used for the pdf calculation
+            n_frames : int
+                The number of frames from which the pdf and its error are
+                calculated. If this is not passed, 1% of the total number of
+                frames are used (rounded up to the nearest int).
+        Returns
+        -------
+        list
+            A list containing the slices of the trajectory (selected frames) to use
+        """
         # np.max ensures that n_frames is at least 1 (relevant if
         # total_n_frames < 100)
         total_n_frames = len(trajectory)
