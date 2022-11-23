@@ -184,8 +184,7 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: "Trajectory",
-                          verbose: int = 0, **settings: dict) -> None:
+    def calculate_from_MD(self, MD_input: "Trajectory", verbose: int = 0, **settings: dict) -> None:
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``
@@ -311,7 +310,7 @@ class PairDistributionFunction(Observable):
         self.origin = 'MD'
         use_average = settings.get('use_average', False)
         self._parse_calc_MD_settings(MD_input, settings)
-        trajectories = self._slice_trajectory(self.trajectory, settings)
+        trajectories = self._slice_trajectory(self.trajectory, **settings)
 
         if use_average:
             running_partial_total = {}
@@ -398,8 +397,7 @@ class PairDistributionFunction(Observable):
         extra_norm = extra_norm**-2
         self._dependent_variables['PDF'] /= extra_norm
 
-
-    def _slice_trajectory(self, trajectory: Trajectory, settings: dict) -> list:
+    def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
         """
         Slice the trajectory into frames used to calculate an average total PDF
 
