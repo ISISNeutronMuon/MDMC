@@ -67,16 +67,15 @@ def averaged_PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-    pdf.calculate_from_MD(trajectory, n_frames=5, r=r, use_average=True,
+    pdf.calculate_from_MD(trajectory, n_frames=15, r=r, use_average=True,
                           dimensions=[39.4221067] * 3)
     return pdf
 @pytest.fixture(scope="module")
 def expected_peak_r_values():
     """
-
     Returns
     -------
-    expected_peak_r_values
+    dict
         A dictionary containing partial pairs as the key, and the corresponding r value of
         its peak as the corresponding value
     """
@@ -101,7 +100,7 @@ def test_total_PDF_peaks(PDF, expected_peak_r_values):
     # Get the absolute values as the O-H peak ends up being a massively negative value in total PDF
     abs_pdf = np.abs(PDF.PDF)
     # Check that peaks exist in the right places
-    peak_indexes, properties = scipy.signal.find_peaks(abs_pdf, height=2)
+    peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [PDF.r[i] for i in peak_indexes]
     np.isin(peak_r_values, peak_actual_r_values)
 
@@ -143,7 +142,7 @@ def test_total_avg_PDF_peaks(averaged_PDF, expected_peak_r_values):
     # Get the absolute values as the O-H peak ends up being a massively negative value in total PDF
     abs_pdf = np.abs(averaged_PDF.PDF)
     # Check that peaks exist in the right places
-    peak_indexes, properties = scipy.signal.find_peaks(abs_pdf, height=2)
+    peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
     np.isin(peak_r_values, peak_actual_r_values)
 
@@ -152,6 +151,6 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
     """Tests that the values of the partial PDF peaks are correct"""
     peak_r_values = expected_peak_r_values[partial_str]
     abs_pdf = np.abs(averaged_PDF.partial_pdfs[partial_str])
-    peak_indexes, properties = scipy.signal.find_peaks(abs_pdf, height=2)
+    peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
     np.isin(peak_r_values, peak_actual_r_values)
