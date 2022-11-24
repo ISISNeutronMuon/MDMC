@@ -376,48 +376,6 @@ def test_set_numbers(PDF, unique_element_dict, element_list):
             == unique_element_dict)
 
 
-@pytest.mark.parametrize('weights, numbers, expected',
-                         [({'H':-3., 'O':5.8, 'K':2.},
-                           {'H':100, 'O':50, 'K':25},
-                           -0.05224489795918315),
-                          ({'H':-3., 'O':5.8, 'K':2.},
-                           {'H':25, 'O':15, 'K':100},
-                           -2.2930612244897954),
-                          ({'C':4., 'Ca':4.5, 'Lu':5., 'Th':5.5},
-                           {'C':15600, 'Ca':18200, 'Lu':1500, 'Th':400},
-                           -18.6082276047674),
-                          ({'C':5.5, 'Ca':5., 'Lu':4.5, 'Th':4.},
-                           {'C':15600, 'Ca':18200, 'Lu':1500, 'Th':400},
-                           -26.897443291041913)])
-def test_low_r_limit(PDF, weights, numbers, expected):
-
-    """
-    Tests that the low r limit (r=0) of the total PDF is always equal to
-    -(ci*cj*bi*bj)
-    """
-
-    # The total PDF is calculated using the partials, the weights, the numbers,
-    # the length of the trajectory (to normalise against number of trajectory
-    # steps used) the volume of the universe, the r values and the r step.
-    # However for the low r limit, only the weights and numbers should be
-    # relevant (assuming the partials are all =0 at r=0), so the other
-    # attributes are set to dummy values.
-
-    PDF.r_step = 1.
-    PDF.r = np.arange(1., 11., PDF.r_step)
-    PDF.universe_volume = 0.
-    PDF.trajectory = np.zeros([10])
-    element_pairs = combinations_with_replacement(weights.keys(), 2)
-    PDF.partial_pdfs = {pair:np.arange(0., 20., PDF.r_step * 2) for pair
-                        in element_pairs}
-    PDF.weights = weights
-    PDF.numbers = numbers
-    PDF._dependent_variables = {}
-    PDF._calculate_total_pdf()
-    # Very small tolerance to account for FP differences
-    assert np.isclose(PDF.PDF[0, 0], expected, atol=1e-20, rtol=1e-12)
-
-
 def get_expected_partition_pairs(x, y, z):
 
     """
