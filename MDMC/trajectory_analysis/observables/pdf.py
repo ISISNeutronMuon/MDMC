@@ -324,10 +324,9 @@ class PairDistributionFunction(Observable):
                 pdf_running_total += self.PDF
 
             # Average over number of trajectories used
-            for partial_item in running_partial_total:
-                partial_str = partial_item[0]
-                partial_val = partial_item[1]
-                self.partial_pdfs[partial_str] = np.divide(partial_val, len(trajectories))
+            for partial_str in running_partial_total:
+                self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
+                                                           len(trajectories))
 
             self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(trajectories))
 
