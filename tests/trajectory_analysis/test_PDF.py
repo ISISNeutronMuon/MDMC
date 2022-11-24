@@ -413,7 +413,7 @@ def test_low_r_limit(PDF, weights, numbers, expected):
     PDF.weights = weights
     PDF.numbers = numbers
     PDF._dependent_variables = {}
-    PDF._sum_partial_pairs()
+    PDF._calculate_total_pdf()
     # Very small tolerance to account for FP differences
     assert np.isclose(PDF.PDF[0, 0], expected, atol=1e-20, rtol=1e-12)
 
