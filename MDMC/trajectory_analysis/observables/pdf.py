@@ -307,13 +307,13 @@ class PairDistributionFunction(Observable):
         self.origin = 'MD'
         use_average = settings.get('use_average', False)
         self._parse_calc_MD_settings(MD_input, settings)
-        trajectories = self._slice_trajectory(self.trajectory, **settings)
+
 
         if use_average:
             running_partial_total = {}
             pdf_running_total = np.zeros(shape=len(self.r))
             # Calculate partial and total PDF for each frame in the sliced trajectory
-            for frame in trajectories:
+            for frame in self.trajectory:
                 self._calculate_partial_pdfs(frame)
                 for partial_str in self.partial_pdfs:
                     if partial_str in running_partial_total:
@@ -326,12 +326,12 @@ class PairDistributionFunction(Observable):
             # Average over number of trajectories used
             for partial_str in running_partial_total:
                 self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
-                                                           len(trajectories))
+                                                           len(self.trajectory))
 
-            self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(trajectories))
+            self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(self.trajectory))
 
         else:
-            self._calculate_partial_pdfs(trajectories)
+            self._calculate_partial_pdfs(self.trajectory)
             self._calculate_total_pdf()
 
     def _calculate_partial_pdfs(self, trajectories: Trajectory) -> None:
@@ -460,7 +460,9 @@ class PairDistributionFunction(Observable):
             If one or two of ``r_min``, ``r_max``, and ``r_step`` have been
             passed, user is warned that three are required to set ``r``.
         """
-        self.trajectory = trajectory
+        # Slice the trajectory in accordance with user config
+        self.trajectory = self._slice_trajectory(trajectory, **settings)
+
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is
         # sorted so that partial pair strings will always be ordered
