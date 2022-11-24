@@ -3,10 +3,9 @@
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement,
                        product)
-from typing import Union, Optional
+from typing import Optional
 import warnings
 
-import numpy
 from numba import jit
 import numpy as np
 
@@ -16,8 +15,6 @@ from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.trajectory import Trajectory, Configuration
-from MDMC.utilities.trajectory_slicing import slice_trajectory
-
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -319,7 +316,7 @@ class PairDistributionFunction(Observable):
             for frame in trajectories:
                 self._calculate_partial_pdfs(frame)
                 for partial_str in self.partial_pdfs:
-                    if partial_str in running_partial_total.keys():
+                    if partial_str in running_partial_total:
                         running_partial_total[partial_str] += self.partial_pdfs[partial_str]
                     else:
                         running_partial_total[partial_str] = self.partial_pdfs[partial_str]
@@ -327,8 +324,11 @@ class PairDistributionFunction(Observable):
                 pdf_running_total += self.PDF
 
             # Average over number of trajectories used
-            for partial_str in running_partial_total:
-                self.partial_pdfs[partial_str] = np.divide(running_partial_total[partial_str], len(trajectories))
+            for partial_item in running_partial_total:
+                partial_str = partial_item[0]
+                partial_val = partial_item[1]
+                self.partial_pdfs[partial_str] = np.divide(partial_val, len(trajectories))
+
             self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(trajectories))
 
         else:
