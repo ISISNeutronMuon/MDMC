@@ -66,7 +66,7 @@ def averaged_PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-    pdf.calculate_from_MD(trajectory, n_frames=15, r=r, use_average=True,
+    pdf.calculate_from_MD(trajectory, n_frames=10, r=r, use_average=True,
                           dimensions=[39.4221067] * 3)
     return pdf
 @pytest.fixture(scope="module")
