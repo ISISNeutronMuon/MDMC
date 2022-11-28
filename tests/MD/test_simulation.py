@@ -369,7 +369,7 @@ def test_add_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
                        if atom.element == 'O')
-    _ = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
+    O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
     for interaction in water_molecule.interactions:
         interaction_elements.append(interaction.sorted_element_list())
@@ -383,7 +383,7 @@ def test_spce_water_molecule(universe, water_molecule):
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
                        if atom.element == 'O')
-    _ = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
+    O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
 
     functions = [inter.function for inter in universe.interactions]
