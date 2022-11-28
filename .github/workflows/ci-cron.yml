@@ -6,6 +6,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  build:
+  name: Build docker container
+  runs-on: ubuntu-20.04
+  steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: fetch  # grabs master to compare if Docker build files changed
+      run: git fetch origin master
+
+    - name: Check and build container
+      env:
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        BRANCH: ${{ github.head_ref }}
+      run: source .github/scripts/build_container.sh
+
   docker_tests:
     name: Docker including MD tests
     runs-on: ubuntu-20.04
@@ -13,7 +28,7 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.8'
+        python-version: '3.9'
         architecture: x64
     - name: Checkout repo
       uses: actions/checkout@v2
@@ -157,6 +172,25 @@ jobs:
         git merge -X ours master
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
 
+documentation:
+    name: Documentation
+    needs: build # so it can use new docker image if docker image has changed
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Create Docker Container
+        run: echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
+      - name: Install Requirements
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install ."
+      - name: Make Documentation
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "make -d -C $(pwd)/doc html"
 
   prune-images:
     name: Prune Old Docker Hub Images

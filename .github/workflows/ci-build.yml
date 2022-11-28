@@ -26,9 +26,9 @@ jobs:
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        testset: [ lammps, "not lammps" ]
+        testset: ["not lammps"]
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -125,26 +125,6 @@ jobs:
         with:
           name: ${{ github.head_ref }}-total-profiling
           path: ${{ github.head_ref }}-total-profiling.csv
-
-  documentation:
-    name: Documentation
-    needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      - name: Pull Docker Image
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
-      - name: Create Docker Container
-        run: echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
-      - name: Install Requirements
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install ."
-      - name: Make Documentation
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "make -d -C $(pwd)/doc html"
 
 
   linting:
