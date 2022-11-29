@@ -17,7 +17,7 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name: str, parameter: 'list[str]', **settings: dict) -> Minimizer:
+    def create_minimizer(module_name: str, parameter: 'Union[Parameters, list[Parameter]]', **settings: dict) -> Minimizer:
         """
         Checks that the module is a supported minimzer and instantiates it as a minimizer.
 

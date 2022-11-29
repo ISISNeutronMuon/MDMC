@@ -190,17 +190,17 @@ class Control:
         # Remove any fixed, tied or parameters equal to 0 as these cannot be refined
         # if a Parameters object, convert to list first for comprehension
         if isinstance(fit_parameters, Parameters):
-            fit_parameters = list(fit_parameters.values())
-        fit_parameters = [p for p in fit_parameters
+            fit_params_list = list(fit_parameters.values())
+        fit_params_list = [p for p in fit_parameters
                           if (not (p.fixed or p.tied) and p.value != 0)]
-        self.fit_parameters = Parameters(fit_parameters)
+        self.fit_parameters = Parameters(fit_params_list)
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.settings = settings
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
-        settings['results_filename'] = self.results_filename
+        settings['results_filename'] = self.results_filename  # type: ignore
 
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
@@ -257,12 +257,12 @@ class Control:
         if FoM_options is None or FoM_options.get('error') is None:
             FoM_error = 'exp'
         else:
-            FoM_error = FoM_options.get('error')
+            FoM_error = str(FoM_options.get('error'))
 
         if FoM_options is None or FoM_options.get('norm') is None:
             FoM_norm = 'data_points'
         else:
-            FoM_norm = FoM_options.get('norm')
+            FoM_norm = str(FoM_options.get('norm'))
 
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
@@ -309,8 +309,8 @@ class Control:
             resolution = resolution_factory.create_instance(dset['resolution'], dset['type'],
                                                             dset['reader'], dt)
 
-            self.observable_pairs[i].exp_obs.resolution = resolution
-            self.observable_pairs[i].MD_obs.resolution = resolution
+            self.observable_pairs[i].exp_obs.resolution = resolution  # type: ignore
+            self.observable_pairs[i].MD_obs.resolution = resolution  # type: ignore
 
         # setup the dataframe for stdout
         data_array = [
@@ -560,9 +560,9 @@ class Control:
         np.random.seed(16)  # Set for reproducible output - will always retain same points
         lowest_chi = min(chi_squared)
 
-        points_to_keep = np.random.random(size=chi_squared.shape) < \
+        points_to_keep = np.random.random(size=len(chi_squared)) < \
                          np.exp((lowest_chi - chi_squared)/(lowest_chi/MC_norm))
-        reduced_chi=chi_squared[points_to_keep]
+        reduced_chi = chi_squared[points_to_keep]
         reduced_coords = np.array(coords)[points_to_keep]
 
         return reduced_chi, reduced_coords
