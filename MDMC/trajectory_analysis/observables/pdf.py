@@ -231,12 +231,16 @@ class PairDistributionFunction(Observable):
         **settings
             n_frames : int
                 The number of frames from which the pdf and its error are
-                calculated. If this is not passed, 1% of the total number of
-                frames are used (rounded up to the nearest int).
+                calculated. These frames are selected uniformly, and the step is taken to be
+                n_frames / total number of frames rounded to the nearest positive integer.
+                If this is not passed, 1% of the total number of frames are used
+                (rounded up to the nearest positive integer).
             use_average : bool
                 Optional parameter. If set to True (default) then the mean value for PDF is
                 calculated across selected frames from the trajectory. Also, the errors
                 are set to the standard deviation calculated over the multiple frames.
+                If set to False, only the last frame of the trajectory is used and
+                n_frames will be ignored.
             subset : list of tuples
                 The subset of element pairs from which the PDF is calculated.
                 This can be used to calculate the partial PDFs of a
@@ -411,15 +415,16 @@ class PairDistributionFunction(Observable):
             A dictionary of kwargs used for the pdf calculation
             n_frames : int
                 The number of frames from which the pdf and its error are
-                calculated. If this is not passed, 1% of the total number of
-                frames are used (rounded up to the nearest int).
+                calculated. These frames are selected uniformly, and the step is taken to be
+                n_frames / total number of frames rounded to the nearest positive integer.
+                If this is not passed, 1% of the total number of frames are used
+                (rounded up to the nearest positive integer).
         Returns
         -------
         list
             A list containing the slices of the trajectory (selected frames) to use
         """
-        # np.max ensures that n_frames is at least 1 (relevant if
-        # total_n_frames < 100)
+        # np.max ensures that n_frames is at least 1 (relevant if total_n_frames < 100)
         total_n_frames = len(trajectory)
         n_frames = settings.get('n_frames', np.max([1, total_n_frames // 100]))
         if n_frames < 1 or n_frames > total_n_frames:
