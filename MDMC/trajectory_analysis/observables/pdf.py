@@ -356,14 +356,15 @@ class PairDistributionFunction(Observable):
         # Calculate histograms for each sub-trajectory
         for config in trajectory.configurations:
             self._calculate_histogram(config)
-        # Apply weighting/factors to each partial PDF
+
+        # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
         for partial_string, partial in self.partial_pdfs.items():
             numbers = np.multiply(*[self.numbers[elem] for elem in partial_string])
             # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
             if len(set(partial_string)) == 1:
                 partial *= 2
-            # Need to normalise by number of trajectories used
+            # Apply weighting & normalise by number of trajectories used
             partial *= prefactor / (numbers * len(trajectory))
 
     def _calculate_total_pdf(self) -> None:
@@ -371,7 +372,6 @@ class PairDistributionFunction(Observable):
         Calculate the total pdf from the partial pairs
 
         This function calculates the total PDF in accordance with equation (10)
-        and adds normalising behaviour explained by equations (16) to (18)
         """
         self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
         total_number_of_particles = np.sum(list(self.numbers.values()))
@@ -392,16 +392,6 @@ class PairDistributionFunction(Observable):
 
             self._dependent_variables['PDF'] += ci_cj * bi_bj * partial * norm_fac
 
-        # Extra normalisation to get desired limiting behaviour
-        # (see equations 16-18 in the publication)
-        extra_norm = 0
-        for elem in self.elements:
-            ci = self.numbers[elem]/total_number_of_particles
-            bi = self.weights[elem]
-            extra_norm += ci * bi
-
-        extra_norm = extra_norm**-2
-        self._dependent_variables['PDF'] /= extra_norm
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
         """
