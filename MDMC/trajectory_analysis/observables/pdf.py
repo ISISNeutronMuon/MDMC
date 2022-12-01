@@ -198,7 +198,10 @@ class PairDistributionFunction(Observable):
         atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
         :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
 
-        This corresponds to the equation (8) in the above paper
+        This corresponds to the equation (8) in the following paper:
+        "A comparison of various commonly used correlation functions for describing total scattering"
+        Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
+        DOI: https://doi.org/10.1107/S0021889800019993
 
         The total pair distribution function (``pdf.PDF``) has the form:
 
@@ -208,6 +211,7 @@ class PairDistributionFunction(Observable):
 
         where :math:`c_i` is the proportion of element :math:`i` in the material,
         :math:`b_i` is the (coherent) scattering length of element :math:`i`
+
         This corresponds to the equation (10) in the above paper.
 
         Independent variables can either be set previously or defined within
@@ -307,7 +311,6 @@ class PairDistributionFunction(Observable):
         self.origin = 'MD'
         use_average = settings.get('use_average', False)
         self._parse_calc_MD_settings(MD_input, settings)
-
 
         if use_average:
             running_partial_total = {}
