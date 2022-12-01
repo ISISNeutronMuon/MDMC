@@ -236,10 +236,10 @@ class PairDistributionFunction(Observable):
                 If this is not passed, 1% of the total number of frames are used
                 (rounded up to the nearest positive integer).
             use_average : bool
-                Optional parameter. If set to True (default) then the mean value for PDF is
+                Optional parameter. If set to True then the mean value for PDF is
                 calculated across selected frames from the trajectory. Also, the errors
                 are set to the standard deviation calculated over the multiple frames.
-                If set to False, only the last frame of the trajectory is used and
+                If set to False (default), only the last frame of the trajectory is used and
                 n_frames will be ignored.
             subset : list of tuples
                 The subset of element pairs from which the PDF is calculated.
