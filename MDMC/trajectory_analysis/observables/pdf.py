@@ -334,7 +334,7 @@ class PairDistributionFunction(Observable):
             self._calculate_partial_pdfs(self.trajectory)
             self._calculate_total_pdf()
 
-    def _calculate_partial_pdfs(self, trajectories: Trajectory) -> None:
+    def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
         """
         Calculate the partial PDFs for each partial pairing
 
@@ -343,12 +343,12 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        trajectories: list of Trajectory
-            The sliced up trajectories to be used to calculate PDFs
+        trajectory: Trajectory
+            The sliced up trajectory to be used to calculate PDFs
         """
         # Calculate histograms for each sub-trajectory
-        for trajectory in trajectories:
-            self._calculate_histogram(trajectory.configurations[-1])
+        for config in trajectory.configurations:
+            self._calculate_histogram(config)
         # Apply weighting/factors to each partial PDF
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
         for partial_string, partial in self.partial_pdfs.items():
@@ -357,7 +357,7 @@ class PairDistributionFunction(Observable):
             if len(set(partial_string)) == 1:
                 partial *= 2
             # Need to normalise by number of trajectories used
-            partial *= prefactor / (numbers * len(trajectories))
+            partial *= prefactor / (numbers * len(trajectory))
 
     def _calculate_total_pdf(self) -> None:
         """
