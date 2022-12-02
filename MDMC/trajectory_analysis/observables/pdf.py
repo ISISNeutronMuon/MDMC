@@ -390,7 +390,7 @@ class PairDistributionFunction(Observable):
             else:
                 norm_fac = 2.
 
-            self._dependent_variables['PDF'] += ci_cj * bi_bj * partial * norm_fac
+            self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial-1) * norm_fac
 
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
