@@ -3,9 +3,6 @@
 Compares the calculated partial PDFs against PDFs calculated using nMOLDYN. The
 total PDF is a simple sum of these partials, but nMOLDYn uses a different
 scaling, so this is not tested here."""
-import sys
-
-import numpy
 from netCDF4 import Dataset
 import numpy as np
 import pytest
@@ -86,6 +83,29 @@ def expected_peak_r_values():
     return {('H', 'H'): 1.65, ('H', 'O'): 1.05, ('O', 'O'): 2.65}
 
 
+@pytest.fixture(scope="module")
+def expected_limiting_behaviour_value(PDF):
+    """
+    Returns the value that the PDF reaches when the value of :math:`r` is less than the
+    shortest distance that any two atoms may approach each other (:math:`r_0`).
+    This is defined by the following equation:
+        .. math::
+
+            G(r<r_0)=-(\sum_{i=1}^n c_i\overline{b}_i)^2
+
+    Parameters
+    ----------
+    PDF
+        The PDF object
+
+    """
+    limiting_value = 0.
+    total_number_of_particles = np.sum(list(PDF.numbers.values()))
+    for elem in PDF.elements:
+        limiting_value += (PDF.numbers[elem] / total_number_of_particles) * PDF.weights[elem]
+
+    return -(limiting_value)**2
+
 # Non-averaged PDF tests
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
 def test_partial_PDFs(PDF, PDF_file, partial_str):
@@ -110,43 +130,45 @@ def test_total_PDF_peaks(PDF, expected_peak_r_values):
     np.isin(peak_r_values, peak_actual_r_values)
 
 
-def test_total_PDF_starts_with_0(PDF):
-    """Tests that the total PDF begins with 0"""
+def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
+    """
+    Tests that the total PDF begins with the correct values.
+    """
     beginning_values = PDF.PDF[:8]
-    assert np.all(np.equal(beginning_values, 0.))
+    assert np.allclose(beginning_values, expected_limiting_behaviour_value)
 
 
-def test_total_PDF_converges_on_1(PDF):
-    """Tests that the total PDF converges on 1"""
+def test_total_PDF_converges_correctly(PDF):
+    """Tests that the total PDF converges on 0"""
     end_values = PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 1.)
+    assert np.allclose(end_values, 0.)
 
 
 # Averaged PDF Tests
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
-def test_partial_PDF_starts_with_0(averaged_PDF, partial_str):
+def test_partial_PDF_starts_correctly(averaged_PDF, partial_str):
     """Tests that the beginning values of the partial PDFs begin with 0"""
     beginning_values = averaged_PDF.partial_pdfs[partial_str][:8]
     assert np.all(np.equal(beginning_values, 0.))
 
 
-def test_total_PDFs_start_with_0(averaged_PDF):
-    """Tests that the beginning values of the total PDF begin with 0"""
+def test_total_PDFs_start_correctly(averaged_PDF, expected_limiting_behaviour_value):
+    """Tests that the beginning values of the total PDF begin with thr correct value"""
     beginning_values = averaged_PDF.PDF[:8]
-    assert np.all(np.equal(beginning_values, 0.))
+    assert np.allclose(beginning_values, expected_limiting_behaviour_value)
 
 
-def test_total_PDFs_converge_to_1(averaged_PDF):
-    """Tests that the values of the total PDF converge on 1"""
+def test_total_PDFs_converge_correctly(averaged_PDF):
+    """Tests that the values of the total PDF converge on 0"""
     end_values = averaged_PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 1.)
+    assert np.allclose(end_values, 0.)
 
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
-def test_partial_PDFs_converge_to_1(averaged_PDF, partial_str):
-    """Tests that the values of the partial PDFs converge on 1"""
+def test_partial_PDFs_converge_correctly(averaged_PDF, partial_str, expected_limiting_behaviour_value):
+    """Tests that the values of the partial PDFs converge on the right value"""
     end_values = averaged_PDF.partial_pdfs[partial_str][-1:-7]
-    assert np.allclose(end_values,  1.)
+    assert np.allclose(end_values, expected_limiting_behaviour_value)
 
 
 def test_total_avg_PDF_peaks(averaged_PDF, expected_peak_r_values):
