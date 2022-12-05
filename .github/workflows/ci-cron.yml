@@ -203,7 +203,7 @@ jobs:
         # token: ${{ secrets.CODECOV_TOKEN }}
 
   doc-deploy:
-    name: Documentation
+    name: Documentation-deploy
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout repo
