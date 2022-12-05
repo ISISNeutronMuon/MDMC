@@ -75,58 +75,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
-  profiling:
-    name: Profiling
-    needs: tests
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      - name: Own repo to avoid npm bug
-        run: sudo chmod -R 777 /home/
-
-      - name: Download tests artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: /home/
-
-#      ## BOOTSTRAPPING: this can be used to upload new master profiling files
-#      - name: create bootstrap master profiling
-#        env:
-#          BRANCH: ${{ github.head_ref }}
-#        run: |
-#          pip3 install pandas
-#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
-#      - name: upload as master profiling
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: master-profiling
-#          path: master-profiling.csv
-#      ## END BOOTSTRAPPING
-
-      - name: Download master profiling for comparison
-        # regular download-artifact can only get artifacts from current run
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: ci-deploy.yml
-          name: master-profiling
-        continue-on-error: true
-
-      - name: Combine and compare profiling data
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name $BRANCH-total-profiling
-
-      - name: Upload total profiling as artifact if successful
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.head_ref }}-total-profiling
-          path: ${{ github.head_ref }}-total-profiling.csv
-
-
   linting:
     name: Pylint
     runs-on: ubuntu-20.04
