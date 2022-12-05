@@ -7,19 +7,19 @@ on:
 
 jobs:
   build:
-  name: Build docker container
-  runs-on: ubuntu-20.04
-  steps:
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: fetch  # grabs master to compare if Docker build files changed
-      run: git fetch origin master
+    name: Build docker container
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: fetch  # grabs master to compare if Docker build files changed
+        run: git fetch origin master
 
-    - name: Check and build container
-      env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }}
-      run: source .github/scripts/build_container.sh
+      - name: Check and build container
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          BRANCH: ${{ github.head_ref }}
+        run: source .github/scripts/build_container.sh
 
   docker_tests:
     name: Docker including MD tests
