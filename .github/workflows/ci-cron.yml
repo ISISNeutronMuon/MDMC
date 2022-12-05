@@ -223,7 +223,7 @@ jobs:
         git merge -X ours master
         git push https://$token@github.com/MDMCproject/MDMCproject.github.io
 
-documentation:
+  documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
