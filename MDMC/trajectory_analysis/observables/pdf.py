@@ -364,7 +364,7 @@ class PairDistributionFunction(Observable):
             # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
             if len(set(partial_string)) == 1:
                 partial *= 2
-            # Apply weighting & normalise by number of trajectories used
+            # Apply weightings & normalise by number of trajectories used
             partial *= prefactor / (numbers * len(trajectory))
 
     def _calculate_total_pdf(self) -> None:
