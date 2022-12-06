@@ -199,7 +199,8 @@ class PairDistributionFunction(Observable):
         :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
 
         This corresponds to the equation (8) in the following paper:
-        "A comparison of various commonly used correlation functions for describing total scattering"
+        "A comparison of various commonly used correlation functions for
+         describing total scattering"
         Keen, D. A. (2001). J. Appl. Cryst. 34, 172-177.
         DOI: https://doi.org/10.1107/S0021889800019993
 
