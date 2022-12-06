@@ -8,7 +8,7 @@ from MDMC.common.constants import h_bar
 from MDMC.readers.observables.obs_reader import SQwReader
 
 
-class netCDF(SQwReader):
+class netCDFSQw(SQwReader):
 
     """
     Currently only setup for parsing MMTK/nMOLDYN SQw netcdf files
