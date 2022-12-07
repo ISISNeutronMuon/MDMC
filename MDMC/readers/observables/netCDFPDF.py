@@ -1,11 +1,12 @@
 """A reader for netcdf PDF data"""
+import re
+
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
 import numpy as np
 from netCDF4 import Dataset
 
 from MDMC.readers.observables.obs_reader import PDFReader
-from tests.test_data.data import OBS_DATA
 
 
 class netCDFPDF(PDFReader):
@@ -24,7 +25,7 @@ class netCDFPDF(PDFReader):
         Opens the file for parsing
         """
 
-        self.file = Dataset(self.file_name, 'r')
+        self.file = Dataset(self.file_name, 'r', encoding="UTF-8")
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the file after parsing"""
@@ -37,3 +38,9 @@ class netCDFPDF(PDFReader):
         """
         # Scale units as nMOLDYN uses nm, rather than Ang
         self.r = np.array(self.file.variables['r'][:]) * 10.
+        self.PDF = np.array(self.file.variables['pdf-total'][:])
+        pattern = re.compile("pdf-.-.")
+        for var in self.file.variables:
+            if re.fullmatch(pattern, var):
+                self.dependent_variables[var] = np.array(self.file.variables[var][:])
+        self.PDF_err = np.zeros(len(self.file.variables['r']))
