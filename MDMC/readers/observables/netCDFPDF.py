@@ -39,8 +39,10 @@ class netCDFPDF(PDFReader):
         # Scale units as nMOLDYN uses nm, rather than Ang
         self.r = np.array(self.file.variables['r'][:]) * 10.
         self.PDF = np.array(self.file.variables['pdf-total'][:])
+        # Automatic detection of partial PDF names
         pattern = re.compile("pdf-.-.")
         for var in self.file.variables:
             if re.fullmatch(pattern, var):
                 self.dependent_variables[var] = np.array(self.file.variables[var][:])
+        # No errors detailed in nMOLDYN netCDF PDF file - replacing with zeroes
         self.PDF_err = np.zeros(len(self.file.variables['r']))
