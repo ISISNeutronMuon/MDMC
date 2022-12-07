@@ -26,6 +26,7 @@ READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', ['Q', 'E'], 'SQw'),
                      ('MantidSQw', 'MantidSQw_one_file', ['Q', 'E'], 'SQw'),
                      ('MantidSQw', 'MantidSQw_two_files', ['Q', 'E'], 'SQw'),
                      ('xml_SQw','xml_SQw', ['Q', 'E'], 'SQw'),
+                     ('netCDFPDF', 'netcdf_PDF', ['r'], 'PDF'),
                      ('LAMPPDF','LAMPPDF', ['r'], 'PDF')]
 
 
@@ -55,9 +56,13 @@ def test_parse(reader_info):
     - All errors are non-negative
     - All data are floats
     """
+    try:
+        reader_data = data.READER_DATA[reader_info['data_lookup']]
+    except KeyError:
+        reader_data = data.OBS_DATA[reader_info['data_lookup']]
 
-    reader = ObservableReaderFactory.create_reader(reader_info['reader'],
-                                                   data.READER_DATA[reader_info['data_lookup']])
+    reader = ObservableReaderFactory.create_reader(reader_info['reader'], reader_data)
+
     indep_datatypes = reader_info['indep_datatypes']
     dep_datatype = reader_info['dep_datatype']
 
