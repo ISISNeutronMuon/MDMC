@@ -1,5 +1,4 @@
 """Tests for reading in data
-
 Any reader can be added by including the required parameters in
 READERS_TEST_INFO and test data in MDMC.tests.test_data, and by setting the test
 data variable in MDMC.tests.test_data.data. Test data variable names must be the
@@ -27,12 +26,13 @@ READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', ['Q', 'E'], 'SQw'),
                      ('MantidSQw', 'MantidSQw_two_files', ['Q', 'E'], 'SQw'),
                      ('xml_SQw','xml_SQw', ['Q', 'E'], 'SQw'),
                      ('netCDFPDF', 'netcdf_PDF', ['r'], 'PDF'),
+                     ('netCDFSQw', "SQw_incoh", ['Q', 'E'], 'SQw'),
+                     ('netCDFSQw', "SQw_coh", ['Q', 'E'], 'SQw'),
                      ('LAMPPDF','LAMPPDF', ['r'], 'PDF')]
 
 
 @pytest.fixture(params=READERS_TEST_INFO)
 def reader_info(request):
-
     """
     Parameterized reader instantiation
 
@@ -47,7 +47,6 @@ def reader_info(request):
 
 
 def test_parse(reader_info):
-
     """
     Tests if the reader has correctly parsed the data
 
