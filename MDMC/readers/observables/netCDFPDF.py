@@ -10,7 +10,6 @@ from MDMC.readers.observables.obs_reader import PDFReader
 
 
 class netCDFPDF(PDFReader):
-
     """
     Currently only setup for parsing MMTK/nMOLDYN SQw netcdf files
 
