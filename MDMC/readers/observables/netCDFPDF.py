@@ -39,6 +39,7 @@ class netCDFPDF(PDFReader):
         self.r = np.array(self.file.variables['r'][:]) * 10.
         self.PDF = np.array(self.file.variables['pdf-total'][:])
         # Automatic detection of partial PDF names
+        # Detects the nMOLDYN partial PDF format of "PDF-[element1]-[element2]"
         pattern = re.compile("pdf-.{1,2}-.{1,2}")
         for var in self.file.variables:
             if re.fullmatch(pattern, var):
