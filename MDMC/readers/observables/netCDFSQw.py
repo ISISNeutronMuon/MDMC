@@ -38,10 +38,14 @@ class netCDFSQw(SQwReader):
         E is the energy transfer (in ``meV``)
         Q is wavevector transfer (in ``Ang^-1``)
         """
+        # Convert hbar (eV*s) to meV*s
+        # Convert angular_frequency (Thz) to Hz
+        # Units cancel out to meV
+        self.E = ((np.array(self.file.variables['angular_frequency']) * 1e3) *
+                  (1e12 * h_bar))
 
-        self.E = (np.array(self.file.variables['angular_frequency']) * 1e15
-                  * h_bar)
         Q = self.file.variables['q']
+        # nMOLDYN uses nm, so we have to convert to Ang for use in MDMC
         if 'nm' in Q.units:
             Q = np.array(Q) * 0.1
         self.Q = np.array(Q)
