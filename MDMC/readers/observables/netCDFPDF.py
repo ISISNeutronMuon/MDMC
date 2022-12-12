@@ -38,21 +38,16 @@ class netCDFPDF(PDFReader):
         # Scale units as nMOLDYN uses nm, rather than Ang
         self.r = np.array(self.file.variables['r'][:]) * 10.
         self.PDF = np.array(self.file.variables['pdf-total'][:])
-        self.extract_partial_pdf(variable_names=self.file.variables)
+        self.extract_partial_pdf()
         # No errors detailed in nMOLDYN netCDF PDF file - replacing with zeroes
         self.PDF_err = np.zeros(len(self.file.variables['r']))
 
-    def extract_partial_pdf(self, variable_names: list[str]) -> None:
+    def extract_partial_pdf(self) -> None:
         """
         Automatically detects the partial PDF names within the file and extracts them
-        nMOLDYN saves partial pdfs in the following format: "pdf-[element1]-[element2]
-
-        Parameters
-        ----------
-        variable_names
-            A list of all the variable names within the netCDF file
+        nMOLDYN saves partial pdfs in the following format: "pdf-[element1]-[element2]"
         """
         pattern = re.compile("pdf-.{1,2}-.{1,2}")
         for var in self.file.variables:
             if re.fullmatch(pattern, var):
-                self.dependent_variables[var] = np.array(self.file.variables[var][:])
+                self.independent_variables[var] = np.array(self.file.variables[var][:])
