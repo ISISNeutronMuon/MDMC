@@ -9,6 +9,7 @@ import inspect
 import pytest
 import numpy as np
 
+from MDMC.readers.observables.obs_reader import PDFReader
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from tests.test_data import data
 
@@ -24,7 +25,7 @@ READER_TEST_INFO contains the following:
 READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', ['Q', 'E'], 'SQw'),
                      ('MantidSQw', 'MantidSQw_one_file', ['Q', 'E'], 'SQw'),
                      ('MantidSQw', 'MantidSQw_two_files', ['Q', 'E'], 'SQw'),
-                     ('xml_SQw','xml_SQw', ['Q', 'E'], 'SQw'),
+                     ('xml_SQw', 'xml_SQw', ['Q', 'E'], 'SQw'),
                      ('netCDFPDF', 'netcdf_PDF', ['r'], 'PDF'),
                      ('netCDFSQw', "SQw_incoh", ['Q', 'E'], 'SQw'),
                      ('netCDFSQw', "SQw_coh", ['Q', 'E'], 'SQw'),
@@ -40,45 +41,57 @@ def reader_info(request):
     Dictionary of data contained in reader test info
     """
 
-    return {'reader':request.param[0],
-            'data_lookup':request.param[1],
-            'indep_datatypes':request.param[2],
-            'dep_datatype':request.param[3]}
+    return {'reader': request.param[0],
+            'data_lookup': request.param[1],
+            'indep_datatypes': request.param[2],
+            'dep_datatype': request.param[3]}
 
-
-def test_parse(reader_info):
-    """
-    Tests if the reader has correctly parsed the data
-
-    - Correct data types have been parsed
-    - Dependent variables have dimensions compatible with independent variables
-    - All errors are non-negative
-    - All data are floats
-    """
+@pytest.fixture()
+def reader(reader_info):
     try:
         reader_data = data.READER_DATA[reader_info['data_lookup']]
     except KeyError:
         reader_data = data.OBS_DATA[reader_info['data_lookup']]
 
     reader = ObservableReaderFactory.create_reader(reader_info['reader'], reader_data)
+    with reader:
+        reader.parse()
+    return reader
 
+def test_parse_data_types(reader_info, reader):
+    """
+    Tests to make sure the correct data types have been parsed
+    """
     indep_datatypes = reader_info['indep_datatypes']
     dep_datatype = reader_info['dep_datatype']
 
-    with reader:
-        reader.parse()
     for indep_datatype in indep_datatypes:
         assert indep_datatype in reader.independent_variables
     assert dep_datatype in reader.dependent_variables
+
+def test_parse_compatible_dimensions(reader_info, reader):
+    """
+    Tests to make sure the dependent variables have dimensions compatible with independent variables
+    """
+    dep_datatype = reader_info['dep_datatype']
 
     for indep_var in reader.independent_variables.values():
         assert len(indep_var) in np.shape(
             reader.dependent_variables[dep_datatype])
 
+def test_parse_all_errors_non_negative(reader):
+    """
+    Tests that all parsed error values are non-negative
+    """
     assert np.all(list(reader.errors.values())[0][0] >= 0)
 
+def test_parse_data_is_floats(reader):
+    """
+    Tests that all data from parsed files are floats
+    """
     all_vars = (list(reader.independent_variables.values())
                 + list(reader.dependent_variables.values())[0]
                 + list(reader.errors.values())[0])
+
     for var in all_vars:
         assert float in inspect.getmro(var.dtype.type)
