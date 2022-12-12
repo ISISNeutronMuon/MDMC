@@ -34,7 +34,7 @@ def empty_universe():
     A empty Universe object
     """
 
-    return Universe(dimensions=UNIVERSE_DIM)
+    return Universe(dimensions=UNIVERSE_DIM, verbose=False)
 
 @pytest.fixture
 def atoms():
@@ -944,7 +944,7 @@ def test_update_charges_error():
     from a universe that contains atoms with a charge of None.
     """
 
-    universe = Universe(10.)
+    universe = Universe(10., verbose=False)
     universe.add_structure(Atom('H'))
     with pytest.raises(AttributeError):
         lmp_eng.LAMMPSUniverse(universe)
@@ -1316,7 +1316,7 @@ def test_parse_constraint_no_IDs(arguments, request):
                                              **arg_fixtures)
 
 
-@pytest.mark.parametrize('temperature', [150., 300., 450.])
+@pytest.mark.parametrize('temperature', [300., 450.])
 def test_initialize_velocities(universe, lammps_universe, temperature):
 
     """
@@ -1340,7 +1340,7 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
     assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
 
 
-@pytest.mark.parametrize('temperature', [150., 300., 450.])
+@pytest.mark.parametrize('temperature', [150., 300.])
 def test_initialize_nonzero_velocities(universe, temperature):
 
     """
@@ -1377,7 +1377,6 @@ def test_initialize_nonzero_velocities(universe, temperature):
 
 @pytest.mark.parametrize('skin, neighbor_steps', [(1, 2),
                                                   (1., 2.),
-                                                  (1., 2),
                                                   (3., 100)])
 def test_set_neighbor_list_parameters(lammps_universe, skin, neighbor_steps):
 
@@ -1535,7 +1534,7 @@ def test_apply_thermostat_barostat(ensemble, thermostat, barostat,
     assert styles == ensemble.fix_styles
 
 
-@pytest.mark.parametrize('n_steps', [1, 5, 10])
+@pytest.mark.parametrize('n_steps', [1, 10])
 def test_trajectory_output(lammps_engine, n_steps):
 
     """

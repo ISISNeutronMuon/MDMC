@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
-from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
+from pytest_cases import parametrize, fixture_ref
 
 from MDMC.common.mathematics import correlation
 from MDMC.common.units import Unit, UnitFloat, UnitNDArray, unit_array
@@ -38,7 +38,6 @@ def uarray_helper():
 
 @parametrize("uclass", [fixture_ref(ufloat), fixture_ref(uarray)])
 def test_unit_deepcopy(uclass):
-
     """
     Tests __deepcopy__ for all classes that add units to the representation
     """
@@ -53,7 +52,6 @@ def test_unit_deepcopy(uclass):
 
 @parametrize("uclass", [fixture_ref(ufloat), fixture_ref(uarray), fixture_ref(uarray_helper)])
 def test_unit_is_Unit(uclass):
-
     """
     Tests that for all classes that add units to the representation, and all
     helper functions that create these classes, the unit must be a Unit object
@@ -64,7 +62,6 @@ def test_unit_is_Unit(uclass):
 
 @parametrize("uclass", [fixture_ref(ufloat), fixture_ref(uarray), fixture_ref(uarray_helper)])
 def test_repr_contains_unit(uclass):
-
     """
     Tests that for all classes that add units to the representation, all
     representations contain the units
@@ -81,7 +78,6 @@ def test_repr_contains_unit(uclass):
                                      (correlation, ())
                                     ])
 def test_array_operations(op, args, uarray):
-
     """
     Tests math operations (e.g. np.ufuncs and functions from MDMC.mathematics)
     applied to UnitNDArray
@@ -96,7 +92,6 @@ def test_array_operations(op, args, uarray):
 
 @pytest.mark.parametrize("cls", [UnitFloat, unit_array])
 def test_init_None(cls):
-
     """
     Tests that passing None to a unit class (or helper function) returns None
     """
@@ -105,7 +100,6 @@ def test_init_None(cls):
 
 
 def test_init_dtype():
-
     """
     Tests that the dtype can be initialized and set using UnitNDArray and
     unit_array
@@ -125,7 +119,6 @@ def test_init_dtype():
 
 
 def test_UnitNDArray_creation():
-
     """
     Tests that UnitNDArray can be created in the same three ways as ndarray:
 
@@ -148,7 +141,6 @@ def test_UnitNDArray_creation():
 
 
 def test_unit_array(uarray, uarray_helper):
-
     """
     Tests that the helper function unit_array returns the correct UnitNDArray
     """

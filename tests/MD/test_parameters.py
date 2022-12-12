@@ -17,7 +17,6 @@ COULOMB_CHARGE = 5.0
 
 @pytest.fixture
 def parameter():
-
     """
     Returns
     -------
@@ -29,7 +28,6 @@ def parameter():
 
 @pytest.fixture
 def scaled_parameter():
-
     """
     Returns
     -------
@@ -41,7 +39,6 @@ def scaled_parameter():
 
 @pytest.fixture
 def coulomb():
-
     """
     Returns
     -------
@@ -53,7 +50,6 @@ def coulomb():
 
 @pytest.fixture
 def coulombic(coulomb):
-
     """
     Returns
     -------
@@ -62,11 +58,10 @@ def coulombic(coulomb):
         InteractionFunction object, an empty universe, and one atom.
     """
 
-    return Coulombic(atom_types=[1], universe=Universe(1.0), function=coulomb)
+    return Coulombic(atom_types=[1], universe=Universe(1.0, verbose=False), function=coulomb)
 
 @pytest.fixture
 def parameter_inter(parameter, coulombic):
-
     """
     Returns
     -------
@@ -79,7 +74,6 @@ def parameter_inter(parameter, coulombic):
 
 @pytest.fixture
 def parameters():
-
     """
     Returns
     -------
@@ -95,7 +89,6 @@ def parameters():
 @pytest.mark.parametrize('value, unit', [(VALUE, UNIT),
                                          (UnitFloat(VALUE, UNIT), None)])
 def test_parameter_value_init(value, unit):
-
     """
     Tests that Parameters can be initialised by either passing a UnitFloat as
     the value, or by passing a value and a unit
@@ -108,7 +101,6 @@ def test_parameter_value_init(value, unit):
 
 
 def test_tied_parameters(parameter, scaled_parameter):
-
     """
     Tests that parameters that are tied with a scale of 1 have the same value,
     including after the value of the tie parameter is changed
@@ -124,7 +116,6 @@ def test_tied_parameters(parameter, scaled_parameter):
 
 
 def test_tied_parameter_change_warning(parameter, scaled_parameter):
-
     """
     Tests that parameters that are tied issue a warning when the value is set,
     and that the value does not change
@@ -137,7 +128,6 @@ def test_tied_parameter_change_warning(parameter, scaled_parameter):
 
 
 def test_parameter_tied(parameter, scaled_parameter):
-
     """
     Tests that tying a Parameter changes tied attribute from False to True
     """
@@ -148,7 +138,6 @@ def test_parameter_tied(parameter, scaled_parameter):
 
 
 def test_fixed_parameter_change_warning(parameter):
-
     """
     Tests that parameters that are fixed issue a warning when the value is set,
     and that the value does not change
@@ -165,7 +154,6 @@ def test_fixed_parameter_change_warning(parameter):
                                                 ((1., 5.), 2.),
                                                 ((-1., 2.), -0.5)])
 def test_value_setting_within_constraints(constraints, value, parameter):
-
     """
     Tests that the value of a Parameter can be set within the constraints
 
@@ -182,7 +170,6 @@ def test_value_setting_within_constraints(constraints, value, parameter):
                                                 ((1., 5.), 6.),
                                                 ((-1., 2.), -1.5)])
 def test_value_setting_outside_constraints(constraints, value, parameter):
-
     """
     Tests that setting the value of a Parameter outside of the constraints
     raises an error, and that the Parameter value does not change
@@ -197,19 +184,17 @@ def test_value_setting_outside_constraints(constraints, value, parameter):
 
 
 def test_interaction_setting_name(parameter_inter, coulomb):
-
     """
     Tests that an error is raised when setting an interaction with a different
     name to interactions already in Parameter.interaction
     """
 
     with pytest.raises(ValueError):
-        parameter_inter.interactions = Dispersion(Universe(1.0), [1, 1],
+        parameter_inter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
                                               function=coulomb)
 
 
 def test_interaction_setting_function_name(parameter_inter):
-
     """
     Tests that an error is raised when setting an interaction with an
     interaction function with a different name to the interaction functions of
@@ -217,7 +202,7 @@ def test_interaction_setting_function_name(parameter_inter):
     """
 
     with pytest.raises(ValueError):
-        parameter_inter.interactions = Coulombic(Universe(1.0), atom_types=[1],
+        parameter_inter.interactions = Coulombic(Universe(1.0, verbose=False), atom_types=[1],
                                              function=LennardJones((1., 'arb'),
                                                                    (1., 'arb')))
 
@@ -227,7 +212,6 @@ def test_interaction_setting_function_name(parameter_inter):
                                                   ('+2.', VALUE + 2.),
                                                   ('-2.', VALUE - 2.)])
 def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
-
     """
     Tests setting Parameter tie with basic arithmetic operations
     """
@@ -247,7 +231,6 @@ def test_parameter_set_tie(expression, expected, parameter, scaled_parameter):
                                               'unit',
                                               'e')])
 def test_filter_parameters(pred, attr, val):
-
     """
     Tests parameter filtering for predicates not used by other Parameter filter
     functions
@@ -269,7 +252,6 @@ def test_filter_parameters(pred, attr, val):
                                           ('epsilon', 2),
                                           ('sigma', 0)])
 def test_filter_parameters_name(name, number):
-
     """
     Tests that filtering parameters by name results in the correct number of
     parameters which have the correct name
@@ -293,7 +275,6 @@ def test_filter_parameters_name(name, number):
                                                          ('==', 1., [1, 2]),
                                                          ('!=', 9., [0, -1])])
 def test_filter_parameter_value(comp, value, expected_slice, parameters):
-
     """
     Tests that the filtering parameters by value results in the correct
     parameters being returned
@@ -315,7 +296,6 @@ def test_filter_parameter_value(comp, value, expected_slice, parameters):
                                                        [-1, -2])])
 def test_filter_parameters_interaction(int_name, expected_slice, parameters,
                                        coulombic):
-
     """
     Tests that filtering parameters by interaction results in the correct
     parameters being returned
@@ -325,7 +305,7 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
         if index % 2:
             parameter.interactions = coulombic
         else:
-            parameter.interactions = Dispersion(Universe(1.0), [1, 1],
+            parameter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
                                             function=LennardJones((1., 'arb'),
                                                                   (1., 'arb')))
 
@@ -342,7 +322,6 @@ def test_filter_parameters_interaction(int_name, expected_slice, parameters,
                                                             [-1, -2])])
 def test_filter_parameters_function(function_name, expected_slice, parameters,
                                     coulomb):
-
     """
     Tests that filtering parameters by interaction function results in the
     correct number of parameters which have the correct interaction function
@@ -353,7 +332,7 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
             function = LennardJones((1., 'arb'), (1., 'arb'))
         else:
             function = coulomb
-        parameter.interactions = Dispersion(Universe(1.0), [1, 1],
+        parameter.interactions = Dispersion(Universe(1.0, verbose=False), [1, 1],
                                         function=function)
 
     expected_parameters = Parameters(list(parameters.values())[slice(*expected_slice)])
@@ -371,7 +350,6 @@ def test_filter_parameters_function(function_name, expected_slice, parameters,
                                                        ('charge', -1.,
                                                         [0, None, 2])])
 def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
-
     """
     Tests that filtering parameters by the values of an attribute of the atoms
     which have the parameter applied to them results in the correct parameters
@@ -413,7 +391,6 @@ def test_filter_parameters_atom_attr(attr, val, expected_slice, parameters):
                                                          ('C', [0, None, 2]),
                                                          ('H2', [0, None, 3])])
 def test_filter_parameters_structure(struct_name, expected_slice, parameters):
-
     """
     Tests that filtering parameters by the structures which have the parameter
     applied to them results in the correct parameters being returned
@@ -449,4 +426,4 @@ def test_parameters_getitem_lazy():
         assert parameters[test_parameter[0]].value == test_parameter[1]
 
     with pytest.raises(KeyError):
-        nonexistent_parameter = parameters['nonexistent_parameter']
+        _ = parameters['nonexistent_parameter']

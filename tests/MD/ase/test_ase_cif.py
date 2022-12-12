@@ -16,7 +16,6 @@ def atom_names(prefix, number):
 
 
 class MockAtom:
-
     """
     A mock of the MDMC Atom class
     """
@@ -30,7 +29,6 @@ class MockAtom:
 
 
 class MockAtoms:
-
     """
     A mock of the ase.atoms.Atoms class
     """
@@ -100,7 +98,6 @@ def ase_atoms():
                            np.array([['AtomH1', 'AtomO1', 'AtomC1', 'AtomN1']]))
                          ])
 def test_get_bonded_interaction_atoms(ase_atoms, geom_def, expected):
-
     """
     Tests that get_bonded_interactions_atoms correctly gets the atoms associated
     with each interaction defined in the CIF file (and parsed into the
@@ -123,7 +120,6 @@ def test_get_bonded_interaction_atoms(ase_atoms, geom_def, expected):
                           (5, 5),
                           (10, 1)])
 def test_create_bonded_interactions_error(interactions_atoms_shape):
-
     """
     Tests that create_bonded_interactions raises a TypeError if
     interactions_atoms contains an incorrect number of atoms for each
@@ -146,7 +142,6 @@ def test_create_bonded_interactions_error(interactions_atoms_shape):
                           ('ID',
                            [(ID,) for ID in range(1, 21, 1)])])
 def test_group_atoms(key, expected):
-
     """
     Parameterize with different keys
     """
@@ -165,7 +160,6 @@ def test_group_atoms(key, expected):
 
 
 def test_reduce_ase_unit_cell(ase_atoms):
-
     """
     Tests that _reduce_ase_unit_cell returns an ASEAtoms object that is
     equivalent to the input except with a fraction of the number of atoms
@@ -187,7 +181,6 @@ def test_reduce_ase_unit_cell(ase_atoms):
                           {'atom_types':[1, 2, 1, 3, 3, 4],
                            'names':['H1', 'H2', 'H1', 'O1', 'O1', 'C1']}])
 def test_ase_read_cif_atom_init(monkeypatch, ase_atoms, settings):
-
     """
     Tests that atoms are created correctly depending on whether atom names and
     atom_types are specified
@@ -242,7 +235,6 @@ def test_ase_read_cif_atom_init(monkeypatch, ase_atoms, settings):
                           (([5., -2., 9.], ),
                            ([0., 0., 0.], ))])
 def test_make_atom_positions_valid(positions, expected):
-
     """
     Tests that `_make_atom_positions_valid` results in the all positions of
     the atoms being >= 0., with at least one of all x, y and z axes equalling 0,

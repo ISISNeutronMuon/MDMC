@@ -97,7 +97,7 @@ def simulation() -> callable:
         to `1`. Returns a ``MockedSimulation`` for testing.
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
 
     def _simulation(traj_step: int = 1,
                     time_step: float = 1.) -> MockSimulation:
@@ -179,7 +179,8 @@ def exp_datasets() -> callable:
 
 def test_control_init_stdout(print_value, expected_indexes, expected_data, monkeypatch,
                              capsys, exp_datasets, simulation):
-    """ A test to make sure that the stdout when creating a control object
+    """ 
+    A test to make sure that the stdout when creating a control object
     is as expected, both when a full output is requested, and when not .
     """
 
@@ -356,6 +357,7 @@ def test_control_no_scaling(simulation, exp_datasets, file_name):
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
+                           verbose=-1,
                            reset_config=False)
 
     for pair in ctrl.observable_pairs:
@@ -374,7 +376,7 @@ def test_control_rescale_factor(simulation, exp_datasets, file_name):
     datasets = exp_datasets(rescale_factor=0.5, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False)
+                           verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 0.5
@@ -391,7 +393,7 @@ def test_control_auto_scale(simulation, exp_datasets, file_name):
     datasets = exp_datasets(auto_scale=True, file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False)
+                           verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.rescale_factor == 1.
@@ -441,7 +443,7 @@ def test_control_use_FFT_default(simulation, exp_datasets, file_name):
     datasets = exp_datasets(file_name=file_name)
     dt = DATASET_INFO['use_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False)
+                           verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert pair.exp_obs.use_FFT
@@ -458,7 +460,7 @@ def test_control_use_FFT(simulation, exp_datasets, file_name):
     datasets = exp_datasets(use_FFT=False, file_name=file_name)
     dt = DATASET_INFO['no_FFT'][file_name]['dt']
     ctrl = control.Control(simulation(time_step=dt), datasets, [],
-                           reset_config=False)
+                           verbose=-1, reset_config=False)
 
     for pair in ctrl.observable_pairs:
         assert not pair.exp_obs.use_FFT
@@ -470,10 +472,10 @@ def test_control_max_parameter_change():
     Test that ``max_parameter_change`` is passed to the ``Minimizer``.
     """
 
-    ctrl_default = control.Control(None, [], [], minimizer_type="MMC", reset_config=False)
+    ctrl_default = control.Control(None, [], [], minimizer_type="MMC",verbose=-1, reset_config=False)
     assert ctrl_default.minimizer.max_parameter_change == 0.01
 
-    ctrl = control.Control(None, [], [], reset_config=False,
+    ctrl = control.Control(None, [], [], reset_config=False, verbose=-1, 
                            minimizer_type="MMC", max_parameter_change=0.02)
     assert ctrl.minimizer.max_parameter_change == 0.02
 
@@ -616,7 +618,7 @@ def test_control_no_MD_steps(simulation, exp_datasets, use_FFT, traj_step,
     time_step = dt / traj_step
     ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
                            exp_datasets(use_FFT=use_FFT, file_name=file_name),
-                           [],
+                           [], verbose=-1,
                            reset_config=False)
     assert ctrl.MD_steps == n_frames * traj_step
 
@@ -647,6 +649,7 @@ def test_control_MD_steps_accepted(simulation, exp_datasets, use_FFT,
     ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
                            exp_datasets(use_FFT=use_FFT, file_name=file_name),
                            [],
+                           verbose=-1,
                            reset_config=False,
                            MD_steps=user_MD_steps)
 
@@ -673,6 +676,7 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
         control.Control(simulation(traj_step=traj_step, time_step=time_step),
                         exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
+                        verbose=-1,
                         reset_config=False,
                         MD_steps=1)
 
@@ -698,6 +702,7 @@ def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
         control.Control(simulation(traj_step=traj_step, time_step=time_step),
                         exp_datasets(use_FFT=use_FFT, file_name=file_name),
                         [],
+                        verbose=-1,
                         reset_config=False)
 
 
@@ -719,7 +724,7 @@ def test_control_fit_parameters(simulation):
                                  Parameter(3., 'constraints', constraints=(2.9, 3.1))])
 
     ctrl = control.Control(simulation(), [], fit_parameters=fit_parameters,
-                           reset_config=False)
+                           verbose=-1, reset_config=False)
 
     assert len(ctrl.fit_parameters) == 1
     assert 'constraints' in list(ctrl.fit_parameters.keys())[0]
@@ -741,6 +746,7 @@ def test_control_resolution_function(simulation, exp_datasets):
     ctrl = control.Control(simulation(time_step=time_step, traj_step=traj_step),
                            exp_datasets(file_name=file_name, resolution=resolution_file),
                            [],
+                           verbose=-1,
                            reset_config=False)
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution

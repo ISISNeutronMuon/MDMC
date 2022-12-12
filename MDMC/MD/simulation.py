@@ -67,6 +67,8 @@ class Universe(AtomContainer):
         ``constraint_algorithm`` (`ConstraintAlgorithm`)
             The constraint algorithm which will be applied to constrained
             ``BondedInteractions``.
+        ``verbose`` (`str`)
+            If the output of the class instantiation should be reported, default to True.
 
     Attributes
     ----------
@@ -134,6 +136,8 @@ class Universe(AtomContainer):
         self.kspace_solver = settings.get('kspace_solver')
         self.electrostatic_solver = settings.get('electrostatic_solver')
         self.dispersive_solver = settings.get('dispersive_solver')
+
+        self.verbose = settings.get('verbose', True)
         # kspace_solver is mutually exclusive with the other two solver
         # attributes
         if self.kspace_solver and (self.electrostatic_solver or
@@ -159,8 +163,8 @@ class Universe(AtomContainer):
                                           '  Force field',
                                           '  Number of atoms'])
 
-        print(
-            f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        if self.verbose:
+            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self) -> str:
 
@@ -986,7 +990,7 @@ class Universe(AtomContainer):
     @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
     def solvate(self, density: float,
                 tolerance: float = 1., solvent: str = 'SPCE',
-                **settings: dict) -> None:
+                max_iterations: int = 100, **settings: dict) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
         coordinates.
@@ -1004,6 +1008,9 @@ class Universe(AtomContainer):
             A `str` specifying an inbuilt ``Solvent`` from the following:
             DYNAMIC_SOLVENT_LIST.
             The default is 'SPCE'.
+        max_iterations: int, optional
+            The maximum number of times to try to solvate the universe to
+            within the required density before stopping. Defaults to 100.
         **settings
             ``constraint_algorithm`` (`ConstraintAlgorithm`)
                 A ``ConstraintAlgorithm`` which is applied to the ``Universe``.
@@ -1104,6 +1111,11 @@ class Universe(AtomContainer):
             actual = (len(mols) * solvent_mass) / self.volume
             difference = (actual - density) / density
             scale_factor = difference / counter
+            if counter > max_iterations:
+                msg = ('100 Iterations have been tried but the universe is not solvated'
+                   ' to within tolerance. Try increasing the tolerance or Universe size')
+                LOGGER.error(msg)
+                raise ValueError(msg)
 
         # Once the correct density is achieved, add molecules to universe
         # and get all bonded interactions
@@ -1131,7 +1143,8 @@ class Universe(AtomContainer):
                 self.constraint_algorithm = settings.get('constraint_algorithm',
                                                          Shake(1e-4, 100))
 
-            print(f'Force field created by solvent {solvent}')
+            if self.verbose:
+                print(f'Force field created by solvent {solvent}')
 
         except ImportError:
             pass
@@ -1381,6 +1394,8 @@ class Simulation:
         ``pressure`` (`float`)
             Simulation pressure in ``Pa``. This is required if a barostat is
             passed.
+        ``verbose`` (`str`)
+            If the output of the class instantiation should be reported, default to True.
 
     Attributes
     ----------
@@ -1410,6 +1425,7 @@ class Simulation:
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self.engine.parent_simulation = self
+        self.verbose = settings.get('verbose', True)
         self._setup()
 
         setup_msg = f'Simulation created with {engine} engine'
@@ -1419,7 +1435,8 @@ class Simulation:
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
 
-        print(setup_msg)
+        if self.verbose:
+            print(setup_msg)
 
     @property
     def time_step(self) -> float:

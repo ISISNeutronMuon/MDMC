@@ -12,7 +12,6 @@ from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, Dihedra
 
 @pytest.fixture
 def water_universe():
-
     """
     Returns
     -------
@@ -20,7 +19,7 @@ def water_universe():
         A Universe with a single water molecule
     """
 
-    universe = Universe(10.0)
+    universe = Universe(10.0, verbose=False)
     H1 = Atom('H', charge=0., cutoff=10.)
     H2 = H1.copy(position=(0., 1.63298, 0.))
     O = Atom('O', position=(0., 0.81649, 0.57736), charge=0., cutoff=10.)
@@ -46,7 +45,6 @@ def water_universe():
                           ('TIP5P', 0.0000, 0.2410),
                           ('SPC', -0.8200, 0.4100)])
 def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
-
     """
     Tests that water models using OPLS force field have correct charge
     parametrization for the H and O atoms. It does not test the charge
@@ -70,7 +68,6 @@ def test_opls_water_model_charges(water_universe, model, O_charge, H_charge):
 @pytest.mark.parametrize('model', ['TIP3P', 'TIP4P', 'TIP3F', 'TIP4F', 'TIP5P',
                                    'SPC'])
 def test_opls_water_model_masses(water_universe, model):
-
     """
     Tests that water models using OPLS force field have correct mass
     parametrization for the H and O atoms. It does not test the mass
@@ -100,7 +97,6 @@ def test_opls_water_model_masses(water_universe, model):
                           ('TIP5P', 3.12000, 0.66944),
                           ('SPC', 3.16557, 0.65019)])
 def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
-
     """
     Tests that water models using OPLS force field have correct LJ
     parametrization for the H and O atoms. It does not test the LJ
@@ -134,7 +130,6 @@ def test_opls_water_model_lj_parameters(water_universe, model, sigma, epsilon):
                           ('SPC', 1.0000, 2510.4)])
 def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
                                           pot_strength):
-
     """
     Tests that water models using OPLS force field have correct HO bond
     parametrization.
@@ -161,7 +156,6 @@ def test_opls_water_model_bond_parameters(water_universe, model, eq_state,
                           ('SPC', 109.47, 313.8)])
 def test_opls_water_model_bond_angle_parameters(water_universe, model,
                                                 eq_state, pot_strength):
-
     """
     Tests that water models using OPLS force field have correct HOH bond angles
     parametrization.
@@ -190,7 +184,6 @@ def test_opls_water_model_bond_angle_parameters(water_universe, model,
                            [1.352, 2284.464])
                          ])
 def test_ff_parametrize_bond(atoms_info, parameters):
-
     """
     Tests that FileForceField correctly parametrizes Bond interactions
 
@@ -219,7 +212,6 @@ def test_ff_parametrize_bond(atoms_info, parameters):
                            [96.4, 313.8])
                          ])
 def test_ff_parametrize_bond_angle(atoms_info, parameters):
-
     """
     Tests that FileForceField correctly parametrizes BondAngle interactions
 
@@ -248,7 +240,6 @@ def test_ff_parametrize_bond_angle(atoms_info, parameters):
                            [0., 21.43882, 0., 0., 180., 0., 1, 2, 3])
                          ])
 def test_ff_parametrize_proper_dihedral(atoms_info, parameters):
-
     """
     Tests that FileForceField correctly parametrizes proper dihedral
     interactions
@@ -282,7 +273,6 @@ def test_ff_parametrize_proper_dihedral(atoms_info, parameters):
                            [125.52, 180., 2.])
                          ])
 def test_ff_parametrize_improper_dihedral(atoms_info, parameters):
-
     """
     Tests that FileForceField correctly parametrizes improper dihedral
     interactions
@@ -317,7 +307,6 @@ def test_ff_parametrize_improper_dihedral(atoms_info, parameters):
                            [0., 0., 1.50624, 0., 180., 0., 1, 2, 3])
                          ])
 def test_bonded_valid_atom_groups(atoms_info1, atoms_info2, expected):
-
     """
     Tests that a bonded interaction which has multiple atom tuples, (with
     the same atom groups) correctly parametrizes the interaction
@@ -344,7 +333,6 @@ def test_bonded_valid_atom_groups(atoms_info1, atoms_info2, expected):
                            [('C', 294), ('C', 277), ('C', 3), ('O', 4)])
                          ])
 def test_bonded_invalid_atom_groups(atoms_info1, atoms_info2):
-
     """
     Tests that a bonded interaction which has multiple atom tuples, (but with
     different atom groups) raises a ValueError
@@ -365,7 +353,6 @@ def test_bonded_invalid_atom_groups(atoms_info1, atoms_info2):
                           ([('C', 22), ('C', 23), ('C', 39), ('C', 40)], 0.265)
                          ])
 def test_coulombic_valid_charges(atoms_info, expected):
-
     """
     Tests that a coulombic interaction which has atoms of different types,
     (with the same charges for the atoms) correctly parametrizes the interaction
@@ -384,7 +371,6 @@ def test_coulombic_valid_charges(atoms_info, expected):
                           ([('C', 10), ('C', 131), ('C', 22), ('C', 31)])
                          ])
 def test_coulombic_invalid_charges(atoms_info):
-
     """
     Tests that a coulombic interaction which has atoms of different types,
     (with different charges for the atoms) raises a ValueError
@@ -396,7 +382,6 @@ def test_coulombic_invalid_charges(atoms_info):
 
 
 def _validate_interaction_parameters(interaction, expected_parameters):
-
     """
     Asserts that all interaction_parameters are equal to the expected values
 
@@ -420,7 +405,6 @@ def _validate_interaction_parameters(interaction, expected_parameters):
 
 def _parametrize_interaction(interaction_class, force_field_name, *atoms,
                              **settings):
-
     """
     Parametrizes an interaction using the specified force field
 
@@ -452,7 +436,6 @@ def _parametrize_interaction(interaction_class, force_field_name, *atoms,
                           ('OPLSAA', 'Ca', 2),
                           ('OPLSAA', 'P', 6)])
 def test_filter_element(force_field_name, element, expected_number):
-
     """
     Tests that filtering the atoms of a FileForceField by an element produces
     the expected number of rows in the returned DataFrame, and that all of these
@@ -466,7 +449,6 @@ def test_filter_element(force_field_name, element, expected_number):
 
 
 def test_specific_force_fields_names():
-
     """
     Tests that ForceFieldFactory.get_force_field_names includes certain force
     field names
@@ -485,12 +467,11 @@ def test_specific_force_fields_names():
 
 
 def test_name_element_error():
-
     """
     Test that atoms with mismatched names and elements raise an error
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
     # name=1 corresponds to a F atom in OPLSAA
     H1 = Atom('H', name=1)
     H2 = Atom('H', name=1)
@@ -502,12 +483,11 @@ def test_name_element_error():
 
 
 def test_undefined_bond_error():
-
     """
     Test that atoms without a defined bond raise an error
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
     # There is no OPLSAA bond between two "7" atoms
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
@@ -519,13 +499,12 @@ def test_undefined_bond_error():
 
 
 def test_coulombic_error():
-
     """
     Test that a coulombic interaction applied to an ``atom_type`` that is
     missing from the universe raises an error
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
     uni.add_structure(H1)
@@ -537,13 +516,12 @@ def test_coulombic_error():
 
 
 def test_dispersion_error():
-
     """
     Test that a dispersion interaction applied to an ``atom_type`` that is
     missing from the universe raises an error
     """
 
-    uni = Universe(10.)
+    uni = Universe(10., verbose=False)
     H1 = Atom('H', name=7)
     H2 = Atom('H', name=7)
     uni.add_structure(H1)
