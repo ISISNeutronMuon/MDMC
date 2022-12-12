@@ -1423,6 +1423,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         ``neighbor_steps`` (`int`)
         ``remove_linear_momentum`` (`int`)
         ``remove_angular_momentum`` (`int`)
+        ``velocity_seed`` (`int`): The seed to be used by LAMMPS to create velocities.
 
     Attributes
     ----------
@@ -1440,6 +1441,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
         self.ensemble = LAMMPSEnsemble(self.lmp, **settings)
+        self.velocity_seed = settings.get('velocity_seed', randint(1, 9999))
         self.temperature = settings.get('temperature')
         self.traj_step = traj_step
         self.time_step = time_step
@@ -1507,10 +1509,10 @@ class LAMMPSSimulation(PyLammpsAttribute):
                                  for atom in self.universe.atoms]
                 if all(zero_velocity):
                     # If we have not set any velocities (they are all the default value of zero)
-                    # then "create" a velocity for each atom
+                    # then "create" a velocity for each atom according to user-specified or
+                    # random seed
                     self.lmp.velocity('all', 'create',
-                                      convert_unit(self._temperature),
-                                      randint(1, 9999))
+                                      convert_unit(self._temperature), self.velocity_seed)
                 else:
                     if any(zero_velocity):
                         msg = ('Some but not all atom velocities set. Atoms with non-zero velocity'
