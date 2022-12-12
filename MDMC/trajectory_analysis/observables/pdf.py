@@ -298,8 +298,6 @@ class PairDistributionFunction(Observable):
 
         self._parse_calc_MD_settings(MD_input[0], settings)
 
-#         for configuration in self.trajectory:
-#             self._calculate_histogram(configuration)
         self._calculate_histogram(self.trajectory)
 
         self._sum_partial_pairs()
@@ -377,7 +375,6 @@ class PairDistributionFunction(Observable):
         frame_step = (total_n_frames + 1 if n_frames == 1
                       else ((total_n_frames - 1) // n_frames) + 1)
         self.trajectory = trajectory.subtrajectory(0, total_n_frames, frame_step)
-        # trajectory[0:total_n_frames:frame_step]
 
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is
@@ -431,10 +428,6 @@ class PairDistributionFunction(Observable):
                              for partial_string in self.partial_strings}
 
         self._dependent_variables = {}
-        # Release memory from full trajectory
-        # del trajectory
-        # Maybe it was a good idea before, but now with the
-        # CompactTrajectory, I will wait an see if we need it.
 
     def _calculate_histogram(self, trajectory: CompactTrajectory) -> None:
         """

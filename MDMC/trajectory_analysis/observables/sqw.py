@@ -8,7 +8,7 @@ from scipy.interpolate import interp2d
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
-from MDMC.common.decorators import unit_decorator_getter, time_function_execution
+from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
@@ -296,7 +296,6 @@ class AbstractSQw(SQwMixins, Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    @time_function_execution
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
                          **settings: dict):
         """

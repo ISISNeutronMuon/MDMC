@@ -52,7 +52,7 @@ except ModuleNotFoundError as err:
 from MDMC.common.units import Unit
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter, \
-    repr_decorator, time_function_execution
+    repr_decorator
 from MDMC.MD.simulation import Universe, KSpaceSolver, ConstraintAlgorithm
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import Atom
@@ -414,7 +414,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.lmp_universe.apply_constraints()
             self.ensemble.apply_ensemble_fixes()
 
-    @time_function_execution
     def run(self, n_steps: int, equilibration=False, output_log: str = None,
             work_dir: str = None, **settings: dict):
         if not equilibration:
@@ -458,7 +457,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         if equilibration and reset_to_nve:
             self.thermostat = None
 
-    @time_function_execution
     def convert_trajectory(self, start: int = 0, stop: int = None,
                            step: int = 1, **settings: dict) -> CompactTrajectory:
         """
@@ -577,7 +575,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                             assert dmin == 0.0
                             # unit is taken from universe dimensions (which is a
                             # UnitArray)
-                            # how bad is this one for performance?
                             assert dmax == convert_unit(self.universe.dimensions[i],
                                                         self.universe.dimensions.unit)
 
@@ -676,7 +673,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         self.lmp_universe.update_parameters()
 
-    @time_function_execution
     def save_config(self) -> None:
 
         # So that the identical calculation is not performed for all processes,

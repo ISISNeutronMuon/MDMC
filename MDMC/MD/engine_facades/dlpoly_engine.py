@@ -437,7 +437,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             traj.preAllocate(n_steps = len(take), n_atoms = n_atoms,
                 useVelocity = level_of_detail >=1)
             traj_step = 0
-            dlpoly_time_unit = Unit('10 ^ -12 s')
+            dlpoly_time_unit = SYSTEM['TIME']
             time_conv = dlpoly_time_unit.conversion_factor
             for iframe in range(frames):
                 if iframe in take:

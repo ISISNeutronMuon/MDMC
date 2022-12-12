@@ -11,14 +11,10 @@ from numpy.fft import fft, ifft
 # However, probably the multiprocessing module is going
 # to be the best solution to improve the performance.
 
-from MDMC.common.decorators import time_function_execution
-
 UNIT_VECTOR = np.array([[1., 0., 0.],
                         [0., 1., 0.],
                         [0., 0., 1.]])
 
-
-@time_function_execution
 def correlation(input1, input2=None, normalise=False) -> np.ndarray:
     """
     The correlation of two vectors
