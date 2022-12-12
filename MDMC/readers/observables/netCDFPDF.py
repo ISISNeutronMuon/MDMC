@@ -50,4 +50,4 @@ class netCDFPDF(PDFReader):
         pattern = re.compile("pdf-.{1,2}-.{1,2}")
         for var in self.file.variables:
             if re.fullmatch(pattern, var):
-                self.independent_variables[var] = np.array(self.file.variables[var][:])
+                self.partial_PDFs[var] = np.array(self.file.variables[var][:])

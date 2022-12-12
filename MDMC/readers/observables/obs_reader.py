@@ -288,7 +288,6 @@ class PDFReader(ObservableReader, ABC):
 
     @property
     def PDF(self) -> np.ndarray:
-
         """
         Get or set the total pair distribution function between pairs (in ``barn``)
         Returns
@@ -307,7 +306,6 @@ class PDFReader(ObservableReader, ABC):
 
     @property
     def PDF_err(self) -> np.ndarray:
-
         """
         Get or set the error on the total pair distribution function between pairs (in ``barn``)
         Returns
@@ -323,3 +321,22 @@ class PDFReader(ObservableReader, ABC):
     def PDF_err(self, value: float) -> None:
 
         self._PDF_err = value
+
+    @property
+    def partial_PDFs(self) -> dict:
+        """
+        Get or set the partial pair distribution functions between pairs (in ``barn``)
+
+        Returns
+        -------
+        dict
+            A dictionary containing the partial pair distribution functions.
+            The keys are the name of the partial
+            The values are arrays containing the values of the partial PDF (in ``barn``)
+        """
+
+        return self.partial_pdfs
+
+    @partial_PDFs.setter
+    def partial_PDFs(self, value: dict) -> None:
+        self.partial_PDFs = value
