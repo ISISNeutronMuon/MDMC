@@ -26,7 +26,7 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 if TYPE_CHECKING:
     from MDMC.MD.structures import Molecule, Atom
     from MDMC.MD.interactions import Interaction
-    from MDMC.trajectory_analysis.trajectory import Trajectory
+    from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -1365,8 +1365,8 @@ class Simulation:
         The ``Universe`` on which the simulation is performed.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame. Along with ``time_step`` determines the time
-        separation of calculated variables such as energy.
+        ``CompactTrajectory`` frame. Along with ``time_step`` determines
+        the time separation of calculated variables such as energy.
     time_step : float, optional
         Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
@@ -1403,8 +1403,8 @@ class Simulation:
         The ``Universe`` on which the simulation is performed.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame. Along with ``time_step`` determines the time
-        separation of calculated variables such as energy.
+        ``CompactTrajectory`` frame. Along with ``time_step`` determines
+        the time separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
         library. Default is ``'lammps'``.
@@ -1460,13 +1460,13 @@ class Simulation:
     def traj_step(self) -> int:
         """
         Get or set the number of simulation steps between saving the
-        ``Trajectory``
+        ``CompactTrajectory``
 
         Returns
         -------
         `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
+            Number of simulation steps that elapse between the
+            ``CompactTrajectory`` being stored
         """
 
         return self._traj_step
@@ -1572,15 +1572,15 @@ class Simulation:
         verbose_manager.finish(f"{process.capitalize()}")
 
     @property
-    def trajectory(self) -> Union['Trajectory', None]:
+    def trajectory(self) -> Union['CompactTrajectory', None]:
         """
-        The ``Trajectory`` produced by the most recent production run of the
+        The ``CompactTrajectory`` produced by the most recent production run of the
         ``Simulation``.
 
         Returns
         -------
-        Trajectory
-            Most recent production run ``Trajectory``, or `None` if no
+        CompactTrajectory
+            Most recent production run ``CompactTrajectory``, or `None` if no
             production run has been performed
         """
 

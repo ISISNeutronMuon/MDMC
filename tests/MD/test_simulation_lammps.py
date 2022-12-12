@@ -14,7 +14,7 @@ from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
                                 Ewald, PPPM, KSpaceSolver, Simulation)
 from MDMC.MD.structures import (Atom)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 pytestmark = [pytest.mark.lammps]
 
@@ -1595,7 +1595,7 @@ def test_reset_config(lammps_engine):
 def test_convert_trajectory_output(lammps_engine):
 
     """
-    Tests that converting a trajectory results in an MDMC Trajectory object
+    Tests that converting a trajectory results in an MDMC CompactTrajectory object
 
     This does not test the correctness of the converted trajectory, purely that
     a trajectory can be converted with the correct type. The correctness of
@@ -1603,7 +1603,7 @@ def test_convert_trajectory_output(lammps_engine):
     """
 
     lammps_engine.run(3)
-    assert isinstance(lammps_engine.convert_trajectory(), Trajectory)
+    assert isinstance(lammps_engine.convert_trajectory(), CompactTrajectory)
 
 
 @pytest.mark.parametrize('args',

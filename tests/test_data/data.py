@@ -90,10 +90,11 @@ for key in OBS_DATA:
 # MDMC object data
 #
 # trajectory
-# Calculated from same MMTK simulation on water as used to calculate DISF. Must
+# Calculated from same MMTK simulation on water as used to calculate DISF.
+# Subsequently converted to CompactTrajectory and pickled again. Must
 # be unzipped using zlib and then unpickled before use.
 
-OBJECT_DATA = {'trajectory':'/trajectory.zip'}
+OBJECT_DATA = {'compact_trajectory':'/compact_trajectory.zip'}
 
 # Add paths to data values
 for key in OBJECT_DATA:

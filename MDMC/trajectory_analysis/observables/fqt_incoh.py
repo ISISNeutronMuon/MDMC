@@ -3,7 +3,7 @@
 import numpy as np
 
 from MDMC.common.atom_properties import B_INCOH
-from MDMC.common.mathematics import correlation
+from MDMC.common.mathematics import faster_autocorrelation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
@@ -24,27 +24,27 @@ class FQtIncoherent(AbstractFQt):
         element_weights = {element: B_INCOH[element]**2 for element
                            in self._trajectory.element_set}
         self.weights = [element_weights[atom.element] for atom
-                        in self._trajectory.atoms]
+                        in [self._trajectory.exportAtom(atom_number=x) for x
+                            in range(self._trajectory.n_atoms)]]
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
-        n_atoms = len(self._trajectory.atoms)
+        n_atoms = self._trajectory.n_atoms
         FQt_single_Q = np.zeros(n_t)
 
         # Arrange configs so that axes are [atoms, times, positions] i.e.
         # iterating over the first axis is iterating over each atom
-        configs = np.swapaxes([config.positions for config in self._trajectory],
+        configs = np.swapaxes(self._trajectory.position,
                               0,
                               1)
         for atom_positions, weight in zip(configs, self.weights):
-            rho_atom = calculate_rho(atom_positions,
-                                     np.array(single_Q_vectors))
+            rho_atom = calculate_rho(atom_positions.T,
+                                     np.array(single_Q_vectors)).T
 
             # A sum over the Q vectors is performed within ``correlation``.
-            FQt_single_Q_atom = correlation(rho_atom,
-                                            normalise=True)[:n_t]
+            FQt_single_Q_atom = faster_autocorrelation(rho_atom)[:n_t]
             FQt_single_Q += FQt_single_Q_atom * weight
 
         # Normalise to the number of orthogonal vectors

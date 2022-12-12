@@ -14,8 +14,7 @@ from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.trajectory import Trajectory, Configuration
-
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
@@ -112,8 +111,8 @@ class PairDistributionFunction(Observable):
 
     def minimum_frames(self, dt: float = None) -> int:
         """
-        The minimum number of ``Trajectory`` frames needed to calculate the
-        ``dependent_variables`` is 1
+        The minimum number of ``CompactTrajectory`` frames needed to
+        calculate the ``dependent_variables`` is 1
 
         Parameters
         ----------
@@ -176,11 +175,11 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: Union[Trajectory, list[Trajectory]],
-                          verbose: int = 0, **settings: dict) -> None:
+    def calculate_from_MD(self, MD_input: Union[CompactTrajectory, list[CompactTrajectory]],
+                          verbose: int = 0, **settings: dict):
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
-        ``Trajectory``
+        ``CompactTrajectory``
 
         The total pair distribution function (``pdf.PDF``) has the form:
 
@@ -212,8 +211,9 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory or list of Trajectory
-            Either a `list` of MD ``Trajectory``s or a single ``Trajectory`` object.
+        MD_input : CompactTrajectory or list of CompactTrajectory
+            Either a `list` of MD ``CompactTrajectory``s or a
+            single ``CompactTrajectory`` object.
         verbose: int
             Verbose print settings. Not currently implemented for PDF.
         **settings
@@ -293,13 +293,12 @@ class PairDistributionFunction(Observable):
 
         self.origin = 'MD'
 
-        if isinstance(MD_input, Trajectory):
+        if isinstance(MD_input, CompactTrajectory):
             MD_input = [MD_input]
 
         self._parse_calc_MD_settings(MD_input[0], settings)
 
-        for trajectory in self.trajectory:
-            self._calculate_histogram(trajectory.configurations[0])
+        self._calculate_histogram(self.trajectory)
 
         self._sum_partial_pairs()
 
@@ -331,7 +330,7 @@ class PairDistributionFunction(Observable):
             self._dependent_variables['PDF'][0] += ((partial - 1) * fac
                                                     * weights * concentration)
 
-    def _parse_calc_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
+    def _parse_calc_MD_settings(self, trajectory: CompactTrajectory, settings: dict) -> None:
         """
         Parses the MD settings
 
@@ -353,7 +352,7 @@ class PairDistributionFunction(Observable):
         ------
         ValueError
             If ``n_frames`` is less than 1 or greater than the number of frames
-            in the ``Trajectory``
+            in the ``CompactTrajectory``
         TypeError
             If ``r`` is in settings as well any of ``r_min``, ``r_max``, and
             ``r_step``
@@ -375,7 +374,7 @@ class PairDistributionFunction(Observable):
         # If only a single frame then set frame_step > total_n_frames
         frame_step = (total_n_frames + 1 if n_frames == 1
                       else ((total_n_frames - 1) // n_frames) + 1)
-        self.trajectory = trajectory[0:total_n_frames:frame_step]
+        self.trajectory = trajectory.subtrajectory(0, total_n_frames, frame_step)
 
         # If no subset is specified, combinations of all elements are used, so
         # that all possible partials will be calculated. The element set is
@@ -397,7 +396,7 @@ class PairDistributionFunction(Observable):
                                              or trajectory.universe.dimensions))
         self.universe_volume = np.prod(self.universe_dimensions)
         # PDF only valid where number of atoms is conserved over trajectories
-        self.n_atoms = len(self.trajectory[0].atoms)
+        self.n_atoms = self.trajectory.n_atoms
 
         # Create independent_variables dictionary if it doesn't exist
         if not hasattr(self, 'independent_variables'):
@@ -429,15 +428,13 @@ class PairDistributionFunction(Observable):
                              for partial_string in self.partial_strings}
 
         self._dependent_variables = {}
-        # Release memory from full trajectory
-        del trajectory
 
-    def _calculate_histogram(self, configuration: Configuration) -> None:
+    def _calculate_histogram(self, trajectory: CompactTrajectory) -> None:
         """
         Partitions the atomic positions into regions where they are within
         ``r_max`` from all other atoms
         """
-        def get_component_lengths(universe_dim: float) -> np.ndarray:
+        def get_component_lengths(universe_dim: float) -> float:
             """
             Use ``r`` values for each component that are at least as big as
             ``r_max``, but that are a factor of the dimensions
@@ -452,68 +449,69 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        partitions = self._partition(configuration.atom_positions,
-                                     configuration.element_list,
-                                     part_comps)
-        # Get the partition_indexes and the pairs of partitions. As well as
-        # calculating atom pairs within a partition, each partition will have 26
-        # neighbors for which atom pairs must be calculated.
-        partition_indexes = list(self._calculate_partition_indexes(part_comps))
-        partition_pair_indexes = self._get_partition_pairs(part_comps)
+        for step_n in range(len(trajectory)):
+            partitions = self._partition(trajectory.position[step_n],
+                                        trajectory.element_list,
+                                        part_comps)
+            # Get the partition_indexes and the pairs of partitions. As well as
+            # calculating atom pairs within a partition, each partition will have 26
+            # neighbors for which atom pairs must be calculated.
+            partition_indexes = list(self._calculate_partition_indexes(part_comps))
+            partition_pair_indexes = self._get_partition_pairs(part_comps)
 
-        # Calculate the histograms of all atoms in each partition for element
-        # combinations that are in self.partial_strings
-        for partial_string in self.partial_strings:
-            elem1, elem2 = partial_string
-            like_elems = elem1 == elem2
-            pos_pairs = []
+            # Calculate the histograms of all atoms in each partition for element
+            # combinations that are in self.partial_strings
+            for partial_string in self.partial_strings:
+                elem1, elem2 = partial_string
+                like_elems = elem1 == elem2
+                pos_pairs = []
 
-            # Get the atom pairs for atoms in the same partition
-            for part_i in partition_indexes:
-                if like_elems:
-                    # combinations avoids an atom and itself being an atom pair
-                    pos_pairs.append(combinations(
-                        partitions[elem1][part_i], 2))
-                else:
-                    # atom and itself as an atom pair not an issue for unlike
-                    # elements
-                    pos_pairs.append(product(partitions[elem1][part_i],
-                                             partitions[elem2][part_i]))
+                # Get the atom pairs for atoms in the same partition
+                for part_i in partition_indexes:
+                    if like_elems:
+                        # combinations avoids an atom and itself being an atom pair
+                        pos_pairs.append(combinations(
+                            partitions[elem1][part_i], 2))
+                    else:
+                        # atom and itself as an atom pair not an issue for unlike
+                        # elements
+                        pos_pairs.append(product(partitions[elem1][part_i],
+                                                partitions[elem2][part_i]))
 
-            # Get the atom pairs for atoms in different partitions
-            for part1, part2 in partition_pair_indexes:
-                # Correct for periodic boundary conditions, which will only
-                # occur if modulus of separation distance in any direction is
-                # greater than 1 (i.e. the partitions would not be neighbors
-                # without pdb)
-                wrap = np.zeros([3])
-                for i in range(3):
-                    component_separation = part1[i] - part2[i]
-                    if component_separation > 1:
-                        wrap[i] = 1
-                    elif component_separation < -1:
-                        wrap[i] = -1
-                wrap *= self.universe_dimensions
+                # Get the atom pairs for atoms in different partitions
+                for part1, part2 in partition_pair_indexes:
+                    # Correct for periodic boundary conditions, which will only
+                    # occur if modulus of separation distance in any direction is
+                    # greater than 1 (i.e. the partitions would not be neighbors
+                    # without pdb)
+                    wrap = np.zeros([3])
+                    for i in range(3):
+                        component_separation = part1[i] - part2[i]
+                        if component_separation > 1:
+                            wrap[i] = 1
+                        elif component_separation < -1:
+                            wrap[i] = -1
+                    wrap *= self.universe_dimensions
 
-                # try/excepts are in case partitions[elem1][part1] is empty
-                try:
-                    pos_pairs.append(product(partitions[elem1][part1] - wrap,
-                                             partitions[elem2][part2]))
-                except ValueError:
-                    pass
-                # For unlike elements, also consider other element/partition
-                # combination
-                if not like_elems:
+                    # try/excepts are in case partitions[elem1][part1] is empty
                     try:
-                        pos_pairs.append(product(partitions[elem2][part1] - wrap,
-                                                 partitions[elem1][part2]))
+                        pos_pairs.append(product(partitions[elem1][part1] - wrap,
+                                                partitions[elem2][part2]))
                     except ValueError:
                         pass
-            # pos_pairs is a list of iterators - flatten this to a single
-            # iterator
-            pos_pairs = chain(*pos_pairs)
-            self.partial_pdfs[partial_string] += \
-                self._calculate_histogram_from_position_pairs(pos_pairs)
+                    # For unlike elements, also consider other element/partition
+                    # combination
+                    if not like_elems:
+                        try:
+                            pos_pairs.append(product(partitions[elem2][part1] - wrap,
+                                                    partitions[elem1][part2]))
+                        except ValueError:
+                            pass
+                # pos_pairs is a list of iterators - flatten this to a single
+                # iterator
+                pos_pairs = chain(*pos_pairs)
+                self.partial_pdfs[partial_string] += \
+                    self._calculate_histogram_from_position_pairs(pos_pairs)
 
     def _partition(self, positions: np.ndarray, element_list: list, part_comps: np.ndarray) -> dict:
         """
@@ -525,8 +523,8 @@ class PairDistributionFunction(Observable):
         Parameters
         ----------
         positions : numpy.ndarray
-            ``array`` of `arrays`, where each ``array`` is 3 elements specifying
-            the ``Atom.position``
+            the full CompactTrajectory.positions array, with the
+            shape = (num_time_steps, num_atoms, 3)
         element_list : list
             A `list` of `str` with the same length as ``positions``. Each `str`
             specifies the ``Atom.element`` for the corresponding index in
@@ -560,10 +558,10 @@ class PairDistributionFunction(Observable):
         # Drop positions of atoms of elements not included
         mask = np.isin(element_list, list(self.elements))
         element_array = np.array(element_list)[mask]
-        positions = positions[mask]
+        t_positions = positions[mask]
 
         # Get element and position of each atom
-        for elem, position in zip(element_array, positions):
+        for elem, position in zip(element_array, t_positions):
             partition_index = []
             for component, part_comp in zip(position, part_comps):
                 partition_index.append(component // part_comp)
@@ -725,7 +723,7 @@ class PairDistributionFunction(Observable):
         unique_elements : list of str
             Where each `str` specifies an element
         element_list : list of str
-            A `list` of the elements for every ``Atom`` in the ``Trajectory``
+            A `list` of the elements for every ``Atom`` in the ``CompactTrajectory``
 
         Returns
         -------

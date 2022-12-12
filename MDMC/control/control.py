@@ -110,14 +110,15 @@ class Control:
      cont_slicing : bool, optional
         Flag to decide between two possible behaviours when the number of ``MD_steps`` is
         larger than the minimum required to calculate the observables. If ``False`` (default) then
-        the ``Trajectory`` is sliced into non-overlapping sub-``Trajectory`` blocks for each of
-        which the observable is calculated. If ``True``, then the ``Trajectory`` is sliced into
-        as many non-identical sub-``Trajectory`` blocks as possible (with overlap allowed).
+        the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
+        blocks for each of which the observable is calculated. If ``True``, then the
+        ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
+        blocks as possible (with overlap allowed).
     use_average : bool, optional
         Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
-        and the MD ``Trajectory`` is sliced into sub-``Trajectory`` blocks. If ``True`` (
-        default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
-        they are not averaged.
+        and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
+        If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
+        blocks. If ``False`` they are not averaged.
     verbose: int, optional
         The level of verbosity:
         Verbose level -1 hides all outputs for tests.
