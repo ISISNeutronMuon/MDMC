@@ -323,7 +323,7 @@ class PDFReader(ObservableReader, ABC):
         self._PDF_err = value
 
     @property
-    def partial_PDFs(self) -> dict:
+    def partial_pdfs(self) -> dict:
         """
         Get or set the partial pair distribution functions between pairs (in ``barn``)
 
@@ -337,6 +337,6 @@ class PDFReader(ObservableReader, ABC):
 
         return self.partial_pdfs
 
-    @partial_PDFs.setter
-    def partial_PDFs(self, value: dict) -> None:
-        self.partial_PDFs = value
+    @partial_pdfs.setter
+    def partial_pdfs(self, value: dict) -> None:
+        self.partial_pdfs = value
