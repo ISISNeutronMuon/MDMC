@@ -47,7 +47,11 @@ class netCDFPDF(PDFReader):
         Automatically detects the partial PDF names within the file and extracts them
         nMOLDYN saves partial pdfs in the following format: "pdf-[element1]-[element2]"
         """
+        # Intermediate value need as partial_PDFs can only be set as a full dict value
+        intermediate_dict = {}
         pattern = re.compile("pdf-.{1,2}-.{1,2}")
         for var in self.file.variables:
             if re.fullmatch(pattern, var):
-                self.partial_PDFs[var] = np.array(self.file.variables[var][:])
+                intermediate_dict[var] = np.array(self.file.variables[var][:])
+
+        self.partial_pdfs = intermediate_dict
