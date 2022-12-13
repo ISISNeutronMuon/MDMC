@@ -79,7 +79,7 @@ jobs:
 
   profiling:
     name: Profiling
-    needs: tests
+    needs: docker_tests, basic_tests
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repo
