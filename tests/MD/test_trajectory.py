@@ -3,21 +3,16 @@ Tests for creating Structure, BoundingBox, and Coulombic objects
 and setting their attributes.
 """
 
-from copy import deepcopy
-from itertools import combinations, permutations
 
 import numpy as np
 import pytest
-from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
 
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 from MDMC.MD.simulation import Universe, Shake, PPPM, Simulation
-from MDMC.trajectory_analysis.trajectory import Configuration
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
-from MDMC.MD.structures import (Atom, BoundingBox, Molecule,
-                                      get_reduced_chemical_formula)
-from tests.system_tests.observables.data_manager import trajectory
+from MDMC.MD.structures import (Atom, Molecule)
 
+pytestmark = pytest.mark.lammps
 
 NUMBER_OF_STEPS = 2000
 
