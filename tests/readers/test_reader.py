@@ -96,8 +96,15 @@ def test_parse_data_is_floats(reader):
     for var in all_vars:
         assert float in inspect.getmro(var.dtype.type)
 
-def test_parse_other_data(reader):
+def test_parse_partial_pdfs(reader):
     """
-    Tests that some other important data is present and in the correct data type
-    Currently designed only for partial PDFS
+    Tests that the partial PDFs are:
+        - Existent
+        - The correct data type
+        - Each partial is the correct datatype
     """
+    if type(reader) == PDFReader:
+        assert reader.partial_pdfs is not None
+        assert type(reader.partial_pdfs) == dict
+        for partial in reader.partial_pdfs:
+            assert type(partial) == np.ndarray
