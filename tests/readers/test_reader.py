@@ -95,3 +95,9 @@ def test_parse_data_is_floats(reader):
 
     for var in all_vars:
         assert float in inspect.getmro(var.dtype.type)
+
+def test_parse_other_data(reader):
+    """
+    Tests that some other important data is present and in the correct data type
+    Currently designed only for partial PDFS
+    """
