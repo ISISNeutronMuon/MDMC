@@ -133,13 +133,13 @@ def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
     Tests that the total PDF begins with the correct values.
     """
     beginning_values = PDF.PDF[:8]
-    assert np.allclose(beginning_values, expected_limiting_behaviour_value)
+    assert np.allclose(beginning_values, expected_limiting_behaviour_value, atol=ATOL, rtol=RTOL)
 
 
 def test_total_PDF_converges_correctly(PDF):
     """Tests that the total PDF converges on 0"""
     end_values = PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 0.)
+    assert np.allclose(end_values, 0., atol=ATOL, rtol=RTOL)
 
 
 # Averaged PDF Tests
@@ -153,20 +153,20 @@ def test_partial_PDF_starts_correctly(averaged_PDF, partial_str):
 def test_total_PDFs_start_correctly(averaged_PDF, expected_limiting_behaviour_value):
     """Tests that the beginning values of the total PDF begin with thr correct value"""
     beginning_values = averaged_PDF.PDF[:8]
-    assert np.allclose(beginning_values, expected_limiting_behaviour_value)
+    assert np.allclose(beginning_values, expected_limiting_behaviour_value, atol=ATOL, rtol=RTOL)
 
 
 def test_total_PDFs_converge_correctly(averaged_PDF):
     """Tests that the values of the total PDF converge on 0"""
     end_values = averaged_PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 0.)
+    assert np.allclose(end_values, 0., atol=ATOL, rtol=RTOL)
 
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
 def test_partial_PDFs_converge_correctly(averaged_PDF, partial_str, expected_limiting_behaviour_value):
     """Tests that the values of the partial PDFs converge on the right value"""
     end_values = averaged_PDF.partial_pdfs[partial_str][-1:-7]
-    assert np.allclose(end_values, expected_limiting_behaviour_value)
+    assert np.allclose(end_values, expected_limiting_behaviour_value, atol=ATOL, rtol=RTOL)
 
 
 def test_total_avg_PDF_peaks(averaged_PDF, expected_peak_r_values):
