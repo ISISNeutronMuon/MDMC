@@ -18,7 +18,6 @@ from MDMC.trajectory_analysis.trajectory import Trajectory, Configuration
 
 @ObservableFactory.register(('PDF', 'PairDistributionFunction'))
 class PairDistributionFunction(Observable):
-
     r"""
     A class for containing, calculating and reading a pair distribution function (PDF).
 
@@ -33,9 +32,13 @@ class PairDistributionFunction(Observable):
 
             G(r) = \sum_{i,j}^{N_{elements}} c_ic_jb_ib_j(g_{ij}(r) - 1)
 
+
         where :math:`c_i` is the number concentration of element :math:`i`,
-        :math:`b_i` is the (coherent) scattering length of element :math:`i`,
-        and the partial pair distribution, :math:`g_{ij}`, is:
+        :math:`b_i` is the (coherent) scattering length of element :math:`i`.
+        (This corresponds to equation 8 in the above publication)
+
+
+    The partial pair distribution, :math:`g_{ij}`, is:
 
         .. math::
 
@@ -46,6 +49,7 @@ class PairDistributionFunction(Observable):
         :math:`\Delta{r}`, and :math:`\rho_{j}` is the number density of
         atoms of element :math:`j`. As :math:`g_{ij}(0) = 0`, it is evident that
         :math:`G(0) = -\sum_{i,j}^{N_{elements}} c_ic_jb_ib_j`.
+        (This corresponds to equation 10 in the above publication)
 
     The total PDF is contained in ``PDF`` and the partial pair PDFs (if calculated or imported)
     are contained in ``partial_pdfs``.
