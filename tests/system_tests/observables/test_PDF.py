@@ -16,7 +16,6 @@ pytestmark = [pytest.mark.lammps]
 
 ATOL = 1e-10
 RTOL = 5e-4
-CLOSER_RTOL = 1.e-8
 
 
 @pytest.fixture(scope="module")
