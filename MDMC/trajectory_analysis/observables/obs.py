@@ -1,6 +1,7 @@
 """Module defining a class for storing, calculating and reading in observables
 from molecular dynamics trajectories."""
 
+import os
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor as PoolExecutor
@@ -12,6 +13,20 @@ if TYPE_CHECKING:
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
     from typing import Union
 
+N_CPUS_MP = 1
+N_SEGMENTS = 1
+if "OMP_NUM_THREADS" in os.environ:
+    omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
+    try:
+        omp_num_threads = int(omp_num_threads_str)
+    except ValueError:
+        pass
+    else:
+        if omp_num_threads > 1:
+            N_CPUS_MP = omp_num_threads
+            N_SEGMENTS = 3*N_CPUS_MP
+
+executor = PoolExecutor(max_workers= N_CPUS_MP)
 
 @repr_decorator('origin', 'data')
 class Observable(ABC):
