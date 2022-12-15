@@ -3,6 +3,7 @@ from molecular dynamics trajectories."""
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
+from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory

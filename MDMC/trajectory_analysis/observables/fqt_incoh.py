@@ -5,6 +5,7 @@ import numpy as np
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import faster_autocorrelation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
+from MDMC.trajectory_analysis.observables.obs import PoolExecutor
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 

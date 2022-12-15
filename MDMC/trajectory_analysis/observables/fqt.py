@@ -14,7 +14,7 @@ from MDMC.common.mathematics import faster_correlation,\
      faster_autocorrelation, \
      UNIT_VECTOR
 from MDMC.resolution import Resolution
-from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.obs import Observable, PoolExecutor
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
