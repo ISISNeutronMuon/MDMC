@@ -177,7 +177,7 @@ def test_total_avg_PDF_peaks(averaged_PDF, expected_peak_r_values):
     # Check that peaks exist in the right places
     peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
-    np.isin(peak_r_values, peak_actual_r_values)
+    assert np.isin(peak_r_values, peak_actual_r_values)
 
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
@@ -187,4 +187,4 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
     abs_pdf = np.abs(averaged_PDF.partial_pdfs[partial_str])
     peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
-    np.isin(peak_r_values, peak_actual_r_values)
+    assert np.isin(peak_r_values, peak_actual_r_values)
