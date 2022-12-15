@@ -125,7 +125,7 @@ def test_total_PDF_peaks(PDF, expected_peak_r_values):
     # Check that peaks exist in the right places
     peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [PDF.r[i] for i in peak_indexes]
-    np.isin(peak_r_values, peak_actual_r_values)
+    assert np.isin(peak_r_values, peak_actual_r_values)
 
 
 def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
