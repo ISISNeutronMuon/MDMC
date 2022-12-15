@@ -147,7 +147,7 @@ def test_total_PDF_converges_correctly(PDF):
 def test_partial_PDF_starts_correctly(averaged_PDF, partial_str):
     """Tests that the beginning values of the partial PDFs begin with 0"""
     beginning_values = averaged_PDF.partial_pdfs[partial_str][:8]
-    assert np.all(np.equal(beginning_values, 0.))
+    assert np.allclose(beginning_values, 0., atol=ATOL, rtol=RTOL)
 
 
 def test_total_PDFs_start_correctly(averaged_PDF, expected_limiting_behaviour_value):
