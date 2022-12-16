@@ -10,12 +10,13 @@ import pytest
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, find_peaks_cwt, peak_prominences, peak_widths
 
 pytestmark = [pytest.mark.lammps]
 
 ATOL = 1e-10
 RTOL = 5e-4
+CLOSER_RTOL = 5.96e-8
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +47,7 @@ def PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-    pdf.calculate_from_MD(trajectory, n_frames=5, r=r, dimensions=[39.4221067]*3)
+    pdf.calculate_from_MD(trajectory, n_frames=5, r=r, use_average=False, dimensions=[39.4221067]*3)
     return pdf
 
 
@@ -78,7 +79,7 @@ def expected_peak_r_values():
         A dictionary containing partial pairs as the key, and the corresponding r value of
         its peak as the corresponding value
     """
-    return {('H', 'H'): 1.65, ('H', 'O'): 1.05, ('O', 'O'): 2.65}
+    return {('H', 'H'): [1.65], ('H', 'O'): [1.05], ('O', 'O'): [2.65]}
 
 
 @pytest.fixture(scope="module")
@@ -119,13 +120,13 @@ def test_partial_PDFs(PDF, PDF_file, partial_str):
 # no calculated 3rd party validated data to test against.
 def test_total_PDF_peaks(PDF, expected_peak_r_values):
     """Tests that the total PDF contains peaks in the correct known places"""
-    peak_r_values = list(expected_peak_r_values.values())
+    peak_expected_r_values = list(expected_peak_r_values.values())
     # Get the absolute values as the O-H peak ends up being a massively negative value in total PDF
     abs_pdf = np.abs(PDF.PDF)
     # Check that peaks exist in the right places
     peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [PDF.r[i] for i in peak_indexes]
-    assert np.isin(peak_r_values, peak_actual_r_values)
+    assert np.all(present_values(peak_expected_r_values, peak_actual_r_values))
 
 
 def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
@@ -139,7 +140,7 @@ def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
 def test_total_PDF_converges_correctly(PDF):
     """Tests that the total PDF converges on 0"""
     end_values = PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 0., atol=ATOL, rtol=RTOL)
+    assert np.allclose(end_values, 0., atol=ATOL, rtol=CLOSER_RTOL)
 
 
 # Averaged PDF Tests
@@ -147,7 +148,7 @@ def test_total_PDF_converges_correctly(PDF):
 def test_partial_PDF_starts_correctly(averaged_PDF, partial_str):
     """Tests that the beginning values of the partial PDFs begin with 0"""
     beginning_values = averaged_PDF.partial_pdfs[partial_str][:8]
-    assert np.allclose(beginning_values, 0., atol=ATOL, rtol=RTOL)
+    assert np.allclose(beginning_values, 0., atol=ATOL, rtol=CLOSER_RTOL)
 
 
 def test_total_PDFs_start_correctly(averaged_PDF, expected_limiting_behaviour_value):
@@ -159,7 +160,7 @@ def test_total_PDFs_start_correctly(averaged_PDF, expected_limiting_behaviour_va
 def test_total_PDFs_converge_correctly(averaged_PDF):
     """Tests that the values of the total PDF converge on 0"""
     end_values = averaged_PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 0., atol=ATOL, rtol=RTOL)
+    assert np.allclose(end_values, 0., atol=ATOL, rtol=CLOSER_RTOL)
 
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
@@ -171,20 +172,26 @@ def test_partial_PDFs_converge_correctly(averaged_PDF, partial_str, expected_lim
 
 def test_total_avg_PDF_peaks(averaged_PDF, expected_peak_r_values):
     """Tests that the averaged total PDF contains peaks in the correct known places"""
-    peak_r_values = list(expected_peak_r_values.values())
+    peak_expected_r_values = list(expected_peak_r_values.values())
     # Get the absolute values as the O-H peak ends up being a massively negative value in total PDF
     abs_pdf = np.abs(averaged_PDF.PDF)
     # Check that peaks exist in the right places
     peak_indexes, properties = find_peaks(abs_pdf, height=2)
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
-    assert np.isin(peak_r_values, peak_actual_r_values)
-
+    assert np.all(present_values(peak_expected_r_values, peak_actual_r_values))
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
 def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
     """Tests that the values of the partial PDF peaks are correct"""
-    peak_r_values = expected_peak_r_values[partial_str]
+    peak_expected_r_values = expected_peak_r_values[partial_str]
     abs_pdf = np.abs(averaged_PDF.partial_pdfs[partial_str])
-    peak_indexes, properties = find_peaks(abs_pdf, height=2)
+    peak_indexes, properties = find_peaks(abs_pdf)
+    print("Peak prominences: ", peak_prominences(abs_pdf, peak_indexes))
+    print("Peak widths: ", peak_widths(abs_pdf, peak_indexes))
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
-    assert np.isin(peak_r_values, peak_actual_r_values)
+    assert np.all(present_values(peak_expected_r_values, peak_actual_r_values))
+
+
+def present_values(expected_values, actual_values):
+    return [np.any(np.isclose(np.array(expected_value), actual_values, rtol=CLOSER_RTOL))
+            for expected_value in expected_values]
