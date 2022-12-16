@@ -34,6 +34,9 @@ class FQtCoherent(AbstractFQt):
         rho_element = {}
         n_atoms = 0
 
+        def helper_coherent(configs, q_vector):
+            return calculate_rho(configs, q_vector).sum(axis = 1)
+
         for element in elements:
             # Get the positions of all atoms (the configuration) of each
             # element over time such that ``element_configs`` has time as its
@@ -44,13 +47,14 @@ class FQtCoherent(AbstractFQt):
             rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),
                                   dtype=complex)
-            for i, positions in enumerate(element_configs):
-                # For each time frame ``i`` calculate the Fourier transformed
-                # number density and sum over all positions but preserve the
-                # second dimension, our array of Q vectors
-                rho_unsummed = calculate_rho(positions.T,
-                                             np.array(single_Q_vectors)).T
-                rho_config[i, :] = np.sum(rho_unsummed, axis=0)
+
+            configs = np.swapaxes(element_configs, 1, 2)
+            futures = [executor.submit(helper_coherent,
+                                       configs, single_Q_vectors[q_num])
+                                       for q_num in range(len(single_Q_vectors))]
+            results = [future.result() for future in futures]
+            for q_num in range(len(single_Q_vectors)):
+                rho_config[:, q_num] = results[q_num]
 
             rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
