@@ -616,7 +616,7 @@ class FQt(AbstractFQt):
                 configs = np.swapaxes(element_configs, 1, 2)
                 rho_unsummed = calculate_rho(configs,
                                              single_Q_vectors[q_num])
-                rho_config[:, q_num] = np.sum(rho_unsummed, axis = 1)                             
+                rho_config[:, q_num] = np.sum(rho_unsummed, axis = 1)
 
             rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
