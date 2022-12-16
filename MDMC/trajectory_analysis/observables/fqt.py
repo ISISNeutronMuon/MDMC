@@ -601,6 +601,9 @@ class FQt(AbstractFQt):
         rho_element = {}
         n_atoms = 0
 
+        def helper_coherent(configs, q_vector):
+            return calculate_rho(configs, q_vector).sum(axis = 1)
+
         for element in elements:
             # Get the positions of all atoms (the configuration) of each
             # element over time such that ``element_configs`` has time as its
@@ -612,11 +615,13 @@ class FQt(AbstractFQt):
                                    len(single_Q_vectors)),
                                   dtype=complex)
 
-            for q_num in np.arange(len(single_Q_vectors)):
-                configs = np.swapaxes(element_configs, 1, 2)
-                rho_unsummed = calculate_rho(configs,
-                                             single_Q_vectors[q_num])
-                rho_config[:, q_num] = np.sum(rho_unsummed, axis = 1)
+            configs = np.swapaxes(element_configs, 1, 2)
+            futures = [executor.submit(helper_coherent,
+                                       configs, single_Q_vectors[q_num])
+                                       for q_num in range(len(single_Q_vectors))]
+            results = [future.result() for future in futures]
+            for q_num in range(len(single_Q_vectors)):
+                rho_config[:, q_num] = results[q_num]
 
             rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
@@ -630,10 +635,13 @@ class FQt(AbstractFQt):
                                   0,
                                   2)
             rho_all = calculate_rho(configs, np.array(single_Q_vectors))
+            futures = [executor.submit(faster_autocorrelation,
+                                       rho_all[q_num].T,
+                                       weights = incoh_weights**2)
+                                       for q_num in range(len(rho_all))]
+            results = [future.result()[:n_t] for future in futures]
             for q_num in np.arange(len(rho_all)):
-                FQt_single_Q_atom = faster_autocorrelation(rho_all[q_num].T,
-                                                        weights = incoh_weights**2)[:n_t]
-                FQt_single_Q += FQt_single_Q_atom
+                FQt_single_Q += results[q_num]
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:
