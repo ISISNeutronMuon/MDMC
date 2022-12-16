@@ -34,19 +34,19 @@ class FQtIncoherent(AbstractFQt):
         n_t = len(self.t)
         n_atoms = self._trajectory.n_atoms
         FQt_single_Q = np.zeros(n_t)
+        weight = self.weights
 
-        # Arrange configs so that axes are [atoms, times, positions] i.e.
-        # iterating over the first axis is iterating over each atom
         configs = np.swapaxes(self._trajectory.position,
+                              1,
+                              2)
+        configs = np.swapaxes(configs,
                               0,
-                              1)
-        for atom_positions, weight in zip(configs, self.weights):
-            rho_atom = calculate_rho(atom_positions.T,
-                                     np.array(single_Q_vectors)).T
-
-            # A sum over the Q vectors is performed within ``correlation``.
-            FQt_single_Q_atom = faster_autocorrelation(rho_atom)[:n_t]
-            FQt_single_Q += FQt_single_Q_atom * weight
+                              2)
+        rho_all = calculate_rho(configs, np.array(single_Q_vectors))
+        for q_num in np.arange(len(rho_all)):
+            FQt_single_Q_atom = faster_autocorrelation(rho_all[q_num].T,
+                                                       weights = np.array(weight))[:n_t]
+            FQt_single_Q += FQt_single_Q_atom # * np.array(weight) # .reshape((len(weight),1))
 
         # Normalise to the number of orthogonal vectors
         try:

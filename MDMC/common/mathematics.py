@@ -111,7 +111,7 @@ def faster_correlation(input1, input2) -> np.ndarray:
     return corr
 
 # We could trying numba.jit here later to speed things up.
-def faster_autocorrelation(input1) -> np.ndarray:
+def faster_autocorrelation(input1, weights = None) -> np.ndarray:
     """
     The autocorrelation of a vector.
 
@@ -132,17 +132,24 @@ def faster_autocorrelation(input1) -> np.ndarray:
 
     N = len(input1)
 
+    # print(f"Input shape: {input1.shape}")
+
     fft1 = fft(input1, n=(N * 2), axis=0)
 
     # Calculate the cyclic correlation function
     cyclic_corr = ifft(np.conjugate(fft1) * fft1, axis=0)
 
+    # print(f"cyclic_corr shape: {cyclic_corr.shape}")
     # Normalise for variable number of contributions to each correlation:
     # 1 / (N - m)
     # where m is the number of each individual step
     prefactor = 1. / (N - np.arange(N))
     # I have to guarantee that the array is a 2D array on input
+    if weights is not None:
+        cyclic_corr *= weights.reshape((1, len(weights)))
     cyclic_corr = np.sum(cyclic_corr, axis=1)
+    # print(f"cyclic_corr shape after summing: {cyclic_corr.shape}")
+    # print(f"prefactor shape: {prefactor.shape}")
 
     corr = prefactor * np.real(cyclic_corr[0:N])
 
