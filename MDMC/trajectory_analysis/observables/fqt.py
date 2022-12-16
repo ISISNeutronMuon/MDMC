@@ -611,29 +611,29 @@ class FQt(AbstractFQt):
             rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),
                                   dtype=complex)
-            for i, positions in enumerate(element_configs):
-                # For each time frame ``i`` calculate the Fourier transformed
-                # number density and sum over all positions but preserve the
-                # second dimension, our array of Q vectors
-                rho_unsummed = calculate_rho(positions.T,
-                                             np.array(single_Q_vectors)).T
-                rho_config[i, :] = np.sum(rho_unsummed, axis=0)
+
+            for q_num in np.arange(len(single_Q_vectors)):
+                configs = np.swapaxes(element_configs, 1, 2)
+                rho_unsummed = calculate_rho(configs,
+                                             single_Q_vectors[q_num])
+                rho_config[:, q_num] = np.sum(rho_unsummed, axis = 1)                             
 
             rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            for atom_positions in np.swapaxes(element_configs, 0, 1):
-                # Swapping the time and position axes lets us iterate over each
-                # atom of ``element``, and gives ``rho_atom`` dimensions of
-                # time and our array of Q vectors respectively.
-                rho_atom = calculate_rho(atom_positions.T,
-                                         np.array(single_Q_vectors)).T
-
-                # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q_atom = faster_autocorrelation(rho_atom)[:n_t]
-                FQt_single_Q += FQt_single_Q_atom * incoh_weights**2
+            configs = np.swapaxes(element_configs,
+                                  1,
+                                  2)
+            configs = np.swapaxes(configs,
+                                  0,
+                                  2)
+            rho_all = calculate_rho(configs, np.array(single_Q_vectors))
+            for q_num in np.arange(len(rho_all)):
+                FQt_single_Q_atom = faster_autocorrelation(rho_all[q_num].T,
+                                                        weights = incoh_weights**2)[:n_t]
+                FQt_single_Q += FQt_single_Q_atom
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:

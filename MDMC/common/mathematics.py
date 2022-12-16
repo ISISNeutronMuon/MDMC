@@ -146,7 +146,11 @@ def faster_autocorrelation(input1, weights = None) -> np.ndarray:
     prefactor = 1. / (N - np.arange(N))
     # I have to guarantee that the array is a 2D array on input
     if weights is not None:
-        cyclic_corr *= weights.reshape((1, len(weights)))
+        try:
+            temp_weights = weights.reshape((1, len(weights)))
+        except AttributeError:
+            temp_weights = weights
+        cyclic_corr *= weights
     cyclic_corr = np.sum(cyclic_corr, axis=1)
     # print(f"cyclic_corr shape after summing: {cyclic_corr.shape}")
     # print(f"prefactor shape: {prefactor.shape}")
