@@ -43,10 +43,13 @@ class FQtIncoherent(AbstractFQt):
                               0,
                               2)
         rho_all = calculate_rho(configs, np.array(single_Q_vectors))
+        futures = [executor.submit(faster_autocorrelation,
+                                    rho_all[q_num].T,
+                                    weights = np.array(weight))
+                                    for q_num in range(len(rho_all))]
+        results = [future.result()[:n_t] for future in futures]
         for q_num in np.arange(len(rho_all)):
-            FQt_single_Q_atom = faster_autocorrelation(rho_all[q_num].T,
-                                                       weights = np.array(weight))[:n_t]
-            FQt_single_Q += FQt_single_Q_atom # * np.array(weight) # .reshape((len(weight),1))
+            FQt_single_Q += results[q_num]
 
         # Normalise to the number of orthogonal vectors
         try:
