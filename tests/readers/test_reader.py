@@ -9,6 +9,7 @@ import inspect
 import pytest
 import numpy as np
 
+from MDMC.readers.observables.netCDFPDF import netCDFPDF
 from MDMC.readers.observables.obs_reader import PDFReader
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
 from tests.test_data import data
@@ -47,7 +48,16 @@ def reader_info(request):
             'dep_datatype': request.param[3]}
 
 @pytest.fixture()
-def reader(reader_info):
+def unparsed_reader(reader_info):
+    try:
+        reader_data = data.READER_DATA[reader_info['data_lookup']]
+    except KeyError:
+        reader_data = data.OBS_DATA[reader_info['data_lookup']]
+    reader = ObservableReaderFactory.create_reader(reader_info['reader'], reader_data)
+    return reader
+
+@pytest.fixture()
+def parsed_reader(reader_info):
     try:
         reader_data = data.READER_DATA[reader_info['data_lookup']]
     except KeyError:
@@ -58,7 +68,7 @@ def reader(reader_info):
         reader.parse()
     return reader
 
-def test_parse_data_types(reader_info, reader):
+def test_parse_data_types(reader_info, parsed_reader):
     """
     Tests to make sure the correct data types have been parsed
     """
@@ -66,37 +76,39 @@ def test_parse_data_types(reader_info, reader):
     dep_datatype = reader_info['dep_datatype']
 
     for indep_datatype in indep_datatypes:
-        assert indep_datatype in reader.independent_variables
-    assert dep_datatype in reader.dependent_variables
+        assert indep_datatype in parsed_reader.independent_variables
+    assert dep_datatype in parsed_reader.dependent_variables
 
-def test_parse_compatible_dimensions(reader_info, reader):
+def test_parse_compatible_dimensions(reader_info, parsed_reader):
     """
     Tests to make sure the dependent variables have dimensions compatible with independent variables
     """
     dep_datatype = reader_info['dep_datatype']
 
-    for indep_var in reader.independent_variables.values():
+    for indep_var in parsed_reader.independent_variables.values():
         assert len(indep_var) in np.shape(
-            reader.dependent_variables[dep_datatype])
+            parsed_reader.dependent_variables[dep_datatype])
 
-def test_parse_all_errors_non_negative(reader):
+def test_parse_all_errors_non_negative(parsed_reader):
     """
     Tests that all parsed error values are non-negative
     """
-    assert np.all(list(reader.errors.values())[0][0] >= 0)
+    assert np.all(list(parsed_reader.errors.values())[0][0] >= 0)
 
-def test_parse_data_is_floats(reader):
+def test_parse_data_is_floats(parsed_reader):
     """
     Tests that all data from parsed files are floats
     """
-    all_vars = (list(reader.independent_variables.values())
-                + list(reader.dependent_variables.values())[0]
-                + list(reader.errors.values())[0])
+    all_vars = (list(parsed_reader.independent_variables.values())
+                + list(parsed_reader.dependent_variables.values())[0]
+                + list(parsed_reader.errors.values())[0])
 
     for var in all_vars:
         assert float in inspect.getmro(var.dtype.type)
 
-def test_parse_partial_pdfs(reader):
+# PDF-specific tests
+
+def test_parse_partial_pdfs(parsed_reader):
     """
     Tests that the partial PDFs are:
         - Existent
