@@ -108,3 +108,19 @@ def test_parse_partial_pdfs(reader):
         assert type(parsed_reader.partial_pdfs) == dict
         for partial in parsed_reader.partial_pdfs.values():
             assert type(partial) == np.ndarray
+
+def test_parse_incorrect_partial_pdfs(unparsed_reader):
+    if type(unparsed_reader) == netCDFPDF:
+        # Modify partial name to incorrect name
+        unparsed_reader.__enter__()
+        intermediate = unparsed_reader.file.variables.pop("pdf-H-O")
+        unparsed_reader.file.variables["pdf-None-H"] = intermediate
+        unparsed_reader.parse()
+        reader = unparsed_reader
+        # Check that all other partials (apart from the one with an incorrect name) are present
+        for partial in reader.partial_pdfs.items():
+            if partial[0] == "pdf-None-H":
+                assert partial[1] is None
+            else:
+                assert type(partial[1]) == np.ndarray
+                assert len(partial[1]) == len(reader.r)
