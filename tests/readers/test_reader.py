@@ -103,8 +103,8 @@ def test_parse_partial_pdfs(reader):
         - The correct data type
         - Each partial is the correct datatype
     """
-    if type(reader) == PDFReader:
-        assert reader.partial_pdfs is not None
-        assert type(reader.partial_pdfs) == dict
-        for partial in reader.partial_pdfs:
+    if issubclass(type(parsed_reader), PDFReader):
+        assert parsed_reader.partial_pdfs is not None
+        assert type(parsed_reader.partial_pdfs) == dict
+        for partial in parsed_reader.partial_pdfs.values():
             assert type(partial) == np.ndarray
