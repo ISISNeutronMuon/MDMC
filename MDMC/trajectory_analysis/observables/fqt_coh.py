@@ -69,10 +69,17 @@ class FQtCoherent(AbstractFQt):
             # axis of atom numbers to axis 2.
             # Time axis is still axis 0.
             configs = np.swapaxes(element_configs, 1, 2)
+            # The single_Q_vectors array contains many q vectors
+            # with similar values of |Q|.
+            # The following lines split the calculation by multiplying
+            # the trajectory by each q vector separately.
             futures = [executor.submit(helper_coherent,
                                        configs, single_Q_vectors[q_num])
                                        for q_num in range(len(single_Q_vectors))]
+            # The following line makes the code wait for all the calculations to finish.
             results = [future.result() for future in futures]
+            # At this stage, the results list is fully populated,
+            # and the following loop writes the results into the rho_config array.
             for q_num in range(len(single_Q_vectors)):
                 rho_config[:, q_num] = results[q_num]
 
