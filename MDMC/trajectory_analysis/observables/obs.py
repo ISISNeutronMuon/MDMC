@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 
 N_CPUS_MP = 1
 
+# A (Thread)PoolExecutor is created here, and is later imported
+# by other observables.
 # The same environment variable that defines the number of OMP threads
 # is used here to fix the max number of threads for the pool executor.
 # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
