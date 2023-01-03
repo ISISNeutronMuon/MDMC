@@ -34,7 +34,22 @@ class FQtCoherent(AbstractFQt):
         rho_element = {}
         n_atoms = 0
 
-        def helper_coherent(configs, q_vector):
+        def helper_coherent(configs: np.ndarray, q_vector: np.ndarray):
+            """A wrapper for the calculate_rho function and the summation
+            of the resulting array. This part of the calculation is handled
+            by numpy, and so it is easy to run in parallel.
+
+            Arguments
+            ---------
+            configs: numpy.ndarray
+                array of atom positions, size (N_timesteps, 3, N_atoms)
+            q_vector: numpy.ndarray
+                q vector in array form, size (3)
+
+            Returns:
+                array of rho values summed over the atoms in the system,
+                size (N_timesteps)
+            """
             return calculate_rho(configs, q_vector).sum(axis = 1)
 
         for element in elements:
@@ -48,6 +63,11 @@ class FQtCoherent(AbstractFQt):
                                    len(single_Q_vectors)),
                                   dtype=complex)
 
+            # For the np.dot product to be broadcast correctly,
+            # the [x, y, z] atom positions have to be on axis 1.
+            # For this reason we swap the axes, moving the
+            # axis of atom numbers to axis 2.
+            # Time axis is still axis 0.
             configs = np.swapaxes(element_configs, 1, 2)
             futures = [executor.submit(helper_coherent,
                                        configs, single_Q_vectors[q_num])

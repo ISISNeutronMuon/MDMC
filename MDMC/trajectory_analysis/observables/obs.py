@@ -14,7 +14,10 @@ if TYPE_CHECKING:
     from typing import Union
 
 N_CPUS_MP = 1
-N_SEGMENTS = 1
+
+# The same environment variable that defines the number of OMP threads
+# is used here to fix the max number of threads for the pool executor.
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 if "OMP_NUM_THREADS" in os.environ:
     omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
     try:
@@ -24,9 +27,13 @@ if "OMP_NUM_THREADS" in os.environ:
     else:
         if omp_num_threads > 1:
             N_CPUS_MP = omp_num_threads
-            N_SEGMENTS = 3*N_CPUS_MP
 
-executor = PoolExecutor(max_workers= N_CPUS_MP)
+# NOTE: The import in line 7 specifies that the PoolExecutor
+# is a ThreadPoolExecutor.
+# There is still a possibility of replacing it with a
+# ProcessPoolExecutor. The thread-based version is better for
+# performance based on the tests so far.
+executor = PoolExecutor(max_workers=N_CPUS_MP)
 
 @repr_decorator('origin', 'data')
 class Observable(ABC):

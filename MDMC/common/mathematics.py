@@ -1,5 +1,7 @@
 """A module containing mathematical functions"""
 
+from typing import Union
+
 import numpy as np
 from numpy.fft import fft, ifft
 
@@ -111,7 +113,8 @@ def faster_correlation(input1, input2) -> np.ndarray:
     return corr
 
 # We could trying numba.jit here later to speed things up.
-def faster_autocorrelation(input1, weights = None) -> np.ndarray:
+def faster_autocorrelation(input1: np.ndarray,
+                           weights: Union[np.ndarray,float] = None) -> np.ndarray:
     """
     The autocorrelation of a vector.
 
@@ -132,14 +135,11 @@ def faster_autocorrelation(input1, weights = None) -> np.ndarray:
 
     num_steps = len(input1)
 
-    # print(f"Input shape: {input1.shape}")
-
     fft1 = fft(input1, n=(num_steps * 2), axis=0)
 
     # Calculate the cyclic correlation function
     cyclic_corr = ifft(np.conjugate(fft1) * fft1, axis=0)
 
-    # print(f"cyclic_corr shape: {cyclic_corr.shape}")
     # Normalise for variable number of contributions to each correlation:
     # 1 / (num_steps - m)
     # where m is the number of each individual step
@@ -152,8 +152,6 @@ def faster_autocorrelation(input1, weights = None) -> np.ndarray:
             temp_weights = weights
         cyclic_corr *= temp_weights
     cyclic_corr = np.sum(cyclic_corr, axis=1)
-    # print(f"cyclic_corr shape after summing: {cyclic_corr.shape}")
-    # print(f"prefactor shape: {prefactor.shape}")
 
     corr = prefactor * np.real(cyclic_corr[0:num_steps])
 
