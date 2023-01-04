@@ -280,7 +280,7 @@ class PairDistributionFunction(Observable):
                 are passed.
             dimensions : array-like
                 A 3 element `array-like` (`list`, `tuple`) with the dimensions
-                of the ``Universe``.
+                of the ``Universe`` in Angstrom.
 
 
         Examples
