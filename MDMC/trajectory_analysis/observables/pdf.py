@@ -364,7 +364,8 @@ class PairDistributionFunction(Observable):
         for partial_string, partial in self.partial_pdfs.items():
             # Takes the product of the number of atoms of each element in the partial
             atom_number_product = np.multiply(*[self.number_of_atoms[elem] for elem in partial_string])
-            # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
+            # Partials of the same element need to be scaled by 2 so that
+            # they tend to 1 as r tends to infinity.
             if len(set(partial_string)) == 1:
                 partial *= 2
             # Apply weightings & normalise by number of trajectories used
@@ -386,8 +387,9 @@ class PairDistributionFunction(Observable):
                 ci_cj *= (self.number_of_atoms[elem] / total_number_of_particles)  # Proportion of element
                 bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
 
-            # Unlike partials need to be scaled by 2 when added to total, as only one of the
-            # indentical pairs is considered (e.g. for water H-O is added but not O-H)
+            # Partials of differing elements need to be scaled by 2 when added to total,
+            # as only one of the indentical pairs is considered
+            # (e.g. for water H-O is added but not O-H)
             if len(set(partial_string)) == 1:
                 norm_fac = 1.
             else:
