@@ -375,8 +375,8 @@ class PairDistributionFunction(Observable):
     def _calculate_total_pdf(self) -> None:
         """
         Calculate the total pdf from the partial pairs
-
         This function calculates the total PDF in accordance with equation (10)
+        This calculation is done in-place
         """
         self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
         total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
