@@ -10,7 +10,7 @@ import pytest
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.test_data import data
 from tests.system_tests.observables.data_manager import trajectory
-from scipy.signal import find_peaks, find_peaks_cwt, peak_prominences, peak_widths
+from scipy.signal import find_peaks, peak_prominences, peak_widths
 
 pytestmark = [pytest.mark.lammps]
 
@@ -98,11 +98,10 @@ def expected_limiting_behaviour_value(PDF):
         The PDF object
 
     """
-    limiting_value = 0.
-    total_number_of_particles = np.sum(list(PDF.numbers.values()))
-    for elem in PDF.elements:
-        limiting_value += (PDF.numbers[elem] / total_number_of_particles) * PDF.weights[elem]
-
+    #limiting_value = 0.
+    total_number_of_particles = np.sum(list(PDF.numbers_of_atoms.values()))
+    limiting_value = sum((PDF.numbers_of_atoms[elem] / total_number_of_particles) * PDF.weights[elem]
+                         for elem in PDF.elements)
     return -(limiting_value)**2
 
 # Non-averaged PDF tests
