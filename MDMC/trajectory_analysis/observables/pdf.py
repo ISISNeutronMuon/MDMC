@@ -329,17 +329,17 @@ class PairDistributionFunction(Observable):
         # Calculate partial and total PDF for each frame in the sliced trajectory
         for frame in self.trajectory:
             self._calculate_partial_pdfs(frame)
-            for partial_str in self.partial_pdfs:
-                if partial_str in running_partial_total:
-                    running_partial_total[partial_str] += self.partial_pdfs[partial_str]
+            for partial_name in self.partial_pdfs:
+                if partial_name in running_partial_total:
+                    running_partial_total[partial_name] += self.partial_pdfs[partial_name]
                 else:
-                    running_partial_total[partial_str] = self.partial_pdfs[partial_str]
+                    running_partial_total[partial_name] = self.partial_pdfs[partial_name]
             self._calculate_total_pdf()
             pdf_running_total += self.PDF
 
         # Average over number of trajectories used
-        for partial_str in running_partial_total:
-            self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
+        for partial_name in running_partial_total:
+            self.partial_pdfs[partial_name] = np.divide(self.partial_pdfs[partial_name],
                                                        len(self.trajectory))
         self.PDF = np.divide(pdf_running_total, len(self.trajectory))
 
@@ -362,15 +362,15 @@ class PairDistributionFunction(Observable):
 
         # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
-        for partial_string, partial in self.partial_pdfs.items():
+        for partial_name, partial_value in self.partial_pdfs.items():
             # Takes the product of the number of atoms of each element in the partial
-            atom_number_product = np.multiply(*[self.number_of_atoms[elem] for elem in partial_string])
+            atom_number_product = np.multiply(*[self.number_of_atoms[elem] for elem in partial_name])
             # Partials of the same element need to be scaled by 2 so that
             # they tend to 1 as r tends to infinity.
-            if len(set(partial_string)) == 1:
-                partial *= 2
+            if len(set(partial_name)) == 1:
+                partial_value *= 2
             # Apply weightings & normalise by number of trajectories used
-            partial *= prefactor / (atom_number_product * len(trajectory))
+            partial_value *= prefactor / (atom_number_product * len(trajectory))
 
     def _calculate_total_pdf(self) -> None:
         """
@@ -381,22 +381,22 @@ class PairDistributionFunction(Observable):
         self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
         total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
         # Calculate proportion and scattering length factors of elements in each pair
-        for partial_string, partial in self.partial_pdfs.items():
+        for partial_name, partial_value in self.partial_pdfs.items():
             ci_cj = np.ones(shape=np.shape(self.r))
             bi_bj = np.ones(shape=np.shape(self.r))
-            for elem in partial_string:
+            for elem in partial_name:
                 ci_cj *= (self.number_of_atoms[elem] / total_number_of_particles)  # Proportion of element
                 bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
 
             # Partials of differing elements need to be scaled by 2 when added to total,
             # as only one of the indentical pairs is considered
             # (e.g. for water H-O is added but not O-H)
-            if len(set(partial_string)) == 1:
+            if len(set(partial_name)) == 1:
                 norm_fac = 1.
             else:
                 norm_fac = 2.
 
-            self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial-1) * norm_fac
+            self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value-1) * norm_fac
 
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
