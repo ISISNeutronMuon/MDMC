@@ -189,8 +189,6 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
         peak_expected_r_values = [2.75]
     abs_pdf = np.abs(averaged_PDF.partial_pdfs[partial_str])
     peak_indexes, properties = find_peaks(abs_pdf)
-    print("Peak prominences: ", peak_prominences(abs_pdf, peak_indexes))
-    print("Peak widths: ", peak_widths(abs_pdf, peak_indexes))
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
     assert np.all(present_values(peak_expected_r_values, peak_actual_r_values))
 
