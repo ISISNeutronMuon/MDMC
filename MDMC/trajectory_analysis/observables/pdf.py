@@ -335,13 +335,13 @@ class PairDistributionFunction(Observable):
                 else:
                     running_partial_total[partial_name] = self.partial_pdfs[partial_name]
             self._calculate_total_pdf()
-            pdf_running_total += self.PDF
+            pdf_running_total += self.dependent_variables['PDF']
 
         # Average over number of trajectories used
         for partial_name in running_partial_total:
             self.partial_pdfs[partial_name] = np.divide(self.partial_pdfs[partial_name],
                                                        len(self.trajectory))
-        self.PDF = np.divide(pdf_running_total, len(self.trajectory))
+        self.dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
 
 
     def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
@@ -378,7 +378,6 @@ class PairDistributionFunction(Observable):
         This function calculates the total PDF in accordance with equation (10)
         This calculation is done in-place
         """
-        self.PDF = list(np.zeros(np.shape(self.r)))
         total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
         # Calculate proportion and scattering length factors of elements in each pair
         for partial_name, partial_value in self.partial_pdfs.items():
@@ -396,7 +395,10 @@ class PairDistributionFunction(Observable):
             else:
                 norm_fac = 2.
 
-            self.PDF += ci_cj * bi_bj * (partial_value-1) * norm_fac
+            if self.dependent_variables['PDF'] is None:
+                self.dependent_variables['PDF'] = ci_cj * bi_bj * (partial_value - 1) * norm_fac
+            else:
+                self.dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value-1) * norm_fac
 
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
