@@ -341,7 +341,7 @@ class PairDistributionFunction(Observable):
         for partial_str in running_partial_total:
             self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
                                                        len(self.trajectory))
-        self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(self.trajectory))
+        self.PDF = np.divide(pdf_running_total, len(self.trajectory))
 
 
     def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
