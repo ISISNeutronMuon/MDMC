@@ -382,8 +382,8 @@ class PairDistributionFunction(Observable):
         total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
         # Calculate proportion and scattering length factors of elements in each pair
         for partial_name, partial_value in self.partial_pdfs.items():
-            ci_cj = np.ones(shape=np.shape(self.r))
-            bi_bj = np.ones(shape=np.shape(self.r))
+            ci_cj = np.ones_like(self.r)
+            bi_bj = np.ones_like(self.r)
             for elem in partial_name:
                 ci_cj *= (self.number_of_atoms[elem] / total_number_of_particles)  # Proportion of element
                 bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
