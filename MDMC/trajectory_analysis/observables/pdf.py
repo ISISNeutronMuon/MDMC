@@ -257,13 +257,13 @@ class PairDistributionFunction(Observable):
                 has a coherent scattering length different from the coherent scattering length in
                 MDMC.common.atom_properties (i.e. if it has been isotopically substituted).
             r_min : float
-                The minimum ``r`` (atomic separation) for which the PDF will be
+                The minimum ``r`` (atomic separation) in Angstrom for which the PDF will be
                 calculated. If this, ``r_max``, and ``r_step`` are passed then
                 these will create a range for the independent variable ``r``,
                 which will overwrite any ``r`` which has previously been
                 defined. This cannot be passed if ``r`` is passed.
             r_max : float
-                The maximum ``r`` (atomic separation) for which the PDF will be
+                The maximum ``r`` (atomic separation) in Angstrom for which the PDF will be
                 calculated. If this, ``r_min``, and ``r_step`` are passed then
                 these will create a range for the independent variable ``r``,
                 which will overwrite any ``r`` which has previously been
@@ -275,7 +275,7 @@ class PairDistributionFunction(Observable):
                 ``r``, which will overwrite any ``r`` which has previously been
                 defined. This cannot be passed if ``r`` is passed.
             r : numpy.ndarray
-                The uniform ``r`` values for which the PDF will be calculated.
+                The uniform ``r`` values in Angstrom for which the PDF will be calculated.
                 This cannot be passed if ``r_min``, ``r_max``, and ``r_step``
                 are passed.
             dimensions : array-like
@@ -337,7 +337,6 @@ class PairDistributionFunction(Observable):
             for partial_str in running_partial_total:
                 self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
                                                            len(self.trajectory))
-
             self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(self.trajectory))
 
         else:
