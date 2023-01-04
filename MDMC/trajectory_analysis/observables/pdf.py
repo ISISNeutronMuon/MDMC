@@ -64,7 +64,7 @@ class PairDistributionFunction(Observable):
         self.partial_strings = None
         self.elements = None
         self.weights = None
-        self.number_of_atoms = None
+        self.numbers_of_atoms = None
         self.universe_volume = None
         self.n_atoms = None
         self.r_step = None
@@ -335,13 +335,13 @@ class PairDistributionFunction(Observable):
                 else:
                     running_partial_total[partial_name] = self.partial_pdfs[partial_name]
             self._calculate_total_pdf()
-            pdf_running_total += self.dependent_variables['PDF']
+            pdf_running_total += self._dependent_variables['PDF']
 
         # Average over number of trajectories used
         for partial_name in running_partial_total:
             self.partial_pdfs[partial_name] = np.divide(self.partial_pdfs[partial_name],
                                                        len(self.trajectory))
-        self.dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
+        self._dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
 
 
     def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
@@ -364,7 +364,7 @@ class PairDistributionFunction(Observable):
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
         for partial_name, partial_value in self.partial_pdfs.items():
             # Takes the product of the number of atoms of each element in the partial
-            atom_number_product = np.multiply(*[self.number_of_atoms[elem] for elem in partial_name])
+            atom_number_product = np.multiply(*[self.numbers_of_atoms[elem] for elem in partial_name])
             # Partials of the same element need to be scaled by 2 so that
             # they tend to 1 as r tends to infinity.
             if len(set(partial_name)) == 1:
@@ -378,13 +378,13 @@ class PairDistributionFunction(Observable):
         This function calculates the total PDF in accordance with equation (10)
         This calculation is done in-place
         """
-        total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
+        total_number_of_particles = np.sum(list(self.numbers_of_atoms.values()))
         # Calculate proportion and scattering length factors of elements in each pair
         for partial_name, partial_value in self.partial_pdfs.items():
             ci_cj = np.ones_like(self.r)
             bi_bj = np.ones_like(self.r)
             for elem in partial_name:
-                ci_cj *= (self.number_of_atoms[elem] / total_number_of_particles)  # Proportion of element
+                ci_cj *= (self.numbers_of_atoms[elem] / total_number_of_particles)  # Proportion of element
                 bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
 
             # Partials of differing elements need to be scaled by 2 when added to total,
@@ -395,10 +395,11 @@ class PairDistributionFunction(Observable):
             else:
                 norm_fac = 2.
 
-            if self.dependent_variables['PDF'] is None:
-                self.dependent_variables['PDF'] = ci_cj * bi_bj * (partial_value - 1) * norm_fac
+            G_r = ci_cj * bi_bj * (partial_value - 1) * norm_fac
+            if "PDF" in self._dependent_variables:
+                self._dependent_variables['PDF'] += G_r
             else:
-                self.dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value-1) * norm_fac
+                self._dependent_variables['PDF'] = G_r
 
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
@@ -482,8 +483,8 @@ class PairDistributionFunction(Observable):
         self.elements = set(chain.from_iterable(self.partial_strings))
         self.weights = self._set_weights(self.elements,
                                          settings.get('b_coh', {}))
-        self.number_of_atoms = self._set_numbers(self.elements,
-                                                 self.trajectory.element_list)
+        self.numbers_of_atoms = self._set_numbers(self.elements,
+                                                  self.trajectory.element_list)
 
         self.universe_dimensions = np.array((settings.get('dimensions')
                                              or trajectory.universe.dimensions))
