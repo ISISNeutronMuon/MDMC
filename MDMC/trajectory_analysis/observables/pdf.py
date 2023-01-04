@@ -252,12 +252,10 @@ class PairDistributionFunction(Observable):
                 multicomponent system. If this is not passed, all combinations
                 of elements are used i.e. the PDF is the total PDF.
             b_coh : dict
-                Definitions of the coherent neutron scattering lengths for one
-                or more elements. This can be used to calculate the PDF of a
-                system where one or more elements has a coherent scattering
-                length different from the coherent scattering length in
-                MDMC.common.atom_properties (i.e. if it has been isotopically
-                substituted).
+                A dictionary containing coherent scattering length values for one or more elements.
+                This can be used to calculate the PDF of a system where one or more elements
+                has a coherent scattering length different from the coherent scattering length in
+                MDMC.common.atom_properties (i.e. if it has been isotopically substituted).
             r_min : float
                 The minimum ``r`` (atomic separation) for which the PDF will be
                 calculated. If this, ``r_max``, and ``r_step`` are passed then
