@@ -378,7 +378,7 @@ class PairDistributionFunction(Observable):
         This function calculates the total PDF in accordance with equation (10)
         This calculation is done in-place
         """
-        self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
+        self.PDF = list(np.zeros(np.shape(self.r)))
         total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
         # Calculate proportion and scattering length factors of elements in each pair
         for partial_name, partial_value in self.partial_pdfs.items():
@@ -396,7 +396,7 @@ class PairDistributionFunction(Observable):
             else:
                 norm_fac = 2.
 
-            self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value-1) * norm_fac
+            self.PDF += ci_cj * bi_bj * (partial_value-1) * norm_fac
 
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
