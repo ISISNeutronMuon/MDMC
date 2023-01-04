@@ -319,29 +319,30 @@ class PairDistributionFunction(Observable):
         use_average = settings.get('use_average', False)
         self._parse_calc_MD_settings(MD_input, settings)
 
-        if use_average:
-            running_partial_total = {}
-            pdf_running_total = np.zeros(shape=len(self.r))
-            # Calculate partial and total PDF for each frame in the sliced trajectory
-            for frame in self.trajectory:
-                self._calculate_partial_pdfs(frame)
-                for partial_str in self.partial_pdfs:
-                    if partial_str in running_partial_total:
-                        running_partial_total[partial_str] += self.partial_pdfs[partial_str]
-                    else:
-                        running_partial_total[partial_str] = self.partial_pdfs[partial_str]
-                self._calculate_total_pdf()
-                pdf_running_total += self.PDF
-
-            # Average over number of trajectories used
-            for partial_str in running_partial_total:
-                self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
-                                                           len(self.trajectory))
-            self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(self.trajectory))
-
-        else:
+        if not use_average:
             self._calculate_partial_pdfs(self.trajectory)
             self._calculate_total_pdf()
+            return
+
+        running_partial_total = {}
+        pdf_running_total = np.zeros(shape=len(self.r))
+        # Calculate partial and total PDF for each frame in the sliced trajectory
+        for frame in self.trajectory:
+            self._calculate_partial_pdfs(frame)
+            for partial_str in self.partial_pdfs:
+                if partial_str in running_partial_total:
+                    running_partial_total[partial_str] += self.partial_pdfs[partial_str]
+                else:
+                    running_partial_total[partial_str] = self.partial_pdfs[partial_str]
+            self._calculate_total_pdf()
+            pdf_running_total += self.PDF
+
+        # Average over number of trajectories used
+        for partial_str in running_partial_total:
+            self.partial_pdfs[partial_str] = np.divide(self.partial_pdfs[partial_str],
+                                                       len(self.trajectory))
+        self._dependent_variables["PDF"] = np.divide(pdf_running_total, len(self.trajectory))
+
 
     def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
         """
