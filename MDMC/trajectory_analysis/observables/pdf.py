@@ -185,7 +185,7 @@ class PairDistributionFunction(Observable):
         except KeyError:
             return None
 
-    def calculate_from_MD(self, MD_input: "Trajectory", verbose: int = 0, **settings: dict) -> None:
+    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings: dict) -> None:
         r"""
         Calculate the pair distribution function, :math:`G(r)`` from a
         ``Trajectory``
