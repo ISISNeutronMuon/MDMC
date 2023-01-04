@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.lammps]
 ATOL = 1e-10
 RTOL = 5e-4
 CLOSER_RTOL = 5.96e-8
-MACHINE_PRECISION = 1.11e-16
+MACHINE_PRECISION = 2.22e-16
 
 
 @pytest.fixture(scope="module")
