@@ -10,12 +10,14 @@ import pytest
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from tests.test_data import data
 from scipy.signal import find_peaks, peak_prominences, peak_widths
+from tests.system_tests.observables.data_manager import trajectory
 
 pytestmark = [pytest.mark.lammps]
 
 ATOL = 1e-10
 RTOL = 5e-4
 CLOSER_RTOL = 5.96e-8
+MACHINE_PRECISION = 1.11e-16
 
 
 @pytest.fixture(scope="module")
@@ -183,7 +185,8 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
     """Tests that the values of the partial PDF peaks are correct"""
     peak_expected_r_values = expected_peak_r_values[partial_str]
     # The correct r value for the O-O peak here is 0.1 Ang off from what it is otherwise
-    peak_expected_r_values[('O', 'O')] = [2.75]
+    if partial_str == ('O', 'O'):
+        peak_expected_r_values = [2.75]
     abs_pdf = np.abs(averaged_PDF.partial_pdfs[partial_str])
     peak_indexes, properties = find_peaks(abs_pdf)
     print("Peak prominences: ", peak_prominences(abs_pdf, peak_indexes))
