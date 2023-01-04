@@ -64,7 +64,7 @@ class PairDistributionFunction(Observable):
         self.partial_strings = None
         self.elements = None
         self.weights = None
-        self.numbers = None
+        self.number_of_atoms = None
         self.universe_volume = None
         self.n_atoms = None
         self.r_step = None
@@ -362,12 +362,13 @@ class PairDistributionFunction(Observable):
         # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
         for partial_string, partial in self.partial_pdfs.items():
-            numbers = np.multiply(*[self.numbers[elem] for elem in partial_string])
+            # Takes the product of the number of atoms of each element in the partial
+            atom_number_product = np.multiply(*[self.number_of_atoms[elem] for elem in partial_string])
             # Like partials need to be scaled by 2 so that they tend to 1 as r tends to infinity.
             if len(set(partial_string)) == 1:
                 partial *= 2
             # Apply weightings & normalise by number of trajectories used
-            partial *= prefactor / (numbers * len(trajectory))
+            partial *= prefactor / (atom_number_product * len(trajectory))
 
     def _calculate_total_pdf(self) -> None:
         """
@@ -376,13 +377,13 @@ class PairDistributionFunction(Observable):
         This function calculates the total PDF in accordance with equation (10)
         """
         self._dependent_variables['PDF'] = list(np.zeros(np.shape(self.r)))
-        total_number_of_particles = np.sum(list(self.numbers.values()))
+        total_number_of_particles = np.sum(list(self.number_of_atoms.values()))
         # Calculate proportion and scattering length factors of elements in each pair
         for partial_string, partial in self.partial_pdfs.items():
             ci_cj = np.ones(shape=np.shape(self.r))
             bi_bj = np.ones(shape=np.shape(self.r))
             for elem in partial_string:
-                ci_cj *= (self.numbers[elem] / total_number_of_particles)  # Proportion of element
+                ci_cj *= (self.number_of_atoms[elem] / total_number_of_particles)  # Proportion of element
                 bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
 
             # Unlike partials need to be scaled by 2 when added to total, as only one of the
@@ -476,8 +477,8 @@ class PairDistributionFunction(Observable):
         self.elements = set(chain.from_iterable(self.partial_strings))
         self.weights = self._set_weights(self.elements,
                                          settings.get('b_coh', {}))
-        self.numbers = self._set_numbers(self.elements,
-                                         self.trajectory.element_list)
+        self.number_of_atoms = self._set_numbers(self.elements,
+                                                 self.trajectory.element_list)
 
         self.universe_dimensions = np.array((settings.get('dimensions')
                                              or trajectory.universe.dimensions))
