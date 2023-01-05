@@ -118,8 +118,12 @@ def test_partial_PDFs(PDF, PDF_file, partial_str):
 
 # The below tests are property-based, as there is (currently)
 # no calculated 3rd party validated data to test against.
+
+# All below tests use machine precision/epsilon to check values are
+# the same within floating point precision
 def test_total_PDF_peaks(PDF, expected_peak_r_values):
-    """Tests that the total PDF contains peaks in the correct known places"""
+    """
+    Tests that the total PDF contains peaks in the correct known places."""
     peak_expected_r_values = list(expected_peak_r_values.values())
     # Get the absolute values as the O-H peak ends up being a massively negative value in total PDF
     abs_pdf = np.abs(PDF.PDF)
@@ -130,15 +134,13 @@ def test_total_PDF_peaks(PDF, expected_peak_r_values):
 
 
 def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
-    """
-    Tests that the total PDF begins with the correct values.
-    """
+    """Tests that the total PDF begins with the correct values."""
     beginning_values = PDF.PDF[:8]
     assert np.allclose(beginning_values, expected_limiting_behaviour_value, rtol=MACHINE_PRECISION)
 
 
 def test_total_PDF_converges_correctly(PDF):
-    """Tests that the total PDF converges on 0"""
+    """Tests that the total PDF converges on 0."""
     end_values = PDF.PDF[-1:-7]
     assert np.allclose(end_values, 0., rtol=MACHINE_PRECISION)
 
