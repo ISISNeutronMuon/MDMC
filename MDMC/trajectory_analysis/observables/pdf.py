@@ -313,6 +313,13 @@ class PairDistributionFunction(Observable):
             .. code-block:: python
 
             pdf.calculate_from_MD(trajectory, r=[1., 2., 3., 4.])
+
+        To calculate the total PDF over an average of 5 frames:
+
+            .. highlight:: python
+            .. code-block:: python
+
+            pdf.calculate_from_MD(trajectory, use_average=True, n_frames=5)
         """
 
         self.origin = 'MD'
