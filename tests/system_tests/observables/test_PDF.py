@@ -110,7 +110,7 @@ def expected_limiting_behaviour_value(PDF):
 def test_partial_PDFs(PDF, PDF_file, partial_str):
     """Tests that each partial pair is within a tolerance of the nMOLDYN values"""
 
-    ref_str = 'pdf-{0}-{1}'.format(partial_str[0], partial_str[1])
+    ref_str = f'pdf-{partial_str[0]}-{partial_str[1]}'
     ref_partial = np.array(PDF_file.variables[ref_str][:])
     partial = PDF.partial_pdfs[partial_str]
     assert len(ref_partial) == len(partial)
