@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.lammps]
 ATOL = 1e-10
 RTOL = 5e-4
 CLOSER_RTOL = 5.96e-8
-MACHINE_PRECISION = 2.22e-16
+MACHINE_PRECISION = np.finfo(float).eps
 
 
 @pytest.fixture(scope="module")
@@ -134,13 +134,13 @@ def test_total_PDF_starts_correctly(PDF, expected_limiting_behaviour_value):
     Tests that the total PDF begins with the correct values.
     """
     beginning_values = PDF.PDF[:8]
-    assert np.allclose(beginning_values, expected_limiting_behaviour_value, atol=ATOL, rtol=RTOL)
+    assert np.allclose(beginning_values, expected_limiting_behaviour_value, rtol=MACHINE_PRECISION)
 
 
 def test_total_PDF_converges_correctly(PDF):
     """Tests that the total PDF converges on 0"""
     end_values = PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 0., atol=ATOL, rtol=CLOSER_RTOL)
+    assert np.allclose(end_values, 0., rtol=MACHINE_PRECISION)
 
 
 # Averaged PDF Tests
@@ -148,26 +148,26 @@ def test_total_PDF_converges_correctly(PDF):
 def test_partial_PDF_starts_correctly(averaged_PDF, partial_str):
     """Tests that the beginning values of the partial PDFs begin with 0"""
     beginning_values = averaged_PDF.partial_pdfs[partial_str][:8]
-    assert np.allclose(beginning_values, 0., atol=ATOL, rtol=CLOSER_RTOL)
+    assert np.allclose(beginning_values, 0., rtol=MACHINE_PRECISION)
 
 
 def test_total_PDFs_start_correctly(averaged_PDF, expected_limiting_behaviour_value):
     """Tests that the beginning values of the total PDF begin with thr correct value"""
     beginning_values = averaged_PDF.PDF[:8]
-    assert np.allclose(beginning_values, expected_limiting_behaviour_value, atol=ATOL, rtol=RTOL)
+    assert np.allclose(beginning_values, expected_limiting_behaviour_value, rtol=MACHINE_PRECISION)
 
 
 def test_total_PDFs_converge_correctly(averaged_PDF):
     """Tests that the values of the total PDF converge on 0"""
     end_values = averaged_PDF.PDF[-1:-7]
-    assert np.allclose(end_values, 0., atol=ATOL, rtol=CLOSER_RTOL)
+    assert np.allclose(end_values, 0., rtol=MACHINE_PRECISION)
 
 
 @pytest.mark.parametrize("partial_str", [('H', 'H'), ('H', 'O'), ('O', 'O')])
 def test_partial_PDFs_converge_correctly(averaged_PDF, partial_str, expected_limiting_behaviour_value):
     """Tests that the values of the partial PDFs converge on the right value"""
     end_values = averaged_PDF.partial_pdfs[partial_str][-1:-7]
-    assert np.allclose(end_values, expected_limiting_behaviour_value, atol=ATOL, rtol=RTOL)
+    assert np.allclose(end_values, expected_limiting_behaviour_value, rtol=MACHINE_PRECISION)
 
 
 def test_total_avg_PDF_peaks(averaged_PDF, expected_peak_r_values):
@@ -194,5 +194,6 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
 
 
 def present_values(expected_values, actual_values):
-    return [np.any(np.isclose(np.array(expected_value), actual_values, rtol=CLOSER_RTOL))
+    """Checks that expected values are present within the actual values, within machine precision"""
+    return [np.any(np.isclose(np.array(expected_value), actual_values, rtol=MACHINE_PRECISION))
             for expected_value in expected_values]
