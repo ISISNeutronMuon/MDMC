@@ -440,7 +440,7 @@ class PairDistributionFunction(Observable):
 
     def _parse_calc_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
         """
-        Parses the MD settings
+        Parses the MD settings and applies them to the class
 
         This includes setting:
             - the number of evenly spaced frames for which the ``PDF`` will be
@@ -450,9 +450,13 @@ class PairDistributionFunction(Observable):
             - the weights for each element
             - the volume of the universe
             - the independent variables (``r``)
+        and slicing the trajectory as requested by the user
 
         Parameters
         ----------
+        trajectory: Trajectory
+            A `Trajectory` object to be used for the PDF calculations
+
         settings : dict
             A `dict` of settings to be parsed
 
