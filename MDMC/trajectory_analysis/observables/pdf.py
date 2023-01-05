@@ -307,12 +307,12 @@ class PairDistributionFunction(Observable):
 
             pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08})
 
-        To calculate the total PDF for r values of [1., 2., 3., 4., ]:
+        To calculate the total PDF for r values of [1., 2., 3., 4.]:
 
             .. highlight:: python
             .. code-block:: python
 
-            pdf.calculate_from_MD(trajectory, b_coh={'Cl':3.08})
+            pdf.calculate_from_MD(trajectory, r=[1., 2., 3., 4.])
         """
 
         self.origin = 'MD'
