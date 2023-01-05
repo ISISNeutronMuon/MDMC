@@ -87,7 +87,7 @@ def test_set_n_frames(PDF_setup, trajectory, n_frames):
     else:
         settings = {}
         n_frames = len(trajectory) // 100
-    PDF_setup._parse_calc_MD_settings(trajectory, settings)
+    PDF_setup._parse_apply_MD_settings(trajectory, settings)
     assert len(PDF_setup.trajectory) == n_frames
     times = PDF_setup.trajectory.times
     # try/except accounts for n_frames == 1
@@ -102,7 +102,7 @@ def test_set_n_frames(PDF_setup, trajectory, n_frames):
 def test_set_n_frames_error(PDF_setup, trajectory, n_frames):
 
     with pytest.raises(ValueError):
-        PDF_setup._parse_calc_MD_settings(trajectory, {'n_frames':n_frames})
+        PDF_setup._parse_apply_MD_settings(trajectory, {'n_frames':n_frames})
 
 
 @pytest.mark.parametrize('partial_strings, expected',
@@ -122,7 +122,7 @@ def test_partial_strings_set(PDF_setup, trajectory, partial_strings, expected):
     """
 
     settings = {'subset':partial_strings} if partial_strings else {}
-    PDF_setup._parse_calc_MD_settings(trajectory, settings)
+    PDF_setup._parse_apply_MD_settings(trajectory, settings)
     assert sorted(PDF_setup.partial_strings) == sorted(expected)
 
 
@@ -133,7 +133,7 @@ def test_r_set(PDF_setup, trajectory):
     """
 
     r_values = np.arange(0., 10., 0.5)
-    PDF_setup._parse_calc_MD_settings(trajectory, {'r':r_values})
+    PDF_setup._parse_apply_MD_settings(trajectory, {'r':r_values})
     assert np.all(PDF_setup.r == r_values)
     assert PDF_setup.r_step == 0.5
 
@@ -148,8 +148,8 @@ def test_r_set_error(PDF_setup, trajectory, r_parameter):
 
     with pytest.raises(TypeError):
         # Set the r_parameter to an arbitrary value
-        PDF_setup._parse_calc_MD_settings(trajectory, {'r':range(0, 10, 1),
-                                                       r_parameter:0.})
+        PDF_setup._parse_apply_MD_settings(trajectory, {'r':range(0, 10, 1),
+                                                        r_parameter:0.})
 
 
 @pytest.mark.parametrize('r_min, r_max, r_step',
@@ -162,7 +162,7 @@ def test_r_set_range(PDF_setup, trajectory, r_min, r_max, r_step):
     Tests setting r values using r_min, r_max and r_step, instead of passing r.
     """
 
-    PDF_setup._parse_calc_MD_settings(trajectory, {'r_min':r_min,
+    PDF_setup._parse_apply_MD_settings(trajectory, {'r_min':r_min,
                                                    'r_max':r_max,
                                                    'r_step':r_step})
     assert np.all(PDF_setup.r == np.arange(r_min, r_max + r_step, r_step))

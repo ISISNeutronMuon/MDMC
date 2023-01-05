@@ -324,7 +324,7 @@ class PairDistributionFunction(Observable):
 
         self.origin = 'MD'
         use_average = settings.get('use_average', False)
-        self._parse_calc_MD_settings(MD_input, settings)
+        self._parse_apply_MD_settings(MD_input, settings)
 
         if not use_average:
             self._calculate_partial_pdfs(self.trajectory)
@@ -438,7 +438,7 @@ class PairDistributionFunction(Observable):
                       else ((total_n_frames - 1) // n_frames) + 1)
         return trajectory[0:total_n_frames:frame_step]
 
-    def _parse_calc_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
+    def _parse_apply_MD_settings(self, trajectory: Trajectory, settings: dict) -> None:
         """
         Parses the MD settings and applies them to the class
 
