@@ -194,6 +194,14 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
     peak_actual_r_values = [averaged_PDF.r[i] for i in peak_indexes]
     assert np.all(present_values(peak_expected_r_values, peak_actual_r_values))
 
+def test_slice_trajectory(trajectory):
+    pdf = ObservableFactory.create_observable('PDF')
+    sliced = pdf._slice_trajectory(trajectory, n_frames=5)
+    assert len(trajectory) == 50
+    assert len(sliced) == 5
+    for index in [(0, 0), (1, 10), (2, 20), (3, 30), (4, 40)]:
+        assert sliced.times[index[0]] in trajectory.times
+        assert sliced.times[index[0]] == trajectory.times[index[1]]
 
 def present_values(expected_values, actual_values):
     """Checks that expected values are present within the actual values, within machine precision"""
