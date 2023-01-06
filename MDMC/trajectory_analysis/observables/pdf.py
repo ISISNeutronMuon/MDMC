@@ -558,8 +558,8 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        for step_n in range(len(trajectory)):
-            partitions = self._partition(trajectory.position[step_n],
+        for step_n in range(trajectory.n_steps):
+            partitions = self._partition(trajectory.positions[step_n],
                                         trajectory.element_list,
                                         part_comps)
             # Get the partition_indexes and the pairs of partitions. As well as

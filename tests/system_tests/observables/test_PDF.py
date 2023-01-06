@@ -17,6 +17,7 @@ pytestmark = [pytest.mark.lammps]
 ATOL = 1e-10
 RTOL = 5e-4
 CLOSER_RTOL = 5.96e-8
+# Obtains the machine epsilon/precision for floating point numbers
 MACHINE_PRECISION = np.finfo(float).eps
 
 
@@ -99,7 +100,6 @@ def expected_limiting_behaviour_value(PDF):
         The PDF object
 
     """
-    #limiting_value = 0.
     total_number_of_particles = np.sum(list(PDF.numbers_of_atoms.values()))
     limiting_value = sum((PDF.numbers_of_atoms[elem] / total_number_of_particles) * PDF.weights[elem]
                          for elem in PDF.elements)
@@ -113,6 +113,8 @@ def test_partial_PDFs(PDF, PDF_file, partial_str):
     ref_str = f'pdf-{partial_str[0]}-{partial_str[1]}'
     ref_partial = np.array(PDF_file.variables[ref_str][:])
     partial = PDF.partial_pdfs[partial_str]
+    print(partial)
+    print(ref_partial)
     assert len(ref_partial) == len(partial)
     assert np.allclose(ref_partial, partial, atol=ATOL, rtol=RTOL)
 
