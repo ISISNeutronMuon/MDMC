@@ -26,7 +26,7 @@ from MDMC.trajectory_analysis.trajectory import Configuration
 if TYPE_CHECKING:
     from MDMC.MD.structures import Molecule, Atom
     from MDMC.MD.interactions import Interaction
-    from MDMC.trajectory_analysis.trajectory import Trajectory
+    from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 
 LOGGER = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class Universe(AtomContainer):
     dimensions : numpy.ndarray, list, float
         Dimensions of the ``Universe``, in units of ``Ang``. A `float` can be
         used for a cubic universe.
-    force_field : ForceField, optional
+    force_fields : ForceField, optional
         A force field to apply to the Universe. The force fields available are:
         DYNAMIC_FORCE_FIELD_LIST. Default is None.
     structures : list, optional
@@ -67,6 +67,8 @@ class Universe(AtomContainer):
         ``constraint_algorithm`` (`ConstraintAlgorithm`)
             The constraint algorithm which will be applied to constrained
             ``BondedInteractions``.
+        ``verbose`` (`str`)
+            If the output of the class instantiation should be reported, default to True.
 
     Attributes
     ----------
@@ -74,8 +76,8 @@ class Universe(AtomContainer):
         Dimensions of the ``Universe`` in units of ``Ang``.
     configuration : Configuration
         Stores the content, i.e. configuration of atoms etc within the universe
-    force_field : ForceField or None
-        Force field to apply to the Universe
+    force_fields : ForceField or None
+        Force field applied to apply to the Universe
     kspace_solver : KSpaceSolver
         The k-space solver to be used for both electrostatic and dispersive
         interactions.
@@ -86,10 +88,34 @@ class Universe(AtomContainer):
     constraint_algorithm : ConstraintAlgorithm
         The constraint algorithm which will be applied to constrained
         ``BondedInteractions``.
+    interactions
+    bonded_interactions
+    nonbonded_interactions
+    bonded_interaction_pairs
+    n_bonded
+    n_nonbonded
+    n_interactions
+    parameters
+    volume
+    element_list
+    element_dict
+    element_lookup
+    atoms
+    n_atoms
+    molecule_list
+    n_molecules
+    structure_list
+    top_level_structure_list
+    equivalent_top_level_structures_dict
+    force_fields
+    atom_types
+    atom_type_interactions
+    density
+    solvent_density
+    nbis_by_atom_type_pairs
     """
 
-    def __init__(self, dimensions, force_field=None, structures=None,
-                 **settings):
+    def __init__(self, dimensions, force_field=None, structures=None, **settings):
 
         self.dimensions = dimensions
         self._atom_types = defaultdict(list)
@@ -110,6 +136,8 @@ class Universe(AtomContainer):
         self.kspace_solver = settings.get('kspace_solver')
         self.electrostatic_solver = settings.get('electrostatic_solver')
         self.dispersive_solver = settings.get('dispersive_solver')
+
+        self.verbose = settings.get('verbose', True)
         # kspace_solver is mutually exclusive with the other two solver
         # attributes
         if self.kspace_solver and (self.electrostatic_solver or
@@ -135,8 +163,8 @@ class Universe(AtomContainer):
                                           '  Force field',
                                           '  Number of atoms'])
 
-        print(
-            f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        if self.verbose:
+            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self) -> str:
 
@@ -403,12 +431,12 @@ class Universe(AtomContainer):
     @property
     def atoms(self) -> 'list[Atom]':
         """
-        Get a list of the atoms in the Universe
+        Get a list of the atoms in the ``Universe``
 
         Returns
         -------
         list
-            The atoms in the Universe
+            The atoms in the ``Universe``
         """
 
         return self.configuration.atoms
@@ -539,7 +567,7 @@ class Universe(AtomContainer):
     @mod_docstring(_FF_DOCSTRING)
     def force_fields(self) -> None:
         """
-        Get or set the ``ForceField`` acting on the Universe
+        Get the ``ForceField`` acting on the ``Universe``
 
         The available force fields are:
         DYNAMIC_FORCE_FIELD_LIST
@@ -962,7 +990,7 @@ class Universe(AtomContainer):
     @mod_docstring({'DYNAMIC_SOLVENT_LIST': ', '.join(get_solvent_names())})
     def solvate(self, density: float,
                 tolerance: float = 1., solvent: str = 'SPCE',
-                **settings: dict) -> None:
+                max_iterations: int = 100, **settings: dict) -> None:
         """
         Fills the ``Universe`` with solvent molecules according to pre-defined
         coordinates.
@@ -980,6 +1008,9 @@ class Universe(AtomContainer):
             A `str` specifying an inbuilt ``Solvent`` from the following:
             DYNAMIC_SOLVENT_LIST.
             The default is 'SPCE'.
+        max_iterations: int, optional
+            The maximum number of times to try to solvate the universe to
+            within the required density before stopping. Defaults to 100.
         **settings
             ``constraint_algorithm`` (`ConstraintAlgorithm`)
                 A ``ConstraintAlgorithm`` which is applied to the ``Universe``.
@@ -1080,6 +1111,11 @@ class Universe(AtomContainer):
             actual = (len(mols) * solvent_mass) / self.volume
             difference = (actual - density) / density
             scale_factor = difference / counter
+            if counter > max_iterations:
+                msg = ('100 Iterations have been tried but the universe is not solvated'
+                   ' to within tolerance. Try increasing the tolerance or Universe size')
+                LOGGER.error(msg)
+                raise ValueError(msg)
 
         # Once the correct density is achieved, add molecules to universe
         # and get all bonded interactions
@@ -1107,7 +1143,8 @@ class Universe(AtomContainer):
                 self.constraint_algorithm = settings.get('constraint_algorithm',
                                                          Shake(1e-4, 100))
 
-            print(f'Force field created by solvent {solvent}')
+            if self.verbose:
+                print(f'Force field created by solvent {solvent}')
 
         except ImportError:
             pass
@@ -1328,8 +1365,8 @@ class Simulation:
         The ``Universe`` on which the simulation is performed.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame. Along with ``time_step`` determines the time
-        separation of calculated variables such as energy.
+        ``CompactTrajectory`` frame. Along with ``time_step`` determines
+        the time separation of calculated variables such as energy.
     time_step : float, optional
         Simulation timestep in ``fs``. Default is 1.
     engine : str, optional
@@ -1357,6 +1394,8 @@ class Simulation:
         ``pressure`` (`float`)
             Simulation pressure in ``Pa``. This is required if a barostat is
             passed.
+        ``verbose`` (`str`)
+            If the output of the class instantiation should be reported, default to True.
 
     Attributes
     ----------
@@ -1364,14 +1403,16 @@ class Simulation:
         The ``Universe`` on which the simulation is performed.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame. Along with ``time_step`` determines the time
-        separation of calculated variables such as energy.
+        ``CompactTrajectory`` frame. Along with ``time_step`` determines
+        the time separation of calculated variables such as energy.
     engine : MDEngine, optional
         A subclass of ``MDEngine`` which provides the interface to the MD
         library. Default is ``'lammps'``.
     settings : dict
         The settings passed to the ``Simulation``.  See the Parameters section
         for details.
+    time_step
+    trajectory
     """
 
     # TODO: Potentially separate out universe and simulation setup
@@ -1384,6 +1425,7 @@ class Simulation:
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self.engine.parent_simulation = self
+        self.verbose = settings.get('verbose', True)
         self._setup()
 
         setup_msg = f'Simulation created with {engine} engine'
@@ -1393,7 +1435,8 @@ class Simulation:
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
 
-        print(setup_msg)
+        if self.verbose:
+            print(setup_msg)
 
     @property
     def time_step(self) -> float:
@@ -1417,13 +1460,13 @@ class Simulation:
     def traj_step(self) -> int:
         """
         Get or set the number of simulation steps between saving the
-        ``Trajectory``
+        ``CompactTrajectory``
 
         Returns
         -------
         `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
+            Number of simulation steps that elapse between the
+            ``CompactTrajectory`` being stored
         """
 
         return self._traj_step
@@ -1529,15 +1572,15 @@ class Simulation:
         verbose_manager.finish(f"{process.capitalize()}")
 
     @property
-    def trajectory(self) -> Union['Trajectory', None]:
+    def trajectory(self) -> Union['CompactTrajectory', None]:
         """
-        The ``Trajectory`` produced by the most recent production run of the
+        The ``CompactTrajectory`` produced by the most recent production run of the
         ``Simulation``.
 
         Returns
         -------
-        Trajectory
-            Most recent production run ``Trajectory``, or `None` if no
+        CompactTrajectory
+            Most recent production run ``CompactTrajectory``, or `None` if no
             production run has been performed
         """
 

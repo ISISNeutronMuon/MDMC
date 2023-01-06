@@ -11,7 +11,6 @@ from MDMC.MD.solvents._solvent_config import SolventConfig
 
 
 class SPCConfig(SolventConfig):
-
     """
     The SPC ``SolventConfig``, which uses the SPC216 dict
     """

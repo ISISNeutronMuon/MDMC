@@ -5,17 +5,19 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from mpi4py import MPI
-from numba import jit
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
-from MDMC.common.mathematics import correlation, UNIT_VECTOR
+from MDMC.common.mathematics import faster_correlation,\
+     faster_autocorrelation, \
+     UNIT_VECTOR
 from MDMC.resolution import Resolution
-from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.trajectory_analysis.observables.obs import Observable, executor
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 if TYPE_CHECKING:
     from builtins import function
@@ -143,7 +145,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.dependent_variables['FQt'] = value
 
-    def calculate_from_MD(self, MD_input: "Trajectory", verbose: int = 0, **settings: dict) -> None:
+    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
+                          **settings: dict) -> None:
         """
         Calculates the intermediate scattering function from a trajectory.
 
@@ -152,8 +155,8 @@ class AbstractFQt(SQwMixins, Observable):
 
         Parameters
         ----------
-        MD_input : Trajectory
-            a single ``Trajectory`` object.
+        MD_input : CompactTrajectory
+            a single ``CompactTrajectory`` object.
         verbose: int, optional
             The level of verbosity:
             Verbose level 0 gives no information.
@@ -183,8 +186,9 @@ class AbstractFQt(SQwMixins, Observable):
         self._set_weights()
 
         try:
-            self.universe_dimensions = MD_input[0].dimensions
+            self.universe_dimensions = MD_input.dimensions
         except AttributeError:
+            print("DEBUG: no universe dimensions in the CompactTrajectory")
             try:
                 self.universe_dimensions = np.array(settings['dimensions'])
             except KeyError as error:
@@ -597,41 +601,75 @@ class FQt(AbstractFQt):
         rho_element = {}
         n_atoms = 0
 
+        def helper_coherent(configs: np.ndarray,
+                            q_vector: np.ndarray) -> np.ndarray:
+            """A wrapper for the calculate_rho function and the summation
+            of the resulting array. This part of the calculation is handled
+            by numpy, and so it is easy to run in parallel.
+
+            Arguments
+            ---------
+            configs: numpy.ndarray
+                array of atom positions, size (N_timesteps, 3, N_atoms)
+            q_vector: numpy.ndarray
+                q vector in array form, size (3)
+
+            Returns:
+                array of rho values summed over the atoms in the system,
+                size (N_timesteps)
+            """
+            return calculate_rho(configs, q_vector).sum(axis = 1)
+
         for element in elements:
             # Get the positions of all atoms (the configuration) of each
             # element over time such that ``element_configs`` has time as its
             # first dimension and each atom of ``element`` as its second
             indexes = np.where(np.array(self._trajectory.element_list)
                                == element)
-            element_configs = [config.positions[indexes] for config
-                               in self._trajectory]
-
+            element_configs = self._trajectory.position[:, indexes[0], :]
             rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),
                                   dtype=complex)
-            for i, positions in enumerate(element_configs):
-                # For each time frame ``i`` calculate the Fourier transformed
-                # number density and sum over all positions but preserve the
-                # second dimension, our array of Q vectors
-                rho_unsummed = calculate_rho(positions,
-                                             np.array(single_Q_vectors))
-                rho_config[i, :] = np.sum(rho_unsummed, axis=0)
+
+            # For the np.dot product to be broadcast correctly,
+            # the [x, y, z] atom positions have to be on axis 1.
+            # For this reason we swap the axes, moving the
+            # axis of atom numbers to axis 2.
+            # Time axis is still axis 0.
+            configs = np.swapaxes(element_configs, 1, 2)
+            # The single_Q_vectors array contains many q vectors
+            # with similar values of |Q|.
+            # The following lines split the calculation by multiplying
+            # the trajectory by each q vector separately.
+            futures = [executor.submit(helper_coherent,
+                                       configs, single_Q_vectors[q_num])
+                                       for q_num in range(len(single_Q_vectors))]
+            # The following line makes the code wait for all the calculations to finish.
+            results = [future.result() for future in futures]
+            # At this stage, the results list is fully populated,
+            # and the following loop writes the results into the rho_config array.
+            for q_num in range(len(single_Q_vectors)):
+                rho_config[:, q_num] = results[q_num]
 
             rho_element[element] = rho_config
             n_atoms += np.shape(indexes)[1]
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            for atom_positions in np.swapaxes(element_configs, 0, 1):
-                # Swapping the time and position axes lets us iterate over each
-                # atom of ``element``, and gives ``rho_atom`` dimensions of
-                # time and our array of Q vectors respectively.
-                rho_atom = calculate_rho(atom_positions,
-                                         np.array(single_Q_vectors))
-
-                # A sum over the Q vectors is performed within ``correlation``.
-                FQt_single_Q_atom = correlation(rho_atom, normalise=True)[:n_t]
-                FQt_single_Q += FQt_single_Q_atom * incoh_weights**2
+            configs = np.swapaxes(element_configs,
+                                  1,
+                                  2)
+            configs = np.swapaxes(configs,
+                                  0,
+                                  2)
+            rho_all = calculate_rho(configs, np.array(single_Q_vectors))
+            futures = [executor.submit(faster_autocorrelation,
+                                       rho_all[q_num].T,
+                                       weights = incoh_weights**2)
+                                       for q_num in range(len(rho_all))]
+            results = [future.result()[:n_t] for future in futures]
+            for q_num in np.arange(len(rho_all)):
+                FQt_single_Q += results[q_num]
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:
@@ -639,9 +677,8 @@ class FQt(AbstractFQt):
                 # A sum over the Q vectors is performed within ``correlation``.
                 FQt_single_Q += self.weights[element1]['coh'] \
                     * self.weights[element2]['coh'] \
-                    * correlation(rho_element[element1],
-                                  rho_element[element2],
-                                  normalise=True)[:n_t]
+                    * faster_correlation(rho_element[element1],
+                                  rho_element[element2])[:n_t]
 
         # Normalise to the number of orthogonal vectors
         try:
@@ -651,9 +688,7 @@ class FQt(AbstractFQt):
 
         return FQt_single_Q / (n_atoms * norm)
 
-
-@jit('float64[:,:], float64[:,:]', nopython=True)
-def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> list:
+def calculate_rho(positions: np.ndarray, Q_vector: np.ndarray) -> np.ndarray:
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors
@@ -671,13 +706,10 @@ def calculate_rho(positions: 'np.ndarray', Q_vector: 'np.ndarray') -> list:
 
     Returns
     -------
-    list
+    numpy.ndarray
         The reciprocal space number density
     """
-
-    return [np.exp(-1j * np.dot(Q_vector, positions[i])) for i
-            in range(len(positions))]
-
+    return np.exp(-1j * np.dot(Q_vector, positions))
 
 def get_point_group(dimensions: 'np.ndarray') -> str:
     """

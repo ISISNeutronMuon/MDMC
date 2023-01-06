@@ -29,7 +29,7 @@ def water_molecule():
 
 def universe():
     """A universe filled with water molecules."""
-    box = MD.Universe(10.)
+    box = MD.Universe(10., verbose=False)
     box.fill(water_molecule(), num_density=0.0336)
 
     return box
