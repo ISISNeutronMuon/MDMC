@@ -357,7 +357,7 @@ class PairDistributionFunction(Observable):
         self.dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
 
 
-    def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
+    def _calculate_partial_pdfs(self, trajectory: CompactTrajectory) -> None:
         """
         Calculate the partial PDFs for each partial pairing
 
@@ -366,7 +366,7 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        trajectory: Trajectory
+        trajectory: CompactTrajectory
             The sliced up trajectory to be used to calculate PDFs
         """
         # Calculate histograms for each sub-trajectory
@@ -413,13 +413,13 @@ class PairDistributionFunction(Observable):
             self.dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
 
 
-    def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
+    def _slice_trajectory(self, trajectory: CompactTrajectory, **settings: dict) -> list:
         """
         Slice the trajectory into frames used to calculate an average total PDF
 
         Parameters
         ----------
-        trajectory: Trajectory
+        trajectory: CompactTrajectory
             The trajectory to slice
         settings: dict
             A dictionary of kwargs used for the pdf calculation
@@ -446,7 +446,7 @@ class PairDistributionFunction(Observable):
         return trajectory[0:total_n_frames:frame_step]
 
 
-    def _parse_calc_MD_settings(self, trajectory: CompactTrajectory, settings: dict) -> None:
+    def _parse_apply_MD_settings(self, trajectory: CompactTrajectory, settings: dict) -> None:
         """
         Parses the MD settings and applies them to the class
 
@@ -462,8 +462,8 @@ class PairDistributionFunction(Observable):
 
         Parameters
         ----------
-        trajectory: Trajectory
-            A `Trajectory` object to be used for the PDF calculations
+        trajectory: CompactTrajectory
+            A `CompactTrajectory` object to be used for the PDF calculations
 
         settings : dict
             A `dict` of settings to be parsed
