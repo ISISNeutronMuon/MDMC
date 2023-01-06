@@ -91,7 +91,10 @@ class PairDistributionFunction(Observable):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variables: these are PDF, the pair distribution function (in ``barn``)
+        Get the dependent variable: these are PDF, the pair distribution function (in ``barn``)
+
+        (This is a public interface for getting the variable,
+        it is intended for use outside the class)
 
         Returns
         -------
@@ -100,6 +103,7 @@ class PairDistributionFunction(Observable):
         """
 
         return self._dependent_variables
+
 
     @property
     def errors(self) -> dict:
@@ -110,7 +114,7 @@ class PairDistributionFunction(Observable):
         Returns
         -------
         dict
-            The errors on the ``dependent_variables``
+            The errors on the ``_dependent_variables``
         """
 
         return self._errors
@@ -122,7 +126,7 @@ class PairDistributionFunction(Observable):
     def minimum_frames(self, dt: float = None) -> int:
         """
         The minimum number of ``Trajectory`` frames needed to calculate the
-        ``dependent_variables`` is 1
+        ``_dependent_variables`` is 1
 
         Parameters
         ----------
@@ -342,13 +346,13 @@ class PairDistributionFunction(Observable):
                 else:
                     running_partial_total[partial_name] = self.partial_pdfs[partial_name]
             self._calculate_total_pdf()
-            pdf_running_total += self._dependent_variables['PDF']
+            pdf_running_total += self.dependent_variables['PDF']
 
         # Average over number of trajectories used
         for partial_name in running_partial_total:
             self.partial_pdfs[partial_name] = np.divide(self.partial_pdfs[partial_name],
                                                        len(self.trajectory))
-        self._dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
+        self.dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
 
 
     def _calculate_partial_pdfs(self, trajectory: Trajectory) -> None:
@@ -386,7 +390,7 @@ class PairDistributionFunction(Observable):
         This calculation is done in-place
         """
         total_number_of_particles = np.sum(list(self.numbers_of_atoms.values()))
-        self._dependent_variables['PDF'] = np.zeros_like(self.r)
+        self.dependent_variables['PDF'] = np.zeros_like(self.r)
         # Calculate proportion and scattering length factors of elements in each pair
         for partial_name, partial_value in self.partial_pdfs.items():
             ci_cj = np.ones_like(self.r)
@@ -403,7 +407,7 @@ class PairDistributionFunction(Observable):
             else:
                 norm_fac = 2.
 
-            self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
+            self.dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
 
 
     def _slice_trajectory(self, trajectory: Trajectory, **settings: dict) -> list:
@@ -529,7 +533,7 @@ class PairDistributionFunction(Observable):
                                  np.shape(self.independent_variables['r']))
                              for partial_string in self.partial_strings}
 
-        self._dependent_variables = {}
+        self.dependent_variables = {}
         # Release memory from full trajectory
         del trajectory
 
