@@ -356,7 +356,6 @@ class PairDistributionFunction(Observable):
                                                        len(self.trajectory))
         self.dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
 
-
     def _calculate_partial_pdfs(self, trajectory: CompactTrajectory) -> None:
         """
         Calculate the partial PDFs for each partial pairing
@@ -369,9 +368,7 @@ class PairDistributionFunction(Observable):
         trajectory: CompactTrajectory
             The sliced up trajectory to be used to calculate PDFs
         """
-        # Calculate histograms for each sub-trajectory
-        for config in trajectory.configurations:
-            self._calculate_histogram(config)
+        self._calculate_histogram(trajectory)
 
         # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
