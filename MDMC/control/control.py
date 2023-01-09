@@ -110,16 +110,18 @@ class Control:
      cont_slicing : bool, optional
         Flag to decide between two possible behaviours when the number of ``MD_steps`` is
         larger than the minimum required to calculate the observables. If ``False`` (default) then
-        the ``Trajectory`` is sliced into non-overlapping sub-``Trajectory`` blocks for each of
-        which the observable is calculated. If ``True``, then the ``Trajectory`` is sliced into
-        as many non-identical sub-``Trajectory`` blocks as possible (with overlap allowed).
+        the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
+        blocks for each of which the observable is calculated. If ``True``, then the
+        ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
+        blocks as possible (with overlap allowed).
     use_average : bool, optional
         Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
-        and the MD ``Trajectory`` is sliced into sub-``Trajectory`` blocks. If ``True`` (
-        default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
-        they are not averaged.
+        and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
+        If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
+        blocks. If ``False`` they are not averaged.
     verbose: int, optional
         The level of verbosity:
+        Verbose level -1 hides all outputs for tests.
         Verbose level 0 gives no information.
         Verbose level 1 gives final time for the whole method.
         Verbose level 2 gives final time and also a progress bar.
@@ -130,6 +132,7 @@ class Control:
     **settings: dict, optional
         Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
         minimiser is used.
+
 
     Example
     -------
@@ -234,7 +237,7 @@ class Control:
 
             auto_scale = dset.get('auto_scale', False)
             rescale_factor = dset.get('rescale_factor')
-            if auto_scale and rescale_factor:
+            if auto_scale and rescale_factor and self.verbose != -1:
                 print('Both `rescale_factor` and `auto_scale` set for file {};'
                       ' scaling will be automated to minimise FoM'
                       ''.format(dset['file_name']))
@@ -365,8 +368,8 @@ class Control:
 
         setup_frame = pd.DataFrame(data=data_array,
                                    index=index_array)
-
-        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        if self.verbose != -1:
+            print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self) -> str:
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
@@ -403,19 +406,27 @@ class Control:
 
         count = -1
 
-        self._print_header()  # creates stdout header
-        verbose_manager = VerboseManager.instance()
-        verbose_manager.start(verbose_steps, verbose=self.verbose)
-        while count < n_steps and not self.minimizer.has_converged():
-            if count >= 0 and self.equilibration_steps > 0:
-                self.equilibrate()
+        if self.verbose != -1:
+            self._print_header()  # creates stdout header
+            verbose_manager = VerboseManager.instance()
+            verbose_manager.start(verbose_steps, verbose=self.verbose)
+            while count < n_steps and not self.minimizer.has_converged():
+                if count >= 0 and self.equilibration_steps > 0:
+                    self.equilibrate()
 
-            verbose_manager.header(f"Step {count + 1}")
-            self.step()  # advance the refinement by one step
-            count += 1
-            if self.verbose == 3:  # if progress bar is there, ensure data is on new line
-                print("")
-            self._print_data()
+                verbose_manager.header(f"Step {count + 1}")
+                self.step()  # advance the refinement by one step
+                count += 1
+                if self.verbose == 3:  # if progress bar is there, ensure data is on new line
+                    print("")
+                self._print_data()
+
+        else:
+            while count < n_steps and not self.minimizer.has_converged():
+                if count >= 0 and self.equilibration_steps > 0:
+                    self.equilibrate()
+                self.step()  # advance the refinement by one step
+                count += 1
 
         # Try/except accounts for n_steps <= -1
         try:
@@ -428,7 +439,8 @@ class Control:
 
         # print values of final parameters
         result_string = self.minimizer.present_result()
-        print(result_string)
+        if self.verbose != -1:
+            print(result_string)
 
         # If automatically scaling data print the scale factor for each dataset
         scaling_keys = []
@@ -441,12 +453,15 @@ class Control:
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
-            print(
+            if self.verbose != -1:
+                print(
                 f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
 
         if self.verbose >= 1:
             average_timing = statistics.mean(self.step_timings)
-            print(f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
+            if self.verbose != -1:
+                print(
+                f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
 
         verbose_manager.finish("Refinement")
 

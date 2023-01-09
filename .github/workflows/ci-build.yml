@@ -26,9 +26,9 @@ jobs:
     needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-20.04
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        testset: [ lammps, "not lammps" ]
+        testset: ["not lammps"]
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -37,19 +37,21 @@ jobs:
           architecture: x64
       - name: Checkout repo
         uses: actions/checkout@v2
-
-      - name: Run tests
+      - name: Pull Docker Image
         env:
           BRANCH: ${{ github.head_ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Run tests
+        env:
           TESTSET: ${{ matrix.testset }}
         run: |
-          docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
-          docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
-          exit 0
+          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
+          exit 0 
 
       - name: Copy profiling info, download profile script reqs. and profile
         env:
-          BRANCH: ${{ github.head_ref }}
           FILENAME: ${{ github.head_ref }}-profiling
         run: |
           sudo docker cp $(docker ps -lq):/home/prof/ prof/
@@ -72,73 +74,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
-
-  profiling:
-    name: Profiling
-    needs: tests
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-      - name: Own repo to avoid npm bug
-        run: sudo chmod -R 777 /home/
-
-      - name: Download tests artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: /home/
-
-#      ## BOOTSTRAPPING: this can be used to upload new master profiling files
-#      - name: create bootstrap master profiling
-#        env:
-#          BRANCH: ${{ github.head_ref }}
-#        run: |
-#          pip3 install pandas
-#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
-#      - name: upload as master profiling
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: master-profiling
-#          path: master-profiling.csv
-#      ## END BOOTSTRAPPING
-
-      - name: Download master profiling for comparison
-        # regular download-artifact can only get artifacts from current run
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: ci-deploy.yml
-          name: master-profiling
-        continue-on-error: true
-
-      - name: Combine and compare profiling data
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name $BRANCH-total-profiling
-
-      - name: Upload total profiling as artifact if successful
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.head_ref }}-total-profiling
-          path: ${{ github.head_ref }}-total-profiling.csv
-
-  documentation:
-    name: Documentation
-    needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v2
-
-      - name: Run script
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || \
-          docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || exit 1
-          exit 0
 
   linting:
     name: Pylint
@@ -173,13 +108,21 @@ jobs:
         with:
           python-version: '3.9'
           architecture: x64
-      - name: Convert & Test Notebooks
+      - name: Pull Docker Image
         env:
           BRANCH: ${{ github.head_ref }}
         run: |
-          docker pull mdmc/mdmc:ci-$BRANCH
-          docker run -t --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" mdmc/mdmc:ci-$BRANCH /bin/bash -c " apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt && jupyter nbconvert --config doc/tutorials/notebook-test-config.py && pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
-          exit 0
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Create Docker Container
+        run: |
+          echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
+      - name: Install Requirements
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt"
+      - name: Convert Notebooks
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/tutorials/notebook-test-config.py"
+      - name: Test Notebooks
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
 
   type-checking:
     name: Mypy

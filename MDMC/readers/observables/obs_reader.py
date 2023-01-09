@@ -183,7 +183,6 @@ class SQwReader(ObservableReader, ABC):
     @w.setter
     @unit_decorator(unit=units.Unit('ps') ** -1)
     def w(self, value: float) -> None:
-
         self._w = value
 
     @property
@@ -202,7 +201,6 @@ class SQwReader(ObservableReader, ABC):
     @E.setter
     @unit_decorator(unit=units.ENERGY_TRANSFER)
     def E(self, value: float) -> None:
-
         self._E = value
 
     @property
@@ -232,6 +230,7 @@ class PDFReader(ObservableReader, ABC):
         super().__init__(file_name)
         self.PDF = None
         self.PDF_err = None
+        self.partial_pdfs = None
 
     @property
     def independent_variables(self) -> dict:
@@ -288,7 +287,6 @@ class PDFReader(ObservableReader, ABC):
 
     @property
     def PDF(self) -> np.ndarray:
-
         """
         Get or set the total pair distribution function between pairs (in ``barn``)
         Returns
@@ -302,12 +300,10 @@ class PDFReader(ObservableReader, ABC):
     @PDF.setter
     @unit_decorator(unit=units.Unit('barn'))
     def PDF(self, value: float) -> None:
-
         self._PDF = value
 
     @property
     def PDF_err(self) -> np.ndarray:
-
         """
         Get or set the error on the total pair distribution function between pairs (in ``barn``)
         Returns
@@ -315,11 +311,9 @@ class PDFReader(ObservableReader, ABC):
         numpy.ndarray
             error on the total pair distribution function (in ``barn``)
         """
-
         return self._PDF_err
 
     @PDF_err.setter
     @unit_decorator(unit=units.Unit('barn'))
     def PDF_err(self, value: float) -> None:
-
         self._PDF_err = value

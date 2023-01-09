@@ -31,7 +31,7 @@ Refinement
 To :ref:`refine the parameters <parameter-refinement-label>` of a simulation,
 one or more experimental datasets must be provided and a minimiser must be
 selected.  Here are the descriptions of the available experimental
-:ref:`observables-modules-label` (the objects representing experimental datasets), the :mod:`~MDMC.refinement.minimizer`, and the
+:ref:`observables-modules-label` (the objects representing experimental datasets), the :mod:`~MDMC.refinement.minimizers`, and the
 :class:`~MDMC.control.control.Control` class, which runs the refinement.
 
 It is possible to refine all of the parameters, or to specify a subset to be

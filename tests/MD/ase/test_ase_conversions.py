@@ -62,7 +62,6 @@ class MockBond:
 
 @pytest.fixture
 def bond_atom_IDs():
-
     """
     Returns
     -------
@@ -82,7 +81,6 @@ def ase_atoms():
 
 
 def test_ASEAtoms(ase_atoms):
-
     """
     Tests that an ASEAtoms class is equal to an ase.atoms.Atoms class
     initialized with the same parameters, but also has bonds and IDs attributes.
@@ -94,7 +92,6 @@ def test_ASEAtoms(ase_atoms):
 
 
 def test_ASEAtoms_error():
-
     """
     Tests that a ValueError is raised if there are not the same number of IDs as
     atoms
@@ -109,7 +106,6 @@ def test_ASEAtoms_error():
                           (9, 'H'),
                           (12, 'O')])
 def test_ASEAtoms_getitem_int(ase_atoms, index, symbol):
-
     """
     Tests that indexing into ASEAtoms with an int returns the correct
     ase.atom.Atom object
@@ -127,7 +123,6 @@ def test_ASEAtoms_getitem_int(ase_atoms, index, symbol):
                           (list(range(14)), FORMULA, BONDS),
                           ([1, 3, 5], 'C3', [])])
 def test_ASEAtoms_getitem_intlist(ase_atoms, indexes, symbols, bonds):
-
     """
     Tests that indexing into ASEAtoms with a list of int returns the correct
     ASEAtoms object
@@ -148,7 +143,6 @@ def test_ASEAtoms_getitem_intlist(ase_atoms, indexes, symbols, bonds):
                           ((0, 14, 2), 'C4H2O', [], range(0, 14, 2)),
                           ((None, 14, None), FORMULA, BONDS, IDS)])
 def test_ASEAtoms_getitem_slice(ase_atoms, p_slice, symbols, bonds, IDs):
-
     """
     Tests that indexing into ASEAtoms with a slice returns the correct ASEAtoms
     object
@@ -166,7 +160,6 @@ def test_ASEAtoms_getitem_slice(ase_atoms, p_slice, symbols, bonds, IDs):
                           ((-5, -10., -15.), 10, 1., 'H', 0.),
                           ((2., 4., 8.), None, 56., 'H', -0.5)])
 def test_convert_to_ase_atom(position, index, mass, symbol, charge):
-
     """
     Tests that an equivalent ase.atom.Atom object is created from an MDMC Atom
     """
@@ -189,7 +182,6 @@ def test_convert_to_ase_atom(position, index, mass, symbol, charge):
                           ('K', 4, None, True),
                           ('Ca', None, '119', False)])
 def test_convert_from_ase_atom(element, atom_type, name, set_charge):
-
     """
     Tests that an equivalent MDMC Atom object is created from an ase.atom.Atom
 
@@ -220,7 +212,6 @@ def test_convert_from_ase_atom(element, atom_type, name, set_charge):
                           ([7, 4, 19, 55],
                            range(0, 4, 1))])
 def test_get_ase_atoms(IDs, expected):
-
     """
     Tests that an ASEAtoms object can created from a list of atoms
 
@@ -244,7 +235,6 @@ def test_get_ase_atoms(IDs, expected):
 
 
 def test_convert_bond(bond_atom_IDs):
-
     """
     Tests that bonds are correctly converted to integers indexing atoms, where
     there is no index conversion
@@ -279,7 +269,6 @@ def test_convert_bond_index_conversion(bond_atom_IDs):
                          [('X3DOM', X3DOMHEADER),
                           ('X3D', X3DHEADER)])
 def test_x3d_write_header_footer(datatype, header):
-
     """
     Tests that the correct X3DOM header and footer are written
 
@@ -293,7 +282,6 @@ def test_x3d_write_header_footer(datatype, header):
 
 
 def test_x3d_atom_lines(monkeypatch):
-
     """
     Tests that x3d.atom_lines returns the correct x3d/html lines (with the
     correct indentation)
@@ -329,8 +317,7 @@ def test_x3d_atom_lines(monkeypatch):
         assert line == expected[i]
 
 
-def test_x3d_bond_lines(monkeypatch):
-
+def test_x3d_bond_lines():
     """
     Tests that x3d.bond_lines returns the correct x3d/html lines (with the
     correct indentation)
@@ -364,7 +351,6 @@ def test_x3d_bond_lines(monkeypatch):
 @pytest.mark.parametrize('cell', [[10., 10., 10.],
                                   [20., 10., 5.]])
 def test_X3D_get_center_of_rotation_cell(cell):
-
     """
     Tests that the correct center of rotation is calculated when a cell is set
     """
@@ -381,7 +367,6 @@ def test_X3D_get_center_of_rotation_cell(cell):
                           (([1., 2., 3.], [5., 5., 5.], [3., 4., 12.]),
                            [3., 3.5, 7.5])])
 def test_X3D_get_center_of_rotation_no_cell(positions, center):
-
     """
     Tests that the correct center of rotation is calculated when no cell is set
     """
@@ -402,7 +387,6 @@ def test_X3D_get_center_of_rotation_no_cell(positions, center):
                           ([5., 10., 0.],
                            18.0714)])
 def test_X3D_get_viewpoint_z_cell(cell, z):
-
     """
     Tests that the correct z position for setting the viewpoint is calculated
     from the cell
