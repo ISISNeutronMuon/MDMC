@@ -371,7 +371,8 @@ class PairDistributionFunction(Observable):
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
         for partial_name, partial_value in self.partial_pdfs.items():
             # Takes the product of the number of atoms of each element in the partial
-            atom_number_product = np.multiply(*[self.numbers_of_atoms[elem] for elem in partial_name])
+            atom_number_product = np.multiply(*[self.numbers_of_atoms[elem]
+                                                for elem in partial_name])
             # Partials of the same element need to be scaled by 2 so that
             # they tend to 1 as r tends to infinity.
             if len(set(partial_name)) == 1:
@@ -392,8 +393,10 @@ class PairDistributionFunction(Observable):
             ci_cj = np.ones_like(self.r)
             bi_bj = np.ones_like(self.r)
             for elem in partial_name:
-                ci_cj *= (self.numbers_of_atoms[elem] / total_number_of_particles)  # Proportion of element
-                bi_bj *= self.weights[elem]  # Scattering Lengths/Weights
+                # Proportion of elements
+                ci_cj *= (self.numbers_of_atoms[elem] / total_number_of_particles)
+                # Scattering Lengths/Weights
+                bi_bj *= self.weights[elem]
 
             # Partials of differing elements need to be scaled by 2 when added to total,
             # as only one of the indentical pairs is considered
