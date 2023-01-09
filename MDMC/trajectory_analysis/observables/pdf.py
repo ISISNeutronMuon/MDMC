@@ -91,7 +91,7 @@ class PairDistributionFunction(Observable):
     @property
     def dependent_variables(self) -> dict:
         """
-        Get the dependent variables: these are PDF, the pair distribution function (in ``barn``)
+        Set the dependent variables: these are PDF, the pair distribution function (in ``barn``)
 
         Returns
         -------
@@ -172,7 +172,7 @@ class PairDistributionFunction(Observable):
     def PDF(self) -> Optional[float]:
         """Get the value of the total pair distribution function (in ``barn``)"""
         try:
-            return self.dependent_variables['PDF']
+            return self._dependent_variables['PDF']
         except KeyError:
             return None
 
