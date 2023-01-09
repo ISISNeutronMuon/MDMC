@@ -366,8 +366,7 @@ class PairDistributionFunction(Observable):
             The sliced up trajectory to be used to calculate PDFs
         """
         # Calculate histograms for each sub-trajectory
-        for config in trajectory.configurations:
-            self._calculate_histogram(config)
+        self._calculate_histogram(trajectory)
 
         # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
@@ -411,7 +410,7 @@ class PairDistributionFunction(Observable):
             self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
 
 
-    def _slice_trajectory(self, trajectory: CompactTrajectory, **settings: dict) -> list:
+    def _slice_trajectory(self, trajectory: CompactTrajectory, **settings: dict) -> CompactTrajectory:
         """
         Slice the trajectory into frames used to calculate an average total PDF
 
@@ -429,8 +428,8 @@ class PairDistributionFunction(Observable):
                 (rounded up to the nearest positive integer).
         Returns
         -------
-        list
-            A list containing the slices of the trajectory (selected frames) to use
+        CompactTrajectory
+            The slices of the trajectory (selected frames) to use
         """
         # np.max ensures that n_frames is at least 1 (relevant if total_n_frames < 100)
         total_n_frames = len(trajectory)
@@ -559,8 +558,8 @@ class PairDistributionFunction(Observable):
 
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        for step_n in range(trajectory.n_steps):
-            partitions = self._partition(trajectory.positions[step_n],
+        for step_n in range(len(trajectory)):
+            partitions = self._partition(trajectory.position[step_n],
                                         trajectory.element_list,
                                         part_comps)
             # Get the partition_indexes and the pairs of partitions. As well as
