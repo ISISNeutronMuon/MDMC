@@ -1,13 +1,14 @@
 """Module for calculating the total pair distribution function (PDF)"""
-
+import itertools
 from collections import defaultdict
-from itertools import (chain, combinations, combinations_with_replacement,
+from itertools import (chain, combinations, combinations_with_replacement, islice,
                        product)
 from typing import Optional
 import warnings
 
 from numba import jit
 import numpy as np
+from numpy import float64
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
@@ -618,7 +619,7 @@ class PairDistributionFunction(Observable):
                             pass
                 # pos_pairs is a list of iterators - flatten this to a single
                 # iterator
-                pos_pairs = chain(*pos_pairs)
+                pos_pairs = chain.from_iterable(pos_pairs)
                 self.partial_pdfs[partial_string] += \
                     self._calculate_histogram_from_position_pairs(pos_pairs)
 
@@ -767,10 +768,21 @@ class PairDistributionFunction(Observable):
             # Using next with default means pair_block will be filled with
             # np.array(['inf']) if StopIteration is returned. Then change
             # exhausted so that the while loop will stop.
-            pair_block = [np.subtract(*next(position_pairs, ([float('inf')],
-                                                             [0.])))
-                          for _ in range(BLOCK)]
-            exhausted = float('inf') in pair_block[-1]
+
+            pair_block = np.fromiter(iter=islice(position_pairs, BLOCK), dtype=object)
+            pair_block = [np.subtract(i[0], i[1]) for i in pair_block]
+            if len(pair_block) < BLOCK:
+                exhausted = True
+                a = [np.array([float('inf'), float('inf'), float('inf')]) for i in range(BLOCK - len(pair_block))]
+                pair_block = np.append(pair_block, a, axis=0)
+
+            # The array is "flattened" to one 3-coordinate position per array index
+            # (i.e. a shape of (BLOCK_SIZE, 3))
+            #pair_block = np.reshape(pair_block, (len(pair_block)*2, 3))
+
+            # pair_block = [np.subtract(*next(position_pairs, ([float('inf')], [0.])))
+            #               for _ in range(BLOCK)]
+            # exhausted = float('inf') in pair_block[-1]
             separations = map(self._calculate_euclidean_norm, pair_block)
             hist += jit_histogram(np.fromiter(separations,
                                               dtype=np.float64,
