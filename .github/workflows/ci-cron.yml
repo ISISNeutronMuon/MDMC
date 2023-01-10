@@ -120,7 +120,7 @@ jobs:
           BRANCH: ${{ github.head_ref }}
         run: |
           pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name "$BRANCH-total-profiling"
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not-lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name "$BRANCH-total-profiling"
 
       - name: Upload total profiling as artifact if successful
         uses: actions/upload-artifact@v3
