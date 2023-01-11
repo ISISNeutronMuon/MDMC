@@ -51,14 +51,7 @@ def PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-
-    profiler = cProfile.Profile()
-    profiler.enable()
     pdf.calculate_from_MD(trajectory, n_frames=5, r=r, use_average=False, dimensions=[39.4221067]*3)
-    profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('ncalls')
-    stats.print_stats()
-
     return pdf
 
 
@@ -77,14 +70,7 @@ def averaged_PDF(trajectory, PDF_file):
     # Scale units as nMOLDYN uses nm, rather than Ang
     r = np.array(PDF_file.variables['r'][:]) * 10.
     pdf = ObservableFactory.create_observable('PDF')
-
-    profiler = cProfile.Profile()
-    profiler.enable()
     pdf.calculate_from_MD(trajectory, n_frames=5, r=r, use_average=True, dimensions=[39.4221067]*3)
-    profiler.disable()
-    stats = pstats.Stats(profiler).sort_stats('tottime')
-    stats.print_stats()
-
     return pdf
 
 
@@ -129,8 +115,6 @@ def test_partial_PDFs(PDF, PDF_file, partial_str):
     ref_str = f'pdf-{partial_str[0]}-{partial_str[1]}'
     ref_partial = np.array(PDF_file.variables[ref_str][:])
     partial = PDF.partial_pdfs[partial_str]
-    print(partial)
-    print(ref_partial)
     assert len(ref_partial) == len(partial)
     assert np.allclose(ref_partial, partial, atol=ATOL, rtol=RTOL)
 
