@@ -764,25 +764,29 @@ class PairDistributionFunction(Observable):
         BLOCK = 65536
         exhausted = False
         while not exhausted:
-            # Get next block from iterator - return histogram if no more exist in the iterator
-            pair_block = islice(position_pairs, BLOCK)
-            # Subtract positions from each other
-            pair_block = [np.subtract(i[0], i[1]) for i in pair_block]
-
+            # Get next block from iterator
+            pair_block = np.fromiter(islice(position_pairs, BLOCK), dtype=object)
+            # return histogram if no more exist in the iterator
             if len(pair_block) == 0:
                 return hist
 
-            # pair_block will be filled with np.array(['inf']) if the iterator ends before reaching
-            # the element at position BLOCK (65536).
-            # Also toggle exhausted so that the while loop will stop.
+            # Unpack & subtract positions from each other
+            pos_1 = np.array([tup[0] for tup in pair_block])
+            pos_2 = np.array([tup[1] for tup in pair_block])
+            pair_block = np.subtract(pos_1, pos_2)
+
             if len(pair_block) < BLOCK:
+                # Toggle exhausted so that the while loop will stop.
                 exhausted = True
+                # pair_block will be filled with np.array(['inf']) if the iterator ends before reaching
+                # the element at position BLOCK (65536).
                 padding = [np.array([float('inf'), float('inf'), float('inf')])
-                     for _ in range(BLOCK - len(pair_block))]
+                           for _ in range(BLOCK - len(pair_block))]
                 pair_block = np.append(pair_block, padding, axis=0)
 
             separations = np.array([self._calculate_euclidean_norm(i) for i in pair_block])
             hist += jit_histogram(separations, bin_edges)
+
         return hist
 
     @staticmethod
@@ -800,7 +804,7 @@ class PairDistributionFunction(Observable):
             L2 distance) is calculated
         """
 
-        return np.sum(vector ** 2) ** 0.5
+        return np.sum(np.square(vector)) ** 0.5
 
     @staticmethod
     def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
