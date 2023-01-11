@@ -336,8 +336,8 @@ class PairDistributionFunction(Observable):
         running_partial_total = {}
         pdf_running_total = np.zeros(shape=len(self.r))
         # Calculate partial and total PDF for each frame in the sliced trajectory
-        for frame_index in range(len(self.trajectory)):
-            self._calculate_partial_pdfs(self.trajectory[frame_index])
+        for frame in self.trajectory:
+            self._calculate_partial_pdfs(frame)
             for partial_name in self.partial_pdfs:
                 if partial_name in running_partial_total:
                     running_partial_total[partial_name] += self.partial_pdfs[partial_name]
@@ -365,8 +365,8 @@ class PairDistributionFunction(Observable):
             The sliced up trajectory to be used to calculate PDFs
         """
         # Calculate histograms for each sub-trajectory
-        for i in range(len(trajectory)):
-            self._calculate_histogram(trajectory[i])
+        for subtraj in trajectory:
+            self._calculate_histogram(subtraj)
 
         # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
