@@ -727,15 +727,15 @@ class PairDistributionFunction(Observable):
                                         / partition_components).astype('int32'))
                        )
 
-    def _calculate_histogram_from_position_pairs(self, position_pairs: np.ndarray) -> np.ndarray:
+    def _calculate_histogram_from_position_pairs(self, position_pairs: iter) -> np.ndarray:
         """
         Returns a histogram of pair separations calculated from
         ``position_pairs``
 
         Parameters
         ----------
-        position_pairs : numpy.ndarray
-            An ``array`` of 2 element `tuples`, where each element is a 3
+        position_pairs : iter
+            An iterator returning 2 element `tuples`, where each element is a 3
             element vector specifying a position.
 
         Returns
@@ -745,7 +745,6 @@ class PairDistributionFunction(Observable):
             ``independent_variables``, where each count is an atomic separation
             (between the elements in a `tuple` in ``position_pairs``)
         """
-
         # Use np.histogram to get empty array of correct size and bin edges
         # Assumes constant r step size
         r_min = np.min(self.r) - self.r_step / 2
@@ -765,29 +764,25 @@ class PairDistributionFunction(Observable):
         BLOCK = 65536
         exhausted = False
         while not exhausted:
-            # Using next with default means pair_block will be filled with
-            # np.array(['inf']) if StopIteration is returned. Then change
-            # exhausted so that the while loop will stop.
-
-            pair_block = np.fromiter(iter=islice(position_pairs, BLOCK), dtype=object)
+            # Get next block from iterator - return histogram if no more exist in the iterator
+            pair_block = islice(position_pairs, BLOCK)
+            # Subtract positions from each other
             pair_block = [np.subtract(i[0], i[1]) for i in pair_block]
+
+            if len(pair_block) == 0:
+                return hist
+
+            # pair_block will be filled with np.array(['inf']) if the iterator ends before reaching
+            # the element at position BLOCK (65536).
+            # Also toggle exhausted so that the while loop will stop.
             if len(pair_block) < BLOCK:
                 exhausted = True
-                a = [np.array([float('inf'), float('inf'), float('inf')]) for i in range(BLOCK - len(pair_block))]
-                pair_block = np.append(pair_block, a, axis=0)
+                padding = [np.array([float('inf'), float('inf'), float('inf')])
+                     for _ in range(BLOCK - len(pair_block))]
+                pair_block = np.append(pair_block, padding, axis=0)
 
-            # The array is "flattened" to one 3-coordinate position per array index
-            # (i.e. a shape of (BLOCK_SIZE, 3))
-            #pair_block = np.reshape(pair_block, (len(pair_block)*2, 3))
-
-            # pair_block = [np.subtract(*next(position_pairs, ([float('inf')], [0.])))
-            #               for _ in range(BLOCK)]
-            # exhausted = float('inf') in pair_block[-1]
-            separations = map(self._calculate_euclidean_norm, pair_block)
-            hist += jit_histogram(np.fromiter(separations,
-                                              dtype=np.float64,
-                                              count=BLOCK),
-                                  bin_edges)
+            separations = np.array([self._calculate_euclidean_norm(i) for i in pair_block])
+            hist += jit_histogram(separations, bin_edges)
         return hist
 
     @staticmethod
