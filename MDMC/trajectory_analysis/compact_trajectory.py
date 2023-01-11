@@ -172,9 +172,10 @@ class CompactTrajectory:
         # which is another CompactTrajectory.
         try:
             start, stop, step = index.start, index.stop, index.step
-        except AttributeError:
+        except AttributeError as exc:
             if index >= self.__len__():
-                raise IndexError("Trying to access a nonexistent time frame in the CompactTrajectory.")
+                raise IndexError("Trying to access a nonexistent time"
+                                 " frame in the CompactTrajectory.") from exc
             return self.subtrajectory(index, index+1, 1)
         else:
             return self.subtrajectory(start, stop, step)
