@@ -1,5 +1,4 @@
 """Module for calculating the total pair distribution function (PDF)"""
-import itertools
 from collections import defaultdict
 from itertools import (chain, combinations, combinations_with_replacement, islice,
                        product)
@@ -8,7 +7,6 @@ import warnings
 
 from numba import jit
 import numpy as np
-from numpy import float64
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
