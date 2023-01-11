@@ -410,7 +410,8 @@ class PairDistributionFunction(Observable):
             self._dependent_variables['PDF'] += ci_cj * bi_bj * (partial_value - 1) * norm_fac
 
 
-    def _slice_trajectory(self, trajectory: CompactTrajectory, **settings: dict) -> CompactTrajectory:
+    def _slice_trajectory(self, trajectory: CompactTrajectory, **settings: dict) \
+            -> CompactTrajectory:
         """
         Slice the trajectory into frames used to calculate an average total PDF
 
@@ -776,8 +777,8 @@ class PairDistributionFunction(Observable):
             if len(pair_block) < BLOCK:
                 # Toggle exhausted so that the while loop will stop.
                 exhausted = True
-                # pair_block will be filled with np.array(['inf']) if the iterator ends before reaching
-                # the element at position BLOCK (65536).
+                # pair_block will be filled with np.array(['inf']) if the iterator ends before
+                # reaching the element at position BLOCK (65536).
                 padding = [np.array([float('inf'), float('inf'), float('inf')])
                            for _ in range(BLOCK - len(pair_block))]
                 pair_block = np.append(pair_block, padding, axis=0)
