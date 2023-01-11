@@ -190,3 +190,19 @@ def test_trajectory_identity_two_filters(water_trajectory):
     subtraj1 = water_trajectory.filter_by_type([1, 2])
     subtraj2 = water_trajectory.filter_by_element(['H'])
     assert subtraj1 == subtraj2
+
+def test_trajectory_infinite_for_loop(water_trajectory):
+    """Test that the iteration over the CompactTrajectory
+    elements does not run over an infinite number of
+    0-lenght CompactTrajectories.
+
+    Arguments:
+        water_trajectory -- The CompactTrajectory (fixture)
+    """
+    correct_loop_length = len(water_trajectory)
+    iterator = 0
+    for _ in water_trajectory:
+        iterator += 1
+        if iterator > correct_loop_length:
+            raise RuntimeError("Infinite loop in CompactTrajectory!")
+    assert correct_loop_length == iterator
