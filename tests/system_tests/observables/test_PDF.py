@@ -230,4 +230,3 @@ def present_values(expected_values, actual_values):
     """Checks that expected values are present within the actual values, within machine precision"""
     return [np.any(np.isclose(np.array(expected_value), actual_values, rtol=MACHINE_PRECISION))
             for expected_value in expected_values]
-
