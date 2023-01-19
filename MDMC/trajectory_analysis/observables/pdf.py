@@ -365,9 +365,13 @@ class PairDistributionFunction(Observable):
         trajectory: CompactTrajectory
             The sliced up trajectory to be used to calculate PDFs
         """
-        # Calculate histograms for each sub-trajectory
-        for subtraj in trajectory:
-            self._calculate_histogram(subtraj)
+
+        # Calculate histograms for each frame in trajectory
+        for partial_value in self.partial_pdfs.values():
+            partial_value = np.zeros_like(self.independent_variables['r'])
+
+        for frame in trajectory:
+            self._calculate_histogram(frame)
 
         # Calculate element-independent prefactor
         prefactor = self.universe_volume / (4.0 * np.pi * self.r ** 2 * self.r_step)
