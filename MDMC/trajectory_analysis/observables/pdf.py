@@ -335,6 +335,8 @@ class PairDistributionFunction(Observable):
 
         running_partial_total = {}
         pdf_running_total = np.zeros(shape=len(self.r))
+
+        n_frames = self.trajectory.n_steps
         # Calculate partial and total PDF for each frame in the sliced trajectory
         for frame in self.trajectory:
             self._calculate_partial_pdfs(frame)
@@ -346,11 +348,10 @@ class PairDistributionFunction(Observable):
             self._calculate_total_pdf()
             pdf_running_total += self._dependent_variables['PDF']
 
-        # Average over number of trajectories used
+        # Average over number of frames used in the sliced trajectory
         for partial_name in running_partial_total:
-            self.partial_pdfs[partial_name] = np.divide(self.partial_pdfs[partial_name],
-                                                       len(self.trajectory))
-        self._dependent_variables['PDF'] = np.divide(pdf_running_total, len(self.trajectory))
+            self.partial_pdfs[partial_name] = np.divide(self.partial_pdfs[partial_name], n_frames)
+        self._dependent_variables['PDF'] = np.divide(pdf_running_total, n_frames)
 
     def _calculate_partial_pdfs(self, trajectory: CompactTrajectory) -> None:
         """
