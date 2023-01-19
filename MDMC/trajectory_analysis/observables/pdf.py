@@ -788,14 +788,14 @@ class PairDistributionFunction(Observable):
                            for _ in range(BLOCK - len(pair_block))])
                 difference = np.append(difference, padding, axis=0)
 
-            separations = self._calculate_euclidean_norm_experimental(difference)
+            separations = self._calculate_euclidean_norm(difference)
             hist += jit_histogram(separations, bin_edges)
 
         return hist
 
     @staticmethod
     @jit('float64[:](float64[:,:])', nopython=True)
-    def _calculate_euclidean_norm_experimental(vectors: np.ndarray) -> np.ndarray:
+    def _calculate_euclidean_norm(vectors: np.ndarray) -> np.ndarray:
         """
         Calculates the Euclidean norm of an array of vectors
 
@@ -809,23 +809,6 @@ class PairDistributionFunction(Observable):
         """
 
         return np.sum(np.square(vectors), 1) ** 0.5
-
-    @staticmethod
-    @jit('float64(float64[:])', nopython=True)
-    def _calculate_euclidean_norm(vector: np.ndarray) -> np.ndarray:
-        """
-        Calculates the Euclidean norm of a vector
-
-        ``numba.jit`` results in ~10x speed up over ``np.linalg.norm``
-
-        Parameters
-        ----------
-        vector : numpy.ndarray
-            The vector for which the Euclidean norm (Euclidean length,
-            L2 distance) is calculated
-        """
-
-        return np.sum(np.square(vector)) ** 0.5
 
     @staticmethod
     def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
