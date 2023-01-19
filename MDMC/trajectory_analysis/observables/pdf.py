@@ -772,21 +772,38 @@ class PairDistributionFunction(Observable):
             # Unpack & subtract positions from each other
             pos_1 = np.array([tup[0] for tup in pair_block])
             pos_2 = np.array([tup[1] for tup in pair_block])
-            pair_block = np.subtract(pos_1, pos_2)
+            difference = np.subtract(pos_1, pos_2)
 
             if len(pair_block) < BLOCK:
                 # Toggle exhausted so that the while loop will stop.
                 exhausted = True
-                # pair_block will be filled with np.array(['inf']) if the iterator ends before
-                # reaching the element at position BLOCK (65536).
-                padding = [np.array([float('inf'), float('inf'), float('inf')])
-                           for _ in range(BLOCK - len(pair_block))]
-                pair_block = np.append(pair_block, padding, axis=0)
+                # The calculated differences will be filled with np.array(['inf'])
+                # if the iterator ended before reaching the element at position BLOCK (65536).
+                padding = np.array([np.array([float('inf'), float('inf'), float('inf')])
+                           for _ in range(BLOCK - len(pair_block))])
+                difference = np.append(difference, padding, axis=0)
 
-            separations = np.array([self._calculate_euclidean_norm(i) for i in pair_block])
+            separations = self._calculate_euclidean_norm_experimental(difference)
             hist += jit_histogram(separations, bin_edges)
 
         return hist
+
+    @staticmethod
+    @jit('float64[:](float64[:,:])', nopython=True)
+    def _calculate_euclidean_norm_experimental(vector: np.ndarray) -> np.ndarray:
+        """
+        Calculates the Euclidean norm of a vector
+
+        ``numba.jit`` results in ~10x speed up over ``np.linalg.norm``
+
+        Parameters
+        ----------
+        vector : numpy.ndarray
+            The vector for which the Euclidean norm (Euclidean length,
+            L2 distance) is calculated
+        """
+
+        return np.sum(np.square(vector), 1) ** 0.5
 
     @staticmethod
     @jit('float64(float64[:])', nopython=True)
