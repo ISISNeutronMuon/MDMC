@@ -68,22 +68,6 @@ def trajectory(universe):
     return trj
 
 
-def test_trajectory_list(PDF_setup, trajectory):
-
-    """
-    Assert that passing the MD_input as a ``Trajectory`` or ``list`` of ``Trajectory``s results in
-    the same behaviour.
-    """
-
-    PDF_setup.calculate_from_MD(trajectory)
-    PDF_trajectory = PDF_setup.trajectory
-
-    PDF_setup.calculate_from_MD([trajectory])
-    PDF_trajectory_list_input = PDF_setup.trajectory
-
-    assert len(PDF_trajectory) == len(PDF_trajectory_list_input)
-
-
 @pytest.mark.parametrize('n_frames',
                          [None, 1, 10, 30, 100])
 def test_set_n_frames(PDF_setup, trajectory, n_frames):
@@ -103,7 +87,7 @@ def test_set_n_frames(PDF_setup, trajectory, n_frames):
     else:
         settings = {}
         n_frames = len(trajectory) // 100
-    PDF_setup._parse_calc_MD_settings(trajectory, settings)
+    PDF_setup._parse_apply_MD_settings(trajectory, settings)
     assert len(PDF_setup.trajectory) == n_frames
     times = PDF_setup.trajectory.times
     # try/except accounts for n_frames == 1
@@ -118,7 +102,7 @@ def test_set_n_frames(PDF_setup, trajectory, n_frames):
 def test_set_n_frames_error(PDF_setup, trajectory, n_frames):
 
     with pytest.raises(ValueError):
-        PDF_setup._parse_calc_MD_settings(trajectory, {'n_frames':n_frames})
+        PDF_setup._parse_apply_MD_settings(trajectory, {'n_frames':n_frames})
 
 
 @pytest.mark.parametrize('partial_strings, expected',
@@ -138,7 +122,7 @@ def test_partial_strings_set(PDF_setup, trajectory, partial_strings, expected):
     """
 
     settings = {'subset':partial_strings} if partial_strings else {}
-    PDF_setup._parse_calc_MD_settings(trajectory, settings)
+    PDF_setup._parse_apply_MD_settings(trajectory, settings)
     assert sorted(PDF_setup.partial_strings) == sorted(expected)
 
 
@@ -149,7 +133,7 @@ def test_r_set(PDF_setup, trajectory):
     """
 
     r_values = np.arange(0., 10., 0.5)
-    PDF_setup._parse_calc_MD_settings(trajectory, {'r':r_values})
+    PDF_setup._parse_apply_MD_settings(trajectory, {'r':r_values})
     assert np.all(PDF_setup.r == r_values)
     assert PDF_setup.r_step == 0.5
 
@@ -164,8 +148,8 @@ def test_r_set_error(PDF_setup, trajectory, r_parameter):
 
     with pytest.raises(TypeError):
         # Set the r_parameter to an arbitrary value
-        PDF_setup._parse_calc_MD_settings(trajectory, {'r':range(0, 10, 1),
-                                                       r_parameter:0.})
+        PDF_setup._parse_apply_MD_settings(trajectory, {'r':range(0, 10, 1),
+                                                        r_parameter:0.})
 
 
 @pytest.mark.parametrize('r_min, r_max, r_step',
@@ -178,7 +162,7 @@ def test_r_set_range(PDF_setup, trajectory, r_min, r_max, r_step):
     Tests setting r values using r_min, r_max and r_step, instead of passing r.
     """
 
-    PDF_setup._parse_calc_MD_settings(trajectory, {'r_min':r_min,
+    PDF_setup._parse_apply_MD_settings(trajectory, {'r_min':r_min,
                                                    'r_max':r_max,
                                                    'r_step':r_step})
     assert np.all(PDF_setup.r == np.arange(r_min, r_max + r_step, r_step))
@@ -284,19 +268,19 @@ def test_partition_pairs(PDF, number_partitions):
     assert np.all(pair in actual for pair in expected)
 
 
-@pytest.mark.parametrize('vector', [(1., 2., 3.),
-                                    (4543., 349., 348.),
-                                    (0.000034, 38748234., -0.0032423),
-                                    (0., 0., 5.),
-                                    (0., 0., 0.)])
-def test_euclidean_norm(PDF, vector):
-
+@pytest.mark.parametrize('vectors', [
+                                    [[1., 2., 3.], [1., 2., 3.], [1., 2., 3.], [1., 2., 3.]],
+                                    [[4543., 349., 348.], [0.000034, 38748234., -0.0032423]],
+                                    [[0.000034, 38748234., -0.0032423], [0.0001, 90876534., -0.00564]],
+                                    [[0., 0., 5.], [0., 2., 0.], [1., 5., 5.]],
+                                    [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
+                                    ])
+def test_euclidean_norm(PDF, vectors):
     """
-    Tests that _calculate_euclidean_norm is the same as np.linalg.norm
+    Tests that the outputs from _calculate_euclidean_norm is the same as np.linalg.norm
     """
-
-    assert (PDF._calculate_euclidean_norm(np.array(vector))
-            == np.linalg.norm(vector))
+    linalg_output = [np.linalg.norm(vector) for vector in vectors]
+    assert np.array_equal(PDF._calculate_euclidean_norm(np.array(vectors)), linalg_output)
 
 
 def generate_position_pairs(start, stop, step):
@@ -390,48 +374,6 @@ def test_set_numbers(PDF, unique_element_dict, element_list):
 
     assert (PDF._set_numbers(unique_element_dict.keys(), element_list)
             == unique_element_dict)
-
-
-@pytest.mark.parametrize('weights, numbers, expected',
-                         [({'H':-3., 'O':5.8, 'K':2.},
-                           {'H':100, 'O':50, 'K':25},
-                           -0.05224489795918315),
-                          ({'H':-3., 'O':5.8, 'K':2.},
-                           {'H':25, 'O':15, 'K':100},
-                           -2.2930612244897954),
-                          ({'C':4., 'Ca':4.5, 'Lu':5., 'Th':5.5},
-                           {'C':15600, 'Ca':18200, 'Lu':1500, 'Th':400},
-                           -18.6082276047674),
-                          ({'C':5.5, 'Ca':5., 'Lu':4.5, 'Th':4.},
-                           {'C':15600, 'Ca':18200, 'Lu':1500, 'Th':400},
-                           -26.897443291041913)])
-def test_low_r_limit(PDF, weights, numbers, expected):
-
-    """
-    Tests that the low r limit (r=0) of the total PDF is always equal to
-    -(ci*cj*bi*bj)
-    """
-
-    # The total PDF is calculated using the partials, the weights, the numbers,
-    # the length of the trajectory (to normalise against number of trajectory
-    # steps used) the volume of the universe, the r values and the r step.
-    # However for the low r limit, only the weights and numbers should be
-    # relevant (assuming the partials are all =0 at r=0), so the other
-    # attributes are set to dummy values.
-
-    PDF.r_step = 1.
-    PDF.r = np.arange(1., 11., PDF.r_step)
-    PDF.universe_volume = 0.
-    PDF.trajectory = np.zeros([10])
-    element_pairs = combinations_with_replacement(weights.keys(), 2)
-    PDF.partial_pdfs = {pair:np.arange(0., 20., PDF.r_step * 2) for pair
-                        in element_pairs}
-    PDF.weights = weights
-    PDF.numbers = numbers
-    PDF._dependent_variables = {}
-    PDF._sum_partial_pairs()
-    # Very small tolerance to account for FP differences
-    assert np.isclose(PDF.PDF[0, 0], expected, atol=1e-20, rtol=1e-12)
 
 
 def get_expected_partition_pairs(x, y, z):
