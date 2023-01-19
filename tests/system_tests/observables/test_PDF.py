@@ -197,15 +197,37 @@ def test_partial_PDF_peaks(averaged_PDF, partial_str, expected_peak_r_values):
     assert np.all(present_values(peak_expected_r_values, peak_actual_r_values))
 
 def test_slice_trajectory(trajectory):
+    """Tests that the sliced trajectory contains the correct frames from the right times"""
+    # 5 Frames are picked from a 50-frame trajectory
     pdf = ObservableFactory.create_observable('PDF')
     sliced = pdf._slice_trajectory(trajectory, n_frames=5)
     assert len(trajectory) == 50
     assert len(sliced) == 5
-    for index in [(0, 0), (1, 10), (2, 20), (3, 30), (4, 40)]:
-        assert sliced.times[index[0]] in trajectory.times
-        assert sliced.times[index[0]] == trajectory.times[index[1]]
+    # Check that the 5 frames are evenly spaced (i.e. at indexes 0, 10, 20, 30, 40)
+    for index in range(0, 5):
+        assert sliced.times[index] in trajectory.times
+        assert sliced.times[index] == trajectory.times[index*10]
+
+
+def test_pdf_recalculation_does_not_change_values(trajectory, PDF):
+    """Tests that when the PDF is calculated in succession the values do not change"""
+    before_total = np.copy(PDF.PDF)
+    before_partials = PDF.partial_pdfs.copy()
+    # Calculate PDF again
+    PDF.calculate_from_MD(trajectory, n_frames=5, r=PDF.r, use_average=False,
+                          dimensions=[39.4221067] * 3)
+    after_total = np.copy(PDF.PDF)
+    after_partials = PDF.partial_pdfs.copy()
+    # Check that values are the same
+    assert np.array_equal(before_total, after_total)
+    assert np.all([
+        np.array_equal(before_partials[partial_name], after_partials[partial_name])
+        for partial_name in PDF.partial_pdfs.keys()
+    ])
+
 
 def present_values(expected_values, actual_values):
     """Checks that expected values are present within the actual values, within machine precision"""
     return [np.any(np.isclose(np.array(expected_value), actual_values, rtol=MACHINE_PRECISION))
             for expected_value in expected_values]
+
