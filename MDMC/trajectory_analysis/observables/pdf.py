@@ -795,20 +795,20 @@ class PairDistributionFunction(Observable):
 
     @staticmethod
     @jit('float64[:](float64[:,:])', nopython=True)
-    def _calculate_euclidean_norm_experimental(vector: np.ndarray) -> np.ndarray:
+    def _calculate_euclidean_norm_experimental(vectors: np.ndarray) -> np.ndarray:
         """
-        Calculates the Euclidean norm of a vector
+        Calculates the Euclidean norm of an array of vectors
 
         ``numba.jit`` results in ~10x speed up over ``np.linalg.norm``
 
         Parameters
         ----------
-        vector : numpy.ndarray
-            The vector for which the Euclidean norm (Euclidean length,
-            L2 distance) is calculated
+        vectors : numpy.ndarray
+            A 2-D array containing vectors for which the Euclidean norm
+            (Euclidean length, L2 distance) is calculated.
         """
 
-        return np.sum(np.square(vector), 1) ** 0.5
+        return np.sum(np.square(vectors), 1) ** 0.5
 
     @staticmethod
     @jit('float64(float64[:])', nopython=True)
