@@ -102,11 +102,11 @@ class Control:
             of steps may be reduced to prevent running MD that won't be used when
             calculating dependent variables. Default is `None`.
     equilibration_steps : int, optional
-            Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
-            refinement step. When changes to the ``Parameters`` are small, this equilibration can be
-            much shorter than the equilibration needed before starting the refinement process, but in
-            general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
-            is 0.
+            Number of molecular dynamics steps used to equilibrate the ``Universe``
+            in between each refinement step. When changes to the ``Parameters`` are small,
+            this equilibration can be much shorter than the equilibration needed before
+            starting the refinement process, but in general will vary depending on
+            the details of the ``Universe`` and ``Parameters``. Default is 0.
     verbose: int, optional
             The level of verbosity:
             Verbose level -1 hides all outputs for tests.
@@ -120,8 +120,8 @@ class Control:
     **settings: dict, optional
         cont_slicing : bool, optional
             Flag to decide between two possible behaviours when the number of ``MD_steps`` is
-            larger than the minimum required to calculate the observables. If ``False`` (default) then
-            the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
+            larger than the minimum required to calculate the observables. If ``False`` (default)
+            then the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
             blocks for each of which the observable is calculated. If ``True``, then the
             ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
             blocks as possible (with overlap allowed).
