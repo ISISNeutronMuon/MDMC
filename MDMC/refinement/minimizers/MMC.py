@@ -50,9 +50,9 @@ class MMC(Minimizer):
         # Parameters are only changed by rank 0 process, and so only rank 0
         # Minimizer needs a random distribution
         distribution = 'uniform'
-        if self.comm.rank == 0:
+        try:
             self.distribution = self.__class__.DISTRIBUTION[distribution]
-        else:
+        except:
             self.distribution = None
 
     @property
