@@ -3,14 +3,10 @@ parameters"""
 
 from abc import ABC, abstractmethod
 
-from mpi4py import MPI
 import pandas as pd
 
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
-
-# pylint: disable=c-extension-no-member
-# to avoid MPI warnings
 
 
 @repr_decorator('comm', 'FoM', 'FoM_old',
@@ -45,9 +41,6 @@ class Minimizer(ABC):
     """
 
     def __init__(self, parameters: Parameters):
-
-        # Use all available processors, as provided by MPI.COMM_WORLD
-        self.comm = MPI.COMM_WORLD
 
         # First MC step always changes state
         self.FoM_old = float('inf')
