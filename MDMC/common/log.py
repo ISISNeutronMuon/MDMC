@@ -5,10 +5,7 @@ import logging
 import platform
 from typing import List, Union
 
-from mpi4py import MPI
-
 # pylint: disable=c-extension-no-member
-# to avoid MPI warnings
 
 
 def start_logging(logfile: str = "MDMC.log",
@@ -36,34 +33,34 @@ def start_logging(logfile: str = "MDMC.log",
         WARNING) or printed to stdout.
     """
 
-    rank = MPI.COMM_WORLD.rank
+    #rank = MPI.COMM_WORLD.rank
 
-    if ranks == rank == 0:
-        logger = _start_single_logger(logfile, level=level)
-        if capture_warnings:
-            _capture_warnings(logger)
-    if ranks:
-        if ranks == -1:
-            ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
-        elif isinstance(ranks, int):
-            ranks_list = [ranks]
-        else:
-            # Try to convert given ranks into int format, otherwise just use all ranks
-            try:
-                ranks_list = [int(ranks)]
-            except ValueError:
-                ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
-
-        if rank in ranks_list:
-            # Prepends rank in front of .log extension if it exists, otherwise
-            # appends to logfile
-            add = f'_{platform.node()}_{rank}'
-            logfile = ('{0}{1}'.format(logfile, add)).replace(
-                '.log{}'.format(add), '{}.log'.format(add))
-            logger = _start_single_logger(logfile, level=level)
-            # Only capture warnings on lowest rank
-            if capture_warnings and rank == min(ranks_list):
-                _capture_warnings(logger)
+    #if ranks == rank == 0:
+    logger = _start_single_logger(logfile, level=level)
+    if capture_warnings:
+         _capture_warnings(logger)
+    # if ranks:
+    #     if ranks == -1:
+    #         ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
+    #     elif isinstance(ranks, int):
+    #         ranks_list = [ranks]
+    #     else:
+    #         # Try to convert given ranks into int format, otherwise just use all ranks
+    #         try:
+    #             ranks_list = [int(ranks)]
+    #         except ValueError:
+    #             ranks_list = list(range(0, MPI.COMM_WORLD.Get_size(), 1))
+    #
+    #     if rank in ranks_list:
+    #         # Prepends rank in front of .log extension if it exists, otherwise
+    #         # appends to logfile
+    #         add = f'_{platform.node()}_{rank}'
+    #         logfile = ('{0}{1}'.format(logfile, add)).replace(
+    #             '.log{}'.format(add), '{}.log'.format(add))
+    #         logger = _start_single_logger(logfile, level=level)
+    #         # Only capture warnings on lowest rank
+    #         if capture_warnings and rank == min(ranks_list):
+    #             _capture_warnings(logger)
 
 
 def _start_single_logger(logfile: str, level: int) -> logging.Logger:
