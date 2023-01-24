@@ -205,20 +205,19 @@ class AbstractFQt(SQwMixins, Observable):
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        # Determine the shape of Q vectors array.
+        # Determine the shape of Q vectors array. If the number of processors
+        # (comm.size) is not a factor of the first index, mpi4py cannot split
+        # the number of Q vectors equally amongst the processors.
         shape = list(np.shape(self.Q_vectors))
+
         Q_vectors = self.Q_vectors
         axis_0 = 0
+        # Split the Q vectors into a single array of Q vectors for each
+        # processor
 
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
-
-        # Reshape FQt as gather doesn't join the arrays but just collects them
-        # as arrays within an array. This is equivalent to flattening the first
-        # index.
-        FQt_shape = np.shape(FQt_array)
-        FQt_array = FQt_array.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
