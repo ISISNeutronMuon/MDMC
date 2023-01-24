@@ -119,6 +119,7 @@ class PyLammpsAttribute:
         # Conversion from System class (which is a namedtuple) to
         # ordered dict required as System cannot be pickled
         system_state = self.lmp.system._asdict()
+        # Cast back to namedtuple to remain consist with LAMMPS system attribute
         return namedtuple('System', system_state.keys())(*system_state.values())
 
     @property
@@ -399,13 +400,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
-            # pylint: disable=consider-using-with
-            # the file has to persist outside out of this method
             self.trajectory_file = NamedTemporaryFile()
             f_name = self.trajectory_file.name
-            # pylint: disable=consider-using-with
-            # the file has to persist outside out of this method
-            self.trajectory_file = open(f_name, encoding='UTF-8')
+
             # Custom trajectory output just saves the atom ID, type and
             # positions
             LOGGER.debug('%s set trajectory dump output to %s',
@@ -915,7 +912,6 @@ class LAMMPSUniverse(PyLammpsAttribute):
         universe : Universe
             The MDMC ``Universe`` used to fill the LAMMPS box with atoms.
         """
-
         self.atom_types = universe.atom_types
         # Assume all atoms of the same type have the same element and mass
         # Sort atoms based on atom_type (i.e. numerically starting at 1) so
@@ -938,10 +934,11 @@ class LAMMPSUniverse(PyLammpsAttribute):
                 # new atom id (as it is sequential)
                 lmp_atom_id = self.lmp.atoms.natoms
                 self.lmp.set('atom', lmp_atom_id,
-                             'vx', atom.velocity[0],
-                             'vy', atom.velocity[1],
-                             'vz', atom.velocity[2])
-                self.atom_dict[atom] = lmp_atom_id, root=0
+                                'vx', atom.velocity[0],
+                                'vy', atom.velocity[1],
+                                'vz', atom.velocity[2])
+
+                self.atom_dict[atom] = lmp_atom_id
 
     def set_config(self, config: np.ndarray) -> None:
         """
