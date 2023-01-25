@@ -19,12 +19,6 @@ variables when they are read from ``PyLammps`` e.g.
 A minor bug in LAMMPS (Dec 2018 version) means that ``nangletypes`` returned
 by ``PyLammps`` is incorrectly set to ``ndihedraltypes``.  This was corrected in
 Mar 2020 release.
-
-The PyLammps class (which is what MDMC interfaces to) only outputs on the rank 0
-process when using MPI. This means that accessing PyLammps properties should
-only be done on rank 0, and broadcast to other ranks if necessary. This is also
-true of calls to PyLammps.eval, and may also occur in other cases (anything that
-ends up using the OutputCapture class).
 """
 from __future__ import annotations
 

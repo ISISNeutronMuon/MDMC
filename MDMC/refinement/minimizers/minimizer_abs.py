@@ -9,7 +9,7 @@ from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
 
 
-@repr_decorator('comm', 'FoM', 'FoM_old',
+@repr_decorator('FoM', 'FoM_old',
                 'parameters', 'parameters_old_values')
 class Minimizer(ABC):
 
@@ -23,8 +23,6 @@ class Minimizer(ABC):
 
     Attributes
     ----------
-    comm : mpi4py.MPI.Intracomm
-        MPI Intracomm which has all of the specified processors
     history : list
         A `list` of minimization history, where each element contains the FoM, a
         `list` of the ``Parameters`` and a `str` with whether the step was
