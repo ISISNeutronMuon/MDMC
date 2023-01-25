@@ -62,6 +62,7 @@ from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=too-many-lines
 
 class PyLammpsAttribute:
 
@@ -400,8 +401,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
+            # pylint: disable=consider-using-with
             self.trajectory_file = NamedTemporaryFile()
-            f_name = self.trajectory_file.name
+            #     f_name = self.trajectory_file.name
 
             # Custom trajectory output just saves the atom ID, type and
             # positions

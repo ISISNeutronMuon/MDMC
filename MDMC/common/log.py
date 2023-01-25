@@ -29,7 +29,7 @@ def start_logging(logfile: str = "MDMC.log",
 
     logger = _start_single_logger(logfile, level=level)
     if capture_warnings:
-         _capture_warnings(logger)
+        _capture_warnings(logger)
 
 
 def _start_single_logger(logfile: str, level: int) -> logging.Logger:
