@@ -47,13 +47,9 @@ class MMC(Minimizer):
         self.max_parameter_change = settings.get('max_parameter_change', 0.01)
         self.conv_tol = settings.get('conv_tol', 1e-5)
         self.min_steps = settings.get('min_steps', 2)
-        # Parameters are only changed by rank 0 process, and so only rank 0
-        # Minimizer needs a random distribution
         distribution = 'uniform'
-        if self.comm.rank == 0:
-            self.distribution = self.__class__.DISTRIBUTION[distribution]
-        else:
-            self.distribution = None
+        self.distribution = self.__class__.DISTRIBUTION[distribution]
+
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -108,14 +104,9 @@ class MMC(Minimizer):
             `True` if the state should be change
         """
 
-        # Only determine if state will be changed on rank 0 process
-        if self.comm.rank == 0:
-            prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
-            change_state = bool(prob > np.random.random())
-        else:
-            change_state = None
-        # Broadcast to all processes whether or not the state will be changed
-        change_state = self.comm.bcast(change_state, root=0)
+        # Only determine if state will be changed
+        prob = min(1, np.exp((self.FoM_old - self.FoM) / self.MC_norm))
+        change_state = bool(prob > np.random.random())
 
         return change_state
 
@@ -134,18 +125,12 @@ class MMC(Minimizer):
             All ``Parameter`` objects that are being refined
         """
 
-        # Only calculate magnitude of parameter changes on rank 0 process, so
-        # that each process ends up with same parameters
-        if self.comm.rank == 0:
-            # Faster to generate all random numbers at once
-            changes = self.distribution(-self.max_parameter_change,
-                                        self.max_parameter_change,
-                                        len(self.parameters))
-        else:
-            changes = None
-        # Broadcast parameters changes to all processes
-        changes = self.comm.bcast(changes, root=0)
-        # Change parameters by same amount on all processes
+        # Calculate magnitude of parameter changes
+        # Faster to generate all random numbers at once
+        changes = self.distribution(-self.max_parameter_change,
+                                    self.max_parameter_change,
+                                    len(self.parameters))
+
         for i, parameter in enumerate(self.parameters.values()):
             new_value = parameter.value * (1 + changes[i])
             # If the parameter is constrained, then clip changes that would be out of range

@@ -760,9 +760,9 @@ class PairDistributionFunction(Observable):
             jit_hist, _ = np.histogram(separations, bins=bin_edges)
             return jit_hist
 
-        # Calculate histograms over blocks. This is both for memory management
-        # and to enable scattering for MPI. Numpy also uses blocks, with a BLOCK
-        # size of 65536 (256**2), so will use this block size and pad with zeros
+        # Calculate histograms over blocks. This is mainly for memory management.
+        # Numpy also uses blocks, with a BLOCK size of 65536 (256**2),
+        # so will use this block size and pad with zeros
         # if position_pairs has been exhausted.
         # pylint: disable=invalid-name
         BLOCK = 65536
