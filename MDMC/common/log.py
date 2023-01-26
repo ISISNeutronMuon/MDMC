@@ -16,12 +16,6 @@ def start_logging(logfile: str = "MDMC.log",
     level : int, optional
         The logging level, corresponding to values in standard library logging
         module.  Default is 20 (``logging.INFO``).
-    ranks : int, list, optional
-        An `int` or `list` of `int` which specifies each rank which will log.
-        Each of these ranks will produce a separate log file, which will be the
-        base ``logfile`` string and the node name and rank. `-1` indicates all
-        ranks will be logged. **It is recommended `-1` is not used for runs
-        using a large number of ranks.**
     capture_warnings : bool, optional
         Whether warnings are captured by the logger (with a level of
         WARNING) or printed to stdout.
