@@ -1517,11 +1517,8 @@ class Simulation:
                 on engine used.
         """
 
-        # verbose_manager.step(f"Running minimization for {n_steps} steps")
         self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
                              **self.settings)
-
-        # verbose_manager.finish("Minimization")
 
     def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
@@ -1553,11 +1550,8 @@ class Simulation:
         else:
             process = 'simulation'
 
-        # verbose_manager.step(f"Running {process} for {n_steps} steps")
         self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
                         work_dir=work_dir, **self.settings)
-
-        # verbose_manager.finish(f"{process.capitalize()}")
 
     @property
     def trajectory(self) -> Union['CompactTrajectory', None]:
