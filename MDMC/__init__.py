@@ -36,7 +36,7 @@ trajectory_analysis
 Logging
 -------
 By default MDMC will log a single process regardless of whether it
-is being run in serial or parallell. The process will log to 'MDMC.log'.
+is being run in serial or parallel. The process will log to 'MDMC.log'.
 """
 
 from .common.log import start_logging
