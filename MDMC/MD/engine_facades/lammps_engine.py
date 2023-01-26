@@ -86,8 +86,6 @@ class PyLammpsAttribute:
         if lmp:
             self.lmp = lmp
         else:
-            # Pass communicator to PyLammps to ensure consistency with process
-            # ranks
             self.lmp = PyLammps()
             self.lmp.units('real')
             self.lmp.atom_style(atom_style)
@@ -129,7 +127,6 @@ class PyLammpsAttribute:
             ``fix` which is applied
         """
 
-        # PyLammps.fixes only exists on rank 0 process, so bcast
         fixes = self.lmp.fixes
         return fixes
 
@@ -167,8 +164,6 @@ class PyLammpsAttribute:
         Dumps are LAMMPS commands which write atom quantities to file for
         specified timesteps
         """
-
-        # PyLammps.dumps only exists on rank 0 process, so bcast.
         dumps = self.lmp.dumps
         return dumps
 
