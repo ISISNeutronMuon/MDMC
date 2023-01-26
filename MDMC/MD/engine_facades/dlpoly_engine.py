@@ -364,7 +364,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         # pylint: disable=c-extension-no-member, too-many-lines
         self.dlpoly.run(numProcs=settings.get('numprocs',1), outputFile=output_log,
                         mpi="mpirun -x OMPI_MCA_btl=\"^vader\" --allow-run-as-root -n")
-        # self.dlpoly.run(numProcs=1, outputFile=output_log)
         print("update coordinates from ", self.dlpoly.control['io_file_revcon'])
         self.dlpoly.dest_config = 'minim.config'
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
