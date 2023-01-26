@@ -10,7 +10,6 @@ import pandas as pd
 import corner
 from scipy.interpolate import interp1d, interp2d
 from scipy.optimize import OptimizeResult
-from verbosemanager import VerboseManager
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -408,13 +407,12 @@ class Control:
 
         if self.verbose != -1:
             self._print_header()  # creates stdout header
-            verbose_manager = VerboseManager.instance()
-            verbose_manager.start(verbose_steps, verbose=self.verbose)
+            # verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
                     self.equilibrate()
 
-                verbose_manager.header(f"Step {count + 1}")
+                # verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
@@ -463,7 +461,7 @@ class Control:
                 print(
                 f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
 
-        verbose_manager.finish("Refinement")
+        # verbose_manager.finish("Refinement")
 
     def equilibrate(self) -> None:
         """
@@ -479,13 +477,11 @@ class Control:
         parameters, iterate parameters a step forward and reset MD (phasespace)
         if previous step was rejected and reset_config = true
         """
-        verbose_manager = VerboseManager.instance()
-        verbose_manager.start(4, verbose=self.verbose)
 
         # Generate FoM by running MD for this step and then calculate FoM
         fom = self._generate_FoM()
 
-        verbose_manager.step("Selecting new parameters and updating engine")
+        # verbose_manager.step("Selecting new parameters and updating engine")
         # Select new parameters to consider
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
@@ -503,8 +499,8 @@ class Control:
 
         self.minimizer.write_history(self.results_filename)
 
-        step_timings = verbose_manager.finish("Refinement step")
-        self.step_timings.append(step_timings)
+        # step_timings = verbose_manager.finish("Refinement step")
+        # self.step_timings.append(step_timings)
 
 
     @staticmethod
@@ -749,14 +745,11 @@ class Control:
             ``ObservablesPairs`` for which the MD ``Observable`` will be
             calculated
         """
-        verbose_manager = VerboseManager.instance()
-        # this is a subprocess, so we don't bother giving maximum steps since it won't be used
-        verbose_manager.start(0, verbose=self.verbose)
 
-        verbose_manager.step("Converting trajectory")
+        # verbose_manager.step("Converting trajectory")
         trj = simulation.engine.convert_trajectory()
 
-        verbose_manager.step("Calculating observables from the MD trajectory")
+        # verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
@@ -764,7 +757,7 @@ class Control:
                     if key not in self.timings:
                         self.timings[key] = []
                     self.timings[key] += value
-        verbose_manager.finish("Calculating observables")
+        # verbose_manager.finish("Calculating observables")
 
     def _calculate_minimum_MD_steps(self, observable_pair: ObservablePair) -> int:
         """
