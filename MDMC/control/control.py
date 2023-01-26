@@ -1,5 +1,4 @@
 """A module for performing the refinement"""
-import statistics
 from copy import deepcopy
 from typing import List, Dict
 from contextlib import suppress
@@ -406,10 +405,6 @@ class Control:
             control.refine(100)
         """
 
-        # calculate verbose steps
-        # 4 steps per refinement step, and n + 1 steps total
-        verbose_steps = (n_steps + 1) * 4
-        # initialise step timings list for average step timings at end
         self.step_timings = []
 
         count = -1
@@ -461,12 +456,6 @@ class Control:
             if self.verbose != -1:
                 print(
                 f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
-
-        if self.verbose >= 1:
-            average_timing = statistics.mean(self.step_timings)
-            if self.verbose != -1:
-                print(
-                f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
 
     def equilibrate(self) -> None:
         """
