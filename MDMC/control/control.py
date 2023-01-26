@@ -131,8 +131,10 @@ class Control:
             If the GPR or GPO minimisers are used, this variable determines the number
             of points to measure and minimise parameters
         use_hypercube: Bool
-            If the GPR minimiser is to be used, this setting determines whether a latin
-            hypercube is used to arrange points of parameter coordinates to measure.
+            If the GPR minimiser is to be used, this determines if the n_points to be measured
+            are spread across the parameter space using a Latin hypercube (True), or if the number
+            of  points to be measured is instead n_points^number of parameters spaced evenly across
+            the entire space (False - not recommended). Default is False.
         MC_norm: int
             1 if the MMC minimiser is to be used for parameter optimisation.
         use_average : bool, optional
