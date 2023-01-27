@@ -1545,11 +1545,6 @@ class Simulation:
             Working directory for the MD engine to write to. Default is `None`.
         """
 
-        if equilibration:
-            process = 'equilibration'
-        else:
-            process = 'simulation'
-
         self.engine.run(n_steps=n_steps, equilibration=equilibration, output_log=output_log,
                         work_dir=work_dir, **self.settings)
 
