@@ -81,25 +81,10 @@ def mocked_df():
 def correct_output_data():
     return [(1.0, 2.0), 1.0, (1.2970476059280804, 2.578890522713669), 3.6666658956168403]
 
-def test_GPR_parameter_point_array(parameters, constrained_parameters):
-    """Test that the array of points to be simulated is created correctly"""
-    gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
-    points = gpr.parameter_point_array
-    assert np.allclose(points[0], (0.7, 1.4), rtol=1e-5)
-    assert np.allclose(points[1], (0.7, 2.6), rtol=1e-5)
-    assert np.allclose(points[2], (1.3, 1.4), rtol=1e-5)
-    assert np.allclose(points[3], (1.3, 2.6), rtol=1e-5)
-
-    _, points = gpr.create_parameter_point_array(constrained_parameters)
-    assert np.allclose(points[0], [0.5, 1.0], rtol=1e-5)
-    assert np.allclose(points[1], [0.5, 4.0], rtol=1e-5)
-    assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
-    assert np.allclose(points[3], [2.0, 4.0], rtol=1e-5)
-
 
 def test_GPR_parameter_point_array_hypercube(constrained_parameters):
-    """Test that the array of points to be simulated is created correctly for the latin hypercube"""
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, use_hypercube=True)
+    """Test that the array of points to be simulated is created correctly"""
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4)
     points = gpr.parameter_point_array
     par1_constraints = constrained_parameters['parameter1'].constraints
     par2_constraints = constrained_parameters['parameter2'].constraints
@@ -117,11 +102,11 @@ def test_GPR_reset_parameters(parameters):
     gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
 
     parameter_values = [p.value for p in gpr.parameters.values()]
-    assert np.allclose(parameter_values, (0.7, 1.4), rtol=1e-5)
+    assert np.allclose(parameter_values, (0.85, 1.7), rtol=1e-5)
 
     gpr.reset_parameters()
     parameter_values = [p.value for p in gpr.parameters.values()]
-    assert np.allclose(parameter_values, (1.3, 2.6), rtol=1e-5)
+    assert np.allclose(parameter_values, (1.15, 2.3), rtol=1e-5)
 
 
 @pytest.mark.parametrize('FoMs,coordinates,expected',
@@ -143,7 +128,8 @@ def test_GPR_create_bounds():
     unconstrained_parameter = Parameter(name='parameter1', value=1.)
     unconstrained_parameter_zero = Parameter(name='parameter1', value=0.0)
 
-    gpr = MinimizerFactory.create_minimizer('GPR', Parameters(), n_points=3)
+    gpr = MinimizerFactory.create_minimizer('GPR', Parameters(constrained_parameter), n_points=3)
+    #  gpr needs to be instantiated, but isn't directly used
     lower_bound, upper_bound = gpr.create_bounds(constrained_parameter)
     assert np.allclose([lower_bound, upper_bound], [0.5,2.0], rtol=1e-5)
 
@@ -172,7 +158,7 @@ def test_GPR_set_parameter_values():
         gpr.set_parameter_values(['parameter2'], [7.0])
 
 
-def test_GPR_fit():
+def test_GPR_fit(parameters):
     """Tests that the GPR fit is called with the correct arguments given an input history"""
     mocked_df = pd.DataFrame(data=[[0,100.0,'Accepted',0.2,2.6],
                             [1,150.5,'Accepted',1.8,2.6]],
@@ -181,16 +167,16 @@ def test_GPR_fit():
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         with patch("MDMC.refinement.minimizers.GPR.skGPR.fit", autospec=True) as mock_fit:
 
-            gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
+            gpr = MinimizerFactory.create_minimizer('GPR', parameters)
             _, _, _ = gpr.GPR_fit()
             # We don't care what the output is as not testing the scikit-learn module
             # we just want to know that it was called correctly.
             mock_fit.assert_called_with(ANY, [[0.2, 2.6], [1.8, 2.6]], [100.0, 150.5])
 
 
-def test_GPR_predict():
+def test_GPR_predict(parameters):
     """Tests that the GPR prediction returns the right points and predictions"""
-    gpr = MinimizerFactory.create_minimizer('GPR', Parameters())
+    gpr = MinimizerFactory.create_minimizer('GPR', parameters)
     kernel = RBF(length_scale=4.0)
     input_regressor = GaussianProcessRegressor(kernel=kernel, alpha=0.1)
     input_regressor.fit([[0.0, 0.0], [1.0, 1.0]], [0.0, 1.0])
@@ -204,11 +190,11 @@ def test_GPR_minimizer_change_constrained_parameter():
     parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
                              Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
 
-    # Expect values to be set to the upper/lower limit
-    expected_values = [0.5, 0.5]
-    minim = MinimizerFactory.create_minimizer('GPR', parameters)
-    minim.change_parameters()
-    assert [p.value for p in minim.parameters.values()] == expected_values
+    # Expect values: The seed in the l.h.c. should make them consistent
+    expected_values = [0.625, 1.375]
+    gpr = MinimizerFactory.create_minimizer('GPR', parameters)
+    gpr.change_parameters()
+    assert [p.value for p in gpr.parameters.values()] == expected_values
 
 
 @pytest.mark.parametrize("has_converged_value",
