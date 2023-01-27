@@ -81,25 +81,10 @@ def mocked_df():
 def correct_output_data():
     return [(1.0, 2.0), 1.0, (1.2970476059280804, 2.578890522713669), 3.6666658956168403]
 
-def test_GPR_parameter_point_array(parameters, constrained_parameters):
-    """Test that the array of points to be simulated is created correctly"""
-    gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
-    points = gpr.parameter_point_array
-    assert np.allclose(points[0], (0.7, 1.4), rtol=1e-5)
-    assert np.allclose(points[1], (0.7, 2.6), rtol=1e-5)
-    assert np.allclose(points[2], (1.3, 1.4), rtol=1e-5)
-    assert np.allclose(points[3], (1.3, 2.6), rtol=1e-5)
-
-    _, points = gpr.create_parameter_point_array(constrained_parameters)
-    assert np.allclose(points[0], [0.5, 1.0], rtol=1e-5)
-    assert np.allclose(points[1], [0.5, 4.0], rtol=1e-5)
-    assert np.allclose(points[2], [2.0, 1.0], rtol=1e-5)
-    assert np.allclose(points[3], [2.0, 4.0], rtol=1e-5)
-
 
 def test_GPR_parameter_point_array_hypercube(constrained_parameters):
-    """Test that the array of points to be simulated is created correctly for the latin hypercube"""
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4, use_hypercube=True)
+    """Test that the array of points to be simulated is created correctly"""
+    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4)
     points = gpr.parameter_point_array
     par1_constraints = constrained_parameters['parameter1'].constraints
     par2_constraints = constrained_parameters['parameter2'].constraints
