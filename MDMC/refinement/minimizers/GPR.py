@@ -68,7 +68,7 @@ class GPR(Minimizer):
         """
         parameter_names = [str(name) for name in parameters.keys()]
 
-        samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
+        samples = st.qmc.LatinHypercube(d=len(parameters), centered=True, seed=1)
         latin_points = samples.random(n=self.n_points)
 
         lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
