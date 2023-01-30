@@ -32,8 +32,7 @@ RUN apt-get update && apt-get install --upgrade -y \
   
 # Get LAMMPS # used to be lammps-stable.tar.gz
 RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
-RUN mkdir opt/MD
-RUN mkdir opt/MD/lammps
+RUN mkdir -p opt/MD/lammps
 RUN tar xvzf lammps-29Sep2021.tar.gz -C opt/MD/lammps --strip-components=1
 RUN rm /lammps-29Sep2021.tar.gz
 
@@ -58,7 +57,7 @@ RUN make
 RUN make install-python
 
 # get DLPOLY
-RUN mkdir opt/MD/dlpoly
+RUN mkdir -p opt/MD/dlpoly
 WORKDIR opt/MD/dlpoly
 RUN git clone https://gitlab.com/ccp5/dl-poly.git
 RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
