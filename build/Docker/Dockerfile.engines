@@ -29,10 +29,28 @@ RUN apt-get update && apt-get install --upgrade -y \
   cmake \
   wget \
   python3-tk
+
+RUN mkdir /opt/MD
+
+# Install packmol
+# Get Package
+RUN mkdir /opt/MD/packmol
+WORKDIR /opt/MD/packmol
+RUN wget https://github.com/m3g/packmol/archive/refs/tags/v20.14.0.tar.gz
+RUN tar -xzvf v20.14.0.tar.gz
+RUN rm v20.14.0.tar.gz
+
+# Build Packmol
+WORKDIR /opt/MD/packmol/packmol
+RUN ./configure
+RUN make
+
+# Install fftool
+RUN git clone https://github.com/agiliopadua/fftool.git
   
 # Get LAMMPS # used to be lammps-stable.tar.gz
 RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
-RUN mkdir -p /opt/MD/lammps
+RUN mkdir /opt/MD/lammps
 RUN tar xvzf lammps-29Sep2021.tar.gz -C /opt/MD/lammps --strip-components=1
 RUN rm /lammps-29Sep2021.tar.gz
 
@@ -57,12 +75,12 @@ RUN make
 RUN make install-python
 
 # get DLPOLY
-RUN mkdir -p /opt/MD/dlpoly
+RUN mkdir /opt/MD/dlpoly
 WORKDIR /opt/MD/dlpoly
 RUN git clone https://gitlab.com/ccp5/dl-poly.git
 RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
 RUN cd build-dlpoly && make install
- 
+
 # Start in /home
 WORKDIR /home
 
