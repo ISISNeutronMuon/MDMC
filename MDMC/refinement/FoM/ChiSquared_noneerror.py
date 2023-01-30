@@ -36,9 +36,10 @@ class ChiSquaredNoError(FigureOfMerit):
         # ignore line too long linting as it is necessary for LaTeX formatting
         # pylint: disable=line-too-long
         r"""
-        Performs the square difference for an ``ObservablePair``. If ``obs_pair.auto_scale`` is
-        `True`, then this will also set ``obs_pair.rescale`` to the value which minimizes the FoM.
-        If we label ``rescale_factor``:math:`=\lambda` then the minimum of the FoM is obtained as:
+        Performs the value normalised square difference for an ``ObservablePair``
+        If ``obs_pair.auto_scale`` is `True`, then this will also set ``obs_pair.rescale``
+        to the value which minimizes the FoM. If we label ``rescale_factor``:math:`=\lambda`
+        then the minimum of the FoM is obtained as:
 
         .. math::
 
@@ -74,5 +75,6 @@ class ChiSquaredNoError(FigureOfMerit):
                                        / np.sum(exp_values ** 2))
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum(obs_pair.calculate_difference() ** 2)
+        value_unreduced = np.sum((obs_pair.calculate_difference() / \
+                        np.array(*obs_pair.MD_obs.dependent_variables.values())) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
