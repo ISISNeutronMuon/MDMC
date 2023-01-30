@@ -32,8 +32,9 @@ RUN apt-get update && apt-get install --upgrade -y \
   
 # Get LAMMPS # used to be lammps-stable.tar.gz
 RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
-RUN mkdir opt/MD/lammps \
-    && tar xvzf lammps-29Sep2021.tar.gz -C opt/MD/lammps --strip-components=1
+RUN mkdir opt/MD
+RUN mkdir opt/MD/lammps
+RUN tar xvzf lammps-29Sep2021.tar.gz -C opt/MD/lammps --strip-components=1
 RUN rm /lammps-29Sep2021.tar.gz
 
 # Build LAMMPS from source
