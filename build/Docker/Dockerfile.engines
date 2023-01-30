@@ -42,7 +42,6 @@ RUN rm v20.14.0.tar.gz
 
 # Build Packmol
 WORKDIR /opt/MD/packmol/packmol
-RUN ./configure
 RUN make
 
 # Install fftool
