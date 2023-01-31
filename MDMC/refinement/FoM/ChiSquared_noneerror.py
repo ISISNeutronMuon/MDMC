@@ -14,11 +14,12 @@ class ChiSquaredNoError(FigureOfMerit):
         FoM_{total} = \frac{\sum_{i} FoM_{i}}{\sum_{i} w_{i}}
 
     Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
-    a sum of the square difference between data points for a single ``ObservablePair``:
+    a value normalised sum of the square difference between data points for a single
+    ``ObservablePair``:
 
     .. math::
 
-        FoM_{i} = \frac{w_{i}}{\nu_{i}} \sum_{j} (D_{j}^{exp} - D_{j}^{sim})^2
+        FoM_{i} = \frac{w_{i}}{\nu_{i}} \sum_{j} \frac{(D_{j}^{exp} - D_{j}^{sim})^2}{D_{j}^{sim}}
 
     where the sum is over the :math:`N_{i}` data points in the ``ObservablePair`` corresponding to
     the :math:`i`-th dataset, and the normalisation factor :math:`\nu_{i}` is either :math:`N_{i}`,
@@ -44,7 +45,7 @@ class ChiSquaredNoError(FigureOfMerit):
         .. math::
 
 
-            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \left(\lambda*D_{j}^{exp} - D_{j}^{sim}\right)^2 \\\\
+            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \frac{\left(\lambda*D_{j}^{exp} - D_{j}^{sim}\right)^2}{D_{j}^{sim}} \\\\
             \left. \frac{dFoM_{i}}{d\lambda}\right|_{\lambda=\lambda_{min}} &=& 0 \\\\
             \lambda_{min} &=& \frac{A}{B} \\\\
 
@@ -75,6 +76,6 @@ class ChiSquaredNoError(FigureOfMerit):
                                        / np.sum(exp_values ** 2))
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum((obs_pair.calculate_difference() / \
-                        np.array(*obs_pair.MD_obs.dependent_variables.values())) ** 2)
+        value_unreduced = np.sum(obs_pair.calculate_difference()** 2 / \
+                        np.array(*obs_pair.MD_obs.dependent_variables.values()))
         return obs_pair.weight * value_unreduced / norm_factor
