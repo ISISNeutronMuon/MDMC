@@ -15,7 +15,7 @@ class ChiSquaredNoError(FigureOfMerit):
 
     Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
     a value normalised sum of the square difference between data points for a single
-    ``ObservablePair``:
+    ``ObservablePair``, i.e. the reduced chi-squared:
 
     .. math::
 
@@ -56,6 +56,12 @@ class ChiSquaredNoError(FigureOfMerit):
             A &=& \sum_{j} D_{j}^{exp}*D_{j}^{sim} \\\\
             B &=& \sum_{j}\left(D_{j}^{exp}\right)^2
 
+        which simplifies to: 
+
+        .. math::
+
+            A &=& \sum_{j} D_{j}^{sim} \\\\
+            B &=& \sum_{j} D_{j}^{exp}
 
         Parameters
         ----------

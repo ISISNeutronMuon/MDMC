@@ -16,11 +16,11 @@ class ChiSquaredExpError(FigureOfMerit):
 
     Here the weighted Figure of Merit for the :math:`i`-th dataset, :math:`FoM_{i}`, is given by
     a sum of the square difference between data points for a single ``ObservablePair``, normalised
-    by the errors and the number of data points:
+    by the errors and the number of data points, i.e. the reduced chi-squared:
 
     .. math::
 
-        FoM_{i} = \frac{w_{i}}{\nu_{i}} \sum_{j} (\frac{D_{j}^{exp} - D_{j}^{sim}}{\sigma_{j}^{exp}})^2
+        FoM_{i} = \frac{w_{i}}{\nu_{i}} \sum_{j} \frac{(D_{j}^{exp} - D_{j}^{sim})^2}{(\sigma_{j}^{exp})^2}
 
     where the sum is over the :math:`N_{i}` data points in the ``ObservablePair`` corresponding to
     the :math:`i`-th dataset, and the normalisation factor :math:`\nu_{i}` is either :math:`N_{i}`,
@@ -57,6 +57,13 @@ class ChiSquaredExpError(FigureOfMerit):
 
             A &=& \sum_{j}\left(\frac{D_{j}^{sim}}{\sigma_{j}^{exp}}\right)^2 \\\\
             B &=& \sum_{j} \frac{D_{j}^{exp}*D_{j}^{sim}}{(\sigma_{j}^{exp})^2}
+        
+        which simplifies to: 
+
+        .. math::
+
+            A &=& \sum_{j} D_{j}^{sim} \\\\
+            B &=& \sum_{j} D_{j}^{exp}
 
 
         Parameters
@@ -75,11 +82,12 @@ class ChiSquaredExpError(FigureOfMerit):
             exp_values = np.array(
                 *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2)
-                                       / np.sum(MD_values * exp_values
-                                                / exp_errors ** 2))
+            obs_pair.rescale_factor = (np.sum((MD_values))
+                                       / np.sum(exp_values))
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum((obs_pair.calculate_difference()
                                   / obs_pair.calculate_exp_errors()) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
+        
+np.array(*self.exp_obs.errors.values()) * self.rescale_factor
