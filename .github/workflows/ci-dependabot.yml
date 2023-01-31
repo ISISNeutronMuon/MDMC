@@ -3,6 +3,7 @@ name: Dependabot CI
 # as Dependabot does not have access to regular secrets
 on:
   pull_request:
+  workflow_dispatch:
   
 jobs:
   tests:
