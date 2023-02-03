@@ -47,7 +47,8 @@ class ChiSquaredExpError(FigureOfMerit):
         .. math::
 
 
-            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \left(\frac{\lambda*D_{j}^{exp} - D_{j}^{sim}}{\lambda*\sigma_{j}^{exp}}\right)^2 \\\\
+            FoM_{i}(\lambda) &=& w_{i} \sum_{j} \left(\frac{\lambda*D_{j}^{exp} - \\\\
+            D_{j}^{sim}}{\lambda*\sigma_{j}^{exp}}\right)^2 \\\\
             \left. \frac{dFoM_{i}}{d\lambda}\right|_{\lambda=\lambda_{min}} &=& 0 \\\\
             \lambda_{min} &=& \frac{A}{B} \\\\
 
@@ -57,8 +58,8 @@ class ChiSquaredExpError(FigureOfMerit):
 
             A &=& \sum_{j}\left(\frac{D_{j}^{sim}}{\sigma_{j}^{exp}}\right)^2 \\\\
             B &=& \sum_{j} \frac{D_{j}^{exp}*D_{j}^{sim}}{(\sigma_{j}^{exp})^2}
-        
-        which simplifies to: 
+
+        which simplifies to:
 
         .. math::
 
