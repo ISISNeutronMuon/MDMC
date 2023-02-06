@@ -42,6 +42,50 @@ RUN tar -xJf gcc-12.2.0.tar.xz
 RUN LD_LIBRARY_PATH="/opt/other/gfortran/gcc-12.2.0/lib64:$LD_LIBRARY_PATH"
 RUN export LD_LIBRARY_PATH
 
+### This is the Dockerfile for mdmc/engines, which contains apt-get dependencies
+### and MD engines; i.e. the 'backend' of mdmc/mdmc.
+
+# Use an official Python runtime as a parent image
+FROM python:3.9.6-slim-buster
+
+# Define environment variable
+ENV NAME World
+ENV DEBIAN_FRONTEND noninteractive
+ENV LD_LIBRARY_PATH /opt/MD/lammps/build/
+ENV PYTHONPATH ${PYTHONPATH}:/opt/MD/lammps/build/
+ENV PYTHONUNBUFFERED 1
+
+# Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
+# scipy), and cmake for LAMMPS
+RUN apt-get update && apt-get install --upgrade -y \
+  python3-pip \
+  python3-dev \
+  libhdf5-dev \
+  libnetcdf-dev \
+  bash \
+  git \
+  gfortran \
+  libopenmpi-dev \
+  libblas-dev \
+  liblapack-dev \
+  libfreetype6-dev \
+  libfftw3-dev \
+  cmake \
+  wget \
+  python3-tk
+
+RUN mkdir /opt/MD
+
+# Install fftool/packmol
+# Install dependencies (gfortran)
+RUN mkdir /opt/other
+RUN mkdir /opt/other/gfortran
+WORKDIR /opt/other/gfortran
+RUN wget https://gfortran.meteodat.ch/download/x86_64/releases/gcc-12.2.0.tar.xz
+RUN tar -xJf gcc-12.2.0.tar.xz
+RUN LD_LIBRARY_PATH="/opt/other/gfortran/gcc-12.2.0/lib64:$LD_LIBRARY_PATH"
+RUN export LD_LIBRARY_PATH
+
 # Get packmol
 RUN mkdir /opt/other/fftool
 WORKDIR /opt/other/fftool
@@ -53,10 +97,12 @@ RUN rm v20.14.0.tar.gz
 WORKDIR /opt/other/fftool/packmol-20.14.0
 RUN ./configure /opt/other/gfortran/gcc-12.2.0/
 RUN make
+RUN export PATH="/opt/other/fftool/packmol-20.14.0/:$PATH"
 
 # Install fftool
 WORKDIR /opt/other/fftool
 RUN git clone https://github.com/agiliopadua/fftool.git
+RUN export PATH="/opt/other/fftool/fftool:$PATH"
 
 # Get LAMMPS # used to be lammps-stable.tar.gz
 RUN mkdir /opt/MD/lammps
