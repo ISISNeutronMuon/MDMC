@@ -56,13 +56,6 @@ class ChiSquaredNoError(FigureOfMerit):
             A &=& \sum_{j} D_{j}^{exp}*D_{j}^{sim} \\\\
             B &=& \sum_{j}\left(D_{j}^{exp}\right)^2
 
-        which simplifies to:
-
-        .. math::
-
-            A &=& \sum_{j} D_{j}^{sim} \\\\
-            B &=& \sum_{j} D_{j}^{exp}
-
         Parameters
         ----------
         obs_pair : ObservablePair
@@ -78,8 +71,9 @@ class ChiSquaredNoError(FigureOfMerit):
             exp_values = np.array(
                 *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            obs_pair.rescale_factor = (np.sum(MD_values * exp_values)
-                                       / np.sum(exp_values ** 2))
+            A = np.sum(MD_values * exp_values)
+            B = np.sum(exp_values ** 2)
+            obs_pair.rescale_factor = A / B
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
         value_unreduced = np.sum(obs_pair.calculate_difference()** 2 / \
