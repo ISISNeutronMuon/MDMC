@@ -1,11 +1,14 @@
 import subprocess
+import os
 from MDMC.MD.simulation import Universe
 
 #TODO: create an overaching interface function to call all others
 #TODO: make distinction between building an input file for packmol or some other MD simulation
-#TODO: create function to check for necessary files needed for packmol usage
-#TODO: create function to check for necessary files needed for fftool usage
-#TODO: make packmol wrapper function
+
+def fill_with_packmol(universe: Universe, molecule_dict: dict, density: float=None):
+    _call_fftool(universe, molecule_dict, density)
+    _call_packmol()
+
 def _call_fftool(universe: Universe, molecule_dict: dict, density: float=None, md_eng: str=None) -> None:
     """
     A wrapper function to call fftool to create the input file needed for packmol (or an MD software
@@ -60,7 +63,7 @@ def _call_fftool(universe: Universe, molecule_dict: dict, density: float=None, m
         elif md_eng == "DL_POLY":
             command_list.append("-d")
 
-    subprocess.run(command_list)
+    _call_external_program(command_list, "/root/")
 
 def _call_packmol(path_to_inp: str="pack.inp") -> None:
     """
@@ -73,3 +76,24 @@ def _call_packmol(path_to_inp: str="pack.inp") -> None:
     """
     command_list = ["packmol", "<"]
     command_list.append(path_to_inp)
+    _call_external_program(command_list, "/root/")
+
+
+def _call_external_program(command_list: list[str], work_dir: str):
+    """
+    A function to call an external program in a specific working directory - defaults to
+    current working directory as a failsafe
+
+    Parameters
+    ----------
+    command_list: list of str
+        The list of string arguments to be passed to the shell in order
+    work_dir: str
+        The desired working directory for the program to run in
+
+    """
+    try:
+        subprocess.run(args=command_list, cwd=work_dir)
+    except:
+        wd = os.getcwd()
+        subprocess.run(args=command_list, cwd=wd)
