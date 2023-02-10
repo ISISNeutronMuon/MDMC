@@ -162,7 +162,7 @@ def exp_datasets() -> callable:
                          [(False,
                            ["- Attributes", "  Minimizer", "  FoM type",
                             "  Number of observables", "  Number of parameters"],
-                           ["-", "MMC", "ChiSquaredNoError", "1", "0"]),
+                           ["-", "MMC", "RSquared_noneerror", "1", "0"]),
 
                           (True,
                           ["- Attributes", "  Minimizer", "  FoM type", "  Number of observables",
@@ -171,7 +171,7 @@ def exp_datasets() -> callable:
                              "  results_filename", "- Parameters", "- Experimental Datasets",
                              "  type", "  reader", "  file_name", "  weight", "  resolution",
                              "- FoM Options", "  error"],
-                            ["-", "MMC", "ChiSquaredNoError", "1", "0", "38", "0", "False", "0", "-",
+                            ["-", "MMC", "RSquared_noneerror", "1", "0", "38", "0", "False", "0", "-",
                              "results_2022-09-20--13-29-45.csv", "-", "-", "SQw", "xml_SQw",
                              "test_data/experimental_data/Well_s_q_omega_Ar_data.xml",
                              "1.0", "{\'gaussian\': 84}", "-", "none"])
