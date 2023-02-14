@@ -69,16 +69,18 @@ class ChiSquaredExpError(FigureOfMerit):
         float
             The FoM for the obs_pair
         """
+        if 0.0 or 0 in obs_pair.calculate_exp_errors():
+            raise ValueError("This dataset has zeros in its error values which will result in an infinite chi-squared. \
+            Please use a different figure of merit.")
 
         if obs_pair.auto_scale:
             exp_values = np.array(
                 *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
             A = np.sum((MD_values / obs_pair.calculate_exp_errors())**2)
-            B = np.sum((exp_values * MD_values) / obs_pair.calculate_exp_errors()**2)
+            B = np.sum((exp_values * MD_values) / 'exp'**2)
             obs_pair.rescale_factor = A / B
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum((obs_pair.calculate_difference()
-                                  / obs_pair.calculate_exp_errors()) ** 2)
+        value_unreduced = np.sum((obs_pair.calculate_difference() / obs_pair.calculate_exp_errors()) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor

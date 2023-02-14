@@ -89,13 +89,13 @@ def SQw_dict():
 
 PAIRS_INFO = [(('experiment',
                 np.arange(-5., 5.5, 0.5),
-                np.random.random_sample(21) * np.arange(21),
-                np.random.random_sample(21) * np.arange(21)
+                np.random.random_sample(21) * np.arange(1, 22),
+                np.random.random_sample(21) * np.arange(1, 22)
                ),
                ('MD',
                 np.arange(-5, 5.5, 0.5),
-                np.random.random_sample(21) * np.arange(21),
-                np.random.random_sample(21) * np.arange(21)
+                np.random.random_sample(21) * np.arange(1, 22),
+                np.random.random_sample(21) * np.arange(1, 22)
                ),
               ),
              ]
@@ -520,6 +520,37 @@ def test_errors_RSquaredNoError(exp_error, MD_error, pairs):
     scaled_FoM = calculator_weighted.calculate()  # I don't think this is a good test, comparing values up to 5e8 different...
 
     assert np.isclose(scaled_FoM, normal_FoM)
+
+
+def test_zero_error_RSquaredNoError(pairs):
+    """
+    Test that inputting a zero for the error is accepted by the RSquared FoM.
+    """
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.zeros(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = FoMFactory.create_FoM('none',pairs)
+    expected_FoM = np.sum(pair.calculate_difference() ** 2)/21  # 21 points
+    normal_FoM = calculator.calculate()
+
+    assert np.isclose(normal_FoM, expected_FoM)
+
+
+def test_zero_error_ChiSquared(pairs):
+    """
+    Test that inputting a zero for the error raises a ValueError
+    for the ChiSquared FoM.
+    """
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.zeros(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = FoMFactory.create_FoM('exp',pairs)
+    with pytest.raises(ValueError):
+        _ = calculator.calculate()
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):

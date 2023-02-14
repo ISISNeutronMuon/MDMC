@@ -35,7 +35,7 @@ class FoMFactory:
                 '.ChiSquared_' + module_name+'error', __package__)
         except ImportError:
             try:
-                module = import_module('.RSquared'+ module_name+'error', __package__)
+                module = import_module('.RSquared_'+ module_name+'error', __package__)
             except ImportError:
                 try:
                     module = import_module('.' + module_name, __package__)

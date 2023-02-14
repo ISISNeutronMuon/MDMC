@@ -229,7 +229,7 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
                            ('Control created with:\n'
                             '- Attributes                             -\n'
                             '  Minimizer                            MMC\n'
-                            '  FoM type               ChiSquaredNoError\n'
+                            '  FoM type               RSquared_noneerror\n'
                             '  Number of observables                  1\n'
                             '  Number of parameters                   0\n')]])
 @pytest.mark.parametrize('file_name',
