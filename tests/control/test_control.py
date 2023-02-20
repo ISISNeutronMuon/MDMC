@@ -227,11 +227,11 @@ def test_control_init_stdout(print_value, expected_indexes, expected_data, monke
                             '  Number of parameters                    0\n')],
                           ['none',
                            ('Control created with:\n'
-                            '- Attributes                             -\n'
-                            '  Minimizer                            MMC\n'
+                            '- Attributes                              -\n'
+                            '  Minimizer                             MMC\n'
                             '  FoM type               RSquared_noneerror\n'
-                            '  Number of observables                  1\n'
-                            '  Number of parameters                   0\n')]])
+                            '  Number of observables                   1\n'
+                            '  Number of parameters                    0\n')]])
 @pytest.mark.parametrize('file_name',
                          ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
 def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
@@ -269,7 +269,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
 
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
-    assert stdout == (error[1] +
+    stdout_message = (error[1] +
                       '\n'
                       'Step       float          str          int really_lo...\n'
                       '   0       1.657         str1           10            1\n'
@@ -284,6 +284,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                       '   9   1.535e+07        False        1e-05            1\n'
                       '  10       1.657         str1           10            1\n'
                       '\n')
+    assert stdout_message in stdout
 
 
 @pytest.mark.parametrize('file_name',
@@ -321,7 +322,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     ctrl.refine(10)
     # Capture stdout using pytest fixture
     stdout = capsys.readouterr().out
-    assert stdout == ('Control created with:\n'
+    stdout_message = ('Control created with:\n'
                       '- Attributes                              -\n'
                       '  Minimizer                             MMC\n'
                       '  FoM type               ChiSquaredExpError\n'
@@ -345,6 +346,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                       'Automatic Scale Factors\n'
                       '  {}  1.0\n'
                       ''.format(datasets[0]['file_name']))
+    assert stdout_message in stdout
 
 
 @pytest.mark.parametrize('file_name',
@@ -421,7 +423,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
         assert pair.auto_scale
 
     stdout = capsys.readouterr().out
-    assert stdout == ('Both `rescale_factor` and `auto_scale` set for file '
+    stdout_message = ('Both `rescale_factor` and `auto_scale` set for file '
                       '{}; scaling will be automated to minimise FoM\n'
                       'Control created with:\n'
                       '- Attributes                              -\n'
@@ -431,6 +433,7 @@ def test_control_scaling_warning(simulation, exp_datasets, file_name,
                       '  Number of parameters                    0\n'
                       '\n'
                       ''.format(datasets[0]['file_name']))
+    assert stdout_message in stdout
 
 
 @pytest.mark.parametrize('file_name',

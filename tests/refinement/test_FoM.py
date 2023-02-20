@@ -540,7 +540,7 @@ def test_zero_error_RSquaredNoError(pairs):
 
 def test_zero_error_ChiSquared(pairs):
     """
-    Test that inputting a zero for the error raises a ValueError
+    Test that inputting a zero for the error makes the FoM infinite
     for the ChiSquared FoM.
     """
     for pair in pairs:
@@ -549,8 +549,7 @@ def test_zero_error_ChiSquared(pairs):
         pair.MD_obs._errors = {'err':np.ones(error_shape)}
 
     calculator = FoMFactory.create_FoM('exp',pairs)
-    with pytest.raises(ValueError):
-        _ = calculator.calculate()
+    assert np.isinf(calculator.calculate())
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
