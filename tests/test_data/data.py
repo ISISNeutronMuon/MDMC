@@ -43,7 +43,7 @@ CONFIG_DATA = {'cif': '/Paracetamol.cif',
                'pdb_water': '/packmol/water.pdb',
                'pdb_palmitic_acid': 'packmol/palitoil.pdb'}
 
-PACKMOL_DATA = {'bilayer_solved_system': '/packmol/bilayer.pdb'
+PACKMOL_DATA = {'bilayer_solved_system': '/packmol/bilayer.pdb',
                 'bilayer_input': '/packmol/bilayer.inp'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
