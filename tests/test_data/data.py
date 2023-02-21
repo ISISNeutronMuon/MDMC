@@ -39,7 +39,12 @@ READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
                'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
 
-CONFIG_DATA = {'cif':'/Paracetamol.cif'}
+CONFIG_DATA = {'cif': '/Paracetamol.cif',
+               'pdb_water': '/packmol/water.pdb',
+               'pdb_palmitic_acid': 'packmol/palitoil.pdb'}
+
+PACKMOL_DATA = {'bilayer_solved_system': '/packmol/bilayer.pdb'
+                'bilayer_input': '/packmol/bilayer.inp'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
