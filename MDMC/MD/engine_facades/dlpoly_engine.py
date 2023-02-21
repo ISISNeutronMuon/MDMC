@@ -30,6 +30,7 @@ from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import (Atom as MAtom,
                                 Molecule as MMolecule)
+from MDMC.MD.interactions import Bond as MBond
 from MDMC.common.units import Unit
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition_interactions
@@ -361,7 +362,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
         # pylint: disable=c-extension-no-member, too-many-lines
-        self.dlpoly.run(numProcs=1, outputFile=output_log)
+        self.dlpoly.run(numProcs=settings.get('numprocs',1), outputFile=output_log,
+                        mpi="mpirun -x OMPI_MCA_btl=\"^vader\" --allow-run-as-root -n")
         print("update coordinates from ", self.dlpoly.control['io_file_revcon'])
         self.dlpoly.dest_config = 'minim.config'
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
@@ -775,20 +777,21 @@ class DLPOLYUniverse(DLPOLYAttribute):
         for bond, atms in structure.bonded_interaction_pairs:
             current_atom = [mapping[atm.ID] for atm in atms]
             if bond.constrained:
-                if not isinstance(bond, Bond):
+                if not isinstance(bond, MBond):
                     raise NotImplementedError(f'{type(bond).__name__} constraints '
                                               'not supported in DLPOLY')
-
+                # print(bond.parameters)
+                # print(bond.parameters['equilibrium_state (#21)'])
                 pot = Bond('constraints',
                            ['',
                             *map(str, current_atom),
-                            str(bond.parameters[0].value.real)
+                            str(list(bond.parameters.values())[0].value.real)
                             ])
             else:
                 pot = Bond(BOND_CLASS_REF[type(bond).__name__],
                            [POTENTIAL_REF[bond.function.name],
                             *map(str, current_atom),
-                            *map(lambda x: str(x.value.real), bond.parameters)
+                            *map(lambda x: str(x.value.real), bond.parameters.values())
                             ])
             new_molecule.add_potential(current_atom, pot)
 
@@ -844,13 +847,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
                 current_atom = [mapping[atm.ID] for atm in atms]
                 if bond.constrained:
                     pot = next(mol.get_pot(species=current_atom))
-                    pot.params = str(bond.parameters[0].value.real)
+                    pot.params = str(list(bond.parameters.values())[0].value.real)
 
                 else:
                     pot = next(mol.get_pot(species=current_atom,
                                            potClass=BOND_CLASS_REF[type(bond).__name__],
                                            potType=POTENTIAL_REF[bond.function.name]))
-                    pot.params = [*map(lambda x: str(x.value.real), bond.parameters)]
+                    pot.params = [*map(lambda x: str(x.value.real), bond.parameters.values())]
 
     def apply_constraints(self) -> None:
         """
