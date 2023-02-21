@@ -5,7 +5,6 @@ from itertools import (chain, combinations, combinations_with_replacement, islic
 from typing import Optional
 import warnings
 
-from numba import jit
 import numpy as np
 
 from MDMC.common.atom_properties import B_COH
@@ -536,6 +535,9 @@ class PairDistributionFunction(Observable):
                           ' set. Using existing r instead.')
         self.r_step = self.r[1] - self.r[0]
 
+        self.r_squared = self.r**2  # this will help us speed up the calculations
+        # since we will compare r^2 values and not r.
+
         self.partial_pdfs = {partial_string:
                              np.zeros(
                                  np.shape(self.independent_variables['r']))
@@ -754,8 +756,8 @@ class PairDistributionFunction(Observable):
         r_min = np.min(self.r) - self.r_step / 2
         r_max = np.max(self.r) + self.r_step / 2
         hist, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
+        bin_edges_squared = bin_edges**2
 
-        @jit('float64[:], float64[:]', nopython=True)
         def jit_histogram(separations, bin_edges):
             jit_hist, _ = np.histogram(separations, bins=bin_edges)
             return jit_hist
@@ -788,18 +790,15 @@ class PairDistributionFunction(Observable):
                            for _ in range(BLOCK - len(pair_block))])
                 difference = np.append(difference, padding, axis=0)
 
-            separations = self._calculate_euclidean_norm(difference)
-            hist += jit_histogram(separations, bin_edges)
+            separations = self._calculate_euclidean_norm_squared(difference)
+            hist += jit_histogram(separations, bin_edges_squared)
 
         return hist
 
     @staticmethod
-    @jit('float64[:](float64[:,:])', nopython=True)
     def _calculate_euclidean_norm(vectors: np.ndarray) -> np.ndarray:
         """
         Calculates the Euclidean norm of an array of vectors
-
-        ``numba.jit`` results in ~10x speed up over ``np.linalg.norm``
 
         Parameters
         ----------
@@ -809,6 +808,22 @@ class PairDistributionFunction(Observable):
         """
 
         return np.sum(np.square(vectors), 1) ** 0.5
+
+    @staticmethod
+    def _calculate_euclidean_norm_squared(vectors: np.ndarray) -> np.ndarray:
+        """
+        Calculates the Euclidean norm squared of an array of vectors.
+        This way we can save time by not calculating the square root,
+        since the bin limits of the histogram are also squared.
+
+        Parameters
+        ----------
+        vectors : numpy.ndarray
+            A 2-D array containing vectors for which the Euclidean norm
+            (Euclidean length, L2 distance) is calculated.
+        """
+
+        return np.sum(np.square(vectors), 1)
 
     @staticmethod
     def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
