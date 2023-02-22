@@ -6,8 +6,10 @@ import copy
 import numpy as np
 import pytest
 
-from  MDMC.refinement.FoM.FoM_factory import FoMFactory
-from  MDMC.refinement.FoM.FoM_abs import ObservablePair
+from MDMC.refinement.FoM.FoM_factory import FoMFactory
+from MDMC.refinement.FoM.FoM_abs import ObservablePair
+#from MDMC.refinement.FoM.ChiSquared_nonerror import RSquared_noneerror
+#from MDMC.refinement.FoM.ChiSquared_experror import ChiSquaredExpError
 import MDMC.trajectory_analysis.observables.obs_factory as of
 
 from tests.test_data import data
@@ -87,13 +89,13 @@ def SQw_dict():
 
 PAIRS_INFO = [(('experiment',
                 np.arange(-5., 5.5, 0.5),
-                np.random.random_sample(21) * np.random.randint(1, 1e9),
-                np.random.random_sample(21) * np.random.randint(1, 1e9)
+                np.random.random_sample(21) * np.arange(1, 22),
+                np.random.random_sample(21) * np.arange(1, 22)
                ),
                ('MD',
                 np.arange(-5, 5.5, 0.5),
-                np.random.random_sample(21) * np.random.randint(1, 1e9),
-                np.random.random_sample(21) * np.random.randint(1, 1e9)
+                np.random.random_sample(21) * np.arange(1, 22),
+                np.random.random_sample(21) * np.arange(1, 22)
                ),
               ),
              ]
@@ -491,11 +493,11 @@ def test_errors_ChiSquaredExpError(exp_error, MD_error, pairs):
 
 @pytest.mark.parametrize('exp_error', [0.1, 1., 10.])
 @pytest.mark.parametrize('MD_error', [0.1, 1., 10.])
-def test_errors_ChiSquaredNoError(exp_error, MD_error, pairs):
+def test_errors_RSquaredNoError(exp_error, MD_error, pairs):
 
     """
     Test that changing the value of neither the experimental errors nor the MD errors affects the
-    ChiSquaredNoError.
+    RSquared_noneerror.
     """
 
     # Set errors to be constant for ease of testing
@@ -515,9 +517,39 @@ def test_errors_ChiSquaredNoError(exp_error, MD_error, pairs):
         pair.MD_obs._errors = {'err':np.full(error_shape, MD_error)}
 
     calculator_weighted = FoMFactory.create_FoM('none',pairs_scaled_error)
-    scaled_FoM = calculator_weighted.calculate()
+    scaled_FoM = calculator_weighted.calculate()  # I don't think this is a good test, comparing values up to 5e8 different...
 
     assert np.isclose(scaled_FoM, normal_FoM)
+
+
+def test_zero_error_RSquaredNoError(pairs):
+    """
+    Test that inputting a zero for the error is accepted by the RSquared FoM.
+    """
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.zeros(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = FoMFactory.create_FoM('none',pairs)
+    expected_FoM = np.sum(pair.calculate_difference() ** 2)/21  # 21 points
+    normal_FoM = calculator.calculate()
+
+    assert np.isclose(normal_FoM, expected_FoM)
+
+
+def test_zero_error_ChiSquared(pairs):
+    """
+    Test that inputting a zero for the error makes the FoM infinite
+    for the ChiSquared FoM.
+    """
+    for pair in pairs:
+        error_shape = pair.exp_obs._errors['err'].shape
+        pair.exp_obs._errors = {'err':np.zeros(error_shape)}
+        pair.MD_obs._errors = {'err':np.ones(error_shape)}
+
+    calculator = FoMFactory.create_FoM('exp',pairs)
+    assert np.isinf(calculator.calculate())
 
 
 def init_exception_check(error, obs_from_exp, obs_from_MD, weight=1.):
