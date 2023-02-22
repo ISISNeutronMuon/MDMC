@@ -580,37 +580,25 @@ class PairDistributionFunction(Observable):
         partition_indexes = list(self._calculate_partition_indexes(part_comps))
         partition_pair_indexes = self._get_partition_pairs(part_comps)
 
-        # Calculate the histograms of all atoms in each partition for element
-        # combinations that are in self.partial_strings
+        # Now we iterate over all the possible combinations of chemical elements
         for partial_string in self.partial_strings:
             elem1, elem2 = partial_string
 
-            # Get the atom pairs for atoms in different partitions
+            # And here we iterate over possible pairs of neighbouring partitions
             for part1, part2 in partition_pair_indexes:
-                # Correct for periodic boundary conditions, which will only
-                # occur if modulus of separation distance in any direction is
-                # greater than 1 (i.e. the partitions would not be neighbors
-                # without pdb)
-                wrap = np.zeros([3])
-                for i in range(3):
-                    component_separation = part1[i] - part2[i]
-                    if component_separation > 1:
-                        wrap[i] = 1
-                    elif component_separation < -1:
-                        wrap[i] = -1
-                wrap *= self.universe_dimensions
 
                 array1 = partitions[elem1][part1]
                 array2 = partitions[elem2][part2]
 
-                nat_array1 = len(array1)
-                nat_array2 = len(array2)
-                array1 = array1.reshape(1,nat_array1,3)
-                array2 = array2.reshape(nat_array2,1,3)
+                n_at_array1 = len(array1)
+                n_at_array2 = len(array2)
+                array1 = array1.reshape(1,n_at_array1,3)
+                array2 = array2.reshape(n_at_array2,1,3)
                 difference = array1 - array2
                 for dim in range(3):
                     temp_array = difference[:,:,dim]
                     box_side = abs(self.universe_dimensions[dim])
+                    # Correct for periodic boundary conditions
                     temp_array[np.where(temp_array > 0.5*box_side)] -= box_side
                     temp_array[np.where(temp_array < -0.5*box_side)] += box_side
                     difference[:,:,dim] = temp_array
