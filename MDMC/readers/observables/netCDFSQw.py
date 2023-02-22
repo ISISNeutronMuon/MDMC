@@ -1,12 +1,14 @@
 """A reader for netcdf SQw data"""
 # disabling as there is a 'no Dataset in netCDF4' false linting warning for this file
 # pylint: disable=no-name-in-module
+import logging
 import numpy as np
 from netCDF4 import Dataset
 
 from MDMC.common.constants import h_bar
 from MDMC.readers.observables.obs_reader import SQwReader
 
+logger = logging.getLogger(__name__)
 
 class netCDFSQw(SQwReader):
 
@@ -52,3 +54,11 @@ class netCDFSQw(SQwReader):
 
         self.SQw = np.abs(np.array(self.file.variables['Sqw-total']))
         self.SQw_err = np.power(np.abs(self.SQw), 0.5)
+
+        if np.any(self.SQw_err <= 0.):
+            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+            msg = "We have set the error bar to infinity for any zero error values, this allows\
+                us to calculate chi-squared but effectively ignores these points, this may not\
+                be what you want to do, consider using a FoM which doesn't need errors if\
+                this is an issue"
+            logger.warning(msg)
