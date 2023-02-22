@@ -535,9 +535,6 @@ class PairDistributionFunction(Observable):
                           ' set. Using existing r instead.')
         self.r_step = self.r[1] - self.r[0]
 
-        self.r_squared = self.r**2  # this will help us speed up the calculations
-        # since we will compare r^2 values and not r.
-
         self.partial_pdfs = {partial_string:
                              np.zeros(
                                  np.shape(self.independent_variables['r']))
@@ -564,10 +561,18 @@ class PairDistributionFunction(Observable):
             r_max = np.max(self.independent_variables['r'])
             return universe_dim / (universe_dim // r_max)
 
+        r_min = np.min(self.r) - self.r_step / 2
+        r_max = np.max(self.r) + self.r_step / 2
+        _, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
+        bin_edges_squared = bin_edges**2
+
+        def inner_histogram(separations, bin_edges):
+            inner_hist, _ = np.histogram(separations, bins=bin_edges)
+            return inner_hist
+
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        partitions = self._partition(trajectory.positions[0],
-                                    trajectory.element_list,
+        partitions = self._partition(trajectory,
                                     part_comps)
         # Get the partition_indexes and the pairs of partitions. As well as
         # calculating atom pairs within a partition, each partition will have 26
@@ -579,20 +584,6 @@ class PairDistributionFunction(Observable):
         # combinations that are in self.partial_strings
         for partial_string in self.partial_strings:
             elem1, elem2 = partial_string
-            like_elems = elem1 == elem2
-            pos_pairs = []
-
-            # Get the atom pairs for atoms in the same partition
-            for part_i in partition_indexes:
-                if like_elems:
-                    # combinations avoids an atom and itself being an atom pair
-                    pos_pairs.append(combinations(
-                        partitions[elem1][part_i], 2))
-                else:
-                    # atom and itself as an atom pair not an issue for unlike
-                    # elements
-                    pos_pairs.append(product(partitions[elem1][part_i],
-                                            partitions[elem2][part_i]))
 
             # Get the atom pairs for atoms in different partitions
             for part1, part2 in partition_pair_indexes:
@@ -609,27 +600,33 @@ class PairDistributionFunction(Observable):
                         wrap[i] = -1
                 wrap *= self.universe_dimensions
 
-                # try/excepts are in case partitions[elem1][part1] is empty
-                try:
-                    pos_pairs.append(product(partitions[elem1][part1] - wrap,
-                                            partitions[elem2][part2]))
-                except ValueError:
-                    pass
-                # For unlike elements, also consider other element/partition
-                # combination
-                if not like_elems:
-                    try:
-                        pos_pairs.append(product(partitions[elem2][part1] - wrap,
-                                                partitions[elem1][part2]))
-                    except ValueError:
-                        pass
-            # pos_pairs is a list of iterators - flatten this to a single
-            # iterator
-            pos_pairs = chain.from_iterable(pos_pairs)
-            self.partial_pdfs[partial_string] += \
-                self._calculate_histogram_from_position_pairs(pos_pairs)
+                array1 = partitions[elem1][part1]
+                array2 = partitions[elem2][part2]
 
-    def _partition(self, positions: np.ndarray, element_list: list, part_comps: np.ndarray) -> dict:
+                nat_array1 = len(array1)
+                nat_array2 = len(array2)
+                array1 = array1.reshape(1,nat_array1,3)
+                array2 = array2.reshape(nat_array2,1,3)
+                difference = array1 - array2
+                for dim in range(3):
+                    temp_array = difference[:,:,dim]
+                    box_side = abs(self.universe_dimensions[dim])
+                    temp_array[np.where(temp_array > 0.5*box_side)] -= box_side
+                    temp_array[np.where(temp_array < -0.5*box_side)] += box_side
+                    difference[:,:,dim] = temp_array
+                
+                if elem1==elem2 and np.all(part1 == part2):
+                    temp = np.sum(difference**2, axis = 2)
+                    temp = np.triu(temp, k=1)
+                    distance_squared = temp.ravel()
+                else:
+                    distance_squared = np.sum(difference**2, axis = 2).ravel()
+
+                histogram = inner_histogram(distance_squared, bin_edges=bin_edges_squared)
+
+                self.partial_pdfs[partial_string] += histogram
+
+    def _partition(self, trajectory: CompactTrajectory, part_comps: np.ndarray) -> dict:
         """
         Partitions the atomic positions into paritions of dimensions specified
         by ``part_comps``
@@ -672,22 +669,17 @@ class PairDistributionFunction(Observable):
                 partitions[element][part_index] = []
 
         # Drop positions of atoms of elements not included
-        mask = np.isin(element_list, list(self.elements))
-        element_array = np.array(element_list)[mask]
-        t_positions = positions[mask]
+        filtered_trajectory = trajectory.filter_by_element(self.elements)
 
-        # Get element and position of each atom
-        for elem, position in zip(element_array, t_positions):
-            partition_index = []
-            for component, part_comp in zip(position, part_comps):
-                partition_index.append(component // part_comp)
-            # Add each position to correct partition
-            partitions[elem][tuple(partition_index)].append(position)
-        # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
-        # of positions from list to array)
-        return {elem: {partition_index: np.array(positions)
-                       for partition_index, positions in elem_partitions.items()}
-                for elem, elem_partitions in partitions.items()}
+        for elem in self.elements:
+            subtrajectory = filtered_trajectory.filter_by_element([elem])
+            pos_array = subtrajectory.positions[0]
+            indices = (pos_array // np.array(part_comps)).astype(int)
+            for one_set in np.unique(indices, axis=0):
+                temp_set = tuple(one_set)
+                new_pos_array = pos_array[np.where(np.all(indices == temp_set, axis=1))]
+                partitions[elem][temp_set] = new_pos_array
+        return partitions
 
     def _get_partition_pairs(self, partition_components: np.ndarray) -> list[tuple]:
         """

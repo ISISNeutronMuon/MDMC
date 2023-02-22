@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.simulation import Universe
-from MDMC.trajectory_analysis.compact_trajectory import configurations_as_compact_trajectory
+from MDMC.trajectory_analysis.compact_trajectory import configurations_as_compact_trajectory, CompactTrajectory
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 
@@ -209,7 +209,18 @@ def test_partition(PDF, positions, element_list, part_comps):
 
     PDF.elements = set(element_list)
     PDF.universe_dimensions = np.array([1.5, 2., 3.])
-    partitions = PDF._partition(positions, element_list, part_comps)
+    # it is necessary to construct a CompactTrajectory here,
+    # since now PDF._partition takes a trajectory as input.
+    trajectory = CompactTrajectory(n_steps=1, n_atoms=len(element_list),
+                                   universe = Universe(PDF.universe_dimensions))
+    trajectory.writeOneStep(0,0.0,positions)
+    trajectory.validateTypes(element_list)
+    trajectory.setCharge(len(element_list)*[0.0])
+    trajectory.labelAtoms({1:'C', 2:'H'}, {1:12.0, 2: 1.0})
+    trajectory.postProcess()
+    # now a CompactTrajectory has been constructed out of the input positions
+    # and the testing can continue
+    partitions = PDF._partition(trajectory, part_comps)
     assert sorted(list(PDF.elements)) == sorted(list(partitions.keys()))
 
     partition_positions = [pos for elem_partitions in partitions.values()
