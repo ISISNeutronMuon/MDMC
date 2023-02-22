@@ -4,7 +4,6 @@ from itertools import product
 from typing import TYPE_CHECKING
 
 import numpy as np
-from mpi4py import MPI
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
@@ -26,7 +25,6 @@ if TYPE_CHECKING:
 
 
 # pylint: disable=c-extension-no-member
-# to avoid MPI warnings
 
 
 class AbstractFQt(SQwMixins, Observable):
@@ -207,57 +205,19 @@ class AbstractFQt(SQwMixins, Observable):
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        comm = MPI.COMM_WORLD
         # Determine the shape of Q vectors array. If the number of processors
         # (comm.size) is not a factor of the first index, mpi4py cannot split
         # the number of Q vectors equally amongst the processors.
         shape = list(np.shape(self.Q_vectors))
-        if shape[0] % comm.size != 0:
-            # Determine the smallest integer larger than the number of Q vectors
-            # that is exactly divisible by the number of processors
-            axis_0 = int(np.ceil(float(shape[0]) / comm.size) * comm.size)
 
-            # Increase the size of Q vectors up to the required size by padding
-            # the end of the array with NaNs. This can be passed to calculate
-            # rho in the _calculate_FQt_single_Q method, resulting in an array
-            # of NaN's for each zero element.  These arrays are then removed
-            # after gathering.
-            if len(shape) == 3:
-                Q_vectors = np.pad(self.Q_vectors,
-                                   ((0, axis_0 - shape[0]), (0, 0), (0, 0)),
-                                   'constant',
-                                   constant_values=(float('nan')))
-            else:
-                # If we do not have a well defined shape (i.e. not every Q
-                # value has the same number of points in reciprocal space) then
-                # we need to manually pad Q_vectors using lists, as numpy
-                # arrays would need to have the same shape to be appended.
-                padding = np.array([np.full(3, float('nan'))])
-                padding_list = [padding for _ in range(axis_0 - shape[0])]
-                Q_vectors_list = list(self.Q_vectors)
-                Q_vectors_list.extend(padding_list)
-                Q_vectors = np.array(Q_vectors_list)
-        else:
-            Q_vectors = self.Q_vectors
-            axis_0 = 0
+        Q_vectors = self.Q_vectors
+        axis_0 = 0
         # Split the Q vectors into a single array of Q vectors for each
         # processor
-        Q_vectors = np.split(Q_vectors, comm.size)
-        # Scatter the Q vector arrays to all processors
-        Q_vectors = comm.scatter(Q_vectors, root=0)
+
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
-
-        # Gather the calculated FQt's together on every processor. This ensures
-        # that all other calculations can be performed on every processor, so
-        # no other methods in SQw need to be made MPI compliant.
-        FQt_array = np.array(comm.allgather(FQt_array))
-        # Reshape FQt as gather doesn't join the arrays but just collects them
-        # as arrays within an array. This is equivalent to flattening the first
-        # index.
-        FQt_shape = np.shape(FQt_array)
-        FQt_array = FQt_array.reshape([FQt_shape[0] * FQt_shape[1], FQt_shape[2]])
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's

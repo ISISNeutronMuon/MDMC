@@ -1296,8 +1296,7 @@ class Molecule(CompositeStructure):
         # Cache only most recent value, as atoms only expected to increase
         @lru_cache(maxsize=1)
         def get_bonded_interaction_pairs(atoms):
-            # Preserve the order - required for consistent
-            # bonded_interaction_pairs on different ranks (if using MPI)
+            # Preserve the order for consistent bonded_interaction_pairs
             used = set()
             return [pair for atom in atoms for pair
                     in atom.bonded_interaction_pairs if pair not in used

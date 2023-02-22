@@ -35,29 +35,8 @@ trajectory_analysis
 
 Logging
 -------
-By default MDMC will log a single process (rank 0) regardless as to whether it
-is being run in serial or parallel. In order to run logging on multiple
-processes, for example ranks 0 and 1, the following should be added **to the
-start** of any script which runs MDMC:
-
-    .. highlight:: python
-    .. code-block:: python
-
-        from MDMC.common.log import start_logging
-        start_logging(ranks=[0, 1])
-
-To log on every rank, which is only recommended when running a small number of
-processes, pass ``ranks=-1``:
-
-    .. highlight:: python
-    .. code-block:: python
-
-        from MDMC.common.log import start_logging
-        start_logging(ranks=-1)
-
-When logging on multiple processes, each process will create a separate log file
-which will have the node name and process rank as part of the filename.  The
-rank 0 process will also be logged to 'MDMC.log'.
+By default MDMC will log a single process regardless of whether it
+is being run in serial or parallel. The process will log to 'MDMC.log'.
 """
 
 from .common.log import start_logging

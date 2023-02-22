@@ -96,43 +96,47 @@ class Control:
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
     MD_steps : int, optional
-        Number of molecular dynamics steps for each step of the refinement.
-        When not provided, the minimum number of steps needed for successful
-        calculation of the observables is used. If provided, the actual number
-        of steps may be reduced to prevent running MD that won't be used when
-        calculating dependent variables. Default is `None`.
+            Number of molecular dynamics steps for each step of the refinement.
+            When not provided, the minimum number of steps needed for successful
+            calculation of the observables is used. If provided, the actual number
+            of steps may be reduced to prevent running MD that won't be used when
+            calculating dependent variables. Default is `None`.
     equilibration_steps : int, optional
-        Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
-        refinement step. When changes to the ``Parameters`` are small, this equilibration can be
-        much shorter than the equilibration needed before starting the refinement process, but in
-        general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
-        is 0.
-     cont_slicing : bool, optional
-        Flag to decide between two possible behaviours when the number of ``MD_steps`` is
-        larger than the minimum required to calculate the observables. If ``False`` (default) then
-        the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
-        blocks for each of which the observable is calculated. If ``True``, then the
-        ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
-        blocks as possible (with overlap allowed).
-    use_average : bool, optional
-        Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
-        and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
-        If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
-        blocks. If ``False`` they are not averaged.
+            Number of molecular dynamics steps used to equilibrate the ``Universe``
+            in between each refinement step. When changes to the ``Parameters`` are small,
+            this equilibration can be much shorter than the equilibration needed before
+            starting the refinement process, but in general will vary depending on
+            the details of the ``Universe`` and ``Parameters``. Default is 0.
     verbose: int, optional
-        The level of verbosity:
-        Verbose level -1 hides all outputs for tests.
-        Verbose level 0 gives no information.
-        Verbose level 1 gives final time for the whole method.
-        Verbose level 2 gives final time and also a progress bar.
-        Verbose level 3 gives final time, a progress bar, and time per step.
+            The level of verbosity:
+            Verbose level -1 hides all outputs for tests.
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
     print_full_settings: bool, optional
         Whether to print all settings/attributes/parameters passed to this object,
         defaults to False.
     **settings: dict, optional
-        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
-        minimiser is used.
-
+        cont_slicing : bool, optional
+            Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+            larger than the minimum required to calculate the observables. If ``False`` (default)
+            then the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
+            blocks for each of which the observable is calculated. If ``True``, then the
+            ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
+            blocks as possible (with overlap allowed).
+        results_filename: str
+            The name of the file in which the results of the MDMC run will be stored
+        n_points: int
+            If the GPR or GPO minimisers are used, this variable determines the number
+            of points to measure and minimise parameters
+        MC_norm: int
+            1 if the MMC minimiser is to be used for parameter optimisation.
+        use_average : bool, optional
+            Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
+            and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
+            If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
+            blocks. If ``False`` they are not averaged.
 
     Example
     -------

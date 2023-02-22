@@ -29,7 +29,7 @@ class MinimizerFactory:
             List of parameters to be refined
         **settings: dict, optional
             Settings to be passed to the created minimiser, e.g. MC_norm=1.0 if MMC minimiser is
-            used. or use_hypercube=True if GPR is using a Latin hypercube to arrange points.
+            used or n_points=8 if GPR or GPO is used
 
         Returns
         -------

@@ -11,7 +11,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: fetch  # grabs master to compare if Docker build files changed
         run: git fetch origin master
 
@@ -36,7 +36,7 @@ jobs:
           python-version: '3.8'
           architecture: x64
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Pull Docker Image
         env:
           BRANCH: ${{ github.head_ref }}
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: apt get
         run: |
           sudo apt-get update
@@ -102,7 +102,7 @@ jobs:
     needs: build
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -129,7 +129,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: apt get
       run: |
         sudo apt-get update
