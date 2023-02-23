@@ -102,12 +102,12 @@ jobs:
         pip3 install pandas
         python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
 
-    - name: Save profiling info as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: cron-${{ matrix.testset }}-profiling
-        path: cron-profiling.csv
-        if-no-files-found: error
+#    - name: Save profiling info as artifact
+#      uses: actions/upload-artifact@v3
+#      with:
+#        name: cron-${{ matrix.testset }}-profiling
+#        path: cron-profiling.csv
+#        if-no-files-found: error
 
     - name: Uninstall
       run: pip3 uninstall -y MDMC
@@ -155,11 +155,11 @@ jobs:
           pip3 install pandas
           python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --compare "master-profiling.csv" --name cron-total-profiling
 
-      - name: Upload total profiling as artifact if successful
-        uses: actions/upload-artifact@v3
-        with:
-          name: cron-total-profiling
-          path: cron-total-profiling.csv
+#      - name: Upload total profiling as artifact if successful
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: cron-total-profiling
+#          path: cron-total-profiling.csv
 
   windows:
     name: Python 3.9.0 on Windows (installation check only)
