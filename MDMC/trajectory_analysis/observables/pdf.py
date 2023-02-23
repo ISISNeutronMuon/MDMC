@@ -581,7 +581,7 @@ class PairDistributionFunction(Observable):
             elem1, elem2 = partial_string
 
             # And here we iterate over possible pairs of neighbouring partitions
-            for part1, part2 in partition_pair_indexes:
+            for part1, part2 in partition_pair_indexes + [(x,x) for x in partition_indexes]:
 
                 array1 = partitions[elem1][part1]
                 array2 = partitions[elem2][part2]
@@ -597,10 +597,8 @@ class PairDistributionFunction(Observable):
                     # Correct for periodic boundary conditions
                     crit1 = np.where(temp_array > 0.5*box_side)
                     crit2 = np.where(temp_array < -0.5*box_side)
-                    temp_array[crit1] *= -1.0
-                    temp_array[crit1] += box_side
-                    temp_array[crit2] *= -1.0
-                    temp_array[crit2] -= box_side
+                    temp_array[crit1] -= box_side
+                    temp_array[crit2] += box_side
                     difference[:,:,dim] = temp_array
                 
                 if elem1==elem2 and np.all(part1 == part2):
@@ -612,7 +610,7 @@ class PairDistributionFunction(Observable):
                 
                 # distance_squared = np.sum(difference**2, axis = 2).ravel()
 
-                histogram, _ = np.histogram(distance_squared, bin_edges=bin_edges_squared)
+                histogram, _ = np.histogram(distance_squared, bins=bin_edges_squared)
 
                 self.partial_pdfs[partial_string] += histogram
 
