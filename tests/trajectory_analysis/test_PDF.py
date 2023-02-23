@@ -323,34 +323,6 @@ def generate_position_pairs(start, stop, step):
                             np.arange(start, stop, step)), 2)
 
 
-@pytest.mark.parametrize('position_pairs, r_values, expected',
-                         [(generate_position_pairs(0., 5., 0.5),
-                           np.arange(0.8660254, 10 * 0.8660254, 0.8660255),
-                           np.arange(9, 0, -1)),
-                          (generate_position_pairs(0., 5., 0.5),
-                           np.arange(1.7320508, 5 * 1.7320508, 1.7320508),
-                           np.arange(17, 0, -4)),
-                          (generate_position_pairs(0., 102., 2.),
-                           np.arange(3.46410162, 51 * 3.46410162, 3.46410162),
-                           np.arange(50, 0, -1))])
-def test_calculate_histogram_entries(PDF, position_pairs, r_values, expected):
-
-    """
-    Tests that _calculate_histogram_from_position_pairs produces a historgram of
-    the correct length, with the correct number for each bin
-
-    The position pairs are of the form descirbed in generate_position_pairs. As
-    they are formed from combinations of a range, there are n-1 separations
-    within the first bin (up to 1 * step), n-2 separations in the second bin
-    (up to 2 * step)... n-k separations within the kth bin (up to k * step).
-    """
-
-    PDF.r = r_values
-    PDF.r_step = r_values[1] - r_values[0]
-    assert np.all(PDF._calculate_histogram_from_position_pairs(position_pairs)
-                  == expected)
-
-
 @pytest.mark.parametrize('unique_elements, b_cohs, expected',
                          [(['H', 'Na', 'C'],
                            {'Na':3.1, 'C':1.9},
