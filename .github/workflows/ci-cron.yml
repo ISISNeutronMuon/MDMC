@@ -24,6 +24,9 @@ jobs:
   docker_tests:
     name: Docker including MD tests
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        testset: [ "not-lammps" ]
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -66,6 +69,9 @@ jobs:
   basic_tests:
     name: Non-container and not inc MD tests
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        testset: [ "lammps" ]
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -127,7 +133,7 @@ jobs:
 #          BRANCH: ${{ github.head_ref }}
 #        run: |
 #          pip3 install pandas
-#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
+#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not-lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
 #      - name: upload as master profiling
 #        uses: actions/upload-artifact@v3
 #        with:
