@@ -42,6 +42,21 @@ jobs:
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
       continue-on-error: true
 
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        FILENAME: ${{ github.head_ref }}-profiling
+      run: |
+        sudo docker cp $(docker ps -lq):/home/prof/ prof/
+        pip3 install pandas
+        python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
+        path: ${{ github.head_ref }}-profiling.csv
+        if-no-files-found: error
+
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
       with:
@@ -73,6 +88,21 @@ jobs:
     - name: Run tests
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
       run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py --ignore=tests/MD/test_trajectory.py
+
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        FILENAME: ${{ github.head_ref }}-profiling
+      run: |
+        sudo docker cp $(docker ps -lq):/home/prof/ prof/
+        pip3 install pandas
+        python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
+        path: ${{ github.head_ref }}-profiling.csv
+        if-no-files-found: error
 
     - name: Uninstall
       run: pip3 uninstall -y MDMC
