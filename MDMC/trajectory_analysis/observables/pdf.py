@@ -1,6 +1,6 @@
 """Module for calculating the total pair distribution function (PDF)"""
 from collections import defaultdict
-from itertools import (chain, combinations, combinations_with_replacement, islice,
+from itertools import (chain, combinations_with_replacement, islice,
                        product)
 from typing import Optional
 import warnings
@@ -600,15 +600,13 @@ class PairDistributionFunction(Observable):
                     temp_array[crit1] -= box_side
                     temp_array[crit2] += box_side
                     difference[:,:,dim] = temp_array
-                
+
                 if elem1==elem2 and np.all(part1 == part2):
                     temp = np.sum(difference**2, axis = 2)
                     temp = np.triu(temp, k=1)
                     distance_squared = temp.ravel()
                 else:
                     distance_squared = np.sum(difference**2, axis = 2).ravel()
-                
-                # distance_squared = np.sum(difference**2, axis = 2).ravel()
 
                 histogram, _ = np.histogram(distance_squared, bins=bin_edges_squared)
 
