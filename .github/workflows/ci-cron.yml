@@ -44,7 +44,7 @@ jobs:
 
     - name: Copy profiling info, download profile script reqs. and profile
       env:
-        FILENAME: ${{ github.head_ref }}-profiling
+        FILENAME: cron-profiling
       run: |
         sudo docker cp $(docker ps -lq):/home/prof/ prof/
         pip3 install pandas
@@ -53,8 +53,8 @@ jobs:
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: ${{ github.head_ref }}-profiling.csv
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
         if-no-files-found: error
 
     - name: Upload code coverage report
@@ -91,17 +91,16 @@ jobs:
 
     - name: Copy profiling info, download profile script reqs. and profile
       env:
-        FILENAME: ${{ github.head_ref }}-profiling
+        FILENAME: cron-profiling
       run: |
-        sudo docker cp $(docker ps -lq):/home/prof/ prof/
         pip3 install pandas
         python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
 
     - name: Save profiling info as artifact
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: ${{ github.head_ref }}-profiling.csv
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
         if-no-files-found: error
 
     - name: Uninstall
