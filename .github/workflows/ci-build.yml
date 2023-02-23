@@ -58,12 +58,12 @@ jobs:
           pip3 install pandas
           python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
 
-      - name: Save profiling info as artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-          path: ${{ github.head_ref }}-profiling.csv
-          if-no-files-found: error
+#      - name: Save profiling info as artifact
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
+#          path: ${{ github.head_ref }}-profiling.csv
+#          if-no-files-found: error
 
       - name: Copy coverage
         run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0

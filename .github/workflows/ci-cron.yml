@@ -116,17 +116,15 @@ jobs:
         continue-on-error: true
 
       - name: Combine and compare profiling data
-        env:
-          BRANCH: ${{ github.head_ref }}
         run: |
           pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name $BRANCH-total-profiling
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --compare "master-profiling.csv" --name cron-total-profiling
 
       - name: Upload total profiling as artifact if successful
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.head_ref }}-total-profiling
-          path: ${{ github.head_ref }}-total-profiling.csv
+          name: cron-total-profiling
+          path: cron-total-profiling.csv
 
   windows:
     name: Python 3.9.0 on Windows (installation check only)
