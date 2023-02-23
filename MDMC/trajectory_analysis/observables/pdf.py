@@ -566,10 +566,6 @@ class PairDistributionFunction(Observable):
         _, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
         bin_edges_squared = bin_edges**2
 
-        def inner_histogram(separations, bin_edges):
-            inner_hist, _ = np.histogram(separations, bins=bin_edges)
-            return inner_hist
-
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
         partitions = self._partition(trajectory,
@@ -599,8 +595,12 @@ class PairDistributionFunction(Observable):
                     temp_array = difference[:,:,dim]
                     box_side = abs(self.universe_dimensions[dim])
                     # Correct for periodic boundary conditions
-                    temp_array[np.where(temp_array > 0.5*box_side)] -= box_side
-                    temp_array[np.where(temp_array < -0.5*box_side)] += box_side
+                    crit1 = np.where(temp_array > 0.5*box_side)
+                    crit2 = np.where(temp_array < -0.5*box_side)
+                    temp_array[crit1] *= -1.0
+                    temp_array[crit1] += box_side
+                    temp_array[crit2] *= -1.0
+                    temp_array[crit2] -= box_side
                     difference[:,:,dim] = temp_array
                 
                 if elem1==elem2 and np.all(part1 == part2):
@@ -609,8 +609,10 @@ class PairDistributionFunction(Observable):
                     distance_squared = temp.ravel()
                 else:
                     distance_squared = np.sum(difference**2, axis = 2).ravel()
+                
+                # distance_squared = np.sum(difference**2, axis = 2).ravel()
 
-                histogram = inner_histogram(distance_squared, bin_edges=bin_edges_squared)
+                histogram, _ = np.histogram(distance_squared, bin_edges=bin_edges_squared)
 
                 self.partial_pdfs[partial_string] += histogram
 
