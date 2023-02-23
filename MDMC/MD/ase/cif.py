@@ -237,8 +237,7 @@ def _create_coulombic_interactions(atoms: 'list[Atom]', cutoff: float,
         objects will have a single ``Coulombic`` interaction.
     """
 
-    if key:
-        atoms = _group_atoms(atoms, key)
+    atoms = _group_atoms(atoms, key)
     # If no grouping then each atom_group is a single atom
     for atom_group in atoms:
         # A Coulomb function is set so that the interaction can be parametrized
@@ -295,7 +294,7 @@ def _create_bonded_interactions(interactions_atoms: np.ndarray,
     # being in its own group (i.e. no tuples of atoms are grouped together).
     # This ensures that interactions_atoms will always have the correct
     # dimensions
-    if not key:
+    if key is None:
         key = id
     interactions_atoms = _group_atoms(interactions_atoms, key)
 
@@ -322,8 +321,11 @@ def _group_atoms(atoms: 'list[Atom]', key: Callable) -> 'list[tuple[Atom]]':
         Where each tuple contains a group of equivalent ``Atom`` objects, based
         on ``key``
     """
+    try:
+        atoms = sorted(atoms, key=key)
+    except TypeError:
+        pass  # If the key passed in is None then it has no idea how to compare `Atom`s
 
-    atoms = sorted(atoms, key=key)
     return [tuple(group) for _, group in groupby(atoms, key=key)]
 
 
