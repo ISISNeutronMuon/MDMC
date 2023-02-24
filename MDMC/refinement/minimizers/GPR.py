@@ -45,6 +45,9 @@ class GPR(Minimizer):
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
         self.results_filename = settings.get('results_filename', None)
+        self.optimizer = skGPR(kernels.RBF(length_scale=np.ones(len(parameters))),
+        n_restarts_optimizer=50, alpha = 5)
+
         self.change_parameters()
 
     def create_parameter_point_array(self,
@@ -247,11 +250,8 @@ class GPR(Minimizer):
         min_pars = records.loc[min_par_index]
 
         coordinates = records.values.tolist()
-
-        kernel = kernels.RBF(length_scale = np.ones(len(coordinates[0]))*length_scale)
-        gpr = skGPR(kernel, n_restarts_optimizer=50, alpha = alpha)
-
-        fitted_GPR = gpr.fit(coordinates, FOMs)
+        
+        fitted_GPR = self.optimizer.fit(coordinates, FOMs)
 
         return fitted_GPR, min_FOM, min_pars
 
