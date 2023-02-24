@@ -1,11 +1,10 @@
 """Module for calculating the total pair distribution function (PDF)"""
 from collections import defaultdict
-from itertools import (chain, combinations, combinations_with_replacement, islice,
+from itertools import (chain, combinations_with_replacement,
                        product)
 from typing import Optional
 import warnings
 
-from numba import jit
 import numpy as np
 
 from MDMC.common.atom_properties import B_COH
@@ -562,72 +561,82 @@ class PairDistributionFunction(Observable):
             r_max = np.max(self.independent_variables['r'])
             return universe_dim / (universe_dim // r_max)
 
+        r_min = np.min(self.r) - self.r_step / 2
+        r_max = np.max(self.r) + self.r_step / 2
+        _, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
+        bin_edges_squared = bin_edges**2
+        # the squared bin edges are calculated so we can bin squared distances directly
+
         part_comps = np.array(list(map(get_component_lengths,
                                        self.universe_dimensions)))
-        partitions = self._partition(trajectory.positions[0],
-                                    trajectory.element_list,
+        partitions = self._partition(trajectory,
                                     part_comps)
         # Get the partition_indexes and the pairs of partitions. As well as
         # calculating atom pairs within a partition, each partition will have 26
         # neighbors for which atom pairs must be calculated.
         partition_indexes = list(self._calculate_partition_indexes(part_comps))
         partition_pair_indexes = self._get_partition_pairs(part_comps)
+        # The partition_pair_indexes do NOT include pairs of identical elements.
+        # However, we need those in the current version of the PDF code.
 
-        # Calculate the histograms of all atoms in each partition for element
-        # combinations that are in self.partial_strings
+        # Now we iterate over all the possible combinations of chemical elements
         for partial_string in self.partial_strings:
-            elem1, elem2 = partial_string
-            like_elems = elem1 == elem2
-            pos_pairs = []
+            elem_A, elem_B = partial_string
 
-            # Get the atom pairs for atoms in the same partition
-            for part_i in partition_indexes:
-                if like_elems:
-                    # combinations avoids an atom and itself being an atom pair
-                    pos_pairs.append(combinations(
-                        partitions[elem1][part_i], 2))
-                else:
-                    # atom and itself as an atom pair not an issue for unlike
-                    # elements
-                    pos_pairs.append(product(partitions[elem1][part_i],
-                                            partitions[elem2][part_i]))
+            # And here we iterate over possible pairs of neighbouring partitions
+            for part1, part2 in partition_pair_indexes + [(x,x) for x in partition_indexes]:
+                distance_squared = self._calculate_squared_distances(elem_A, elem_B,
+                                                  part1, part2, partitions)
+                if distance_squared is not None:
+                    histogram, _ = np.histogram(distance_squared, bins=bin_edges_squared)
+                    self.partial_pdfs[partial_string] += histogram
 
-            # Get the atom pairs for atoms in different partitions
-            for part1, part2 in partition_pair_indexes:
-                # Correct for periodic boundary conditions, which will only
-                # occur if modulus of separation distance in any direction is
-                # greater than 1 (i.e. the partitions would not be neighbors
-                # without pdb)
-                wrap = np.zeros([3])
-                for i in range(3):
-                    component_separation = part1[i] - part2[i]
-                    if component_separation > 1:
-                        wrap[i] = 1
-                    elif component_separation < -1:
-                        wrap[i] = -1
-                wrap *= self.universe_dimensions
+            if elem_A != elem_B:
+                for part1, part2 in partition_pair_indexes:
+                    distance_squared = self._calculate_squared_distances(elem_B, elem_A,
+                                                    part1, part2, partitions)
+                    if distance_squared is not None:
+                        histogram, _ = np.histogram(distance_squared, bins=bin_edges_squared)
+                        self.partial_pdfs[partial_string] += histogram
 
-                # try/excepts are in case partitions[elem1][part1] is empty
-                try:
-                    pos_pairs.append(product(partitions[elem1][part1] - wrap,
-                                            partitions[elem2][part2]))
-                except ValueError:
-                    pass
-                # For unlike elements, also consider other element/partition
-                # combination
-                if not like_elems:
-                    try:
-                        pos_pairs.append(product(partitions[elem2][part1] - wrap,
-                                                partitions[elem1][part2]))
-                    except ValueError:
-                        pass
-            # pos_pairs is a list of iterators - flatten this to a single
-            # iterator
-            pos_pairs = chain.from_iterable(pos_pairs)
-            self.partial_pdfs[partial_string] += \
-                self._calculate_histogram_from_position_pairs(pos_pairs)
+    def _calculate_squared_distances(self, elem1: str, elem2: str,
+                                     part1: tuple, part2: tuple, partitions: dict):
+        distance_squared = None
+        array1 = partitions[elem1][part1]
+        array2 = partitions[elem2][part2]
+        # Each array should contain all the atoms of the chemical element elem
+        # in the partition part.
 
-    def _partition(self, positions: np.ndarray, element_list: list, part_comps: np.ndarray) -> dict:
+        n_at_array1 = len(array1)
+        n_at_array2 = len(array2)
+        array1 = array1.reshape(1,n_at_array1,3)
+        array2 = array2.reshape(n_at_array2,1,3)
+        difference = array1 - array2
+        # this calculated the difference in coordinates between every atom
+        # in array1 and every element in array2
+        for dim in range(3):
+            temp_array = difference[:,:,dim]
+            box_side = abs(self.universe_dimensions[dim])
+            # Correct for periodic boundary conditions
+            crit1 = np.where(temp_array > 0.5*box_side)
+            crit2 = np.where(temp_array < -0.5*box_side)
+            temp_array[crit1] -= box_side
+            temp_array[crit2] += box_side
+            difference[:,:,dim] = temp_array
+
+        if elem1==elem2 and np.all(part1 == part2):
+            temp = np.sum(difference**2, axis = 2)
+            temp = np.triu(temp, k=1)
+            # now the array contains only the part above the diagonal
+            # and this way we avoid double counting.
+            distance_squared = temp.ravel()
+        else:
+            distance_squared = np.sum(difference**2, axis = 2).ravel()
+
+        return distance_squared
+
+
+    def _partition(self, trajectory: CompactTrajectory, part_comps: np.ndarray) -> dict:
         """
         Partitions the atomic positions into paritions of dimensions specified
         by ``part_comps``
@@ -670,22 +679,17 @@ class PairDistributionFunction(Observable):
                 partitions[element][part_index] = []
 
         # Drop positions of atoms of elements not included
-        mask = np.isin(element_list, list(self.elements))
-        element_array = np.array(element_list)[mask]
-        t_positions = positions[mask]
+        filtered_trajectory = trajectory.filter_by_element(self.elements)
 
-        # Get element and position of each atom
-        for elem, position in zip(element_array, t_positions):
-            partition_index = []
-            for component, part_comp in zip(position, part_comps):
-                partition_index.append(component // part_comp)
-            # Add each position to correct partition
-            partitions[elem][tuple(partition_index)].append(position)
-        # Convert defaultdicts(list) to dicts of numpy arrays (just changes type
-        # of positions from list to array)
-        return {elem: {partition_index: np.array(positions)
-                       for partition_index, positions in elem_partitions.items()}
-                for elem, elem_partitions in partitions.items()}
+        for elem in self.elements:
+            subtrajectory = filtered_trajectory.filter_by_element([elem])
+            pos_array = subtrajectory.positions[0]
+            indices = (pos_array // np.array(part_comps)).astype(int)
+            for one_set in np.unique(indices, axis=0):
+                temp_set = tuple(one_set)
+                new_pos_array = pos_array[np.where(np.all(indices == temp_set, axis=1))]
+                partitions[elem][temp_set] = new_pos_array
+        return partitions
 
     def _get_partition_pairs(self, partition_components: np.ndarray) -> list[tuple]:
         """
@@ -731,75 +735,10 @@ class PairDistributionFunction(Observable):
                                         / partition_components).astype('int32'))
                        )
 
-    def _calculate_histogram_from_position_pairs(self, position_pairs: iter) -> np.ndarray:
-        """
-        Returns a histogram of pair separations calculated from
-        ``position_pairs``
-
-        Parameters
-        ----------
-        position_pairs : iter
-            An iterator returning 2 element `tuples`, where each element is a 3
-            element vector specifying a position.
-
-        Returns
-        -------
-        numpy.ndarray
-            An histogram of length equal to the length of ``r`` in
-            ``independent_variables``, where each count is an atomic separation
-            (between the elements in a `tuple` in ``position_pairs``)
-        """
-        # Use np.histogram to get empty array of correct size and bin edges
-        # Assumes constant r step size
-        r_min = np.min(self.r) - self.r_step / 2
-        r_max = np.max(self.r) + self.r_step / 2
-        hist, bin_edges = np.histogram([], len(self.r), range=(r_min, r_max))
-
-        @jit('float64[:], float64[:]', nopython=True)
-        def jit_histogram(separations, bin_edges):
-            jit_hist, _ = np.histogram(separations, bins=bin_edges)
-            return jit_hist
-
-        # Calculate histograms over blocks. This is mainly for memory management.
-        # Numpy also uses blocks, with a BLOCK size of 65536 (256**2),
-        # so will use this block size and pad with zeros
-        # if position_pairs has been exhausted.
-        # pylint: disable=invalid-name
-        BLOCK = 65536
-        exhausted = False
-        while not exhausted:
-            # Get next block from iterator
-            pair_block = np.fromiter(islice(position_pairs, BLOCK), dtype=object)
-            # return histogram if no more exist in the iterator
-            if len(pair_block) == 0:
-                return hist
-
-            # Unpack & subtract positions from each other
-            pos_1 = np.array([tup[0] for tup in pair_block])
-            pos_2 = np.array([tup[1] for tup in pair_block])
-            difference = np.subtract(pos_1, pos_2)
-
-            if len(pair_block) < BLOCK:
-                # Toggle exhausted so that the while loop will stop.
-                exhausted = True
-                # The calculated differences will be filled with np.array(['inf'])
-                # if the iterator ended before reaching the element at position BLOCK (65536).
-                padding = np.array([np.array([float('inf'), float('inf'), float('inf')])
-                           for _ in range(BLOCK - len(pair_block))])
-                difference = np.append(difference, padding, axis=0)
-
-            separations = self._calculate_euclidean_norm(difference)
-            hist += jit_histogram(separations, bin_edges)
-
-        return hist
-
     @staticmethod
-    @jit('float64[:](float64[:,:])', nopython=True)
     def _calculate_euclidean_norm(vectors: np.ndarray) -> np.ndarray:
         """
         Calculates the Euclidean norm of an array of vectors
-
-        ``numba.jit`` results in ~10x speed up over ``np.linalg.norm``
 
         Parameters
         ----------
@@ -809,6 +748,22 @@ class PairDistributionFunction(Observable):
         """
 
         return np.sum(np.square(vectors), 1) ** 0.5
+
+    @staticmethod
+    def _calculate_euclidean_norm_squared(vectors: np.ndarray) -> np.ndarray:
+        """
+        Calculates the Euclidean norm squared of an array of vectors.
+        This way we can save time by not calculating the square root,
+        since the bin limits of the histogram are also squared.
+
+        Parameters
+        ----------
+        vectors : numpy.ndarray
+            A 2-D array containing vectors for which the Euclidean norm
+            (Euclidean length, L2 distance) is calculated.
+        """
+
+        return np.sum(np.square(vectors), 1)
 
     @staticmethod
     def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
