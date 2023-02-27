@@ -1,6 +1,6 @@
 netCDF4==1.6.2
 numpy==1.23.4 #currently kept to 1.22.0 due to numba not supporting higher versions
-mypy==0.982
+mypy==1.0.1
 pandas==1.5.3
 scipy==1.10.0
 ase==3.22.1
