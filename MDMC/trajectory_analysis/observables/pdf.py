@@ -736,36 +736,6 @@ class PairDistributionFunction(Observable):
                        )
 
     @staticmethod
-    def _calculate_euclidean_norm(vectors: np.ndarray) -> np.ndarray:
-        """
-        Calculates the Euclidean norm of an array of vectors
-
-        Parameters
-        ----------
-        vectors : numpy.ndarray
-            A 2-D array containing vectors for which the Euclidean norm
-            (Euclidean length, L2 distance) is calculated.
-        """
-
-        return np.sum(np.square(vectors), 1) ** 0.5
-
-    @staticmethod
-    def _calculate_euclidean_norm_squared(vectors: np.ndarray) -> np.ndarray:
-        """
-        Calculates the Euclidean norm squared of an array of vectors.
-        This way we can save time by not calculating the square root,
-        since the bin limits of the histogram are also squared.
-
-        Parameters
-        ----------
-        vectors : numpy.ndarray
-            A 2-D array containing vectors for which the Euclidean norm
-            (Euclidean length, L2 distance) is calculated.
-        """
-
-        return np.sum(np.square(vectors), 1)
-
-    @staticmethod
     def _set_weights(unique_elements: list[str], b_coh: dict) -> dict:
         """
         Sets the weights for each element

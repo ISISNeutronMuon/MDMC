@@ -279,21 +279,6 @@ def test_partition_pairs(PDF, number_partitions):
     assert np.all(pair in actual for pair in expected)
 
 
-@pytest.mark.parametrize('vectors', [
-                                    [[1., 2., 3.], [1., 2., 3.], [1., 2., 3.], [1., 2., 3.]],
-                                    [[4543., 349., 348.], [0.000034, 38748234., -0.0032423]],
-                                    [[0.000034, 38748234., -0.0032423], [0.0001, 90876534., -0.00564]],
-                                    [[0., 0., 5.], [0., 2., 0.], [1., 5., 5.]],
-                                    [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
-                                    ])
-def test_euclidean_norm(PDF, vectors):
-    """
-    Tests that the outputs from _calculate_euclidean_norm is the same as np.linalg.norm
-    """
-    linalg_output = [np.linalg.norm(vector) for vector in vectors]
-    assert np.array_equal(PDF._calculate_euclidean_norm(np.array(vectors)), linalg_output)
-
-
 def generate_position_pairs(start, stop, step):
 
     """
