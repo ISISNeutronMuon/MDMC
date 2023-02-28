@@ -13,7 +13,7 @@ _CALC_OBS_PATH = '/calculated_observables'
 _OBJECT_PATH = '/MDMC_objects'
 _CONFIG_PATH = '/configurations'
 _GUI_PATH = '/gui'
-
+_PACKMOL_PATH = '/configurations/packmol'
 
 # Reader/experimental data
 #
@@ -54,6 +54,9 @@ for key in READER_DATA:
 
 for key in CONFIG_DATA:
     CONFIG_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + CONFIG_DATA[key]
+
+for key in PACKMOL_DATA:
+    PACKMOL_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + PACKMOL_DATA[key]
 
 for key in RESOLUTION_DATA:
     RESOLUTION_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + RESOLUTION_DATA[key]
