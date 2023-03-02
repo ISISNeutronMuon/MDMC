@@ -18,6 +18,8 @@ class Minimizer(ABC):
 
     Parameters
     ----------
+    control : Control
+        The ``Control`` object which uses this Minimizer.
     parameters : Parameters or list of Parameter
         A `list` of ``Parameter`` objects which will be fit
 
@@ -38,7 +40,8 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, parameters: Parameters):
+    def __init__(self, control: Control, parameters: Parameters):
+        self.control = control
 
         # First MC step always changes state
         self.FoM_old = float('inf')
