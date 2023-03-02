@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from MDMC.MD.simulation import Universe
-from MDMC.trajectory_analysis.compact_trajectory import configurations_as_compact_trajectory
+from MDMC.trajectory_analysis.compact_trajectory import configurations_as_compact_trajectory, CompactTrajectory
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
 from MDMC.trajectory_analysis.observables.pdf import PairDistributionFunction
 
@@ -209,7 +209,18 @@ def test_partition(PDF, positions, element_list, part_comps):
 
     PDF.elements = set(element_list)
     PDF.universe_dimensions = np.array([1.5, 2., 3.])
-    partitions = PDF._partition(positions, element_list, part_comps)
+    # it is necessary to construct a CompactTrajectory here,
+    # since now PDF._partition takes a trajectory as input.
+    trajectory = CompactTrajectory(n_steps=1, n_atoms=len(element_list),
+                                   universe = Universe(PDF.universe_dimensions))
+    trajectory.writeOneStep(0,0.0,positions)
+    trajectory.validateTypes(element_list)
+    trajectory.setCharge(len(element_list)*[0.0])
+    trajectory.labelAtoms({1:'C', 2:'H'}, {1:12.0, 2: 1.0})
+    trajectory.postProcess()
+    # now a CompactTrajectory has been constructed out of the input positions
+    # and the testing can continue
+    partitions = PDF._partition(trajectory, part_comps)
     assert sorted(list(PDF.elements)) == sorted(list(partitions.keys()))
 
     partition_positions = [pos for elem_partitions in partitions.values()
@@ -268,21 +279,6 @@ def test_partition_pairs(PDF, number_partitions):
     assert np.all(pair in actual for pair in expected)
 
 
-@pytest.mark.parametrize('vectors', [
-                                    [[1., 2., 3.], [1., 2., 3.], [1., 2., 3.], [1., 2., 3.]],
-                                    [[4543., 349., 348.], [0.000034, 38748234., -0.0032423]],
-                                    [[0.000034, 38748234., -0.0032423], [0.0001, 90876534., -0.00564]],
-                                    [[0., 0., 5.], [0., 2., 0.], [1., 5., 5.]],
-                                    [[0., 0., 0.], [0., 0., 0.], [0., 0., 0.], [0., 0., 0.]]
-                                    ])
-def test_euclidean_norm(PDF, vectors):
-    """
-    Tests that the outputs from _calculate_euclidean_norm is the same as np.linalg.norm
-    """
-    linalg_output = [np.linalg.norm(vector) for vector in vectors]
-    assert np.array_equal(PDF._calculate_euclidean_norm(np.array(vectors)), linalg_output)
-
-
 def generate_position_pairs(start, stop, step):
 
     """
@@ -310,34 +306,6 @@ def generate_position_pairs(start, stop, step):
 
     return combinations(map(lambda x: np.array([x]*3),
                             np.arange(start, stop, step)), 2)
-
-
-@pytest.mark.parametrize('position_pairs, r_values, expected',
-                         [(generate_position_pairs(0., 5., 0.5),
-                           np.arange(0.8660254, 10 * 0.8660254, 0.8660255),
-                           np.arange(9, 0, -1)),
-                          (generate_position_pairs(0., 5., 0.5),
-                           np.arange(1.7320508, 5 * 1.7320508, 1.7320508),
-                           np.arange(17, 0, -4)),
-                          (generate_position_pairs(0., 102., 2.),
-                           np.arange(3.46410162, 51 * 3.46410162, 3.46410162),
-                           np.arange(50, 0, -1))])
-def test_calculate_histogram_entries(PDF, position_pairs, r_values, expected):
-
-    """
-    Tests that _calculate_histogram_from_position_pairs produces a historgram of
-    the correct length, with the correct number for each bin
-
-    The position pairs are of the form descirbed in generate_position_pairs. As
-    they are formed from combinations of a range, there are n-1 separations
-    within the first bin (up to 1 * step), n-2 separations in the second bin
-    (up to 2 * step)... n-k separations within the kth bin (up to k * step).
-    """
-
-    PDF.r = r_values
-    PDF.r_step = r_values[1] - r_values[0]
-    assert np.all(PDF._calculate_histogram_from_position_pairs(position_pairs)
-                  == expected)
 
 
 @pytest.mark.parametrize('unique_elements, b_cohs, expected',
