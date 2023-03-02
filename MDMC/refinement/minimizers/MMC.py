@@ -142,7 +142,6 @@ class MMC(Minimizer):
 
             self.parameters[parameter.name].value = new_value
 
-
     def has_converged(self) -> bool:
         """
         Checks if the refinement process has converged on a stable solution.
