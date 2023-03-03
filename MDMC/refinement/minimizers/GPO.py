@@ -9,6 +9,7 @@ from MDMC.refinement.minimizers.GPR import GPR
 
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
+    from MDMC.control import Control
 
 
 class GPO(Minimizer):
@@ -30,6 +31,8 @@ class GPO(Minimizer):
 
     Parameters
     ----------
+    control: Control
+        The ``Control`` object which uses this Minimizer.
     parameters: Parameters
         The parameters in the simulation Universe to be optimized
 
@@ -37,8 +40,9 @@ class GPO(Minimizer):
     ----------
     n_initial: int, optional
         The number of points used for the initial latin hypercube coverage of the parameter
-        space. Optional. If no value is given it defaults to 20. Note that if it is larger than
-        the maximum number of refinement steps (``Control.n_steps``) then that value will be
+        space. Optional. If no value is given it defaults to 20. Note that if the
+        associated ``Control`` objects has a maximum number of refinement steps (defined in
+        ``Control.n_steps``) which is smaller than ``n_initial`` then that value will be
         used instead.
 
     Attributes
@@ -47,11 +51,13 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, parameters: 'Parameters', **settings: dict):
-        super().__init__(parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
+        super().__init__(control, parameters)
 
         self.parameters = parameters
-        self.n_initial = min(self.control.n_points, settings.get('n_initial', 20))
+        self.n_initial = settings.get('n_initial', 20)
+        if self.control.n_steps:
+            self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
         self.predicted_min_pos = []
         # Ensure all parameters have bounds
@@ -95,7 +101,7 @@ class GPO(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.control.n_points
+        return len(self.history) >= self.control.n_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """

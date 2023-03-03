@@ -1,12 +1,15 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
-
+from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
 
 import pandas as pd
 
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
+
+if TYPE_CHECKING:
+    from MDMC.control import Control
 
 
 @repr_decorator('FoM', 'FoM_old',
@@ -40,7 +43,7 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: Control, parameters: Parameters):
+    def __init__(self, control: 'Control', parameters: Parameters):
         self.control = control
 
         # First MC step always changes state

@@ -1,4 +1,5 @@
 """The Gaussian-Process-Regression minimizer class"""
+from typing import TYPE_CHECKING
 import itertools
 from typing import Optional
 
@@ -13,6 +14,9 @@ from scipy.ndimage import minimum_position, minimum
 from MDMC.MD.parameters import Parameters, Parameter
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
+if TYPE_CHECKING:
+    from MDMC.control import Control
+
 
 class GPR(Minimizer):
     """
@@ -24,15 +28,22 @@ class GPR(Minimizer):
     provided with them, the minimizer sets constraints equal to 20% of the current parameter
     values.
 
+    Parameters
+    ----------
+    control: Control
+        The ``Control`` object which uses this Minimizer.
+    parameters: Parameters
+        The parameters in the simulation Universe to be optimized
+
     Attributes
     ----------
     history_columns: list[str]
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, parameters: Parameters, **settings: dict):
-        super().__init__(parameters)
-        np.random.seed(0)
+    def __init__(self, control: 'Control', parameters: Parameters, **settings: dict):
+        super().__init__(control, parameters)
+        np.random.seed(0) # This should mean results are reproducible in tests
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
@@ -44,7 +55,7 @@ class GPR(Minimizer):
         """
         Takes or creates the constraints of the parameters to be minimised and makes an array
         of points, placed on a Latin hypercube covering the space defined by the constraints.
-        The resulting array of coordinates is self.control.n_points long.
+        The resulting array of coordinates is self.control.n_steps long.
 
         Parameters
         ----------
@@ -61,7 +72,7 @@ class GPR(Minimizer):
         parameter_names = [str(name) for name in parameters.keys()]
 
         samples = st.qmc.LatinHypercube(d=len(parameters), centered=True, seed=1)
-        latin_points = samples.random(n=self.control.n_points)
+        latin_points = samples.random(n=self.control.n_steps)
 
         lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
         upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
@@ -122,7 +133,7 @@ class GPR(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.control.n_points
+        return len(self.history) >= self.control.n_steps
 
     @property
     def history_columns(self) -> 'list[str]':
