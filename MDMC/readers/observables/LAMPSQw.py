@@ -1,10 +1,12 @@
 """Readers for dynamic data"""
 
+import logging
 from typing import IO, Iterable
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
 
+logger = logging.getLogger(__name__)
 
 class LAMPSQw(SQwReader):
 
@@ -68,7 +70,13 @@ class LAMPSQw(SQwReader):
         # LAMP sets errors -1 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them but
         # result in inf.
-        self.SQw_err[np.where(self.SQw_err < 0.)] = float('inf')
+        if np.any(self.SQw_err <= 0.):
+            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+            msg = "We have set the error bar to infinity for any zero error values, this allows\
+                us to calculate chi-squared but effectively ignores these points, this may not\
+                be what you want to do, consider using a FoM which doesn't need errors if\
+                this is an issue"
+            logger.warning(msg)
 
     def parse_indep_var(self, file: IO) -> 'tuple[np.ndarray, np.ndarray]':
         """
