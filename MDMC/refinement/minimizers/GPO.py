@@ -37,7 +37,7 @@ class GPO(Minimizer):
     ----------
     n_initial: int, optional
         The number of points used for the initial latin hypercube coverage of the parameter
-        space. Optional: if no value is given it defaults to 20. Note that if it is larger than
+        space. Optional. If no value is given it defaults to 20. Note that if it is larger than
         the maximum number of refinement steps (``Control.n_steps``) then that value will be
         used instead.
 
