@@ -55,7 +55,7 @@ WORKDIR /opt/other/packmol/packmol-20.14.0
 RUN ./configure /opt/other/gfortran/gcc-12.2.0/
 RUN make
 
-# Add fftool to env variables
+# Add packmol to env variables
 RUN echo export PATH="/opt/other/packmol/packmol-20.14.0/:$PATH" >> /root/.bashrc
 ENV PYTHONPATH ${PYTHONPATH}:/opt/other/packmol/packmol-20.14.0/
 
@@ -99,3 +99,5 @@ WORKDIR /home
 # Create aliases
 RUN echo alias python="python3" > ~/.bash_aliases
 RUN echo alias pip="pip3" >> ~/.bash_aliases
+RUN source ~/.bashrc
+RUN source ~/.bash_aliases
