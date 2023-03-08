@@ -41,10 +41,10 @@ READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
 
 CONFIG_DATA = {'cif': '/Paracetamol.cif',
                'pdb_water': '/packmol/water.pdb',
-               'pdb_palmitic_acid': 'packmol/palitoil.pdb'}
+               'pdb_palmitic_acid': '/packmol/palitoil.pdb'}
 
-PACKMOL_DATA = {'bilayer_solved_system': '/packmol/bilayer.pdb',
-                'bilayer_input': '/packmol/bilayer.inp'}
+PACKMOL_DATA = {'bilayer_solved_system': '/bilayer.pdb',
+                'bilayer_input': '/bilayer.inp'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
@@ -56,7 +56,7 @@ for key in CONFIG_DATA:
     CONFIG_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + CONFIG_DATA[key]
 
 for key in PACKMOL_DATA:
-    PACKMOL_DATA[key] = _ABS_DIR_PATH + _CONFIG_PATH + PACKMOL_DATA[key]
+    PACKMOL_DATA[key] = _ABS_DIR_PATH + _PACKMOL_PATH + PACKMOL_DATA[key]
 
 for key in RESOLUTION_DATA:
     RESOLUTION_DATA[key] = _ABS_DIR_PATH + _EXP_DATA_PATH + RESOLUTION_DATA[key]
