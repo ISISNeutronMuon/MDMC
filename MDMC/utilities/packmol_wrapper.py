@@ -2,12 +2,12 @@ import re
 import shutil
 import subprocess
 import os
-import sys
 
 import numpy as np
 
+from MDMC.MD import Molecule
 from MDMC.MD.simulation import Universe
-import MDMC.readers.configurations.pdb as pdb_reader
+from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
     """
@@ -18,32 +18,50 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
     desired_cwd: str
         A string path to the working directory from which you want to call packmol
         (i.e. where your input files are)
-
     """
-
+    # Create packmol call
     packmol_path = get_packmol_path()
     command_list = [packmol_path, "<"]
 
+    # Get input path and add to call
     input_file_path = os.path.join(desired_cwd, inp_file_name)
     command_list.append(input_file_path)
 
+    # Run packmol on input file
     _call_external_program(command_list, desired_cwd)
+
+    # Get output file
     output_file_name = get_packmol_output_name(input_file_path)
     output_file_path = os.path.join(desired_cwd, output_file_name)
-    reader = pdb_reader.ProteinDataBankReader(output_file_path)
+
+    # Read Output
+    # TODO: Change to read in all the different pdb files separately
+    reader = PackmolPDBReader(output_file_path)
+    reader.__enter__()
     reader.parse()
+
+    # Create Universe from output
     dim = get_packmol_universe_dimensions(input_file_path)
     universe = Universe(dim)
     for molecule in reader.molecules:
+        print(molecule.bonded_interactions)
         universe.add_structure(molecule)
+
     return universe
+
+
+# def introduce_bonds(molecules: list[Molecule], reader: ConfigurationReader):
+    # for molecule in molecules:
+    #     if molecule ==
+    # pass
+
+
 def get_packmol_path() -> str:
     """
     Returns a string containing the path to packmol from the PATH environment variable,
     if it exists. Otherwise, returns ``None`` if packmol is not in PATH.
     """
-    path_var = ":".join(sys.path)
-    return shutil.which("packmol", path=path_var)
+    return shutil.which("packmol")
 
 def get_packmol_output_name(inp_file_path: str) -> str:
     """
@@ -59,7 +77,7 @@ def get_packmol_output_name(inp_file_path: str) -> str:
     str
         The name of the packmol output file name
     """
-    with open(inp_file_path) as inp_file:
+    with open(inp_file_path, "r") as inp_file:
         contents = inp_file.readlines()
 
     pattern = re.compile("output.*")
