@@ -11,6 +11,8 @@ import numpy as np
 import os
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
+os.environ["OMPI_MCA_rmaps_base_oversubscribe"]="true"
+os.environ["OMPI_MCA_btl"]="^vader"
 os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
 
@@ -59,6 +61,7 @@ exp_datasets = [{'file_name':'../doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
                  'type':'SQw',
                  'reader':'xml_SQw',
                  'weight':1.,
+                 'auto_scale':True,
                  'resolution':None}]
 
 fit_parameters = universe.parameters

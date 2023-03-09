@@ -36,6 +36,6 @@ WORKDIR /home
 RUN echo alias python="python3" > ~/.bash_aliases
 RUN echo alias pip="pip3" >> ~/.bash_aliases
 
-RUN export OMPI_MCA_btl=^vader >> ~/.bashrc
+RUN echo export OMPI_MCA_btl=^vader >> ~/.bashrc
 
 # Meaningless change to provoke rebuild
