@@ -205,7 +205,7 @@ class Control:
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.settings = settings
-        self.n_steps = settings.get('n_step')
+        self.n_steps = settings.get('n_steps')
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
