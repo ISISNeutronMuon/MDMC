@@ -19,6 +19,7 @@ class MockControl:
     def __init__(self):
         self.n_steps = 20
 
+
 @pytest.fixture(scope="module")
 def mockcontrol():
 
