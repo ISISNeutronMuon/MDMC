@@ -9,7 +9,6 @@ import pytest
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
-from MDMC.control import Control
 
 pytestmark = pytest.mark.mpi
 
