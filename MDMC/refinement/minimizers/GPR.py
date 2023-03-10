@@ -1,7 +1,6 @@
 """The Gaussian-Process-Regression minimizer class"""
-from typing import TYPE_CHECKING
 import itertools
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import scipy.stats as st
