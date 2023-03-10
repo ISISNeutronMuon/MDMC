@@ -11,7 +11,20 @@ import numpy as np
 import os
 # Change the number of threads depending on the number of physical cores on
 # your computer as it was tested for LAMMPS
+
+# This variable has been added to the script to allow testing
+# on machines where, for whatever reason, the user only enabled
+# a single CPU core in Docker. This way it is still possible
+# to test the MPI functionality, as MPI will launch multiple
+# processes, even though not enough slots are available to
+# run them. Of course, we should not expect any performance gain
+# in such a case.
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 os.environ["OMPI_MCA_rmaps_base_oversubscribe"]="true"
+#
+# This disables the vader BTL in OpenMPI, which is necessary,
+# since vader BTL is not allowed by Docker.
+# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 os.environ["OMPI_MCA_btl"]="^vader"
 os.environ["OMP_NUM_THREADS"] = "4"
 from scipy.interpolate import interp2d
