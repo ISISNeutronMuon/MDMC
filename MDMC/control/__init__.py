@@ -8,3 +8,4 @@ Control
 
 
 from .control import Control
+from .control import PlotResults
