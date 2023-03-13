@@ -7,12 +7,12 @@ class PackmolPDBReader(Reader):
     def __init__(self, file_name: str):
 
         super().__init__(file_name)
-        self._atoms = None
+        self._atoms = []
+        self._molecules = []
 
     def parse(self, **settings: dict) -> None:
-        self._atoms = []
         prev_id = ""
-        molecules = {}
+        molecules_dict = {}
         for i in self.file:
             line = i.split()
             if line[0] == "ATOM" or line[0] == "HETATM":
@@ -27,13 +27,13 @@ class PackmolPDBReader(Reader):
                 self._atoms.append(current_atom)
 
                 if prev_id == current_id:
-                    molecules[prev_id].append(current_atom)
+                    molecules_dict[prev_id].append(current_atom)
                 else:
                     if prev_id:
-                        full_molecule = Molecule(atoms=molecules[prev_id])
+                        full_molecule = Molecule(atoms=molecules_dict[prev_id])
                         self._molecules.append(full_molecule)
                     prev_id = current_id
-                    molecules[prev_id] = [current_atom, ]
+                    molecules_dict[prev_id] = [current_atom, ]
 
 
     @property
