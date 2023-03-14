@@ -7,12 +7,10 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-import corner
 from scipy.interpolate import interp1d, interp2d
-from scipy.optimize import OptimizeResult
 from verbosemanager import VerboseManager
 
-from MDMC.control import PlotResults
+from MDMC.control.plot_results import PlotResults
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -538,7 +536,7 @@ class Control:
         plotter = PlotResults(filename, MH_norm=MH_norm, points=points,
                               quantiles=[0.34, 0.5, 0.68])
         cornerplot = plotter.create_cornerplot()
-        
+
         return cornerplot
 
     def _print_data(self) -> None:

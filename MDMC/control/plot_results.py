@@ -31,12 +31,11 @@ class PlotResults():
         self.MH_norm = MH_norm
         self.points = points
 
-        self.parameter_names, self.parameter_coords,
+        self.parameter_names, self.parameter_coords,\
         self.minmax_coords, self.FoMs = self.get_measured_points()
 
         self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
-                                   acq_optimizer="sampling", initial_point_generator="lhs",
-                                   n_initial_points=0, model_queue_size=1)
+                                   acq_optimizer="sampling", model_queue_size=1)
 
     def get_measured_points(self) -> tuple:
         """Opens the dataframe in `filename` and extracts the measured parameters names, values
@@ -137,7 +136,7 @@ class PlotResults():
         """
         try:
             _, _, y_random, coords = \
-            self._expected_minimum_random_sampling(n_random_starts=self.points)
+            self._expected_minimum_random_sampling()
         except IndexError:
             msg = ("\n \n Your data file apears not to have any points in, please check you have "
                    "run the refinement and it saved correctly. \n")
