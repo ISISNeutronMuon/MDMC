@@ -3,7 +3,7 @@ from itertools import pairwise
 
 import numpy as np
 
-from MDMC.MD.interactions import Bond
+from MDMC.MD.interactions import BondAngle, Bond
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.structures import Atom
 
@@ -35,26 +35,21 @@ class ProteinDataBankReader(ConfigurationReader):
         self._bonds = []
 
     def parse(self, **settings: dict) -> None:
-        prev_id = ""
-        self._molecule = {}
+        molecule = {}
         for i in self.file:
             line = i.split()
             if line[0] == "ATOM" or line[0] == "HETATM":
-                if len(line) == 9:
-                    current_id = "".join(line[3:6])
-                else:
-                    current_id = "".join(line[3:5])
-
                 element = line[2]
                 current_pos = [float(i) for i in line[-3:]]
                 current_atom = Atom(element, current_pos)
                 self._atoms.append(current_atom)
-                self._molecule[line[1]] = current_atom
+                molecule[line[1]] = current_atom
 
             elif line[0] == "CONECT":
                 atoms_to_connect = line[1:]
                 for atom1_id, atom2_id in pairwise(atoms_to_connect):
-                    self.create_bond(self._molecule[atom1_id], self._molecule[atom2_id])
+                    self.create_bond(molecule[atom1_id], molecule[atom2_id])
+
 
     def create_bond(self, atom1: Atom, atom2: Atom) -> None:
         """
@@ -76,6 +71,7 @@ class ProteinDataBankReader(ConfigurationReader):
     def atoms(self) -> 'list[Atom]':
         return self._atoms
 
+    @property
     def bonds(self) -> 'list[Bond]':
         return self._bonds
 
