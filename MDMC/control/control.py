@@ -411,13 +411,12 @@ class Control:
         if n_steps is None:
             if self.n_steps is None:
                 raise ValueError('The number of maximum refinement steps has not been specified')
-            n_steps = self.n_steps
         else:
             self.n_steps = n_steps
 
         # calculate verbose steps
         # 4 steps per refinement step, and n + 1 steps total
-        verbose_steps = (n_steps + 1) * 4
+        verbose_steps = (self.n_steps + 1) * 4
         # initialise step timings list for average step timings at end
         self.step_timings = []
 
