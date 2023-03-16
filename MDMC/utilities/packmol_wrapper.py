@@ -5,7 +5,6 @@ import os
 
 import numpy as np
 
-from MDMC.MD import Molecule
 from MDMC.MD.simulation import Universe
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
@@ -19,6 +18,9 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
         A string path to the working directory from which you want to call packmol
         (i.e. where your input files are)
     """
+
+    #TODO: allow MDMC molecule export into pdb format
+
     # Create packmol call
     packmol_path = get_packmol_path()
     command_list = [packmol_path, "<"]
@@ -35,7 +37,6 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
     output_file_path = os.path.join(desired_cwd, output_file_name)
 
     # Read Output
-    # TODO: Change to read in all the different pdb files separately
     reader = PackmolPDBReader(output_file_path)
     reader.__enter__()
     reader.parse()
@@ -44,16 +45,9 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
     dim = get_packmol_universe_dimensions(input_file_path)
     universe = Universe(dim)
     for molecule in reader.molecules:
-        print(molecule.bonded_interactions)
         universe.add_structure(molecule)
 
     return universe
-
-
-# def introduce_bonds(molecules: list[Molecule], reader: ConfigurationReader):
-    # for molecule in molecules:
-    #     if molecule ==
-    # pass
 
 
 def get_packmol_path() -> str:
