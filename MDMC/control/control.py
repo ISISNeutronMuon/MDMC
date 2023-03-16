@@ -395,6 +395,8 @@ class Control:
             Maximum number of steps for the refinement. Must be specified either when creating
             the ``Control`` object or when calling this method. The value specified to this
             method supersedes the value passed (if any) when the ``Control`` object was created.
+            If nothing is passed, the method will check if a number was specified when the
+            ``Control`` object was created and use that value.
 
         Examples
         --------
