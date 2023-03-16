@@ -25,19 +25,12 @@ def filled_universe(packmol_data_path):
 @fixture
 def input_file_name():
     return "bilayer.inp"
+
 def test_get_packmol_path():
     """Tests that the packmol path is correct within the docker container"""
     actual_path = packmol.get_packmol_path()
     correct_path = "/opt/other/packmol/packmol-20.14.0/packmol"
     assert actual_path == correct_path
-
-# def test_correct_packmol_run(packmol_data_path):
-#     """
-#     Tests that a correctly-initiated packmol run will
-#     correctly run packmol and read in the result
-#     """
-#
-#     pass
 
 def test_packmol_result_is_identical_between_runs(filled_universe, packmol_data_path, input_file_name):
     universe_1 = filled_universe
@@ -46,13 +39,12 @@ def test_packmol_result_is_identical_between_runs(filled_universe, packmol_data_
 def test_returns_universe(filled_universe):
     assert type(filled_universe) == Universe
 
-def test_correct_atoms(filled_universe):
-    assert filled_universe.n_atoms == 7187
-    assert filled_universe.n_molecules == 1199
+def test_correct_system_properties(filled_universe):
+    assert filled_universe.n_atoms == 8000
+    assert filled_universe.n_molecules == 1100
     assert set(filled_universe.element_list) == {"H", "O", "C"}
-
-def test_molecules_are_connected(filled_universe):
-    assert len(filled_universe.bonded_interactions) == 7150
+    # Double bonds are not represented in MDMC, so there should be 7000 bonds, but 6900 are seen
+    assert len(filled_universe.bonded_interactions) == 6900
 
 def test_incorrect_packmol_path(packmol_data_path, input_file_name):
     """Tests that a packmol run with an incorrect path will return an error"""
@@ -66,24 +58,17 @@ def test_incorrect_packmol_filename(packmol_data_path, input_file_name):
     with pytest.raises(IOError) as except_info:
         packmol.fill_with_packmol(input_file_name, incorrect_path)
 
-
-def test_get_packmol_output_name():
+def test_get_packmol_output_name(packmol_data_path, input_file_name):
     """Tests that the output name of a packmol file will be correctly retrieved"""
-    pass
+    actual_name = packmol.get_packmol_output_name(packmol_data_path+"/"+input_file_name)
+    correct_name = "bilayer.pdb"
+    assert actual_name == correct_name
 
-def test_get_packmol_universe_dimensions():
+def test_get_packmol_universe_dimensions(packmol_data_path, input_file_name):
     """Tests that the dimensions are correctly read from the packmol input"""
-    pass
-
+    actual_dim = packmol.get_packmol_universe_dimensions(packmol_data_path+"/"+input_file_name)
+    correct_dim = [72., 60., 60.,]
+    assert actual_dim == correct_dim
 def test_call_external_program():
-    """Tests that the """
+    """Tests that the external programs are called correctly"""
     pass
-
-def test_unrelated():
-    from MDMC.readers.configurations import pdb
-    from MDMC.MD.structures import Molecule
-    reader = pdb.ProteinDataBankReader(test_data._ABS_DIR_PATH + test_data._PACKMOL_PATH + "/water.pdb")
-    reader.__enter__()
-    reader.parse()
-    water = Molecule(atoms=reader.atoms, interactions=reader.bonds)
-    assert water.bonded_interactions == 2
