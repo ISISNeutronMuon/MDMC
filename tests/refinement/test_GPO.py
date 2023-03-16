@@ -58,7 +58,7 @@ def GPO_with_history(mockcontrol, parameters):
         A GPO object with a history of 10 steps
     """
 
-    minimizer = GPO(mockcontrol(), parameters)
+    minimizer = GPO(mockcontrol(10), parameters)
     for i in range(1, 11):
         minimizer.step(FoM=i)
     return minimizer

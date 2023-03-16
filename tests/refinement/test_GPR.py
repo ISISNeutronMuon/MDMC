@@ -69,7 +69,7 @@ def GPR_with_history(mockcontrol, parameters):
         A GPR object with a history of 10 steps
     """
 
-    minimizer = GPR(mockcontrol(), parameters)
+    minimizer = GPR(mockcontrol(10), parameters)
     for i in range(10):
         minimizer.step(FoM=i)
     return minimizer
