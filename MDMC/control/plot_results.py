@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import corner
+import os
 
 from skopt import Optimizer
 
@@ -34,8 +35,12 @@ class PlotResults():
         self.parameter_names, self.parameter_coords,\
         self.minmax_coords, self.FoMs = self.get_measured_points()
 
+        # Create the optimizer
         self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
                                    acq_optimizer="sampling", model_queue_size=1)
+        # Train the optimizer
+        self.train_optimizer()
+        self.train_optimizer()
 
     def get_measured_points(self) -> tuple:
         """Opens the dataframe in `filename` and extracts the measured parameters names, values
@@ -49,13 +54,13 @@ class PlotResults():
         # Convert to float where possible (i.e. not a string)
 
         FoMs = records['FoM'].to_list()
-
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'])
+        #drop_filter = records.filter(['Unnamed: 0', 'FoM', 'Change state', 'Pred coords', 'Pred FoM'])
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state', 'Pred coords', 'Pred FoM'], errors='ignore')
         # TODO this is hard coded to creation of history, may want to change
 
         coordinates = records.values.tolist()
         names = records.columns.tolist()
-        minmax_coordinates = [(min(np.array(coord)), max(np.array(coord))) for coord in coordinates]
+        minmax_coordinates = [(min(np.array(coord)), max(np.array(coord))) for coord in np.array(coordinates).T]
         return names, coordinates, minmax_coordinates, FoMs
 
 
@@ -80,9 +85,9 @@ class PlotResults():
         y_random[index_best_objective] : float
             the surrogate function value at the minimum.
         y_random : np.array
-            An array of length "n_random_starts" containing surrogate function values at each point
+            An array of length "self.points" containing surrogate function values at each point
         random_samples : list[list]
-            A list of length "n_random_starts" containing the coordinates of each prediction
+            A list of length "self.points" containing the coordinates of each prediction
         """
 
         # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
@@ -97,11 +102,18 @@ class PlotResults():
         return min_x, y_random[index_best_objective], y_random, random_samples
 
 
-    def _remove_points(self) -> 'tuple[list, list]':
+    def _remove_points(self, chi_squared: 'list[float]', coords: 'list[list]') -> 'tuple[list, list]':
         """
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
         where the likelihood of keeping a point is dependent on the exponent of the difference
         between its figure of merit, and that of the best one found, divided by MH_norm.
+
+        Parameters
+        ----------
+        chi_squared : list[float]
+            A list of the predicted chi-squared value at each coordinate
+        coords : list[list]
+            A list of the coordinates at which all of the chi-squared predictions are made
 
         Returns
         -------
@@ -111,12 +123,12 @@ class PlotResults():
             A list of the remaining coordinates
         """
         np.random.seed(16)  # Set for reproducible output - will always retain same points
-        lowest_chi = min(self.FoMs)
+        lowest_chi = min(chi_squared)
 
-        points_to_keep = np.random.random(size=self.FoMs.shape) < \
-                         np.exp((lowest_chi - self.FoMs)/(lowest_chi/self.MH_norm))
-        reduced_chi=self.FoMs[points_to_keep]
-        reduced_coords = np.array(self.parameter_coords)[points_to_keep]
+        points_to_keep = np.random.random(size=chi_squared.shape) < \
+                         np.exp((lowest_chi - chi_squared)/(lowest_chi/self.MH_norm))
+        reduced_chi=chi_squared[points_to_keep]
+        reduced_coords = np.array(coords)[points_to_keep]
 
         return reduced_chi, reduced_coords
 
@@ -144,7 +156,7 @@ class PlotResults():
 
             return None
 
-        _, reduced_coordinate_list = self._remove_points(y_random, coords, self.MH_norm)
+        _, reduced_coordinate_list = self._remove_points(y_random, coords)
 
         data = np.empty(shape=np.array(reduced_coordinate_list).shape)
         for i in range(np.array(reduced_coordinate_list).shape[1]):
