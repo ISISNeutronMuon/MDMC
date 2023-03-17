@@ -1,5 +1,4 @@
-"""Tests the PlotResults class
-"""
+"""Tests the PlotResults class"""
 from unittest.mock import patch
 
 from skopt import Optimizer
@@ -31,6 +30,10 @@ def mocked_df():
 
 
 def test_optimizer_types(mocked_df):
+    """
+    Tests that the instantiation of a PlotResults object has
+    the correct type of minimizer and trained model within that minimizer.
+    """
     with patch("MDMC.control.plot_results.pd.read_csv",
                autospec=True,return_value=mocked_df):
         plotter = PlotResults(filename="ignore")
@@ -38,11 +41,19 @@ def test_optimizer_types(mocked_df):
         assert isinstance(plotter.optimizer.models[-1], GaussianProcessRegressor)
 
 def test_model_random_sampling(mocked_df):
+    """
+    Tests that the random sampling of the model generates the correct number
+    of samples and that the number of samples can be changed by the PlotResults object
+    """
     with patch("MDMC.control.plot_results.pd.read_csv",
                autospec=True,return_value=mocked_df):
         plotter = PlotResults(filename="ignore")
         result = plotter._expected_minimum_random_sampling()
         assert len(result[3]) == 100000
+        plotter.points = 50
+        small_result = plotter._expected_minimum_random_sampling()
+        assert len(small_result[3]) == 50
+
 
 def test_remove_points(mocked_df):
     """Tests that points with poor figures of merit are likely to be removed"""
