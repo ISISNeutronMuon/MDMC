@@ -39,8 +39,7 @@ class PlotResults():
         self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
                                    acq_optimizer="sampling", model_queue_size=1)
         # Train the optimizer
-        self.train_optimizer()
-        self.train_optimizer()
+        self.optimizer.tell(self.parameter_coords, self.FoMs)
 
     def get_measured_points(self) -> tuple:
         """Opens the dataframe in `filename` and extracts the measured parameters names, values
@@ -63,14 +62,6 @@ class PlotResults():
         minmax_coordinates = [(min(np.array(coord)), max(np.array(coord))) for coord in np.array(coordinates).T]
         return names, coordinates, minmax_coordinates, FoMs
 
-
-    def train_optimizer(self) -> None :
-        """
-        Tells the optimizer all of the measured points and creates a Gaussian process optimizer object which is able to
-        model the FoM surface.
-        """
-        for coordinate, FoM in zip(self.parameter_coords, self.FoMs):
-            self.optimizer.tell(coordinate, float(FoM))
 
     def _expected_minimum_random_sampling(self) -> 'tuple[list, float, list, list[list]]':
         """

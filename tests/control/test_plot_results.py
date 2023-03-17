@@ -30,12 +30,28 @@ def mocked_df():
         ])
 
 
-def test_train_optimizer(mocked_df):
+def test_optimizer_types(mocked_df):
     with patch("MDMC.control.plot_results.pd.read_csv",
                autospec=True,return_value=mocked_df):
         plotter = PlotResults(filename="ignore")
         assert isinstance(plotter.optimizer, Optimizer)
         assert isinstance(plotter.optimizer.models[-1], GaussianProcessRegressor)
-        #result = plotter._expected_minimum_random_sampling()
-        #assert len(result[3]) == 100000
 
+def test_model_random_sampling(mocked_df):
+    with patch("MDMC.control.plot_results.pd.read_csv",
+               autospec=True,return_value=mocked_df):
+        plotter = PlotResults(filename="ignore")
+        result = plotter._expected_minimum_random_sampling()
+        assert len(result[3]) == 100000
+
+def test_remove_points(mocked_df):
+    """Tests that points with poor figures of merit are likely to be removed"""
+    with patch("MDMC.control.plot_results.pd.read_csv",
+            autospec=True,return_value=mocked_df):
+        plotter = PlotResults(filename="ignore",MH_norm=2.0)
+        chi_squared =  np.append(np.ones(500), np.ones(500)*2.0)
+        coords = list(np.append(np.ones((500,2)), np.ones((500,2),)*2.0, axis=0))
+        less_chi, removed = plotter._remove_points(chi_squared=chi_squared, coords=coords)
+
+        np.testing.assert_allclose(less_chi[:500], np.ones(500), atol=1e-7)  # Check all ones are kept
+        assert (len(removed) > 555 and len(removed) < 585)  # check roughly correct number remain (should be 567)
