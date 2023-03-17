@@ -1,7 +1,7 @@
+"""A module for plotting the results of a minimization in a cornerplot"""
 import numpy as np
 import pandas as pd
 import corner
-import os
 
 from skopt import Optimizer
 
@@ -9,8 +9,9 @@ from skopt import Optimizer
 
 class PlotResults():
     """
-    A class to read in any refinement, create a Gaussain Process Optimizer and then do sampling 
-    on the result to create a corner plot.
+    A class to read in any completed refinement history file, create a Gaussain Process Optimizer
+    and then do sampling on the result to create a corner plot.
+
     Parameters:
     -----------
     filename : str
@@ -25,10 +26,10 @@ class PlotResults():
         Number of points to plot on the corner plot, defaults to 100,000
     """
 
-    def __init__(self, filename: str, quantiles: list[float]=[0.34, 0.5, 0.68],
+    def __init__(self, filename: str, quantiles: list[float]=None,
                  MH_norm: float=20, points: int =100000):
         self.filename = filename
-        self.quantiles = quantiles
+        self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
         self.MH_norm = MH_norm
         self.points = points
 
@@ -46,20 +47,21 @@ class PlotResults():
         and associated figures of merit.
         Returns:
         --------
-        tuple of (parameter names, parameter coordinates, min and max parameters, FoM's) 
+        tuple of (parameter names, parameter coordinates, min and max parameters, FoM's)
         """
         records = pd.read_csv(self.filename, delimiter=',')
         records = records.astype(dtype=float, errors='ignore')
         # Convert to float where possible (i.e. not a string)
 
         FoMs = records['FoM'].to_list()
-        #drop_filter = records.filter(['Unnamed: 0', 'FoM', 'Change state', 'Pred coords', 'Pred FoM'])
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state', 'Pred coords', 'Pred FoM'], errors='ignore')
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state',
+                                        'Pred coords', 'Pred FoM'], errors='ignore')
         # TODO this is hard coded to creation of history, may want to change
 
         coordinates = records.values.tolist()
         names = records.columns.tolist()
-        minmax_coordinates = [(min(np.array(coord)), max(np.array(coord))) for coord in np.array(coordinates).T]
+        minmax_coordinates = [(min(np.array(coord)),
+                               max(np.array(coord))) for coord in np.array(coordinates).T]
         return names, coordinates, minmax_coordinates, FoMs
 
 
@@ -93,7 +95,8 @@ class PlotResults():
         return min_x, y_random[index_best_objective], y_random, random_samples
 
 
-    def _remove_points(self, chi_squared: 'list[float]', coords: 'list[list]') -> 'tuple[list, list]':
+    def _remove_points(self, chi_squared: 'list[float]',
+                       coords: 'list[list]') -> 'tuple[list, list]':
         """
         Removes points with poor figure of merit based on a Metropolis-Hastings type rule,
         where the likelihood of keeping a point is dependent on the exponent of the difference
