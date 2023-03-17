@@ -6,7 +6,6 @@ import corner
 from skopt import Optimizer
 
 
-
 class PlotResults():
     """
     A class to read in any completed refinement history file, create a Gaussain Process Optimizer

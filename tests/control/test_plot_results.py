@@ -8,7 +8,6 @@ import pandas as pd
 import pytest
 
 from MDMC.control.plot_results import PlotResults
-from MDMC.control import control
 
 
 @pytest.fixture
