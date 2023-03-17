@@ -25,7 +25,7 @@ class PlotResults():
         Number of points to plot on the corner plot, defaults to 100,000
     """
 
-    def __init__(self, filename: str, quantiles: list[float]=None,
+    def __init__(self, filename: str, quantiles: 'list[float]'=None,
                  MH_norm: float=20, points: int =100000):
         self.filename = filename
         self.quantiles = [0.34, 0.5, 0.68] if quantiles is None else quantiles
