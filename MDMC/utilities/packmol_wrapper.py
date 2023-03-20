@@ -1,3 +1,5 @@
+"""A module that integrates packmol into MDMC"""
+
 import re
 import shutil
 import subprocess
@@ -10,6 +12,7 @@ from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
     """
+
     Parameters
     ----------
     inp_file_name: str
@@ -19,7 +22,8 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
         (i.e. where your input files are)
     """
 
-    #TODO: allow MDMC molecule export into pdb format
+    #TODO: Allow MDMC molecule export into pdb format
+    #TODO: Allow users to pass config atom types to the universe
 
     # Create packmol call
     packmol_path = get_packmol_path()
@@ -38,8 +42,8 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
 
     # Read Output
     reader = PackmolPDBReader(output_file_path)
-    reader.__enter__()
-    reader.parse()
+    with reader:
+        reader.parse()
 
     # Create Universe from output
     dim = get_packmol_universe_dimensions(input_file_path)
@@ -60,25 +64,29 @@ def get_packmol_path() -> str:
 def get_packmol_output_name(inp_file_path: str) -> str:
     """
     Obtains the name of the packmol output file, as defined by the input file
+    Returns an empty string if there is no input file name defined
 
     Parameters
     ----------
     inp_file_path: str
-        The path to the packmol input file (.inp) as a string
+        The path to the packmol input file (.inp) as a string, an empty string if no file defined.
 
     Returns
     -------
     str
         The name of the packmol output file name
     """
-    with open(inp_file_path, "r") as inp_file:
+    with open(inp_file_path, "r", encoding="UTF-8") as inp_file:
         contents = inp_file.readlines()
 
     pattern = re.compile("output.*")
 
+    name = ""
     for line in contents:
         if pattern.match(line):
-            return line.split()[1]
+            name = line.split()[1]
+
+    return name
 
 def get_packmol_universe_dimensions(inp_file_path: str) -> list[float]:
     """
@@ -93,7 +101,7 @@ def get_packmol_universe_dimensions(inp_file_path: str) -> list[float]:
     list[float]
         The size of the universe needed for the system
     """
-    with open(inp_file_path) as inp_file:
+    with open(inp_file_path, "r", encoding="UTF-8") as inp_file:
         contents = inp_file.readlines()
 
     pattern = re.compile(".*inside box.*")
@@ -129,7 +137,7 @@ def _call_external_program(command_list: list[str], work_dir: str):
     """
     command_list = " ".join(command_list)
     try:
-        subprocess.run(args=command_list, cwd=work_dir, shell=True)
-    except:
+        subprocess.run(args=command_list, cwd=work_dir, shell=True, check=True)
+    except subprocess.CalledProcessError:
         wd = os.getcwd()
-        subprocess.run(args=command_list, cwd=wd, shell=True)
+        subprocess.run(args=command_list, cwd=wd, shell=True, check=True)

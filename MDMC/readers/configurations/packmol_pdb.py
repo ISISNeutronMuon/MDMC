@@ -1,4 +1,5 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
+# pylint: disable=no-name-in-module
 from itertools import pairwise
 
 from MDMC.MD import Atom, Molecule
