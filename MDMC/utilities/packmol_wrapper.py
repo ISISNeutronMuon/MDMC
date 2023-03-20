@@ -88,7 +88,7 @@ def get_packmol_output_name(inp_file_path: str) -> str:
 
     return name
 
-def get_packmol_universe_dimensions(inp_file_path: str) -> list[float]:
+def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
     """
     Obtains and calculates the dimensions needed for a universe from a packmol input file
     Parameters
@@ -122,7 +122,7 @@ def get_packmol_universe_dimensions(inp_file_path: str) -> list[float]:
 
     return dimensions
 
-def _call_external_program(command_list: list[str], work_dir: str):
+def _call_external_program(command_list: 'list[str]', work_dir: str):
     """
     A function to call an external program in a specific working directory - defaults to
     current working directory as a failsafe
