@@ -3,7 +3,7 @@ from itertools import pairwise
 
 import numpy as np
 
-from MDMC.MD.interactions import BondAngle, Bond
+from MDMC.MD.interactions import Bond
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.structures import Atom
 
@@ -73,8 +73,11 @@ class ProteinDataBankReader(ConfigurationReader):
 
     @property
     def bonds(self) -> 'list[Bond]':
+        """Returns the bonds within the molecule,
+        as specified by "CONECT" statements in the pdb file"""
         return self._bonds
 
     @property
-    def extension(self) -> str:
+    @staticmethod
+    def extension() -> str:
         return "pdb"
