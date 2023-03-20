@@ -5,9 +5,7 @@ from MDMC.MD import Atom, Molecule
 from MDMC.readers.configurations.pdb import ProteinDataBankReader
 
 class PackmolPDBReader(ProteinDataBankReader):
-
-    def __init__(self, file_name: str):
-        super().__init__(file_name)
+    """A class to read in packmol """
 
     def parse(self, **settings: dict) -> None:
         prev_molecule_id = ""
