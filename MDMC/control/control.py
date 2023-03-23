@@ -117,6 +117,10 @@ class Control:
         Whether to print all settings/attributes/parameters passed to this object,
         defaults to False.
     **settings: dict, optional
+        n_steps: int
+            The maximum number of refinement steps to be. An optional parameter that,
+            if specified, will be used in the ``refine`` method unless a different value
+            of ``n_steps`` is explicitly passed when running ``refine``.
         cont_slicing : bool, optional
             Flag to decide between two possible behaviours when the number of ``MD_steps`` is
             larger than the minimum required to calculate the observables. If ``False`` (default)
@@ -126,9 +130,6 @@ class Control:
             blocks as possible (with overlap allowed).
         results_filename: str
             The name of the file in which the results of the MDMC run will be stored
-        n_points: int
-            If the GPR or GPO minimisers are used, this variable determines the number
-            of points to measure and minimise parameters
         MC_norm: int
             1 if the MMC minimiser is to be used for parameter optimisation.
         use_average : bool, optional
@@ -203,6 +204,7 @@ class Control:
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.settings = settings
+        self.n_steps = settings.get('n_steps')
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
@@ -212,8 +214,8 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
-                                                           **settings)
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
+                                                           self.fit_parameters, **settings)
 
 
         # Create experimental observables from datasets and placeholders for
@@ -382,14 +384,18 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
-    def refine(self, n_steps: int) -> None:
+    def refine(self, n_steps: int = None) -> None:
         """
         Refines the specified potential parameters
 
         Parameters
         ----------
         n_steps : int
-            maximum number of steps for the refinement
+            Maximum number of steps for the refinement. Must be specified either when creating
+            the ``Control`` object or when calling this method. The value specified to this
+            method supersedes the value passed (if any) when the ``Control`` object was created.
+            If nothing is passed, the method will check if a number was specified when the
+            ``Control`` object was created and use that value.
 
         Examples
         --------
@@ -401,9 +407,15 @@ class Control:
             control.refine(100)
         """
 
+        if n_steps is None:
+            if self.n_steps is None:
+                raise ValueError('The number of maximum refinement steps has not been specified')
+        else:
+            self.n_steps = n_steps
+
         # calculate verbose steps
         # 4 steps per refinement step, and n + 1 steps total
-        verbose_steps = (n_steps + 1) * 4
+        verbose_steps = (self.n_steps + 1) * 4
         # initialise step timings list for average step timings at end
         self.step_timings = []
 

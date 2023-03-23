@@ -14,6 +14,19 @@ from MDMC.refinement.minimizers.MMC import MMC
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 
 
+class MockControl:
+
+    def __init__(self):
+        pass
+
+
+@pytest.fixture(scope="module")
+def mockcontrol():
+
+    _mockcontrol = MockControl()
+    return _mockcontrol
+
+
 @pytest.fixture
 def parameters():
     """
@@ -36,7 +49,7 @@ def parameters():
 
 
 @pytest.fixture
-def MMC_with_history(parameters):
+def MMC_with_history(mockcontrol, parameters):
     """
     Creates an instance of MMC with a random, 10-step history
 
@@ -44,7 +57,7 @@ def MMC_with_history(parameters):
     -------
         A MMC object with a random history of 10 steps
     """
-    minimizer = MMC(parameters)
+    minimizer = MMC(mockcontrol, parameters)
     randomizer = random.Random()
     for i in range(10):
         minimizer.step(FoM=randomizer.uniform(0.1, 1000))
@@ -60,7 +73,7 @@ def mock_change_parameters(self):
         self.parameters[p].value *= 2
 
 
-def test_mmc_step_accepted(monkeypatch, parameters):
+def test_mmc_step_accepted(monkeypatch, mockcontrol, parameters):
     """
     Tests that the ``MMC`` minimizer increments with the correct step when the
     state change is accepted (i.e. ``MMC.change_state`` returns `True`)
@@ -80,7 +93,7 @@ def test_mmc_step_accepted(monkeypatch, parameters):
     # mock_change_parameters)
     original_values = [parameters[p].value for p in parameters]
     changed_values = [parameters[p].value * 2 for p in parameters]
-    mmc = MinimizerFactory.create_minimizer('MMC', parameters)
+    mmc = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
 
     # Monkeypatch both the state change and the parameter change
     monkeypatch.setattr(minimizers.MMC.MMC, 'change_state', mock_change_state)
@@ -97,7 +110,7 @@ def test_mmc_step_accepted(monkeypatch, parameters):
     assert mmc._history == [[FoM, 'Accepted'] + original_values]
 
 
-def test_mmc_step_rejected(monkeypatch, parameters):
+def test_mmc_step_rejected(monkeypatch, mockcontrol, parameters):
     """
     Tests that the ``MMC`` minimizer increments with the correct step when the
     state change is rejected (i.e. ``MMC.change_state`` returns `False`)
@@ -116,7 +129,7 @@ def test_mmc_step_rejected(monkeypatch, parameters):
     # changed values should be 2x the old values which the MMC already
     # possesses.  As these are not set when MMC is initialised, set these
     # manually to something arbitrary.
-    mmc = MinimizerFactory.create_minimizer('MMC', parameters)
+    mmc = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
     mmc.parameters_old_values = {p: v for p, v in zip(parameters, np.arange(len(parameters)))}
     original_FoM = mmc.FoM_old
     original_values = [parameters[p].value for p in parameters]
@@ -153,21 +166,21 @@ def test_mmc_step_rejected(monkeypatch, parameters):
                            True),
                           ([[2, 'Accepted', 3], [2, 'Rejected', 3], [2, 'Accepted', 3]], None,
                            True)])
-def test_MMC_has_converged(mock_history, min_steps, expected):
+def test_MMC_has_converged(mockcontrol, mock_history, min_steps, expected):
     """
     Tests that the has_converged method returns the expected boolean for a number of
     mocked minimizer histories.
     """
     parameter = Parameters(Parameter(name='A', value=None))
     if min_steps:
-        minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter, min_steps=min_steps)
+        minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameter, min_steps=min_steps)
     else:
-        minim = MinimizerFactory.create_minimizer('MMC', parameter=parameter)
+        minim = MinimizerFactory.create_minimizer('MMC',  mockcontrol, parameter)
     minim._history = mock_history
     assert minim.has_converged() == expected
 
 
-def test_MMC_change_parameter(parameters):
+def test_MMC_change_parameter(mockcontrol, parameters):
     """
     Tests that unconstrained parameters change by the expected amount when given a mocked
     distribution which always returns 1 and constrained parameters do not exceed their
@@ -177,7 +190,7 @@ def test_MMC_change_parameter(parameters):
     def mock_distribution(low: float, high: float, size: int):
         return np.ones(size)
 
-    minim = MinimizerFactory.create_minimizer('MMC', parameters)
+    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
     expected_values = {p: 2 * parameters[p].value for p in parameters}
     minim.distribution = mock_distribution
     minim.change_parameters()
@@ -191,7 +204,7 @@ def test_MMC_change_parameter(parameters):
                              Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
     # Expect values to be set to the upper/lower limit
     expected_values = [1.5, 0.5]
-    minim = MinimizerFactory.create_minimizer('MMC', parameters)
+    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters)
     minim.distribution = mock_distribution2
     minim.change_parameters()
     assert [p.value for p in minim.parameters.values()] == expected_values
@@ -205,7 +218,7 @@ def test_MMC_change_parameter(parameters):
                           (40., 20., 28., False),
                           (60., 40., 29., True),
                           (60., 40., 28., False)])
-def test_MMC_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
+def test_MMC_change_state_FoM_gt(monkeypatch, mockcontrol, parameters, FoM, FoM_old,
                                  MC_norm, change):
     """
     Tests that the state changes correctly given an FoM, old FoM, and MC norm,
@@ -216,7 +229,7 @@ def test_MMC_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
     def mock_random():
         return 0.5
 
-    minim = MinimizerFactory.create_minimizer('MMC', parameters, MC_norm=MC_norm)
+    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters, MC_norm=MC_norm)
     minim.FoM_old = FoM_old
     minim.FoM = FoM
     monkeypatch.setattr(np.random, 'random', mock_random)
@@ -229,7 +242,7 @@ def test_MMC_change_state_FoM_gt(monkeypatch, parameters, FoM, FoM_old,
                           (10., 20.),
                           (1.e+10, 1.e+10),
                           (0., 0.)])
-def test_MMC_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
+def test_MMC_change_state_FoM_le(monkeypatch, mockcontrol, parameters, FoM, FoM_old):
     """
     Tests that the state always changes (i.e. returns True) given an FoM, old
     FoM, and MC norm, where the FoM is less than or equal to old FoM, and the
@@ -239,7 +252,7 @@ def test_MMC_change_state_FoM_le(monkeypatch, parameters, FoM, FoM_old):
     def mock_random():
         return 0.999999
 
-    minim = MinimizerFactory.create_minimizer('MMC', parameters, MC_norm=1.0)
+    minim = MinimizerFactory.create_minimizer('MMC', mockcontrol, parameters, MC_norm=1.0)
     minim.FoM_old = FoM_old
     minim.FoM = FoM
     monkeypatch.setattr(np.random, 'random', mock_random)
@@ -289,7 +302,7 @@ def test_converge_message_in_output_string(MMC_with_history, has_converged_value
 class TestParametrized:
     """A class of tests that shares parametrized data"""
 
-    def test_MMC_extract_result(self, mock_history, FoMs, expected):
+    def test_MMC_extract_result(self, mock_history, mockcontrol, FoMs, expected):
         """Tests that the correct values are extracted from the history"""
         params = Parameters()
         with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
@@ -297,14 +310,14 @@ class TestParametrized:
             with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
                        new_callable=PropertyMock) as columns:
                 columns.return_value = list(mock_history.columns)
-                mmc = MinimizerFactory().create_minimizer("MMC", params)
+                mmc = MinimizerFactory().create_minimizer("MMC", mockcontrol, params)
                 output_data = mmc.extract_result()
                 assert FoMs[0] in output_data
                 assert FoMs[1] in output_data
                 assert expected[0] == output_data[2]
                 assert expected[1] == output_data[0]
 
-    def test_MMC_FoM_and_coordinates_in_output(self, mock_history, FoMs, expected):
+    def test_MMC_FoM_and_coordinates_in_output(self, mock_history, mockcontrol, FoMs, expected):
         """Tests that the correct coordinates are present in the final output"""
         params = Parameters()
         with patch("MDMC.refinement.minimizers.MMC.MMC.history", new_callable=PropertyMock) as hist:
@@ -312,7 +325,7 @@ class TestParametrized:
             with patch("MDMC.refinement.minimizers.MMC.MMC.history_columns",
                        new_callable=PropertyMock) as columns:
                 columns.return_value = list(mock_history.columns)
-                mmc = MinimizerFactory().create_minimizer("MMC", params)
+                mmc = MinimizerFactory().create_minimizer("MMC", mockcontrol, params)
                 output_string = mmc.present_result()
                 assert str(expected[0]) in output_string
                 assert str(expected[1]) in output_string

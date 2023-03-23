@@ -15,10 +15,25 @@ from MDMC.refinement.minimizers.GPR import GPR
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 
 
+class MockControl:
+
+    def __init__(self, n_steps: int):
+        self.n_steps = n_steps
+
+
+@pytest.fixture(scope="module")
+def mockcontrol():
+
+    def _mockcontrol(n_steps: int = 4) -> MockControl:
+        return MockControl(n_steps=n_steps)
+
+    return _mockcontrol
+
+
 @pytest.fixture
 def parameters():
     """
-    Returns multiple constained parameters
+    Returns multiple constrained parameters
 
     Returns
     -------
@@ -44,7 +59,7 @@ def constrained_parameters():
 
 
 @pytest.fixture
-def GPR_with_history(parameters):
+def GPR_with_history(mockcontrol, parameters):
     """
     Creates an instance of GPR with a 10-step history
 
@@ -54,7 +69,7 @@ def GPR_with_history(parameters):
         A GPR object with a history of 10 steps
     """
 
-    minimizer = GPR(parameters)
+    minimizer = GPR(mockcontrol(10), parameters)
     for i in range(10):
         minimizer.step(FoM=i)
     return minimizer
@@ -82,9 +97,10 @@ def correct_output_data():
     return [(1.0, 2.0), 1.0, (1.2970476059280804, 2.578890522713669), 3.6666658956168403]
 
 
-def test_GPR_parameter_point_array_hypercube(constrained_parameters):
+def test_GPR_parameter_point_array_hypercube(mockcontrol, constrained_parameters):
     """Test that the array of points to be simulated is created correctly"""
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_parameters, n_points=4)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), constrained_parameters,
+                                            n_points=4)
     points = gpr.parameter_point_array
     par1_constraints = constrained_parameters['parameter1'].constraints
     par2_constraints = constrained_parameters['parameter2'].constraints
@@ -97,9 +113,9 @@ def test_GPR_parameter_point_array_hypercube(constrained_parameters):
                    np.array(points)[:,1]<=par2_constraints[1]])
 
 
-def test_GPR_reset_parameters(parameters):
+def test_GPR_reset_parameters(mockcontrol, parameters):
     """Test that parameters get reset"""
-    gpr = MinimizerFactory.create_minimizer('GPR', parameters, n_points=2)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(n_steps=2), parameters)
 
     parameter_values = [p.value for p in gpr.parameters.values()]
     assert np.allclose(parameter_values, (0.85, 1.7), rtol=1e-5)
@@ -113,22 +129,23 @@ def test_GPR_reset_parameters(parameters):
     [([2, 3, 0, 1, 4], [[0,0], [0,1], [1,0], [1,1], [2,0]], [[1,0], 0]),
     ([2], [[0,0,1]], [[0,0,1], 2]),
     ([0.01, 0.020, 0.01, 6], [[0.1,0.1,0.1],[0.1,0.1,1],[0.1,1,1],[1,1,1]], [[0.1,0.1,0.1], 0.01])])
-def test_GPR_global_minimum_position(FoMs, coordinates, expected):
+def test_GPR_global_minimum_position(mockcontrol, FoMs, coordinates, expected):
     """Tests that the global minimum position is found and returned correctly"""
     constrained_par = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0))])
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_par, n_points=3)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), constrained_par, n_points=3)
     min_coord, min_FoM = gpr.global_minimum_position(FoMs, coordinates)
     assert np.allclose(min_coord, expected[0], rtol=1e-5)
     assert np.allclose(min_FoM, expected[1], rtol=1e-5)
 
 
-def test_GPR_create_bounds():
+def test_GPR_create_bounds(mockcontrol):
     """Tests bounds are created and returned correctly"""
     constrained_parameter = Parameter(name='parameter1', value=1., constraints=(0.5,2.0))
     unconstrained_parameter = Parameter(name='parameter1', value=1.)
     unconstrained_parameter_zero = Parameter(name='parameter1', value=0.0)
 
-    gpr = MinimizerFactory.create_minimizer('GPR', Parameters(constrained_parameter), n_points=3)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), Parameters(
+        constrained_parameter), n_points=3)
     #  gpr needs to be instantiated, but isn't directly used
     lower_bound, upper_bound = gpr.create_bounds(constrained_parameter)
     assert np.allclose([lower_bound, upper_bound], [0.5,2.0], rtol=1e-5)
@@ -140,11 +157,11 @@ def test_GPR_create_bounds():
         lower_bound, upper_bound = gpr.create_bounds(unconstrained_parameter_zero)
 
 
-def test_GPR_set_parameter_values():
+def test_GPR_set_parameter_values(mockcontrol):
     """Tests set_parameter_values can set values correctly"""
     constrained_par = Parameters([Parameter(name='parameter1', value=1., constraints=(0.5,2.0)),
                                  Parameter(name='parameter2', value=2., constraints=(0.3,6.0))])
-    gpr = MinimizerFactory.create_minimizer('GPR', constrained_par, n_points=3)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), constrained_par, n_points=3)
     gpr.set_parameter_values(['parameter1'], [1.9])
     assert gpr.parameters['parameter1'].value == 1.9
 
@@ -158,7 +175,7 @@ def test_GPR_set_parameter_values():
         gpr.set_parameter_values(['parameter2'], [7.0])
 
 
-def test_GPR_fit(parameters):
+def test_GPR_fit(mockcontrol, parameters):
     """Tests that the GPR fit is called with the correct arguments given an input history"""
     mocked_df = pd.DataFrame(data=[[0,100.0,'Accepted',0.2,2.6],
                             [1,150.5,'Accepted',1.8,2.6]],
@@ -167,16 +184,16 @@ def test_GPR_fit(parameters):
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         with patch("MDMC.refinement.minimizers.GPR.skGPR.fit", autospec=True) as mock_fit:
 
-            gpr = MinimizerFactory.create_minimizer('GPR', parameters)
+            gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), parameters)
             _, _, _ = gpr.GPR_fit()
             # We don't care what the output is as not testing the scikit-learn module
             # we just want to know that it was called correctly.
             mock_fit.assert_called_with(ANY, [[0.2, 2.6], [1.8, 2.6]], [100.0, 150.5])
 
 
-def test_GPR_predict(parameters):
+def test_GPR_predict(mockcontrol, parameters):
     """Tests that the GPR prediction returns the right points and predictions"""
-    gpr = MinimizerFactory.create_minimizer('GPR', parameters)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), parameters)
     kernel = RBF(length_scale=4.0)
     input_regressor = GaussianProcessRegressor(kernel=kernel, alpha=0.1)
     input_regressor.fit([[0.0, 0.0], [1.0, 1.0]], [0.0, 1.0])
@@ -185,14 +202,14 @@ def test_GPR_predict(parameters):
     assert np.allclose(prediction, [0.03015209, 0.40226347, 0.40226347, 0.89999947], rtol=1e-5)
 
 
-def test_GPR_minimizer_change_constrained_parameter():
+def test_GPR_minimizer_change_constrained_parameter(mockcontrol):
     """Tests that constrained parameters do not exceed their max/min values."""
     parameters = Parameters([Parameter(name='constraints', value=1., constraints=(0.5, 1.5)),
                              Parameter(name='constraints_2', value=1., constraints=(0.5, 1.5))])
 
     # Expect values: The seed in the l.h.c. should make them consistent
     expected_values = [0.625, 1.375]
-    gpr = MinimizerFactory.create_minimizer('GPR', parameters)
+    gpr = MinimizerFactory.create_minimizer('GPR', mockcontrol(), parameters)
     gpr.change_parameters()
     assert [p.value for p in gpr.parameters.values()] == expected_values
 
