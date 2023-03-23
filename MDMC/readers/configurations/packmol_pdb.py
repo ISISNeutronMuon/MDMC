@@ -35,6 +35,7 @@ class PackmolPDBReader(ProteinDataBankReader):
 
             elif line[0] == "CONECT":
                 atoms_to_connect = line[1:]
+                #pylint: ignore=no-member
                 for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
                     self.create_bond(atom_id_dict[atom1_id], atom_id_dict[atom2_id])
 

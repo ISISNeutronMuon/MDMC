@@ -48,6 +48,7 @@ class ProteinDataBankReader(ConfigurationReader):
 
             elif line[0] == "CONECT":
                 atoms_to_connect = line[1:]
+                # pylint: ignore=no-member
                 for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
                     self.create_bond(molecule[atom1_id], molecule[atom2_id])
 
