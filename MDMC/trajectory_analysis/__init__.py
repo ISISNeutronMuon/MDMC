@@ -7,5 +7,5 @@ observables
 trajectory
 """
 
-from . import observables
-from . import compact_trajectory
+from MDMC.trajectory_analysis import observables
+from MDMC.trajectory_analysis import compact_trajectory

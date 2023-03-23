@@ -8,7 +8,7 @@ reader_factory
 reader
 """
 
-from . import configurations
-from . import observables
-from . import reader_factory
-from . import reader
+from MDMC.readers import configurations
+from MDMC.readers import observables
+from MDMC.readers import reader_factory
+from MDMC.readers import reader

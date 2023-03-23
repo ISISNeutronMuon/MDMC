@@ -1,6 +1,6 @@
 """Module for reading pdb files"""
 # pylint: disable=no-name-in-module
-from itertools import pairwise
+import itertools
 
 import numpy as np
 
@@ -48,7 +48,7 @@ class ProteinDataBankReader(ConfigurationReader):
 
             elif line[0] == "CONECT":
                 atoms_to_connect = line[1:]
-                for atom1_id, atom2_id in pairwise(atoms_to_connect):
+                for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
                     self.create_bond(molecule[atom1_id], molecule[atom2_id])
 
 

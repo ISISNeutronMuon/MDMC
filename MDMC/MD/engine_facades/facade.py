@@ -1,14 +1,14 @@
 """Module containing an abstract base class for MD engine facades"""
 from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
-from MDMC.trajectory_analysis.trajectory import Configuration
-from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Simulation
+    from MDMC.trajectory_analysis.trajectory import Configuration
+    from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+
 
 class MDEngine(ABC):
-
     """
     Abstract base class for MD engine facades
     """
@@ -27,7 +27,7 @@ class MDEngine(ABC):
 
     @property
     @abstractmethod
-    def saved_config(self) -> Configuration:
+    def saved_config(self) -> 'Configuration':
         """
         Get the saved configuration of the atomic positions
 
@@ -162,7 +162,7 @@ class MDEngine(ABC):
 
     @abstractmethod
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> CompactTrajectory:
+                           step: int = 1, **settings: dict) -> 'CompactTrajectory':
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 

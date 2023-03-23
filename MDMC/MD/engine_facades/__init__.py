@@ -7,12 +7,11 @@ force_field_factory
 lammps_engine (requires external module lammps.py)
 """
 
-from contextlib import suppress
 from importlib import import_module
 import warnings
 
-from . import facade_factory
-from . import facade
+from MDMC.MD.engine_facades import facade_factory
+from MDMC.MD.engine_facades import facade
 
 engines = ['lammps_engine', 'dlpoly_engine']
 

@@ -1,8 +1,7 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-# pylint: disable=no-name-in-module
-from itertools import pairwise
+import itertools
 
-from MDMC.MD import Atom, Molecule
+from MDMC.MD.structures import Molecule, Atom
 from MDMC.readers.configurations.pdb import ProteinDataBankReader
 
 class PackmolPDBReader(ProteinDataBankReader):
@@ -36,12 +35,12 @@ class PackmolPDBReader(ProteinDataBankReader):
 
             elif line[0] == "CONECT":
                 atoms_to_connect = line[1:]
-                for atom1_id, atom2_id in pairwise(atoms_to_connect):
+                for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
                     self.create_bond(atom_id_dict[atom1_id], atom_id_dict[atom2_id])
 
         self._atoms = atom_id_dict.values()
 
     @property
-    def molecules(self) -> list[Molecule]:
+    def molecules(self) -> 'list[Molecule]':
         """Returns a list of ``Molecule`` objects from the data read from the file"""
         return self._molecules
