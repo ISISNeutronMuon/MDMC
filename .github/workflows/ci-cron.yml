@@ -127,19 +127,19 @@ jobs:
         with:
           path: /home/
 
-#      ## BOOTSTRAPPING: this can be used to upload new master profiling files
-#      - name: create bootstrap master profiling
-#        env:
-#          BRANCH: ${{ github.head_ref }}
-#        run: |
-#          pip3 install pandas
-#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not-lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
-#      - name: upload as master profiling
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: master-profiling
-#          path: master-profiling.csv
-#      ## END BOOTSTRAPPING
+      ## BOOTSTRAPPING: this can be used to upload new master profiling files
+      - name: create bootstrap master profiling
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          pip3 install pandas
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
+      - name: upload as master profiling
+        uses: actions/upload-artifact@v3
+        with:
+          name: master-profiling
+          path: master-profiling.csv
+      ## END BOOTSTRAPPING
 
       - name: Download master profiling for comparison
         # regular download-artifact can only get artifacts from current run
@@ -153,7 +153,7 @@ jobs:
       - name: Combine and compare profiling data
         run: |
           pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --compare "master-profiling.csv" --name cron-total-profiling
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name cron-total-profiling --compare "master-profiling.csv" 
 
 #      - name: Upload total profiling as artifact if successful
 #        uses: actions/upload-artifact@v3
