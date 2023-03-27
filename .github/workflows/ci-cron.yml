@@ -133,6 +133,7 @@ jobs:
           BRANCH: ${{ github.head_ref }}
         run: |
           pip3 install pandas
+          ls /home/
           python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name master-profiling
       - name: upload as master profiling
         uses: actions/upload-artifact@v3
