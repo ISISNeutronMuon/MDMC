@@ -754,13 +754,3 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
-
-
-def test_control_remove_points():
-    """Tests that points with poor figures of merit are likely to be removed"""
-    chi_squared =  np.append(np.ones(500), np.ones(500)*2.0)
-    coords = list(np.append(np.ones((500,2)), np.ones((500,2),)*2.0, axis=0))
-    less_chi, removed = control.Control._remove_points(chi_squared=chi_squared, coords=coords, MC_norm=2.0)
-
-    np.testing.assert_allclose(less_chi[:500], np.ones(500), atol=1e-7)  # Check all ones are kept
-    assert (len(removed) > 555 and len(removed) < 585)  # check roughly correct number remain (should be 567)

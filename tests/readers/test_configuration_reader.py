@@ -15,7 +15,6 @@ from tests.test_data import data
 
 
 def test_configuration_reader_extension_error():
-
     """
     Tests that subclasses of ConfigurationReader require an extension to be
     defined
@@ -38,7 +37,6 @@ def test_configuration_reader_extension_error():
 
 
 def test_create_reader_from_ext():
-
     """
     Tests that a reader can be created from a correctly specified file extension
     """
@@ -49,7 +47,6 @@ def test_create_reader_from_ext():
 
 
 def test_create_reader_from_ext_unimplemented():
-
     """
     Tests that if an unknown extension has been passed, a NotImplementedError is
     raised
