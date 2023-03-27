@@ -102,12 +102,12 @@ jobs:
         pip3 install pandas
         python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
 
-#    - name: Save profiling info as artifact
-#      uses: actions/upload-artifact@v3
-#      with:
-#        name: cron-${{ matrix.testset }}-profiling
-#        path: cron-profiling.csv
-#        if-no-files-found: error
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
+        if-no-files-found: error
 
     - name: Uninstall
       run: pip3 uninstall -y MDMC
@@ -133,7 +133,7 @@ jobs:
           BRANCH: ${{ github.head_ref }}
         run: |
           pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name master-profiling
       - name: upload as master profiling
         uses: actions/upload-artifact@v3
         with:
