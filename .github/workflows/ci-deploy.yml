@@ -50,7 +50,6 @@ jobs:
         name: cron-total-profiling
 
     - name: Rename to master profiling
-      env:
       run: mv cron-total-profiling.csv master-profiling.csv
     
     - name: Upload as master profiling
