@@ -24,6 +24,9 @@ jobs:
   docker_tests:
     name: Docker including MD tests
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        testset: [ "not-lammps" ]
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -42,6 +45,21 @@ jobs:
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
       continue-on-error: true
 
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        FILENAME: cron-profiling
+      run: |
+        sudo docker cp $(docker ps -lq):/home/prof/ prof/
+        pip3 install pandas
+        python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
+        if-no-files-found: error
+
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
       with:
@@ -51,6 +69,9 @@ jobs:
   basic_tests:
     name: Non-container and not inc MD tests
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        testset: [ "lammps" ]
     steps:
     - name: Setup Python
       uses: actions/setup-python@v2
@@ -74,6 +95,20 @@ jobs:
       #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
       run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py --ignore=tests/MD/test_trajectory.py
 
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        FILENAME: cron-profiling
+      run: |
+        pip3 install pandas
+        python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
+        if-no-files-found: error
+
     - name: Uninstall
       run: pip3 uninstall -y MDMC
 
@@ -92,41 +127,40 @@ jobs:
         with:
           path: /home/
 
-#      ## BOOTSTRAPPING: this can be used to upload new master profiling files
+#      # BOOTSTRAPPING: this can be used to upload new master profiling files
 #      - name: create bootstrap master profiling
 #        env:
 #          BRANCH: ${{ github.head_ref }}
 #        run: |
 #          pip3 install pandas
-#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --name master-profiling
+#          ls /home/
+#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name master-profiling
 #      - name: upload as master profiling
 #        uses: actions/upload-artifact@v3
 #        with:
 #          name: master-profiling
 #          path: master-profiling.csv
-#      ## END BOOTSTRAPPING
+#      # END BOOTSTRAPPING
 
       - name: Download master profiling for comparison
         # regular download-artifact can only get artifacts from current run
         uses: dawidd6/action-download-artifact@v2
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: ci-deploy.yml
+          workflow: ci-cron.yml
           name: master-profiling
         continue-on-error: true
 
       - name: Combine and compare profiling data
-        env:
-          BRANCH: ${{ github.head_ref }}
         run: |
           pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name $BRANCH-total-profiling
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name cron-total-profiling --compare "master-profiling.csv" 
 
       - name: Upload total profiling as artifact if successful
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ github.head_ref }}-total-profiling
-          path: ${{ github.head_ref }}-total-profiling.csv
+          name: cron-total-profiling
+          path: cron-total-profiling.csv
 
   windows:
     name: Python 3.9.0 on Windows (installation check only)
