@@ -16,8 +16,7 @@ class ProteinDataBankReader(ConfigurationReader):
     Examples
     --------
     To use a pdb reader to read a file called 'paracetamol.pdb' and create a set of
-    ``Molecule``s from it (assuming ``Molecule`` has been imported from
-    ``MDMC.MD``):
+    ``Molecule``s from it:
 
     .. highlight:: python
     .. code-block:: python
