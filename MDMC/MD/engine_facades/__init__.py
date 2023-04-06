@@ -10,8 +10,8 @@ lammps_engine (requires external module lammps.py)
 from importlib import import_module
 import warnings
 
-from MDMC.MD.engine_facades import facade_factory
-from MDMC.MD.engine_facades import facade
+from . import facade_factory
+from . import facade
 
 engines = ['lammps_engine', 'dlpoly_engine']
 

@@ -9,4 +9,4 @@ plotting
 structures
 """
 
-from MDMC.utilities.installation_tests import run_installation_tests
+from .installation_tests import run_installation_tests

@@ -2,11 +2,11 @@
 
 from typing import Union, TYPE_CHECKING
 
-from MDMC.readers.configurations.conf_reader_factory import ConfigurationReaderFactory
-from MDMC.readers.configurations import cif
-from MDMC.readers.configurations import pdb
-from MDMC.readers.configurations import packmol_pdb
-from MDMC.readers.configurations import conf_reader
+from .conf_reader_factory import ConfigurationReaderFactory
+from . import cif
+from . import pdb
+from . import packmol_pdb
+from . import conf_reader
 
 if TYPE_CHECKING:
     from MDMC.MD.structures import Atom
