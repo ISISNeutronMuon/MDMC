@@ -11,8 +11,8 @@ class PackmolPDBReader(ProteinDataBankReader):
         prev_molecule_id = ""
         atom_id_dict = {}
         molecules_dict = {}
-        for i in self.file:
-            line = i.split()
+        for full_line_string in self.file:
+            line = full_line_string.split()
             if line[0] == "ATOM" or line[0] == "HETATM":
                 if len(line) == 9:
                     current_molecule_id = "".join(line[3:6])
@@ -20,7 +20,7 @@ class PackmolPDBReader(ProteinDataBankReader):
                     current_molecule_id = "".join(line[3:5])
 
                 element = line[2]
-                current_atom_pos = [float(i) for i in line[-3:]]
+                current_atom_pos = [float(position) for position in line[-3:]]
                 current_atom_obj = Atom(element, current_atom_pos)
                 atom_id_dict[line[1]] = current_atom_obj
 
