@@ -9,9 +9,7 @@ if TYPE_CHECKING:
 
 
 class MDEngine(ABC):
-    """
-    Abstract base class for MD engine facades
-    """
+    """Abstract base class for MD engine facades"""
 
     def __repr__(self) -> str:
 
