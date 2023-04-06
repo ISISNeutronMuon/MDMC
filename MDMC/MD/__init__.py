@@ -17,14 +17,14 @@ from importlib import import_module
 from pkgutil import iter_modules
 from inspect import isclass, isabstract, getmembers
 
-from MDMC.MD import ase
-from MDMC.MD import engine_facades
-from MDMC.MD import force_fields
-from MDMC.MD import solvents
-from MDMC.MD.interaction_functions import *
-from MDMC.MD.simulation import *
-from MDMC.MD.structures import *
-from MDMC.MD.interactions import *
+from . import ase
+from . import engine_facades
+from . import force_fields
+from . import solvents
+from .interaction_functions import *
+from .simulation import *
+from .structures import *
+from .interactions import *
 
 # Get the class of each force field
 for _, name, _ in iter_modules(force_fields.__path__,
