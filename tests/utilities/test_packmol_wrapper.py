@@ -69,6 +69,3 @@ def test_get_packmol_universe_dimensions(packmol_data_path, input_file_name):
     actual_dim = packmol.get_packmol_universe_dimensions(packmol_data_path+"/"+input_file_name)
     correct_dim = [72., 60., 60.,]
     assert actual_dim == correct_dim
-def test_call_external_program():
-    """Tests that the external programs are called correctly"""
-    pass
