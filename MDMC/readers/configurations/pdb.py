@@ -62,7 +62,11 @@ class ProteinDataBankReader(ConfigurationReader):
         Therefore, cutting off the bond length at a reasonable distance prevents an extremely long
         bond being introduced into a molecule structure
         """
-        cutoff = 2.5
+
+        # 2.1 Ang used as bonded interactions should not usually go beyond this, and to prevent
+        # bonds that are way too long in the context of the whole molecule value.
+        # Value comes from: https://doi.org/10.1002/anie.202102967, where 2 Ang is given as the
+        cutoff = 2.1
         difference = np.subtract(atom1.position, atom2.position)
         bond_length = np.linalg.norm(difference)
         if bond_length < cutoff:
