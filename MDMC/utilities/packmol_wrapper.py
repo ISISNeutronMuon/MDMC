@@ -113,12 +113,11 @@ def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
             line = line.split()
             minimums = [float(i) for i in line[2:5]]
             maximums = [float(i) for i in line[5:]]
-            min_coords = np.append(min_coords, [minimums], axis=0)
-            max_coords = np.append(max_coords, [maximums], axis=0)
+            for i in range (0, 3):
+                min_coords[i] = minimums[i] if minimums[i] < min_coords[i] else min_coords[i]
+                max_coords[i] = maximums[i] if maximums[i] > max_coords[i] else max_coords[i]
 
-    dimensions = []
-    for i in range(0, 3):
-        dimensions.append(max(max_coords[:, i]) - min(min_coords[:, i]))
+    dimensions = max_coords - min_coords
 
     return dimensions
 
