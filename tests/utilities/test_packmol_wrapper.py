@@ -37,7 +37,7 @@ def test_packmol_result_is_identical_between_runs(filled_universe, packmol_data_
     universe_2 = packmol.fill_with_packmol(input_file_name, packmol_data_path)
     assert dir(universe_1) == dir(universe_2)
 def test_returns_universe(filled_universe):
-    assert type(filled_universe) == Universe
+    assert type(filled_universe) is Universe
 
 def test_correct_system_properties(filled_universe):
     assert filled_universe.n_atoms == 8000
@@ -49,13 +49,13 @@ def test_correct_system_properties(filled_universe):
 def test_incorrect_packmol_path(packmol_data_path, input_file_name):
     """Tests that a packmol run with an incorrect path will return an error"""
     incorrect_path = packmol_data_path + "/incorrect_place"
-    with pytest.raises(IOError) as except_info:
+    with pytest.raises(IOError):
         packmol.fill_with_packmol(input_file_name, incorrect_path)
 
 def test_incorrect_packmol_filename(packmol_data_path, input_file_name):
     """Tests that a packmol run with an incorrect filename will return an error"""
     incorrect_path = packmol_data_path + "/incorrect_place"
-    with pytest.raises(IOError) as except_info:
+    with pytest.raises(IOError):
         packmol.fill_with_packmol(input_file_name, incorrect_path)
 
 def test_get_packmol_output_name(packmol_data_path, input_file_name):
