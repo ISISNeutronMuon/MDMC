@@ -22,9 +22,6 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
         (i.e. where your input files are)
     """
 
-    #TODO: Allow MDMC molecule export into pdb format
-    #TODO: Allow users to pass config atom types to the universe
-
     # Create packmol call
     packmol_path = get_packmol_path()
     command_list = [packmol_path, "<"]
