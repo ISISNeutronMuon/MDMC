@@ -16,7 +16,7 @@ def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
     Parameters
     ----------
     inp_file_name: str
-        The name the .inp file used to input into packmol.
+        The name of the .inp file used to input into packmol.
     desired_cwd: str
         A string path to the working directory from which you want to call packmol
         (i.e. where your input files are)
