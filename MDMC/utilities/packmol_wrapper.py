@@ -106,8 +106,8 @@ def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
 
     pattern = re.compile(".*inside box.*")
 
-    min_coords = np.array([np.zeros(3)])
-    max_coords = np.array([np.zeros(3)])
+    min_coords = np.zeros(3)
+    max_coords = np.zeros(3)
     for line in contents:
         if pattern.match(line):
             line = line.split()
