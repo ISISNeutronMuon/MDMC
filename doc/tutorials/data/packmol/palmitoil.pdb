@@ -1,0 +1,102 @@
+HEADER
+
+HETATM    1  H   PAT    2       -9.928   3.595   0.014
+HETATM    2  H   PAT    2       -9.054   2.316   0.938
+HETATM    3  H   PAT    2       -9.063   2.283  -0.860
+HETATM    4  C   PAT    2       -9.030   2.939   0.023
+HETATM    5  H   PAT    2       -7.775   4.468   0.894
+HETATM    6  H   PAT    2       -7.780   4.429  -0.923
+HETATM    7  C   PAT    2       -7.770   3.801  -0.000
+HETATM    8  H   PAT    2       -6.506   2.275  -0.870
+HETATM    9  C   PAT    2       -6.505   2.934   0.014                 
+HETATM   10  H   PAT    2       -6.502   2.308   0.929
+HETATM   11  H   PAT    2       -5.249   4.440  -0.918                 
+HETATM   12  C   PAT    2       -5.243   3.806  -0.003
+HETATM   13  H   PAT    2       -5.238   4.470   0.896
+HETATM   14  C   PAT    2       -3.977   2.942   0.002
+HETATM   15  H   PAT    2       -3.975   2.277  -0.896
+HETATM   16  H   PAT    2       -3.971   2.305   0.922
+HETATM   17  H   PAT    2       -2.721   4.446  -0.928
+HETATM   18  H   PAT    2       -2.716   4.472   0.869
+HETATM   19  C   PAT    2       -2.714   3.814  -0.014
+HETATM   20  C   PAT    2       -1.448   2.951  -0.000
+HETATM   21  H   PAT    2       -1.446   2.287  -0.897
+HETATM   22  H   PAT    2       -1.443   2.316   0.911
+HETATM   23  H   PAT    2       -0.193   4.493   0.890
+HETATM   24  H   PAT    2       -0.191   4.464  -0.930
+HETATM   25  C   PAT    2       -0.187   3.826  -0.015
+HETATM   26  C   PAT    2        1.080   2.966  -0.007
+HETATM   27  H   PAT    2        1.083   2.316  -0.899
+HETATM   28  H   PAT    2        1.088   2.328   0.900
+HETATM   29  H   PAT    2        2.331   4.494  -0.923
+HETATM   30  C   PAT    2        2.342   3.843  -0.014
+HETATM   31  H   PAT    2        2.343   4.490   0.891
+HETATM   32  C   PAT    2        3.609   2.981  -0.024
+HETATM   33  H   PAT    2        3.612   2.336  -0.945
+HETATM   34  H   PAT    2        3.615   2.318   0.883
+HETATM   35  H   PAT    2        4.861   4.521  -0.908
+HETATM   36  H   PAT    2        4.870   4.477   0.890
+HETATM   37  C   PAT    2        4.871   3.853  -0.017
+HETATM   38  H   PAT    2        6.130   2.371  -0.969
+HETATM   39  C   PAT    2        6.136   2.989  -0.048
+HETATM   40  H   PAT    2        6.146   2.309   0.830
+HETATM   41  H   PAT    2        7.389   4.549  -0.903
+HETATM   42  H   PAT    2        7.399   4.471   0.915
+HETATM   43  C   PAT    2        7.401   3.857  -0.024
+HETATM   44  H   PAT    2        8.644   2.390  -1.016
+HETATM   45  C   PAT    2        8.661   2.990  -0.084
+HETATM   46  H   PAT    2        8.690   2.292   0.776
+HETATM   47  H   PAT    2        9.631   4.637   1.789
+HETATM   48  C   PAT    2        9.908   3.834  -0.062
+HETATM   49  O   PAT    2       10.202   4.609   1.005
+HETATM   50  O   PAT    2       10.680   3.809  -1.006
+CONECT    1    4
+CONECT    2    4
+CONECT    3    4
+CONECT    4    7
+CONECT    5    7
+CONECT    6    7
+CONECT    7    9
+CONECT    8    9
+CONECT   10    9
+CONECT    9   12
+CONECT   11   12
+CONECT   13   12
+CONECT   12   14
+CONECT   15   14
+CONECT   16   14
+CONECT   14   19
+CONECT   17   19
+CONECT   18   19
+CONECT   19   20
+CONECT   21   20
+CONECT   22   20
+CONECT   20   25
+CONECT   23   25
+CONECT   24   25
+CONECT   25   26
+CONECT   27   26
+CONECT   28   26
+CONECT   26   30
+CONECT   29   30
+CONECT   31   30
+CONECT   30   32
+CONECT   33   32
+CONECT   34   32
+CONECT   32   37
+CONECT   35   37
+CONECT   36   37
+CONECT   37   39
+CONECT   38   39
+CONECT   40   39
+CONECT   39   43
+CONECT   41   43
+CONECT   42   43
+CONECT   43   45
+CONECT   44   45
+CONECT   46   45
+CONECT   45   48
+CONECT   47   49
+CONECT   48   50
+CONECT   48   50
+CONECT   50   48
