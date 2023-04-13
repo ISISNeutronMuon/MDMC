@@ -10,162 +10,122 @@ jobs:
     # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: fetch  # grabs master to compare if Docker build files changed
-      run: git fetch origin master
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: fetch  # grabs master to compare if Docker build files changed
+        run: git fetch origin master
 
-    - name: Check and build container
-      env:
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BRANCH: ${{ github.head_ref }}
-      run: source .github/scripts/build_container.sh
+      - name: Check and build container
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          BRANCH: ${{ github.head_ref }}
+        run: source .github/scripts/build_container.sh
 
   tests:
     name: Docker tests
     needs: build # so it can use new docker image if docker image has changed
     runs-on: self-hosted
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        testset: [lammps, "not lammps"]
+        testset: ["not lammps"]
     steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-        architecture: x64
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
-    - name: Checkout repo
-      uses: actions/checkout@v2
-
-    - name: Run tests
-      env:
-        BRANCH: ${{ github.head_ref }}
-        TESTSET: ${{ matrix.testset }}
-      run: |
-        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || \
-        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ] && exit 0 || exit 1
-        exit 0
-        
-    - name: Download master profiling for comparison
-      # regular download-artifact can only get artifacts from current run
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: ci-deploy.yml
-        name: master-profiling
-      continue-on-error: true
-        
-    - name: Copy profiling info, download profile script reqs. and profile
-      env:
-        BRANCH: ${{ github.head_ref }}
-        FILENAME: ${{ github.head_ref }}-profiling
-      run: |
-          # clear directory of any existing prof files first
-          sudo rm -r /home/prof/
-          sudo docker cp $(docker ps -lq):home/prof/ /home/prof
-          pip3 install pandas
-          python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME --compare "master-profiling.csv" || python3 .github/scripts/process_prof_data.py /home/prof --name $FILENAME || exit 1
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+          architecture: x64
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Run tests
+        env:
+          TESTSET: ${{ matrix.testset }}
+        run: |
+          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
+          exit 0 
           
-    - name: Save profiling info as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ github.head_ref }}-${{ matrix.testset }}-profiling
-        path: /home/ansible/_work/MDMCv0.2_pilot/MDMCv0.2_pilot/${{ github.head_ref }}-profiling.csv
-        if-no-files-found: error
+      - name: Copy coverage
+        run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+        continue-on-error: true
 
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
-      continue-on-error: true
-
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
-
-  profiling:
-    name: Profiling
-    needs: tests
-    runs-on: self-hosted
-    steps:
-    - name: Own repo to clear before checkout and home to save files
-      run: |
-        sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
-        sudo chown -R ansible /home/
-    - name: Checkout repo
-      uses: actions/checkout@v2
-    - name: Own repo to avoid npm bug
-      run: sudo chmod -R 777 /home/
-
-    - name: Download tests artifacts
-      uses: actions/download-artifact@v3
-      with:
-        path: /home/
-
-    - name: Download master profiling for comparison
-      # regular download-artifact can only get artifacts from current run
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: ci-deploy.yml
-        name: master-profiling
-      continue-on-error: true
-
-    - name: Combine and compare profiling data
-      env: 
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        pip3 install pandas
-        python3 .github/scripts/check_deploy_prof_data.py --files "/home/$BRANCH-lammps-profiling/$BRANCH-profiling.csv" "/home/$BRANCH-not lammps-profiling/$BRANCH-profiling.csv" --compare "master-profiling.csv" --name $BRANCH-total-profiling
-    
-    - name: Upload total profiling as artifact if successful
-      uses: actions/upload-artifact@v3
-      with:
-        name: ${{ github.head_ref }}-total-profiling
-        path: /home/ansible/_work/MDMCv0.2_pilot/MDMCv0.2_pilot/${{ github.head_ref }}-total-profiling.csv
-
-  documentation:
-    name: Documentation
-    needs: build # so it can use new docker image if docker image has changed
-    runs-on: self-hosted
-    steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
-    - name: Checkout repo
-      uses: actions/checkout@v2
-
-    - name: Run script
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: |
-        docker pull mdmc/mdmc:ci-$BRANCH && docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:ci-$BRANCH /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || \
-        docker pull mdmc/mdmc:latest &&  docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html" && exit 0 || exit 1
-        exit 0
+      - name: Upload code coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
   linting:
     name: Pylint
-    runs-on: self-hosted
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: apt get
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
+        # we use cat and grep here to get the version-pinned pylint version from .dev_requirements.txt; thus we can version control pylint
+      - name: pip3 install
+        run: |
+          sudo pip3 install --upgrade pip
+          sudo pip3 install -r requirements.txt
+          sudo pip3 install --upgrade $(cat .dev_requirements.txt | grep pylint)
+      - name: pylint
+        run: |
+          pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
+          exit $?
+
+  notebooks:
+    name: Notebooks
+    runs-on: ubuntu-20.04
+    needs: build
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+          architecture: x64
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Create Docker Container
+        run: |
+          echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="/home/mdmc_home" -w "/home/mdmc_home" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
+      - name: Install Requirements
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt"
+      - name: Convert Notebooks
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/tutorials/notebook-test-config.py"
+      - name: Test Notebooks
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
+
+  type-checking:
+    name: Mypy
+    runs-on: ubuntu-20.04
     steps:
     - name: Own repo to clear before checkout
       run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: apt get
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin python3-tk
-      # we use cat and grep here to get the version-pinned pylint version from .dev_requirements.txt; thus we can version control pylint
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
     - name: pip3 install
       run: |
         sudo pip3 install --upgrade pip
         sudo pip3 install -r requirements.txt
-        sudo pip3 install --upgrade $(cat .dev_requirements.txt | grep pylint) 
-    - name: pylint
+    - name: mypy
       run: |
-        pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
-        exit $?
+        cd MDMC
+        mypy . --show-error-codes --pretty

@@ -9,6 +9,7 @@ from MDMC.refinement.minimizers.GPR import GPR
 
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
+    from MDMC.control import Control
 
 
 class GPO(Minimizer):
@@ -16,12 +17,12 @@ class GPO(Minimizer):
     ``Minimizer`` which uses Gaussian process regression to find the global minimum
     figure of merit. The optimizer comes from scikit-optimize
     https://scikit-optimize.github.io/stable/modules/generated/skopt.optimizer.Optimizer.html
-    It acts in an ask/tell arcitecture, where the optimizer is "asked" for the best
+    It acts in an ask/tell architecture, where the optimizer is "asked" for the best
     parameter values to measure at, then when the measurement is complete, we "tell"
     the optimizer what the result was and it updates its model. The optimizer
     is configured to cycle between prioritising exploration of the space, and
     exploitation of the minima, in order to find the global minimum, without becoming
-    stuck in a local minimum. The first 20 points will be spaced according to a latin
+    stuck in a local minimum. The first ``n_initial`` points will be spaced according to a latin
     hypercube, to cover the available space, subsequent points will then be chosen according
     to the acquisition function and the measured values.
     Due to the potential large jumps between the points, a reasonable amount of equlibration
@@ -30,13 +31,19 @@ class GPO(Minimizer):
 
     Parameters
     ----------
+    control: Control
+        The ``Control`` object which uses this Minimizer.
     parameters: Parameters
         The parameters in the simulation Universe to be optimized
 
     Settings
     ----------
-    n_points: int
-        The number of points to measure
+    n_initial: int, optional
+        The number of points used for the initial latin hypercube coverage of the parameter
+        space. Optional. If no value is given it defaults to 20. Note that if the
+        associated ``Control`` objects has a maximum number of refinement steps (defined in
+        ``Control.n_steps``) which is smaller than ``n_initial`` then that value will be
+        used instead.
 
     Attributes
     ----------
@@ -44,11 +51,13 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, parameters: 'Parameters', **settings: dict):
-        super().__init__(parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
+        super().__init__(control, parameters)
 
         self.parameters = parameters
-        self.n_points = settings.get('n_points', 20)
+        self.n_initial = settings.get('n_initial', 20)
+        if self.control.n_steps:
+            self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
         self.predicted_min_pos = []
         # Ensure all parameters have bounds
@@ -64,7 +73,8 @@ class GPO(Minimizer):
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
         self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
-                acq_optimizer="sampling", initial_point_generator="lhs", n_initial_points=20)
+                                   acq_optimizer="sampling", initial_point_generator="lhs",
+                                   n_initial_points=self.n_initial, model_queue_size=1)
 
 
     @property
@@ -82,15 +92,16 @@ class GPO(Minimizer):
 
     def has_converged(self) -> bool:
         """
-        Checks if the refinement process has finished, i.e. if the number of points
-        equal to or greater than n_points have been measured.
+        Checks if the refinement process has finished, i.e. if the number of points is
+        equal to or greater than the number of maximum refinement points of the associated
+        ``Control`` object.
 
         Returns
         -------
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= self.n_points
+        return len(self.history) >= self.control.n_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
@@ -113,7 +124,7 @@ class GPO(Minimizer):
         from the parameter_point_array.
         """
 
-        if len(self._history) <= self.n_points:
+        if not self.has_converged():
             coordinates = self.optimizer.ask()
             self.set_parameter_values(self.parameter_names, coordinates)
 

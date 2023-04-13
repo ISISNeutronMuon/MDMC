@@ -21,7 +21,6 @@ from collections import defaultdict
 import glob
 from importlib import import_module
 from os.path import dirname, basename, isfile, join
-from typing import Dict, List, Type
 
 from . import obs_factory
 
@@ -35,7 +34,7 @@ for full_module_name in MODULE_NAMES:
             import_module(__name__ + '.' + module_name.replace('.py', ''))
 
 
-def _merge_obs_aliases(registry: Dict[str, Type]) -> List[str]:
+def _merge_obs_aliases(registry: 'dict[str, type]') -> 'list[str]':
     inverse_registry = defaultdict(list)
     for reg_name, reg_class in registry.items():
         inverse_registry[reg_class].append(reg_name)

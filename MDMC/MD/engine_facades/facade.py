@@ -1,7 +1,8 @@
 """Module containing an abstract base class for MD engine facades"""
 from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
-from MDMC.trajectory_analysis.trajectory import Configuration, Trajectory
+from MDMC.trajectory_analysis.trajectory import Configuration
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 if TYPE_CHECKING:
     from MDMC.MD.simulation import Simulation
@@ -79,13 +80,13 @@ class MDEngine(ABC):
     def traj_step(self) -> int:
         """
         Get the number of simulation steps between saving the
-        ``Trajectory`` from the parent simulation
+        ``CompactTrajectory`` from the parent simulation
 
         Returns
         -------
         `int`
-            Number of simulation steps that elapse between the ``Trajectory``
-            being stored
+            Number of simulation steps that elapse between the
+            ``CompactTrajectory`` being stored
         """
 
         try:
@@ -161,7 +162,7 @@ class MDEngine(ABC):
 
     @abstractmethod
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> Trajectory:
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
         Parses the trajectory from the ``MDEngine`` format into MDMC format
 
@@ -182,8 +183,8 @@ class MDEngine(ABC):
 
         Returns
         -------
-        ``Trajectory``
-            The ``Trajectory`` from the most recent production simulation
+        ``CompactTrajectory``
+            The ``CompactTrajectory`` from the most recent production simulation
         """
 
         # convert_trajectory has no range function as it is assumed that the

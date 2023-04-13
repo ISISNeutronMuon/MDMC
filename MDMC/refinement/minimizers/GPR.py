@@ -1,6 +1,6 @@
 """The Gaussian-Process-Regression minimizer class"""
 import itertools
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 import scipy.stats as st
@@ -12,6 +12,9 @@ from scipy.ndimage import minimum_position, minimum
 
 from MDMC.MD.parameters import Parameters, Parameter
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+
+if TYPE_CHECKING:
+    from MDMC.control import Control
 
 
 class GPR(Minimizer):
@@ -26,13 +29,10 @@ class GPR(Minimizer):
 
     Parameters
     ----------
-    n_points : int
-        A number of points which will be measured at, either randomly on a latin hypercube
-        (if use_hypercube=True) or p^n_points (p = number of parameters) in a regular grid
-        (if use_hypercube=False)
-    use_hypercube : optional, bool
-        Boolean toggle for if the n_points should be placed in a latin hypercube, or as a grid
-        across each parameter. Defaults to False
+    control: Control
+        The ``Control`` object which uses this Minimizer.
+    parameters: Parameters
+        The parameters in the simulation Universe to be optimized
 
     Attributes
     ----------
@@ -40,12 +40,9 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, parameters: Parameters, **settings: dict):
-        super().__init__(parameters)
-        np.random.seed(0)
-
-        self.use_hypercube = settings.get('use_hypercube', False)
-        self.n_points = settings.get('n_points', 4)
+    def __init__(self, control: 'Control', parameters: Parameters, **settings: dict):
+        super().__init__(control, parameters)
+        np.random.seed(0) # This should mean results are reproducible in tests
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
@@ -55,13 +52,9 @@ class GPR(Minimizer):
     def create_parameter_point_array(self,
                                      parameters: Parameters) -> 'tuple[list[str], list[tuple]]':
         """
-        Takes or creates the constraints of the parameters to be minimised, if
-        self.use_hypercube=False this makes an array of length self.n_points and performs the
-        Cartesian product across all parameters, to give an equally spaced set of coordinates to
-        be measured. This set of coordinates will be #of parameters^(self.n_points) long. If
-        self.use_hypercube=True then an array of points will be placed on a Latin hypercube covering
-        the space defined by the constraints. The resulting array of coordinates will be
-        self.n_points long.
+        Takes or creates the constraints of the parameters to be minimised and makes an array
+        of points, placed on a Latin hypercube covering the space defined by the constraints.
+        The resulting array of coordinates is self.control.n_steps long.
 
         Parameters
         ----------
@@ -77,22 +70,14 @@ class GPR(Minimizer):
         """
         parameter_names = [str(name) for name in parameters.keys()]
 
-        if self.use_hypercube:
-            samples = st.qmc.LatinHypercube(d=len(parameters), centered=True)
-            latin_points = samples.random(n=self.n_points)
+        samples = st.qmc.LatinHypercube(d=len(parameters), centered=True, seed=1)
+        latin_points = samples.random(n=self.control.n_steps)
 
-            lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
-            upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
+        lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
+        upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
 
-            latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
-            return parameter_names, latin_points
-
-        bounds_grid = [self.create_bounds(parameter) for parameter in parameters.values()]
-        bounds_array = [np.linspace(lower_bound, upper_bound, self.n_points) \
-                        for lower_bound, upper_bound in bounds_grid]
-        point_array = list(itertools.product(*bounds_array))
-        # * is necessary for unpacking the arrays
-        return parameter_names, point_array
+        latin_points = st.qmc.scale(latin_points, lower_bounds, upper_bounds)
+        return parameter_names, latin_points
 
     @staticmethod
     def create_bounds(parameter: Parameter, fraction: float = 0.3) -> 'tuple[float, float]':
@@ -147,7 +132,7 @@ class GPR(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
-        return len(self.history) >= len(self.parameter_point_array)
+        return len(self.history) >= self.control.n_steps
 
     @property
     def history_columns(self) -> 'list[str]':

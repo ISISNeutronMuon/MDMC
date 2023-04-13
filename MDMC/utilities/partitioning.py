@@ -1,4 +1,5 @@
-"""Partitioning utilities
+"""
+Partitioning utilities
 
 Utilities related to partitioning iterators into their composite components
 
@@ -7,11 +8,15 @@ Notes
 
 """
 
-##
+from typing import TYPE_CHECKING
 from itertools import tee
 
+if TYPE_CHECKING:
+    from MDMC.MD import Interaction
+    from typing import Callable, Iterable
 
-def partition(items, predicate):
+
+def partition(items: iter, predicate: "Callable[[any], bool]") -> tuple:
 
     """
     Partitions an ``iterable`` using a predicate
@@ -37,7 +42,10 @@ def partition(items, predicate):
             (item for pred, item in iter_b if not pred))
 
 
-def partition_interactions(interactions, names, unpartitioned=False, lst=False):
+def partition_interactions(interactions: "Iterable[Interaction]",
+                           names: "list[str]",
+                           unpartitioned: bool = False,
+                           lst: bool = False) -> tuple:
 
     """
     Partitions an ``iterable`` of ``Interaction`` objects using a `list` of

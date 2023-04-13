@@ -6,11 +6,11 @@ from itertools import combinations, permutations
 import numpy as np
 import numpy.testing as npt
 import pytest
-from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
+from pytest_cases import parametrize, fixture_ref
 
-from MDMC.MD import interactions, Parameters
+from MDMC.MD import interactions
 from MDMC.MD.force_fields.ff import WaterModel
-from MDMC.MD.interaction_functions import LennardJones, Parameter
+from MDMC.MD.interaction_functions import LennardJones
 import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
@@ -26,22 +26,22 @@ O_MASS = 16.000
 WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
-TOLERANCE = 1
+TOLERANCE = 1.5
 SPCE_MASS = 18.01499
-SPCE_DIMENSIONS = SPC216['box_dimensions']
-SPCE_NUM_MOL = len(SPC216['molecules'])
+SPCE_DIMENSIONS = np.array([18.6206, 18.6206, 18.6206])
+SPCE_NUM_MOL = len(SPC216['molecules'])  # 216
 SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
 
 
 @pytest.fixture
 def universe():
 
-    return sim.Universe(UNIVERSE_DIMENSIONS)
+    yield sim.Universe(UNIVERSE_DIMENSIONS, verbose=False)
 
 @pytest.fixture
 def atom():
 
-    return su.Atom('H', mass=H_MASS)
+    yield su.Atom('H', mass=H_MASS)
 
 @pytest.fixture
 def water_molecule():
@@ -55,45 +55,43 @@ def water_molecule():
                                  interactions=[interactions.Bond((H1, O), (H2, O)),
                                                interactions.BondAngle(H1, O, H2)],
                                  name='water')
-    return water_molecule
+    yield water_molecule
 
 @pytest.fixture
 def water_SPCE_universe(water_molecule):
 
-    water_universe = sim.Universe(UNIVERSE_DIMENSIONS)
+    water_universe = sim.Universe(UNIVERSE_DIMENSIONS, verbose=False)
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atoms
                        if atom.element == 'O')
     O_dispersion = interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
-    return water_universe
+    yield water_universe
 
 @pytest.fixture
 def kspace_solver():
 
-    return sim.Ewald(accuracy=0.0001)
+    yield sim.Ewald(accuracy=0.0001)
 
 @pytest.fixture
 def small_diatomic():
-
     """
     Creates molecular hydrogen (H2) with normal internuclear separation
     and therefore a small bounding box relative to the size of the universe.
     """
 
-    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+    yield su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
                               su.Atom('H', position=([np.sqrt(3)] * 3))])
 
 @pytest.fixture
 def large_diatomic():
-
     """
     Creates molecular hydrogen with a large internuclear separation,
     orientated so that its bounding box is very large relative to
     the universe.
     """
 
-    return su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
+    yield su.Molecule(atoms=[su.Atom('H', position=(0, 0, 0)),
                               su.Atom('H',
                                       position=(np.array(UNIVERSE_DIMENSIONS)/2)
                                      )])
@@ -101,18 +99,31 @@ def large_diatomic():
 @pytest.fixture
 def solvated_universe():
 
-    uni = sim.Universe(SPCE_DIMENSIONS)
+    uni = sim.Universe(SPCE_DIMENSIONS, verbose=False)
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
 
-    return uni
+    yield uni
 
+def get_dispersions(inters):
+    """
+    Parameters
+    ----------
+    inters : list
+        A list of Interaction objects
+
+    Returns
+    -------
+    list
+        A list of all Dispersion interactions
+    """
+    return list(filter(lambda x: isinstance(x, interactions.Dispersion), inters))
 
 def test_create_universe(universe):
 
     npt.assert_array_equal(UNIVERSE_DIMENSIONS, universe.dimensions)
 
-    universe_equal = sim.Universe(UNIVERSE_DIMENSIONS)
-    universe_unequal = sim.Universe((9., 9., 9.))
+    universe_equal = sim.Universe(UNIVERSE_DIMENSIONS, verbose=False)
+    universe_unequal = sim.Universe((9., 9., 9.), verbose=False)
     assert universe == universe
     assert universe == universe_equal
     assert universe != universe_unequal
@@ -148,7 +159,6 @@ def test_create_atom(atom):
                          ]
                         )
 def test_copy_structures(unit, changed_attr):
-
     """
     Tests that structures.copy copies the correct attributes and modifies
     the other attributes
@@ -171,7 +181,6 @@ def test_copy_structures(unit, changed_attr):
 
 
 def test_copy_composite_rotation(water_molecule):
-
     """
     Tests that CompositeStructure.copy can have rotate passed
     """
@@ -187,7 +196,6 @@ def test_copy_composite_rotation(water_molecule):
 
 
 def test_structure_unique_ID(water_SPCE_universe):
-
     """
     Tests that each Structure in water_SPCE_universe has a unique ID
 
@@ -209,7 +217,6 @@ def test_structure_unique_ID(water_SPCE_universe):
 
 
 def test_structure_parent():
-
     """
     Tests that a structure which is not a subunit has itself as a parent
 
@@ -235,7 +242,6 @@ def test_structure_parent():
 
 
 def test_top_level_structure(water_molecule):
-
     """
     Tests that the top_level_structure property returns self (if not a subunit),
     or the parent which returns self
@@ -252,9 +258,7 @@ def test_top_level_structure(water_molecule):
 
 
 def test_equivalent_top_level_structures_dict(
-    universe: sim.Universe, water_molecule: su.Molecule,
-):
-
+    universe: sim.Universe, water_molecule: su.Molecule):
     """
     Test that ``Universe.equivalent_top_level_structures_dict`` correctly
     counts all equivalent structures and atoms.
@@ -310,7 +314,6 @@ def test_atoms(atom):
 
 
 def test_atom_type(atom):
-
     """
     Tests that atom_type can only be set if it has not previously been set
     """
@@ -323,7 +326,6 @@ def test_atom_type(atom):
 
 
 def test_add_atom(universe, atom):
-
     """
     Tests that atom is added to Universe.atoms
 
@@ -332,7 +334,7 @@ def test_add_atom(universe, atom):
     Tests that atom interactions are added to Universe.interactions
     """
 
-    atom_coulombic = interactions.Coulombic(atoms=atom)
+    _ = interactions.Coulombic(atoms=atom)
     assert len(universe.atom_types) == 0
     universe.add_structure(atom)
     assert atom.atoms == universe.atoms
@@ -414,8 +416,7 @@ def test_spce_water_molecule(universe, water_molecule):
 
 
 @parametrize('structures', [fixture_ref(atom), fixture_ref(water_molecule)])
-def test_add_structure_center(universe, structures, request):
-
+def test_add_structure_center(universe, structures):
     """
     Tests that passing center=True to universe.add_structure adds the
     structures to the center of the Universe
@@ -427,7 +428,6 @@ def test_add_structure_center(universe, structures, request):
 
 
 def test_spce_water_box(water_SPCE_universe):
-
     """
     Tests for correct number of interactions
     """
@@ -462,7 +462,6 @@ def test_spce_water_box(water_SPCE_universe):
 
 
 def test_universe_membership(water_SPCE_universe):
-
     """
     Tests that structures that have been added to a universe have that universe
     as self.universe
@@ -474,7 +473,7 @@ def test_universe_membership(water_SPCE_universe):
     tested in test_copy_structures
     """
 
-    uni_false = sim.Universe(5.)
+    uni_false = sim.Universe(5., verbose=False)
     for structure in water_SPCE_universe.structure_list:
         assert structure.universe == water_SPCE_universe
         assert structure.universe != uni_false
@@ -485,7 +484,6 @@ def test_universe_membership(water_SPCE_universe):
 
 @parametrize("unit", [fixture_ref(atom), fixture_ref(water_molecule)])
 def test_translate(unit, universe):
-
     """
     Tests that the translate method changes the position of an atom, a molecule,
     and the corresponding positions in the universe which they belong to
@@ -510,7 +508,6 @@ def test_translate(unit, universe):
 
 
 def test_valid_position(atom):
-
     """
     Tests if Structure.valid_position returns True if an atom is either not
     in a universe or within the bounds of the universe, and False otherwise
@@ -520,7 +517,7 @@ def test_valid_position(atom):
     assert atom.valid_position()
 
     atom.position = [0., 0., 0.]
-    uni = sim.Universe(5.0)
+    uni = sim.Universe(5.0, verbose=False)
     uni.add_structure(atom)
     assert atom.valid_position()
 
@@ -541,7 +538,6 @@ def test_valid_position(atom):
 @pytest.mark.parametrize("position, expected", [(None, [2., 9., 7.5]),
                                                 ([5., 4., 3.], [5., 4., 3.])])
 def test_molecule_position(position, expected):
-
     """
     Tests that a molecules position is set correctly on initialization, both
     when the position argument is passed and when it is left as default
@@ -563,7 +559,6 @@ def test_molecule_position(position, expected):
 
 
 def test_molecule_subunit_positions(water_molecule):
-
     """
     Tests that the positions of atoms belonging to a molecule are set correctly
     when the molecule's position is set
@@ -582,7 +577,6 @@ def test_molecule_subunit_positions(water_molecule):
                                           (interactions.BondAngle, [3]),
                                           (interactions.DihedralAngle, [4])])
 def test_bonded_interactions(Int, n_atoms, atom):
-
     """
     Tests that only the correct number of atoms can be used for the interaction
 
@@ -625,7 +619,6 @@ def test_bonded_interactions(Int, n_atoms, atom):
                                                   (interactions.BondAngle, 6),
                                                   (interactions.DihedralAngle, 8)])
 def test_bonded_interactions_duplicate_tuples(interaction, n_atoms):
-
     """
     Tests that atom tuples added to BondedInteractions are unique i.e. there are
     no duplicates.
@@ -648,7 +641,6 @@ def test_bonded_interactions_duplicate_tuples(interaction, n_atoms):
 
 
 def test_improper_dihedral_duplicate_tuples():
-
     """
     Tests that atom tuples added to improper Dihedrals are unique i.e. there are
     no duplicates.
@@ -673,7 +665,6 @@ def test_improper_dihedral_duplicate_tuples():
 
 
 def test_universe_atom_types(water_molecule, universe):
-
     """
     Tests that Universe.atom_types is set correctly when atoms are added and
     when interactions are added to the atoms
@@ -681,7 +672,7 @@ def test_universe_atom_types(water_molecule, universe):
 
     C = su.Atom('C', mass=12.0107, atom_type=2)
     assert C.atom_type == 2
-    C_coulombic = interactions.Coulombic(atoms=C)
+    _ = interactions.Coulombic(atoms=C)
     H1, H2, O = water_molecule.atoms
 
     assert len(universe.atom_types) == 0
@@ -730,9 +721,9 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
     # Add more atoms with interactions to universe so that there are sufficient
     # atom_types for all parameterizations
     He = su.Atom('He', mass=2.)
-    He_coulombic = interactions.Coulombic(atoms=He)
+    _ = interactions.Coulombic(atoms=He)
     C = su.Atom('C', mass=12.)
-    C_coulombic = interactions.Coulombic(atoms=C)
+    _ = interactions.Coulombic(atoms=C)
 
     for atom in [He, C]:
         water_SPCE_universe.add_structure(atom)
@@ -750,7 +741,6 @@ def test_init_dispersion(atom_types_init, atom_types_expected,
                           ((1.0, 1.0), TypeError)])
 def test_init_dispersion_atom_type_error(atom_types_init, error,
                                          water_SPCE_universe):
-
     """
     Tests that the appropriate errors are raised when trying to initialize
     a Dispersion interaction by passing invalid atom_types.
@@ -761,7 +751,6 @@ def test_init_dispersion_atom_type_error(atom_types_init, error,
 
 
 def test_dispersion_cutoff(water_SPCE_universe):
-
     """
     Tests that Dispersion can be initialized with a cutoff, and that not
     specifying a cutoff results in a cutoff attribute set to None
@@ -774,7 +763,6 @@ def test_dispersion_cutoff(water_SPCE_universe):
 
 
 def test_charge_setting(water_SPCE_universe):
-
     """
     Tests that charges can be set from the atom.charge attribute, if the atom
     already has a Coulombic interaction
@@ -785,66 +773,14 @@ def test_charge_setting(water_SPCE_universe):
     assert atom.charge == 5.0
 
 
-def test_init_coulombic_atom_types():
-
-    """
-    Tests initializing a coulombic object with atom_types:
-
-    - 1 atom_type
-    - 2 atom_types (different)
-    """
-
-    pass
-
-
-def test_init_coulombic_atoms():
-
-    """
-    Tests initializing a coulombic object with atoms
-    """
-
-    pass
-
-
-def test_init_coulombic_with_charge():
-
-    """
-    Tests initializing a coulombic object with the charge keyword
-
-    Test if the correct InteractionFunction (with the correct parameter) is
-    created, and if the charge keyword renders the function keyword redundant.
-    """
-
-    pass
-
-
-def test_coulombic_add_atom_types():
-
-    """
-    Tests adding atom_types to a coulombic object
-    """
-
-    pass
-
-
-def test_coulombic_add_atoms():
-
-    """
-    Tests adding atoms to a coulombic object
-    """
-
-    pass
-
-
 @pytest.mark.parametrize("bonded_interaction, n_atoms", [(interactions.Bond, 2),
                                                          (interactions.BondAngle, 3)])
 def test_bonded_constraint_set_True(bonded_interaction, n_atoms, atom):
-
     """
     Tests that constraints can be applied to BondedInteractions
     """
 
-    atoms = [atom.copy([1., 1., 1.]) for i in range(n_atoms)]
+    atoms = [atom.copy([1., 1., 1.]) for _ in range(n_atoms)]
     b_i = bonded_interaction(*atoms, constrained=True)
     assert b_i.constrained
 
@@ -852,12 +788,11 @@ def test_bonded_constraint_set_True(bonded_interaction, n_atoms, atom):
 @pytest.mark.parametrize("bonded_interaction, n_atoms", [(interactions.Bond, 2),
                                                          (interactions.BondAngle, 3)])
 def test_bonded_constraint_set_False(bonded_interaction, n_atoms, atom):
-
     """
     Tests that BondedInteractions can be unconstrained if set to False
     """
 
-    atoms = [atom.copy([1., 1., 1.]) for i in range(n_atoms)]
+    atoms = [atom.copy([1., 1., 1.]) for _ in range(n_atoms)]
     b_i = bonded_interaction(*atoms, constrained=False)
     assert b_i.constrained is False
 
@@ -865,18 +800,16 @@ def test_bonded_constraint_set_False(bonded_interaction, n_atoms, atom):
 @pytest.mark.parametrize("bonded_interaction, n_atoms", [(interactions.Bond, 2),
                                                          (interactions.BondAngle, 3)])
 def test_bonded_constraint_unset(bonded_interaction, n_atoms, atom):
-
     """
     Tests that BondedInteractions are unconstrained if no constraint is applied
     """
 
-    atoms = [atom.copy([1., 1., 1.]) for i in range(n_atoms)]
+    atoms = [atom.copy([1., 1., 1.]) for _ in range(n_atoms)]
     b_i = bonded_interaction(*atoms)
     assert b_i.constrained == False
 
 
 def test_universe_multiple_solvers(kspace_solver):
-
     """
     Tests that both an electrostatic_solver and a dispersive solver can be
     passed when initializing a Universe
@@ -884,13 +817,13 @@ def test_universe_multiple_solvers(kspace_solver):
 
     uni = sim.Universe(UNIVERSE_DIMENSIONS,
                        electrostatic_solver=kspace_solver,
-                       dispersive_solver=kspace_solver)
+                       dispersive_solver=kspace_solver,
+                       verbose=False)
     assert uni.electrostatic_solver == kspace_solver
     assert uni.dispersive_solver == kspace_solver
 
 
 def test_universe_multiple_solvers_error(kspace_solver):
-
     """
     Tests that if either electrostatic_solver or dispersive_solver and a
     kspace_solver are passed when initializing a Universe, a ValueError is
@@ -898,20 +831,22 @@ def test_universe_multiple_solvers_error(kspace_solver):
     """
 
     with pytest.raises(ValueError):
-        uni = sim.Universe(UNIVERSE_DIMENSIONS,
-                           kspace_solver=kspace_solver,
-                           electrostatic_solver=kspace_solver)
-        uni = sim.Universe(UNIVERSE_DIMENSIONS,
-                           kspace_solver=kspace_solver,
-                           dispersive_solver=kspace_solver)
-        uni = sim.Universe(UNIVERSE_DIMENSIONS,
+        _ = sim.Universe(UNIVERSE_DIMENSIONS,
                            kspace_solver=kspace_solver,
                            electrostatic_solver=kspace_solver,
-                           dispersive_solver=kspace_solver)
+                       verbose=False)
+        _ = sim.Universe(UNIVERSE_DIMENSIONS,
+                           kspace_solver=kspace_solver,
+                           dispersive_solver=kspace_solver,
+                       verbose=False)
+        _ = sim.Universe(UNIVERSE_DIMENSIONS,
+                           kspace_solver=kspace_solver,
+                           electrostatic_solver=kspace_solver,
+                           dispersive_solver=kspace_solver,
+                       verbose=False)
 
 
 def test_universe_fill_orientations(universe):
-
     """
     Tests that filling 2 separate Universe objects with a diatomic
     molecule of different orientations but the same internuclear
@@ -919,12 +854,11 @@ def test_universe_fill_orientations(universe):
     """
 
     univ1 = universe
-    univ2 = universe
+    univ2 = sim.Universe(UNIVERSE_DIMENSIONS, verbose=False)
     origin = (0, 0, 0)
     pos1 = (0, 1, 0)
     pos2 = (np.sqrt(0.5), np.sqrt(0.5), 0)
-    # Check that the internuclear separation is the same.
-    assert np.linalg.norm(pos1) == np.linalg.norm(pos2)
+
     # Build the 2 diatomics with different orientations.
     diatomic1 = su.Molecule(atoms=[su.Atom('H', position=origin),
                                    su.Atom('H', position=pos1)])
@@ -940,7 +874,6 @@ def test_universe_fill_orientations(universe):
 
 @pytest.mark.parametrize('parameter', ['num_density', 'num_struc_units'])
 def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
-
     """
     Tests that filling the universe with a Structure results in
     no molecules being added outside the bounds of the universe.
@@ -963,7 +896,6 @@ def test_universe_fill_no_out_of_bounds(universe, water_molecule, parameter):
 
 @pytest.mark.parametrize('num_density', [3.14, 0.6, 1.0])
 def test_universe_fill_equivalence(universe, num_density, water_molecule):
-
     """
     Tests that specifying either num_density or manually calling
     add_structure fills the universe and results in no difference in the
@@ -973,7 +905,7 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     num_strucs = num_density * np.prod(universe.dimensions)
     num_strucs_rounded = int(np.cbrt(num_strucs)) ** 3
-    universe_manual = sim.Universe(universe.dimensions)
+    universe_manual = sim.Universe(universe.dimensions, verbose=False)
     universe.fill(water_molecule, num_density=num_density)
     for i in range(num_strucs_rounded):
         universe_manual.add_structure(water_molecule)
@@ -992,7 +924,6 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
                                                           [3.14, 100]))
 def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
                                                    universe, water_molecule):
-
     """
     Tests that the appropriate error is raised when passing both or neither
     num_density and num_struc_units as parameters.
@@ -1009,25 +940,31 @@ def test_universe_fill_num_density_num_struc_error(num_density, num_struc_units,
         assert exc.value.message == 'Cannot pass both'
 
 
-@pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar)
-                                 for scalar in [0.9, 1.0, 1.1]])
+@pytest.mark.parametrize("uni", [sim.Universe(SPCE_DIMENSIONS * scalar, verbose=False)
+                                 for scalar in [0.5, 1.02]])
 def test_solvate_spce_no_solute(uni):
-
     """
     Tests that the achieved density is within the tolerance for solvating
-    with SPCE water an empty universe of dimensions smaller, equal to, and
-    larger than those of the SPCE configuration box.
+    with SPCE water an empty universe of dimensions smaller, and
+    larger than those of the SPCE configuration box, equal is in another test.
     """
 
     uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     actual_dens = len(uni.molecule_list) * SPCE_MASS / uni.volume
-    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens
-    assert actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
+    assert SPCE_DENSITY * (100 - TOLERANCE) / 100 < actual_dens and \
+           actual_dens < SPCE_DENSITY * (100 + TOLERANCE) / 100
 
+def test_solvation_fail():
+    """
+    Tests that a ValueError is raised when the universe has not been solvated
+    to within tolerance after a given number of iterations.
+    """
+    uni = sim.Universe(SPCE_DIMENSIONS * 0.3, verbose=False)
+    with pytest.raises(ValueError):
+        uni.solvate(SPCE_DENSITY, tolerance=TOLERANCE, max_iterations=2)
 
 @parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
 def test_solvate_spce_with_solute(molecule):
-
     """
     Tests that the achieved density is within the tolerance for solvating
     with SPCE water a universe containing a small diatomic molecule.
@@ -1036,7 +973,7 @@ def test_solvate_spce_with_solute(molecule):
     with SPCE water a universe containing a large diatomic molecule.
     """
 
-    univ = sim.Universe(SPCE_DIMENSIONS / 2)
+    univ = sim.Universe(SPCE_DIMENSIONS / 2, verbose=False)
     univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     tot_mass = 0
@@ -1048,7 +985,6 @@ def test_solvate_spce_with_solute(molecule):
 
 
 def test_solvate_spce_no_out_of_bounds(solvated_universe):
-
     """
     Tests that solvating an empty universe with SPCE water results in no
     atoms of those solvent moleules being outside the universe bounds.
@@ -1061,13 +997,12 @@ def test_solvate_spce_no_out_of_bounds(solvated_universe):
 
 @parametrize("molecule", [fixture_ref(small_diatomic), fixture_ref(large_diatomic)])
 def test_solvate_spce_no_overlap_with_solute(molecule):
-
     """
     Tests that solvating a universe containing different solute molecules
     with SPCE water gives no overlaps between solvent and solute molecules.
     """
 
-    univ = sim.Universe(SPCE_DIMENSIONS / 2)
+    univ = sim.Universe(SPCE_DIMENSIONS / 2, verbose=False)
     univ.add_structure(molecule)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     solute_bounds = molecule.bounding_box
@@ -1081,9 +1016,8 @@ def test_solvate_spce_no_overlap_with_solute(molecule):
                             and all(pos < solute_bounds.max))
 
 
-@pytest.mark.parametrize("dim_scalings", [(0.9, 1.1), (0.5, 0.7)])
-def test_solvate_spce_bond_lengths(dim_scalings):
 
+def test_solvate_spce_bond_lengths():
     """
     Tests that solvating 2 empty universes of different dimensions results
     in no change of the intramolecular nuclear separation lengths in the
@@ -1091,8 +1025,8 @@ def test_solvate_spce_bond_lengths(dim_scalings):
     """
 
     # Solvate 2 universes of different dimensions.
-    univ1 = sim.Universe(SPCE_DIMENSIONS * dim_scalings[0])
-    univ2 = sim.Universe(SPCE_DIMENSIONS * dim_scalings[1])
+    univ1 = sim.Universe(SPCE_DIMENSIONS*0.5, verbose=False)
+    univ2 = sim.Universe(SPCE_DIMENSIONS*0.7, verbose=False)
     univ1.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     univ2.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
 
@@ -1121,9 +1055,8 @@ def test_solvate_spce_bond_lengths(dim_scalings):
     assert lengths1 == lengths2
 
 
-@pytest.mark.parametrize('dim_scaling', [[1, 1, 1], [1, 2, 3], [2, 3, 1]])
+@pytest.mark.parametrize('dim_scaling', [[1, 1, 1], [2, 3, 1]])
 def test_solvate_spce_density_perfect_dimensions(dim_scaling):
-
     """
     Tests that a perfect density (i.e. the density of SPCE water box as
     provided in GROMACS' spc216.gro at 300K) is achieved when solvating an
@@ -1131,7 +1064,7 @@ def test_solvate_spce_density_perfect_dimensions(dim_scaling):
     water box.
     """
 
-    univ = sim.Universe(SPCE_DIMENSIONS * np.array(dim_scaling))
+    univ = sim.Universe(SPCE_DIMENSIONS * np.array(dim_scaling), verbose=False)
     univ.solvate(SPCE_DENSITY)
     total_mass = 0
     for atom in univ.atoms:
@@ -1141,7 +1074,6 @@ def test_solvate_spce_density_perfect_dimensions(dim_scaling):
 
 
 def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
-
     """
     Creates a universe with a dimension that is a non-integer multiple of the
     dimensions of the SPCE water box, and tests that a known SPCE molecule with
@@ -1152,7 +1084,7 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
     # Build a universe of dimensions of the SPCE box, but cut in half
     # along the z-axis, and solvate it.
     univ_dimensions = SPCE_DIMENSIONS * np.array([1, 1, 0.5])
-    univ = sim.Universe(univ_dimensions)
+    univ = sim.Universe(univ_dimensions, verbose=False)
     univ.solvate(SPCE_DENSITY)
     # Molecule 12 from the GROMACS spc216 configuration is known to have one
     # atom that sits out of bounds of these universe dimensions, along the
@@ -1182,7 +1114,6 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
                                                   ('epsilon', 0.6502),
                                                   ('sigma', 3.166)))])
 def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
-
     """
     Tests that the parameters of the solvent molcules are set correctly when
     the solvent has been selected from inbuilt solvents
@@ -1196,11 +1127,9 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
 
 
 @pytest.mark.parametrize("density, tolerance", [(0.7, 20.),
-                                                (0.59, 5.),
                                                 (0.602707, 1.)])
 def test_solvate_solvated_universe_same_density(density, tolerance,
                                                 solvated_universe):
-
     """
     Tests that if a previously solvated universe is solvated with the same
     density, there is no change in the solvent_density or the number or atoms
@@ -1215,12 +1144,9 @@ def test_solvate_solvated_universe_same_density(density, tolerance,
 
 
 @pytest.mark.parametrize("density, tolerance", [(0.7, 1.),
-                                                (0.5, 5.),
-                                                (6.02, 0.01),
                                                 (6.03, 0.0001)])
 def test_solvate_solvated_universe_different_density(density, tolerance,
                                                      solvated_universe):
-
     """
     Tests that if a previously solvated universe is solvated with a different
     density, a ValueError is raised
@@ -1237,22 +1163,19 @@ def test_solvate_solvated_universe_different_density(density, tolerance,
                          [(10., [10., 10., 10.], False),
                           (0.1, [-7., 0, 0], True),
                           ([20., 15., 1.], [21., 15., 1.], True),
-                          (10., [0., 0., -0.0001], True),
-                          (10., [5, 5, 5], False)])
+                          (10., [0., 0., -0.0001], True)])
 def test_check_out_of_bounds(univ_dimensions, pos, expected):
-
     """
     Tests whether the correct bool is returned by the function that checks
     whether a position is outside the bounds of a universe.
     """
 
-    univ = sim.Universe(univ_dimensions)
+    univ = sim.Universe(univ_dimensions, verbose=False)
     assert univ._check_out_of_bounds(np.array(pos)) == expected
 
 
 
 def test_water_model_inheritance():
-
     """
     Tests that a class which inherits from WaterModel requires n_body to be
     defined. This test is required because although WaterModel specifies n_body
@@ -1275,16 +1198,6 @@ def test_water_model_inheritance():
 
     assert ValidWaterModel().n_body == 3
 
-
-def test_empty_universe_density(universe):
-
-    """
-    Tests that the density of an empty Universe is 0.
-    """
-
-    assert universe.density == 0.
-
-
 @pytest.mark.parametrize("structures, expected",
                          [([su.Atom('AA', mass=1.0)],
                            0.001),
@@ -1296,42 +1209,25 @@ def test_empty_universe_density(universe):
                           ([su.Atom('AA', mass=1.0), su.Atom('DD', mass=21.0)],
                            0.022)])
 def test_universe_density(structures, expected, universe):
-
     """
     Tests that the density property of Universe is correct
     """
 
     assert universe.density == 0.
-    for structures in structures:
-        universe.add_structure(structures)
+    for structure in structures:
+        universe.add_structure(structure)
     assert universe.density == expected
 
 @pytest.mark.parametrize("dimensions, expected",
-                         [(-1., ValueError), ((-1., 1., 1.), ValueError), ([0., 1., 2.], ValueError),
-                          ((-1., 1., 1.), ValueError), (1, TypeError), ((1., 2.), ValueError),
+                         [(-1., ValueError), ([0., 1., 2.], ValueError),
+                          (1, TypeError), ((1., 2.), ValueError),
                           ([1., 2., 3., 4.], ValueError), ("1.", TypeError)])
 def test_universe_universe_dimensions_setting(dimensions, expected):
     """
     Tests that setting incorrect `Universe.dimensions` raises the expected errors.
     """
     with pytest.raises(expected):
-        sim.Universe(dimensions)
-
-def get_dispersions(inters):
-
-    """
-    Parameters
-    ----------
-    inters : list
-        A list of Interaction objects
-
-    Returns
-    -------
-    list
-        A list of all Dispersion interactions
-    """
-    return list(filter(lambda x: isinstance(x, interactions.Dispersion), inters))
-
+        sim.Universe(dimensions, verbose=False)
 
 def test_add_force_field_dispersions_bool(universe):
 

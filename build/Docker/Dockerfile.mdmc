@@ -35,4 +35,19 @@ WORKDIR /home
 # Create aliases
 RUN echo alias python="python3" > ~/.bash_aliases
 RUN echo alias pip="pip3" >> ~/.bash_aliases
+#
+# The following variable deactivates the vader BTL in OpenMPI
+# This is necessary to suppress error messages produced
+# by OpenMPI when running in a Docker container. Normally OpenMPI
+# tries to use "vader" as one of the interprocess communication
+# mechanisms. However, this is disabled in Docker. The resulting
+# error messages have repeatedly been a confusing factor in MDMC
+# issues such as:
+# https://github.com/MDMCproject/MDMCv0.2_pilot/issues/562
+# https://github.com/MDMCproject/MDMCv0.2_pilot/issues/1022
+# See also:
+# https://github.com/open-mpi/ompi/issues/4948
+# https://www.open-mpi.org/faq/?category=sm#what-is-vader
+RUN echo export OMPI_MCA_btl=^vader >> ~/.bashrc
 
+# Meaningless change to provoke rebuild

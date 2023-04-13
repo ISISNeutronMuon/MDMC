@@ -1,6 +1,6 @@
 """Module for AbstractSQw and total SQw class"""
 
-from typing import Dict
+from typing import Optional
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -12,7 +12,7 @@ from MDMC.common.decorators import unit_decorator_getter
 from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
 
@@ -21,9 +21,9 @@ class SQwMixins:
     A mixin class for properties used by both SQw and FQt objects
     """
 
-    def minimum_frames(self, dt: float = None):
+    def minimum_frames(self, dt: float = None) -> int:
         r"""
-        The minimum number of ``Trajectory`` frames needed to calculate the
+        The minimum number of ``CompactTrajectory`` frames needed to calculate the
         ``dependent_variables`` depends on ``self.use_FFT``.
 
         If `self.use_FFT == True`, it is the number of energy steps + 1, in order to allow for
@@ -72,9 +72,9 @@ class SQwMixins:
         # ensure we exceed the minimum number of frames needed
         return int(np.ceil(required_time / (2 * dt) + 1))
 
-    def maximum_frames(self):
+    def maximum_frames(self) -> Optional[int]:
         """
-        The maximum number of ``Trajectory`` frames that can be used to
+        The maximum number of ``CompactTrajectory`` frames that can be used to
         calculate the ``dependent_variables`` depends on ``self.use_FFT``.
 
         If `True`, it is the number of energy steps + 1, in order to allow for
@@ -96,13 +96,13 @@ class SQwMixins:
 
     @property
     @unit_decorator_getter(unit=units.LENGTH ** -1)
-    def Q(self):
+    def Q(self) -> Optional[np.array]:
         """
-        Get the momentum transfers
+        Get or set the momentum transfers
 
         Returns
         -------
-        array
+        numpy.array
             1D array of Q `float` (in ``Ang^-1``)
         """
         try:
@@ -111,8 +111,7 @@ class SQwMixins:
             return None
 
     @Q.setter
-    def Q(self, value):
-
+    def Q(self, value: np.array) -> None:
         self.independent_variables['Q'] = value
 
 
@@ -136,7 +135,7 @@ class AbstractSQw(SQwMixins, Observable):
         self._use_FFT = True
 
     @property
-    def independent_variables(self):
+    def independent_variables(self) -> dict:
         """
         Get or set the independent variables: these are
         the frequency Q (in ``Ang^-1``) and energy E (in``meV``)
@@ -150,26 +149,24 @@ class AbstractSQw(SQwMixins, Observable):
         return self._independent_variables
 
     @independent_variables.setter
-    def independent_variables(self, value):
-
+    def independent_variables(self, value: dict) -> None:
         self._independent_variables = value
 
     @property
-    def dependent_variables(self):
+    def dependent_variables(self) -> dict:
         """
-        Get or set the dependent variables: this is
-        SQw, the dynamic structure factor (in ``arb``)
+        Get the dependent variables: this is SQw, the
+        dynamic structure factor (in ``arb``)
 
         Returns
         -------
         dict
             The dependent variables
         """
-
         return self._dependent_variables
 
     @property
-    def errors(self):
+    def errors(self) -> dict:
         """
         Get or set the errors on the dependent variables, the dynamic
         structure factor (in ``arb``)
@@ -179,23 +176,21 @@ class AbstractSQw(SQwMixins, Observable):
         dict
             The errors on the ``dependent_variables``
         """
-
         return self._errors
 
     @errors.setter
-    def errors(self, value):
-
+    def errors(self, value: dict) -> None:
         self._errors = value
 
     @property
     @unit_decorator_getter(unit=units.ENERGY_TRANSFER)
-    def E(self):
+    def E(self) -> 'np.array':
         """
         Get the energies
 
         Returns
         -------
-        array
+        numpy.array
             1D array of energy `float` (in ``meV``)
         """
 
@@ -208,13 +203,13 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
-    def w(self):
+    def w(self) -> 'np.array':
         """
         Get the angular frequencies
 
         Returns
         -------
-        array
+        numpy.array
             1D array of angular frequency `float` in units of ``1 / ps``
         """
 
@@ -222,7 +217,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw(self):
+    def SQw(self) -> Optional[list[np.ndarray]]:
         """
         Get the dynamic structure factor, S(Q, w), in arb
 
@@ -239,7 +234,7 @@ class AbstractSQw(SQwMixins, Observable):
 
     @property
     @unit_decorator_getter(unit=units.ARBITRARY)
-    def SQw_err(self):
+    def SQw_err(self) -> Optional[list[np.ndarray]]:
         """
         Get the errors on the dynamic structure factor in arb
 
@@ -254,7 +249,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    def validate_energy(self, dt):
+    def validate_energy(self, dt: float) -> None:
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -301,22 +296,23 @@ class AbstractSQw(SQwMixins, Observable):
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
 
-    def calculate_from_MD(self, MD_input: Trajectory, verbose: int = 0, **settings):
+    def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
+                         **settings: dict):
         """
-        Calculate the dynamic structure factor, S(Q, w) from a ``Trajectory``.
+        Calculate the dynamic structure factor, S(Q, w) from a ``CompactTrajectory``.
 
-        If the ``Trajectory`` has more frames than the ``self.maximum_frames()`` that can be
-        used to recreate the grid of energy points, it can slice the ``Trajectory`` into
-        sub-trajectories of length ``self.maximum_frames()``, with the slicing specified through
-        the settings ``use_average`` and ``cont_slicing``.
+        If the ``CompactTrajectory`` has more frames than the ``self.maximum_frames()``
+        that can be used to recreate the grid of energy points, it can slice the
+        ``CompactTrajectory`` into sub-trajectories of length ``self.maximum_frames()``,
+        with the slicing specified through the settings ``use_average`` and ``cont_slicing``.
 
         The ``independent_variable`` ``Q`` can either be set previously or defined within
         ``**settings``.
 
         Parameters
         ----------
-        MD_input : Trajectory
-            An MDMC ``Trajectory`` from which to calculate ``SQw``
+        MD_input : CompactTrajectory
+            An MDMC ``CompactTrajectory`` from which to calculate ``SQw``
         verbose: int, optional
             The level of verbosity:
             Verbose level 0 gives no information.
@@ -343,21 +339,28 @@ class AbstractSQw(SQwMixins, Observable):
             ``use_average`` (`bool`)
                 Optional parameter if a list of more than one ``Trajectory`` is used. If set to
                 True (default) then the mean value for S(Q, w) is calculated. Also, the errors
-                are set to the standard deviation calculated over the list of ``Trajectory``
-                objects.
+                are set to the standard deviation calculated over the list of
+                ``CompactTrajectory`` objects.
              ``cont_slicing`` (`bool`)
                 Flag to decide between two possible behaviours when the number of ``MD_steps`` is
                 larger than the minimum required to calculate the observables. If ``False``
-                (default) then the ``Trajectory`` is sliced into non-overlapping
-                sub-``Trajectory`` blocks for each of which the observable is calculated. If
-                ``True``, then the ``Trajectory`` is sliced into as many non-identical
-                sub-``Trajectory`` blocks as possible (with overlap allowed).
+                (default) then the ``CompactTrajectory`` is sliced into non-overlapping
+                sub-``CompactTrajectory`` blocks for each of which the observable is calculated.
+                If ``True``, then the ``CompactTrajectory`` is sliced into as many non-identical
+                sub-``CompactTrajectory`` blocks as possible (with overlap allowed).
         """
 
         self._origin = 'MD'
         SQw_list = []
         use_average = settings.get('use_average', True)
         cont_slicing = settings.get('cont_slicing', False)
+
+        try:
+            override_dimensions = settings['dimensions']
+        except KeyError:
+            pass
+        else:
+            MD_input.setDimensions(np.array(override_dimensions))
 
         # adds resolution attribute if it doesn't already exist
         if self.resolution is None:
@@ -373,22 +376,33 @@ class AbstractSQw(SQwMixins, Observable):
         if not hasattr(self, 'independent_variables'):
             self.independent_variables = {}
 
-        # Extract information that should be constant throughout the Trajectory and hence the
+        # Extract information that should be constant throughout the trajectory and hence the
         # subtrajectories (if there are any)
         t = MD_input.times - MD_input.times[0]
         dt = t[1] - t[0]
         if self.maximum_frames():
             t = t[0:self.maximum_frames()]
 
-        try:
-            self.universe_dimensions = MD_input[0].dimensions
-        except AttributeError:
+        if MD_input.is_fixedbox:
             try:
-                self.universe_dimensions = np.array(settings['dimensions'])
-            except KeyError as error:
-                raise AttributeError('Either trajectory requires a dimensions'
-                                     ' attribute or dimensions must be passed'
-                                     ' when calling calculate_from_MD') from error
+                self.universe_dimensions = MD_input.dimensions
+            except AttributeError:
+                try:
+                    self.universe_dimensions = np.array(settings['dimensions'])
+                except KeyError as error:
+                    raise AttributeError('Either trajectory requires a dimensions'
+                                        ' attribute or dimensions must be passed'
+                                        ' when calling calculate_from_MD') from error
+        else: # If the dimensions of the simulation box are not fixed, we use the first value
+            try:
+                self.universe_dimensions = MD_input.changing_dimensions[0]
+            except AttributeError:
+                try:
+                    self.universe_dimensions = np.array(settings['dimensions'])
+                except KeyError as error:
+                    raise AttributeError('Either trajectory requires a dimensions'
+                                        ' attribute or dimensions must be passed'
+                                        ' when calling calculate_from_MD') from error
 
         # Test that, if there is an existing E, it is consistent with E
         # calculated from trajectory times
@@ -404,7 +418,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             pass
 
-        #slice trajectory up if possible and requested by user:
+        # Slice trajectory up if possible and requested by user:
         if self.maximum_frames() and use_average:
             trajectories = slice_trajectory(trj=MD_input, subtrj_len=self.maximum_frames(),
                                             cont_slicing=cont_slicing)
@@ -413,7 +427,7 @@ class AbstractSQw(SQwMixins, Observable):
             trajectories = [MD_input]
             trj_sliced = False
 
-        # Perform calculations for each Trajectory
+        # Perform calculations for each trajectory
         for trajectory in trajectories:
             self.trajectory = trajectory
 
@@ -423,8 +437,8 @@ class AbstractSQw(SQwMixins, Observable):
                     assert_allclose(self.trajectory.times -
                                     self.trajectory.times[0], t, rtol=1e-7, atol=1e-3)
                 except AssertionError as error:
-                    msg = ('The `times` of the current `Trajectory` were not '
-                           'consistent with the first `Trajectory` passed')
+                    msg = ('The `times` of the current `CompactTrajectory` were not '
+                           'consistent with the first `CompactTrajectory` passed')
                     raise AssertionError(msg) from error
             try:
                 assert_allclose(self.universe_dimensions,
@@ -433,8 +447,8 @@ class AbstractSQw(SQwMixins, Observable):
                 # May not have dimensions set, in which case pass
                 pass
             except AssertionError as error:
-                msg = ('The `dimensions` of the current `Trajectory` were not '
-                       'consistent with the first `Trajectory` passed')
+                msg = ('The `dimensions` of the current `CompactTrajectory` were not '
+                       'consistent with the first `CompactTrajectory` passed')
                 raise AssertionError(msg) from error
 
             fqt_type = self._get_fqt_type()
@@ -456,7 +470,7 @@ class AbstractSQw(SQwMixins, Observable):
         self._dependent_variables = {'SQw': SQw_output}
         self._errors = {'SQw': errors_output}
 
-    def _get_fqt_type(self):
+    def _get_fqt_type(self) -> str:
         """
         Gets the name of the FQt type associated with each SQw type.
         """
@@ -466,14 +480,15 @@ class AbstractSQw(SQwMixins, Observable):
         return fqt_types[self.__class__.__name__]
 
     @staticmethod
-    def calculate_E(nE: int, dt: float):
+    def calculate_E(nE: int, dt: float) -> np.ndarray:
         r"""
         Calculates an array of ``nE`` uniformly spaced energy values from the
-        time separation of the ``Trajectory`` frames, ``dt``. The frequencies
-        are determined by the Fast Fourier Transform, as implemented by numpy,
-        for ``2 * nE`` points in time which we then crop to only include ``nE``
-        positive frequencies. As we are dealing with frequency rather than
-        angular frequency here, the relation to between energy is given by:
+        time separation of the ``CompactTrajectory`` frames, ``dt``. The
+        frequencie are determined by the Fast Fourier Transform, as implemented
+        by numpy, for ``2 * nE`` points in time which we then crop to only
+        include ``nE`` positive frequencies. As we are dealing with frequency
+        rather than angular frequency here, the relation to between energy
+        is given by:
 
         .. math::
 
@@ -496,7 +511,7 @@ class AbstractSQw(SQwMixins, Observable):
         # factor of 1e3 * 1e15 to convert it
         return h * 1e18 * np.fft.fftfreq(2 * int(nE), dt)[:int(nE)]
 
-    def calculate_dt(self):
+    def calculate_dt(self) -> float:
         r"""
         Calculates the time separation of frames required by the experimental
         dataset, assuming uniform spacing. Note that this may be different from
@@ -520,7 +535,7 @@ class AbstractSQw(SQwMixins, Observable):
         nE = len(self.E)
         return h * 1e18 * (nE - 1) / (2 * nE * (np.max(np.abs(self.E))))
 
-    def calculate_resolution_functions(self, dt):
+    def calculate_resolution_functions(self, dt: float) -> dict:
         """
         Generates a resolution function in momentum and time that can be used in the calculation of
         SQw. Note that this uses the ``SQw`` values of the ``Observable`` it is called from, and so
@@ -609,7 +624,7 @@ class AbstractSQw(SQwMixins, Observable):
         return {'SQw': data_interpol}
 
     @property
-    def dependent_variables_structure(self) -> Dict[str, list]:
+    def dependent_variables_structure(self) -> dict[str, list]:
         """
         The order in which the 'SQw' dependent variable is indexed in terms of 'Q' and 'E'.
         Explicitly: we have that self.SQw[Q_index, E_index] is the data point for
@@ -628,7 +643,7 @@ class AbstractSQw(SQwMixins, Observable):
         return {'SQw': ['Q', 'E']}
 
     @property
-    def uniformity_requirements(self) -> Dict[str, Dict[str, bool]]:
+    def uniformity_requirements(self) -> dict[str, dict[str, bool]]:
         """
         Captures the current limitations on the energy 'E' and reciprocal
         lattice points 'Q' within the dynamic structure factor ``Observables``.

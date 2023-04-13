@@ -9,7 +9,6 @@ from MDMC.common import decorators
 
 @pytest.fixture
 def docstring():
-
     """
     Returns
     -------
@@ -61,7 +60,6 @@ def docstring():
 
 @pytest.fixture
 def modified_docstring():
-
     """
     Returns
     -------
@@ -99,7 +97,6 @@ def modified_docstring():
 
 @pytest.fixture
 def wrap(docstring):
-
     """
     docstring wrapped with a line length of 40
     """
@@ -112,7 +109,6 @@ def wrap(docstring):
                                                       (60, 41),
                                                       (40, 48)])
 def test_wrap_docstring_wrapping(docstring, length, n_expected_lines):
-
     """
     This tests wrapping a docstring to a specific line length
 
@@ -129,7 +125,6 @@ def test_wrap_docstring_wrapping(docstring, length, n_expected_lines):
 
 @pytest.mark.parametrize('length', [16, 10])
 def test_wrap_docstring_invalid_length(docstring, length):
-
     """
     Tests that a wrapping length greater than the number of characters in one or
     more indents raises a ValueError
@@ -148,7 +143,6 @@ def test_wrap_docstring_blank_lines(docstring, wrap):
 
 
 def test_wrap_docstring_indentation(wrap):
-
     """
     Tests that indentation is maintained
     """
@@ -166,7 +160,6 @@ def test_wrap_docstring_indentation(wrap):
 
 
 def test_wrap_docstring_math():
-
     """
     Tests that text wrapping doesn't prepend text in front of a math command,
     which would stop the command functioning
@@ -183,14 +176,12 @@ def test_wrap_docstring_math():
 
 
 def test_set_docstring_function(docstring):
-
     """
     Tests setting a docstring to a function
     """
 
     @decorators.set_docstring(docstring)
     def test_func():
-
         """
         This docstring should be overwritten
         """
@@ -201,7 +192,6 @@ def test_set_docstring_function(docstring):
 
 
 def test_set_docstring_method(docstring):
-
     """
     Tests setting a docstring to a method
     """
@@ -217,7 +207,6 @@ def test_set_docstring_method(docstring):
 
 
 def test_set_docstring_class(docstring):
-
     """
     Tests setting a docstring to a class
     """
@@ -231,7 +220,6 @@ def test_set_docstring_class(docstring):
 
 
 def test_set_docstring_property(docstring):
-
     """
     Tests setting a docstring to a property
     """
@@ -253,14 +241,12 @@ def test_set_docstring_property(docstring):
 
 
 def test_mod_docstring_function(modified_docstring):
-
     """
     Tests modifying the docstring of a function
     """
 
     @decorators.mod_docstring(modified_docstring['replacements'])
     def test_func():
-
         """
         This is a docstring with parts to be replaced
 
@@ -285,7 +271,6 @@ def test_mod_docstring_function(modified_docstring):
 
 
 def test_mod_docstring_method(modified_docstring):
-
     """
     Tests modifying the docstring of a method
     """
@@ -294,7 +279,6 @@ def test_mod_docstring_method(modified_docstring):
 
         @decorators.mod_docstring(modified_docstring['replacements'])
         def test_method(self):
-
             """
             This is a docstring with parts to be replaced
 
@@ -320,14 +304,12 @@ def test_mod_docstring_method(modified_docstring):
 
 
 def test_mod_docstring_class(modified_docstring):
-
     """
     Tests modifying the docstring of a class
     """
 
     @decorators.mod_docstring(modified_docstring['replacements'])
     class TestClass:
-
         """
         This is a docstring with parts to be replaced
 
@@ -352,7 +334,6 @@ def test_mod_docstring_class(modified_docstring):
 
 
 def test_mod_docstring_property(modified_docstring):
-
     """
     Tests modifying the docstring of a property
     """
@@ -362,7 +343,6 @@ def test_mod_docstring_property(modified_docstring):
         @property
         @decorators.mod_docstring(modified_docstring['replacements'])
         def prop(self):
-
             """
             This is a docstring with parts to be replaced
 
@@ -392,7 +372,6 @@ def test_mod_docstring_property(modified_docstring):
 
 
 def test_repr_decorator():
-
     """
     Tests that calls repr_decorator implements a __repr__ method with the
     expected output

@@ -14,8 +14,6 @@ from copy import copy
 import logging
 
 import dlpoly.control
-from ase import Atoms, Atom
-from ase.io import write
 
 from dlpoly import DLPoly
 from dlpoly.species import Species
@@ -24,14 +22,17 @@ from dlpoly.new_control import NewControl as DLPControl
 from dlpoly.config import Config
 import numpy as np
 
+from ase import Atoms, Atom
+from ase.io import write
+
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, repr_decorator
 from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import (Atom as MAtom,
                                 Molecule as MMolecule)
+from MDMC.MD.interactions import Bond as MBond
 from MDMC.common.units import Unit
-from MDMC.trajectory_analysis.trajectory import (Trajectory,
-                                                 TemporalConfiguration)
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition_interactions
 
 if TYPE_CHECKING:
@@ -361,13 +362,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         self.dlpoly.control['time_run'] = (n_steps, 'steps')
         self.dlpoly.workdir = work_dir
         # pylint: disable=c-extension-no-member, too-many-lines
-        self.dlpoly.run(numProcs=1, outputFile=output_log)
+        self.dlpoly.run(numProcs=settings.get('numprocs',1), outputFile=output_log,
+                        mpi="mpirun --allow-run-as-root -n")
         print("update coordinates from ", self.dlpoly.control['io_file_revcon'])
         self.dlpoly.dest_config = 'minim.config'
         self.dlpoly.load_config(self.dlpoly.control['io_file_revcon'])
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> Trajectory:
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
         Parses the trajectory from the ``DL_POLY`` format into MDMC format.
 
@@ -382,13 +384,13 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         Returns
         -------
-        ``Trajectory``
-            The MDMC ``Trajectory`` from the most recent production simulation
+        ``CompactTrajectory``
+            The MDMC ``CompactTrajectory`` from the most recent production simulation
 
         """
 
         def read_cell(f):
-            cell = np.zeros((3, 3))
+            cell = np.zeros((3, 3))  # The unit cell is a 3x3 array
             for i in range(3):
                 cell[i, :] = np.array([float(x) for x in f.readline().split()])
             return cell
@@ -396,12 +398,16 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         def read_line_as(f, typ):
             return list(map(typ, f.readline().split()))
 
-        def create_atom(f, level_of_detail):
+        def create_atom(f, level_of_detail, element_dict = None):
             # level_of_detail of information in the file, 0, indicates only positions,
             # 1 positions and velocities, 2 positions, velocities and forces
             # the first line gives the symbol, mass and atom_ID of the atom
-            symbol, _, mass_str, *_ = f.readline().split()
+            element, atom_ID_str, mass_str, charge_str, *_ = f.readline().split()
             mass = float(mass_str)
+            charge = float(charge_str)
+            atom_ID = int(atom_ID_str)
+            if element_dict is not None:
+                element_dict[atom_ID] = element
             # the next line gives the position of the atom
             pos = read_line_as(f, float)
             # the next line, if it exists, gives the velocity of the atom
@@ -411,21 +417,14 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                 vel = None
             # next line, if existent, gives the force on the atom. currently not used by MDMC
             if level_of_detail > 1:
-                force = read_line_as(f, float)
-            else:
-                force = None
-            _ = force
+                _ = read_line_as(f, float)  # this is actually force acting on the atom, never used
+            if vel is None:
+                return np.concatenate([pos, [mass, charge, atom_ID]])
+            return np.concatenate([pos, vel, [mass, charge, atom_ID]])
 
-            atom = MAtom(symbol, position=pos, mass=mass)
-            atom.atom_type = self.universe.element_dict[symbol].atom_type
-
-            if self.universe:
-                atom.universe = self.universe
-            if vel is not None:
-                atom.velocity = vel
-            return atom
-
-        atom_ids = settings.get('atom_IDs')
+        traj = CompactTrajectory()
+        element_dictionary = {}  # this one will store chemical element symbols per ID
+        # atom_ids = settings.get('atom_IDs')
         with open(self.dlpoly.control['io_file_history'], "r", encoding="ascii") as f:
             _ = f.readline()  # title
             level_of_detail, _, n_atoms, frames, *_ = read_line_as(f, int)  # imcon
@@ -433,30 +432,50 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             if self.universe:
                 assert n_atoms == len(self.universe.atoms)
 
-            configs = []
             end = stop or frames + 1
 
             take = range(start, end, step)
 
+            traj.preAllocate(n_steps = len(take), n_atoms = n_atoms,
+                useVelocity = level_of_detail >=1)
+            traj_step = 0
+            dlpoly_time_unit = SYSTEM['TIME']
+            time_conv = dlpoly_time_unit.conversion_factor
             for iframe in range(frames):
                 if iframe in take:
-                    time = float(f.readline().split()[-1])
-                    # Just skip, unused for the moment, will need to be
-                    # used for npt simulations
-                    read_cell(f)
+                    timestep_line = f.readline().split()
+                    time = float(timestep_line[-1]) * time_conv
+                    # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    # CompactTrajectory uses the System units (fs), DL_POLY uses ps.
+                    # time_conv is the conversion factor to re-calculate time into fs.
+                    dim3x3 = read_cell(f)
+                    dim = np.diagonal(dim3x3).copy()
 
-                    atoms = filter(lambda atom: not atom_ids or atom.ID in atom_ids,
-                                   (create_atom(f, level_of_detail) for _ in range(n_atoms))
-                                   )
-                    configs.append(
-                        TemporalConfiguration(
-                            convert_unit(time, unit=units.Unit('ps'), to_dlpoly=False), *atoms
-                        ))
+                    tempdata = np.row_stack([create_atom(f,
+                                                    level_of_detail,
+                                                    element_dict=element_dictionary)
+                                            for _ in range(n_atoms)])
+                    if level_of_detail:
+                        traj.writeOneStep(traj_step, time, tempdata[:,0:3], tempdata[:,3:6])
+                    else:
+                        traj.writeOneStep(traj_step, time, tempdata[:,0:3])
+                    mass_dictionary = {}
+                    for ind in range(len(tempdata)):
+                        mass_dictionary[int(tempdata[ind, -1])] = tempdata[ind, -3]
+                    traj.setCharge(tempdata[:, -2])
+                    traj.validateTypes(np.array([element_dictionary[int(x)]
+                                                 for x in tempdata[:, -1]]))
+                    traj.labelAtoms(element_dictionary, mass_dictionary)
+                    traj.setDimensions(dim, step_num=traj_step)
+                    traj_step += 1
                 else:  # Skip time + cell + atoms
-                    for _ in range(1 + 3 + n_atoms):
+                    # I added the level_of_detail here, since we can have
+                    # multiple lines per atom.
+                    for _ in range(1 + 3 + n_atoms * (level_of_detail + 1)):
                         f.readline()
 
-        return Trajectory(*configs)
+        traj.postProcess()
+        return traj
 
     def update_parameters(self) -> None:
 
@@ -758,20 +777,21 @@ class DLPOLYUniverse(DLPOLYAttribute):
         for bond, atms in structure.bonded_interaction_pairs:
             current_atom = [mapping[atm.ID] for atm in atms]
             if bond.constrained:
-                if not isinstance(bond, Bond):
+                if not isinstance(bond, MBond):
                     raise NotImplementedError(f'{type(bond).__name__} constraints '
                                               'not supported in DLPOLY')
-
+                # print(bond.parameters)
+                # print(bond.parameters['equilibrium_state (#21)'])
                 pot = Bond('constraints',
                            ['',
                             *map(str, current_atom),
-                            str(bond.parameters[0].value.real)
+                            str(list(bond.parameters.values())[0].value.real)
                             ])
             else:
                 pot = Bond(BOND_CLASS_REF[type(bond).__name__],
                            [POTENTIAL_REF[bond.function.name],
                             *map(str, current_atom),
-                            *map(lambda x: str(x.value.real), bond.parameters)
+                            *map(lambda x: str(x.value.real), bond.parameters.values())
                             ])
             new_molecule.add_potential(current_atom, pot)
 
@@ -827,13 +847,13 @@ class DLPOLYUniverse(DLPOLYAttribute):
                 current_atom = [mapping[atm.ID] for atm in atms]
                 if bond.constrained:
                     pot = next(mol.get_pot(species=current_atom))
-                    pot.params = str(bond.parameters[0].value.real)
+                    pot.params = str(list(bond.parameters.values())[0].value.real)
 
                 else:
                     pot = next(mol.get_pot(species=current_atom,
                                            potClass=BOND_CLASS_REF[type(bond).__name__],
                                            potType=POTENTIAL_REF[bond.function.name]))
-                    pot.params = [*map(lambda x: str(x.value.real), bond.parameters)]
+                    pot.params = [*map(lambda x: str(x.value.real), bond.parameters.values())]
 
     def apply_constraints(self) -> None:
         """
@@ -865,7 +885,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
         which results in a new ``dlpoly-py`` object being initialised.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame
+        ``CompactTrajectory`` frame
     time_step : float, optional
         Simulation timestep in ``fs``, default is ``1.``
     **settings
@@ -880,7 +900,7 @@ class DLPOLYSimulation(DLPOLYAttribute):
         The time difference between MD simulation steps in fs.
     traj_step : int
         Number of simulation steps that elapse
-        between the ``Trajectory`` being stored.
+        between the ``CompactTrajectory`` being stored.
     ensemble : DLPOLYEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     **settings

@@ -1,13 +1,14 @@
 """Readers for dynamic data"""
 
+import logging
 from typing import IO
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
 
+logger = logging.getLogger(__name__)
 
 class MantidSQw(SQwReader):
-
     """
     A class for reading SQw files from Mantid
 
@@ -33,7 +34,6 @@ class MantidSQw(SQwReader):
         File containing the errors on the dependent variables, default=None
     file_variables : file
         File containing the variables for each detector ID or Q
-
     """
 
     def __init__(self, file_name: str):
@@ -90,7 +90,13 @@ class MantidSQw(SQwReader):
 
         # Mantid sets errors to 0 if the corresponding datum is 0.  Change these to
         # inf so that error calculations can still be performed on them.
-        self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+        if np.any(self.SQw_err <= 0.):
+            self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
+            msg = "We have set the error bar to infinity for any zero error values, this allows\
+                us to calculate chi-squared but effectively ignores these points, this may not\
+                be what you want to do, consider using a FoM which doesn't need errors if\
+                this is an issue"
+            logger.warning(msg)
 
     def parse_variables(self, file: IO) -> 'tuple[float]':
         """

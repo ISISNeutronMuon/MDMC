@@ -1,7 +1,8 @@
 """
 An example MDMC script for optimizing spce parameters for water at 263 K
 
-Water data provided by Bertil Halle. Ref: J. Chem. Phys. 134, 144508 (2011)
+Water data from ILL (IN5, 263K) provided by Bertil Halle. Ref: J. Chem. Phys. 134, 144508 (2011)
+Water data from ISIS (IRIS, 280K) provided by Spencer Howells
 """
 
 from MDMC.MD.interactions import Bond, BondAngle
@@ -37,11 +38,14 @@ O_dispersion = Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
 universe.add_force_field('SPCE')
 
 # MD Engine setup
+# NOTE: the temperatures of the measured data sets are:
+# B Halle / ILL data: 263K; S Howells / ISIS data: 280K
+# The below simulation object is for the ISIS data
 simulation = Simulation(universe,
                         engine="lammps",
-                        time_step=1.057564,
-                        temperature=263.,
-                        traj_step=1000)
+                        time_step=1.033916924,
+                        temperature=280.,
+                        traj_step=4000)
 
 # Energy Minimization and equilibration
 simulation.minimize(n_steps=5000)
@@ -49,38 +53,31 @@ simulation.run(n_steps=25000, equilibration=True)
 
 # Setup refinement
 
-# exp_datasets is a list of dictionaries with one dictionary per experimental dataset
-exp_datasets = [{'file_name':data.READER_DATA['LAMPSQw'],
+# in general exp_datasets is a list of dictionaries with one dictionary per experimental dataset
+# below are 2 separate objects for the 2 datasets as they were measured at different temperatures
+exp_dataset_ILL = [{'file_name':data.READER_DATA['LAMPSQw'],
                  'type':'SQw',
                  'reader':'LAMPSQw',
                  'weight':1.}]
+exp_dataset_ISIS = [{'file_name':data.READER_DATA['MantidSQw_one_file'],
+                 'type':'SQw',
+                 'reader':'MantidSQw',
+                 'weight':1.,
+                 'resolution':data._ABS_DIR_PATH+'/experimental_data/IRIS_26173_water_data_resolution.dat'}]
 
 # Fit parameters is a set(?) of all unique fit parameters in the universe which can then be filtered.
-for p in universe.parameters:
-    if p.name != 'epsilon':
+for p in universe.parameters.as_array:
+    if p.type != 'epsilon':
         p.fixed = True
 
 fit_parameters = universe.parameters
 control = Control(simulation=simulation,
-                  exp_datasets=exp_datasets,
+                  exp_datasets=exp_dataset_ISIS,
                   fit_parameters=fit_parameters,
                   MC_norm=1,
                   minimizer_type="MMC",
-                  MD_steps=208000,
+                  MD_steps=804000,
                   energy_resolution=13.6)
-
-# Bertil Halle water data is non-symmetric. Consider only a subset of the
-# data in this example.
-# So that the MD simulation size can be minimized, the Q min is increased and
-# the Q resolution is reduced.
-exp_obs = control.observable_pairs[0].exp_obs
-Q_slice = slice(6, len(exp_obs.Q), 2)
-Q = exp_obs.Q[Q_slice]
-E_range = (exp_obs.E >=0)
-E = exp_obs.E[E_range]
-# copy the updated E values, and Q values back to the control.observable
-control.observable_pairs[0].exp_obs.independent_variables = {'E':E, 'Q':Q}
-control.observable_pairs[0].MD_obs.independent_variables = {'E':E, 'Q':Q}
 
 # Run refinement
 control.refine(n_steps=0)

@@ -4,7 +4,7 @@ from math import ceil
 
 import numpy as np
 import pytest
-from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
+from pytest_cases import parametrize, fixture_ref
 
 from MDMC.common.units import Unit, UnitFloat
 from MDMC.MD.interaction_functions import (Buckingham, Coulomb,
@@ -44,7 +44,6 @@ VAL_DICT = {'aa': UnitFloat(5, 'arb'),
 
 @pytest.fixture
 def parameters():
-
     """
     Returns
     -------
@@ -58,7 +57,6 @@ def parameters():
 
 @pytest.fixture
 def interaction_func():
-
     """
     Returns
     -------
@@ -71,7 +69,6 @@ def interaction_func():
 
 @pytest.fixture
 def buckingham():
-
     """
     Returns
     -------
@@ -84,7 +81,6 @@ def buckingham():
 
 @pytest.fixture
 def coulomb():
-
     """
     Returns
     -------
@@ -96,7 +92,6 @@ def coulomb():
 
 @pytest.fixture
 def coulombic(coulomb):
-
     """
     Returns
     -------
@@ -105,11 +100,10 @@ def coulombic(coulomb):
         InteractionFunction object, an empty universe, and one atom.
     """
 
-    return Coulombic(atom_types=[1], universe=Universe(1.0), function=coulomb)
+    return Coulombic(atom_types=[1], universe=Universe(1.0, verbose=False), function=coulomb)
 
 @pytest.fixture
 def harmonic():
-
     """
     Returns
     -------
@@ -123,7 +117,6 @@ def harmonic():
 
 @pytest.fixture
 def lennardjones():
-
     """
     Returns
     -------
@@ -136,7 +129,6 @@ def lennardjones():
 
 @pytest.fixture
 def periodic():
-
     """
     Returns
     -------
@@ -149,7 +141,6 @@ def periodic():
 
 
 def test_interaction_function_get_parameters(interaction_func):
-
     """
     Tests that the correct parameters are returned when retrieving them from
     an already-initialized InteractionFunction object.
@@ -160,7 +151,6 @@ def test_interaction_function_get_parameters(interaction_func):
 
 
 def test_interaction_function_set_parameters(interaction_func, parameters):
-
     """
     Tests that the parameters of an InteractionFunction can be set.
     """
@@ -171,7 +161,6 @@ def test_interaction_function_set_parameters(interaction_func, parameters):
 
 
 def test_interaction_function_parameters_values(interaction_func):
-
     """
     Tests that retrieval of the values of the parameters set during
     initialization of an InteractionFunction object returns the correct values.
@@ -182,7 +171,6 @@ def test_interaction_function_parameters_values(interaction_func):
 
 
 def test_interaction_function_name(interaction_func):
-
     """
     Tests that the initialization of an InteractionFunction object has the
     correct name.
@@ -193,7 +181,6 @@ def test_interaction_function_name(interaction_func):
 
 @pytest.mark.filterwarnings("ignore: Coulombic")
 def test_interaction_function_set_parameters_inters(interaction_func, coulombic):
-
     """
     Tests that the parent interaction for all Parameters of the
     InteractionFunction object can be set to a Coulombic Interaction object.
@@ -218,7 +205,6 @@ def test_interaction_function_set_parameters_inters(interaction_func, coulombic)
                            ['K1', 'K2', 'K3', 'K4', 'd1', 'd2', 'd3', 'd4',
                             'n1', 'n2', 'n3', 'n4'])])
 def test_interaction_function_subclass_parameters(obj, values, names):
-
     """
     Tests that initializing a subclass of InteractionFunction assigns the
     correct values and names to the parameters.
@@ -238,7 +224,6 @@ def test_interaction_function_subclass_parameters(obj, values, names):
                           (fixture_ref(periodic), ['K1', 'n1', 'd1', 'K2', 'n2', 'd2',
                                         'K3', 'n3', 'd3', 'K4', 'n4', 'd4'])])
 def test_interaction_function_attributes(inter_func, parameters, request):
-
     """
     Tests that initializing a subclass of InteractionFunction creates an
     attribute with the name of each Parameter passed to __init__
@@ -285,7 +270,6 @@ def test_interaction_function_attributes(inter_func, parameters, request):
                            {'epsilon':LJ_EPSILON_UNIT,
                             'sigma':LJ_SIGMA_UNIT})])
 def test_interaction_function_units(inter_func, units):
-
     """
     Tests that the units of the parameters of all subclasses of
     InteractionFunction (except HarmonicPotential) are set correctly when using
@@ -310,7 +294,6 @@ def test_interaction_function_units(inter_func, units):
                           ('improper', [HARMPOT_EQUIL_STATE_ANGLE_UNIT,
                                         HARMPOT_POT_STREN_ANGLE_UNIT])])
 def test_harmonic_potential_units(inter_type, units):
-
     """
     Tests that the units of the parameters of HarmonicPotential are set
     correctly, dependent on the interaction_type that is passed to it, for
@@ -333,7 +316,6 @@ def test_harmonic_potential_units(inter_type, units):
 
 
 def test_harmonic_potential_invalid_inter_type():
-
     """
     Tests that if an invalid interaction_type is passed to HarmonicPotential, it
     raises a ValueError
@@ -344,9 +326,8 @@ def test_harmonic_potential_invalid_inter_type():
 
 
 def test_harmonic_potential_no_inter_type():
-
     """
-    Tests that if an interaction_type is no passed to HarmonicPotential, it
+    Tests that if a `bond` interaction_type is passed to HarmonicPotential, it
     raises a TypeError
     """
 
@@ -363,7 +344,6 @@ def test_harmonic_potential_no_inter_type():
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 9.9),
                           {'K1':3., 'n1':1, 'd1':2.}])
 def test_periodic_init(parameters):
-
     """
     Tests that initializing a Periodic InteractionFunction of different orders
     (first, second, third, and fourth) produces the expected parameters
@@ -410,7 +390,6 @@ def test_periodic_init(parameters):
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1),
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1, 19., 10.)])
 def test_periodic_invalid_num_parameters(parameters):
-
     """
     Tests that initializing a Periodic InteractionFunction with the incorrect
     number of parameters (i.e. not a multiple of 3), raises a TypeError
@@ -429,7 +408,6 @@ def test_periodic_invalid_num_parameters(parameters):
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., 1.6, 9.9),
                           (5., 1., 0.5, 7., 3., 8., 9., 0., 7., 4., 1., 9.9)])
 def test_periodic_init_types(parameters):
-
     """
     Tests that initializing a Periodic InteractionFunction with an n value (of
     any order) which is not an int, raises a TypeError
@@ -445,7 +423,6 @@ def test_periodic_init_types(parameters):
                           (5., 1, 0.5, 7., 3, 8., 9., 0, 7.5, 4., -1, 9.9),
                           (5., -1, 0.5, 7., -3, 8., 9., -10, 7., 4., -1, 9.9)])
 def test_periodic_init_values(parameters):
-
     """
     Tests that initializing a Periodic InteractionFunction with an n value (of
     any order) which is negative, raises a ValueError

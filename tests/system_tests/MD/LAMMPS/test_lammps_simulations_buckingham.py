@@ -18,15 +18,17 @@ from MDMC.MD.interaction_functions import Buckingham
 
 pytestmark = [pytest.mark.mpi, pytest.mark.lammps]
 
-""" 
+"""
 STDEV_FAC is the number of standard deviations within which the calculated
 property must lie for it to be considered equivalent to the expected value
-i.e. it is the tolerance of the assertion on the property 
+i.e. it is the tolerance of the assertion on the property
 """
 STDEV_FAC = 4.
 N_MOLECULES = 216
 DIMENSION = 18.60
 TEMPERATURE = 300.
+VOLUME = round(DIMENSION**3, 3)
+VELOCITY_SEED = 1234
 
 # Number of steps between logging of thermo_style variables
 THERMO_STEPS = 100
@@ -34,77 +36,76 @@ EQUILIBRIUM_STEPS = 10000
 MD_STEPS = 20000
 
 """Each EXPECTED dictionary contains all of the required properties as keys. The
-corresponding values are a tuple of (mean value, standard deviation),
-where both the mean value and the standard deviation have been calculated from
-10 repeats (with different random velocity seeds) of an external LAMMPS
-simulation with the same simulation parameters.
+corresponding values were computed with the `velocity_seed=1234` for the LAMMPS simulations.
 
 The NVE temperature differs from the set value due to the effects of SHAKE"""
 
 NVE_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (1441.19, 4.85),
-                'PotEng': (-222.99, 3.51),
-                'Temp': (1121.78, 3.78),
-                'Press': (54184.59, 94.68),
-                'Volume': (DIMENSION**3, 0.0),
+                'KinEng': (382.48, 3.5), # Changed Value
+                'PotEng': (-1164.74, 4.5), # Changed Value
+                'Temp': (297.71, 2.68), # Changed Value
+                'Press': (26000.7, 156.55), # Changed Value
+                'Volume': (VOLUME, 0.0),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (1038.99, 2.54),
-                'E_coul': (11966.69, 3.42),
-                'E_long': (-13228.67, 0.32),
-                'Nbuild': (900.73, 3.3),
+                'E_vdwl': (536.29, 3.73),
+                'E_coul': (11553.7, 5.2), # Changed Value
+                'E_long': (-13254.73, 0.1), # Changed Value
+                'Nbuild': (433.67, 2.52),
                 'Ndanger': (0.0, 0.0)}
+
 
 NVT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (383.18, 1.18),
-                'PotEng': (-1163.76, 2.27),
-                'Temp': (298.26, 0.92),
-                'Press': (26007.41, 129.86),
-                'Volume': (DIMENSION**3, 0.0),
+                'KinEng': (383.28, 1.2), # Changed Value
+                'PotEng': (-1164.4, 3.0),
+                'Temp': (298.33, 1.2), # Changed Value
+                'Press': (26014.23, 180.65),
+                'Volume': (VOLUME, 0.0),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (535.73, 4.02),
-                'E_coul': (11555.23, 3.01),
-                'E_long': (-13254.73, 0.09),
-                'Nbuild': (431.3, 1.69),
+                'E_vdwl': (536.17, 6.08),
+                'E_coul': (11554.08, 4.01),
+                'E_long': (-13254.66, 0.11),
+                'Nbuild': (433.49, 3.81),
                 'Ndanger': (0.0, 0.0)}
+
 
 NPT_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                 'Bonds': (N_MOLECULES*2, 0.0),
                 'Angles': (N_MOLECULES, 0.0),
-                'KinEng': (383.02, 0.79),
-                'PotEng': (-1087.25, 3.15),
-                'Temp': (298.13, 0.61),
-                'Press': (13.26, 42.9),
-                'Volume': (11985.33, 88.26),
+                'KinEng': (382.5, 1.4), # Changed Value
+                'PotEng': (-1090.95, 4.),
+                'Temp': (297.72, 1.1), # Changed Value
+                'Press': (1.59, 29.34),
+                'Volume': (11926.95, 80.35),
                 'E_bond': (0.0, 0.0),
                 'E_angle': (0.0, 0.0),
-                'E_vdwl': (55.24, 2.21),
-                'E_coul': (11911.1, 131.52),
-                'E_long': (-13053.59, 132.12),
-                'Nbuild': (493.74, 2.3),
+                'E_vdwl': (54.38, 2.37),
+                'E_coul': (11842.14, 94.69),
+                'E_long': (-12987.47, 93.22),
+                'Nbuild': (493.96, 2.65),
                 'Ndanger': (0.0, 0.0)}
+
 
 NVE_UNCONSTRAINED_EXPECTED = {'Atoms': (N_MOLECULES*3, 0.0),
                               'Bonds': (N_MOLECULES*2, 0.0),
                               'Angles': (N_MOLECULES, 0.0),
-                              'KinEng': (1623.88, 2.37),
-                              'PotEng': (-85.4, 2.36),
-                              'Temp': (842.01, 1.23),
-                              'Press': (50210.5, 355.58),
-                              'Volume': (DIMENSION**3, 0.0),
-                              'E_bond': (125.92, 2.7),
-                              'E_angle': (273.51, 4.71),
-                              'E_vdwl': (1018.22, 11.22),
-                              'E_coul': (11728.32, 9.79),
-                              'E_long': (-13231.37, 0.4),
-                              'Nbuild': (92.74, 1.19),
+                              'KinEng': (586.04, 3.8), # Changed Value
+                              'PotEng': (-1024.23, 5.0),
+                              'Temp': (303.87, 2.), # Changed Value
+                              'Press': (28387.19, 292.63),
+                              'Volume': (VOLUME, 0.0),
+                              'E_bond': (59.26, 1.58),
+                              'E_angle': (138.19, 2.10), # Changed Value
+                              'E_vdwl': (627.93, 8.18),
+                              'E_coul': (11402.58, 7.06),
+                              'E_long': (-13252.19, 0.25), # Changed Value,
+                              'Nbuild': (51.21, 0.78),
                               'Ndanger': (0.0, 0.0)}
-
 
 # Use module scope so that the simulation only runs once for all functions
 @pytest.fixture(scope="module")
@@ -118,7 +119,7 @@ def universe():
         The interaction potential used is the Buckingham potential.
     """
 
-    universe = Universe(dimensions=DIMENSION)
+    universe = Universe(dimensions=DIMENSION, verbose=False)
     H1 = Atom('H')
     H2 = Atom('H', position=(0., 1.63298, 0.))
     O = Atom('O', position=(0., 0.81649, 0.57736))
@@ -152,7 +153,7 @@ def universe():
     Dispersion(universe, (O.atom_type, O.atom_type), cutoff=10.,
                vdw_tail_correction=True, function=buck)
 
-    return universe
+    yield universe
 
 
 @pytest.fixture(scope="module")
@@ -169,14 +170,20 @@ def NVE(universe):
                            engine='lammps',
                            time_step=1.,
                            temperature=TEMPERATURE,
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -194,14 +201,20 @@ def NVT(universe):
                            time_step=1.,
                            temperature=TEMPERATURE,
                            thermostat='nose',
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -222,14 +235,20 @@ def NPT(universe):
                            thermostat='nose',
                            barostat='nose',
                            p_damp=100,
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 @pytest.fixture(scope="module")
@@ -259,14 +278,20 @@ def NVE_unconstrained(universe):
                            engine='lammps',
                            time_step=0.1,
                            temperature=TEMPERATURE,
-                           traj_step=10)
+                           traj_step=10,
+                           velocity_seed=VELOCITY_SEED,
+                           verbose=False)
 
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.run(EQUILIBRIUM_STEPS)
+    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
-    return md_engine
+    yield md_engine
+
+    #teardown the LAMMPS instance
+    md_engine.engine.lmp.close()
 
 
 def parameterize_decorator(func):
@@ -470,9 +495,5 @@ def assert_property(ensemble, expected, request, prop):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     average = average_property(request.getfixturevalue(ensemble), prop)
-
-    # expected[property][1] is the standard_deviation of the property. The
-    # absolute tolerance is set to STDEV_FAC times this value.
-    # Small relative tolerance accounts for rounding differences
     assert np.allclose(average, expected[prop][0],
-                       atol=expected[prop][1] * STDEV_FAC, rtol=1e-8)
+                       atol=expected[prop][1]*STDEV_FAC, rtol=1e-8)

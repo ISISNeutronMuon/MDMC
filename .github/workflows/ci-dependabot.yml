@@ -3,6 +3,7 @@ name: Dependabot CI
 # as Dependabot does not have access to regular secrets
 on:
   pull_request:
+  workflow_dispatch:
   
 jobs:
   tests:
@@ -11,7 +12,7 @@ jobs:
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Build Docker container
       env:
         BRANCH: ${{ github.head_ref }} 

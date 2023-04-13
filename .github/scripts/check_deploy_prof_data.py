@@ -54,10 +54,13 @@ def main():
     print(percentage_time)
     summary['% time'] = percentage_time
     if args.compare:
-        master = pd.read_csv(args.compare)
+        # we drop duplicate tests in master to avoid memory leak (issue #1032)
+        master = pd.read_csv(args.compare).drop_duplicates(subset=['name'])
         summary = compare_times(master, summary).sort_values(by='change')
 
-    summary = summary.sort_values(by='tottime', ascending=False)
+    # sort values and drop duplicate tests (which sometimes slip through)
+    # TODO: fix duplicate tests from appearing in a more elegant way
+    summary = summary.sort_values(by='tottime', ascending=False).drop_duplicates(subset=['name'])
 
     # get all significantly slower tests
     # if we haven't got a change column (if getting master has failed)

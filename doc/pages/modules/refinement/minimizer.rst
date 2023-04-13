@@ -1,4 +1,4 @@
 minimizer
 =========
-.. automodule:: MDMC.refinement.minimizer
+.. automodule:: MDMC.refinement.minimizers
     :members:

@@ -1,5 +1,7 @@
-""" This is a module for reading TINKER .prm files and converting them to MDMC
-force field python files."""
+"""
+This is a module for reading TINKER .prm files and converting them to MDMC
+force field python files.
+"""
 
 from datetime import datetime
 import os
@@ -15,7 +17,7 @@ from MDMC.common import units
 from MDMC.MD import force_fields
 
 
-def read_prm(fname, ncols=14):
+def read_prm(fname: str, ncols: int = 14) -> "pd.DataFrame":
     """
     Reads a TINKER prm (force field) file
 
@@ -43,7 +45,7 @@ def read_prm(fname, ncols=14):
                        header=None, names=dummy_headers(0, 14))
 
 
-def parse_prm(dataframe):
+def parse_prm(dataframe: "pd.DataFrame") -> "tuple[pd.DataFrame]":
     """
     Parses a prm file into DataFrames
 
@@ -125,13 +127,19 @@ def parse_prm(dataframe):
     return atoms, disps, bonds, angles, impropers, propers
 
 
-def write_force_field_module(fname, atoms, *interactions, path=None,
-                             module_docstring=None, class_docstring=None,
+def write_force_field_module(fname: str,
+                             atoms: "pd.DataFrame",
+                             *interactions: "pd.DataFrame",
+                             path: str = None,
+                             module_docstring: str = None,
+                             class_docstring: str = None,
                              **settings):
     """
+    Parameters
+    ----------
     atoms : pandas.DataFrame
     *interactions
-        pandas.DataFrame
+        An arbitrary number of `pandas.DataFrame` objects
     fname : str
         name of the module (excluding the file extension) and the class
     module_docstring : str
@@ -177,7 +185,7 @@ def write_force_field_module(fname, atoms, *interactions, path=None,
     # Use pandas to output as CSV
 
 
-def write_data(fname, atoms, path=None, **settings):
+def write_data(fname: str, atoms: "pd.DataFrame", path: str = None, **settings: dict) -> None:
     """
     Writes force field data to a .dat file.
 
@@ -226,7 +234,7 @@ def write_data(fname, atoms, path=None, **settings):
             data.to_csv(out_datafile, sep='\t', index=False)
 
 
-def dummy_headers(start, end):
+def dummy_headers(start: int, end: int) -> "list[str]":
     """
     Generates dummy headers c0, c1, c2, ... until end (exclusive)
 
@@ -246,7 +254,7 @@ def dummy_headers(start, end):
     return ['c{0}'.format(i) for i in range(start, end)]
 
 
-def parse_dataframe(dataframe, drop, names):
+def parse_dataframe(dataframe: "pd.DataFrame", drop: list, names: list) -> pd.DataFrame:
     """
     Parses a dataframe containing single datatype (e.g. atom or angles) by
     dropping any unnecessary columns and setting correct header names
@@ -277,7 +285,7 @@ def parse_dataframe(dataframe, drop, names):
     return dataframe
 
 
-def convert_units(series):
+def convert_units(series: "pd.Series") -> None:
     """
     Converts from TINKER units (kcal) to kJ
 

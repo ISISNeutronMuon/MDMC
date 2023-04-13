@@ -6,8 +6,10 @@ import textwrap
 from types import FunctionType
 from typing import Optional, Callable, Union
 import weakref
+from time import time
 
 from MDMC.common.units import UnitFloat, unit_array
+from MDMC.common.time_keeper import TimeKeeper
 
 
 def unit_decorator(unit: Union[str, None]) -> Callable:
@@ -314,7 +316,7 @@ def mod_docstring(replacements: 'dict[str, str]') -> Callable:
     return decorator
 
 
-def wrap_docstring(docstring: str, line_length: int) -> Callable:
+def wrap_docstring(docstring: str, line_length: int) -> str:
     """
     Wraps a docstring to a specific line length.
 
@@ -478,3 +480,26 @@ def weakref_cache(maxsize=128) -> Callable:
         return inner
 
     return wrapper
+
+def time_function_execution(func) -> Callable:
+    """
+    Creates an instance of the TimeKeeper and stores the
+    function execution time in TimeKeeper's class attributes.
+
+    This decorator is meant to be used on functions that are
+    likely to be using up too much CPU time, so the scale
+    of the problem can be assessed.
+    """
+    def decorated_func(*args, **kwargs):
+        tk = TimeKeeper()
+        fname = " ".join(str(x) for x in [func.__name__, 'in', func.__module__])
+        # print(fname)
+        # print(args)
+        # print(kwargs)
+        tk.function_called(fname)
+        start_time = time()
+        results = func(*args, **kwargs)
+        end_time = time()
+        tk.time_passed(fname, abs(end_time-start_time))
+        return results
+    return decorated_func

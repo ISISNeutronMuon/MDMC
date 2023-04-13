@@ -19,12 +19,6 @@ variables when they are read from ``PyLammps`` e.g.
 A minor bug in LAMMPS (Dec 2018 version) means that ``nangletypes`` returned
 by ``PyLammps`` is incorrectly set to ``ndihedraltypes``.  This was corrected in
 Mar 2020 release.
-
-The PyLammps class (which is what MDMC interfaces to) only outputs on the rank 0
-process when using MPI. This means that accessing PyLammps properties should
-only be done on rank 0, and broadcast to other ranks if necessary. This is also
-true of calls to PyLammps.eval, and may also occur in other cases (anything that
-ends up using the OutputCapture class).
 """
 from __future__ import annotations
 
@@ -36,8 +30,8 @@ import logging
 from random import randint
 from tempfile import NamedTemporaryFile
 from typing import Union
+import os
 
-from mpi4py import MPI
 import numpy as np
 
 try:
@@ -57,16 +51,12 @@ from MDMC.MD.engine_facades.facade import MDEngine
 from MDMC.MD.structures import Atom
 from MDMC.MD.interactions import BondedInteraction, Interaction, \
     NonBondedInteraction, Bond, BondAngle
-from MDMC.trajectory_analysis.trajectory import TemporalConfiguration, \
-    Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.partitioning import partition, partition_interactions
 
 LOGGER = logging.getLogger(__name__)
 
-
-# pylint: disable=c-extension-no-member, too-many-lines
-# to avoid MPI warnings
-
+# pylint: disable=too-many-lines
 
 class PyLammpsAttribute:
 
@@ -93,16 +83,10 @@ class PyLammpsAttribute:
 
     def __init__(self, lmp: PyLammps = None, atom_style: str = 'full'):
 
-        # Set communicator to MPI predefined intracommunicator instance which
-        # contains all processes
-        self.comm = MPI.COMM_WORLD
-
         if lmp:
             self.lmp = lmp
         else:
-            # Pass communicator to PyLammps to ensure consistency with process
-            # ranks
-            self.lmp = PyLammps(comm=self.comm)
+            self.lmp = PyLammps()
             self.lmp.units('real')
             self.lmp.atom_style(atom_style)
 
@@ -110,7 +94,7 @@ class PyLammpsAttribute:
                      ' instance %s.',
                      self.__class__,
                      self.lmp,
-                     self.comm,
+                     None,
                      atom_style,
                      'added to class' if lmp else 'created by class')
 
@@ -125,14 +109,9 @@ class PyLammpsAttribute:
                 Contains the properties of the simulation box.
         """
 
-        # PyLammps.system only exists on rank 0 process, so bcast. Conversion
-        # from System class (which is a namedtuple) to ordered dict required as
-        # System cannot be pickled
-        if self.comm.rank == 0:
-            system_state = self.lmp.system._asdict()
-        else:
-            system_state = None
-        system_state = self.comm.bcast(system_state, root=0)
+        # Conversion from System class (which is a namedtuple) to
+        # ordered dict required as System cannot be pickled
+        system_state = self.lmp.system._asdict()
         # Cast back to namedtuple to remain consist with LAMMPS system attribute
         return namedtuple('System', system_state.keys())(*system_state.values())
 
@@ -148,13 +127,8 @@ class PyLammpsAttribute:
             ``fix` which is applied
         """
 
-        # PyLammps.fixes only exists on rank 0 process, so bcast
-        if self.comm.rank == 0:
-            fixes = self.lmp.fixes
-        else:
-            fixes = None
-
-        return self.comm.bcast(fixes, root=0)
+        fixes = self.lmp.fixes
+        return fixes
 
     @property
     def fix_styles(self) -> "list[str]":
@@ -190,13 +164,8 @@ class PyLammpsAttribute:
         Dumps are LAMMPS commands which write atom quantities to file for
         specified timesteps
         """
-
-        # PyLammps.dumps only exists on rank 0 process, so bcast.
-        if self.comm.rank == 0:
-            dumps = self.lmp.dumps
-        else:
-            dumps = None
-        return self.comm.bcast(dumps, root=0)
+        dumps = self.lmp.dumps
+        return dumps
 
 
 @repr_decorator('lmp', 'lmp_universe', 'lmp_simulation')
@@ -421,18 +390,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             if 'traj1' in [dump['name'] for dump in self.dumps]:
                 self.lmp.undump('traj1')
             # Store the trajectory in a NamedTemporaryFile
-            if self.comm.rank == 0:
-                # pylint: disable=consider-using-with
-                # the file has to persist outside out of this method
-                self.trajectory_file = NamedTemporaryFile()
-                f_name = self.trajectory_file.name
-            else:
-                f_name = None
-            f_name = self.comm.bcast(f_name, root=0)
-            if self.comm.rank != 0:
-                # pylint: disable=consider-using-with
-                # the file has to persist outside out of this method
-                self.trajectory_file = open(f_name, encoding='UTF-8')
+            # pylint: disable=consider-using-with
+            self.trajectory_file = NamedTemporaryFile()
+            #     f_name = self.trajectory_file.name
+
             # Custom trajectory output just saves the atom ID, type and
             # positions
             LOGGER.debug('%s set trajectory dump output to %s',
@@ -458,9 +419,10 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.thermostat = None
 
     def convert_trajectory(self, start: int = 0, stop: int = None,
-                           step: int = 1, **settings: dict) -> Trajectory:
+                           step: int = 1, **settings: dict) -> CompactTrajectory:
         """
-        Converts between a LAMMPS trajectory dump and an MDMC ``Trajectory``
+        Converts between a LAMMPS trajectory dump and an MDMC
+        ``CompactTrajectory``
 
         The LAMMPS dump must include at least ``id``, ``atom_type``, and ``xyz``
         ``positions``. The ``xyz`` ``positions`` must be consecutive and in that
@@ -484,8 +446,9 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         Returns
         -------
-        ``Trajectory``
-            The MDMC ``Trajectory`` corresponding to the LAMMPS ``trajectory_file``
+        ``CompactTrajectory``
+            The MDMC ``CompactTrajectory`` corresponding to the LAMMPS
+            ``trajectory_file``.
 
         Raises
         ------
@@ -496,59 +459,40 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             If ``trajectory_file`` describes a triclinic universe.
         """
 
-        def create_atom(line: np.ndarray) -> Atom:
-            """
-            Create an MDMC ``Atom`` from a line in a LAMMPS dump (trajectory) file
-
-            At a minimum it will set the ``ID``, ``atom_type` and ``position`` of
-            the ``Atom``. It will also set the ``velocity`` if included in the line,
-            and the ``Universe``, if this was passed to ``convert_trajectory()``.
-
-            Parameters
-            ----------
-            line : numpy.ndarray
-                ``array`` containing a line from the ATOMS sections of a LAMMPS dump
-                file. The ``array`` must contain the atom ``ID``, the ``atom_type``,
-                and the ``x``, ``y``, and ``z`` (or scaled equivalents) components
-                of the ``position``, which are assumed to be adjacent. It will also
-                set the ``velocity`` of the atom if this is included in the line.
-
-            Returns
-            -------
-            ``Atom``
-                MDMC ``Atom`` object corresponding to the ``line``
-            """
-
-            atom_type = int(line[i_type])
-            # If distance units are same for MDMC and LAMMPS then
-            # don't call convert_units - currently hardcoded
-            # Same goes for velocity and time units
-            position = [float(splt) for splt in line[i_pos:i_pos+3]]
-            # Get symbol and mass from atom_type_properties
-            # Adjusted for 0 index
-            symbol, mass = self.lmp_universe.atom_type_properties[atom_type-1]
-            atom = Atom(symbol, position=position, mass=mass)
-            atom.atom_type = atom_type
-            if self.universe:
-                atom.universe = self.universe
-            if i_vel is not None:
-                atom.velocity = [float(splt) for splt
-                                 in line[i_vel:i_vel+3]]
-            return atom
-
         # Change expected position string if scaled positions are used
         pos_string = 'xs' if settings.get('scaled_positions', False) else 'x'
 
-        # ID is an acronym
-        # pylint: disable=invalid-name
-        atom_IDs = settings.get('atom_IDs')
-
-        configs = []
+        traj_dimensions = np.zeros(3)
         frame_n = start
         # Use count to create range so that stop can be undefined
         frame_indexes = count(start, step)
         # next_frame_n next attribute is assigned dynamically
         next_frame_n = next(frame_indexes)  # pylint: disable=no-member
+
+        traj = CompactTrajectory() #the instance of our new trajectory object
+
+        def _make_gen(reader):
+            """A support function for splitting a binary file into buffers
+
+            Args:
+                reader (file descriptor): an open file or a file-like object
+
+            Yields:
+                bytes: a byte string read from the file
+            """
+            b = reader(1024 * 1024)
+            while b:
+                yield b
+                b = reader(1024*1024)
+
+        # here we check how long the trajectory really is
+        with open(self.trajectory_file.name, 'rb') as file_handler:
+            file_generator = _make_gen(file_handler.raw.read)
+            line_count = sum( buf.count(b'\n') for buf in file_generator )
+        # And header_size will tell us how many lines per frame
+        # are added on top of the atom positions
+        header_size = 0
+
         with open(self.trajectory_file.name, 'r', encoding='UTF-8') as file_handler:
             line = file_handler.readline()
             while line:
@@ -560,25 +504,35 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                 if 'ITEM: TIMESTEP' in line:
                     line = file_handler.readline()
                     frame = int(line.split()[0])
+                    header_size += 2
 
                 if 'ITEM: NUMBER OF ATOMS' in line:
                     line = file_handler.readline()
                     n_atoms = int(line.split()[0])
+                    header_size += 2
                     # Check that n_atoms is as expected, if a universe was passed
                     if self.universe:
                         assert n_atoms == len(self.universe.atoms)
 
                 if 'ITEM: BOX BOUNDS' in line:
+                    header_size += 1
+                    traj_dimensions *= 0.0
+                    temp_dim = []
                     # CURRENTLY ASSUMES ORTHOGONAL SIMULATION BOX
                     if 'xy' in line:
                         raise TypeError('triclinic simulation boxes have not'
                                         ' been implemented')
                     # Test dimensions are as expected, if a universe was passed
                     # and we are not using an NPT or NPH ensemble
+                    for i in range(3):
+                        line = file_handler.readline()
+                        header_size += 1
+                        dmin, dmax = [float(splt) for splt in line.split()]
+                        temp_dim.append((dmin, dmax))
+                        traj_dimensions[i] = dmax-dmin
                     if self.universe and not ('npt' in self.fix_names or 'nph' in self.fix_names):
                         for i in range(3):
-                            line = file_handler.readline()
-                            dmin, dmax = [float(splt) for splt in line.split()]
+                            dmin, dmax = temp_dim[i]
                             assert dmin == 0.0
                             # unit is taken from universe dimensions (which is a
                             # UnitArray)
@@ -586,6 +540,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                         self.universe.dimensions.unit)
 
                 if 'ITEM: ATOMS' in line:
+                    header_size += 1
                     if frame_n == start:
                         # LAMMPS dump files contain order of LAMMPS atom properties,
                         # at each time step. As these should not change with time
@@ -603,6 +558,15 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         else:
                             i_vel = None
 
+                        # now we try to get the correct number of frames in the trajectory
+                        real_n_steps = 1 + line_count // (n_atoms + header_size)
+
+                        traj.preAllocate(n_steps = real_n_steps,
+                                         n_atoms = n_atoms,
+                                         useVelocity = i_vel is not None)
+
+                        traj.setDimensions(traj_dimensions)
+
                     if frame_n == next_frame_n:
                         # Reads all atom lines before creating any atoms. By
                         # creating a list of tuples of (LAMMPS_ID, atom), this
@@ -610,27 +574,33 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         # is required as by default LAMMPS does not sort by ID, so
                         # the same atom will not appear in the same place for each
                         # time step.
+                        header_size = 0
                         lines = []
                         for _ in range(n_atoms):
-                            line = file_handler.readline().split()
+                            split_line = file_handler.readline().split()
                             # convert id to int
-                            line[i_id] = int(line[i_id])
-                            lines.append(line)
+                            split_line[i_id] = int(split_line[i_id])
+                            lines.append(split_line)
                         # sort list of lists based on id
                         lines = sorted(lines, key=lambda x: x[i_id])
 
-                        atoms = []
-                        for line in lines:
-                            # Checks if only specific atom_IDs are required, and if
-                            # so, only creates atoms which have those IDs
-                            if not atom_IDs or line[i_id] in atom_IDs:
-                                atoms.append(create_atom(line))
+                        sorted_lines = np.array(lines, dtype = traj.dtype)
 
-                        # Multiply the number of timesteps by dt to calculate the
-                        # elapsed time
-                        configs.append(TemporalConfiguration(frame * self.time_step,
-                                                             *atoms))
+                        atom_types = sorted_lines[:,i_type].astype(np.int64)
+                        if not traj.validateTypes(atom_types):
+                            raise TypeError("CompactTrajectory received wrong atom type array")
 
+                        if i_vel is not None:
+                            traj.writeOneStep(step_num = frame_n,
+                                          time = frame * self.time_step,
+                                          positions = sorted_lines[:,i_pos:i_pos+3],
+                                          velocities = sorted_lines[:,i_vel:i_vel+3])
+                        else:
+                            traj.writeOneStep(step_num = frame_n,
+                                          time = frame * self.time_step,
+                                          positions = sorted_lines[:,i_pos:i_pos+3])
+
+                        traj.setDimensions(traj_dimensions, step_num = frame_n)
                         # next_frame_n next attribute is assigned dynamically
                         # pylint: disable=no-member
                         next_frame_n = next(frame_indexes)
@@ -639,7 +609,26 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                         break
 
                 line = file_handler.readline()
-        return Trajectory(*configs)
+        atom_symbols = {}
+        atom_masses = {}
+        for at_id in np.unique(traj.atom_types):
+            symbol, mass = self.lmp_universe.atom_type_properties[at_id-1]
+            atom_symbols[at_id] = symbol
+            atom_masses[at_id] = mass
+        traj.labelAtoms(atom_symbols, atom_masses)
+        # electric charges, for completeness
+        # (otherwise we cannot output an Atom from CompactTrajectory)
+        charge_list = []
+        for struc in self.parent_simulation.universe.structure_list:
+            if isinstance(struc, Atom):
+                charge_list.append([struc.ID, struc.charge])
+        charges = np.array(charge_list)
+        sequence = np.argsort(charges[:, 0])
+        charges = charges[sequence][:, 1]
+        traj.setCharge(charges)
+        # we conclude the creation of the trajectory
+        traj.postProcess()
+        return traj
 
     def update_parameters(self) -> None:
 
@@ -647,34 +636,29 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     def save_config(self) -> None:
 
-        # So that the identical calculation is not performed for all processes,
-        # only calculate for rank 0 process
-        if self.comm.rank == 0:
-            # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
-            # or the individual atoms, so instead this saves the x, y, z, mass
-            # and charge in a NumPy array with the indexes given by the atom ID
-            # (with a -1 offset due to zero index)
-            # The atoms attribute also is not iterable
-            n_atoms = self.system_state.natoms
-            LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
-                        self.__class__,
-                        n_atoms)
-            atoms = np.zeros([n_atoms, 5])
-            for i in range(n_atoms):
-                atom = self.lmp.atoms[i]
-                atoms[atom.id-1, :] = (list(atom.position) + [atom.mass, atom.charge])
-            saved_config = atoms
-        else:
-            saved_config = None
-        # Broadcast rank 0 saved config to all processes - this is not required
-        # as anything that accesses the _saved_config attribute could be set so
-        # that it only accesses the rank 0 saved config, however currently it is
-        # simpler to duplicate saved config for all processes.
-        saved_config = self.comm.bcast(saved_config, root=0)
+
+        # It is not possible to deepcopy the LAMMPS wrapper atoms attribute,
+        # or the individual atoms, so instead this saves the x, y, z, mass
+        # and charge in a NumPy array with the indexes given by the atom ID
+        # (with a -1 offset due to zero index)
+        # The atoms attribute also is not iterable
+        n_atoms = self.system_state.natoms
+        LOGGER.info('%s save_config: {n_atoms: %s}. Config saved.',
+                    self.__class__,
+                    n_atoms)
+        atoms = np.zeros([n_atoms, 5])
+        tmp_mass = {}
+        for type_ID, atom_type_group in self.lmp_universe.atom_types.items():
+            tmp_mass[type_ID] = float(atom_type_group[0].mass)
+        for i in range(n_atoms):
+            atom = self.lmp.atoms[i]
+            atom_type = atom.type
+            # _, mass = self.lmp_universe.atom_type_properties[atom_type-1]
+            atoms[atom.id-1, :] = (list(atom.position) + [tmp_mass[atom_type], atom.charge])
+        saved_config = atoms
         self._saved_config = saved_config
 
     def reset_config(self) -> None:
-
         self.lmp_universe.set_config(self.saved_config)
 
 
@@ -764,6 +748,17 @@ class LAMMPSUniverse(PyLammpsAttribute):
         self.proper_ID = {}
         self.improper_ID = {}
         self.nonbonded_mix = None
+
+        if "OMP_NUM_THREADS" in os.environ:
+            omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
+            try:
+                omp_num_threads = int(omp_num_threads_str)
+            except ValueError:
+                pass
+            else:
+                if omp_num_threads > 1:
+                    self.lmp.command("package omp 0")  # use OMP_NUM_THREADS
+                    self.lmp.command("suffix omp")  # add /omp to relevant styles
 
         self._define_simulation_box(self.universe)
         self._build_config(self.universe)
@@ -908,7 +903,6 @@ class LAMMPSUniverse(PyLammpsAttribute):
         universe : Universe
             The MDMC ``Universe`` used to fill the LAMMPS box with atoms.
         """
-
         self.atom_types = universe.atom_types
         # Assume all atoms of the same type have the same element and mass
         # Sort atoms based on atom_type (i.e. numerically starting at 1) so
@@ -926,18 +920,16 @@ class LAMMPSUniverse(PyLammpsAttribute):
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
-                if self.comm.rank == 0:
-                    # As PyLammps has a bug preventing getting atom id from
-                    # self.lmp.atoms[index].id, use number of atoms as proxy for
-                    # new atom id (as it is sequential)
-                    lmp_atom_id = self.lmp.atoms.natoms
-                    self.lmp.set('atom', lmp_atom_id,
-                                 'vx', atom.velocity[0],
-                                 'vy', atom.velocity[1],
-                                 'vz', atom.velocity[2])
-                else:
-                    lmp_atom_id = None
-                self.atom_dict[atom] = self.comm.bcast(lmp_atom_id, root=0)
+                # As PyLammps has a bug preventing getting atom id from
+                # self.lmp.atoms[index].id, use number of atoms as proxy for
+                # new atom id (as it is sequential)
+                lmp_atom_id = self.lmp.atoms.natoms
+                self.lmp.set('atom', lmp_atom_id,
+                                'vx', atom.velocity[0],
+                                'vy', atom.velocity[1],
+                                'vz', atom.velocity[2])
+
+                self.atom_dict[atom] = lmp_atom_id
 
     def set_config(self, config: np.ndarray) -> None:
         """
@@ -1329,7 +1321,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
         # *_ is for pylint as it does not know about the output of partition_interactions
         bonds, angles, *_ = partition_interactions([inter for inter
                                                     in b_inters
-                                                    if inter.constrained],
+                                                    if getattr(inter, 'constrained', False)],
                                                    ['Bond', 'BondAngle'], lst=True)
         algorithm = parse_constraint(self.universe.constraint_algorithm,
                                      bonds=bonds, bond_ID_dict=self.bond_ID,
@@ -1363,7 +1355,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         The MDMC ``Universe`` used to create the ``LAMMPSUniverse``.
     traj_step : int
         How many steps the simulation should take between dumping each
-        ``Trajectory`` frame
+        ``CompactTrajectory`` frame
     time_step : float, optional
         Simulation timestep in ``fs``, default is ``1.``
     lmp : PyLammps, optional
@@ -1375,14 +1367,15 @@ class LAMMPSSimulation(PyLammpsAttribute):
         ``neighbor_steps`` (`int`)
         ``remove_linear_momentum`` (`int`)
         ``remove_angular_momentum`` (`int`)
+        ``velocity_seed`` (`int`): The seed to be used by LAMMPS to create velocities.
 
     Attributes
     ----------
     universe : Universe
         An MDMC ``Universe`` object.
     traj_step : int
-        Number of simulation steps that elapse between the ``Trajectory`` being
-        stored.
+        Number of simulation steps that elapse between the ``CompactTrajectory``
+        being stored.
     ensemble : LAMMPSEnsemble
         Simulation ensemble, which applies a ``thermostat`` and ``barostat``.
     """
@@ -1392,6 +1385,7 @@ class LAMMPSSimulation(PyLammpsAttribute):
         super().__init__(lmp, settings.get('atom_style', 'full'))
         self.universe = universe
         self.ensemble = LAMMPSEnsemble(self.lmp, **settings)
+        self.velocity_seed = settings.get('velocity_seed', randint(1, 9999))
         self.temperature = settings.get('temperature')
         self.traj_step = traj_step
         self.time_step = time_step
@@ -1459,10 +1453,10 @@ class LAMMPSSimulation(PyLammpsAttribute):
                                  for atom in self.universe.atoms]
                 if all(zero_velocity):
                     # If we have not set any velocities (they are all the default value of zero)
-                    # then "create" a velocity for each atom
+                    # then "create" a velocity for each atom according to user-specified or
+                    # random seed
                     self.lmp.velocity('all', 'create',
-                                      convert_unit(self._temperature),
-                                      randint(1, 9999))
+                                      convert_unit(self._temperature), self.velocity_seed)
                 else:
                     if any(zero_velocity):
                         msg = ('Some but not all atom velocities set. Atoms with non-zero velocity'
@@ -2363,7 +2357,7 @@ def parse_bonded_styles(interaction: BondedInteraction) -> str:
                               ' implemented in the LAMMPS facade')
 
 
-def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
+def parse_nonbonded_styles(interaction: NonBondedInteraction) -> tuple:
     """
     Converts MDMC ``InteractionFunction`` names for ``NonBondedInteractions`` to
     LAMMPS pair styles
@@ -2413,8 +2407,8 @@ def parse_nonbonded_styles(interaction: BondedInteraction) -> tuple:
                 lmp_str[-1] += '/cut'
         lmp_str.append(cutoff)
     else:
-        raise NotImplementedError('This InteractionFunction has not been'
-                                  ' implemented in the LAMMPS facade')
+        raise AttributeError(f'You have not specified a `cutoff` for the'
+                                  f'{interaction} InteractionFunction.')
 
     return lmp_str, parse_nonbonded_modifications(interaction)
 

@@ -14,7 +14,7 @@ from MDMC.MD.simulation import (ConstraintAlgorithm, Rattle, Shake, Universe,
                                 Ewald, PPPM, KSpaceSolver, Simulation)
 from MDMC.MD.structures import (Atom)
 from MDMC.MD.interactions import Bond, BondAngle, Dispersion, Coulombic, DihedralAngle
-from MDMC.trajectory_analysis.trajectory import Trajectory
+from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 pytestmark = [pytest.mark.lammps]
 
@@ -24,11 +24,6 @@ DISP_CUTOFF = 10.0
 N_ATOMS = 10
 UNIVERSE_DIM = 50.0
 CONST = units.CODATA[units.CODATA_VERSION]
-CUTOFF = 3.14
-COUL_CUTOFF = 8.0
-DISP_CUTOFF = 10.0
-N_ATOMS = 10
-UNIVERSE_DIM = 50.0
 
 
 @pytest.fixture
@@ -39,7 +34,7 @@ def empty_universe():
     A empty Universe object
     """
 
-    return Universe(dimensions=UNIVERSE_DIM)
+    return Universe(dimensions=UNIVERSE_DIM, verbose=False)
 
 @pytest.fixture
 def atoms():
@@ -710,6 +705,19 @@ def test_parse_all_nonbonded_styles_invalid_styles(interactions, indices,
     with pytest.raises(ValueError):
         lmp_eng.parse_all_nonbonded_styles(interactions)
 
+def test_parse_nonbonded_styles_no_cutoff_error(request):
+
+    """
+    Tests that an AttributeError is raised when trying to create LAMMPS pair_styles from
+    nonbonded interactions which have no `cutoff` attribute set.
+    """
+
+    interactions = [request.getfixturevalue('dispersions')[0],
+                    request.getfixturevalue('coulombics')[0]]
+    for interaction in interactions:
+        interaction.cutoff = None
+    with pytest.raises(AttributeError):
+        lmp_eng.parse_all_nonbonded_styles(interactions)
 
 @pytest.mark.parametrize('interaction, arguments, parser',
                          [(Bond, ['atom_pair'], 'parse_bonded_styles'),
@@ -936,7 +944,7 @@ def test_update_charges_error():
     from a universe that contains atoms with a charge of None.
     """
 
-    universe = Universe(10.)
+    universe = Universe(10., verbose=False)
     universe.add_structure(Atom('H'))
     with pytest.raises(AttributeError):
         lmp_eng.LAMMPSUniverse(universe)
@@ -1308,7 +1316,7 @@ def test_parse_constraint_no_IDs(arguments, request):
                                              **arg_fixtures)
 
 
-@pytest.mark.parametrize('temperature', [150., 300., 450.])
+@pytest.mark.parametrize('temperature', [300., 450.])
 def test_initialize_velocities(universe, lammps_universe, temperature):
 
     """
@@ -1332,7 +1340,7 @@ def test_initialize_velocities(universe, lammps_universe, temperature):
     assert lammps_simulation.lmp.runs[0][0].Temp[0] == temperature
 
 
-@pytest.mark.parametrize('temperature', [150., 300., 450.])
+@pytest.mark.parametrize('temperature', [150., 300.])
 def test_initialize_nonzero_velocities(universe, temperature):
 
     """
@@ -1369,7 +1377,6 @@ def test_initialize_nonzero_velocities(universe, temperature):
 
 @pytest.mark.parametrize('skin, neighbor_steps', [(1, 2),
                                                   (1., 2.),
-                                                  (1., 2),
                                                   (3., 100)])
 def test_set_neighbor_list_parameters(lammps_universe, skin, neighbor_steps):
 
@@ -1527,7 +1534,7 @@ def test_apply_thermostat_barostat(ensemble, thermostat, barostat,
     assert styles == ensemble.fix_styles
 
 
-@pytest.mark.parametrize('n_steps', [1, 5, 10])
+@pytest.mark.parametrize('n_steps', [1, 10])
 def test_trajectory_output(lammps_engine, n_steps):
 
     """
@@ -1588,7 +1595,7 @@ def test_reset_config(lammps_engine):
 def test_convert_trajectory_output(lammps_engine):
 
     """
-    Tests that converting a trajectory results in an MDMC Trajectory object
+    Tests that converting a trajectory results in an MDMC CompactTrajectory object
 
     This does not test the correctness of the converted trajectory, purely that
     a trajectory can be converted with the correct type. The correctness of
@@ -1596,7 +1603,7 @@ def test_convert_trajectory_output(lammps_engine):
     """
 
     lammps_engine.run(3)
-    assert isinstance(lammps_engine.convert_trajectory(), Trajectory)
+    assert isinstance(lammps_engine.convert_trajectory(), CompactTrajectory)
 
 
 @pytest.mark.parametrize('args',

@@ -22,7 +22,6 @@ class MockAtom:
                           (5, 50),
                           (10, 10)])
 def test_limit_atoms(n_atoms, atoms_max):
-
     """
     Tests that limit_atoms does not change the number of atoms if it is smaller
     than the specified max_atoms
@@ -38,7 +37,6 @@ def test_limit_atoms(n_atoms, atoms_max):
                           (1000, 999),
                           (1000, 0)])
 def test_limit_atoms_max(n_atoms, atoms_max):
-
     """
     Tests that limit_atoms limits the number of atoms if it is greater than the
     specified max_atoms, and warns

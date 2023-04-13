@@ -2,7 +2,7 @@
 
 import numpy as np
 import pytest
-from pytest_cases import parametrize, fixture, fixture_ref, lazy_value
+from pytest_cases import fixture_ref
 
 from MDMC.common.units import Unit
 
@@ -17,7 +17,6 @@ def unit():
 
 
 def test_subclass_string(unit):
-
     """
     Tests that Unit objects have str as base class
     """
@@ -32,7 +31,6 @@ def test_subclass_string(unit):
                                      ('find', ('g', )),
                                      ('replace', ('k', 'm'))])
 def test_string_operations(unit, op, args):
-
     """
     Tests that common string operations are also valid for Unit objects
     """
@@ -42,7 +40,6 @@ def test_string_operations(unit, op, args):
 
 
 def test_multiply_Unit(unit):
-
     """
     Tests that * operation has the expected behaviour
     """
@@ -55,7 +52,6 @@ def test_multiply_Unit(unit):
 
 
 def test_divide_Unit(unit):
-
     """
     Tests that / operation has the expected behaviour
     """
@@ -74,7 +70,6 @@ def test_divide_Unit(unit):
                                             (STRING, TypeError),
                                             ('2', ' ^ 2')])
 def test_power_Unit(unit, input, expected):
-
     """
     Tests that ** operation has the expected behaviour
 
@@ -102,7 +97,6 @@ def test_power_Unit(unit, input, expected):
                           ('e^2 K J^2', False, ['e', 'e', 'K', 'J', 'J'], []),
                           ('e^2 K / J^2', False, ['e', 'e', 'K'], ['J', 'J'])])
 def test_determine_components(input, base, numerator, denominator):
-
     """
     Tests that the numerator and denominator components of a Unit are correctly
     determined upon passing a string, and whether or not the Unit is base
@@ -123,7 +117,6 @@ def test_determine_components(input, base, numerator, denominator):
                           ('e^-2 K J^-2', ['K'], ['e', 'e', 'J', 'J']),
                           ('e^-2 K / J^-2', ['K', 'J', 'J'], ['e', 'e'])])
 def test_negative_powers(string, numerator, denominator):
-
     """
     Tests that the numerator and denominator components of a Unit are correctly
     determined upon passing a string that contains negative powers
@@ -138,7 +131,6 @@ def test_negative_powers(string, numerator, denominator):
                          [('(Ang)', ['Ang'], []),
                           ('[Ang]', ['Ang'], [])])
 def test_unsupported_characters(string, numerator, denominator):
-
     """
     Tests that the numerator and denominator components of a Unit are correctly
     determined upon passing a string that contains unsupported characters
@@ -156,7 +148,6 @@ def test_unsupported_characters(string, numerator, denominator):
                           ('10^3 nm', 10000.),
                           ('10^3 nm / 10^-3 cm', 0.1)])
 def test_conversion_factor(string, conversion_factor):
-
     """
     Tests that the ``conversion_factor`` of a Unit is correctly determined upon
     passing a string
@@ -182,7 +173,6 @@ def test_conversion_factor(string, conversion_factor):
                           ('deg', 'ANGLE'),
                           ('rad', 'ANGLE')])
 def test_physical_property(string, physical_property):
-
     """
     Tests that the ``physical_property`` of a Unit is correctly determined upon
     passing a string

@@ -23,7 +23,7 @@ _GUI_PATH = '/gui'
 #
 # MantidSQw
 # TODO cite data once published, the Mantid data file iris70429_graphite002_red was provided by Jeff Armstrong
-# IRIS_26176_water_data was provided by Spencer Howells
+# IRIS_26176_water_data was provided by Spencer Howells by (H2O at 280K on the IRIS spectrometer)
 #
 # xml_SQw
 # Argon data from van Well et al. (1985). Physical Review A, 31(5), 3391-3414.
@@ -90,10 +90,11 @@ for key in OBS_DATA:
 # MDMC object data
 #
 # trajectory
-# Calculated from same MMTK simulation on water as used to calculate DISF. Must
+# Calculated from same MMTK simulation on water as used to calculate DISF.
+# Subsequently converted to CompactTrajectory and pickled again. Must
 # be unzipped using zlib and then unpickled before use.
 
-OBJECT_DATA = {'trajectory':'/trajectory.zip'}
+OBJECT_DATA = {'compact_trajectory':'/compact_trajectory.zip'}
 
 # Add paths to data values
 for key in OBJECT_DATA:

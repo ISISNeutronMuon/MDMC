@@ -1,19 +1,10 @@
-"""This module configures logging for MDMC
-"""
+"""This module configures logging for MDMC"""
 
 import logging
-import platform
-from typing import List, Union
-
-from mpi4py import MPI
-
-# pylint: disable=c-extension-no-member
-# to avoid MPI warnings
 
 
 def start_logging(logfile: str = "MDMC.log",
                   level: int = logging.INFO,
-                  ranks: Union[int, List[int]] = 0,
                   capture_warnings: bool = True):
     """
     Start one or more loggers to capture log information from MDMC
@@ -25,38 +16,14 @@ def start_logging(logfile: str = "MDMC.log",
     level : int, optional
         The logging level, corresponding to values in standard library logging
         module.  Default is 20 (``logging.INFO``).
-    ranks : int, list, optional
-        An `int` or `list` of `int` which specifies each rank which will log.
-        Each of these ranks will produce a separate log file, which will be the
-        base ``logfile`` string and the node name and rank. `-1` indicates all
-        ranks will be logged. **It is recommended `-1` is not used for runs
-        using a large number of ranks.**
     capture_warnings : bool, optional
-        Whether or not warnings are captured by the logger (with a level of
+        Whether warnings are captured by the logger (with a level of
         WARNING) or printed to stdout.
     """
 
-    rank = MPI.COMM_WORLD.rank
-
-    if ranks == rank == 0:
-        logger = _start_single_logger(logfile, level=level)
-        if capture_warnings:
-            _capture_warnings(logger)
-    if ranks:
-        if ranks == -1:
-            ranks = range(0, MPI.COMM_WORLD.Get_size(), 1)
-        elif isinstance(ranks, str):
-            ranks = [ranks]
-        if rank in ranks:
-            # Prepends rank in front of .log extension if it exists, otherwise
-            # appends to logfile
-            add = f'_{platform.node()}_{rank}'
-            logfile = ('{0}{1}'.format(logfile, add)).replace(
-                '.log{}'.format(add), '{}.log'.format(add))
-            logger = _start_single_logger(logfile, level=level)
-            # Only capture warnings on lowest rank
-            if capture_warnings and rank == min(ranks):
-                _capture_warnings(logger)
+    logger = _start_single_logger(logfile, level=level)
+    if capture_warnings:
+        _capture_warnings(logger)
 
 
 def _start_single_logger(logfile: str, level: int) -> logging.Logger:

@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
 
+from MDMC.control.plot_results import PlotResults
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -94,37 +95,48 @@ class Control:
         Determines if the configuration is reset to the end of the last accepted
         state. Default is `True`.
     MD_steps : int, optional
-        Number of molecular dynamics steps for each step of the refinement.
-        When not provided, the minimum number of steps needed for successful
-        calculation of the observables is used. If provided, the actual number
-        of steps may be reduced to prevent running MD that won't be used when
-        calculating dependent variables. Default is `None`.
+            Number of molecular dynamics steps for each step of the refinement.
+            When not provided, the minimum number of steps needed for successful
+            calculation of the observables is used. If provided, the actual number
+            of steps may be reduced to prevent running MD that won't be used when
+            calculating dependent variables. Default is `None`.
     equilibration_steps : int, optional
-        Number of molecular dynamics steps used to equilibrate the ``Universe`` in between each
-        refinement step. When changes to the ``Parameters`` are small, this equilibration can be
-        much shorter than the equilibration needed before starting the refinement process, but in
-        general will vary depending on the details of the ``Universe`` and ``Parameters``. Default
-        is 0.
-     cont_slicing : bool, optional
-        Flag to decide between two possible behaviours when the number of ``MD_steps`` is
-        larger than the minimum required to calculate the observables. If ``False`` (default) then
-        the ``Trajectory`` is sliced into non-overlapping sub-``Trajectory`` blocks for each of
-        which the observable is calculated. If ``True``, then the ``Trajectory`` is sliced into
-        as many non-identical sub-``Trajectory`` blocks as possible (with overlap allowed).
-    use_average : bool, optional
-        Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
-        and the MD ``Trajectory`` is sliced into sub-``Trajectory`` blocks. If ``True`` (
-        default) the observables are averaged over the sub-``Trajectory`` blocks. If ``False``
-        they are not averaged.
+            Number of molecular dynamics steps used to equilibrate the ``Universe``
+            in between each refinement step. When changes to the ``Parameters`` are small,
+            this equilibration can be much shorter than the equilibration needed before
+            starting the refinement process, but in general will vary depending on
+            the details of the ``Universe`` and ``Parameters``. Default is 0.
     verbose: int, optional
-        The level of verbosity:
-        Verbose level 0 gives no information.
-        Verbose level 1 gives final time for the whole method.
-        Verbose level 2 gives final time and also a progress bar.
-        Verbose level 3 gives final time, a progress bar, and time per step.
+            The level of verbosity:
+            Verbose level -1 hides all outputs for tests.
+            Verbose level 0 gives no information.
+            Verbose level 1 gives final time for the whole method.
+            Verbose level 2 gives final time and also a progress bar.
+            Verbose level 3 gives final time, a progress bar, and time per step.
+    print_full_settings: bool, optional
+        Whether to print all settings/attributes/parameters passed to this object,
+        defaults to False.
     **settings: dict, optional
-        Settings to be passed into other functions, e.g. MC_norm=1 for MC optimiser if MMC
-        minimiser is used.
+        n_steps: int
+            The maximum number of refinement steps to be. An optional parameter that,
+            if specified, will be used in the ``refine`` method unless a different value
+            of ``n_steps`` is explicitly passed when running ``refine``.
+        cont_slicing : bool, optional
+            Flag to decide between two possible behaviours when the number of ``MD_steps`` is
+            larger than the minimum required to calculate the observables. If ``False`` (default)
+            then the ``CompactTrajectory`` is sliced into non-overlapping sub-``CompactTrajectory``
+            blocks for each of which the observable is calculated. If ``True``, then the
+            ``CompactTrajectory`` is sliced into as many non-identical sub-``CompactTrajectory``
+            blocks as possible (with overlap allowed).
+        results_filename: str
+            The name of the file in which the results of the MDMC run will be stored
+        MC_norm: int
+            1 if the MMC minimiser is to be used for parameter optimisation.
+        use_average : bool, optional
+            Optional parameter relevant in case ``MD_steps`` is larger than the minimum required
+            and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
+            If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
+            blocks. If ``False`` they are not averaged.
 
     Example
     -------
@@ -168,13 +180,14 @@ class Control:
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
                  verbose: int = 0,
+                 print_all_settings: bool = False,
                  **settings: dict):
 
-        self.step_timings = None
+        self.step_timings: list = []
         self.simulation = simulation
         self.exp_datasets = exp_datasets
         self.verbose = verbose
-        self.timings = {'equilibrate': [],
+        self.timings: dict = {'equilibrate': [],
                         '_run_MD': [],
                         'convert_trajectory': [],
                         'FoM_calculator': [],
@@ -191,6 +204,7 @@ class Control:
         self.reset_config = reset_config
         self.equilibration_steps = equilibration_steps
         self.settings = settings
+        self.n_steps = settings.get('n_steps')
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
@@ -200,8 +214,8 @@ class Control:
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
-        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self.fit_parameters,
-                                                           **settings)
+        self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
+                                                           self.fit_parameters, **settings)
 
 
         # Create experimental observables from datasets and placeholders for
@@ -228,7 +242,7 @@ class Control:
 
             auto_scale = dset.get('auto_scale', False)
             rescale_factor = dset.get('rescale_factor')
-            if auto_scale and rescale_factor:
+            if auto_scale and rescale_factor and self.verbose != -1:
                 print('Both `rescale_factor` and `auto_scale` set for file {};'
                       ' scaling will be automated to minimise FoM'
                       ''.format(dset['file_name']))
@@ -293,8 +307,8 @@ class Control:
             if 'resolution' not in dset.keys():
                 # create list of user keys for resolutions to add to the error
                 userkeys = []
-                for key in resolution_factory.resolutions:
-                    userkeys.append(key.lower().replace('resolution', ''))
+                for setting in resolution_factory.resolutions:
+                    userkeys.append(setting.lower().replace('resolution', ''))
                 raise KeyError("A resolution function must be added. Recognised functions are " +
                                str(userkeys) +
                                ". If you meant to apply no resolution,"
@@ -307,16 +321,60 @@ class Control:
             self.observable_pairs[i].MD_obs.resolution = resolution
 
         # setup the dataframe for stdout
-        setup_frame = pd.DataFrame([[minimizer_type],
-                                    [self.FoM_calculator.__class__.__name__],
-                                    [len(self.observable_pairs)],
-                                    [len(self.fit_parameters)]],
-                                   index=['  Minimizer',
-                                          '  FoM type',
-                                          '  Number of observables',
-                                          '  Number of parameters'])
+        data_array = [
+            ["-"],
+            [minimizer_type],
+            [self.FoM_calculator.__class__.__name__],
+            [len(self.observable_pairs)],
+            [len(self.fit_parameters)],
+        ]
 
-        print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        index_array = [
+            '- Attributes',
+            '  Minimizer',
+            '  FoM type',
+            '  Number of observables',
+            '  Number of parameters'
+        ]
+
+        # Printing settings
+        if print_all_settings:
+            for item in ["MD_steps", "equilibration_steps", "reset_config", "verbose"]:
+                index_array.append(f'  {item}')
+                data_array.append([self.__dict__[item]])
+
+            # pylint: disable=consider-using-dict-items
+            index_array.append("- Control Settings")
+            data_array.append(["-"])
+            for setting in settings:
+                index_array.append(f'  {setting}')
+                data_array.append([settings[setting]])
+
+            index_array.append("- Parameters")
+            data_array.append(["-"])
+            for parameter in fit_parameters:
+                index_array.append(f'  {parameter.name}')
+                data_array.append([parameter.value])
+
+            index_array.append("- Experimental Datasets")
+            data_array.append(["-"])
+            if exp_datasets is not None:
+                for dataset in exp_datasets:
+                    for key in dataset.keys():
+                        index_array.append(f'  {key}')
+                        data_array.append([dataset[key]])
+
+            index_array.append("- FoM Options")
+            data_array.append(["-"])
+            if FoM_options is not None:
+                for key in FoM_options.keys():
+                    index_array.append(f'  {key}')
+                    data_array.append([FoM_options[key]])
+
+        setup_frame = pd.DataFrame(data=data_array,
+                                   index=index_array)
+        if self.verbose != -1:
+            print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
     def __str__(self) -> str:
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
@@ -326,14 +384,18 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
-    def refine(self, n_steps: int) -> None:
+    def refine(self, n_steps: int = None) -> None:
         """
         Refines the specified potential parameters
 
         Parameters
         ----------
         n_steps : int
-            maximum number of steps for the refinement
+            Maximum number of steps for the refinement. Must be specified either when creating
+            the ``Control`` object or when calling this method. The value specified to this
+            method supersedes the value passed (if any) when the ``Control`` object was created.
+            If nothing is passed, the method will check if a number was specified when the
+            ``Control`` object was created and use that value.
 
         Examples
         --------
@@ -345,27 +407,41 @@ class Control:
             control.refine(100)
         """
 
+        if n_steps is None:
+            if self.n_steps is None:
+                raise ValueError('The number of maximum refinement steps has not been specified')
+        else:
+            self.n_steps = n_steps
+
         # calculate verbose steps
         # 4 steps per refinement step, and n + 1 steps total
-        verbose_steps = (n_steps + 1) * 4
+        verbose_steps = (self.n_steps + 1) * 4
         # initialise step timings list for average step timings at end
         self.step_timings = []
 
         count = -1
 
-        self._print_header()  # creates stdout header
-        verbose_manager = VerboseManager.instance()
-        verbose_manager.start(verbose_steps, verbose=self.verbose)
-        while count < n_steps and not self.minimizer.has_converged():
-            if count >= 0 and self.equilibration_steps > 0:
-                self.equilibrate()
+        if self.verbose != -1:
+            self._print_header()  # creates stdout header
+            verbose_manager = VerboseManager.instance()
+            verbose_manager.start(verbose_steps, verbose=self.verbose)
+            while count < n_steps and not self.minimizer.has_converged():
+                if count >= 0 and self.equilibration_steps > 0:
+                    self.equilibrate()
 
-            verbose_manager.header(f"Step {count + 1}")
-            self.step()  # advance the refinement by one step
-            count += 1
-            if self.verbose == 3:  # if progress bar is there, ensure data is on new line
-                print("")
-            self._print_data()
+                verbose_manager.header(f"Step {count + 1}")
+                self.step()  # advance the refinement by one step
+                count += 1
+                if self.verbose == 3:  # if progress bar is there, ensure data is on new line
+                    print("")
+                self._print_data()
+
+        else:
+            while count < n_steps and not self.minimizer.has_converged():
+                if count >= 0 and self.equilibration_steps > 0:
+                    self.equilibrate()
+                self.step()  # advance the refinement by one step
+                count += 1
 
         # Try/except accounts for n_steps <= -1
         try:
@@ -378,7 +454,8 @@ class Control:
 
         # print values of final parameters
         result_string = self.minimizer.present_result()
-        print(result_string)
+        if self.verbose != -1:
+            print(result_string)
 
         # If automatically scaling data print the scale factor for each dataset
         scaling_keys = []
@@ -391,12 +468,15 @@ class Control:
 
         if len(scaling_keys) > 0 and len(scaling_values) > 0:
             scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
-            print(
+            if self.verbose != -1:
+                print(
                 f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
 
         if self.verbose >= 1:
             average_timing = statistics.mean(self.step_timings)
-            print(f"\nAverage time per step was {np.round_(average_timing, 2)} seconds.")
+            if self.verbose != -1:
+                print(
+                f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
 
         verbose_manager.finish("Refinement")
 
@@ -440,6 +520,36 @@ class Control:
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
+
+
+    def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
+        """
+        Instantiates an insstance of the PlotResults class and generates a cornerplot
+        from the data in self.results_filename
+
+        Parameters
+        ----------
+        filename : str, optional
+            The filename and path to the history file. Defaults to None which
+            then uses self.results_filename
+        points : int, optional
+            The number of samples to initially generate, defaults to 100,000
+        MH_norm : float, optional
+            The denominator of the exponent, controlling how likley points are to be kept,
+            defaults to 20.0
+
+        Returns
+        -------
+        corner plot : Matplotlib.figure.Figure
+            A plot displaying every parameter combination with their variances and covariances
+        """
+        if filename is None:
+            filename = self.results_filename
+        plotter = PlotResults(filename, MH_norm=MH_norm, points=points,
+                              quantiles=[0.34, 0.5, 0.68])
+        cornerplot = plotter.create_cornerplot()
+
+        return cornerplot
 
     def _print_data(self) -> None:
 

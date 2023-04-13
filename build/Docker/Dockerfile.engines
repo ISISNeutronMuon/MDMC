@@ -2,7 +2,7 @@
 ### and MD engines; i.e. the 'backend' of mdmc/mdmc.
 
 # Use an official Python runtime as a parent image
-FROM python:3.9.6-slim-buster
+FROM python:3.11.2-slim-buster
 
 # Define environment variable
 ENV NAME World
@@ -25,32 +25,40 @@ RUN apt-get update && apt-get install --upgrade -y \
   libblas-dev \
   liblapack-dev \
   libfreetype6-dev \
+  libfftw3-dev \
   cmake \
   wget \
   python3-tk
   
-# Get LAMMPS
-RUN wget https://lammps.sandia.gov/tars/lammps-stable.tar.gz
-RUN mkdir /lammps \
-    && tar xvzf lammps-stable.tar.gz -C /lammps --strip-components=1
-RUN rm /lammps-stable.tar.gz
+# Get LAMMPS # used to be lammps-stable.tar.gz
+RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
+RUN mkdir -p /opt/MD/lammps
+RUN tar xvzf lammps-29Sep2021.tar.gz -C /opt/MD/lammps --strip-components=1
+RUN rm /lammps-29Sep2021.tar.gz
 
 # Build LAMMPS from source
-WORKDIR /lammps/build
+WORKDIR /opt/MD/lammps/build
+RUN find /usr/lib -name libgomp\*
 RUN cmake -C ../cmake/presets/all_on.cmake \
           -C ../cmake/presets/nolib.cmake \
+          -C ../cmake/presets/gcc.cmake \
           -D BUILD_LIB=on \
           -D BUILD_SHARED_LIBS=on \
           -D BUILD_MPI=on \
+          -D BUILD_OMP=on \
           -D LAMMPS_EXCEPTIONS=on \
           -D DOWNLOAD_VORO=on \
+          -D PKG_OPENMP=on \
           -D PKG_PYTHON=on \
           -D PKG_VORONOI=on \
+          -D OpenMP_gomp_LIBRARY=/usr/lib/gcc/x86_64-linux-gnu/8/libgomp.so \
           ../cmake
 RUN make
 RUN make install-python
 
 # get DLPOLY
+RUN mkdir -p /opt/MD/dlpoly
+WORKDIR /opt/MD/dlpoly
 RUN git clone https://gitlab.com/ccp5/dl-poly.git
 RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
 RUN cd build-dlpoly && make install

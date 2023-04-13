@@ -1,19 +1,18 @@
 """A module for all minimizers which can be iterated to refine the potential
 parameters"""
-
+from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
 
-from mpi4py import MPI
 import pandas as pd
 
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
 
-# pylint: disable=c-extension-no-member
-# to avoid MPI warnings
+if TYPE_CHECKING:
+    from MDMC.control import Control
 
 
-@repr_decorator('comm', 'FoM', 'FoM_old',
+@repr_decorator('FoM', 'FoM_old',
                 'parameters', 'parameters_old_values')
 class Minimizer(ABC):
 
@@ -22,13 +21,13 @@ class Minimizer(ABC):
 
     Parameters
     ----------
+    control : Control
+        The ``Control`` object which uses this Minimizer.
     parameters : Parameters or list of Parameter
         A `list` of ``Parameter`` objects which will be fit
 
     Attributes
     ----------
-    comm : mpi4py.MPI.Intracomm
-        MPI Intracomm which has all of the specified processors
     history : list
         A `list` of minimization history, where each element contains the FoM, a
         `list` of the ``Parameters`` and a `str` with whether the step was
@@ -44,10 +43,8 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, parameters: Parameters):
-
-        # Use all available processors, as provided by MPI.COMM_WORLD
-        self.comm = MPI.COMM_WORLD
+    def __init__(self, control: 'Control', parameters: Parameters):
+        self.control = control
 
         # First MC step always changes state
         self.FoM_old = float('inf')

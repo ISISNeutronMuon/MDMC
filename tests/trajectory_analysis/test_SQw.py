@@ -12,6 +12,7 @@ from MDMC.common.constants import h
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables.sqw import SQw
 import MDMC.trajectory_analysis.trajectory as trj
+import MDMC.trajectory_analysis.compact_trajectory as ctrj
 from MDMC.resolution.resolution import Resolution
 
 from tests.test_data import data
@@ -32,7 +33,9 @@ def altered_trajectory(water_SPCE_universe):
     for time in times:
         configurations.append(trj.TemporalConfiguration(
             time, *water_SPCE_universe.configuration.atoms))
-    return trj.Trajectory(*configurations)
+    temp = ctrj.CompactTrajectory()
+    temp.fromConfigs(*configurations)
+    return temp
 
 @pytest.fixture
 def SQw_from_data():
