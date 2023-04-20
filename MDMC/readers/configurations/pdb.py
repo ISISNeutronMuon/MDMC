@@ -22,10 +22,10 @@ class ProteinDataBankReader(ConfigurationReader):
     .. code-block:: python
 
         file = 'water.pdb'
-        pdb = pdb()
-        pdb.open(file)
-        pdb.parse()
-        paracetamol = pdb.molecules[0]
+        pdb_reader = pdb(file)
+        with pdb_reader:
+            pdb_reader.parse()
+            water = pdb_reader.molecules[0]
     """
 
     def __init__(self, file_name: str):
