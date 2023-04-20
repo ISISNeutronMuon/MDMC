@@ -40,10 +40,9 @@ class Exporter(ABC):
         self.file.close()
 
     @abstractmethod
-    def parse(self, **settings: dict) -> None:
+    def write(self, **settings: dict) -> None:
         """
-        Parses the file data so that it is in a format expected by the class
-        calling the data exporter
+        Writes the file data into the file so that it is in a format expected by the file format
 
         For exporters which are not specific to one data type, the calling class
         must be determined so that the file data can be parsed into
