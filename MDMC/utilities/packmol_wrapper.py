@@ -7,19 +7,21 @@ import os
 
 import numpy as np
 
+from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD.simulation import Universe
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
-def fill_with_packmol(inp_file_name: str, desired_cwd: str) -> Universe:
+def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     """
 
     Parameters
     ----------
-    inp_file_name: str
-        The name of the .inp file used to input into packmol.
-    desired_cwd: str
-        A string path to the working directory from which you want to call packmol
-        (i.e. where your input files are)
+    setup_data
+        A `PackmolSetup` object containing the data for the
+
+    Returns
+    -------
+
     """
 
     # Create packmol call
