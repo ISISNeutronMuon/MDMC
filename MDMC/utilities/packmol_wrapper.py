@@ -23,6 +23,13 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     -------
 
     """
+    # Export molecules into PDB format
+    # Create packmol input file
+    # Call packmol
+    # Get output file
+    # Read output
+    # Convert into MDMC universe
+    # Export universe
 
     # Create packmol call
     packmol_path = get_packmol_path()
@@ -51,6 +58,12 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
         universe.add_structure(molecule)
 
     return universe
+
+#TODO: Take MDMC molecules as inputs
+#TODO: Create Algorithm for finding which molecule read in from packmol
+# corresponds to which molecule from the user's input
+#TODO: Compare molecules by stoichiometry and bonds
+#TODO: Create algorithm to copy user's molecules into position of those returned by packmol
 
 
 def get_packmol_path() -> str:
