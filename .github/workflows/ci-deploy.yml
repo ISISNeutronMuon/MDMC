@@ -11,7 +11,7 @@ jobs:
     name: Update Docker image
     if: github.event.pull_request.merged == true
     # just need an env that include docker, here picked:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - name: Login to Docker
       env:
@@ -26,20 +26,18 @@ jobs:
         docker pull mdmc/mdmc:ci-$BRANCH || exit 0
         docker tag mdmc/mdmc:ci-$BRANCH mdmc/mdmc:latest
         docker push mdmc/mdmc:latest
-
     - name: Update backend image for MD engines
       env:
-        BRANCH: ${{ github.head_ref }} 
+        BRANCH: ${{ github.head_ref }}
       run: |
         # If no image (mdmc/engines:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/engines:ci-$BRANCH || exit 0
         docker tag mdmc/engines:ci-$BRANCH mdmc/engines:latest
         docker push mdmc/engines:latest
-
   update-master-profiling:
     name: Update master profiling data
     if: github.event.pull_request.merged == true
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - name: Download master profiling for comparison
       # regular download artifact can only get artifacts from latest run

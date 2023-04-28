@@ -48,8 +48,7 @@ jobs:
           TESTSET: ${{ matrix.testset }}
         run: |
           docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -m "$TESTSET" -s $(pwd)/tests/;[ $? -eq 0 ]
-          exit 0 
-          
+          exit 0
       - name: Copy coverage
         run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
         continue-on-error: true
@@ -62,7 +61,7 @@ jobs:
 
   linting:
     name: Pylint
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -80,10 +79,9 @@ jobs:
         run: |
           pylint MDMC || pylint-exit $? --error-fail --warn-fail --refactor-fail --convention-fail
           exit $?
-
   notebooks:
     name: Notebooks
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     needs: build
     steps:
       - name: Checkout Repo
@@ -111,10 +109,8 @@ jobs:
 
   type-checking:
     name: Mypy
-    runs-on: ubuntu-20.04
+    runs-on: self-hosted
     steps:
-    - name: Own repo to clear before checkout
-      run: sudo chown -R ansible /home/ansible/_work/MDMCv0.2_pilot || exit 0
     - name: Checkout repo
       uses: actions/checkout@v3
     - name: apt get
