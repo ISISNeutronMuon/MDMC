@@ -12,4 +12,3 @@ ipython==8.10.0
 ipykernel==6.21.2
 dlpoly-py==0.3.10
 corner==2.2.1
-pdbreader
