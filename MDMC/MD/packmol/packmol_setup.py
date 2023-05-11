@@ -11,12 +11,15 @@ def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: 
 
     Parameters
     ----------
-    dimensions
-    container_type
+    dimensions: tuple
+        A tuple containing the dimensions of the container as provided to packmol
+    container_type: str
+        A string specifying the type of container.
+        Currently only "cube", "box" and "sphere" are supported
 
     Returns
     -------
-
+    The dimensions that affect the volume of the container
     """
     match container_type:
         case "cube", "sphere":
@@ -42,7 +45,7 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
 
     Returns
     -------
-    The volume of the dimensions
+    The volume of the container
     """
     dimensions = get_volume_affecting_dimensions(dimensions, container_type)
     match container_type:
@@ -241,21 +244,31 @@ class PackmolSetup:
         for settings_dict in self._molecule_settings:
             settings = settings_dict.keys()
             molecule = settings_dict["dict"]
-            assert "molecule" in settings, "There is a setting without a molecule associated to it."
+            assert "molecule" in settings, "There are settings without a molecule associated to it."
             # Each molecule needs to have at least one "number" setting
             assert "number" in settings, \
                 f"The number of {molecule} molecules needs to be specified."
             # Each molecule must have at least one constraint
             assert np.any([self._is_constraint(key) for key in settings]), \
-                f"Molecule {molecule} needs to have a spatial constraint attached to it."
+                f"Molecule {molecule} does not have a spatial constraint attached to it."
             # Each molecule must have values for their respective constraints
-            assert np.any([settings[key] is not None for key in settings]), \
+            assert np.any([settings_dict[key] is not None for key in settings]), \
                 f"Molecule {molecule} has unfilled values for it's respective settings."
 
     def get_settings(self) -> 'tuple[dict, list[dict]]':
+        """
+        Returns
+        -------
+        A tuple containing the whole-system and per-molecule settings
+        """
         return self._system_settings, self._molecule_settings
 
     def get_molecules(self) -> 'set[Molecule]':
+        """
+        Returns
+        -------
+        The set of `Molecule` objects in the setup
+        """
         return self._molecules
 
     @staticmethod
