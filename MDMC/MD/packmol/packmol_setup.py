@@ -6,16 +6,23 @@ from MDMC.MD import Molecule
 
 
 def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: "str" = None):
+    """
+    Get the dimensions that affect the volume of a container
+
+    Parameters
+    ----------
+    dimensions
+    container_type
+
+    Returns
+    -------
+
+    """
     match container_type:
-        case "cube":
+        case "cube", "sphere":
             return dimensions[3]
         case "box":
-            x = dimensions[3] - dimensions[0]
-            y = dimensions[4] - dimensions[1]
-            z = dimensions[5] - dimensions[2]
-            return x, y, z
-        case "sphere":
-            return dimensions[3]
+            return dimensions
         case _:
             raise ValueError("The type of container is unsupported or none."
                              "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
@@ -40,14 +47,14 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
     dimensions = get_volume_affecting_dimensions(dimensions, container_type)
     match container_type:
         case "cube":
-            return dimensions[3] ** 3
+            return dimensions ** 3
         case "box":
             x = dimensions[3] - dimensions[0]
             y = dimensions[4] - dimensions[1]
             z = dimensions[5] - dimensions[2]
             return x * y * z
         case "sphere":
-            return (3 / 4) + math.pi * (dimensions[3]) ^ 2
+            return (3 / 4) + math.pi * dimensions ^ 2
         case _:
             raise ValueError("The type of container is unsupported or none."
                              "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
@@ -58,7 +65,7 @@ class PackmolSetup:
     For an explanation of all the settings and constraints see:
     https://m3g.github.io/packmol/userguide.shtml#basic
     """
-    _molecules: 'list[Molecule]' = []
+    _molecules: 'set[Molecule]' = set()
     _molecule_settings: 'list[dict]' = []
     _system_settings: dict = {}
 
@@ -87,7 +94,7 @@ class PackmolSetup:
             True if the molecule is to be centred around the position or not. Defaults to True.
         """
         if molecule not in self._molecules:
-            self._molecules.append(molecule)
+            self._molecules.add(molecule)
 
         self._molecule_settings.append({
             "molecule": molecule,
@@ -104,7 +111,7 @@ class PackmolSetup:
                       container_type: str = None):
 
         if molecule not in self._molecules:
-            self._molecules.append(molecule)
+            self._molecules.add(molecule)
 
         if not n_molecules:
             # Figure out number of molecules
@@ -245,8 +252,11 @@ class PackmolSetup:
             assert np.any([settings[key] is not None for key in settings]), \
                 f"Molecule {molecule} has unfilled values for it's respective settings."
 
-    def get_settings(self) -> tuple[dict, dict]:
-        pass
+    def get_settings(self) -> 'tuple[dict, list[dict]]':
+        return self._system_settings, self._molecule_settings
+
+    def get_molecules(self) -> 'set[Molecule]':
+        return self._molecules
 
     @staticmethod
     def _is_constraint(setting_name: str) -> bool:
@@ -301,7 +311,20 @@ class PackmolSetup:
         scale_factor = area_factor**(1/3)
 
         scale_dimensions = get_volume_affecting_dimensions(dimensions, container_type)
-        scale_dimensions = [dim*scale_factor for dim in scale_dimensions]
+
+        if container_type == "box":
+            # Get xyz lenghts of box
+            x = scale_dimensions[3] - scale_dimensions[0]
+            y = scale_dimensions[4] - scale_dimensions[1]
+            z = scale_dimensions[5] - scale_dimensions[2]
+            # Scale sizes of box
+            scaled_lengths = [size*scale_factor for size in [x,y,z]]
+            # Reassign xyz sizes of box
+            scale_dimensions[3] = scale_dimensions[0] + scaled_lengths[0] # x
+            scale_dimensions[4] = scale_dimensions[1] + scaled_lengths[1] # y
+            scale_dimensions[5] = scale_dimensions[2] + scaled_lengths[2] # z
+        else:
+            scale_dimensions = [dim*scale_factor for dim in scale_dimensions]
 
         return scale_dimensions, expected_mol
 
