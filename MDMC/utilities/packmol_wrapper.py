@@ -9,6 +9,7 @@ import numpy as np
 
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD.simulation import Universe
+from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
@@ -21,9 +22,19 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
 
     Returns
     -------
-
+    A `Universe` object filled with the molecules requested by the user as per the `PackmolSetup` object
     """
     # Export molecules into PDB format
+    molecules = setup_data.get_molecules()
+    mol_file_names = {}
+    # Enumerate molecules to ensure that an empty molecule name will have a non-empty file name
+    for i, molecule in enumerate(molecules):
+        file_name = molecule.name + str(i)
+        pdb_exporter = ProteinDataBankExporter(file_name)
+        with pdb_exporter:
+            pdb_exporter.write(molecule)
+        mol_file_names[molecule] = file_name
+
     # Create packmol input file
     # Call packmol
     # Get output file
