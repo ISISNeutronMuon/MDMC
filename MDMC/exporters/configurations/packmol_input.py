@@ -35,5 +35,3 @@ class PackmolInputExporter(ConfigurationExporter):
             for setting in mol_settings[molecule].keys():
                 self.file.writeline(self.INDENT+f"{setting}")
             self.file.writeline(f"end structure")
-
-
