@@ -14,7 +14,10 @@ class PackmolInputExporter(Exporter):
     def extension() -> str:
         return ".inp"
 
-    def write(self, setup: PackmolSetup, molecule_file_names: dict, **settings: dict) -> None:
+    def write(self, setup: PackmolSetup,
+              molecule_file_names: dict,
+              output_name: str = "output_file.pdb",
+              **settings: dict) -> None:
         """
         Write the data contained in a `PackmolSetup` object out to a packmol input file
 
@@ -22,6 +25,8 @@ class PackmolInputExporter(Exporter):
         ----------
         setup: PackmolSetup
             A `PackmolSetup` object which contains the molecules and constraints for the
+        output_name: str
+            The filename of the output file to write to
         molecule_file_names: dict
             A dictionary mapping molecules in the system to corresponding file names
         """
@@ -29,8 +34,8 @@ class PackmolInputExporter(Exporter):
         tol = system_settings["tolerance"]
         self.file.writeline("# Created by MDMC")
         self.file.writeline(f"tolerance {tol}")
-        self.file.writeline(f"filetype pdb")
-        self.file.writeline("output output-universe.pdb")
+        self.file.writeline("filetype pdb")
+        self.file.writeline(f"output {output_name}")
         for molecule in mol_settings:
             # Get structure file name
             struct_file_name = molecule_file_names[molecule]
