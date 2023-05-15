@@ -10,6 +10,7 @@ import numpy as np
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD.simulation import Universe
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
+from MDMC.exporters.packmol_input import PackmolInputExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
@@ -24,53 +25,52 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     -------
     A `Universe` object filled with the molecules requested by the user as per the `PackmolSetup` object
     """
+    packmol_path = "./packmol_files/"
+    input_path = os.path.join(packmol_path, "input_file.inp")
+    output_path =  os.path.join(packmol_path,"output-universe.pdb")
     # Export molecules into PDB format
     molecules = setup_data.get_molecules()
     mol_file_names = {}
     # Enumerate molecules to ensure that an empty molecule name will have a non-empty file name
     for i, molecule in enumerate(molecules):
         file_name = molecule.name + str(i)
-        pdb_exporter = ProteinDataBankExporter(file_name)
+        pdb_exporter = ProteinDataBankExporter(os.path.join(packmol_path, f"{file_name}.pdb"))
         with pdb_exporter:
             pdb_exporter.write(molecule)
         mol_file_names[molecule] = file_name
 
     # Create packmol input file
+    inp_exporter = PackmolInputExporter(input_path)
+    with inp_exporter:
+        inp_exporter.write(setup_data, mol_file_names, output_path)
+
     # Call packmol
-    # Get output file
-    # Read output
-    # Convert into MDMC universe
-    # Export universe
-
     # Create packmol call
-    packmol_path = get_packmol_path()
     command_list = [packmol_path, "<"]
-
-    # Get input path and add to call
-    input_file_path = os.path.join(desired_cwd, inp_file_name)
-    command_list.append(input_file_path)
-
+    command_list.append(input_path)
     # Run packmol on input file
-    _call_external_program(command_list, desired_cwd)
+    _call_external_program(command_list)
 
-    # Get output file
-    output_file_name = get_packmol_output_name(input_file_path)
-    output_file_path = os.path.join(desired_cwd, output_file_name)
-
+    # Convert into MDMC universe
     # Read Output
-    reader = PackmolPDBReader(output_file_path)
+    reader = PackmolPDBReader(output_path)
     with reader:
         reader.parse()
 
     # Create Universe from output
-    dim = get_packmol_universe_dimensions(input_file_path)
+    dim = get_packmol_universe_dimensions(input_path)
     universe = Universe(dim)
+
+    # Identify molecules from output
     for molecule in reader.molecules:
         universe.add_structure(molecule)
 
-    return universe
+    # Fill molecules with packmol-provided positions
 
-#TODO: Take MDMC molecules as inputs
+
+
+
+    return universe
 #TODO: Create Algorithm for finding which molecule read in from packmol
 # corresponds to which molecule from the user's input
 #TODO: Compare molecules by stoichiometry and bonds
@@ -144,7 +144,7 @@ def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
 
     return dimensions
 
-def _call_external_program(command_list: 'list[str]', work_dir: str):
+def _call_external_program(command_list: 'list[str]', work_dir: str=None):
     """
     A function to call an external program in a specific working directory - defaults to
     current working directory as a failsafe
