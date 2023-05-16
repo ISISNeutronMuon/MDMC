@@ -39,8 +39,12 @@ class PackmolInputExporter(Exporter):
         for molecule in mol_settings:
             # Get structure file name
             struct_file_name = molecule_file_names[molecule]
-            struct_file_name if struct_file_name.endswith(".pdb") else struct_file_name += ".pdb"
+            if struct_file_name.endswith(".pdb"):
+                struct_file_name = struct_file_name
+            else:
+                struct_file_name += ".pdb"
             self.file.writeline(f"structure {struct_file_name}")
+            # Write each setting
             for setting in mol_settings[molecule].keys():
                 self.file.writeline(self.INDENT+f"{setting}")
             self.file.writeline(f"end structure")
