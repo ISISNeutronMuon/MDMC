@@ -8,6 +8,11 @@ class ProteinDataBankExporter(ConfigurationExporter):
     def __init__(self, file_name: str):
         super().__init__(file_name)
 
+    @property
+    @staticmethod
+    def extension() -> str:
+        return ".pdb"
+
     def write(self, structure: Structure, **settings: dict) -> None:
         # Convert into ASE format
         atom_list = [atom.element for atom in structure.atoms]
