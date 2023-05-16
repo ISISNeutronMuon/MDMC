@@ -23,9 +23,11 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     -------
     A `Universe` object filled with the molecules requested by the user as per the `PackmolSetup` object
     """
-    packmol_path = "./packmol_files/"
+    cwd = os.getcwd()
+    packmol_path = os.path.join(cwd, "packmol_files")
     input_path = os.path.join(packmol_path, "input_file.inp")
     output_path =  os.path.join(packmol_path,"output-universe.pdb")
+
     # Export molecules into PDB format
     molecules = setup_data.get_molecules()
     mol_file_names = {}
