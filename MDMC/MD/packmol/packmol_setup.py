@@ -5,7 +5,7 @@ import numpy as np
 from MDMC.MD import Molecule
 
 
-def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: "str" = None):
+def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: "str" = None) -> tuple[float]:
     """
     Get the dimensions that affect the volume of a container
 
@@ -22,8 +22,8 @@ def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: 
     The dimensions that affect the volume of the container
     """
     match container_type:
-        case "cube", "sphere":
-            return dimensions[3]
+        case "cube" | "sphere":
+            return (dimensions[3],)
         case "box":
             return dimensions
         case _:
@@ -57,7 +57,7 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
             z = dimensions[5] - dimensions[2]
             return x * y * z
         case "sphere":
-            return (3 / 4) + math.pi * dimensions ^ 2
+            return (3 / 4) + math.pi * dimensions[0] ** 2
         case _:
             raise ValueError("The type of container is unsupported or none."
                              "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
