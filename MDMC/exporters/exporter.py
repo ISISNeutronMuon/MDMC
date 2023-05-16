@@ -32,7 +32,7 @@ class Exporter(ABC):
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file = open(self.file_name, '+', encoding='UTF-8')
+        self.file = open(self.file_name, 'w', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the open file after parsing"""
