@@ -11,11 +11,9 @@ from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD.simulation import Universe
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
 from MDMC.exporters.packmol_input import PackmolInputExporter
-from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     """
-
     Parameters
     ----------
     setup_data
@@ -33,7 +31,10 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     mol_file_names = {}
     # Enumerate molecules to ensure that an empty molecule name will have a non-empty file name
     for i, molecule in enumerate(molecules):
-        file_name = molecule.name + str(i)
+        if molecule.name:
+            file_name = str(i)
+        else:
+            file_name = molecule.name
         pdb_exporter = ProteinDataBankExporter(os.path.join(packmol_path, f"{file_name}.pdb"))
         with pdb_exporter:
             pdb_exporter.write(molecule)
@@ -48,29 +49,29 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     # Create packmol call
     command_list = [packmol_path, "<"]
     command_list.append(input_path)
+
     # Run packmol on input file
     _call_external_program(command_list)
 
-    # Convert into MDMC universe
-    # Read Output
-    reader = PackmolPDBReader(output_path)
-    with reader:
-        reader.parse()
+    # # Convert into MDMC universe
+    # # Read Output
+    # reader = PackmolPDBReader(output_path)
+    # with reader:
+    #     reader.parse()
 
     # Create Universe from output
     dim = get_packmol_universe_dimensions(input_path)
     universe = Universe(dim)
 
-    # Identify molecules from output
-    for molecule in reader.molecules:
-        universe.add_structure(molecule)
-
-    # Fill molecules with packmol-provided positions
-
-
+    # # Identify molecules from output
+    # for molecule in reader.molecules:
+    #     universe.add_structure(molecule)
+    #
+    # # Fill molecules with packmol-provided positions
 
 
     return universe
+
 #TODO: Create Algorithm for finding which molecule read in from packmol
 # corresponds to which molecule from the user's input
 #TODO: Compare molecules by stoichiometry and bonds
