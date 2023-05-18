@@ -32,10 +32,10 @@ class PackmolInputExporter(Exporter):
         """
         system_settings, mol_settings = setup.get_settings()
         tol = system_settings["tolerance"]
-        self.file.writeline("# Created by MDMC")
-        self.file.writeline(f"tolerance {tol}")
-        self.file.writeline("filetype pdb")
-        self.file.writeline(f"output {output_name}")
+        self.file.writelines(["# Created by MDMC",
+                              f"tolerance {tol}",
+                              "filetype pdb",
+                              f"output {output_name}"])
         for molecule in mol_settings:
             # Get structure file name
             struct_file_name = molecule_file_names[molecule]
@@ -43,8 +43,7 @@ class PackmolInputExporter(Exporter):
                 struct_file_name = struct_file_name
             else:
                 struct_file_name += ".pdb"
-            self.file.writeline(f"structure {struct_file_name}")
+            self.file.write(f"structure {struct_file_name}\n")
             # Write each setting
-            for setting in mol_settings[molecule].keys():
-                self.file.writeline(self.INDENT+f"{setting}")
-            self.file.writeline(f"end structure")
+            self.file.writelines([self.INDENT+f"{setting}" for setting in mol_settings[molecule].keys()] )
+            self.file.write(f"end structure")
