@@ -1,5 +1,5 @@
 """A module that integrates packmol into MDMC"""
-
+#TODO: Move into MDMC.MD.Packmol
 import re
 import shutil
 import subprocess

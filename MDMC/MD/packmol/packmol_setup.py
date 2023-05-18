@@ -110,7 +110,8 @@ class PackmolSetup:
 
     def add_container(self,
                       molecule: Molecule,
-                      dimensions: tuple = None,
+                      dimensions: tuple,
+                      origin: tuple = (0.,0.,0.),
                       density: float = 0.,
                       n_molecules: int = 0,
                       container_type: str = None):
@@ -120,13 +121,15 @@ class PackmolSetup:
 
         if not n_molecules:
             # Figure out number of molecules
-            #TODO: Inform the user that the dimensions are changed to new values (See: VerboseManager or LOGGER.info)
             dimensions, n_molecules = self.resolve_density(density, dimensions, container_type)
+            if container_type == "box":
+                dimensions = [i+j for i, j in zip(origin, dimensions)]
 
         self._molecule_settings.append({
             "molecule": molecule,
             "number": n_molecules,
-            f"inside {container_type}": dimensions
+            # Packmol needs the origin information explicitly
+            f"inside {container_type}": origin+dimensions
         })
     def add_cube(self, molecule: Molecule,
                  size: float,
@@ -154,14 +157,15 @@ class PackmolSetup:
             An integer number of molecules to fill the cube with.
         """
         self.add_container(molecule=molecule,
-                           dimensions=origin+(size),
+                           dimensions=origin+(size,),
                            density=density,
                            n_molecules=n_molecules,
                            container_type="cube")
     def add_box(self, molecule: Molecule,
-                     dimensions: 'tuple[float]',
-                     density: float = 0.,
-                     n_molecules: int = 0) -> None:
+                lengths: 'tuple[float]',
+                origin: 'tuple[float]' = (0.,0.,0.),
+                density: float = 0.,
+                n_molecules: int = 0) -> None:
         """
         Add a cuboid box of randomly-packed molecules.
         At least two of "size", "density" or "number" must be filled in order to
@@ -172,10 +176,10 @@ class PackmolSetup:
         ----------
         molecule: Molecule
             The `Molecule` object to randomly fill the box with.
-        dimensions: optional, tuple
-            A 6-tuple of origin and end coordinates of the box,
-            in the form: x_min, y_min, z_min, x_max, y_max, z_max
-            Defaults to None
+        lengths: tuple
+            A 3-tuple of xyz lengths for the box
+        origin: optional, tuple
+            A 3-tuple of xyz coordinates for the origin of the box
         density: optional, float
             The density of the molecule within the box.
             Defaults to 0.
@@ -190,9 +194,10 @@ class PackmolSetup:
                            container_type="box")
 
     def add_sphere(self, molecule: Molecule,
-                     dimensions: 'tuple[float]' = None,
-                     density: float = 0.,
-                     n_molecules: int = 0) -> None:
+                   radius: float,
+                   origin: 'tuple[float]' = (0., 0., 0.),
+                   density: float = 0.,
+                   n_molecules: int = 0) -> None:
         """
         Add a cuboid box of randomly-packed molecules.
         At least two of "size", "density" or "number" must be filled in order to
@@ -203,10 +208,10 @@ class PackmolSetup:
         ----------
         molecule: Molecule
             The `Molecule` object to randomly fill the box with.
-        dimensions: optional, tuple
-            A 4-tuple of centre and size (diameter) coordinates of the sphere,
-            in the form: x_centre, y_centre, z_centre, diameter
-            Defaults to None
+        radius: float
+            The radius of the sphere
+        origin: optional, tuple
+            A 3-tuple of xyz coordinates for the centre of the sphere
         density: optional, float
             The density of the molecule within the box.
             Defaults to 0.
@@ -215,7 +220,7 @@ class PackmolSetup:
             Defaults to 0.
         """
         self.add_container(molecule=molecule,
-                           dimensions=dimensions,
+                           dimensions=origin+(radius,),
                            density=density,
                            n_molecules=n_molecules,
                            container_type="sphere")
@@ -294,20 +299,20 @@ class PackmolSetup:
                                 "inside sphere", "outside sphere", "fixed"]
 
     @staticmethod
-    def resolve_density(density: float = 0.,
-                        dimensions: 'tuple[float]' = (0., 0., 0.),
+    def resolve_density(dimensions: 'tuple[float]',
+                        density: float = 0.,
                         container_type: str = None) -> tuple:
         """
-        Finds and returns the number of molecules and
-        revised dimensions of a volume given dimensions
-        and a target density.
+        Takes a volume of type "box", "cube", or "sphere", with nominal dimensions,
+        tries to fill that volume to the given density, and changes the dimensions
+        to ensure an integer number of molecules will fit with the desired density
 
         Parameters
         ----------
+        dimensions: optional, tuple
+            A tuple of the dimensions that affect the volume of the container
         density: optional, float
             A target density to achieve within the system
-        dimensions: optional, tuple
-            A tuple of the dimensions of the shape
         container_type: str
             A string describing the type of container to use.
             Currently only "cube", "box" and "sphere" are supported
@@ -317,30 +322,19 @@ class PackmolSetup:
         1) A tuple of the (possibly) revised dimensions of the volume
         2) The number of molecules needed to meet the density
         """
-        if density == 0. and dimensions == (0., 0., 0.):
-            raise ValueError("Density and sizes are all set to 0.")
+        if density == 0. or 0. in dimensions:
+            raise ValueError("Density or dimension(s) is set to 0.")
 
         volume = calculate_volume(dimensions, container_type)
         expected_mol = round(density * volume)
         expected_volume = expected_mol / density
 
-        scale_factor = (expected_volume/volume)**(1/3)
-        scale_dimensions = get_volume_affecting_dimensions(dimensions, container_type)
-
+        scale_factor = (optimal_volume/volume)**(1/3)
         if container_type == "box":
-            # Get xyz lengths of box
-            x = scale_dimensions[3] - scale_dimensions[0]
-            y = scale_dimensions[4] - scale_dimensions[1]
-            z = scale_dimensions[5] - scale_dimensions[2]
-            # Scale sizes of box
-            scaled_lengths = [size*scale_factor for size in [x,y,z]]
-            # Reassign xyz sizes of box
-            scale_dimensions[3] = scale_dimensions[0] + scaled_lengths[0] # x
-            scale_dimensions[4] = scale_dimensions[1] + scaled_lengths[1] # y
-            scale_dimensions[5] = scale_dimensions[2] + scaled_lengths[2] # z
-            LOGGER.info(f'New dimensions are now ({scaled_lengths})')
+            scaled_lengths = [size*scale_factor for size in dimensions]
         else:
-            scale_dimensions = [dim*scale_factor for dim in scale_dimensions]
+            scaled_lengths = [dim*scale_factor for dim in dimensions]
+        LOGGER.info(f'New dimensions are now ({scaled_lengths})')
 
-        return scale_dimensions, expected_mol
+        return tuple(scaled_lengths), integer_num_mol
 
