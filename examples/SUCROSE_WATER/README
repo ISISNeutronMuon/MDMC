@@ -1,5 +1,5 @@
 This folder contains simulation boxes in pdb-format for systems with sucrose and water.
-Water is described by SPCE-model.
+Water is described by SPCE-model. Sucrose is made for OPLS-AA force field
 
 Files with structures are named in a following way:
 - SUC100PERC_178SUCROSE.pdb
