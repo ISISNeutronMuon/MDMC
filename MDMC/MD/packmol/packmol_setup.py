@@ -26,11 +26,11 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
     """
     match container_type:
         case "cube":
-            return dimensions ** 3
+            return dimensions[0] ** 3
         case "box":
             return np.product(*dimensions)
         case "sphere":
-            return (3 / 4) + math.pi * dimensions ** 2
+            return (3 / 4) + math.pi * dimensions[0] ** 2
         case _:
             raise ValueError("The type of container is unsupported or none."
                              "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
@@ -95,7 +95,7 @@ class PackmolSetup:
 
         if not n_molecules:
             # Figure out number of molecules
-            dimensions, n_molecules = self.resolve_density(density, dimensions, container_type)
+            dimensions, n_molecules = self.resolve_density(dimensions, density, container_type)
             if container_type == "box":
                 dimensions = [i+j for i, j in zip(origin, dimensions)]
 
@@ -132,7 +132,8 @@ class PackmolSetup:
             An integer number of molecules to fill the cube with.
         """
         self.add_container(molecule=molecule,
-                           dimensions=origin+(size,),
+                           dimensions=(size,),
+                           origin=origin,
                            density=density,
                            n_molecules=n_molecules,
                            container_type="cube")
@@ -164,7 +165,8 @@ class PackmolSetup:
             Defaults to 0.
         """
         self.add_container(molecule=molecule,
-                           dimensions=origin+lengths,
+                           dimensions=lengths,
+                           origin=origin,
                            density=density,
                            n_molecules=n_molecules,
                            container_type="box")
@@ -196,7 +198,8 @@ class PackmolSetup:
             Defaults to 0.
         """
         self.add_container(molecule=molecule,
-                           dimensions=origin+(radius,),
+                           dimensions=(radius,),
+                           origin=origin,
                            density=density,
                            n_molecules=n_molecules,
                            container_type="sphere")
