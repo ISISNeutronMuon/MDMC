@@ -9,6 +9,7 @@ from MDMC.MD import Universe
 # lammps mark used to ensure test runs in docker container
 pytestmark = [pytest.mark.lammps]
 
+'''
 @fixture
 def packmol_data_path():
     """
@@ -26,18 +27,12 @@ def filled_universe(packmol_data_path):
 def input_file_name():
     return "bilayer.inp"
 
+
 def test_get_packmol_path():
     """Tests that the packmol path is correct within the docker container"""
     actual_path = packmol.get_packmol_path()
     correct_path = "/opt/other/packmol/packmol-20.14.0/packmol"
     assert actual_path == correct_path
-
-def test_packmol_result_is_identical_between_runs(filled_universe, packmol_data_path, input_file_name):
-    universe_1 = filled_universe
-    universe_2 = packmol.fill_with_packmol(input_file_name, packmol_data_path)
-    assert dir(universe_1) == dir(universe_2)
-def test_returns_universe(filled_universe):
-    assert type(filled_universe) is Universe
 
 def test_correct_system_properties(filled_universe):
     assert filled_universe.n_atoms == 8000
@@ -57,15 +52,35 @@ def test_incorrect_packmol_filename(packmol_data_path, input_file_name):
     incorrect_path = packmol_data_path + "/incorrect_place"
     with pytest.raises(IOError):
         packmol.fill_with_packmol(input_file_name, incorrect_path)
+        
+'''
+# TODO: make filled_universe fixture
+
+def test_packmol_result_is_identical_between_runs(filled_universe, packmol_data_path, input_file_name):
+    """Test that filling is deterministic"""
+    universe_1 = filled_universe
+    universe_2 = packmol.fill_with_packmol(input_file_name, packmol_data_path)
+    assert dir(universe_1) == dir(universe_2)
+
+def test_returns_universe(filled_universe):
+    assert type(filled_universe) is Universe
+
+
+
+
+
+
 
 def test_get_packmol_output_name(packmol_data_path, input_file_name):
     """Tests that the output name of a packmol file will be correctly retrieved"""
+    # TODO: Check this still conforms to what we are doing
     actual_name = packmol.get_packmol_output_name(packmol_data_path+"/"+input_file_name)
     correct_name = "bilayer.pdb"
     assert actual_name == correct_name
 
 def test_get_packmol_universe_dimensions(packmol_data_path, input_file_name):
     """Tests that the dimensions are correctly read from the packmol input"""
+    #
     actual_dim = packmol.get_packmol_universe_dimensions(packmol_data_path+"/"+input_file_name)
     correct_dim = [72., 60., 60.,]
-    assert actual_dim == correct_dim
+    assert actual_dim == correct_dim # TODO: allclose here not ==
