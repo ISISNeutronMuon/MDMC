@@ -118,6 +118,7 @@ class PackmolSetup:
 
         if not n_molecules:
             # Figure out number of molecules
+            #TODO: Inform the user that the dimensions are changed to new values (See: VerboseManager or LOGGER.info)
             dimensions, n_molecules = self.resolve_density(density, dimensions, container_type)
 
         self._molecule_settings.append({
@@ -126,8 +127,8 @@ class PackmolSetup:
             f"inside {container_type}": dimensions
         })
     def add_cube(self, molecule: Molecule,
-                 origin: 'tuple[float]',
                  size: float,
+                 origin: 'tuple[float]' = (0.,0.,0.),
                  density: float = 0.,
                  n_molecules: int = 0) -> None:
         """
@@ -140,12 +141,13 @@ class PackmolSetup:
         ----------
         molecule: Molecule
             The `Molecule` object to randomly fill the cube with.
-        origin: tuple
-            A 3-tuple of xyz coordinates indicating the origin of the cube.
         size: float
             The size (x y and z) of the cube in angstroms.
+        origin: tuple
+            A 3-tuple of xyz coordinates indicating the origin of the cube.
+            Defaults to (0.,0.,0.)
         density: optional, float
-            The density of the molecule within the cube.
+            The density of the molecule within the cube in Molecule Ang^-3
         n_molecules: optional, int
             An integer number of molecules to fill the cube with.
         """
@@ -320,9 +322,7 @@ class PackmolSetup:
         expected_mol = round(density * volume)
         expected_volume = expected_mol / density
 
-        area_factor = expected_volume/volume
-        scale_factor = area_factor**(1/3)
-
+        scale_factor = (expected_volume/volume)**(1/3)
         scale_dimensions = get_volume_affecting_dimensions(dimensions, container_type)
 
         if container_type == "box":
