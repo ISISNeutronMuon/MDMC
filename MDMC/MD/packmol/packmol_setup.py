@@ -7,31 +7,6 @@ from MDMC.MD import Molecule
 
 LOGGER = logging.getLogger(__name__)
 
-def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: "str" = None) -> tuple[float]:
-    """
-    Get the dimensions that affect the volume of a container
-
-    Parameters
-    ----------
-    dimensions: tuple
-        A tuple containing the dimensions of the container as provided to packmol
-    container_type: str
-        A string specifying the type of container.
-        Currently only "cube", "box" and "sphere" are supported
-
-    Returns
-    -------
-    The dimensions that affect the volume of the container
-    """
-    match container_type:
-        case "cube" | "sphere":
-            return (dimensions[3],)
-        case "box":
-            return dimensions
-        case _:
-            raise ValueError("The type of container is unsupported or none."
-                             "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
-
 
 def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -> float:
     """
@@ -49,17 +24,13 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
     -------
     The volume of the container
     """
-    dimensions = get_volume_affecting_dimensions(dimensions, container_type)
     match container_type:
         case "cube":
             return dimensions ** 3
         case "box":
-            x = dimensions[3] - dimensions[0]
-            y = dimensions[4] - dimensions[1]
-            z = dimensions[5] - dimensions[2]
-            return x * y * z
+            return np.product(*dimensions)
         case "sphere":
-            return (3 / 4) + math.pi * dimensions[0] ** 2
+            return (3 / 4) + math.pi * dimensions ** 2
         case _:
             raise ValueError("The type of container is unsupported or none."
                              "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
@@ -115,6 +86,9 @@ class PackmolSetup:
                       density: float = 0.,
                       n_molecules: int = 0,
                       container_type: str = None):
+        """
+        TODO
+        """
 
         if molecule not in self._molecules:
             self._molecules.add(molecule)
@@ -131,6 +105,7 @@ class PackmolSetup:
             # Packmol needs the origin information explicitly
             f"inside {container_type}": origin+dimensions
         })
+
     def add_cube(self, molecule: Molecule,
                  size: float,
                  origin: 'tuple[float]' = (0.,0.,0.),
@@ -161,6 +136,7 @@ class PackmolSetup:
                            density=density,
                            n_molecules=n_molecules,
                            container_type="cube")
+
     def add_box(self, molecule: Molecule,
                 lengths: 'tuple[float]',
                 origin: 'tuple[float]' = (0.,0.,0.),
@@ -188,7 +164,7 @@ class PackmolSetup:
             Defaults to 0.
         """
         self.add_container(molecule=molecule,
-                           dimensions=dimensions,
+                           dimensions=origin+lengths,
                            density=density,
                            n_molecules=n_molecules,
                            container_type="box")
@@ -224,6 +200,7 @@ class PackmolSetup:
                            density=density,
                            n_molecules=n_molecules,
                            container_type="sphere")
+
     def remove_molecule(self, molecule: Molecule) -> None:
         """
         Remove a molecule and associated setups from the system
@@ -326,8 +303,8 @@ class PackmolSetup:
             raise ValueError("Density or dimension(s) is set to 0.")
 
         volume = calculate_volume(dimensions, container_type)
-        expected_mol = round(density * volume)
-        expected_volume = expected_mol / density
+        integer_num_mol = round(density * volume)
+        optimal_volume = integer_num_mol / density
 
         scale_factor = (optimal_volume/volume)**(1/3)
         if container_type == "box":
