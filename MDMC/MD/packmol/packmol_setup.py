@@ -1,9 +1,11 @@
 """A module containing a class for storing packmol systems and their metadata"""
 import math
 import numpy as np
+import logging
 
 from MDMC.MD import Molecule
 
+LOGGER = logging.getLogger(__name__)
 
 def get_volume_affecting_dimensions(dimensions: 'tuple[float]', container_type: "str" = None) -> tuple[float]:
     """
@@ -326,7 +328,7 @@ class PackmolSetup:
         scale_dimensions = get_volume_affecting_dimensions(dimensions, container_type)
 
         if container_type == "box":
-            # Get xyz lenghts of box
+            # Get xyz lengths of box
             x = scale_dimensions[3] - scale_dimensions[0]
             y = scale_dimensions[4] - scale_dimensions[1]
             z = scale_dimensions[5] - scale_dimensions[2]
@@ -336,6 +338,7 @@ class PackmolSetup:
             scale_dimensions[3] = scale_dimensions[0] + scaled_lengths[0] # x
             scale_dimensions[4] = scale_dimensions[1] + scaled_lengths[1] # y
             scale_dimensions[5] = scale_dimensions[2] + scaled_lengths[2] # z
+            LOGGER.info(f'New dimensions are now ({scaled_lengths})')
         else:
             scale_dimensions = [dim*scale_factor for dim in scale_dimensions]
 
