@@ -25,6 +25,8 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     """
     cwd = os.getcwd()
     packmol_path = os.path.join(cwd, "packmol_files")
+    if not os.path.exists(packmol_path):
+        os.makedirs(packmol_path)
     input_path = os.path.join(packmol_path, "input_file.inp")
     output_path =  os.path.join(packmol_path,"output-universe.pdb")
 
