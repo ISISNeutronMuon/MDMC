@@ -23,23 +23,24 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     -------
     A `Universe` object filled with the molecules requested by the user as per the `PackmolSetup` object
     """
-    cwd = os.getcwd()
-    packmol_path = os.path.join(cwd, "packmol_files")
-    if not os.path.exists(packmol_path):
-        os.makedirs(packmol_path)
-    input_path = os.path.join(packmol_path, "input_file.inp")
-    output_path =  os.path.join(packmol_path,"output-universe.pdb")
+    original_cwd = os.getcwd()
+    packmol_file_path = os.path.join(original_cwd, "packmol_files")
+    if not os.path.exists(packmol_file_path):
+        os.makedirs(packmol_file_path)
+
+    os.chdir(packmol_file_path)
+    cwd = packmol_file_path
+    input_path = os.path.join(cwd, "input_file.inp")
+    output_path =  os.path.join(cwd,"output-universe.pdb")
 
     # Export molecules into PDB format
     molecules = setup_data.get_molecules()
     mol_file_names = {}
     # Enumerate molecules to ensure that an empty molecule name will have a non-empty file name
     for i, molecule in enumerate(molecules):
-        if molecule.name:
-            file_name = str(i)
-        else:
-            file_name = molecule.name
-        pdb_exporter = ProteinDataBankExporter(os.path.join(packmol_path, f"{file_name}.pdb"))
+        file_name = f"{str(molecule.name)}-{str(i)}"
+        file_path = os.path.join(cwd, f"{file_name}.pdb")
+        pdb_exporter = ProteinDataBankExporter(file_path)
         with pdb_exporter:
             pdb_exporter.write(molecule)
         mol_file_names[molecule] = file_name
@@ -51,8 +52,8 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
 
     # Call packmol
     # Create packmol call
-    command_list = [packmol_path, "<"]
-    command_list.append(input_path)
+    packmol_exec_path = get_packmol_path()
+    command_list = [f"{packmol_exec_path}", "<", f"{input_path}"]
 
     # Run packmol on input file
     _call_external_program(command_list)
@@ -73,7 +74,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     #
     # # Fill molecules with packmol-provided positions
 
-
+    os.chdir(original_cwd)
     return universe
 
 #TODO: Create Algorithm for finding which molecule read in from packmol
