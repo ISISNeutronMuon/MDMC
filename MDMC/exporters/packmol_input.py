@@ -1,6 +1,7 @@
 """A module of a class to export a packmol input file"""
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.exporters.exporter import Exporter
+from copy import deepcopy
 
 class PackmolInputExporter(Exporter):
     """A class to export `PackmolSetup` objects into packmol input files"""
@@ -32,18 +33,23 @@ class PackmolInputExporter(Exporter):
         """
         system_settings, mol_settings = setup.get_settings()
         tol = system_settings["tolerance"]
-        self.file.writelines(["# Created by MDMC",
-                              f"tolerance {tol}",
-                              "filetype pdb",
-                              f"output {output_name}"])
-        for molecule in mol_settings:
+        self.file.writelines(["# Created by MDMC\n",
+                              f"tolerance {tol}\n",
+                              "filetype pdb\n",
+                              f"output {output_name}\n"])
+        self.file.write("\n")
+        for molecule_setting in mol_settings:
             # Get structure file name
-            struct_file_name = molecule_file_names[molecule]
+            struct_file_name = molecule_file_names[molecule_setting["molecule"]]
             if struct_file_name.endswith(".pdb"):
                 struct_file_name = struct_file_name
             else:
                 struct_file_name += ".pdb"
             self.file.write(f"structure {struct_file_name}\n")
-            # Write each setting
-            self.file.writelines([self.INDENT+f"{setting}" for setting in mol_settings[molecule].keys()] )
-            self.file.write(f"end structure")
+            # Write each setting that is relevant to the structure
+            constraint_settings = deepcopy(molecule_setting)
+            constraint_settings.pop("molecule")
+            for setting in constraint_settings.keys():
+                self.file.writelines(self.INDENT+f"{setting} {constraint_settings[setting]}\n")
+            self.file.write(f"end structure\n")
+            self.file.write("\n")
