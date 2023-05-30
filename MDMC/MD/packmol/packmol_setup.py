@@ -50,8 +50,8 @@ class PackmolSetup:
         self._system_settings["tolerance"] = 2.0
 
     def add_fixed_molecule(self, molecule: Molecule,
-                           position: 'tuple[float]' = (0.,0.,0.),
-                           rotation: 'tuple[float]' = (0.,0.,0.),
+                           position: 'tuple[float]' = (0., 0., 0.),
+                           rotation: 'tuple[float]' = (0., 0., 0.),
                            centre: bool = True) -> None:
         """
         Add a single molecule in a fixed position to the setup
@@ -82,12 +82,31 @@ class PackmolSetup:
     def add_container(self,
                       molecule: Molecule,
                       dimensions: tuple,
-                      origin: tuple = (0.,0.,0.),
+                      origin: tuple = (0., 0., 0.),
                       density: float = 0.,
                       n_molecules: int = 0,
-                      container_type: str = None):
+                      container_type: str = None) -> None:
         """
-        TODO
+        Adds a container to the setup
+        Only density or n_molecules need to be provided at one time,
+        as n_molecules can be inferred from the density
+
+        Parameters
+        ----------
+        molecule: Molecule
+            A `Molecule` object to be added to the container
+        dimensions: tuple
+            The size of the molecule either in xyz (3-tuple)
+            or a single size (1-tuple) depending on the container type
+        origin: tuple
+            A 3-tuple containing the xyz coordinate for the origin of the container
+        density: float
+            A floating point number describing the density of
+            the molecule in the container in Molecules/Ang^3
+        n_molecules: int
+            An integer number of molecules to add to the container
+        container_type: str
+            The type of container to add. Currently only "cube", "box" and "sphere" are supported
         """
 
         if molecule not in self._molecules:
@@ -108,7 +127,7 @@ class PackmolSetup:
 
     def add_cube(self, molecule: Molecule,
                  size: float,
-                 origin: 'tuple[float]' = (0.,0.,0.),
+                 origin: 'tuple[float]' = (0., 0., 0.),
                  density: float = 0.,
                  n_molecules: int = 0) -> None:
         """
@@ -140,7 +159,7 @@ class PackmolSetup:
 
     def add_box(self, molecule: Molecule,
                 lengths: 'tuple[float]',
-                origin: 'tuple[float]' = (0.,0.,0.),
+                origin: 'tuple[float]' = (0., 0., 0.),
                 density: float = 0.,
                 n_molecules: int = 0) -> None:
         """
@@ -221,7 +240,7 @@ class PackmolSetup:
                     del setting
             self._molecules.remove(molecule)
 
-    def validate_setup(self):
+    def validate_setup(self) -> None:
         """Ensures that the setup is valid - shows errors and warnings for issues with the setup"""
         # The system tolerance must be set
         tol = self._system_settings["tolerance"]
@@ -265,7 +284,7 @@ class PackmolSetup:
         Returns
         -------
         A 6-tuple of the minimum and maximum sizes of the setup in the following format:
-        x_min, y_min, z_min, x_max, y_max, z_max
+        (x_min, y_min, z_min, x_max, y_max, z_max)
         """
         for mol_dict in self._molecule_settings:
             keys = mol_dict.keys()
@@ -279,6 +298,7 @@ class PackmolSetup:
                 dims = mol_dict["inside sphere"]
                 origin = dims[0:2]
                 radius = dims[3]//2
+                # Get min and max coordinates on both sides of the origin
                 minimums = np.subtract(origin, radius).astype(tuple)
                 maximums = np.add(origin, radius).astype(tuple)
                 return minimums + maximums
@@ -298,9 +318,10 @@ class PackmolSetup:
         -------
         True if the setting is a constraint, False otherwise
         """
-        return setting_name in ["inside cube", "outside cube",
-                                "inside box", "outside box",
-                                "inside sphere", "outside sphere", "fixed"]
+        return setting_name in ["inside cube",
+                                "inside box",
+                                "inside sphere",
+                                "fixed"]
 
     @staticmethod
     def resolve_density(dimensions: 'tuple[float]',
