@@ -76,7 +76,7 @@ class PackmolSetup:
             "molecule": molecule,
             "number": 1,
             "center": centre,
-            "fixed": position + rotation
+            "fixed": " ".join([str(number) for number in position+rotation])
         })
 
     def add_container(self,
@@ -103,7 +103,7 @@ class PackmolSetup:
             "molecule": molecule,
             "number": n_molecules,
             # Packmol needs the origin information explicitly
-            f"inside {container_type}": origin+dimensions
+            f"inside {container_type}": " ".join([str(number) for number in origin+dimensions])
         })
 
     def add_cube(self, molecule: Molecule,
@@ -260,6 +260,14 @@ class PackmolSetup:
         """
         return self._molecules
 
+    def get_max_sizes(self) -> tuple[float]:
+        """
+        Returns
+        -------
+        A 6-tuple of the minimum and maximum sizes of the setup in the following format:
+        x_min, y_min, z_min, x_max, y_max, z_max
+        """
+        #TODO: implement this & replace with function from packmol wrapper
     @staticmethod
     def _is_constraint(setting_name: str) -> bool:
         """
