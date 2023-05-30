@@ -284,7 +284,6 @@ class PackmolSetup:
                 return minimums + maximums
 
 
-        #TODO: implement this & replace with function from packmol wrapper
     @staticmethod
     def _is_constraint(setting_name: str) -> bool:
         """
