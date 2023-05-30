@@ -267,6 +267,23 @@ class PackmolSetup:
         A 6-tuple of the minimum and maximum sizes of the setup in the following format:
         x_min, y_min, z_min, x_max, y_max, z_max
         """
+        for mol_dict in self._molecule_settings:
+            keys = mol_dict.keys()
+            if "inside cube" in keys:
+                dims = mol_dict["inside cube"]
+                # Duplicate size by 3 for xyz max values
+                return dims[0:2] + (dims[3],)*3
+            elif "inside box" in keys:
+                return mol_dict["inside box"]
+            elif "inside sphere" in keys:
+                dims = mol_dict["inside sphere"]
+                origin = dims[0:2]
+                radius = dims[3]//2
+                minimums = np.subtract(origin, radius).astype(tuple)
+                maximums = np.add(origin, radius).astype(tuple)
+                return minimums + maximums
+
+
         #TODO: implement this & replace with function from packmol wrapper
     @staticmethod
     def _is_constraint(setting_name: str) -> bool:
