@@ -286,14 +286,15 @@ class PackmolSetup:
         A 6-tuple of the minimum and maximum sizes of the setup in the following format:
         (x_min, y_min, z_min, x_max, y_max, z_max)
         """
+        dims = []
         for mol_dict in self._molecule_settings:
             keys = mol_dict.keys()
             if "inside cube" in keys:
                 dims = mol_dict["inside cube"]
                 # Duplicate size by 3 for xyz max values
-                return dims[0:2] + (dims[3],)*3
+                dims += dims[0:2] + (dims[3],)*3
             elif "inside box" in keys:
-                return mol_dict["inside box"]
+                dims +=  mol_dict["inside box"]
             elif "inside sphere" in keys:
                 dims = mol_dict["inside sphere"]
                 origin = dims[0:2]
@@ -301,7 +302,11 @@ class PackmolSetup:
                 # Get min and max coordinates on both sides of the origin
                 minimums = np.subtract(origin, radius).astype(tuple)
                 maximums = np.add(origin, radius).astype(tuple)
-                return minimums + maximums
+                dims += minimums + maximums
+        # Get maximum of each xyz
+        minimum = tuple(float(np.amin(dims[:, i])) for i in range(0, 3))
+        maximum = tuple(float(np.amax(dims[:, i])) for i in range(3, 6))
+        return minimum + maximum
 
 
     @staticmethod
