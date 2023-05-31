@@ -287,6 +287,7 @@ class PackmolSetup:
         (x_min, y_min, z_min, x_max, y_max, z_max)
         """
         dims = []
+        # Extract coordinates for each container
         for mol_dict in self._molecule_settings:
             keys = mol_dict.keys()
             if "inside cube" in keys:
@@ -303,7 +304,8 @@ class PackmolSetup:
                 minimums = np.subtract(origin, radius).astype(tuple)
                 maximums = np.add(origin, radius).astype(tuple)
                 dims += minimums + maximums
-        # Get maximum of each xyz
+
+        # Get max & min of each container
         minimum = tuple(float(np.amin(dims[:, i])) for i in range(0, 3))
         maximum = tuple(float(np.amax(dims[:, i])) for i in range(3, 6))
         return minimum + maximum
