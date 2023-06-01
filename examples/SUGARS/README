@@ -1,0 +1,11 @@
+This folder contains models for the following sugars:
+- trehalose
+- fructose
+- glucose
+
+By saying a model it meant that there are py-files with full descriptions of bonds, angles dihedrals, pairs and coordinates.
+Every model is supported by a respective pdb-file.
+Additionally for previously submitted model of sucrose there are two smaller simulation moxes which can be used for some test refinement of the systems.
+
+3 other sugars are supported also by small simulation boxes of 27 and 64 molecules which can be directly used for some simulations.
+Boxes are not equilibrated and need to be equilibrated before starting any proper refinement.
