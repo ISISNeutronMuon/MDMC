@@ -286,29 +286,31 @@ class PackmolSetup:
         A 6-tuple of the minimum and maximum sizes of the setup in the following format:
         (x_min, y_min, z_min, x_max, y_max, z_max)
         """
-        dims = []
+        dims = np.ndarray(shape=(1,6))
         # Extract coordinates for each container
-        for mol_dict in self._molecule_settings:
+        for index, mol_dict in enumerate(self._molecule_settings):
             keys = mol_dict.keys()
             if "inside cube" in keys:
-                dims = mol_dict["inside cube"]
+                container_dims = [float(dim) for dim in mol_dict["inside cube"].split()]
                 # Duplicate size by 3 for xyz max values
-                dims += dims[0:2] + (dims[3],)*3
+                final_dims = np.array(container_dims[0:3] + [container_dims[3]]*3)
+                dims = np.insert(dims, index, final_dims, axis=0)
             elif "inside box" in keys:
-                dims +=  mol_dict["inside box"]
+                container_dims = [float(dim) for dim in mol_dict["inside box"].split()]
+                dims = np.insert(dims, index, container_dims, axis=0)
             elif "inside sphere" in keys:
-                dims = mol_dict["inside sphere"]
-                origin = dims[0:2]
-                radius = dims[3]//2
+                container_dims = [float(dim) for dim in mol_dict["inside sphere"].split()]
+                origin = container_dims[0:3]
+                radius = container_dims[3]//2
                 # Get min and max coordinates on both sides of the origin
-                minimums = np.subtract(origin, radius).astype(tuple)
-                maximums = np.add(origin, radius).astype(tuple)
-                dims += minimums + maximums
+                origin_min = np.subtract(origin, radius)
+                origin_max = np.add(origin, radius)
+                dims = np.insert(dims, index, np.concatenate([origin_min, origin_max]), axis=0)
 
         # Get max & min of each container
-        minimum = tuple(float(np.amin(dims[:, i])) for i in range(0, 3))
-        maximum = tuple(float(np.amax(dims[:, i])) for i in range(3, 6))
-        return minimum + maximum
+        minimum = [float(np.amin(dims[:, i])) for i in range(0, 3)]
+        maximum = [float(np.amax(dims[:, i])) for i in range(3, 6)]
+        return np.subtract(maximum, minimum)
 
 
     @staticmethod

@@ -65,7 +65,8 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     #     reader.parse()
 
     # Create Universe from output
-    dim = get_packmol_universe_dimensions(input_path)
+    dim = setup_data.get_max_sizes()
+    print("Dimentions:", dim)
     universe = Universe(dim)
 
     # # Identify molecules from output
@@ -117,38 +118,38 @@ def get_packmol_output_name(inp_file_path: str) -> str:
 
     return name
 
-def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
-    """
-    Obtains and calculates the dimensions needed for a universe from a packmol input file
-    Parameters
-    ----------
-    inp_file_path: str
-        The path to the packmol input file (.inp) as a string
-
-    Returns
-    -------
-    list[float]
-        The size of the universe needed for the system
-    """
-    with open(inp_file_path, "r", encoding="UTF-8") as inp_file:
-        contents = inp_file.readlines()
-
-    pattern = re.compile(".*inside box.*")
-
-    min_coords = np.zeros(3)
-    max_coords = np.zeros(3)
-    for line in contents:
-        if pattern.match(line):
-            line = line.split()
-            minimums = [float(i) for i in line[2:5]]
-            maximums = [float(i) for i in line[5:]]
-            for i in range (0, 3):
-                min_coords[i] = minimums[i] if minimums[i] < min_coords[i] else min_coords[i]
-                max_coords[i] = maximums[i] if maximums[i] > max_coords[i] else max_coords[i]
-
-    dimensions = max_coords - min_coords
-
-    return dimensions
+# def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
+#     """
+#     Obtains and calculates the dimensions needed for a universe from a packmol input file
+#     Parameters
+#     ----------
+#     inp_file_path: str
+#         The path to the packmol input file (.inp) as a string
+#
+#     Returns
+#     -------
+#     list[float]
+#         The size of the universe needed for the system
+#     """
+#     with open(inp_file_path, "r", encoding="UTF-8") as inp_file:
+#         contents = inp_file.readlines()
+#
+#     pattern = re.compile(".*inside box.*")
+#
+#     min_coords = np.zeros(3)
+#     max_coords = np.zeros(3)
+#     for line in contents:
+#         if pattern.match(line):
+#             line = line.split()
+#             minimums = [float(i) for i in line[2:5]]
+#             maximums = [float(i) for i in line[5:]]
+#             for i in range (0, 3):
+#                 min_coords[i] = minimums[i] if minimums[i] < min_coords[i] else min_coords[i]
+#                 max_coords[i] = maximums[i] if maximums[i] > max_coords[i] else max_coords[i]
+#
+#     dimensions = max_coords - min_coords
+#
+#     return dimensions
 
 def _call_external_program(command_list: 'list[str]', work_dir: str=None):
     """
