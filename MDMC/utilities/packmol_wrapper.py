@@ -69,7 +69,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
 
     # Create Universe from output
     dim = setup_data.get_max_sizes()
-    print("Dimentions:", dim)
+    print("Dimensions:", dim)
     universe = Universe(dim)
 
     _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
@@ -92,11 +92,6 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
 
     os.chdir(original_cwd)
     return universe
-
-#TODO: Create Algorithm for finding which molecule read in from packmol
-# corresponds to which molecule from the user's input
-#TODO: Compare molecules by stoichiometry and bonds
-#TODO: Create algorithm to copy user's molecules into position of those returned by packmol
 
 
 def get_packmol_path() -> str:

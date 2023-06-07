@@ -41,7 +41,7 @@ class PackmolSetup:
     For an explanation of all the settings and constraints see:
     https://m3g.github.io/packmol/userguide.shtml#basic
     """
-    _molecules: 'set[Molecule]' = set()
+    _molecules: 'list[Molecule]' = []
     _molecule_settings: 'list[dict]' = []
     _system_settings: dict = {}
 
