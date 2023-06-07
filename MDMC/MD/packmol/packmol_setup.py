@@ -70,7 +70,7 @@ class PackmolSetup:
             True if the molecule is to be centred around the position or not. Defaults to True.
         """
         if molecule not in self._molecules:
-            self._molecules.add(molecule)
+            self._molecules.append(molecule)
 
         self._molecule_settings.append({
             "molecule": molecule,
@@ -110,7 +110,7 @@ class PackmolSetup:
         """
 
         if molecule not in self._molecules:
-            self._molecules.add(molecule)
+            self._molecules.append(molecule)
 
         if not n_molecules:
             # Figure out number of molecules
@@ -271,7 +271,7 @@ class PackmolSetup:
         """
         return self._system_settings, self._molecule_settings
 
-    def get_molecules(self) -> 'set[Molecule]':
+    def get_molecules(self) -> 'list[Molecule]':
         """
         Returns
         -------

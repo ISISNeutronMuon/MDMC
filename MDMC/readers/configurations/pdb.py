@@ -7,6 +7,7 @@ import numpy as np
 from MDMC.MD.interactions import Bond
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.structures import Atom
+from ase.io import proteindatabank
 
 
 class ProteinDataBankReader(ConfigurationReader):

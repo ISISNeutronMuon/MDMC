@@ -8,9 +8,10 @@ import os
 import numpy as np
 
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
-from MDMC.MD.simulation import Universe
+from MDMC.MD import Universe, Molecule
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
 from MDMC.exporters.packmol_input import PackmolInputExporter
+from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     """
@@ -58,22 +59,36 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     # Run packmol on input file
     _call_external_program(command_list)
 
-    # # Convert into MDMC universe
-    # # Read Output
-    # reader = PackmolPDBReader(output_path)
-    # with reader:
-    #     reader.parse()
+    # Convert into MDMC universe
+    # Read Output
+    reader = PackmolPDBReader(output_path)
+    with reader:
+        reader.parse()
+        output_molecules = reader.molecules
+
 
     # Create Universe from output
     dim = setup_data.get_max_sizes()
     print("Dimentions:", dim)
     universe = Universe(dim)
 
-    # # Identify molecules from output
-    # for molecule in reader.molecules:
-    #     universe.add_structure(molecule)
-    #
-    # # Fill molecules with packmol-provided positions
+    _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
+    # Loops over all molecules in setup
+    for molecule_setting in mol_settings:
+        molecule = molecule_setting["molecule"]
+        number_of_molecules = molecule_setting["number"]
+        count = 0
+        while count < number_of_molecules:
+            # copy atoms from user defined `molecule`
+            # apply new positions to atoms
+            atom_copies = []
+            for input_atom, output_atom in zip(molecule.atoms, output_molecules[count].atoms):
+                atom_copies.append(input_atom.copy(position=output_atom.position))
+            molecule_copy = Molecule(atoms=atom_copies)
+            universe.add_structure(molecule_copy)
+            count += 1
+
+        output_molecules = output_molecules[number_of_molecules-1:]
 
     os.chdir(original_cwd)
     return universe
@@ -89,7 +104,10 @@ def get_packmol_path() -> str:
     Returns a string containing the path to packmol from the PATH environment variable,
     if it exists. Otherwise, returns ``None`` if packmol is not in PATH.
     """
-    return shutil.which("packmol")
+    if shutil.which("packmol") is not None:
+        return shutil.which("packmol")
+    else:
+        return "packmol"
 
 def get_packmol_output_name(inp_file_path: str) -> str:
     """
@@ -118,38 +136,6 @@ def get_packmol_output_name(inp_file_path: str) -> str:
 
     return name
 
-# def get_packmol_universe_dimensions(inp_file_path: str) -> 'list[float]':
-#     """
-#     Obtains and calculates the dimensions needed for a universe from a packmol input file
-#     Parameters
-#     ----------
-#     inp_file_path: str
-#         The path to the packmol input file (.inp) as a string
-#
-#     Returns
-#     -------
-#     list[float]
-#         The size of the universe needed for the system
-#     """
-#     with open(inp_file_path, "r", encoding="UTF-8") as inp_file:
-#         contents = inp_file.readlines()
-#
-#     pattern = re.compile(".*inside box.*")
-#
-#     min_coords = np.zeros(3)
-#     max_coords = np.zeros(3)
-#     for line in contents:
-#         if pattern.match(line):
-#             line = line.split()
-#             minimums = [float(i) for i in line[2:5]]
-#             maximums = [float(i) for i in line[5:]]
-#             for i in range (0, 3):
-#                 min_coords[i] = minimums[i] if minimums[i] < min_coords[i] else min_coords[i]
-#                 max_coords[i] = maximums[i] if maximums[i] > max_coords[i] else max_coords[i]
-#
-#     dimensions = max_coords - min_coords
-#
-#     return dimensions
 
 def _call_external_program(command_list: 'list[str]', work_dir: str=None):
     """

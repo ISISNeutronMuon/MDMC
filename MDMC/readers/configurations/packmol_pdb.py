@@ -9,20 +9,22 @@ class PackmolPDBReader(ProteinDataBankReader):
 
     def parse(self, **settings: dict) -> None:
         prev_molecule_id = ""
-        atom_id_dict = {}
         molecules_dict = {}
-        for full_line_string in self.file:
-            line = full_line_string.split()
-            if line[0] == "ATOM" or line[0] == "HETATM":
-                if len(line) == 9:
-                    current_molecule_id = "".join(line[3:6])
-                else:
-                    current_molecule_id = "".join(line[3:5])
-
-                element = line[2]
-                current_atom_pos = [float(position) for position in line[-3:]]
-                current_atom_obj = Atom(element, current_atom_pos)
-                atom_id_dict[line[1]] = current_atom_obj
+        for line in self.file:
+            # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
+            # Link to PDF of file format:
+            # https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
+            #chars 0-6 identify what the line is describing
+            record_name = line[0:6]
+            if record_name == "ATOM  " or record_name == "HETATM":
+                #chars 23-26 identify molecule
+                current_molecule_id = int(line[22:26].split()[-1])
+                element = line[76:78].split()[-1]
+                current_atom_pos = [float(pos.split()[-1]) for pos in
+                                    (line[30:38], line[38:46], line[46:54])] #xyz positions
+                atom_name = line[12:16].split()[-1]
+                current_atom_obj = Atom(element, position=current_atom_pos, name=atom_name)
+                self._atoms.append(current_atom_obj)
 
                 if prev_molecule_id == current_molecule_id:
                     molecules_dict[prev_molecule_id].append(current_atom_obj)
@@ -31,15 +33,7 @@ class PackmolPDBReader(ProteinDataBankReader):
                         full_molecule = Molecule(atoms=molecules_dict[prev_molecule_id])
                         self._molecules.append(full_molecule)
                     prev_molecule_id = current_molecule_id
-                    molecules_dict[prev_molecule_id] = [current_atom_obj, ]
-
-            elif line[0] == "CONECT":
-                atoms_to_connect = line[1:]
-                #pylint: disable=no-member
-                for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
-                    self.create_bond(atom_id_dict[atom1_id], atom_id_dict[atom2_id])
-
-        self._atoms = atom_id_dict.values()
+                    molecules_dict[prev_molecule_id] = [current_atom_obj,]
 
     @property
     def molecules(self) -> 'list[Molecule]':
