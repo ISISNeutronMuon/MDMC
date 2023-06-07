@@ -74,7 +74,8 @@ class GPO(Minimizer):
         # are decided based on the best position as determined by the Gaussian process).
         self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
                                    acq_optimizer="sampling", initial_point_generator="lhs",
-                                   n_initial_points=self.n_initial, model_queue_size=1)
+                                   n_initial_points=self.n_initial, model_queue_size=2,
+                                   n_jobs=-1)
 
 
     @property
