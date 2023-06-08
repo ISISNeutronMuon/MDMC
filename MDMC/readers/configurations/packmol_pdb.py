@@ -8,6 +8,17 @@ class PackmolPDBReader(ProteinDataBankReader):
     """A class to read in packmol PDB output files"""
 
     def parse(self, **settings: dict) -> None:
+        """
+        Read lines from the .pdb file one at a time, following the PDB file-format. Identify the atoms, and the
+        molecules to which they belong. Then add the atoms to `Molecule` objects and store in self._atoms or
+        self._molecules for access by other functions.
+
+        Parameters
+        ----------
+        **settings: dict, optional
+            None are necessary for this reader.
+
+        """
         prev_molecule_id = ""
         molecules_dict = {}
         for line in self.file:
@@ -27,6 +38,7 @@ class PackmolPDBReader(ProteinDataBankReader):
                 self._atoms.append(current_atom_obj)
 
                 if prev_molecule_id == current_molecule_id:
+                    # We are in the same molecule so append new atom
                     molecules_dict[prev_molecule_id].append(current_atom_obj)
                 else:
                     # The molecule has changed between lines - we have started to read a new molecule
