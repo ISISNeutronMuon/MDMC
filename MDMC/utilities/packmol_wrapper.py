@@ -29,10 +29,8 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     if not os.path.exists(packmol_file_path):
         os.makedirs(packmol_file_path)
 
-    os.chdir(packmol_file_path)
-    cwd = packmol_file_path
-    input_path = os.path.join(cwd, "input_file.inp")
-    output_path =  os.path.join(cwd,"output-universe.pdb")
+    input_path = os.path.join(packmol_file_path, "input_file.inp")
+    output_path =  os.path.join(packmol_file_path,"output-universe.pdb")
 
     # Export molecules into PDB format
     molecules = setup_data.get_molecules()
@@ -40,7 +38,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     # Enumerate molecules to ensure that an empty molecule name will have a non-empty file name
     for i, molecule in enumerate(molecules):
         file_name = f"{str(molecule.name)}-{str(i)}"
-        file_path = os.path.join(cwd, f"{file_name}.pdb")
+        file_path = os.path.join(packmol_file_path, f"{file_name}.pdb")
         pdb_exporter = ProteinDataBankExporter(file_path)
         with pdb_exporter:
             pdb_exporter.write(molecule)
@@ -57,7 +55,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     command_list = [f"{packmol_exec_path}", "<", f"{input_path}"]
 
     # Run packmol on input file
-    _call_external_program(command_list)
+    _call_external_program(command_list, work_dir=packmol_file_path)
 
     # Convert into MDMC universe
     # Read Output
@@ -66,10 +64,8 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
         reader.parse()
         output_molecules = reader.molecules
 
-
     # Create Universe from output
     dim = setup_data.get_max_sizes()
-    print("Dimensions:", dim)
     universe = Universe(dim)
 
     _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
@@ -87,10 +83,10 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
             molecule_copy = Molecule(atoms=atom_copies)
             universe.add_structure(molecule_copy)
             count += 1
+        if number_of_molecules != len(output_molecules):
+            output_molecules = output_molecules[number_of_molecules:]
 
-        output_molecules = output_molecules[number_of_molecules-1:]
-
-    os.chdir(original_cwd)
+    print(len(universe.bonded_interactions))
     return universe
 
 

@@ -35,6 +35,9 @@ class PackmolPDBReader(ProteinDataBankReader):
                     prev_molecule_id = current_molecule_id
                     molecules_dict[prev_molecule_id] = [current_atom_obj,]
 
+        #Add final molecule
+        self._molecules.append(full_molecule)
+
     @property
     def molecules(self) -> 'list[Molecule]':
         """Returns a list of ``Molecule`` objects from the data read from the file"""
