@@ -1,9 +1,7 @@
 """Tests for the packmol wrapper utility of MDMC"""
 import pytest
-from pytest_cases import fixture
 
-import MDMC.utilities.packmol_wrapper as packmol
-import tests.test_data.data as test_data
+import MDMC.MD.packmol.packmol_wrapper as packmol
 from MDMC.MD import Universe
 
 # lammps mark used to ensure test runs in docker container
