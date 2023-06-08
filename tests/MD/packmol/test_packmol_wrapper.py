@@ -1,8 +1,10 @@
 """Tests for the packmol wrapper utility of MDMC"""
+import numpy as np
 import pytest
 
 import MDMC.MD.packmol.packmol_wrapper as packmol
-from MDMC.MD import Universe
+from MDMC.MD import Universe, Atom, BondAngle, Molecule
+from MDMC.MD.packmol.packmol_setup import PackmolSetup
 
 # lammps mark used to ensure test runs in docker container
 pytestmark = [pytest.mark.lammps]
@@ -52,22 +54,34 @@ def test_incorrect_packmol_filename(packmol_data_path, input_file_name):
         packmol.fill_with_packmol(input_file_name, incorrect_path)
         
 '''
-# TODO: make filled_universe fixture
 
-def test_packmol_result_is_identical_between_runs(filled_universe, packmol_data_path, input_file_name):
+@pytest.fixture()
+def simple_universe_setup():
+    h_1 = Atom("H")
+    h_2 = Atom("H")
+    o_1 = Atom("O")
+    h20_bondangle = BondAngle(atom_tuples=[(h_1,o_1,h_2)])
+    h2o_mol = Molecule(atoms=[h_1, h_2, o_1], interactions=[h20_bondangle])
+    setup = PackmolSetup()
+    setup.add_cube(h2o_mol, size=30., density=0.05)
+@pytest.fixture()
+def simple_filled_universe():
+    h_1 = Atom("H")
+    h_2 = Atom("H")
+    o_1 = Atom("O")
+    h20_bondangle = BondAngle(atom_tuples=[(h_1,o_1,h_2)])
+    h2o_mol = Molecule(atoms=[h_1, h_2, o_1], interactions=[h20_bondangle])
+    setup = PackmolSetup()
+    setup.add_cube(h2o_mol, size=30., density=0.05)
+    return packmol.fill_with_packmol(setup)
+def test_packmol_result_is_identical_between_runs(simple_filled_universe, simple_universe_setup):
     """Test that filling is deterministic"""
-    universe_1 = filled_universe
-    universe_2 = packmol.fill_with_packmol(input_file_name, packmol_data_path)
+    universe_1 = simple_filled_universe
+    universe_2 = packmol.fill_with_packmol(simple_universe_setup)
     assert dir(universe_1) == dir(universe_2)
 
-def test_returns_universe(filled_universe):
-    assert type(filled_universe) is Universe
-
-
-
-
-
-
+def test_returns_universe(simple_filled_universe):
+    assert type(simple_filled_universe) is Universe
 
 def test_get_packmol_output_name(packmol_data_path, input_file_name):
     """Tests that the output name of a packmol file will be correctly retrieved"""
@@ -78,7 +92,6 @@ def test_get_packmol_output_name(packmol_data_path, input_file_name):
 
 def test_get_packmol_universe_dimensions(packmol_data_path, input_file_name):
     """Tests that the dimensions are correctly read from the packmol input"""
-    #
     actual_dim = packmol.get_packmol_universe_dimensions(packmol_data_path+"/"+input_file_name)
     correct_dim = [72., 60., 60.,]
-    assert actual_dim == correct_dim # TODO: allclose here not ==
+    assert np.allclose(actual_dim, correct_dim)
