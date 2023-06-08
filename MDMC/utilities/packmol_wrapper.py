@@ -83,7 +83,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
             molecule_copy = Molecule(atoms=atom_copies)
             universe.add_structure(molecule_copy)
             count += 1
-        if number_of_molecules != len(output_molecules):
+        if len(output_molecules) != number_of_molecules:
             output_molecules = output_molecules[number_of_molecules:]
 
     print(len(universe.bonded_interactions))
