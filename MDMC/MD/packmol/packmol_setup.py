@@ -28,9 +28,9 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
         case "cube":
             return dimensions[0] ** 3
         case "box":
-            return np.product(*dimensions)
+            return np.product(np.array(dimensions))
         case "sphere":
-            return (3 / 4) + math.pi * dimensions[0] ** 2
+            return (4 / 3) * math.pi * (dimensions[0] ** 3)
         case _:
             raise ValueError("The type of container is unsupported or none."
                              "Currently only \"cube\", \"box\", and \"sphere\" are supported.")
@@ -301,7 +301,7 @@ class PackmolSetup:
             elif "inside sphere" in keys:
                 container_dims = [float(dim) for dim in mol_dict["inside sphere"].split()]
                 origin = container_dims[0:3]
-                radius = container_dims[3]//2
+                radius = container_dims[3]
                 # Get min and max coordinates on both sides of the origin
                 origin_min = np.subtract(origin, radius)
                 origin_max = np.add(origin, radius)
