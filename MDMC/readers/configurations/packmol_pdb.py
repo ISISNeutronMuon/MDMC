@@ -29,9 +29,13 @@ class PackmolPDBReader(ProteinDataBankReader):
                 if prev_molecule_id == current_molecule_id:
                     molecules_dict[prev_molecule_id].append(current_atom_obj)
                 else:
+                    # The molecule has changed between lines - we have started to read a new molecule
                     if prev_molecule_id:
+                        # A molecule has existed previously (i.e. not the first molecule)
                         full_molecule = Molecule(atoms=molecules_dict[prev_molecule_id])
                         self._molecules.append(full_molecule)
+                    # Setting up for the reading a new molecule
+                    # (done to allow first molecule to be read as well as between molecules)
                     prev_molecule_id = current_molecule_id
                     molecules_dict[prev_molecule_id] = [current_atom_obj,]
 

@@ -69,24 +69,26 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     universe = Universe(dim)
 
     _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
-    # Loops over all molecules in setup
     for molecule_setting in mol_settings:
         molecule = molecule_setting["molecule"]
         number_of_molecules = molecule_setting["number"]
         count = 0
         while count < number_of_molecules:
             # copy atoms from user defined `molecule`
-            # apply new positions to atoms
             atom_copies = []
             for input_atom, output_atom in zip(molecule.atoms, output_molecules[count].atoms):
+                # apply new positions to atoms in `universe`
                 atom_copies.append(input_atom.copy(position=output_atom.position))
+            # Create molecule in new position & add to universe
             molecule_copy = Molecule(atoms=atom_copies)
             universe.add_structure(molecule_copy)
             count += 1
+        # change output_molecules to remove molecules we have just added
+        # ensures we start with the right molecule in the next iteration
         if len(output_molecules) != number_of_molecules:
             output_molecules = output_molecules[number_of_molecules:]
 
-    print(len(universe.bonded_interactions))
+    #print(len(universe.bonded_interactions))
     return universe
 
 
