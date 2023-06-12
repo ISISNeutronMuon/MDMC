@@ -279,7 +279,10 @@ class ObservablePair:
 
     def calculate_difference(self) -> np.ndarray:
         """
-        Assumes a single dependent variable for each ``Observable``
+        Calculates the difference between the dependent variables of an
+        experimental dataset and an MD simulation dataset, after applying
+        a rescale factor which is calculated to scale the exp_data to the
+        MD simulation.
 
         Returns
         -------
@@ -298,7 +301,8 @@ class ObservablePair:
 
     def calculate_errors(self) -> np.ndarray:
         """
-        Assumes a single dependent variable error for each ``Observable``
+        Combines, in quadrature, the errors of the MD dataset and the
+        experimental dataset.
 
         Returns
         -------
@@ -317,7 +321,8 @@ class ObservablePair:
     def calculate_exp_errors(self) -> np.ndarray:
         """
         Assumes a single dependent variable error for each ``Observable``.
-        Calculates only the experimental errors.
+        Calculates only the experimental errors and scales them by the
+        `rescale_factor`.
 
         Returns
         -------
