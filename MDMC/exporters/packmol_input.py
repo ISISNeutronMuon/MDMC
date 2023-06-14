@@ -47,7 +47,7 @@ class PackmolInputExporter(Exporter):
                 struct_file_name += ".pdb"
             self.file.write(f"structure {struct_file_name}\n")
             # Write each setting that is relevant to the structure
-            constraint_settings = deepcopy(molecule_setting)
+            constraint_settings = {k:v for k,v in molecule_setting.items()}
             constraint_settings.pop("molecule")
             for setting in constraint_settings.keys():
                 self.file.writelines(self.INDENT+f"{setting} {constraint_settings[setting]}\n")
