@@ -4,6 +4,7 @@ import re
 import shutil
 import subprocess
 import os
+from copy import deepcopy
 
 import numpy as np
 
@@ -81,7 +82,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
             # get list of mol positions
             output_molecule_pos_data = [atom.position for atom in current_molecule]
             # copy whole molecule
-            copied_mol = ref_molecule.__deepcopy__({})
+            copied_mol = deepcopy(ref_molecule)
             # adjust individual atom positions
             for copied_atom, new_pos in zip(copied_mol.atoms, output_molecule_pos_data):
                 copied_atom.position = new_pos
