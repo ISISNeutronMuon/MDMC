@@ -12,6 +12,8 @@ from MDMC.MD import Universe, Molecule
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
 from MDMC.exporters.packmol_input import PackmolInputExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
+from scipy.spatial.transform import Rotation
+
 
 def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     """
@@ -70,19 +72,24 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
 
     _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
     for molecule_setting in mol_settings:
-        molecule = molecule_setting["molecule"]
+        ref_molecule = molecule_setting["molecule"]
         number_of_molecules = molecule_setting["number"]
-        count = 0
-        while count < number_of_molecules:
-            # copy atoms from user defined `molecule`
-            atom_copies = []
-            for input_atom, output_atom in zip(molecule.atoms, output_molecules[count].atoms):
-                # apply new positions to atoms in `universe`
-                atom_copies.append(input_atom.copy(position=output_atom.position))
-            # Create molecule in new position & add to universe
-            molecule_copy = Molecule(atoms=atom_copies)
-            universe.add_structure(molecule_copy)
-            count += 1
+        current_molecules = output_molecules[:number_of_molecules]
+        output_molecules = output_molecules[number_of_molecules:]
+
+        for current_molecule in current_molecules:
+            # get list of mol positions
+            output_molecule_pos_data = [atom.position for atom in current_molecule]
+            # copy whole molecule
+            copied_mol = ref_molecule.__deepcopy__({})
+            # adjust individual atom positions
+            for copied_atom, new_pos in zip(copied_mol.atoms, output_molecule_pos_data):
+                copied_atom.position = new_pos
+
+            # Recalculate centre of mass & add to universe
+            copied_mol.position = copied_mol.calc_CoM()
+            universe.add_structure(copied_mol)
+
         # change output_molecules to remove molecules we have just added
         # ensures we start with the right molecule in the next iteration
         if len(output_molecules) != number_of_molecules:
