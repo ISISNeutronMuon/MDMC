@@ -34,7 +34,7 @@ class PackmolPDBReader(ProteinDataBankReader):
                 current_atom_pos = [float(pos.split()[-1]) for pos in
                                     (line[30:38], line[38:46], line[46:54])] #xyz positions
                 atom_name = line[12:16].split()[-1]
-                current_atom_obj = Atom(element, position=current_atom_pos, name=atom_name)
+                current_atom_obj = Atom(element.capitalize(), position=current_atom_pos, name=atom_name)
                 self._atoms.append(current_atom_obj)
 
                 if prev_molecule_id == current_molecule_id:
@@ -52,7 +52,8 @@ class PackmolPDBReader(ProteinDataBankReader):
                     molecules_dict[prev_molecule_id] = [current_atom_obj,]
 
         #Add final molecule
-        self._molecules.append(full_molecule)
+        if full_molecule:
+            self._molecules.append(full_molecule)
 
     @property
     def molecules(self) -> 'list[Molecule]':
