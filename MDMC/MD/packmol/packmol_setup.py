@@ -47,6 +47,9 @@ class PackmolSetup:
 
     def __init__(self):
         # packmol default tolerance
+        self._molecules = []
+        self._molecule_settings = []
+        self._system_settings = {}
         self._system_settings["tolerance"] = 2.0
 
     def add_fixed_molecule(self, molecule: Molecule,
