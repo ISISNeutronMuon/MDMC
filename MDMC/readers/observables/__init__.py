@@ -5,6 +5,7 @@ Contents
 LAMPSQw
 LAMPPDF
 MantidSQw
+MDANSEQSw
 netCDFSQw
 netCDFPDF
 obs_reader_factory
@@ -15,6 +16,7 @@ xml_SQw
 from . import LAMPSQw
 from . import LAMPPDF
 from . import MantidSQw
+from . import MDANSESQw
 from . import netCDFSQw
 from . import netCDFPDF
 from . import obs_reader_factory
