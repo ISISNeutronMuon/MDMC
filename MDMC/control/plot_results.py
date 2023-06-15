@@ -157,7 +157,7 @@ class PlotResults():
 
         labels = [str(name) for name in self.parameter_names]
         cornerplot = corner.corner(data, labels = labels, quantiles = [0.34, 0.5, 0.68])
-        
+
         mean, std = np.mean(data, axis=0), np.std(data, axis=0)
 
         return cornerplot, mean, std
