@@ -31,7 +31,7 @@ class MDANSESQw(SQwReader):
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
 
-        self.file_variables = np.loadtxt(self.file_name, delimiter=',')
+        self.file_variables = np.loadtxt(self.file_name)
 
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
@@ -46,11 +46,12 @@ class MDANSESQw(SQwReader):
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.Q = self.file_variables[1:, 0]  # Entry ar [0,0] is always zero
-        self.E = self.file_variables[0, 1:]
-        self.SQw = self.file_variables[1:, 1:]
-        self.SQw_err = np.sqrt(self.SQw)*0.01  # This is arbirtary and may need to be changed
-
+        self.Q = self.file_variables[0, 1:] # Entry ar [0,0] is always zero
+        self.E = self.file_variables[1:, 0]
+        self.SQw = self.file_variables[1:, 1:].T
+        self.SQw_err = self.SQw*0.001  # This is arbirtary and may need to be changed
+        if np.any(self.SQw <= 0.):
+            self.SQw[np.where(self.SQw <= 0.)] = 0.0
         # Change and zero errors into inf so that error calculations can still be performed on them.
         if np.any(self.SQw_err <= 0.):
             self.SQw_err[np.where(self.SQw_err <= 0.)] = float('inf')
