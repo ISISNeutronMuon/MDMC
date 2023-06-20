@@ -21,6 +21,7 @@ class PackmolPDBReader(ProteinDataBankReader):
         """
         prev_molecule_id = ""
         molecules_dict = {}
+        full_molecule = None
         for line in self.file:
             # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
             # Link to PDF of file format:
