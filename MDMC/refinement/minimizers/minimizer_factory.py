@@ -1,5 +1,5 @@
 """Factory class for generating minimizers"""
-
+from typing import TYPE_CHECKING
 from glob import glob
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
@@ -7,6 +7,8 @@ from os.path import basename, dirname, join, isfile
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
+if TYPE_CHECKING:
+    from MDMC.control import Control
 
 class MinimizerFactory:
 
@@ -17,7 +19,9 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name: str, parameter: 'list[str]', **settings: dict) -> Minimizer:
+    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]',
+                         **settings: dict) -> \
+            Minimizer:
         """
         Checks that the module is a supported minimzer and instantiates it as a minimizer.
 
@@ -25,6 +29,8 @@ class MinimizerFactory:
         ----------
         module_name: str
             The name of the module to be used as the minimizer, e.g. 'MMC'
+        control: Control
+            The ``Control`` object which uses this Minimizer.
         parameter: list[str]
             List of parameters to be refined
         **settings: dict, optional
@@ -45,7 +51,7 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](parameter, **settings)
+        return classes[0][1](control, parameter, **settings)
 
     @staticmethod
     def get_minimizer_names() -> 'list[str]':

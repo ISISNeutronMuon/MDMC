@@ -46,13 +46,11 @@ jobs:
       uses: dawidd6/action-download-artifact@v2
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: ci-build.yml
-        name: ${{ github.head_ref }}-total-profiling
+        workflow: ci-cron.yml
+        name: cron-total-profiling
 
     - name: Rename to master profiling
-      env:
-        BRANCH: ${{ github.head_ref }}
-      run: mv $BRANCH-total-profiling.csv master-profiling.csv
+      run: mv cron-total-profiling.csv master-profiling.csv
     
     - name: Upload as master profiling
       uses: actions/upload-artifact@v3
