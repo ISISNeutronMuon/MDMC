@@ -1,19 +1,16 @@
 """A module that integrates packmol into MDMC"""
-#TODO: Move into MDMC.MD.Packmol
 import re
 import shutil
 import subprocess
 import os
 from copy import deepcopy
 
-import numpy as np
 
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
-from MDMC.MD import Universe, Molecule
+from MDMC.MD import Universe
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
 from MDMC.exporters.packmol_input import PackmolInputExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
-from scipy.spatial.transform import Rotation
 
 
 def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
