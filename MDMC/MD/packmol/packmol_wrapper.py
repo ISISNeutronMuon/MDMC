@@ -7,7 +7,7 @@ from copy import deepcopy
 
 
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
-from MDMC.MD import Universe
+from MDMC.MD import Universe, Molecule, Atom
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
 from MDMC.exporters.packmol_input import PackmolInputExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
@@ -66,7 +66,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
 
     # Create Universe from output
     dim = setup_data.get_max_sizes()
-    universe = Universe(dim)
+    universe = Universe(dimensions=dim)
 
     _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
     for molecule_setting in mol_settings:
@@ -76,24 +76,27 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
         output_molecules = output_molecules[number_of_molecules:]
 
         for current_molecule in current_molecules:
-            # get list of mol positions
-            output_molecule_pos_data = [atom.position for atom in current_molecule]
-            # copy whole molecule
-            copied_mol = deepcopy(ref_molecule)
-            # adjust individual atom positions
-            for copied_atom, new_pos in zip(copied_mol.atoms, output_molecule_pos_data):
-                copied_atom.position = new_pos
+            if type(ref_molecule) == Molecule:
+                # get list of mol positions
+                output_molecule_pos_data = [atom.position for atom in current_molecule]
+                # copy whole molecule
+                copied_mol = ref_molecule.copy((0.,0.,0.))
+                # adjust individual atom positions
+                for copied_atom, new_pos in zip(copied_mol.atoms, output_molecule_pos_data):
+                    copied_atom.position = new_pos
 
-            # Recalculate centre of mass & add to universe
-            copied_mol.position = copied_mol.calc_CoM()
-            universe.add_structure(copied_mol)
+                # Recalculate centre of mass & add to universe
+                copied_mol.position = copied_mol.calc_CoM()
+                universe.add_structure(copied_mol)
+            elif type(ref_molecule) == Atom:
+                copied_atm = ref_molecule.copy(current_molecule.position)
+                universe.add_structure(copied_atm)
 
         # change output_molecules to remove molecules we have just added
         # ensures we start with the right molecule in the next iteration
         if len(output_molecules) != number_of_molecules:
             output_molecules = output_molecules[number_of_molecules:]
 
-    #print(len(universe.bonded_interactions))
     return universe
 
 
