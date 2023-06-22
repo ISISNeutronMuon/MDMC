@@ -1,0 +1,14 @@
+DL_POLY : Ar/Kr
+units kj
+molecules 1
+ArKr
+nummols     432
+atoms 2
+Ar             39.950         -0.1    1    0
+Kr             83.798         0.1    1    0
+finish
+vdw     3
+Ar      Ar       lj      -1.0     3.1
+Ar      Kr       lj      -1.0     3.5010
+Kr      Kr       lj      164.56     3.6010
+close
