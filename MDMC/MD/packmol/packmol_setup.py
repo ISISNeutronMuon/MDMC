@@ -375,3 +375,11 @@ class PackmolSetup:
 
         return tuple(scaled_lengths), integer_num_mol
 
+    @property
+    def tolerance(self) -> float:
+        return self._system_settings["tolerance"]
+    @tolerance.setter
+    def tolerance(self, new_tolerance: float) -> None:
+        """
+        """
+        self._system_settings["tolerance"] = new_tolerance

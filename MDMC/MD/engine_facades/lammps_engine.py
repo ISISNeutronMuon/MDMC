@@ -919,6 +919,7 @@ class LAMMPSUniverse(PyLammpsAttribute):
             # it is passed to LAMMPS - cast to float to remove units
             self.lmp.mass(type_ID, float(atom_type_group[0].mass))
             for atom in atom_type_group:
+                print("Atom being added to LAMMPS:", atom)
                 self.lmp.create_atoms(type_ID, 'single', *atom.position)
                 # As PyLammps has a bug preventing getting atom id from
                 # self.lmp.atoms[index].id, use number of atoms as proxy for

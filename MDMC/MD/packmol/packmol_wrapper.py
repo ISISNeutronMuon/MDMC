@@ -89,7 +89,7 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
                 copied_mol.position = copied_mol.calc_CoM()
                 universe.add_structure(copied_mol)
             elif type(ref_molecule) == Atom:
-                copied_atm = ref_molecule.copy(current_molecule.position)
+                copied_atm = ref_molecule.copy(current_molecule.atoms[0].position)
                 universe.add_structure(copied_atm)
 
         # change output_molecules to remove molecules we have just added

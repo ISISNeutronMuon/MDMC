@@ -31,10 +31,10 @@ class PackmolPDBReader(ProteinDataBankReader):
             if record_name == "ATOM  " or record_name == "HETATM":
                 #chars 23-26 identify molecule
                 current_molecule_id = int(line[22:26].split()[-1])
-                element = line[76:78].split()[-1]
+                element = str(line[76:78].split()[-1])
                 current_atom_pos = [float(pos.split()[-1]) for pos in
                                     (line[30:38], line[38:46], line[46:54])] #xyz positions
-                atom_name = line[12:16].split()[-1]
+                atom_name = str(line[12:16].split()[-1])
                 current_atom_obj = Atom(element.capitalize(), position=current_atom_pos, name=atom_name)
                 self._atoms.append(current_atom_obj)
 
