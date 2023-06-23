@@ -1485,7 +1485,7 @@ class Simulation:
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, md_steps: int,
+    def minimize(self, n_steps: int,
                  minimize_every: int = 10,
                  verbose: bool = False, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
@@ -1497,7 +1497,7 @@ class Simulation:
 
         Parameters
         ----------
-        md_steps : int
+        n_steps : int
             Total number of the MD run
         minimize_every: int, optional
             Number of MD steps between two consecutive minimizations
@@ -1527,8 +1527,8 @@ class Simulation:
         verbose_manager.start(1, verbose=int(verbose))
 
         verbose_manager.step(f"Running minimization every {minimize_every} steps"
-                             f"in an MD run with {md_steps} steps")
-        self.engine.minimize(md_steps, minimize_every, output_log=output_log, work_dir=work_dir,
+                             f"in an MD run with {n_steps} steps")
+        self.engine.minimize(n_steps, minimize_every, output_log=output_log, work_dir=work_dir,
                              **settings)
 
         verbose_manager.finish("Minimization")

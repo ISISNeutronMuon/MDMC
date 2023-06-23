@@ -383,7 +383,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         self.save_config()
         for nstep in range(int(n_steps/minimize_every)):
             self.lmp.velocity(
-                        'all', 'scale', convert_unit(self._temperature))
+                        'all', 'scale', convert_unit(self.lmp_simulation.temperature))
             self.lmp.run(minimize_every)
             self.lmp.minimize(etol,
                               ftol,

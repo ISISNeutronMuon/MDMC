@@ -279,7 +279,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   dlpoly=self.dlpoly,
                                                   **settings)
 
-    def minimize(self, md_steps: int,
+    def minimize(self, n_steps: int,
                  minimize_every: int = 10, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
@@ -287,7 +287,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
 
         Parameters
         ----------
-        md_steps : int
+        n_steps : int
             Maximum number of steps for the MD run.
         minimize_every : int
             Number of MD steps between two consecutive minimizations.
@@ -309,7 +309,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         ftol = settings.get('ftol', None)
         min_freq = minimize_every
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
-                    self.__class__, md_steps, ftol)
+                    self.__class__, n_steps, ftol)
         if not ftol:  # Should handle ftol == 0 or undefined ftol
             self.dlpoly.control['minimisation_criterion'] = 'energy'
             self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
@@ -317,7 +317,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
         self.dlpoly.control['minimisation_frequency'] = (min_freq, 'steps')
-        self.run(md_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
+        self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
                  **settings)
         self.dlpoly.control['minimisation_criterion'] = 'off'
 
