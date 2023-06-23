@@ -371,15 +371,24 @@ class PackmolSetup:
             scaled_lengths = [size*scale_factor for size in dimensions]
         else:
             scaled_lengths = [dim*scale_factor for dim in dimensions]
-        LOGGER.info(f'New dimensions are now ({scaled_lengths})')
+        info_string = f'New dimensions are now ({scaled_lengths})'
+        print(info_string)
+        LOGGER.info(msg=info_string)
 
         return tuple(scaled_lengths), integer_num_mol
 
     @property
     def tolerance(self) -> float:
+        """
+        Get or set the tolerance of the packmol run (i.e. how far apart each atom must be)
+
+        Returns
+        -------
+        `float`
+            The tolerance of the distances between atoms
+        """
         return self._system_settings["tolerance"]
+
     @tolerance.setter
     def tolerance(self, new_tolerance: float) -> None:
-        """
-        """
         self._system_settings["tolerance"] = new_tolerance
