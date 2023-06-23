@@ -21,7 +21,7 @@ class PackmolFiller:
         self._setup_data = setup_data
         self._mol_file_names = {}
 
-    def fill_with_packmol(self, setup_data: PackmolSetup) -> Universe:
+    def fill_with_packmol(self) -> Universe:
         """
         Parameters
         ----------
@@ -36,8 +36,8 @@ class PackmolFiller:
         self._export_molecules()
         self._export_system_setup()
         self._call_packmol()
-        molecules = self._read_packmol_output()
-        universe = self._fill_universe()
+        structures = self._read_packmol_output()
+        universe = self._fill_universe(structures)
         return universe
 
     def _create_paths(self) -> None:
@@ -133,7 +133,7 @@ class PackmolFiller:
             output_molecules = reader.molecules
         return output_molecules
 
-    def _fill_universe(self) -> Universe:
+    def _fill_universe(self, output_structures: 'List[Structure]') -> Universe:
         """
         A function to fill in the universe with the output data from packmol
         """
@@ -177,7 +177,7 @@ class PackmolFiller:
         return universe
 
     #TODO possibly move this to common or utils?
-    def _call_external_program(command_list: 'list[str]', work_dir: str=None):
+    def _call_external_program(self, command_list: 'list[str]', work_dir: str=None):
         """
         A function to call an external program in a specific working directory - defaults to
         current working directory as a failsafe
