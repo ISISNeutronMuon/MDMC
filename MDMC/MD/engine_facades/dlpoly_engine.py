@@ -279,15 +279,18 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   dlpoly=self.dlpoly,
                                                   **settings)
 
-    def minimize(self, n_steps: int, output_log: str = None,
+    def minimize(self, md_steps: int,
+                 minimize_every: int, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
         Minimizes the simulation energy
 
         Parameters
         ----------
-        n_steps : int
-            Maximum number of steps for the energy minimization.
+        md_steps : int
+            Maximum number of steps for the MD run.
+        minimize_every : int
+            Number of MD steps between two consecutive minimizations.
         output_log: str, optional, default None
             file where the output goes.
         work_dir: str, optional, default None
@@ -297,16 +300,16 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``MDEngine`` that is being used.
         etol: float, energy tolerance criteria for energy minimisation
         ftol: float, force tolerance criteria for force minimisation, active only if non-zero
-        minimisation_frequency: how often to do a geometry optimisation during minimisation process
+        maxeval: maximum number of minimization steps, IGNORED by DL_POLY
         """
 
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
         etol = settings.get('etol', 1.e-3)
         ftol = settings.get('ftol', None)
-        min_freq = settings.get('minimisation_frequency', 10)
+        min_freq = minimize_every
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
-                    self.__class__, n_steps, ftol)
+                    self.__class__, md_steps, ftol)
         if not ftol:  # Should handle ftol == 0 or undefined ftol
             self.dlpoly.control['minimisation_criterion'] = 'energy'
             self.dlpoly.control['minimisation_tolerance'] = (etol, 'internal_e')
@@ -314,7 +317,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             self.dlpoly.control['minimisation_criterion'] = 'force'
             self.dlpoly.control['minimisation_tolerance'] = (ftol, 'e.V/Ang')
         self.dlpoly.control['minimisation_frequency'] = (min_freq, 'steps')
-        self.run(n_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
+        self.run(md_steps, equilibration=True, output_log=output_log, work_dir=work_dir,
                  **settings)
         self.dlpoly.control['minimisation_criterion'] = 'off'
 

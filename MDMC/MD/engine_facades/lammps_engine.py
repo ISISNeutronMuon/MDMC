@@ -351,7 +351,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                lmp=self.lmp,
                                                **settings)
 
-    def minimize(self, n_steps: int, output_log: str = None,
+    def minimize(self, n_steps: int, minimize_every: int,
+                 output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
 
         # Check fix styles for shake or rattle styles and remove them
@@ -365,17 +366,35 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         etol = settings.get('etol', 1.e-4)
         ftol = settings.get('ftol', 0.)
         maxeval = settings.get('maxeval', 10000)
-        LOGGER.info('%s minimize: {n_steps: %s, etol: %s, ftol: %s,'
+        LOGGER.info('%s minimize: {md_steps: %s, minimize_every: %s, etol: %s, ftol: %s,'
                     ' maxeval: %s}',
                     self.__class__,
                     n_steps,
+                    minimize_every,
                     etol,
                     ftol,
                     maxeval)
+
         self.lmp.minimize(etol,
                           ftol,
                           n_steps,
                           maxeval)
+        best_energy = self.lmp.eval("pe")
+        self.save_config()
+        for nstep in range(int(n_steps/minimize_every)):
+            self.lmp.velocity(
+                        'all', 'scale', convert_unit(self._temperature))
+            self.lmp.run(minimize_every)
+            self.lmp.minimize(etol,
+                              ftol,
+                              n_steps,
+                              maxeval)
+            energy = self.lmp.eval("pe")
+            if energy < best_energy:
+                self.save_config()
+                best_energy = energy
+
+        self.reset_config()
 
         # Reapply the constraints
         if self.universe.constraint_algorithm:
