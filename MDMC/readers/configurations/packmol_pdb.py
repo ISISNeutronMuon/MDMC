@@ -53,8 +53,8 @@ class PackmolPDBReader(ProteinDataBankReader):
                     molecules_dict[prev_molecule_id] = [current_atom_obj,]
 
         #Add final molecule
-        if full_molecule:
-            self._molecules.append(full_molecule)
+        full_molecule = Molecule(atoms=molecules_dict[current_molecule_id])
+        self._molecules.append(full_molecule)
 
     @property
     def molecules(self) -> 'list[Molecule]':
