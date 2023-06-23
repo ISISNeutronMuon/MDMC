@@ -23,19 +23,17 @@ class PackmolPDBReader(ProteinDataBankReader):
         molecules_dict = {}
         full_molecule = None
         for line in self.file:
-            # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
-            # Link to PDF of file format:
-            # https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
             #chars 0-6 identify what the line is describing
             record_name = line[0:6]
             if record_name == "ATOM  " or record_name == "HETATM":
-                #chars 23-26 identify molecule
-                current_molecule_id = int(line[22:26].split()[-1])
-                element = str(line[76:78].split()[-1])
-                current_atom_pos = [float(pos.split()[-1]) for pos in
-                                    (line[30:38], line[38:46], line[46:54])] #xyz positions
-                atom_name = str(line[12:16].split()[-1])
-                current_atom_obj = Atom(element.capitalize(), position=current_atom_pos, name=atom_name)
+                record_info = self._parse_atom_record(line)
+                current_molecule_id = record_info[0]
+                atom_name = record_info[1]
+                current_atom_position = record_info[2]
+                element_symbol = record_info[3]
+                current_atom_obj = Atom(element_symbol.capitalize(),
+                                        position=current_atom_position,
+                                        name=atom_name)
                 self._atoms.append(current_atom_obj)
 
                 if prev_molecule_id == current_molecule_id:
@@ -55,6 +53,20 @@ class PackmolPDBReader(ProteinDataBankReader):
         #Add final molecule
         full_molecule = Molecule(atoms=molecules_dict[current_molecule_id])
         self._molecules.append(full_molecule)
+
+    def _parse_atom_record(self, line):
+        """
+        A function to get the necessary information out of an `ATOM  ` or `HETATM` record
+        This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
+        Link to PDF of file format:
+        https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
+        """
+        atom_name = str(line[12:16].split()[-1])
+        molecule_id = int(line[22:26].split()[-1])
+        atom_position = [float(position.split()[-1]) for position in
+                            (line[30:38], line[38:46], line[46:54])]  # xyz positions
+        element_symbol = str(line[76:78].split()[-1])
+        return molecule_id, atom_name, atom_position, element_symbol
 
     @property
     def molecules(self) -> 'list[Molecule]':
