@@ -56,7 +56,7 @@ RUN ./configure /opt/other/gfortran/gcc-12.2.0/
 RUN make
 
 # Add packmol to env variables
-RUN echo export PATH="/opt/other/packmol/packmol-20.14.0/:$PATH" >> /root/.bashrc
+ENV PATH /opt/other/packmol/packmol-20.14.0:$PATH
 ENV PYTHONPATH ${PYTHONPATH}:/opt/other/packmol/packmol-20.14.0/
 
 # Get LAMMPS # used to be lammps-stable.tar.gz
