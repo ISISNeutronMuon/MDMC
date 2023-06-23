@@ -3,8 +3,6 @@ import re
 import shutil
 import subprocess
 import os
-from copy import deepcopy
-
 
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD import Universe, Molecule, Atom
@@ -67,7 +65,6 @@ def fill_with_packmol(setup_data: PackmolSetup) -> Universe:
     # Create Universe from output
     dim = setup_data.get_max_sizes()
     universe = Universe(dimensions=dim)
-
     _, mol_settings = setup_data.get_settings() # All molecules in setup + their metadata
     for molecule_setting in mol_settings:
         ref_molecule = molecule_setting["molecule"]
