@@ -1457,7 +1457,6 @@ class Simulation:
         configuration and topology to ``self.universe`` and defines the
         simulation conditions
         """
-
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 

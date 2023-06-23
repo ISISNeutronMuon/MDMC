@@ -119,12 +119,3 @@ class ParamFileParser(Reader):
                     line = re.sub(PARAM_RE, OUT_RE, line)
 
                     print(line.format(**self.param_dict), file=out_file, end="")
-
-
-if __name__ == "__main__":
-    x = ParamFileParser("test.input")
-    x.parse()
-    print(f"{x.param_dict=}")
-    x.param_dict['sig_ar_ar'] = -1.0
-    x.param_dict['eps_ar_ar'] = 3.1
-    x.dump("ttt")

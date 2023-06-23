@@ -14,15 +14,16 @@ os.environ["OMP_NUM_THREADS"] = "4"
 from MDMC.control import Control
 from MDMC.MD import Atom, LennardJones, Simulation, Universe
 from MDMC.MD.interactions import Dispersion
+from MDMC.MD.engine_facades.file_facade import FileUniverse
 
 # Build universe with density 0.0176 atoms per AA^-3
-density = 0.0176
-# This means cubic universe of side:
-# 23.0668 A will contain 216 Ar atoms
-# 26.911 A will contain 343 Ar atoms
-# 30.7553 A will contain 512 Ar atoms
-# 38.4441 A will contain 1000 Ar atoms
-universe = Universe(dimensions=38.4441)
+# density = 0.0176
+# # This means cubic universe of side:
+# # 23.0668 A will contain 216 Ar atoms
+# # 26.911 A will contain 343 Ar atoms
+# # 30.7553 A will contain 512 Ar atoms
+# # 38.4441 A will contain 1000 Ar atoms
+# universe = Universe(dimensions=38.4441)
 Ar = Atom('Ar', charge=0.)
 # Calculating number of Ar atoms needed to obtain density
 n_ar_atoms = int(density * np.prod(universe.dimensions))
@@ -31,20 +32,26 @@ universe.fill(Ar, num_struc_units=(n_ar_atoms))
 
 # Above an universe of non-interacting argon atoms was created. Below
 # specify how these atoms will interact
-Ar_dispersion = Dispersion(universe,
-                           (Ar.atom_type, Ar.atom_type),
-                           cutoff=8.,
-                           vdw_tail_correction=True,
-                           function=LennardJones(1.0243, 3.36))
+# Ar_dispersion = Dispersion(universe,
+#                            (Ar.atom_type, Ar.atom_type),
+#                            cutoff=8.,
+#                            vdw_tail_correction=True,
+#                            function=LennardJones(1.0243, 3.36))
 
 # MD Engine setup. time_step of 10 fs is somewhat high, but for argon OK-ish.
 # If time_step is descreased by a factor consider increasing traj_step by the
 # same factor.
+universe = FileUniverse('argon.data',
+                        dimensions=(24, 24, 24),
+                        atoms=(Ar,),
+                        species_no={'Ar': 81})
 simulation = Simulation(universe,
-                        engine="lammps",
+                        engine="lammps_file",
                         time_step=10.18893,
                         temperature=120.,
-                        traj_step=15)
+                        traj_step=15,
+                        data_filename='argon.data',
+                        field_filename='argon.lmp')
 
 # Setup refinement of the force field parameters
 
