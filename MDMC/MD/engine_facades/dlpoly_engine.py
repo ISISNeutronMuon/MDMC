@@ -280,7 +280,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   **settings)
 
     def minimize(self, md_steps: int,
-                 minimize_every: int, output_log: str = None,
+                 minimize_every: int = 10, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
         Minimizes the simulation energy

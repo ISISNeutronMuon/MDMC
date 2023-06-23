@@ -351,7 +351,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                lmp=self.lmp,
                                                **settings)
 
-    def minimize(self, n_steps: int, minimize_every: int,
+    def minimize(self, n_steps: int, minimize_every: int = 10,
                  output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
 
