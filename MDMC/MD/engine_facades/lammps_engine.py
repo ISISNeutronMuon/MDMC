@@ -377,8 +377,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         self.lmp.minimize(etol,
                           ftol,
-                          n_steps,
-                          maxeval)
+                          maxeval,
+                          5*maxeval)
         best_energy = self.lmp.eval("pe")
         self.save_config()
         for nstep in range(int(n_steps/minimize_every)):
@@ -387,8 +387,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.lmp.run(minimize_every)
             self.lmp.minimize(etol,
                               ftol,
-                              n_steps,
-                              maxeval)
+                              maxeval,
+                              5*maxeval)
             energy = self.lmp.eval("pe")
             if energy < best_energy:
                 self.save_config()
