@@ -12,6 +12,9 @@ from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 
 class PackmolFiller:
+    """
+    A class representing a packmol run based on a `PackmolSetup` object
+    """
 
     _setup_data: PackmolSetup
     _packmol_files_path : str
@@ -30,8 +33,11 @@ class PackmolFiller:
 
         Returns
         -------
-        A `Universe` object filled with the molecules requested by the user as per the `PackmolSetup` object
+        `Universe`
+            A `Universe` object filled with the molecules requested
+            by the user as per the `PackmolSetup` object
         """
+        self._setup_data.validate_setup()
         self._create_paths()
         self._export_molecules()
         self._export_system_setup()
@@ -86,6 +92,7 @@ class PackmolFiller:
 
         # Run packmol on input file
         self._call_external_program(command_list, work_dir=self._packmol_files_path)
+
     @staticmethod
     def get_packmol_path() -> str:
         """
@@ -125,7 +132,8 @@ class PackmolFiller:
 
         Returns
         -------
-        output_molecules: List of `Structure`
+        `List`
+            A list of `Structure` objects (i.e. `Molecule` or `Atom`) read from the packmol output
         """
         reader = PackmolPDBReader(self._output_path)
         with reader:
@@ -136,6 +144,17 @@ class PackmolFiller:
     def _fill_universe(self, output_structures: 'List[Structure]') -> Universe:
         """
         A function to fill in the universe with the output data from packmol
+
+        Parameters
+        ----------
+        output_structures: `List` of `Structure`
+             A list containing the `Structure` objects (i.e. Atoms & Molecules)
+             read from packmol to
+
+        Returns
+        -------
+        `Universe`
+            A `Universe` object filled with the `Structure` objects in `output_structures`
         """
         dim = self._setup_data.get_max_sizes()
         universe = Universe(dimensions=dim)
@@ -152,7 +171,7 @@ class PackmolFiller:
             for current_structure in current_structures:
                 # Case where the structure we're copying is a molecule
                 if type(reference_structure) == Molecule:
-                    # get list of mol positions
+                    # get list of atom positions
                     output_molecule_pos_data = [atom.position for atom in current_structure]
                     # copy whole molecule
                     copied_molecule = reference_structure.copy((0., 0., 0.))
@@ -160,7 +179,7 @@ class PackmolFiller:
                     for copied_atom, new_pos in zip(copied_molecule.atoms, output_molecule_pos_data):
                         copied_atom.position = new_pos
 
-                    # Recalculate centre of mass & add to universe
+                    # Recalculate centre of mass & add everything to universe
                     copied_molecule.position = copied_molecule.calc_CoM()
                     universe.add_structure(copied_molecule)
 
@@ -177,7 +196,7 @@ class PackmolFiller:
         return universe
 
     #TODO possibly move this to common or utils?
-    def _call_external_program(self, command_list: 'list[str]', work_dir: str=None):
+    def _call_external_program(self, command_list: 'list[str]', work_dir: str=None) -> None:
         """
         A function to call an external program in a specific working directory - defaults to
         current working directory as a failsafe

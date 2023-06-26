@@ -22,7 +22,8 @@ def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -
 
     Returns
     -------
-    The volume of the container
+    `float`
+        The volume of the container
     """
     match container_type:
         case "cube":
@@ -232,7 +233,7 @@ class PackmolSetup:
 
         Parameters
         ----------
-        molecule: Molecule
+        `Molecule`
             The `Molecule` object to remove from the setup
         """
         if molecule not in self._molecules:
@@ -270,7 +271,8 @@ class PackmolSetup:
         """
         Returns
         -------
-        A tuple containing the whole-system and per-molecule settings
+        `tuple`
+            A tuple containing the whole-system and per-molecule settings
         """
         return self._system_settings, self._molecule_settings
 
@@ -278,7 +280,8 @@ class PackmolSetup:
         """
         Returns
         -------
-        The set of `Molecule` objects in the setup
+        `list`
+            The set of `Molecule` objects in the setup
         """
         return self._molecules
 
@@ -286,8 +289,9 @@ class PackmolSetup:
         """
         Returns
         -------
-        A 6-tuple of the minimum and maximum sizes of the setup in the following format:
-        (x_min, y_min, z_min, x_max, y_max, z_max)
+        `tuple`
+            A 6-tuple of the minimum and maximum sizes of the setup in the following format:
+            (x_min, y_min, z_min, x_max, y_max, z_max)
         """
         dims = np.ndarray(shape=(1,6))
         # Extract coordinates for each container
@@ -328,7 +332,8 @@ class PackmolSetup:
 
         Returns
         -------
-        True if the setting is a constraint, False otherwise
+        `bool`
+            True if the setting is a constraint, False otherwise
         """
         return setting_name in ["inside cube",
                                 "inside box",
@@ -356,8 +361,10 @@ class PackmolSetup:
 
         Returns
         -------
-        1) A tuple of the (possibly) revised dimensions of the volume
-        2) The number of molecules needed to meet the density
+        `tuple`
+            A tuple containing (in order):
+            1) A tuple of the (possibly) revised dimensions of the volume
+            2) The number of molecules needed to meet the density
         """
         if density == 0. or 0. in dimensions:
             raise ValueError("Density or dimension(s) is set to 0.")
