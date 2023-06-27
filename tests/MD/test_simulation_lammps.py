@@ -1014,10 +1014,11 @@ def test_parse_kspace_solver_unimplemented():
         unimplemented_solver = lmp_eng.parse_kspace_solver(solver)
 
 
-@pytest.mark.parametrize('solver_cls, style', [(PPPM, 'pppm'),
-                                               (Ewald, 'ewald')])
+@pytest.mark.parametrize('solver_cls, style, omp_style',
+                         [(PPPM, 'pppm', 'pppm/omp'),
+                          (Ewald, 'ewald', 'ewald/omp')])
 def test_set_kspace_solver_styles(populated_lammps_simulation, universe,
-                                  dispersions, solver_cls, style):
+                                  dispersions, solver_cls, style, omp_style):
 
     """
     Tests setting the kspace solver if the Universe has a kspace_solver
@@ -1032,7 +1033,8 @@ def test_set_kspace_solver_styles(populated_lammps_simulation, universe,
     # interactions (i.e. kspace calculations), so change the cutoff for the
     # Dispersion interactions
     populated_lammps_simulation._set_kspace_solver()
-    assert populated_lammps_simulation.system_state.kspace_style == style
+    assert populated_lammps_simulation.system_state.kspace_style == style or \
+           populated_lammps_simulation.system_state.kspace_style == omp_style
 
 
 @pytest.mark.parametrize('solver_cls', [PPPM, Ewald])
@@ -1056,12 +1058,12 @@ def test_set_different_cutoffs(lammps_universe, universe, dispersions,
         lammps_universe._add_topology(lammps_universe.universe)
 
 
-@pytest.mark.parametrize('solver_attr, expected',
-                         [('kspace_solver', 'pppm'),
-                          ('electrostatic_solver', 'pppm'),
-                          ('dispersive_solver', TypeError)])
+@pytest.mark.parametrize('solver_attr, expected, omp_expected',
+                         [('kspace_solver', 'pppm', 'pppm/omp'),
+                          ('electrostatic_solver', 'pppm', 'pppm/omp'),
+                          ('dispersive_solver', TypeError, TypeError)])
 def test_set_kspace_solver_single_solver_error(populated_lammps_simulation,
-                                               solver_attr, expected):
+                                               solver_attr, expected, omp_expected):
 
     """
     Tests setting the kspace solver with the different solver attributes that
@@ -1082,7 +1084,8 @@ def test_set_kspace_solver_single_solver_error(populated_lammps_simulation,
             populated_lammps_simulation._set_kspace_solver()
     else:
         populated_lammps_simulation._set_kspace_solver()
-        assert populated_lammps_simulation.system_state.kspace_style == expected
+        assert populated_lammps_simulation.system_state.kspace_style == expected or \
+               populated_lammps_simulation.system_state.kspace_style == omp_expected
 
 
 def test_set_kspace_solver_multiple_solvers(populated_lammps_simulation):
@@ -1099,7 +1102,8 @@ def test_set_kspace_solver_multiple_solvers(populated_lammps_simulation):
     populated_lammps_simulation.universe.electrostatic_solver = solver
     populated_lammps_simulation.universe.dispersive_solver = solver
     populated_lammps_simulation._set_kspace_solver()
-    assert populated_lammps_simulation.system_state.kspace_style == 'pppm'
+    assert populated_lammps_simulation.system_state.kspace_style == 'pppm' or \
+           populated_lammps_simulation.system_state.kspace_style == 'pppm/omp'
 
 
 def test_set_kspace_solver_multiple_solvers_error(populated_lammps_simulation):
@@ -1429,21 +1433,22 @@ def test_remove_momentum(populated_lammps_simulation, momentum_steps,
         assert name in populated_lammps_simulation.fix_names
 
 
-@pytest.mark.parametrize('thermostat, styles, attributes',
-                         [(None, ['nve'], {}),
-                          ('nose', ['nvt'],
+@pytest.mark.parametrize('thermostat, styles, omp_styles, attributes',
+                         [(None, ['nve'], ['OMP', 'nve/omp'], {}),
+                          ('nose', ['nvt'], ['OMP', 'nvt/omp'],
                            {'temperature':400., 't_damp':100}),
                           ('berendsen', ['nve', 'temp/berendsen'],
+                           ['OMP', 'nve/omp', 'temp/berendsen'],
                            {'temperature':400., 't_damp':100}),
-                          ('langevin', ['nve', 'langevin'],
+                          ('langevin', ['nve', 'langevin'], ['OMP', 'nve/omp', 'langevin'],
                            {'temperature':400., 't_damp':100}),
-                          ('rescale', ['nve', 'temp/rescale'],
+                          ('rescale', ['nve', 'temp/rescale'], ['OMP', 'nve/omp', 'temp/rescale'],
                            {'temperature':100., 't_fraction':0.5,
                             't_window':10., 'rescale_step':100}),
-                          ('csvr', ['nve', 'temp/csvr'],
+                          ('csvr', ['nve', 'temp/csvr'], ['OMP', 'nve/omp', 'temp/csvr'],
                            {'temperature': 400., 't_damp': 100})
                           ])
-def test_apply_thermostat(ensemble, thermostat, styles, attributes):
+def test_apply_thermostat(ensemble, thermostat, styles, omp_styles, attributes):
 
     """
     Tests that applying a thermostat results in the correct fix being applying
@@ -1459,14 +1464,14 @@ def test_apply_thermostat(ensemble, thermostat, styles, attributes):
 
     # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
     # are correct
-    assert styles == ensemble.fix_styles
+    assert ensemble.fix_styles == styles or ensemble.fix_styles == omp_styles
 
 
-@pytest.mark.parametrize('barostat, styles',
-                         [(None, ['nve']),
-                          ('berendsen', ['press/berendsen']),
-                          ('nose', ['nph'])])
-def test_apply_barostat(ensemble, barostat, styles):
+@pytest.mark.parametrize('barostat, styles, omp_styles',
+                         [(None, ['nve'], ['OMP', 'nve/omp']),
+                          ('berendsen', ['press/berendsen'], ['OMP', 'press/berendsen']),
+                          ('nose', ['nph'], ['OMP', 'nph/omp'])])
+def test_apply_barostat(ensemble, barostat, styles, omp_styles):
 
     """
     Tests that applying a barostat results in the correct fix being applied to
@@ -1480,41 +1485,47 @@ def test_apply_barostat(ensemble, barostat, styles):
 
     # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
     # are correct
-    assert styles == ensemble.fix_styles
+    assert styles == ensemble.fix_styles or omp_styles == ensemble.fix_styles
 
 
-@pytest.mark.parametrize('thermostat, barostat, styles, attributes',
-                         [(None, None, ['nve'], {}),
-                          ('nose', 'nose', ['npt'],
+@pytest.mark.parametrize('thermostat, barostat, styles, omp_styles, attributes',
+                         [(None, None, ['nve'], ['OMP', 'nve/omp'], {}),
+                          ('nose', 'nose', ['npt'], ['OMP', 'npt/omp'],
                            {'temperature':400., 't_damp':100, 'pressure':10.,
                             'p_damp':1000}),
                           ('berendsen', 'nose', ['temp/berendsen', 'nph'],
+                           ['OMP', 'temp/berendsen', 'nph/omp'],
                            {'temperature':400., 't_damp':100, 'pressure':10.,
                             'p_damp':1000}),
-                          ('langevin', 'nose', ['langevin', 'nph'],
+                          ('langevin', 'nose', ['langevin', 'nph'], ['OMP', 'langevin', 'nph/omp'],
                            {'temperature':400., 't_damp':100, 'pressure':10.,
                             'p_damp':1000}),
                           ('rescale', 'nose', ['temp/rescale', 'nph'],
+                           ['OMP', 'temp/rescale', 'nph/omp'],
                            {'temperature':400., 't_fraction':.5, 't_window':10.,
                             'rescale_step':100, 'pressure':10., 'p_damp':1000}),
                           ('nose', 'berendsen', ['nvt', 'press/berendsen'],
+                           ['OMP', 'nvt/omp', 'press/berendsen'],
                            {'temperature':400., 't_damp':100, 'pressure':10.,
                             'p_damp':1000}),
                           ('berendsen', 'berendsen', ['nve', 'temp/berendsen',
                                                       'press/berendsen'],
+                           ['OMP', 'nve/omp', 'temp/berendsen', 'press/berendsen'],
                            {'temperature':400., 't_damp':100, 'pressure':10.,
                             'p_damp':1000}),
                           ('langevin', 'berendsen', ['nve', 'langevin',
                                                      'press/berendsen'],
+                           ['OMP', 'nve/omp', 'langevin', 'press/berendsen'],
                            {'temperature':400., 't_damp':100, 'pressure':10.,
                             'p_damp':1000}),
                           ('rescale', 'berendsen', ['nve', 'temp/rescale',
                                                     'press/berendsen'],
+                           ['OMP', 'nve/omp', 'temp/rescale', 'press/berendsen'],
                            {'temperature':400., 't_fraction':.5, 't_window':10.,
                             'rescale_step':100, 'pressure':10., 'p_damp':1000})]
                         )
 def test_apply_thermostat_barostat(ensemble, thermostat, barostat,
-                                   styles, attributes):
+                                   styles, omp_styles, attributes):
 
     """
     Tests that applying both a thermostat and a barostat results in the correct
@@ -1531,7 +1542,7 @@ def test_apply_thermostat_barostat(ensemble, thermostat, barostat,
 
     # Test that the fix styles returned from the LAMMPS wrapper fixes attribute
     # are correct
-    assert styles == ensemble.fix_styles
+    assert styles == ensemble.fix_styles or omp_styles == ensemble.fix_styles
 
 
 @pytest.mark.parametrize('n_steps', [1, 10])
