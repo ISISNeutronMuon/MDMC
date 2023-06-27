@@ -177,7 +177,7 @@ def NVE(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.minimize(n_steps=0, minimize_every=5, maxeval=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
@@ -208,7 +208,7 @@ def NVT(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.minimize(n_steps=0, minimize_every=5, maxeval=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
@@ -242,7 +242,7 @@ def NPT(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.minimize(n_steps=0, minimize_every=5, maxeval=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
@@ -285,7 +285,7 @@ def NVE_unconstrained(universe):
     # Manually select which properties to output from LAMMPS
     set_thermo_style(md_engine)
 
-    md_engine.minimize(n_steps=EQUILIBRIUM_STEPS//2)
+    md_engine.minimize(n_steps=0, minimize_every=5, maxeval=EQUILIBRIUM_STEPS//2)
     md_engine.run(EQUILIBRIUM_STEPS, equilibration=True)
     md_engine.run(MD_STEPS)
     yield md_engine
@@ -495,5 +495,10 @@ def assert_property(ensemble, expected, request, prop):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     average = average_property(request.getfixturevalue(ensemble), prop)
+    print(f"Difference from expected: {average - expected[prop][0]}")
+    if average < expected[prop][0]:
+        print("Better than before")
+    else:
+        print("Worse than before")
     assert np.allclose(average, expected[prop][0],
                        atol=expected[prop][1]*STDEV_FAC, rtol=1e-8)

@@ -381,7 +381,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                           5*maxeval)
         best_energy = self.lmp.eval("pe")
         self.save_config()
-        for nstep in range(int(n_steps/minimize_every)):
+        for _ in range(int(n_steps/minimize_every)):
             self.lmp.velocity(
                         'all', 'scale', convert_unit(self.lmp_simulation.temperature))
             self.lmp.run(minimize_every)
