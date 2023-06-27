@@ -255,7 +255,7 @@ class PackmolSetup:
 
         for settings_dict in self._molecule_settings:
             settings = settings_dict.keys()
-            molecule = settings_dict["dict"]
+            molecule = settings_dict["molecule"]
             assert "molecule" in settings, "There are settings without a molecule associated to it."
             # Each molecule needs to have at least one "number" setting
             assert "number" in settings, \
