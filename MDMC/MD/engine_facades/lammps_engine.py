@@ -354,6 +354,28 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def minimize(self, n_steps: int, minimize_every: int = 10,
                  output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
+        """Moves the atom towards a potential energy minimum,
+        by performing an MD simulation interrupted periodically
+        by a structure relaxation. In the end, the configuration
+        with the lowest potential energy reached during the run
+        is kept.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of MD simulation steps
+        minimize_every : int, optional
+            The structure relaxation will be performed every
+            'minimize_every' steps of the MD simulation
+        output_log : str, optional
+            Not used at the moment
+        work_dir : str, optional
+            Not used at the moment
+        **settings
+        etol: float, energy tolerance criteria for energy minimisation
+        ftol: float, force tolerance criteria for force minimisation, active only if non-zero
+        maxeval: int,  maximum number of steps in a single structure relaxation
+        """
 
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
@@ -366,7 +388,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         etol = settings.get('etol', 1.e-4)
         ftol = settings.get('ftol', 0.)
         maxeval = settings.get('maxeval', 10000)
-        LOGGER.info('%s minimize: {md_steps: %s, minimize_every: %s, etol: %s, ftol: %s,'
+        LOGGER.info('%s minimize: {n_steps: %s, minimize_every: %s, etol: %s, ftol: %s,'
                     ' maxeval: %s}',
                     self.__class__,
                     n_steps,

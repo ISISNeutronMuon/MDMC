@@ -138,10 +138,8 @@ class MDEngine(ABC):
 
         Parameters
         ----------
-        md_steps : int
+        n_steps : int
             Maximum number of MD steps during the energy minimization.
-        steps_per_minimize : int
-            Maximum number of optimization steps in a single energy minimization.
         minimize_every : int
             Number of MD steps between two consecutive minimizations.
         """

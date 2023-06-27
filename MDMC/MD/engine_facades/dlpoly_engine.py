@@ -300,7 +300,6 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``MDEngine`` that is being used.
         etol: float, energy tolerance criteria for energy minimisation
         ftol: float, force tolerance criteria for force minimisation, active only if non-zero
-        maxeval: maximum number of minimization steps, IGNORED by DL_POLY
         """
 
         # Example of how to use the **settings to specify parameters,
