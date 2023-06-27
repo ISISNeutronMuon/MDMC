@@ -399,8 +399,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         self.lmp.minimize(etol,
                           ftol,
-                          maxeval,
-                          5*maxeval)
+                          maxeval,  # this is the number of relaxation steps
+                          5*maxeval)  # this is the number of force evaluations
+                          # we only specify the first number in the inputs, so 5
+                          # has been introduced for now as a rough estimate of
+                          # how many evaluations will be needed.
         best_energy = self.lmp.eval("pe")
         self.save_config()
         for _ in range(int(n_steps/minimize_every)):
@@ -409,8 +412,11 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
             self.lmp.run(minimize_every)
             self.lmp.minimize(etol,
                               ftol,
-                              maxeval,
-                              5*maxeval)
+                              maxeval,  # this is the number of relaxation steps
+                              5*maxeval)  # this is the number of force evaluations
+                          # we only specify the first number in the inputs, so 5
+                          # has been introduced for now as a rough estimate of
+                          # how many evaluations will be needed.
             energy = self.lmp.eval("pe")
             if energy < best_energy:
                 self.save_config()
