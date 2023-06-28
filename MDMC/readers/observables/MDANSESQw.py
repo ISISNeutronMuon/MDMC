@@ -36,6 +36,7 @@ class MDANSESQw(SQwReader):
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Does nothing since numpy closes the file after reading anyway"""
+        # pylint: disable=unnecessary-pass
         pass
 
     def parse(self, **settings: dict) -> None:
