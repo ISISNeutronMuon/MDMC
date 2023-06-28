@@ -35,7 +35,6 @@ class MDANSESQw(SQwReader):
         """Open the files for variables and detector momenta"""
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
-        self.parse_header()
         self.file_variables = np.loadtxt(self.file_name)
 
 
@@ -63,22 +62,24 @@ class MDANSESQw(SQwReader):
         # This part will find the relevant part of the header
         # and extract the information about the axes.
         for line in header:
-            if '1st' in line:
+            if '1st' in line or 'First' in line:
                 axis_signature = line.split(':')[-1]
                 variable = axis_signature.split()[0]
                 unit = axis_signature.split()[1].strip("()")
                 if variable == 'q':
                     value = 'Q'
+                    q_unit = Unit(unit)
                     try:
-                        q_unit = Unit(unit)
-                    except:
+                        q_unit.conversion_factor
+                    except KeyError:
                         q_unit = 1/SYSTEM["LENGTH"]
                     self.q_unit = q_unit
                 elif variable == 'omega':
                     value = 'E'
+                    e_unit = Unit(unit)
                     try:
-                        e_unit = Unit(unit)
-                    except:
+                        e_unit.conversion_factor
+                    except KeyError:
                         e_unit = SYSTEM["ENERGY_TRANSFER"]
                     self.e_unit = e_unit
             if "row:" in line:
@@ -95,6 +96,7 @@ class MDANSESQw(SQwReader):
         E is the energy transfer (in meV)
         Q is wavevector transfer (in Ang^-1)
         """
+        self.parse_header()
 
         if self.first_row == 'Q' and self.first_column == 'E':
             self.Q = self.file_variables[0, 1:] # Entry at [0,0] is always zero
