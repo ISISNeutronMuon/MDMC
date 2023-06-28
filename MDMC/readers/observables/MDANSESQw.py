@@ -4,6 +4,7 @@ import logging
 import numpy as np
 
 from MDMC.readers.observables.obs_reader import SQwReader
+from MDMC.common.units import SYSTEM, Unit
 
 logger = logging.getLogger(__name__)
 
@@ -25,12 +26,16 @@ class MDANSESQw(SQwReader):
     def __init__(self, file_name: str):
         super().__init__(file_name)
         self.file_variables = None
+        self.first_row = 'Q'
+        self.first_column = 'E'
+        self.q_unit = None
+        self.e_unit = None
 
     def __enter__(self) -> None:
         """Open the files for variables and detector momenta"""
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
-
+        self.parse_header()
         self.file_variables = np.loadtxt(self.file_name)
 
 
@@ -38,6 +43,48 @@ class MDANSESQw(SQwReader):
         """Does nothing since numpy closes the file after reading anyway"""
         # pylint: disable=unnecessary-pass
         pass
+
+    def parse_header(self):
+        """Reads the header part of the file to get the labels of
+        the data axes.
+        """
+        header = []
+        # This loop will only read the header of the file,
+        # and stop as soon as it reaches the data
+        with open(self.file_name, 'r') as source:
+            for line in source:
+                tokens = line.split()
+                if len(tokens) == 0:
+                    continue
+                elif '#' in tokens[0]:
+                    header.append(line)
+                else:
+                    break
+        # This part will find the relevant part of the header
+        # and extract the information about the axes.
+        for line in header:
+            if '1st' in line:
+                axis_signature = line.split(':')[-1]
+                variable = axis_signature.split()[0]
+                unit = axis_signature.split()[1].strip("()")
+                if variable == 'q':
+                    value = 'Q'
+                    try:
+                        q_unit = Unit(unit)
+                    except:
+                        q_unit = 1/SYSTEM["LENGTH"]
+                    self.q_unit = q_unit
+                elif variable == 'omega':
+                    value = 'E'
+                    try:
+                        e_unit = Unit(unit)
+                    except:
+                        e_unit = SYSTEM["ENERGY_TRANSFER"]
+                    self.e_unit = e_unit
+            if "row:" in line:
+                self.first_row = value
+            if "column:" in line:
+                self.first_column = value
 
     def parse(self, **settings: dict) -> None:
         """
@@ -49,8 +96,14 @@ class MDANSESQw(SQwReader):
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.Q = self.file_variables[0, 1:] # Entry at [0,0] is always zero
-        self.E = self.file_variables[1:, 0]
+        if self.first_row == 'Q' and self.first_column == 'E':
+            self.Q = self.file_variables[0, 1:] # Entry at [0,0] is always zero
+            self.E = self.file_variables[1:, 0]
+        elif self.first_row == 'E' and self.first_column == 'Q':
+            self.E = self.file_variables[0, 1:]
+            self.Q = self.file_variables[1:, 0]
+        self.Q *= self.q_unit.conversion_factor
+        self.E *= self.e_unit.conversion_factor
         self.SQw = self.file_variables[1:, 1:].T
         self.SQw_err = self.SQw*0.01  # TODO: When MDANSE outputs an error, read it in
         if np.any(self.SQw <= 0.):
