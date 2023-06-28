@@ -95,8 +95,9 @@ def test_packmol_program_path(simple_filled_universe_filler_object):
     assert shutil.which("packmol") == packmol_path
 
 def test_correct_system_properties(simple_filled_universe):
-    assert simple_filled_universe.n_atoms == 1350
-    assert simple_filled_universe.n_molecules == 4050
+    """Tests to make sure the correct system properties are in the final filled system"""
+    assert simple_filled_universe.n_atoms == 4050
+    assert simple_filled_universe.n_molecules == 1350
     assert set(simple_filled_universe.element_list) == {"H", "O", "C"}
     # 2 Bonds and a BondAngle per molecule
     assert len(simple_filled_universe.bonded_interactions) == 4050
