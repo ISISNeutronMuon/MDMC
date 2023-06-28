@@ -547,7 +547,10 @@ class Control:
             filename = self.results_filename
         plotter = PlotResults(filename, MH_norm=MH_norm, points=points,
                               quantiles=[0.34, 0.5, 0.68])
-        cornerplot = plotter.create_cornerplot()
+        cornerplot, means, stds = plotter.create_cornerplot()
+
+        if self.verbose != -1:
+            print(f'Parameter means = {means}, Parameter errors = {stds}')
 
         return cornerplot
 

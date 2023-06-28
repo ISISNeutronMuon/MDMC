@@ -75,10 +75,10 @@ class ChiSquaredExpError(FigureOfMerit):
             exp_values = np.array(
                 *obs_pair.exp_obs.dependent_variables.values())
             MD_values = np.array(*obs_pair.MD_obs.dependent_variables.values())
-            obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2)
-                                       / np.sum(MD_values * exp_values
-                                                / exp_errors ** 2))
+            obs_pair.rescale_factor = (np.sum((MD_values / exp_errors) ** 2) / np.sum(
+                MD_values * exp_values / exp_errors ** 2))
 
         norm_factor = self.data_norm_factor(obs_pair=obs_pair)
-        value_unreduced = np.sum((obs_pair.calculate_difference() / obs_pair.calculate_exp_errors()) ** 2)
+        value_unreduced = np.sum((obs_pair.calculate_difference()
+                                  / obs_pair.calculate_exp_errors()) ** 2)
         return obs_pair.weight * value_unreduced / norm_factor
