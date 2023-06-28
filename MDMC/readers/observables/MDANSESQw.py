@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class MDANSESQw(SQwReader):
     """
-    A class for reading SQw files from MDANSE
+    A class for reading SQw files from MDANSE's trajectory analysis
 
     The output from MDANSE analysis of trajectories is a .csv file with some lines
     of comments describing the dataset and columns/rows. The first rwo is the Q
@@ -40,16 +40,18 @@ class MDANSESQw(SQwReader):
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse into SQw format
+        Parse into SQw format, creates an error on SQw 1% of the value of SQw,
+        since MDANSE does not yet output an error. This should be changed once
+        it is possible to read an error.
 
         E is the energy transfer (in meV)
         Q is wavevector transfer (in Ang^-1)
         """
 
-        self.Q = self.file_variables[0, 1:] # Entry ar [0,0] is always zero
+        self.Q = self.file_variables[0, 1:] # Entry at [0,0] is always zero
         self.E = self.file_variables[1:, 0]
         self.SQw = self.file_variables[1:, 1:].T
-        self.SQw_err = self.SQw*0.001  # This is arbirtary and may need to be changed
+        self.SQw_err = self.SQw*0.01  # TODO: When MDANSE outputs an error, read it in
         if np.any(self.SQw <= 0.):
             self.SQw[np.where(self.SQw <= 0.)] = 0.0
         # Change and zero errors into inf so that error calculations can still be performed on them.

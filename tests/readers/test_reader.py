@@ -30,6 +30,7 @@ READERS_TEST_INFO = [('LAMPSQw', 'LAMPSQw', ['Q', 'E'], 'SQw'),
                      ('netCDFPDF', 'netcdf_PDF', ['r'], 'PDF'),
                      ('netCDFSQw', "SQw_incoh", ['Q', 'E'], 'SQw'),
                      ('netCDFSQw', "SQw_coh", ['Q', 'E'], 'SQw'),
+                     ('MDANSESQw', "MDANSESQw", ['Q', 'E'], 'SQw'),
                      ('LAMPPDF','LAMPPDF', ['r'], 'PDF')]
 
 
