@@ -293,14 +293,14 @@ class PackmolSetup:
             A 6-tuple of the minimum and maximum sizes of the setup in the following format:
             (x_min, y_min, z_min, x_max, y_max, z_max)
         """
-        dims = np.ndarray(shape=(1,6))
+        dims = np.zeros(shape=(1,6))
         # Extract coordinates for each container
         for index, mol_dict in enumerate(self._molecule_settings):
             keys = mol_dict.keys()
             if "inside cube" in keys:
                 container_dims = [float(dim) for dim in mol_dict["inside cube"].split()]
-                # Duplicate size by 3 for xyz max values
-                final_dims = np.array(container_dims[0:3] + [container_dims[3]]*3)
+                end_coord = np.add(container_dims[0:3], container_dims[3])
+                final_dims = np.concatenate([container_dims[0:3], end_coord])
                 dims = np.insert(dims, index, final_dims, axis=0)
             elif "inside box" in keys:
                 container_dims = [float(dim) for dim in mol_dict["inside box"].split()]
@@ -378,9 +378,11 @@ class PackmolSetup:
             scaled_lengths = [size*scale_factor for size in dimensions]
         else:
             scaled_lengths = [dim*scale_factor for dim in dimensions]
-        info_string = f'New dimensions are now ({scaled_lengths})'
-        print(info_string)
-        LOGGER.info(msg=info_string)
+
+        if scale_factor != 1.0:
+            info_string = f'The dimensions of the container are changed to {scaled_lengths} to achieve the requested density of {density} with a whole number of molecules'
+            print(info_string)
+            LOGGER.info(msg=info_string)
 
         return tuple(scaled_lengths), integer_num_mol
 

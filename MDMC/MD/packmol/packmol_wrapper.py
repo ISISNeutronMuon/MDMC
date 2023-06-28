@@ -20,10 +20,22 @@ class PackmolFiller:
     _packmol_files_path : str
     _input_path: str
     _output_path: str
+    _filled_universe: Universe
     def __init__(self, setup_data: PackmolSetup):
         self._setup_data = setup_data
         self._mol_file_names = {}
+        self._filled_universe = None
 
+    @property
+    def filled_universe(self) -> 'Universe':
+        """
+        Get the `Universe` filled via the packmol run
+        """
+        return self._filled_universe
+
+    @property
+    def setup_data (self):
+        return self._setup_data
     def fill_with_packmol(self) -> Universe:
         """
         Parameters
@@ -43,8 +55,8 @@ class PackmolFiller:
         self._export_system_setup()
         self._call_packmol()
         structures = self._read_packmol_output()
-        universe = self._fill_universe(structures)
-        return universe
+        self._filled_universe = self._fill_universe(structures)
+        return self._filled_universe
 
     def _create_paths(self) -> None:
         """
@@ -104,7 +116,7 @@ class PackmolFiller:
         else:
             return "packmol"
 
-    def get_packmol_output_name(self) -> str:
+    def get_packmol_output_path(self) -> str:
         """
         Obtains the name of the packmol output file, as defined by the input file
         Returns an empty string if there is no input file name defined
@@ -125,6 +137,9 @@ class PackmolFiller:
                 name = line.split()[1]
 
         return name
+
+    def get_packmol_files_path(self) -> str:
+        return self._packmol_files_path
 
     def _read_packmol_output(self) -> 'List[Structure]':
         """
