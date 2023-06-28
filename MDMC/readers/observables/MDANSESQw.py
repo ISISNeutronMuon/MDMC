@@ -50,7 +50,7 @@ class MDANSESQw(SQwReader):
         header = []
         # This loop will only read the header of the file,
         # and stop as soon as it reaches the data
-        with open(self.file_name, 'r') as source:
+        with open(self.file_name, 'r', encoding='utf-8') as source:
             for line in source:
                 tokens = line.split()
                 if len(tokens) == 0:
