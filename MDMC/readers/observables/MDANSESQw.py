@@ -55,7 +55,7 @@ class MDANSESQw(SQwReader):
                 tokens = line.split()
                 if len(tokens) == 0:
                     continue
-                elif '#' in tokens[0]:
+                if '#' in tokens[0]:
                     header.append(line)
                 else:
                     break
@@ -66,13 +66,15 @@ class MDANSESQw(SQwReader):
                 axis_signature = line.split(':')[-1]
                 variable = axis_signature.split()[0]
                 unit = axis_signature.split()[1].strip("()")
+                if unit == 'ang':
+                    unit = 'Ang'  # we need this since Unit cannot handle 'ang'
                 if variable == 'q':
                     value = 'Q'
                     q_unit = Unit(unit)
                     try:
                         q_unit.conversion_factor
                     except KeyError:
-                        q_unit = 1/SYSTEM["LENGTH"]
+                        q_unit = Unit('1')/SYSTEM["LENGTH"]
                     self.q_unit = q_unit
                 elif variable == 'omega':
                     value = 'E'
