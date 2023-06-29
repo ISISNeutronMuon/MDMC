@@ -495,10 +495,5 @@ def assert_property(ensemble, expected, request, prop):
     # fixtures are included instead - the return values of the fixtures are then
     # recovered using request.getfixturevalue
     average = average_property(request.getfixturevalue(ensemble), prop)
-    print(f"Difference from expected: {average - expected[prop][0]}")
-    if average < expected[prop][0]:
-        print("Better than before")
-    else:
-        print("Worse than before")
     assert np.allclose(average, expected[prop][0],
                        atol=expected[prop][1]*STDEV_FAC, rtol=1e-8)
