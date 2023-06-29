@@ -140,7 +140,7 @@ class MDEngine(ABC):
         ----------
         n_steps : int
             Maximum number of MD steps during the energy minimization.
-        minimize_every : int
+        minimize_every : int, optional, default 10
             Number of MD steps between two consecutive minimizations.
         """
 

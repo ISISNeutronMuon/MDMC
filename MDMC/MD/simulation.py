@@ -1498,7 +1498,7 @@ class Simulation:
         Parameters
         ----------
         n_steps : int
-            Total number of the MD run
+            Total number of the MD run steps
         minimize_every: int, optional
             Number of MD steps between two consecutive minimizations
         verbose: bool, optional
@@ -1515,6 +1515,9 @@ class Simulation:
             ``ftol`` (`float`)
                 If the magnitude of the global force is less than ``ftol``,
                 minimization is stopped. Default depends on engine used.
+            ``maxiter`` (`int`)
+                Maximum number of iterations of a single structure
+                relaxation procedure. Default depends on engine used.
             ``maxeval`` (`int`)
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
@@ -1526,7 +1529,7 @@ class Simulation:
         # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
 
-        verbose_manager.step(f"Running minimization every {minimize_every} steps"
+        verbose_manager.step(f"Running minimization every {minimize_every} steps "
                              f"in an MD run with {n_steps} steps")
         self.engine.minimize(n_steps, minimize_every, output_log=output_log, work_dir=work_dir,
                              **settings)

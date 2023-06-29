@@ -289,7 +289,7 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         ----------
         n_steps : int
             Maximum number of steps for the MD run.
-        minimize_every : int
+        minimize_every : int, optional, default 10
             Number of MD steps between two consecutive minimizations.
         output_log: str, optional, default None
             file where the output goes.
@@ -300,6 +300,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``MDEngine`` that is being used.
         etol: float, energy tolerance criteria for energy minimisation
         ftol: float, force tolerance criteria for force minimisation, active only if non-zero
+        maxiter: int, not used in this facade
+        maxeval: int, not used in this facade
         """
 
         # Example of how to use the **settings to specify parameters,
