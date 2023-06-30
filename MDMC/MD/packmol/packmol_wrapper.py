@@ -172,7 +172,7 @@ class PackmolFiller:
             A `Universe` object filled with the `Structure` objects in `output_structures`
         """
         dim = self._setup_data.get_max_sizes()
-        universe = Universe(dimensions=dim)
+        universe = Universe(dimensions=dim, verbose=-1)
         _, struct_settings = self._setup_data.get_settings()  # All structures + their metadata
 
         # Loop through all molecules specified for the system
