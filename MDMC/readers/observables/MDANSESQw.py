@@ -8,6 +8,31 @@ from MDMC.common.units import SYSTEM, Unit
 
 logger = logging.getLogger(__name__)
 
+eV_in_Joules = 1.602176634 * 10**(-19)
+mole = 6.02214076 * 10**23
+
+conversion_to_meV ={
+    'J' : 6.2415091e+21,
+    'kJ' : 6.2415091e+24,
+    'kcal' : 2.6114474e+25,
+    'cal' : 2.6114474e+22,
+    'kJ/mol' : 6.2415091e+24 / mole,
+    'kcal/mol' :  2.6114474e+25 / mole,
+    'J/mol' : 6.2415091e+21 / mole,
+    'cal/mol' :  2.6114474e+22 / mole,
+    'rad/ps' : 0.6582231395941951,
+    'rad/fs' : 0.6582231395941951 *1e3,
+    'rad/ns' : 0.6582231395941951 *1e-3,
+    '1/ps' : 0.6582231395941951 * 2*np.pi,
+    '1/fs' : 0.6582231395941951 *1e3 * 2*np.pi,
+    '1/ns' : 0.6582231395941951 *1e-3 * 2*np.pi,
+    'meV' : 1.0,
+    'eV' : 1e3,
+    'keV' : 1e6,
+    'ueV' : 1e-3
+}
+
+
 class MDANSESQw(SQwReader):
     """
     A class for reading SQw files from MDANSE's trajectory analysis
@@ -30,13 +55,13 @@ class MDANSESQw(SQwReader):
         self.first_column = 'E'
         self.q_unit = None
         self.e_unit = None
+        self.transpose_data = True
 
     def __enter__(self) -> None:
         """Open the files for variables and detector momenta"""
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
         self.file_variables = np.loadtxt(self.file_name)
-
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Does nothing since numpy closes the file after reading anyway"""
@@ -66,8 +91,7 @@ class MDANSESQw(SQwReader):
                 axis_signature = line.split(':')[-1]
                 variable = axis_signature.split()[0]
                 unit = axis_signature.split()[1].strip("()")
-                if unit == 'ang':
-                    unit = 'Ang'  # we need this since Unit cannot handle 'ang'
+                unit.replace('ang', 'Ang')  # we need this since Unit cannot handle 'ang'
                 if variable == 'q':
                     value = 'Q'
                     q_unit = Unit(unit)
@@ -78,16 +102,18 @@ class MDANSESQw(SQwReader):
                     self.q_unit = q_unit
                 elif variable == 'omega':
                     value = 'E'
-                    e_unit = Unit(unit)
                     try:
-                        e_unit.conversion_factor
+                        conversion_to_meV[unit]
                     except KeyError:
-                        e_unit = SYSTEM["ENERGY_TRANSFER"]
-                    self.e_unit = e_unit
+                        self.e_unit = 'arb. u.'
+                    else:
+                        self.e_unit = unit
             if "row:" in line:
                 self.first_row = value
             if "column:" in line:
                 self.first_column = value
+        if not self.first_row == 'Q':
+            self.transpose_data = False
 
     def parse(self, **settings: dict) -> None:
         """
@@ -107,8 +133,11 @@ class MDANSESQw(SQwReader):
             self.E = self.file_variables[0, 1:]
             self.Q = self.file_variables[1:, 0]
         self.Q *= self.q_unit.conversion_factor
-        self.E *= self.e_unit.conversion_factor
-        self.SQw = self.file_variables[1:, 1:].T
+        self.E *= conversion_to_meV[self.e_unit]
+        if self.transpose_data:
+            self.SQw = self.file_variables[1:, 1:].T
+        else:
+            self.SQw = self.file_variables[1:, 1:]
         self.SQw_err = self.SQw*0.01  # TODO: When MDANSE outputs an error, read it in
         if np.any(self.SQw <= 0.):
             self.SQw[np.where(self.SQw <= 0.)] = 0.0
