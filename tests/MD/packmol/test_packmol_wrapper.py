@@ -12,17 +12,14 @@ from MDMC.MD.packmol.packmol_setup import PackmolSetup
 # lammps mark used to ensure test runs in docker container
 pytestmark = [pytest.mark.lammps]
 
-'''
-        
-'''
 @pytest.fixture()
 def h2o_molecule():
     h_1 = Atom("H")
     h_2 = Atom("H")
     o_1 = Atom("O")
-    h20_bonds = Bond((h_1, o_1), (h_2, o_1))
+    ho_bonds = Bond((h_1, o_1), (h_2, o_1))
     h20_bondangle = BondAngle(atom_tuples=[(h_1, o_1, h_2)])
-    h2o_mol = Molecule(atoms=[h_1, h_2, o_1], interactions=[h20_bondangle, h20_bonds])
+    h2o_mol = Molecule(atoms=[h_1, h_2, o_1], interactions=[h20_bondangle, ho_bonds])
     return h2o_mol
 @pytest.fixture()
 def simple_universe_setup(h2o_molecule):
@@ -98,6 +95,6 @@ def test_correct_system_properties(simple_filled_universe):
     """Tests to make sure the correct system properties are in the final filled system"""
     assert simple_filled_universe.n_atoms == 4050
     assert simple_filled_universe.n_molecules == 1350
-    assert set(simple_filled_universe.element_list) == {"H", "O", "C"}
-    # 2 Bonds and a BondAngle per molecule
-    assert len(simple_filled_universe.bonded_interactions) == 4050
+    assert set(simple_filled_universe.element_list) == {"H", "O"}
+    # 2 bonded interactions per molecule
+    assert len(simple_filled_universe.bonded_interactions) == 2700
