@@ -351,8 +351,32 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
                                                lmp=self.lmp,
                                                **settings)
 
-    def minimize(self, n_steps: int, output_log: str = None,
+    def minimize(self, n_steps: int, minimize_every: int = 10,
+                 output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
+        """Moves the atoms towards a potential energy minimum,
+        by performing an MD simulation interrupted periodically
+        by a structure relaxation. In the end, the configuration
+        with the lowest potential energy reached during the run
+        is kept.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of MD simulation steps
+        minimize_every : int, optional, default 10
+            The structure relaxation will be performed every
+            'minimize_every' steps of the MD simulation
+        output_log : str, optional
+            Not used in this facade
+        work_dir : str, optional
+            Not used in this facade
+        **settings
+        etol: float, energy tolerance criteria for energy minimisation
+        ftol: float, force tolerance criteria for force minimisation, active only if non-zero
+        maxiter: int,  maximum number of steps in a single structure relaxation
+        maxeval: int,  maximum number of force calculations in a single structure relaxation
+        """
 
         # Check fix styles for shake or rattle styles and remove them
         if 'constrain' in self.fix_names:
@@ -364,18 +388,38 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
         etol = settings.get('etol', 1.e-4)
         ftol = settings.get('ftol', 0.)
+        maxiter = settings.get('maxiter', 10000)
         maxeval = settings.get('maxeval', 10000)
-        LOGGER.info('%s minimize: {n_steps: %s, etol: %s, ftol: %s,'
-                    ' maxeval: %s}',
+        LOGGER.info('%s minimize: {n_steps: %s, minimize_every: %s, etol: %s, ftol: %s,'
+                    ' maxiter: %s, maxeval: %s}',
                     self.__class__,
                     n_steps,
+                    minimize_every,
                     etol,
                     ftol,
+                    maxiter,
                     maxeval)
+
         self.lmp.minimize(etol,
                           ftol,
-                          n_steps,
-                          maxeval)
+                          maxiter,  # this is the number of relaxation steps
+                          maxeval)  # this is the number of force evaluations
+        best_energy = self.lmp.eval("pe")
+        self.save_config()
+        for _ in range(int(n_steps/minimize_every)):
+            self.lmp.velocity(
+                        'all', 'scale', convert_unit(self.lmp_simulation.temperature))
+            self.lmp.run(minimize_every)
+            self.lmp.minimize(etol,
+                              ftol,
+                              maxiter,  # this is the number of relaxation steps
+                              maxeval)  # this is the number of force evaluations
+            energy = self.lmp.eval("pe")
+            if energy < best_energy:
+                self.save_config()
+                best_energy = energy
+
+        self.reset_config()
 
         # Reapply the constraints
         if self.universe.constraint_algorithm:

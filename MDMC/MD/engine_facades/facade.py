@@ -131,14 +131,17 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def minimize(self, n_steps: int, **settings: dict) -> None:
+    def minimize(self, n_steps: int, minimize_every: int = 10,
+                 **settings: dict) -> None:
         """
         Minimizes the simulation energy
 
         Parameters
         ----------
         n_steps : int
-            Maximum number of steps for the energy minimization.
+            Maximum number of MD steps during the energy minimization.
+        minimize_every : int, optional, default 10
+            Number of MD steps between two consecutive minimizations.
         """
 
         raise NotImplementedError
