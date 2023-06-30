@@ -119,8 +119,9 @@ class PackmolSetup:
         if not n_molecules:
             # Figure out number of molecules
             dimensions, n_molecules = self.resolve_density(dimensions, density, container_type)
-            if container_type == "box":
-                dimensions = [i+j for i, j in zip(origin, dimensions)]
+
+        if container_type == "box":
+            dimensions = tuple(i+j for i, j in zip(origin, dimensions))
 
         self._molecule_settings.append({
             "molecule": molecule,
@@ -381,6 +382,7 @@ class PackmolSetup:
 
         if scale_factor != 1.0:
             info_string = f'The dimensions of the container are changed to {scaled_lengths} to achieve the requested density of {density} with a whole number of molecules'
+            # TODO: Find a way to silence this to not clog the output during testing
             print(info_string)
             LOGGER.info(msg=info_string)
 
