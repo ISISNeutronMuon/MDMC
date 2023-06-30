@@ -169,7 +169,7 @@ class PackmolSetup:
                 n_molecules: int = 0) -> None:
         """
         Add a cuboid box of randomly-packed molecules.
-        At least two of "size", "density" or "number" must be filled in order to
+        At least two of "lengths", "density" or "number" must be filled in order to
         properly create the box. If "density" is provided, the size of the box
         may change to allow for a whole number of molecules.
 
