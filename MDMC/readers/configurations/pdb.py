@@ -44,6 +44,7 @@ class ProteinDataBankReader(ConfigurationReader):
             record_name = line[0:6]
             if record_name == "ATOM  " or record_name == "HETATM":
                 # chars 23-26 identify molecule
+                atom_id = int(line[6:12].split()[-1])
                 molecule_id = int(line[22:26].split()[-1])
                 element = line[76:78].split()[-1]
                 current_atom_pos = [float(pos.split()[-1]) for pos in
@@ -52,32 +53,33 @@ class ProteinDataBankReader(ConfigurationReader):
                 current_atom_obj = Atom(element.capitalize(), position=current_atom_pos,
                                         name=atom_name)
                 self._atoms.append(current_atom_obj)
+                molecule[atom_id] = current_atom_obj
 
-            elif line[0] == "CONECT":
-                atoms_to_connect = line[1:]
+            elif line[0:6] == "CONECT":
+                atoms_to_connect = line[6:].split()
                 # pylint: disable=no-member
                 for atom1_id, atom2_id in itertools.pairwise(atoms_to_connect):
-                    self.create_bond(molecule[atom1_id], molecule[atom2_id])
+                    self.create_bond(molecule[int(atom1_id)], molecule[int(atom2_id)])
 
-    # def create_bond(self, atom1: Atom, atom2: Atom) -> None:
-    #     """
-    #     Checks the bond lengths of the atoms in the molecule and
-    #     creates a bond if it is below a certain threshold
-    #
-    #     This is needed because PDB files are able to include H-bonds (which MDMC does not support)
-    #     alongside other types of bonds, which are undistinguishable from each other in a pdb file.
-    #     Therefore, cutting off the bond length at a reasonable distance prevents an extremely long
-    #     bond being introduced into a molecule structure
-    #     """
-    #
-    #     # 2.1 Ang used as bonded interactions should not usually go beyond this, and to prevent
-    #     # bonds that are way too long in the context of the whole molecule value.
-    #     # Value comes from: https://doi.org/10.1002/anie.202102967, where 2 Ang is given as the
-    #     cutoff = 2.1
-    #     difference = np.subtract(atom1.position, atom2.position)
-    #     bond_length = np.linalg.norm(difference)
-    #     if bond_length < cutoff:
-    #         self._bonds += Bond((atom1, atom2))
+    def create_bond(self, atom1: Atom, atom2: Atom) -> None:
+        """
+        Checks the bond lengths of the atoms in the molecule and
+        creates a bond if it is below a certain threshold
+
+        This is needed because PDB files are able to include H-bonds (which MDMC does not support)
+        alongside other types of bonds, which are undistinguishable from each other in a pdb file.
+        Therefore, cutting off the bond length at a reasonable distance prevents an extremely long
+        bond being introduced into a molecule structure
+        """
+
+        # 2.1 Ang used as bonded interactions should not usually go beyond this, and to prevent
+        # bonds that are way too long in the context of the whole molecule value.
+        # Value comes from: https://doi.org/10.1002/anie.202102967, where 2 Ang is given as the
+        cutoff = 2.1
+        difference = np.subtract(atom1.position, atom2.position)
+        bond_length = np.linalg.norm(difference)
+        if bond_length < cutoff:
+            self._bonds += Bond((atom1, atom2))
 
     @property
     def atoms(self) -> 'list[Atom]':

@@ -25,7 +25,7 @@ def h2o_molecule():
 @pytest.fixture()
 def exported_file_path():
     """Returns the file path to the file exported"""
-    return os.path.normpath("../test_data/example_pdb_export.pdb")
+    return os.path.normpath("../test_data/configurations/example_pdb_export.pdb")
 
 @pytest.fixture()
 def simple_exported_system(h2o_molecule, exported_file_path):
