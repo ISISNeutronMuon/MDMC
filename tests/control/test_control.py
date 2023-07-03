@@ -66,7 +66,7 @@ class MockMinimizer:
         return False
 
     def step(self, FoM):
-        self.history = pd.concat([self.history, next(self._history)], ignore_index=True)
+        self.history = pd.concat([self.history, next(self._history).to_frame().T], ignore_index=True)
 
     def write_history(self, fn):
         pass
@@ -283,6 +283,8 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                       '   9   1.535e+07        False        1e-05            1\n'
                       '  10       1.657         str1           10            1\n'
                       '\n')
+    with open("./stdout.txt", 'w') as file:
+        file.write(stdout)
     assert stdout_message in stdout
 
 
