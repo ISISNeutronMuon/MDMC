@@ -66,8 +66,7 @@ class MockMinimizer:
         return False
 
     def step(self, FoM):
-        self.history = self.history.append(next(self._history),
-                                           ignore_index=True)
+        self.history = pd.concat(self.history, next(self._history), ignore_index=True)
 
     def write_history(self, fn):
         pass
