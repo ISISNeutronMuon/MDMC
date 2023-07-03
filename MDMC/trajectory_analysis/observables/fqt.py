@@ -201,7 +201,7 @@ class AbstractFQt(SQwMixins, Observable):
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if self.Q_vectors is None:
             try:
-                self.Q_vectors = np.array(settings['Q_vectors'])
+                self.Q_vectors = np.array(settings['Q_vectors'], dtype='object')
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
@@ -262,12 +262,12 @@ class AbstractFQt(SQwMixins, Observable):
             vectors = self._calculate_vectors_single_Q(Q_min, Q_max)
 
             if len(vectors) > 0:
-                Q_vectors.extend(vectors)
+                Q_vectors.append(vectors)
                 updated_Q_values.append(Q)
 
         self.Q_values = updated_Q_values
 
-        return np.array(Q_vectors)
+        return np.array(Q_vectors, dtype='object')
 
     def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> list:
         """
