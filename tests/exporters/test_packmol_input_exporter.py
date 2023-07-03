@@ -1,3 +1,4 @@
+import os.path
 import re
 
 import pytest
@@ -5,7 +6,7 @@ import pytest
 from MDMC.MD import Atom, Bond, BondAngle, Molecule
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.exporters.packmol_input import PackmolInputExporter
-
+from tests.test_data.data import _ABS_DIR_PATH
 @pytest.fixture()
 def h2o_molecule():
     """A simple water molecule"""
@@ -27,7 +28,7 @@ def simple_packmol_input_system(h2o_molecule):
 @pytest.fixture()
 def exported_file_path():
     """Returns the file path of the exported input file"""
-    return "../test_data/exported_input_file.inp"
+    return os.path.join(_ABS_DIR_PATH, "exported_input_file.inp")
 
 @pytest.fixture()
 def export_input_file(simple_packmol_input_system, h2o_molecule, exported_file_path):

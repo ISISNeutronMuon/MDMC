@@ -3,12 +3,10 @@ import os
 
 import pytest
 from numpy.testing import assert_allclose
-from pytest_cases import fixture
 
 from MDMC.MD import Atom, Molecule, Bond
 from MDMC.readers.configurations import pdb
-import tests.test_data.data as test_data
-from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
+from tests.test_data.data import _ABS_DIR_PATH
 
 
 @pytest.fixture
@@ -16,7 +14,7 @@ def pdb_ethanol_data_path():
     """
     Returns the path to the directory for the example pdb configuration file for ethanol
     """
-    return "../test_data/configurations/ethanol.pdb"
+    return os.path.join(_ABS_DIR_PATH, "configurations/ethanol.pdb")
 
 @pytest.fixture()
 def ethanol_molecule():

@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from MDMC.MD import Atom, Bond, BondAngle, Molecule
-from MDMC.exporters.configurations import pdb
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
+from tests.test_data.data import _ABS_DIR_PATH
 
 # lammps mark used to ensure test runs in docker container
 pytestmark = [pytest.mark.lammps]
@@ -25,7 +25,7 @@ def h2o_molecule():
 @pytest.fixture()
 def exported_file_path():
     """Returns the file path to the file exported"""
-    return os.path.normpath("../test_data/configurations/example_pdb_export.pdb")
+    return os.path.join(_ABS_DIR_PATH, "configurations/example_pdb_export.pdb")
 
 @pytest.fixture()
 def simple_exported_system(h2o_molecule, exported_file_path):

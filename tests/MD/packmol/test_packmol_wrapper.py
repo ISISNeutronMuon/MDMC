@@ -21,6 +21,7 @@ def h2o_molecule():
     h20_bondangle = BondAngle(atom_tuples=[(h_1, o_1, h_2)])
     h2o_mol = Molecule(atoms=[h_1, h_2, o_1], interactions=[h20_bondangle, ho_bonds])
     return h2o_mol
+
 @pytest.fixture()
 def simple_universe_setup(h2o_molecule):
     setup = PackmolSetup()
@@ -56,7 +57,7 @@ def test_get_packmol_output_name(simple_filled_universe_filler_object):
     """Tests that the output name of a packmol file will be correctly retrieved"""
     actual_path = simple_filled_universe_filler_object.get_packmol_output_path()
     actual_name = os.path.basename(actual_path)
-    correct_name = "example-output-universe.pdb"
+    correct_name = "output-universe.pdb"
     assert actual_name == correct_name
 
 def test_get_packmol_universe_dimensions(more_complicated_universe_setup):
@@ -71,11 +72,12 @@ def test_directories_created_correctly(simple_filled_universe_filler_object):
     packmol_files_path = simple_filled_universe_filler_object.get_packmol_files_path()
     assert os.path.exists(packmol_files_path)
     assert os.path.basename(packmol_files_path) == "packmol_files"
+
 def test_all_files_are_created_after_run(simple_filled_universe_filler_object):
     """Tests that the right files are created for the packmol run as necessary"""
     packmol_files_path = simple_filled_universe_filler_object.get_packmol_files_path()
     input_file_path = os.path.join(packmol_files_path, "input_file.inp")
-    output_file_path = os.path.join(packmol_files_path, "example-output-universe.pdb")
+    output_file_path = os.path.join(packmol_files_path, "output-universe.pdb")
     mol_name = [molecule.name for molecule in simple_filled_universe_filler_object.setup_data.get_molecules()]
     assert os.path.exists(input_file_path)
     assert os.path.exists(output_file_path)
