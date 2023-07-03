@@ -262,14 +262,14 @@ class AbstractFQt(SQwMixins, Observable):
             vectors = self._calculate_vectors_single_Q(Q_min, Q_max)
 
             if len(vectors) > 0:
-                Q_vectors.append(np.array(vectors))
+                Q_vectors.extend(vectors)
                 updated_Q_values.append(Q)
 
         self.Q_values = updated_Q_values
 
         return np.array(Q_vectors)
 
-    def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> 'np.ndarray':
+    def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> list:
         """
         Calculates a number of Q vectors that have a magnitude between
         ``Q_min`` and ``Q_max``.
@@ -283,8 +283,8 @@ class AbstractFQt(SQwMixins, Observable):
             The maximum Q value for which a Q vector can be calculated
         Returns
         -------
-        numpy.ndarray
-            An ``array`` of Q vectors which lie within the range defined by
+        list
+            A list of Q vectors which lie within the range defined by
             ``Q_min`` and ``Q_max``
         """
 
@@ -322,7 +322,7 @@ class AbstractFQt(SQwMixins, Observable):
             if len(Q_vectors) >= self.n_Q_vectors:
                 break
 
-        return np.array(Q_vectors)
+        return Q_vectors
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':

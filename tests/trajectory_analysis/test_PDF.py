@@ -188,7 +188,7 @@ def generate_positions(dimensions, number):
     """
 
     components = np.array([np.linspace(0., dimensions[i], number[i]) for i in
-                           range(3)])
+                           range(3)], dtype='object')
     positions = list(product(*components))
     return np.array(list(map(np.array, positions)))
 
