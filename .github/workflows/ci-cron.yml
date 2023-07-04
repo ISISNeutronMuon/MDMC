@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build docker container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
 
   docker_tests:
     name: Docker including MD tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         testset: [ "not-lammps" ]
@@ -68,7 +68,7 @@ jobs:
 
   basic_tests:
     name: Non-container and not inc MD tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         testset: [ "lammps" ]
@@ -115,7 +115,7 @@ jobs:
   profiling:
     name: Profiling
     needs: [docker_tests, basic_tests]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
