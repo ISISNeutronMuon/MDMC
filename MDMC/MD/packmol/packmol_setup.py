@@ -269,9 +269,9 @@ class PackmolSetup:
             if np.any([settings_dict[key] is None for key in settings]):
                 error_messages.append(f"Molecule {molecule} has unfilled values"
                                       " for its settings.")
-                
+
         if error_messages:
-            raise RuntimeError("The packmol setup is invalid for the following reasons:\n" 
+            raise RuntimeError("The packmol setup is invalid for the following reasons:\n"
                                + "\n".join(error_messages))
 
     def get_settings(self) -> Tuple[dict, list[dict]]:
@@ -387,7 +387,9 @@ class PackmolSetup:
             scaled_lengths = [dim*scale_factor for dim in dimensions]
 
         if scale_factor != 1.0:
-            info_string = f'The dimensions of the container are changed to {scaled_lengths} to achieve the requested density of {density} with a whole number of molecules'
+            info_string = (f"The dimensions of the container are changed to {scaled_lengths} "
+                           f"to achieve the requested density of {density} "
+                            "with a whole number of molecules")
             # TODO: Find a way to silence this to not clog the output during testing
             print(info_string)
             LOGGER.info(msg=info_string)

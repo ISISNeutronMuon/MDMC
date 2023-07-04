@@ -1,18 +1,19 @@
 """A module for a class to export a packmol input file"""
+from copy import deepcopy
+
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.exporters.exporter import Exporter
-from copy import deepcopy
 
 class PackmolInputExporter(Exporter):
     """A class to export `PackmolSetup` objects into packmol input files"""
-    def __init__(self, file_name: str):
-        super().__init__(file_name)
-
     INDENT = "  "
 
     @property
     @staticmethod
     def extension() -> str:
+        """
+        The Packmol input file's extension.
+        """
         return ".inp"
 
     def write(self, setup: PackmolSetup,
@@ -42,16 +43,14 @@ class PackmolInputExporter(Exporter):
         for molecule_setting in mol_settings:
             # Get structure file name
             struct_file_name = molecule_file_names[molecule_setting["molecule"]]
-            if struct_file_name.endswith(".pdb"):
-                struct_file_name = struct_file_name
-            else:
-                struct_file_name += ".pdb"
+            if not struct_file_name.endswith(".pdb"):
+                struct_file_name += ".pdb"                
 
             self.file.write(f"structure {struct_file_name}\n")
             # Write each setting that is relevant to the structure
-            constraint_settings = {k:v for k,v in molecule_setting.items()}
+            constraint_settings = dict(molecule_setting.items())
             constraint_settings.pop("molecule")
             for setting in constraint_settings.keys():
                 self.file.writelines(self.INDENT+f"{setting} {constraint_settings[setting]}\n")
-            self.file.write(f"end structure\n")
+            self.file.write("end structure\n")
             self.file.write("\n")

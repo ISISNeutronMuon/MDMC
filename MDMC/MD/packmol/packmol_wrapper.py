@@ -22,6 +22,9 @@ class PackmolFiller:
         self._setup_data: str = setup_data
         self._mol_file_names = {}
         self._filled_universe: Universe = None
+        self._packmol_files_path = None
+        self._input_path = None
+        self._output_path = None
 
     @property
     def filled_universe(self) -> Universe:
@@ -32,6 +35,7 @@ class PackmolFiller:
 
     @property
     def setup_data (self) -> PackmolSetup:
+        """The Packmol setup data for this run."""
         return self._setup_data
 
     def fill_with_packmol(self) -> Universe:
@@ -111,8 +115,7 @@ class PackmolFiller:
         """
         if shutil.which("packmol") is not None:
             return shutil.which("packmol")
-        else:
-            return "packmol"
+        return "packmol"
 
     def get_packmol_output_path(self) -> str:
         """
@@ -137,6 +140,7 @@ class PackmolFiller:
         return name
 
     def get_packmol_files_path(self) -> str:
+        """Get the path in which packmol files are placed and run."""
         return self._packmol_files_path
 
     def _read_packmol_output(self) -> List[Structure]:
@@ -183,13 +187,14 @@ class PackmolFiller:
             # Copy structure positions
             for current_structure in current_structures:
                 # Case where the structure we're copying is a molecule
-                if type(reference_structure) == Molecule:
+                if isinstance(reference_structure, Molecule):
                     # get list of atom positions
                     output_molecule_pos_data = [atom.position for atom in current_structure]
                     # copy whole molecule
                     copied_molecule = reference_structure.copy((0., 0., 0.))
                     # adjust individual atom positions
-                    for copied_atom, new_pos in zip(copied_molecule.atoms, output_molecule_pos_data):
+                    for copied_atom, new_pos in zip(copied_molecule.atoms,
+                                                    output_molecule_pos_data):
                         copied_atom.position = new_pos
 
                     # Recalculate centre of mass & add everything to universe
@@ -197,7 +202,7 @@ class PackmolFiller:
                     universe.add_structure(copied_molecule)
 
                 # If the structure we want is an atom, we just copy that one atom into the universe
-                elif type(reference_structure) == Atom:
+                elif isinstance(reference_structure, Atom):
                     copied_atm = reference_structure.copy(current_structure.atoms[0].position)
                     universe.add_structure(copied_atm)
 

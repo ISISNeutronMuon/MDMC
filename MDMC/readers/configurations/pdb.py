@@ -42,7 +42,7 @@ class ProteinDataBankReader(ConfigurationReader):
         molecule_id = 0
         for line in self.file:
             record_name = line[0:6]
-            if record_name == "ATOM  " or record_name == "HETATM":
+            if record_name in ("ATOM  ", "HETATM"):
                 # chars 23-26 identify molecule
                 atom_id = int(line[6:12].split()[-1])
                 molecule_id = int(line[22:26].split()[-1])

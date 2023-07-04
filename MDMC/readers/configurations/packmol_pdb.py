@@ -1,6 +1,4 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-import itertools
-
 from MDMC.MD.structures import Molecule, Atom
 from MDMC.readers.configurations.pdb import ProteinDataBankReader
 
@@ -9,9 +7,11 @@ class PackmolPDBReader(ProteinDataBankReader):
 
     def parse(self, **settings: dict) -> None:
         """
-        Read lines from the .pdb file one at a time, following the PDB file-format. Identify the atoms, and the
-        molecules to which they belong. Then add the atoms to `Molecule` objects and store in self._atoms or
-        self._molecules for access by other functions.
+        Read lines from the .pdb file one at a time, 
+        following the PDB file-format. Identify the atoms, and the
+        molecules to which they belong. Then add the atoms to `Molecule` 
+        objects and store in self._atoms or self._molecules 
+        for access by other functions.
 
         Parameters
         ----------
@@ -25,7 +25,7 @@ class PackmolPDBReader(ProteinDataBankReader):
         for line in self.file:
             #chars 0-6 identify what the line is describing
             record_name = line[0:6]
-            if record_name == "ATOM  " or record_name == "HETATM":
+            if record_name in ("ATOM  ", "HETATM"):
                 record_info = self._parse_atom_record(line)
                 current_molecule_id = record_info[0]
                 atom_name = record_info[1]
