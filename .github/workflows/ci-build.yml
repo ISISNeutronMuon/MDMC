@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     name: Build docker container
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     # if this is a dependabot PR, skip all this and do the Dependabot workflow instead
     if: ${{ github.actor != 'dependabot[bot]' }}
     steps:
@@ -24,7 +24,7 @@ jobs:
   tests:
     name: Docker tests
     needs: build # so it can use new docker image if docker image has changed
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: true
       matrix:
@@ -62,7 +62,7 @@ jobs:
 
   linting:
     name: Pylint
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -83,7 +83,7 @@ jobs:
 
   notebooks:
     name: Notebooks
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: build
     steps:
       - name: Checkout Repo
@@ -111,7 +111,7 @@ jobs:
 
   type-checking:
     name: Mypy
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3

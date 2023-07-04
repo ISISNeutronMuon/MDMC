@@ -54,13 +54,13 @@ def filter_dataframe(values: Sequence,
 
     # Filter all columns of dataframe which match column_regex for the first
     # value in values
-    filtered_dataframe = []
+    filtered_dataframes: list = []
     for col_name in column_names:
-        filtered_dataframe.append(dataframe[dataframe[col_name]
+        filtered_dataframes.append(dataframe[dataframe[col_name]
                                             == values[0]])
     # Concat the list of filtered dataframes (1 for each matching column)
     # into a single dataframe
-    concat_filtered_dataframe = pd.concat(filtered_dataframe)
+    concat_filtered_dataframe = pd.concat(filtered_dataframes)
     # If there is more than one value in values, call _filter_df_multi
     # recursively to further filter by the remaining values
     if len(values) > 1:

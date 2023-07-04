@@ -279,7 +279,8 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
                                                   dlpoly=self.dlpoly,
                                                   **settings)
 
-    def minimize(self, n_steps: int, output_log: str = None,
+    def minimize(self, n_steps: int,
+                 minimize_every: int = 10, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
         Minimizes the simulation energy
@@ -287,7 +288,9 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
         Parameters
         ----------
         n_steps : int
-            Maximum number of steps for the energy minimization.
+            Maximum number of steps for the MD run.
+        minimize_every : int, optional, default 10
+            Number of MD steps between two consecutive minimizations.
         output_log: str, optional, default None
             file where the output goes.
         work_dir: str, optional, default None
@@ -297,14 +300,15 @@ class DLPOLYEngine(DLPOLYAttribute, MDEngine):
             ``MDEngine`` that is being used.
         etol: float, energy tolerance criteria for energy minimisation
         ftol: float, force tolerance criteria for force minimisation, active only if non-zero
-        minimisation_frequency: how often to do a geometry optimisation during minimisation process
+        maxiter: int, not used in this facade
+        maxeval: int, not used in this facade
         """
 
         # Example of how to use the **settings to specify parameters,
         # e.g. tolerances
         etol = settings.get('etol', 1.e-3)
         ftol = settings.get('ftol', None)
-        min_freq = settings.get('minimisation_frequency', 10)
+        min_freq = minimize_every
         LOGGER.info('%s minimize: {n_steps: %s,  ftol: %s}',
                     self.__class__, n_steps, ftol)
         if not ftol:  # Should handle ftol == 0 or undefined ftol

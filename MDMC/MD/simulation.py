@@ -1485,17 +1485,22 @@ class Simulation:
         self.engine.setup_universe(self.universe, **self.settings)
         self.engine.setup_simulation(**self.settings)
 
-    def minimize(self, n_steps: int, verbose: bool = False, output_log: str = None,
+    def minimize(self, n_steps: int,
+                 minimize_every: int = 10,
+                 verbose: bool = False, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
-        Minimizes the total potential energy of the simulated system by
-        modifying the positions of the constituent atoms until one of the
-        stopping criteria is met.
+        Performs an MD run intertwined with periodic structure relaxation.
+        This way after a local minimum is found, the system is taken
+        out of the minimum to explore a larger volume of the parameter
+        space.
 
         Parameters
         ----------
         n_steps : int
-            Maximum number of steps to run the minimization
+            Total number of the MD run steps
+        minimize_every: int, optional
+            Number of MD steps between two consecutive minimizations
         verbose: bool, optional
             Whether to print statements when the minimization has been started and completed
             (including the number of minimization steps and time taken). Default is `False`.
@@ -1510,11 +1515,11 @@ class Simulation:
             ``ftol`` (`float`)
                 If the magnitude of the global force is less than ``ftol``,
                 minimization is stopped. Default depends on engine used.
+            ``maxiter`` (`int`)
+                Maximum number of iterations of a single structure
+                relaxation procedure. Default depends on engine used.
             ``maxeval`` (`int`)
                 Maximum number of force evaluations to perform. Default depends
-                on engine used.
-            ``nfreq`` (`int`)
-                Frequency at which minimisation is performed. Default depends
                 on engine used.
         """
 
@@ -1524,9 +1529,10 @@ class Simulation:
         # step in this function so verbose levels 2 or 3 would not provide extra information
         verbose_manager.start(1, verbose=int(verbose))
 
-        verbose_manager.step(f"Running minimization for {n_steps} steps")
-        self.engine.minimize(n_steps, output_log=output_log, work_dir=work_dir,
-                             **self.settings)
+        verbose_manager.step(f"Running minimization every {minimize_every} steps "
+                             f"in an MD run with {n_steps} steps")
+        self.engine.minimize(n_steps, minimize_every, output_log=output_log, work_dir=work_dir,
+                             **settings)
 
         verbose_manager.finish("Minimization")
 

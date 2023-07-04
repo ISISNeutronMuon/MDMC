@@ -26,7 +26,7 @@ MASS = {
     'S': 32.06,
     'Cl': 35.453,
     'K': 39.0983,
-    'Ar': 35.967,
+    'Ar': 36.0,  # TODO: This is for Ar-36! Update reader to allow isotopes
     'Ca': 40.08,
     'Sc': 44.9559,
     'Ti': 47.9,
@@ -205,7 +205,7 @@ B_COH = {
     'P': 5.13,
     'S': 2.847,
     'Cl': 9.577,
-    'Ar': 24.90,
+    'Ar': 24.9,  # TODO: This is for Ar-36! Update reader to allow isotopes
     'K': 3.67,
     'Ca': 4.7,
     'Sc': 12.29,
@@ -306,7 +306,7 @@ B_INCOH = {
     'P': 0.199471140,
     'S': 0.236017435,
     'Cl': 6.494309810,
-    'Ar': 0.0,
+    'Ar': 0.0,  # TODO: This is for Ar-36! Update reader to allow isotopes
     'K': 1.465807535,
     'Ca': 0.630783130,
     'Sc': 5.984134206,
