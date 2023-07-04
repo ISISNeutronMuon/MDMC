@@ -144,7 +144,7 @@ class GPR(Minimizer):
         list[str]
             A ``list`` of ``str`` containing all the column labels in the history
         """
-        return ['FoM', 'Change state'] + list(self.parameters)
+        return ['FoM'] + list(self.parameters)
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
@@ -183,7 +183,7 @@ class GPR(Minimizer):
         """
 
         self.FoM = FoM
-        history = [self.FoM, 'Accepted']
+        history = [self.FoM]
         self.FoM_old = self.FoM
         self.state_changed = True
 
