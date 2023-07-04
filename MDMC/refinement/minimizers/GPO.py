@@ -88,7 +88,7 @@ class GPO(Minimizer):
             A ``list`` of ``str`` containing all the column labels in the history
         """
 
-        return ['FoM', 'Pred coords', 'Pred FoM'] + list(self.parameters)
+        return ['FoM'] + list(self.parameters)
 
     def has_converged(self) -> bool:
         """
@@ -152,7 +152,7 @@ class GPO(Minimizer):
 
         self.predicted_FoM = self.optimizer.get_result()['fun']
         self.predicted_min_pos = self.optimizer.get_result()['x']
-        history = [self.FoM, self.predicted_min_pos, self.predicted_FoM]
+        history = [self.FoM]
         self.state_changed = True
 
         history.extend(values)

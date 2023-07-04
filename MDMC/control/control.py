@@ -7,10 +7,11 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import IPython.display
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
 
-from MDMC.control.plot_results import PlotResults
+from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
 from MDMC.MD.simulation import Simulation
@@ -137,6 +138,9 @@ class Control:
             and the MD ``CompactTrajectory`` is sliced into sub-``CompactTrajectory`` blocks.
             If ``True`` (default) the observables are averaged over the sub-``CompactTrajectory``
             blocks. If ``False`` they are not averaged.
+        data_printer: str, default 'plaintext'
+            How to display the data during minimisation. Current options are 'plaintext' (default,
+            plaintext printing) or 'ipython' (prettier HTML printing via iPython)
 
     Example
     -------
@@ -376,6 +380,9 @@ class Control:
         if self.verbose != -1:
             print(f'Control created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
+        # set up data printer and attach minimiser history to it
+        self.data_printer = data_printers[settings.get('data_printer', 'plaintext')]()
+
     def __str__(self) -> str:
         exp_dataset_types = [dataset['type'] for dataset in self.exp_datasets]
 
@@ -422,7 +429,7 @@ class Control:
         count = -1
 
         if self.verbose != -1:
-            self._print_header()  # creates stdout header
+            self.data_printer.print_header(self.minimizer.history)  # creates stdout header
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
@@ -434,7 +441,7 @@ class Control:
                 count += 1
                 if self.verbose == 3:  # if progress bar is there, ensure data is on new line
                     print("")
-                self._print_data()
+                self.data_printer.print_data(self.minimizer.history)
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
@@ -554,27 +561,6 @@ class Control:
 
         return cornerplot
 
-    def _print_data(self) -> None:
-
-        with pd.option_context('display.max_colwidth', 12,
-                               'display.precision', 5,
-                               'display.float_format', '{:.4g}'.format):
-            n_step = self.minimizer.history.iloc[-1].name
-            output = self.minimizer.history.loc[[n_step]].to_string(
-                col_space=12, index=False, header=False).split('\n')
-            data = '{:4d}'.format(n_step) + ''.join(output)
-            print(data)
-
-    def _print_header(self) -> None:
-
-        def format_column(column):
-            column = column if len(column) < 13 else column[:9] + '...'
-            return ' ' * (12 - len(column)) + column
-
-        columns = ' '.join([format_column(col) for col
-                            in self.minimizer.history.columns])
-        header = 'Step' + columns
-        print(header)
 
     def _generate_FoM(self) -> float:
         """
