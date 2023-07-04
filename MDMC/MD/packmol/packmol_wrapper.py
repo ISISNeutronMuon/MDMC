@@ -4,6 +4,8 @@ import shutil
 import subprocess
 import os
 
+from typing import List
+
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD import Universe, Molecule, Atom, Structure
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
@@ -16,26 +18,22 @@ class PackmolFiller:
     A class representing a packmol run based on a `PackmolSetup` object
     """
 
-    _setup_data: PackmolSetup
-    _packmol_files_path : str
-    _input_path: str
-    _output_path: str
-    _filled_universe: Universe
     def __init__(self, setup_data: PackmolSetup):
-        self._setup_data = setup_data
+        self._setup_data: str = setup_data
         self._mol_file_names = {}
-        self._filled_universe = None
+        self._filled_universe: Universe = None
 
     @property
-    def filled_universe(self) -> 'Universe':
+    def filled_universe(self) -> Universe:
         """
         Get the `Universe` filled via the packmol run
         """
         return self._filled_universe
 
     @property
-    def setup_data (self):
+    def setup_data (self) -> PackmolSetup:
         return self._setup_data
+
     def fill_with_packmol(self) -> Universe:
         """
         Parameters
@@ -64,12 +62,12 @@ class PackmolFiller:
         place & run packmol files
         """
         original_cwd = os.getcwd()
-        self._packmol_files_path = os.path.join(original_cwd, "packmol_files")
+        self._packmol_files_path: str = os.path.join(original_cwd, "packmol_files")
         if not os.path.exists(self._packmol_files_path):
             os.makedirs(self._packmol_files_path)
 
-        self._input_path = os.path.join(self._packmol_files_path, "input_file.inp")
-        self._output_path = os.path.join(self._packmol_files_path, "output-universe.pdb")
+        self._input_path: str = os.path.join(self._packmol_files_path, "input_file.inp")
+        self._output_path: str = os.path.join(self._packmol_files_path, "output-universe.pdb")
 
     def _export_molecules(self) -> None:
         """
@@ -141,7 +139,7 @@ class PackmolFiller:
     def get_packmol_files_path(self) -> str:
         return self._packmol_files_path
 
-    def _read_packmol_output(self) -> 'List[Structure]':
+    def _read_packmol_output(self) -> List[Structure]:
         """
         A function to read in the packmol output and return the molecules read in
 
@@ -156,7 +154,7 @@ class PackmolFiller:
             output_molecules = reader.molecules
         return output_molecules
 
-    def _fill_universe(self, output_structures: 'List[Structure]') -> Universe:
+    def _fill_universe(self, output_structures: List[Structure]) -> Universe:
         """
         A function to fill in the universe with the output data from packmol
 

@@ -1,4 +1,4 @@
-"""A module of a class to export a packmol input file"""
+"""A module for a class to export a packmol input file"""
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.exporters.exporter import Exporter
 from copy import deepcopy
@@ -20,7 +20,7 @@ class PackmolInputExporter(Exporter):
               output_name: str = "output_file.pdb",
               **settings: dict) -> None:
         """
-        Write the data contained in a `PackmolSetup` object out to a packmol input file
+        Write the data contained in a `PackmolSetup` object to a packmol input file
 
         Parameters
         ----------
@@ -38,6 +38,7 @@ class PackmolInputExporter(Exporter):
                               "filetype pdb\n",
                               f"output {output_name}\n"])
         self.file.write("\n")
+
         for molecule_setting in mol_settings:
             # Get structure file name
             struct_file_name = molecule_file_names[molecule_setting["molecule"]]
@@ -45,6 +46,7 @@ class PackmolInputExporter(Exporter):
                 struct_file_name = struct_file_name
             else:
                 struct_file_name += ".pdb"
+
             self.file.write(f"structure {struct_file_name}\n")
             # Write each setting that is relevant to the structure
             constraint_settings = {k:v for k,v in molecule_setting.items()}

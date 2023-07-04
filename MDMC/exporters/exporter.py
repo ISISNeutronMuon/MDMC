@@ -1,5 +1,4 @@
 """Module for exporter abstract class"""
-import os.path
 from abc import ABC, abstractmethod
 
 from MDMC.common.decorators import repr_decorator
@@ -9,7 +8,7 @@ from MDMC.common.decorators import repr_decorator
 class Exporter(ABC):
 
     """
-    Abstract class that defines methods common to all exporters
+    Abstract context manager class that defines methods common to all exporters
 
     Parameters
     ----------
@@ -32,6 +31,7 @@ class Exporter(ABC):
         # pylint: disable=consider-using-with
         # as this is an abstracted open method
         self.file = open(self.file_name, 'w', encoding='UTF-8')
+
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         """Closes the open file after parsing"""
 
@@ -40,7 +40,7 @@ class Exporter(ABC):
     @abstractmethod
     def write(self, **settings: dict) -> None:
         """
-        Writes the file data into the file so that it is in a format expected by the file format
+        Writes the file data in the correct format.
 
         For exporters which are not specific to one data type, the calling class
         must be determined so that the file data can be parsed into

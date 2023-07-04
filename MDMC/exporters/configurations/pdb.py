@@ -3,6 +3,7 @@ from MDMC.exporters.configurations.conf_exporter import ConfigurationExporter
 from MDMC.MD import Structure
 from MDMC.MD.ase.conversions import get_ase_atoms
 from ase.io import proteindatabank
+
 class ProteinDataBankExporter(ConfigurationExporter):
 
     def __init__(self, file_name: str):
@@ -14,7 +15,5 @@ class ProteinDataBankExporter(ConfigurationExporter):
         return ".pdb"
 
     def write(self, structure: Structure, **settings: dict) -> None:
-        # Convert into ASE format
         ase_atoms = get_ase_atoms(structure.atoms)
-        # Write to pdb file
         proteindatabank.write_proteindatabank(self.file, ase_atoms)

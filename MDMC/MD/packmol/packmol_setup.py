@@ -1,14 +1,16 @@
 """A module containing a class for storing packmol systems and their metadata"""
 import math
-import numpy as np
 import logging
+from typing import List, Tuple
+
+import numpy as np
 
 from MDMC.MD import Molecule
 
 LOGGER = logging.getLogger(__name__)
 
 
-def calculate_volume(dimensions: 'tuple[float]', container_type: "str" = None) -> float:
+def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> float:
     """
     A method to calculate the volume of a container given the dimensions.
 
@@ -42,20 +44,17 @@ class PackmolSetup:
     For an explanation of all the settings and constraints see:
     https://m3g.github.io/packmol/userguide.shtml#basic
     """
-    _molecules: 'list[Molecule]' = []
-    _molecule_settings: 'list[dict]' = []
-    _system_settings: dict = {}
 
     def __init__(self):
         # packmol default tolerance
-        self._molecules = []
-        self._molecule_settings = []
-        self._system_settings = {}
+        self._molecules: List[Molecule] = []
+        self._molecule_settings: List[dict] = []
+        self._system_settings: dict = {}
         self._system_settings["tolerance"] = 2.0
 
     def add_fixed_molecule(self, molecule: Molecule,
-                           position: 'tuple[float]' = (0., 0., 0.),
-                           rotation: 'tuple[float]' = (0., 0., 0.),
+                           position: Tuple[float] = (0., 0., 0.),
+                           rotation: Tuple[float] = (0., 0., 0.),
                            centre: bool = True) -> None:
         """
         Add a single molecule in a fixed position to the setup
@@ -132,7 +131,7 @@ class PackmolSetup:
 
     def add_cube(self, molecule: Molecule,
                  size: float,
-                 origin: 'tuple[float]' = (0., 0., 0.),
+                 origin: Tuple[float] = (0., 0., 0.),
                  density: float = 0.,
                  n_molecules: int = 0) -> None:
         """
@@ -163,8 +162,8 @@ class PackmolSetup:
                            container_type="cube")
 
     def add_box(self, molecule: Molecule,
-                lengths: 'tuple[float]',
-                origin: 'tuple[float]' = (0., 0., 0.),
+                lengths: Tuple[float],
+                origin: Tuple[float] = (0., 0., 0.),
                 density: float = 0.,
                 n_molecules: int = 0) -> None:
         """
@@ -197,7 +196,7 @@ class PackmolSetup:
 
     def add_sphere(self, molecule: Molecule,
                    radius: float,
-                   origin: 'tuple[float]' = (0., 0., 0.),
+                   origin: Tuple[float] = (0., 0., 0.),
                    density: float = 0.,
                    n_molecules: int = 0) -> None:
         """
@@ -239,36 +238,43 @@ class PackmolSetup:
         """
         if molecule not in self._molecules:
             raise ValueError("This molecule does not exist in the setup.")
-        else:
-            for setting in self._molecule_settings:
-                if setting["molecule"] == molecule:
-                    del setting
-            self._molecules.remove(molecule)
+        for setting in self._molecule_settings:
+            if setting["molecule"] == molecule:
+                del setting
+        self._molecules.remove(molecule)
 
     def validate_setup(self) -> None:
         """Ensures that the setup is valid - shows errors and warnings for issues with the setup"""
-        # The system tolerance must be set
+        error_messages = []
         tol = self._system_settings["tolerance"]
-        assert (tol is not None and tol > 0.), "The system tolerance must be set"
+        if (tol is None or tol <= 0.):
+            error_messages.append("The system tolerance must be set.")
 
-        # At least one type of molecule must be present
-        assert len(self._molecules) >= 1, "There must be at least one type of molecule present"
+        if len(self._molecules) == 0:
+            error_messages.append("There must be at least one type of molecule present.")
 
         for settings_dict in self._molecule_settings:
             settings = settings_dict.keys()
             molecule = settings_dict["molecule"]
-            assert "molecule" in settings, "There are settings without a molecule associated to it."
+            if "molecule" not in settings:
+                error_messages.append("There are settings without an associated molecule.")
             # Each molecule needs to have at least one "number" setting
-            assert "number" in settings, \
-                f"The number of {molecule} molecules needs to be specified."
+            if "number" not in settings:
+                error_messages.append(f"The number of {molecule} molecules needs to be specified.")
             # Each molecule must have at least one constraint
-            assert np.any([self._is_constraint(key) for key in settings]), \
-                f"Molecule {molecule} does not have a spatial constraint attached to it."
+            if not np.any([self._is_constraint(key) for key in settings]):
+                error_messages.append(f"Molecule {molecule} must"
+                                      " have a spatial constraint attached.")
             # Each molecule must have values for their respective constraints
-            assert np.any([settings_dict[key] is not None for key in settings]), \
-                f"Molecule {molecule} has unfilled values for it's respective settings."
+            if np.any([settings_dict[key] is None for key in settings]):
+                error_messages.append(f"Molecule {molecule} has unfilled values"
+                                      " for its settings.")
+                
+        if error_messages:
+            raise RuntimeError("The packmol setup is invalid for the following reasons:\n" 
+                               + "\n".join(error_messages))
 
-    def get_settings(self) -> 'tuple[dict, list[dict]]':
+    def get_settings(self) -> Tuple[dict, list[dict]]:
         """
         Returns
         -------
@@ -277,7 +283,7 @@ class PackmolSetup:
         """
         return self._system_settings, self._molecule_settings
 
-    def get_molecules(self) -> 'list[Molecule]':
+    def get_molecules(self) -> Tuple[Molecule]:
         """
         Returns
         -------
@@ -286,7 +292,7 @@ class PackmolSetup:
         """
         return self._molecules
 
-    def get_max_sizes(self) -> tuple[float]:
+    def get_max_sizes(self) -> Tuple[float]:
         """
         Returns
         -------
@@ -342,7 +348,7 @@ class PackmolSetup:
                                 "fixed"]
 
     @staticmethod
-    def resolve_density(dimensions: 'tuple[float]',
+    def resolve_density(dimensions: Tuple[float],
                         density: float = 0.,
                         container_type: str = None) -> tuple:
         """

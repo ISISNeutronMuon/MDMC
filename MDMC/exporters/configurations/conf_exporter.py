@@ -9,7 +9,7 @@ from MDMC.exporters.exporter import Exporter
 @repr_decorator('file', 'extension')
 class ConfigurationExporter(Exporter):
     """
-    Abstract class (as it does not implement ``Exporer.write``) that defines
+    Abstract class (as it does not implement ``Exporter.write``) that defines
     properties common to all exporters for configurations
 
     A ``ConfigurationExporter`` is created using ``ConfigurationReaderFactory``
@@ -18,7 +18,7 @@ class ConfigurationExporter(Exporter):
     @abstractmethod
     def write(self, structure: Structure, **settings: dict) -> None:
         """
-        Writes the file data into the file so that it is in a format expected by the file format
+        Writes the file data in the correct format.
 
         For exporters which are not specific to one data type, the calling class
         must be determined so that the file data can be parsed into
