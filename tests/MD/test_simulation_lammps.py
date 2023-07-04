@@ -1607,7 +1607,8 @@ def test_convert_trajectory_output(lammps_engine):
 
 
 @pytest.mark.parametrize('args',
-                         [{'n_steps':0, 'minimize_every':5},
+                         [{'n_steps':0, 'minimize_every':5,
+                           'maxiter':1000},
                           {'n_steps':0, 'minimize_every':5,
                            'etol':0., 'ftol':1.e-8,
                            'maxeval':1000, 'maxiter': 1000},
