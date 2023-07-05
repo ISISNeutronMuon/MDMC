@@ -5,7 +5,7 @@ import pytest
 
 from MDMC.MD import Atom, Bond, BondAngle, Molecule
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
-from MDMC.exporters.packmol_input import PackmolInputExporter
+from MDMC.exporters.configurations.packmol_input import PackmolInputExporter
 from tests.test_data.data import _ABS_DIR_PATH
 @pytest.fixture()
 def h2o_molecule():

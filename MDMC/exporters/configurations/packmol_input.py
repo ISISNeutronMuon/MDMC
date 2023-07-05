@@ -1,8 +1,12 @@
 """A module for a class to export a packmol input file"""
+from __future__ import annotations
 from copy import deepcopy
+from typing import TYPE_CHECKING
 
-from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.exporters.exporter import Exporter
+
+if TYPE_CHECKING:
+    from MDMC.MD.packmol.packmol_setup import PackmolSetup
 
 class PackmolInputExporter(Exporter):
     """A class to export `PackmolSetup` objects into packmol input files"""

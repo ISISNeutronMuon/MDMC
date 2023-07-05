@@ -9,7 +9,7 @@ from typing import List
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD import Universe, Molecule, Atom, Structure
 from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
-from MDMC.exporters.packmol_input import PackmolInputExporter
+from MDMC.exporters.configurations.packmol_input import PackmolInputExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 
