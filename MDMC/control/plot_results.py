@@ -169,18 +169,28 @@ class PlotResults():
 class DataPrinter(ABC):
     """
     A class for printing data during a minimisation.
-
-    Parameters:
-    history
-        The history of the minimizer data is printed from.
     """
 
     @abstractmethod
     def print_data(self, history):
+        """
+        Update table at the end of a refinement step.
+
+        Parameters:
+        history
+            The history of the minimizer data is printed from.
+        """
         raise NotImplementedError
 
     @abstractmethod
     def print_header(self, history):
+        """
+        Create table headers at the start of refinement.
+        
+        Parameters:
+        history
+            The history of the minimizer data is printed from.
+        """
         raise NotImplementedError
 
 
