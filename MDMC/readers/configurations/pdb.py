@@ -38,6 +38,8 @@ class ProteinDataBankReader(ConfigurationReader):
         # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
         # Link to PDF of file format:
         # https://files.wwpdb.org/pub/pdb/doc/format_descriptions/Format_v33_A4.pdf (page 180)
+        # pylint: disable=unused-variable
+        # as molecule_id is unused but is part of the standard! 
         molecule = {}
         molecule_id = 0
         for line in self.file:

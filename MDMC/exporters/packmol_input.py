@@ -44,7 +44,7 @@ class PackmolInputExporter(Exporter):
             # Get structure file name
             struct_file_name = molecule_file_names[molecule_setting["molecule"]]
             if not struct_file_name.endswith(".pdb"):
-                struct_file_name += ".pdb"                
+                struct_file_name += ".pdb"
 
             self.file.write(f"structure {struct_file_name}\n")
             # Write each setting that is relevant to the structure
