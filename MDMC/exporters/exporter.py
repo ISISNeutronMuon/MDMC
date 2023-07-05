@@ -38,7 +38,7 @@ class Exporter(ABC):
         self.file.close()
 
     @abstractmethod
-    def write(self, object, **settings: dict) -> None:
+    def write(self, obj, **settings: dict) -> None:
         """
         Writes the file data in the correct format.
 
@@ -48,7 +48,7 @@ class Exporter(ABC):
 
         Parameters
         ----------
-        object
+        obj
             The object to be exported.
         **settings: dict
             dictionary of settings for exporter

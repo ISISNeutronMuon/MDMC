@@ -1,6 +1,5 @@
 """A module for a class to export a packmol input file"""
 from __future__ import annotations
-from copy import deepcopy
 from typing import TYPE_CHECKING
 
 from MDMC.exporters.exporter import Exporter
@@ -12,6 +11,7 @@ class PackmolInputExporter(Exporter):
     """A class to export `PackmolSetup` objects into packmol input files"""
     INDENT = "  "
 
+    #pylint: disable=arguments-differ, too-few-public-methods
     def write(self, setup: PackmolSetup,
               molecule_file_names: dict,
               output_name: str = "output_file.pdb",

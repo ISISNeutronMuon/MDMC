@@ -15,6 +15,7 @@ class ProteinDataBankExporter(Exporter):
         The export file name.
     """
 
+    #pylint: disable=arguments-renamed, too-few-public-methods
     def write(self, structure: Structure, **settings: dict) -> None:
         ase_atoms = get_ase_atoms(structure.atoms)
         proteindatabank.write_proteindatabank(self.file, ase_atoms)

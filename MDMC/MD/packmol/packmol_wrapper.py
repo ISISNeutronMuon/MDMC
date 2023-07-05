@@ -22,9 +22,9 @@ class PackmolFiller:
         self._setup_data: str = setup_data
         self._mol_file_names = {}
         self._filled_universe: Universe = None
-        self._packmol_files_path = None
-        self._input_path = None
-        self._output_path = None
+        self._packmol_files_path: str = None
+        self._input_path: str = None
+        self._output_path: str = None
 
     @property
     def filled_universe(self) -> Universe:
@@ -66,12 +66,12 @@ class PackmolFiller:
         place & run packmol files
         """
         original_cwd = os.getcwd()
-        self._packmol_files_path: str = os.path.join(original_cwd, "packmol_files")
+        self._packmol_files_path = os.path.join(original_cwd, "packmol_files")
         if not os.path.exists(self._packmol_files_path):
             os.makedirs(self._packmol_files_path)
 
-        self._input_path: str = os.path.join(self._packmol_files_path, "input_file.inp")
-        self._output_path: str = os.path.join(self._packmol_files_path, "output-universe.pdb")
+        self._input_path = os.path.join(self._packmol_files_path, "input_file.inp")
+        self._output_path = os.path.join(self._packmol_files_path, "output-universe.pdb")
 
     def _export_molecules(self) -> None:
         """
