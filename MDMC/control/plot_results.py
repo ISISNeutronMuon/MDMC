@@ -186,7 +186,7 @@ class DataPrinter(ABC):
     def print_header(self, history):
         """
         Create table headers at the start of refinement.
-        
+
         Parameters:
         history
             The history of the minimizer data is printed from.
@@ -224,7 +224,7 @@ class IPythonDataPrinter(DataPrinter):
         self.display = IPython.display.DisplayHandle()
 
     def print_data(self, history) -> None:
-        history_table = pd.DataFrame(history, 
+        history_table = pd.DataFrame(history,
                                      columns=history.columns)
         history_table.index.name = "Step"
         self.display.update(history_table)
