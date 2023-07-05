@@ -7,7 +7,6 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
-import IPython.display
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
 

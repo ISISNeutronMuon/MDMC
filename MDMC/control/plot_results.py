@@ -169,20 +169,21 @@ class PlotResults():
 class DataPrinter(ABC):
     """
     A class for printing data during a minimisation.
-    
+
     Parameters:
     history
         The history of the minimizer data is printed from.
     """
 
     @abstractmethod
-    def print_data(self):
+    def print_data(self, history):
         raise NotImplementedError
 
     @abstractmethod
-    def print_header(self):
+    def print_header(self, history):
         raise NotImplementedError
-    
+
+
 class PlaintextDataPrinter(DataPrinter):
     """Plaintext data printer."""
 
@@ -209,16 +210,16 @@ class PlaintextDataPrinter(DataPrinter):
 
 class IPythonDataPrinter(DataPrinter):
     """Prettier IPython data printer, for Jupyter Notebooks, etc."""
+    def __init__(self):
+        self.display = IPython.display.DisplayHandle()
 
     def print_data(self, history) -> None:
-        display = IPython.display.DisplayHandle
         history_table = pd.DataFrame(history, 
                                      columns=history.columns)
         history_table.index.name = "Step"
         self.display.update(history_table)
 
     def print_header(self, history) -> None:
-        self.display = IPython.display.DisplayHandle()
         history_table = pd.DataFrame(columns=history.columns)
         self.display.display(history_table)
 
