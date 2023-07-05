@@ -1,17 +1,19 @@
 """A module for a class to export a packmol input file"""
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from copy import copy
 
 from MDMC.exporters.exporter import Exporter
 
 if TYPE_CHECKING:
     from MDMC.MD.packmol.packmol_setup import PackmolSetup
 
+#pylint: disable=arguments-differ, too-few-public-methods
+
 class PackmolInputExporter(Exporter):
     """A class to export `PackmolSetup` objects into packmol input files"""
     INDENT = "  "
 
-    #pylint: disable=arguments-differ, too-few-public-methods
     def write(self, setup: PackmolSetup,
               molecule_file_names: dict,
               output_name: str = "output_file.pdb",
@@ -44,9 +46,9 @@ class PackmolInputExporter(Exporter):
 
             self.file.write(f"structure {struct_file_name}\n")
             # Write each setting that is relevant to the structure
-            constraint_settings = dict(molecule_setting.items())
+            constraint_settings = copy(molecule_setting)
             constraint_settings.pop("molecule")
-            for setting in constraint_settings.keys():
-                self.file.writelines(self.INDENT+f"{setting} {constraint_settings[setting]}\n")
+            for setting, value in constraint_settings.items():
+                self.file.writelines(self.INDENT+f"{setting} {value}\n")
             self.file.write("end structure\n")
             self.file.write("\n")
