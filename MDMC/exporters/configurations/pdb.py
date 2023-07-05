@@ -1,11 +1,11 @@
 """A module to export configuations as pdb files"""
 from ase.io import proteindatabank
 
-from MDMC.exporters.configurations.conf_exporter import ConfigurationExporter
+from MDMC.exporters.exporter import Exporter
 from MDMC.MD import Structure
 from MDMC.MD.ase.conversions import get_ase_atoms
 
-class ProteinDataBankExporter(ConfigurationExporter):
+class ProteinDataBankExporter(Exporter):
     """
     Exporter for Protein Data Bank (pdb) files.
 

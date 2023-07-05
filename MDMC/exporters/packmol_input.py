@@ -8,14 +8,6 @@ class PackmolInputExporter(Exporter):
     """A class to export `PackmolSetup` objects into packmol input files"""
     INDENT = "  "
 
-    @property
-    @staticmethod
-    def extension() -> str:
-        """
-        The Packmol input file's extension.
-        """
-        return ".inp"
-
     def write(self, setup: PackmolSetup,
               molecule_file_names: dict,
               output_name: str = "output_file.pdb",
