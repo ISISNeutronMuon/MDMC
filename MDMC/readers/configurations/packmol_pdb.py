@@ -1,4 +1,6 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
+from typing import List
+
 from MDMC.MD.structures import Molecule, Atom
 from MDMC.readers.configurations.pdb import ProteinDataBankReader
 
@@ -70,6 +72,6 @@ class PackmolPDBReader(ProteinDataBankReader):
         return molecule_id, atom_name, atom_position, element_symbol
 
     @property
-    def molecules(self) -> 'list[Molecule]':
+    def molecules(self) -> List[Molecule]:
         """Returns a list of ``Molecule`` objects from the data read from the file"""
         return self._molecules

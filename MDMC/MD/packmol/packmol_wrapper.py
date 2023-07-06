@@ -174,7 +174,7 @@ class PackmolFiller:
         reader = PackmolPDBReader(self._output_path)
         with reader:
             reader.parse()
-            output_structures = reader.structures
+            output_structures = reader.molecules
         return output_structures
 
     def _fill_universe(self, output_structures: List[Structure]) -> Universe:
@@ -193,7 +193,7 @@ class PackmolFiller:
             A `Universe` object filled with the `Structure` objects in `output_structures`.
         """
         dim = self._setup_data.get_max_sizes()
-        universe = Universe(dimensions=dim, verbose=-1)
+        universe = Universe(dimensions=dim, verbose=False)
         _, struct_settings = self._setup_data.get_settings()  # All structures + their metadata
 
         # Loop through all molecules specified for the system
@@ -205,8 +205,13 @@ class PackmolFiller:
 
             # Copy structure positions
             for current_structure in current_structures:
-                # Case where the structure we're copying is a molecule
-                if isinstance(reference_structure, Molecule):
+                # If the structure we want is an atom, we just copy that one atom into the universe
+                if isinstance(reference_structure, Atom):
+                    copied_atm = reference_structure.copy(current_structure.atoms[0].position)
+                    universe.add_structure(copied_atm)
+                
+                # Else, if the structure we're copying is a molecule
+                elif isinstance(reference_structure, Molecule):
                     # get list of atom positions
                     output_molecule_pos_data = [atom.position for atom in current_structure]
                     # copy whole molecule
@@ -219,11 +224,6 @@ class PackmolFiller:
                     # Recalculate centre of mass & add everything to universe
                     copied_molecule.position = copied_molecule.calc_CoM()
                     universe.add_structure(copied_molecule)
-
-                # If the structure we want is an atom, we just copy that one atom into the universe
-                elif isinstance(reference_structure, Atom):
-                    copied_atm = reference_structure.copy(current_structure.atoms[0].position)
-                    universe.add_structure(copied_atm)
 
             # change output_structures to remove structures we have just added
             # ensures we start with the right structure type in the next iteration
