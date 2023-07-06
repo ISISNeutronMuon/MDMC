@@ -98,6 +98,7 @@ class MDANSESQw(SQwReader):
                     try:
                         q_unit.conversion_factor
                     except KeyError:
+                        logger.warning('Unit %s not recognised, replaced with 1/Ang', str(unit))
                         q_unit = Unit('1')/SYSTEM["LENGTH"]
                     self.q_unit = q_unit
                 elif variable == 'omega':
