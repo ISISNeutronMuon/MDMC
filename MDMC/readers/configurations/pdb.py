@@ -32,6 +32,7 @@ class ProteinDataBankReader(ConfigurationReader):
         super().__init__(file_name)
         self._atoms = []
         self._molecules = []
+        self._structures = []
         self._bonds = []
 
     def parse(self, **settings: dict) -> None:

@@ -175,7 +175,7 @@ class PackmolFiller:
         reader = PackmolPDBReader(self._output_path)
         with reader:
             reader.parse()
-            output_structures = reader.molecules
+            output_structures = reader.structures
         return output_structures
 
     def _fill_universe(self, output_structures: List[Structure]) -> Universe:
