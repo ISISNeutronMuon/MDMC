@@ -2,10 +2,11 @@
 import math
 import logging
 from typing import List, Tuple
+import warnings
 
 import numpy as np
 
-from MDMC.MD import Molecule
+from MDMC.MD import Structure
 
 LOGGER = logging.getLogger(__name__)
 
@@ -17,15 +18,15 @@ def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> fl
     Parameters
     ----------
     dimensions
-        A tuple of float that defines the dimensions of the container
+        A tuple of floats that define the dimensions of the container.
     container_type: str
         A string specifying the type of container.
-        Currently only "cube", "box" and "sphere" are supported
+        Currently only "cube", "box" and "sphere" are supported.
 
     Returns
     -------
     `float`
-        The volume of the container
+        The volume of the container.
     """
     match container_type:
         case "cube":
@@ -40,208 +41,210 @@ def calculate_volume(dimensions: Tuple[float], container_type: str = None) -> fl
 
 class PackmolSetup:
     """
-    A class that stores molecules and their metadata for use in a packmol generation a universe
+    A class that stores structures and their metadata for use in a packmol generation.
     For an explanation of all the settings and constraints see:
     https://m3g.github.io/packmol/userguide.shtml#basic
     """
 
     def __init__(self):
-        # packmol default tolerance
-        self._molecules: List[Molecule] = []
-        self._molecule_settings: List[dict] = []
+        self._structures: List[Structure] = []
+        self._structure_settings: List[dict] = []
         self._system_settings: dict = {}
-        self._system_settings["tolerance"] = 2.0
+        self._system_settings["tolerance"] = 2.0  # packmol default tolerance
 
-    def add_fixed_molecule(self, molecule: Molecule,
+    def add_fixed_structure(self, structure: Structure,
                            position: Tuple[float] = (0., 0., 0.),
                            rotation: Tuple[float] = (0., 0., 0.),
                            centre: bool = True) -> None:
         """
-        Add a single molecule in a fixed position to the setup
+        Add a single structure (atom or molecule) in a fixed position to the setup.
 
         Parameters
         ----------
-        molecule: Molecule
-            The `Molecule` object to be added to the setup
+        structure: Structure
+            The `Structure` object (atom or molecule) to be added to the setup.
         position: optional, tuple
-            A 3-tuple containing the xyz coordinates of the molecule.
+            A 3-tuple containing the xyz coordinates of the structure.
             Defaults to the origin (0.,0.,0.)
         rotation: optional, tuple
-            A 3-tuple containing the rotational angles of the molecules (in radians).
-            Defaults to (0.,0.,0.) (0 rotation in any direction)
+            A 3-tuple containing the rotational angles of the structure (in radians).
+            Defaults to (0.,0.,0.) (0 rotation in any direction). Meaningless if
+            the structure is not a Molecule.
         centre: optional, bool
-            True if the molecule is to be centred around the position or not. Defaults to True.
+            True if the structure is to be centred around the position or not. Defaults to True.
+            Meaningless if the structure is not a Molecule.
         """
-        if molecule not in self._molecules:
-            self._molecules.append(molecule)
+        if structure not in self._structures:
+            self._structures.append(structure)
 
-        self._molecule_settings.append({
-            "molecule": molecule,
+        self._structure_settings.append({
+            "structure": structure,
             "number": 1,
             "center": centre,
             "fixed": " ".join([str(number) for number in position+rotation])
         })
 
     def add_container(self,
-                      molecule: Molecule,
+                      structure: Structure,
                       dimensions: tuple,
                       origin: tuple = (0., 0., 0.),
                       density: float = 0.,
-                      n_molecules: int = 0,
+                      n_structures: int = 0,
                       container_type: str = None) -> None:
         """
         Adds a container to the setup
-        Only density or n_molecules need to be provided at one time,
-        as n_molecules can be inferred from the density
+        Only density or n_structures need to be provided at one time,
+        as n_structures can be inferred from the density
 
         Parameters
         ----------
-        molecule: Molecule
-            A `Molecule` object to be added to the container
+        structure: Structure
+            A `Structure` (atom or molecule) object to be added to the container.
         dimensions: tuple
-            The size of the molecule either in xyz (3-tuple)
-            or a single size (1-tuple) depending on the container type
+            The size of the container either in xyz (3-tuple)
+            or a single size (1-tuple) depending on the container type.
         origin: tuple
-            A 3-tuple containing the xyz coordinate for the origin of the container
+            A 3-tuple containing the xyz coordinate for the origin of the container.
         density: float
             A floating point number describing the density of
-            the molecule in the container in Molecules/Ang^3
-        n_molecules: int
-            An integer number of molecules to add to the container
+            the structures in the container in Ang^-3.
+        n_structures: int
+            An integer number of structures to add to the container.
         container_type: str
-            The type of container to add. Currently only "cube", "box" and "sphere" are supported
+            The type of container to add. Currently only "cube", "box" and "sphere" are supported.
         """
 
-        if molecule not in self._molecules:
-            self._molecules.append(molecule)
+        if structure not in self._structures:
+            self._structures.append(structure)
 
-        if not n_molecules:
-            # Figure out number of molecules
-            dimensions, n_molecules = self.resolve_density(dimensions, density, container_type)
+        if not n_structures:
+            # Figure out number of structures
+            dimensions, n_structures = self.resolve_density(dimensions, density, container_type)
 
         if container_type == "box":
             dimensions = tuple(i+j for i, j in zip(origin, dimensions))
 
-        self._molecule_settings.append({
-            "molecule": molecule,
-            "number": n_molecules,
+        self._structure_settings.append({
+            "structure": structure,
+            "number": n_structures,
             # Packmol needs the origin information explicitly
             f"inside {container_type}": " ".join([str(number) for number in origin+dimensions])
         })
 
-    def add_cube(self, molecule: Molecule,
+    def add_cube(self, structure: Structure,
                  size: float,
                  origin: Tuple[float] = (0., 0., 0.),
                  density: float = 0.,
-                 n_molecules: int = 0) -> None:
+                 n_structures: int = 0) -> None:
         """
-        Add a cube of randomly-packed molecules.
+        Add a cube of randomly-packed structures.
         At least two of "size", "density" or "number" must be filled in order to
         properly create the cube. If "density" is provided, the size of the cube
-        may change to allow for a whole number of molecules.
+        may change to allow for a whole number of structures.
 
         Parameters
         ----------
-        molecule: Molecule
-            The `Molecule` object to randomly fill the cube with.
+        structure: Structure
+            The `Structure` (atom or molecule) object to randomly fill the cube with.
         size: float
             The size (x y and z) of the cube in angstroms.
         origin: tuple
             A 3-tuple of xyz coordinates indicating the origin of the cube.
-            Defaults to (0.,0.,0.)
+            Defaults to (0.,0.,0.).
         density: optional, float
-            The density of the molecule within the cube in Molecule Ang^-3
-        n_molecules: optional, int
-            An integer number of molecules to fill the cube with.
+            The density of the structures within the cube in Ang^-3.
+        n_structures: optional, int
+            An integer number of structures to fill the cube with.
         """
-        self.add_container(molecule=molecule,
+        self.add_container(structure=structure,
                            dimensions=(size,),
                            origin=origin,
                            density=density,
-                           n_molecules=n_molecules,
+                           n_structures=n_structures,
                            container_type="cube")
 
-    def add_box(self, molecule: Molecule,
+    def add_box(self, structure: Structure,
                 lengths: Tuple[float],
                 origin: Tuple[float] = (0., 0., 0.),
                 density: float = 0.,
-                n_molecules: int = 0) -> None:
+                n_structures: int = 0) -> None:
         """
-        Add a cuboid box of randomly-packed molecules.
+        Add a cuboid box of randomly-packed structures.
         At least two of "lengths", "density" or "number" must be filled in order to
         properly create the box. If "density" is provided, the size of the box
-        may change to allow for a whole number of molecules.
+        may change to allow for a whole number of structures.
 
         Parameters
         ----------
-        molecule: Molecule
-            The `Molecule` object to randomly fill the box with.
+        structure: Structure
+            The `Structure` (atom or molecule) object to randomly fill the box with.
         lengths: tuple
-            A 3-tuple of xyz lengths for the box
+            A 3-tuple of xyz lengths for the box in angstroms.
         origin: optional, tuple
-            A 3-tuple of xyz coordinates for the origin of the box
+            A 3-tuple of xyz coordinates for the origin of the box. Defaults to (0.,0.,0.).
         density: optional, float
-            The density of the molecule within the box.
+            The density of the structures within the box.
             Defaults to 0.
-        n_molecules: optional, int
-            An integer number of molecules to fill the box with.
+        n_structures: optional, int
+            An integer number of structures to fill the box with.
             Defaults to 0.
         """
-        self.add_container(molecule=molecule,
+        self.add_container(structure=structure,
                            dimensions=lengths,
                            origin=origin,
                            density=density,
-                           n_molecules=n_molecules,
+                           n_structures=n_structures,
                            container_type="box")
 
-    def add_sphere(self, molecule: Molecule,
+    def add_sphere(self, structure: Structure,
                    radius: float,
                    origin: Tuple[float] = (0., 0., 0.),
                    density: float = 0.,
-                   n_molecules: int = 0) -> None:
+                   n_structures: int = 0) -> None:
         """
-        Add a cuboid box of randomly-packed molecules.
+        Add a sphere of randomly-packed structures.
         At least two of "size", "density" or "number" must be filled in order to
         properly create the box. If "density" is provided, the size of the box
-        may change to allow for a whole number of molecules.
+        may change to allow for a whole number of structures.
 
         Parameters
         ----------
-        molecule: Molecule
-            The `Molecule` object to randomly fill the box with.
+        structure: Structure
+            The `Structure` (atom or molecule) object to randomly fill the sphere with.
         radius: float
-            The radius of the sphere
+            The radius of the sphere in angstroms.
         origin: optional, tuple
-            A 3-tuple of xyz coordinates for the centre of the sphere
+            A 3-tuple of xyz coordinates for the centre of the sphere.
         density: optional, float
-            The density of the molecule within the box.
+            The density of the structures within the box.
             Defaults to 0.
-        n_molecules: optional, int
-            An integer number of molecules to fill the box with.
+        n_structures: optional, int
+            An integer number of structures to fill the box with.
             Defaults to 0.
         """
-        self.add_container(molecule=molecule,
+        self.add_container(structure=structure,
                            dimensions=(radius,),
                            origin=origin,
                            density=density,
-                           n_molecules=n_molecules,
+                           n_structures=n_structures,
                            container_type="sphere")
 
-    def remove_molecule(self, molecule: Molecule) -> None:
+    def remove_structure(self, structure: Structure) -> None:
         """
-        Remove a molecule and associated setups from the system
+        Remove a structure and associated setups from the system.
 
         Parameters
         ----------
-        `Molecule`
-            The `Molecule` object to remove from the setup
+        structure
+            The `Structure` (atom or molecule) object to remove from the setup.
         """
-        if molecule not in self._molecules:
-            raise ValueError("This molecule does not exist in the setup.")
-        for setting in self._molecule_settings:
-            if setting["molecule"] == molecule:
+        if structure not in self._structures:
+            warnings.warn(f"The removal of the structure {structure} was requested,"
+                          " but no such structure is in the system.")
+        for setting in self._structure_settings:
+            if setting["structure"] == structure:
                 del setting
-        self._molecules.remove(molecule)
+        self._structures.remove(structure)
 
     def validate_setup(self) -> None:
         """Ensures that the setup is valid - shows errors and warnings for issues with the setup"""
@@ -250,24 +253,24 @@ class PackmolSetup:
         if (tol is None or tol <= 0.):
             error_messages.append("The system tolerance must be set.")
 
-        if len(self._molecules) == 0:
-            error_messages.append("There must be at least one type of molecule present.")
+        if len(self._structures) == 0:
+            error_messages.append("There must be at least one type of structure present.")
 
-        for settings_dict in self._molecule_settings:
+        for settings_dict in self._structure_settings:
             settings = settings_dict.keys()
-            molecule = settings_dict["molecule"]
-            if "molecule" not in settings:
-                error_messages.append("There are settings without an associated molecule.")
-            # Each molecule needs to have at least one "number" setting
+            structure = settings_dict["structure"]
+            if "structure" not in settings:
+                error_messages.append("There are settings without an associated structure.")
+            # Each structure needs to have at least one "number" setting
             if "number" not in settings:
-                error_messages.append(f"The number of {molecule} molecules needs to be specified.")
-            # Each molecule must have at least one constraint
+                error_messages.append(f"The number of {structure} structures needs to be specified.")
+            # Each structure must have at least one constraint
             if not np.any([self._is_constraint(key) for key in settings]):
-                error_messages.append(f"Molecule {molecule} must"
+                error_messages.append(f"Structure {structure} must"
                                       " have a spatial constraint attached.")
-            # Each molecule must have values for their respective constraints
+            # Each structure must have values for their respective constraints
             if np.any([settings_dict[key] is None for key in settings]):
-                error_messages.append(f"Molecule {molecule} has unfilled values"
+                error_messages.append(f"Structure {structure} has unfilled values"
                                       " for its settings.")
 
         if error_messages:
@@ -279,18 +282,18 @@ class PackmolSetup:
         Returns
         -------
         `tuple`
-            A tuple containing the whole-system and per-molecule settings
+            A tuple containing the whole-system and per-structure settings
         """
-        return self._system_settings, self._molecule_settings
+        return self._system_settings, self._structure_settings
 
-    def get_molecules(self) -> Tuple[Molecule]:
+    def get_structures(self) -> Tuple[Structure]:
         """
         Returns
         -------
         `list`
-            The set of `Molecule` objects in the setup
+            The set of `Structure` objects in the setup
         """
-        return self._molecules
+        return self._structures
 
     def get_max_sizes(self) -> Tuple[float]:
         """
@@ -302,7 +305,7 @@ class PackmolSetup:
         """
         dims = np.zeros(shape=(1,6))
         # Extract coordinates for each container
-        for index, mol_dict in enumerate(self._molecule_settings):
+        for index, mol_dict in enumerate(self._structure_settings):
             keys = mol_dict.keys()
             if "inside cube" in keys:
                 container_dims = [float(dim) for dim in mol_dict["inside cube"].split()]
@@ -354,24 +357,24 @@ class PackmolSetup:
         """
         Takes a volume of type "box", "cube", or "sphere", with nominal dimensions,
         tries to fill that volume to the given density, and changes the dimensions
-        to ensure an integer number of molecules will fit with the desired density
+        to ensure an integer number of structures will fit with the desired density.
 
         Parameters
         ----------
         dimensions: optional, tuple
-            A tuple of the dimensions that affect the volume of the container
+            A tuple of the dimensions that affect the volume of the container.
         density: optional, float
-            A target density to achieve within the system
+            A target density to achieve within the system.
         container_type: str
             A string describing the type of container to use.
-            Currently only "cube", "box" and "sphere" are supported
+            Currently only "cube", "box" and "sphere" are supported.
 
         Returns
         -------
         `tuple`
             A tuple containing (in order):
             1) A tuple of the (possibly) revised dimensions of the volume
-            2) The number of molecules needed to meet the density
+            2) The number of structures needed to meet the density
         """
         if density == 0. or 0. in dimensions:
             raise ValueError("Density or dimension(s) is set to 0.")
@@ -389,7 +392,7 @@ class PackmolSetup:
         if scale_factor != 1.0:
             info_string = (f"The dimensions of the container are changed to {scaled_lengths} "
                            f"to achieve the requested density of {density} "
-                            "with a whole number of molecules")
+                            "with a whole number of structures")
             # TODO: Find a way to silence this to not clog the output during testing
             print(info_string)
             LOGGER.info(msg=info_string)

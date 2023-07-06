@@ -78,7 +78,7 @@ def test_all_files_are_created_after_run(simple_filled_universe_filler_object):
     packmol_files_path = simple_filled_universe_filler_object.get_packmol_files_path()
     input_file_path = os.path.join(packmol_files_path, "input_file.inp")
     output_file_path = os.path.join(packmol_files_path, "output-universe.pdb")
-    mol_name = [molecule.name for molecule in simple_filled_universe_filler_object.setup_data.get_molecules()]
+    mol_name = [molecule.name for molecule in simple_filled_universe_filler_object.setup_data.get_structures()]
     assert os.path.exists(input_file_path)
     assert os.path.exists(output_file_path)
     assert os.path.isfile(input_file_path)

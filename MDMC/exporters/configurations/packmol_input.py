@@ -15,7 +15,7 @@ class PackmolInputExporter(Exporter):
     INDENT = "  "
 
     def write(self, setup: PackmolSetup,
-              molecule_file_names: dict,
+              structure_file_names: dict,
               output_name: str = "output_file.pdb",
               **settings: dict) -> None:
         """
@@ -24,11 +24,11 @@ class PackmolInputExporter(Exporter):
         Parameters
         ----------
         setup: PackmolSetup
-            A `PackmolSetup` object which contains the molecules and constraints for the
+            A `PackmolSetup` object which contains the molecules and constraints for the setup.
         output_name: str
-            The filename of the output file to write to
-        molecule_file_names: dict
-            A dictionary mapping molecules in the system to corresponding file names
+            The filename of the output file.
+        structure_file_names: dict
+            A dictionary mapping structures in the system to corresponding file names.
         """
         system_settings, mol_settings = setup.get_settings()
         tol = system_settings["tolerance"]
@@ -40,14 +40,14 @@ class PackmolInputExporter(Exporter):
 
         for molecule_setting in mol_settings:
             # Get structure file name
-            struct_file_name = molecule_file_names[molecule_setting["molecule"]]
+            struct_file_name = structure_file_names[molecule_setting["structure"]]
             if not struct_file_name.endswith(".pdb"):
                 struct_file_name += ".pdb"
 
             self.file.write(f"structure {struct_file_name}\n")
             # Write each setting that is relevant to the structure
             constraint_settings = copy(molecule_setting)
-            constraint_settings.pop("molecule")
+            constraint_settings.pop("structure")
             for setting, value in constraint_settings.items():
                 self.file.writelines(self.INDENT+f"{setting} {value}\n")
             self.file.write("end structure\n")

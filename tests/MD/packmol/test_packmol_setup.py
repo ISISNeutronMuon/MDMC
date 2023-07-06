@@ -32,16 +32,16 @@ def test_calculate_volume(lengths, container_type, expected):
 def test_static_molecule_created(h2o_molecule, origin, rotation, centre):
     """Tests that the creation of a static molecule is successful"""
     setup = packmol_setup_module.PackmolSetup()
-    setup.add_fixed_molecule(molecule=h2o_molecule,
+    setup.add_fixed_structure(structure=h2o_molecule,
                              position=origin,
                              rotation=rotation,
                              centre=centre)
     _, mol_settings = setup.get_settings()
     fixed_mol_setting = mol_settings[0]
-    for attribute in ["molecule", "center", "number", "fixed"]:
+    for attribute in ["structure", "center", "number", "fixed"]:
         assert attribute in list(fixed_mol_setting.keys())
 
-    assert fixed_mol_setting["molecule"] == h2o_molecule
+    assert fixed_mol_setting["structure"] == h2o_molecule
     assert fixed_mol_setting["center"] == centre
     assert fixed_mol_setting["number"] == 1
     assert fixed_mol_setting["fixed"] == " ".join([str(num) for num in origin+rotation])
@@ -58,7 +58,7 @@ def test_box_correctly_created(h2o_molecule, lengths, origin, density, n_molecul
     setup.add_box(h2o_molecule, lengths, origin, density, n_molecules)
     _, mol_settings = setup.get_settings()
     settings = mol_settings[0]
-    assert settings["molecule"] == h2o_molecule
+    assert settings["structure"] == h2o_molecule
     assert settings["number"] == n_molecules or \
     settings["number"] == int(density * packmol_setup_module.calculate_volume(lengths, "box"))
     assert "inside box" in settings.keys()
@@ -77,7 +77,7 @@ def test_cube_correctly_created(h2o_molecule, lengths, origin, density, n_molecu
     setup.add_cube(h2o_molecule, lengths, origin, density, n_molecules)
     _, mol_settings = setup.get_settings()
     settings = mol_settings[0]
-    assert settings["molecule"] == h2o_molecule
+    assert settings["structure"] == h2o_molecule
     assert settings["number"] == n_molecules or \
     settings["number"] == int(
         density * packmol_setup_module.calculate_volume((lengths,), "cube"))
@@ -94,7 +94,7 @@ def test_sphere_correctly_created(h2o_molecule, lengths, origin, density, n_mole
     setup.add_sphere(h2o_molecule, lengths, origin, density, n_molecules)
     _, mol_settings = setup.get_settings()
     settings = mol_settings[0]
-    assert settings["molecule"] == h2o_molecule
+    assert settings["structure"] == h2o_molecule
     assert settings["number"] == expected_molecules
     assert "inside sphere" in settings.keys()
     assert np.allclose(float(settings["inside sphere"].split()[-1]), lengths, atol=1.e-2)
@@ -155,13 +155,13 @@ def test_get_system_settings():
 def test_get_molecule_settings(h2o_molecule):
     """Tests to make sure the molecule settings are correctly returned"""
     setup = packmol_setup_module.PackmolSetup()
-    setup.add_box(h2o_molecule,(10.,10.,10.), n_molecules=1000)
-    setup.add_cube(h2o_molecule, 10., n_molecules=2000)
-    setup.add_sphere(h2o_molecule, 10., n_molecules=1000)
-    setup.add_fixed_molecule(h2o_molecule)
+    setup.add_box(h2o_molecule,(10.,10.,10.), n_structures=1000)
+    setup.add_cube(h2o_molecule, 10., n_structures=2000)
+    setup.add_sphere(h2o_molecule, 10., n_structures=1000)
+    setup.add_fixed_structure(h2o_molecule)
     _, molecule_settings = setup.get_settings()
     for setting in molecule_settings:
-        assert "molecule" in setting.keys()
+        assert "structure" in setting.keys()
         assert "number" in setting.keys()
         if "fixed" in setting.keys():
             assert "center" in setting.keys()

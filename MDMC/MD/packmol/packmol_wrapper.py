@@ -15,7 +15,7 @@ from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
 class PackmolFiller:
     """
-    A class representing a packmol run based on a `PackmolSetup` object
+    A class representing a packmol run based on a `PackmolSetup` object.
     """
 
     def __init__(self, setup_data: PackmolSetup):
@@ -29,13 +29,25 @@ class PackmolFiller:
     @property
     def filled_universe(self) -> Universe:
         """
-        Get the `Universe` filled via the packmol run
+        Get the `Universe` filled via the packmol run.
+
+        Returns
+        -------
+        Universe
+            An MDMC Universe.
         """
         return self._filled_universe
 
     @property
     def setup_data (self) -> PackmolSetup:
-        """The Packmol setup data for this run."""
+        """
+        The Packmol setup data for this run.
+        
+        Returns
+        -------
+        PackmolSetup
+            The setup data for this run.
+        """
         return self._setup_data
 
     def fill_with_packmol(self) -> Universe:
@@ -43,17 +55,17 @@ class PackmolFiller:
         Parameters
         ----------
         setup_data
-            A `PackmolSetup` object containing the data for the packmol run
+            A `PackmolSetup` object containing the data for the packmol run.
 
         Returns
         -------
         `Universe`
-            A `Universe` object filled with the molecules requested
-            by the user as per the `PackmolSetup` object
+            A `Universe` object filled with the structures requested
+            by the `PackmolSetup` object.
         """
         self._setup_data.validate_setup()
         self._create_paths()
-        self._export_molecules()
+        self._export_structures()
         self._export_system_setup()
         self._call_packmol()
         structures = self._read_packmol_output()
@@ -73,23 +85,23 @@ class PackmolFiller:
         self._input_path = os.path.join(self._packmol_files_path, "input_file.inp")
         self._output_path = os.path.join(self._packmol_files_path, "output-universe.pdb")
 
-    def _export_molecules(self) -> None:
+    def _export_structures(self) -> None:
         """
         Exports the molecules from a `PackmolSetup` object to pdb format
         """
-        molecules = self._setup_data.get_molecules()
-        # Enumerate molecules to ensure that an empty molecule name will have a non-empty file name
-        for i, molecule in enumerate(molecules):
-            file_name = f"{str(molecule.name)}-{str(i)}"
+        structures = self._setup_data.get_structures()
+        # Enumerate structures to ensure that an empty structure name will have a non-empty file name
+        for i, structure in enumerate(structures):
+            file_name = f"{str(structure.name)}-{str(i)}"
             file_path = os.path.join(self._packmol_files_path, f"{file_name}.pdb")
             pdb_exporter = ProteinDataBankExporter(file_path)
             with pdb_exporter:
-                pdb_exporter.write(molecule)
-            self._mol_file_names[molecule] = file_name
+                pdb_exporter.write(structure)
+            self._mol_file_names[structure] = file_name
 
     def _export_system_setup(self) -> None:
         """
-        Exports the setup of a `PackmolSetup` system to a packmol input file (.inp file)
+        Exports the setup of a `PackmolSetup` system to a packmol input file (.inp file).
         """
         # Create packmol input file
         inp_exporter = PackmolInputExporter(self._input_path)
@@ -98,7 +110,7 @@ class PackmolFiller:
 
     def _call_packmol(self) -> None:
         """
-        A function to call packmol on the input path using the packmol files directory
+        A function to call packmol on the input path using the packmol files directory.
         """
         # Create packmol call
         packmol_exec_path = self.get_packmol_path()
@@ -111,7 +123,7 @@ class PackmolFiller:
     def get_packmol_path() -> str:
         """
         Returns a string containing the path to packmol from the PATH environment variable,
-        if it exists. Otherwise, returns ``None`` if packmol is not in PATH.
+        if it exists. Otherwise, returns the current working directory if packmol is not in PATH.
         """
         if shutil.which("packmol") is not None:
             return shutil.which("packmol")
@@ -119,13 +131,13 @@ class PackmolFiller:
 
     def get_packmol_output_path(self) -> str:
         """
-        Obtains the name of the packmol output file, as defined by the input file
-        Returns an empty string if there is no input file name defined
+        Obtains the name of the packmol output file, as defined by the input file.
+        Returns an empty string if there is no input file name defined.
 
         Returns
         -------
         str
-            The name of the packmol output file name
+            The name of the packmol output file name.
         """
         with open(self._input_path, "r", encoding="UTF-8") as inp_file:
             contents = inp_file.readlines()
@@ -140,7 +152,14 @@ class PackmolFiller:
         return name
 
     def get_packmol_files_path(self) -> str:
-        """Get the path in which packmol files are placed and run."""
+        """
+        Get the path in which packmol files are placed and run.
+
+        Returns
+        -------
+        str
+            The path to the packmol files directory.
+        """
         return self._packmol_files_path
 
     def _read_packmol_output(self) -> List[Structure]:
@@ -150,28 +169,28 @@ class PackmolFiller:
         Returns
         -------
         `List`
-            A list of `Structure` objects (i.e. `Molecule` or `Atom`) read from the packmol output
+            A list of `Structure` objects (i.e. `Molecule` or `Atom`) read from the packmol output.
         """
         reader = PackmolPDBReader(self._output_path)
         with reader:
             reader.parse()
-            output_molecules = reader.molecules
-        return output_molecules
+            output_structures = reader.structures
+        return output_structures
 
     def _fill_universe(self, output_structures: List[Structure]) -> Universe:
         """
-        A function to fill in the universe with the output data from packmol
+        A function to fill in the universe with the output data from packmol.
 
         Parameters
         ----------
         output_structures: `List` of `Structure`
-             A list containing the `Structure` objects (i.e. Atoms & Molecules)
-             read from packmol to
+            A list containing the `Structure` objects (i.e. Atoms & Molecules)
+            read from packmol to MDMC.
 
         Returns
         -------
         `Universe`
-            A `Universe` object filled with the `Structure` objects in `output_structures`
+            A `Universe` object filled with the `Structure` objects in `output_structures`.
         """
         dim = self._setup_data.get_max_sizes()
         universe = Universe(dimensions=dim, verbose=-1)
@@ -179,7 +198,7 @@ class PackmolFiller:
 
         # Loop through all molecules specified for the system
         for structure_setting in struct_settings:
-            reference_structure = structure_setting["molecule"]
+            reference_structure = structure_setting["structure"]
             number_of_structures = structure_setting["number"]
             current_structures = output_structures[:number_of_structures]
             output_structures = output_structures[number_of_structures:]
@@ -214,7 +233,7 @@ class PackmolFiller:
         return universe
 
     #TODO possibly move this to common or utils?
-    def _call_external_program(self, command_list: 'list[str]', work_dir: str=None) -> None:
+    def _call_external_program(self, command_list: List[str], work_dir: str=None) -> None:
         """
         A function to call an external program in a specific working directory - defaults to
         current working directory as a failsafe

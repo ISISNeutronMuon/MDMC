@@ -12,7 +12,7 @@ class ProteinDataBankExporter(Exporter):
     Parameters
     ----------
     file_name: str
-        The export file name.
+        The output file name.
     """
 
     #pylint: disable=arguments-renamed, too-few-public-methods

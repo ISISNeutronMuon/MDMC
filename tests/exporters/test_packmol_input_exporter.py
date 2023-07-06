@@ -22,7 +22,7 @@ def h2o_molecule():
 def simple_packmol_input_system(h2o_molecule):
     """A simple packmol setup"""
     setup = PackmolSetup()
-    setup.add_cube(h2o_molecule, size=30., n_molecules=200)
+    setup.add_cube(h2o_molecule, size=30., n_structures=200)
     return setup
 
 @pytest.fixture()
@@ -36,7 +36,7 @@ def export_input_file(simple_packmol_input_system, h2o_molecule, exported_file_p
     exporter = PackmolInputExporter(exported_file_path)
     with exporter:
         exporter.write(setup=simple_packmol_input_system,
-                       molecule_file_names={h2o_molecule:"water.pdb"},
+                       structure_file_names={h2o_molecule:"water.pdb"},
                        output_name="output_example.pdb")
 
 def test_correct_name_for_each_structure(export_input_file, exported_file_path):

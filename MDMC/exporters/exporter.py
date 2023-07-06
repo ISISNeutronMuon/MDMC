@@ -8,7 +8,7 @@ from MDMC.common.decorators import repr_decorator
 class Exporter(ABC):
 
     """
-    Abstract context manager class that defines methods common to all exporters
+    Abstract context manager class that defines methods common to all exporters.
 
     Parameters
     ----------
@@ -24,7 +24,7 @@ class Exporter(ABC):
     def __enter__(self) -> None:
         """
         Provides a generic implementation of file opening using inbuilt python
-        open
+        open.
 
         Should be overridden if necessary for specific file types.
         """
@@ -33,7 +33,7 @@ class Exporter(ABC):
         self.file = open(self.file_name, 'w', encoding='UTF-8')
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        """Closes the open file after parsing"""
+        """Closes the open file after parsing."""
 
         self.file.close()
 
