@@ -42,7 +42,7 @@ class PackmolFiller:
     def setup_data (self) -> PackmolSetup:
         """
         The Packmol setup data for this run.
-        
+
         Returns
         -------
         PackmolSetup
@@ -90,7 +90,8 @@ class PackmolFiller:
         Exports the molecules from a `PackmolSetup` object to pdb format
         """
         structures = self._setup_data.get_structures()
-        # Enumerate structures to ensure that an empty structure name will have a non-empty file name
+        # Enumerate structures to ensure that an empty structure name
+        # will have a non-empty file name
         for i, structure in enumerate(structures):
             file_name = f"{str(structure.name)}-{str(i)}"
             file_path = os.path.join(self._packmol_files_path, f"{file_name}.pdb")
@@ -209,7 +210,7 @@ class PackmolFiller:
                 if isinstance(reference_structure, Atom):
                     copied_atm = reference_structure.copy(current_structure.atoms[0].position)
                     universe.add_structure(copied_atm)
-                
+
                 # Else, if the structure we're copying is a molecule
                 elif isinstance(reference_structure, Molecule):
                     # get list of atom positions

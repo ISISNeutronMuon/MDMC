@@ -263,7 +263,8 @@ class PackmolSetup:
                 error_messages.append("There are settings without an associated structure.")
             # Each structure needs to have at least one "number" setting
             if "number" not in settings:
-                error_messages.append(f"The number of {structure} structures needs to be specified.")
+                error_messages.append(f"The number of {structure}"
+                                      " structures needs to be specified.")
             # Each structure must have at least one constraint
             if not np.any([self._is_constraint(key) for key in settings]):
                 error_messages.append(f"Structure {structure} must"
