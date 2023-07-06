@@ -407,7 +407,8 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
         best_energy = self.lmp.eval("pe")
         self.save_config()
         for _ in range(int(n_steps/minimize_every)):
-            self.lmp.velocity(
+            if self.lmp_simulation.temperature is not None:
+                self.lmp.velocity(
                         'all', 'scale', convert_unit(self.lmp_simulation.temperature))
             self.lmp.run(minimize_every)
             self.lmp.minimize(etol,
