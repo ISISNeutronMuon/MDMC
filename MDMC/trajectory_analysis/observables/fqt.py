@@ -201,29 +201,23 @@ class AbstractFQt(SQwMixins, Observable):
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
         if self.Q_vectors is None:
             try:
-                self.Q_vectors = np.array(settings['Q_vectors'], dtype='object')
+                self.Q_vectors = settings['Q_vectors']
             except KeyError:
                 self.Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        # Determine the shape of Q vectors array. If the number of processors
-        # (comm.size) is not a factor of the first index, mpi4py cannot split
-        # the number of Q vectors equally amongst the processors.
-        shape = list(np.shape(self.Q_vectors))
-
         Q_vectors = self.Q_vectors
-        axis_0 = 0
-        # Split the Q vectors into a single array of Q vectors for each
-        # processor
 
         # Calculate FQt for each Q vector for all processors
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
 
+        shape = list(np.shape(self.Q_vectors))
+        axis_0 = 0
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
         self.FQt = FQt_array[:shape[0] - axis_0]
 
-    def _calculate_Q_vectors(self, Q_values: list) -> 'np.ndarray':
+    def _calculate_Q_vectors(self, Q_values: list) -> list:
         """
         For each value of Q in ``Q_values`` calculates a number of Q vectors
         (points in reciprocal space) that lie close to that Q value.
@@ -241,11 +235,9 @@ class AbstractFQt(SQwMixins, Observable):
 
         Returns
         -------
-        numpy.ndarray
-            A three dimensional array where the first dimension corresponds to
-            each entry in ``Q_values``, the second dimension is of variable
-            length and contains a number of points in reciprocal space, which
-            are in turn length 3 arrays or "vectors" in reciprocal space.
+        list
+            A list containing lists of Q-vectors for each Q-value - each
+            Q-vector is a 3-dimensional vector in reciprocal space.
         """
 
         # Only valid for uniform Q_values
@@ -267,7 +259,7 @@ class AbstractFQt(SQwMixins, Observable):
 
         self.Q_values = updated_Q_values
 
-        return np.array(Q_vectors, dtype='object')
+        return Q_vectors
 
     def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> list:
         """
