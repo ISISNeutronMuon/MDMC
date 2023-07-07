@@ -1,7 +1,7 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
 from itertools import product
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -46,7 +46,6 @@ class AbstractFQt(SQwMixins, Observable):
         self._use_FFT = True
 
         self.reciprocal_basis = None
-        self.Q_vectors = None
         self.n_Q_vectors = None
         self.Q_values = None
         self.weights = None
@@ -199,25 +198,23 @@ class AbstractFQt(SQwMixins, Observable):
 
         # calculate Q vectors from Q
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
-        if self.Q_vectors is None:
-            try:
-                self.Q_vectors = settings['Q_vectors']
-            except KeyError:
-                self.Q_vectors = self._calculate_Q_vectors(self.Q)
+        try:
+            Q_vectors = settings['Q_vectors']
+        except KeyError:
+            Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        Q_vectors = self.Q_vectors
-
-        # Calculate FQt for each Q vector for all processors
+        # Calculate FQt for each Q vector
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
 
-        shape = list(np.shape(self.Q_vectors))
-        axis_0 = 0
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
-        self.FQt = FQt_array[:shape[0] - axis_0]
+        # FQt_size is the number of Q values if specified, and otherwise we
+        # assume Q is taken from settings and use the number of lists of vectors instead
+        FQt_size = len(self.Q_values) if self.Q_values is not None else len(settings['Q_vectors'])
+        self.FQt = FQt_array[:FQt_size]
 
-    def _calculate_Q_vectors(self, Q_values: list) -> list:
+    def _calculate_Q_vectors(self, Q_values: list) -> Generator[list, None, None]:
         """
         For each value of Q in ``Q_values`` calculates a number of Q vectors
         (points in reciprocal space) that lie close to that Q value.
@@ -233,17 +230,16 @@ class AbstractFQt(SQwMixins, Observable):
         Q_value : list
             A ``list` of ``float`` for the Q values
 
-        Returns
+        Yields
         -------
         list
-            A list containing lists of Q-vectors for each Q-value - each
+            A list of Q-vectors for each Q-value - each
             Q-vector is a 3-dimensional vector in reciprocal space.
         """
 
         # Only valid for uniform Q_values
         Q_step = (Q_values[1] - Q_values[0]) / 2.
 
-        Q_vectors = []
         updated_Q_values = []
         for Q in Q_values:
             # For each ``Q``, define a shell in momentum space bounded by
@@ -254,12 +250,10 @@ class AbstractFQt(SQwMixins, Observable):
             vectors = self._calculate_vectors_single_Q(Q_min, Q_max)
 
             if len(vectors) > 0:
-                Q_vectors.append(vectors)
                 updated_Q_values.append(Q)
+                yield vectors
 
         self.Q_values = updated_Q_values
-
-        return Q_vectors
 
     def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> list:
         """
