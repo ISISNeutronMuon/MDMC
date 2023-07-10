@@ -56,8 +56,7 @@ class PlotResults():
         # Convert to float where possible (i.e. not a string)
 
         FoMs = records['FoM'].to_list()
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state',
-                                        'Pred coords', 'Pred FoM'], errors='ignore')
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'], errors='ignore')
         # TODO this is hard coded to creation of history, may want to change
 
         coordinates = records.values.tolist()
