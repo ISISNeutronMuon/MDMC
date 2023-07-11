@@ -1,6 +1,7 @@
 """Module for incoherent FQt class"""
 
 import numpy as np
+import dask.array as da
 
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import faster_autocorrelation
@@ -33,22 +34,22 @@ class FQtIncoherent(AbstractFQt):
 
         n_t = len(self.t)
         n_atoms = self._trajectory.n_atoms
-        FQt_single_Q = np.zeros(n_t)
+        FQt_single_Q = da.zeros(n_t)
         weight = self.weights
 
-        configs = np.swapaxes(self._trajectory.position,
+        configs = da.swapaxes(self._trajectory.position,
                               1,
                               2)
-        configs = np.swapaxes(configs,
+        configs = da.swapaxes(configs,
                               0,
                               2)
-        rho_all = calculate_rho(configs, np.array(single_Q_vectors))
+        rho_all = calculate_rho(configs, da.array(single_Q_vectors))
         futures = [executor.submit(faster_autocorrelation,
                                     rho_all[q_num].T,
                                     weights = np.array(weight))
                                     for q_num in range(len(rho_all))]
         results = [future.result()[:n_t] for future in futures]
-        for q_num in np.arange(len(rho_all)):
+        for q_num in range(len(rho_all)):
             FQt_single_Q += results[q_num]
 
         # Normalise to the number of orthogonal vectors
