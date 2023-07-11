@@ -4,8 +4,7 @@ import numpy as np
 
 from MDMC.common.atom_properties import B_COH
 from MDMC.common.mathematics import faster_correlation
-from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
-from MDMC.trajectory_analysis.observables.obs import executor
+from MDMC.trajectory_analysis.observables.fqt import AbstractFQt
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 

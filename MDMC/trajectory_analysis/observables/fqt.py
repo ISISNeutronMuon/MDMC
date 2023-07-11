@@ -386,10 +386,23 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         raise NotImplementedError
-    
-    def calculate_rho_config(self, config, single_Q_vectors) -> np.ndarray:
+
+    def calculate_rho_config(self, config: np.ndarray, single_Q_vectors: list) -> np.ndarray:
         """
-        Calculate rho over an entire configuration.
+        Calculate density over an entire configuration.
+
+        Parameters
+        ----------
+        config: np.ndarray
+            An array of atom positions.
+        single_Q_vectors: list
+            A list of Q-vectors for a single value of Q.
+
+        Returns
+        -------
+        np.ndarray
+            An array of rho values for each timestep summed over the atoms in the system,
+            corresponding to each Q-vector.
         """
         def helper_coherent(configs: np.ndarray,
                             q_vector: np.ndarray) -> np.ndarray:
@@ -409,7 +422,7 @@ class AbstractFQt(SQwMixins, Observable):
                 size (N_timesteps)
             """
             return next(calculate_rho(configs, [q_vector])).sum(axis=1)
-        
+
         rho_config = np.zeros((len(config),
                                len(single_Q_vectors)),
                                dtype=complex)
@@ -435,7 +448,6 @@ class AbstractFQt(SQwMixins, Observable):
             rho_config[:, q_num] = results[q_num]
 
         return rho_config
-
 
 
     @abstractmethod
@@ -609,9 +621,6 @@ class FQt(AbstractFQt):
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            configs = np.swapaxes(element_configs,
-                                  1,
-                                  2)
             configs = np.swapaxes(configs,
                                   0,
                                   2)
@@ -620,9 +629,9 @@ class FQt(AbstractFQt):
                                        rho.T,
                                        weights = incoh_weights**2)
                                        for rho in rho_all]
-            results = [future.result()[:n_t] for future in futures]
-            for q_num in range(len(single_Q_vectors)):
-                FQt_single_Q += results[q_num]
+            results = (future.result()[:n_t] for future in futures)
+            for result in results:
+                FQt_single_Q += result
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:
