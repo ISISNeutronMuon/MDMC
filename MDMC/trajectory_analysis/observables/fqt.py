@@ -4,7 +4,6 @@ from itertools import product
 from typing import TYPE_CHECKING, Generator
 
 import numpy as np
-import dask.array as da
 
 from MDMC.common import units
 from MDMC.common.atom_properties import B_INCOH, B_COH
@@ -544,8 +543,9 @@ class FQt(AbstractFQt):
 
         n_t = len(self.t)
         elements = self._trajectory.element_set
-        FQt_single_Q = da.zeros(n_t)
+        FQt_single_Q = np.zeros(n_t)
         rho_element = {}
+        n_atoms = 0
 
         def helper_coherent(configs: np.ndarray,
                             q_vector: np.ndarray) -> np.ndarray:
@@ -570,8 +570,10 @@ class FQt(AbstractFQt):
             # Get the positions of all atoms (the configuration) of each
             # element over time such that ``element_configs`` has time as its
             # first dimension and each atom of ``element`` as its second
-            element_configs = da.from_array(self._trajectory.filter_by_element(element).position)
-            rho_config = da.zeros((len(element_configs),
+            indexes = np.where(np.array(self._trajectory.element_list)
+                               == element)
+            element_configs = self._trajectory.position[:, indexes[0], :]
+            rho_config = np.zeros((len(element_configs),
                                    len(single_Q_vectors)),
                                   dtype=complex)
 
@@ -580,14 +582,14 @@ class FQt(AbstractFQt):
             # For this reason we swap the axes, moving the
             # axis of atom numbers to axis 2.
             # Time axis is still axis 0.
-            configs = da.swapaxes(element_configs, 1, 2)
+            configs = np.swapaxes(element_configs, 1, 2)
             # The single_Q_vectors array contains many q vectors
             # with similar values of |Q|.
             # The following lines split the calculation by multiplying
             # the trajectory by each q vector separately.
             futures = [executor.submit(helper_coherent,
-                                       configs, vector)
-                                       for vector in single_Q_vectors]
+                                       configs, single_Q_vectors[q_num])
+                                       for q_num in range(len(single_Q_vectors))]
             # The following line makes the code wait for all the calculations to finish.
             results = [future.result() for future in futures]
             # At this stage, the results list is fully populated,
@@ -596,19 +598,23 @@ class FQt(AbstractFQt):
                 rho_config[:, q_num] = results[q_num]
 
             rho_element[element] = rho_config
+            n_atoms += np.shape(indexes)[1]
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            configs = da.swapaxes(configs,
+            configs = np.swapaxes(element_configs,
+                                  1,
+                                  2)
+            configs = np.swapaxes(configs,
                                   0,
                                   2)
-            rho_all = calculate_rho(configs, da.array(single_Q_vectors))
+            rho_all = calculate_rho(configs, np.array(single_Q_vectors))
             futures = [executor.submit(faster_autocorrelation,
                                        rho_all[q_num].T,
                                        weights = incoh_weights**2)
                                        for q_num in range(len(rho_all))]
             results = [future.result()[:n_t] for future in futures]
-            for q_num in range(len(rho_all)):
+            for q_num in np.arange(len(rho_all)):
                 FQt_single_Q += results[q_num]
 
         # Calculates the coherent contribution to SQw
@@ -626,7 +632,7 @@ class FQt(AbstractFQt):
         except IndexError:
             norm = 1
 
-        return FQt_single_Q / (self._trajectory.n_atoms * norm)
+        return FQt_single_Q / (n_atoms * norm)
 
 def calculate_rho(positions: np.ndarray, Q_vector: np.ndarray) -> np.ndarray:
     """
@@ -649,7 +655,7 @@ def calculate_rho(positions: np.ndarray, Q_vector: np.ndarray) -> np.ndarray:
     numpy.ndarray
         The reciprocal space number density
     """
-    return np.exp(-1j * da.dot(Q_vector, positions))
+    return np.exp(-1j * np.dot(Q_vector, positions))
 
 def get_point_group(dimensions: 'np.ndarray') -> str:
     """
