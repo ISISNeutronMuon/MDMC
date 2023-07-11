@@ -28,7 +28,7 @@ class FQtIncoherent(AbstractFQt):
                         in [self._trajectory.exportAtom(atom_number=x) for x
                             in range(self._trajectory.n_atoms)]]
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
+    def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
@@ -44,11 +44,11 @@ class FQtIncoherent(AbstractFQt):
                               2)
         rho_all = calculate_rho(configs, np.array(single_Q_vectors))
         futures = [executor.submit(faster_autocorrelation,
-                                    rho_all[q_num].T,
+                                    rho.T,
                                     weights = np.array(weight))
-                                    for q_num in range(len(rho_all))]
+                                    for rho in rho_all]
         results = [future.result()[:n_t] for future in futures]
-        for q_num in np.arange(len(rho_all)):
+        for q_num in range(len(single_Q_vectors)):
             FQt_single_Q += results[q_num]
 
         # Normalise to the number of orthogonal vectors
