@@ -402,7 +402,7 @@ class AbstractFQt(SQwMixins, Observable):
         -------
         np.ndarray
             An array of rho values for each timestep summed over the atoms in the system,
-            corresponding to each Q-vector.
+            corresponding to each Q
         """
         def helper_coherent(configs: np.ndarray,
                             q_vector: np.ndarray) -> np.ndarray:
@@ -621,6 +621,7 @@ class FQt(AbstractFQt):
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
+            configs = np.swapaxes(element_configs, 1, 2)
             configs = np.swapaxes(configs,
                                   0,
                                   2)
