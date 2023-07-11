@@ -664,8 +664,8 @@ def calculate_rho(positions: np.ndarray, Q_vectors: list) -> Generator[np.ndarra
     positions : numpy.ndarray
         An ``array`` of atomic positions for which the reciprocal space number
         density should be calculated
-    Q_vector : numpy.ndarray
-        An ``array`` of one or more Q vectors with the same Q value
+    Q_vector : list
+        An list of one or more Q vectors with the same Q value
 
     Returns
     -------
