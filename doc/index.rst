@@ -47,7 +47,7 @@ Indices
    :caption: Overview
 
    introduction
-   installation
+   installation/installation
    contributing
 
 .. toctree::
@@ -55,23 +55,36 @@ Indices
    :hidden:
    :caption: Tutorials
 
-   tutorials/building-a-universe.ipynb
-   tutorials/read-configurations.ipynb
-   tutorials/units.ipynb
-   tutorials/applying-a-forcefield.ipynb
-   tutorials/solvating-a-universe.ipynb
-   tutorials/molecular-visualization.ipynb
-   tutorials/running-a-simulation.ipynb
-   tutorials/creating-an-observable.ipynb
-   tutorials/selecting-fitting-parameters.ipynb
-   tutorials/running-a-refinement.ipynb
    tutorials/Argon-a-to-z.ipynb
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: How-to
+
+   how-to/building-a-universe.ipynb
+   how-to/read-configurations.ipynb
+   how-to/units.ipynb
+   how-to/applying-a-forcefield.ipynb
+   how-to/solvating-a-universe.ipynb
+   how-to/molecular-visualization.ipynb
+   how-to/running-a-simulation.ipynb
+   how-to/creating-an-observable.ipynb
+   how-to/selecting-fitting-parameters.ipynb
+   how-to/running-a-refinement.ipynb
 
 .. toctree::
   :maxdepth: 1
   :hidden:
   :caption: Reference
 
-  reference/developer
-  reference/modules
+  reference/api/modules
+  reference/developer/overview
 
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Explanation
+
+   explanation/parameter-refinement
+   explanation/simulations
