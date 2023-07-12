@@ -46,11 +46,9 @@ Indices
    :hidden:
    :caption: Overview
 
-   pages/introduction
-   pages/installation
-   pages/simulations
-   pages/parameter-refinement
-   pages/contributing
+   introduction
+   installation
+   contributing
 
 .. toctree::
    :maxdepth: 2
@@ -72,28 +70,8 @@ Indices
 .. toctree::
   :maxdepth: 1
   :hidden:
-  :caption: Developer Documentation
+  :caption: Reference
 
-  pages/developer/overview
-  pages/developer/coding_standards
-  pages/developer/documentation
-  pages/developer/units
-  pages/developer/testing
-  pages/developer/management
-  pages/developer/containers
-  pages/developer/vscode
-  pages/developer/recipes
-  pages/developer/known_bugs
+  reference/developer
+  reference/modules
 
-.. toctree::
-  :maxdepth: 1
-  :hidden:
-  :caption: Modules
-
-  pages/modules/common
-  pages/modules/control
-  pages/modules/gui
-  pages/modules/md
-  pages/modules/readers
-  pages/modules/refinement
-  pages/modules/trajectory_analysis
