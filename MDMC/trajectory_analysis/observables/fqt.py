@@ -437,9 +437,9 @@ class AbstractFQt(SQwMixins, Observable):
         # with similar values of |Q|.
         # The following lines split the calculation by multiplying
         # the trajectory by each q vector separately.
-        futures = [executor.submit(helper_coherent,
+        futures = (executor.submit(helper_coherent,
                                     configs, vector)
-                                    for vector in single_Q_vectors]
+                                    for vector in single_Q_vectors)
         # The following line makes the code wait for all the calculations to finish.
         results = [future.result() for future in futures]
         # At this stage, the results list is fully populated,
@@ -616,20 +616,20 @@ class FQt(AbstractFQt):
             indexes = np.where(np.array(self._trajectory.element_list)
                                == element)
             element_configs = self._trajectory.position[:, indexes[0], :]
-
             rho_element[element] = self.calculate_rho_config(element_configs, single_Q_vectors)
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            configs = np.swapaxes(element_configs, 1, 2)
-            configs = np.swapaxes(configs,
-                                  0,
-                                  2)
-            rho_all = calculate_rho(configs, single_Q_vectors)
-            futures = [executor.submit(faster_autocorrelation,
+
+            # rearrange the axes so that calculate_rho broadcasts correctly
+            element_configs = np.swapaxes(element_configs, 1, 2)
+            element_configs = np.swapaxes(element_configs, 0, 2)
+
+            rho_all = calculate_rho(element_configs, single_Q_vectors)
+            futures = (executor.submit(faster_autocorrelation,
                                        rho.T,
                                        weights = incoh_weights**2)
-                                       for rho in rho_all]
+                                       for rho in rho_all)
             results = (future.result()[:n_t] for future in futures)
             for result in results:
                 FQt_single_Q += result
@@ -644,10 +644,8 @@ class FQt(AbstractFQt):
                                   rho_element[element2])[:n_t]
 
         # Normalise to the number of orthogonal vectors
-        try:
-            norm = np.shape(single_Q_vectors)[0]
-        except IndexError:
-            norm = 1
+        # default to 1 if there are no vectors to avoid division by 0
+        norm = len(single_Q_vectors) or 1
 
         return FQt_single_Q / (self._trajectory.n_atoms * norm)
 
