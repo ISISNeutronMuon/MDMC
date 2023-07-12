@@ -43,10 +43,10 @@ class FQtIncoherent(AbstractFQt):
                               0,
                               2)
         rho_all = calculate_rho(configs, np.array(single_Q_vectors))
-        futures = [executor.submit(faster_autocorrelation,
+        futures = (executor.submit(faster_autocorrelation,
                                     rho.T,
                                     weights = np.array(weight))
-                                    for rho in rho_all]
+                                    for rho in rho_all)
         results = [future.result()[:n_t] for future in futures]
         for q_num in range(len(single_Q_vectors)):
             FQt_single_Q += results[q_num]
