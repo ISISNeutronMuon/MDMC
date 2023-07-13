@@ -38,9 +38,11 @@ class MDANSESQw(SQwReader):
     A class for reading SQw files from MDANSE's trajectory analysis
 
     The output from MDANSE analysis of trajectories is a .csv file with some lines
-    of comments describing the dataset and columns/rows. The first rwo is the Q
-    points of the dataset. The first column is the omega points for the dataset
-    and the remaining points are the S(Q,w) at each corresponding Q and w.
+    of comments describing the dataset and columns/rows, followed by an array
+    of numbers. The first row and column of the array define the axes of the data,
+    where the role and physical unit of each axis is described in the comment lines
+    preceding the data. The [0,0] element of the array is always 0.0 and is not used,
+    while all the remaining points are the S(Q,w) at each corresponding Q and w.
 
     Attributes
     ----------
