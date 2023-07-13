@@ -3,6 +3,8 @@
 Parameter Refinement
 ====================
 
+MDMC runs refinements to fit simulation parameters to experimental data.
+
 Running a refinement requires:
 
  - A setup :class:`~MDMC.MD.simulation.Simulation`.
@@ -15,7 +17,10 @@ along with other parameters such as the minimizer type.  This
 used to :py:meth:`~MDMC.control.control.Control.refine` the
 :class:`~MDMC.MD.parameters.Parameters`.
 
-.. rubric:: Related Tutorials
+The MDMC interface for these objects is explained in more detail in the following notebooks:
 
-| `Selecting fitting Parameters <../tutorials/selecting-fitting-parameters.ipynb>`_
-| `Running a Refinement <../tutorials/running-a-refinement.ipynb>`_
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/selecting-fitting-parameters.ipynb
+   notebooks/running-a-refinement.ipynb

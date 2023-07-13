@@ -31,9 +31,9 @@ to separately install a supported molecular dynamics package (e.g. LAMMPS).
    :maxdepth: 2
    :hidden:
 
-   docker
-   singularity
-   nocontainerlinux
+   installation/docker
+   installation/singularity
+   installation/nocontainerlinux
 
 
 Installation Tests

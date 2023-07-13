@@ -47,7 +47,6 @@ Indices
    :caption: Overview
 
    introduction
-   installation/installation
    contributing
 
 .. toctree::
@@ -62,16 +61,8 @@ Indices
    :hidden:
    :caption: How-to
 
-   how-to/building-a-universe.ipynb
-   how-to/read-configurations.ipynb
-   how-to/units.ipynb
-   how-to/applying-a-forcefield.ipynb
-   how-to/solvating-a-universe.ipynb
-   how-to/molecular-visualization.ipynb
-   how-to/running-a-simulation.ipynb
-   how-to/creating-an-observable.ipynb
-   how-to/selecting-fitting-parameters.ipynb
-   how-to/running-a-refinement.ipynb
+   how-to/use-MDMC
+   how-to/installation
 
 .. toctree::
   :maxdepth: 1

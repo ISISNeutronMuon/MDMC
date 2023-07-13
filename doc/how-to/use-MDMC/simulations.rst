@@ -2,6 +2,9 @@
 
 Simulations
 ===========
+
+Creating a Universe
+-------------------
 An MDMC simulation requires a :class:`~MDMC.MD.simulation.Universe`, and one or
 more :class:`~MDMC.MD.structures.Atom` objects, which can be combined into
 one or more :class:`~MDMC.MD.structures.Molecule` objects.  These atoms
@@ -18,23 +21,7 @@ interaction could have a :class:`~MDMC.MD.interaction_functions.LennardJones` or
 a :class:`~MDMC.MD.interaction_functions.Buckingham` interaction function
 applied to it.
 
-Once the :class:`~MDMC.MD.simulation.Universe` is setup, it should be passed to
-a :class:`~MDMC.MD.simulation.Simulation` object.  This controls the properties
-of the simulation, such as which engine will be used and what the thermodynamic
-conditions are. It is then possible to
-:py:meth:`~MDMC.MD.simulation.Simulation.minimize` and
-:py:meth:`~MDMC.MD.simulation.Simulation.run` the
-:class:`~MDMC.MD.simulation.Simulation`.  The results of the simulation can then
-be accessed through :class:`~MDMC.MD.simulation.Simulation`, for example via the
-property :py:attr:`~MDMC.MD.simulation.Simulation.trajectory`.
-
-For in-depth examples of these please see the related tutorials, particularly
-`Building a Universe <../tutorials/building-a-universe.ipynb>`_ and
-`Running a Simulation <../tutorials/running-a-simulation.ipynb>`_.
-
-As mentioned in the :ref:`introduction-label`, MDMC can be used purely to aid
-the setup of MD simulations, without performing a refinement.  It is possible
-to:
+It is also possible to:
 
  - :py:meth:`~MDMC.MD.simulation.Simulation.fill` and
    :py:meth:`~MDMC.MD.simulation.Universe.solvate` a Universe
@@ -53,10 +40,37 @@ to:
    `Applying a FieldField <../tutorials/applying-a-forcefield.ipynb>`_)
 
 
-.. rubric:: Related Tutorials
+The MDMC interface for these objects is explained in the following notebooks:
 
-| `Building a Universe <../tutorials/building-a-universe.ipynb>`_
-| `Reading atoms from configuration files <../tutorials/read-configurations.ipynb>`_
-| `Applying a ForceField <../tutorials/applying-a-forcefield.ipynb>`_
-| `Solvating a Universe <../tutorials/solvating-a-universe.ipynb>`_
-| `Running a Simulation <../tutorials/running-a-simulation.ipynb>`_
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/building-a-universe.ipynb
+   notebooks/solvating-a-universe.ipynb
+   notebooks/read-configurations.ipynb
+   notebooks/molecular-visualization.ipynb
+   notebooks/applying-a-forcefield.ipynb
+
+Indeed, as mentioned in the :ref:`introduction-label`, MDMC can be used purely to aid
+the setup of MD simulations, without performing a refinement.
+
+Creating a Simulation
+---------------------
+Once the :class:`~MDMC.MD.simulation.Universe` is setup, it should be passed to
+a :class:`~MDMC.MD.simulation.Simulation` object.  This controls the properties
+of the simulation, such as which engine will be used and what the thermodynamic
+conditions are. It is then possible to
+:py:meth:`~MDMC.MD.simulation.Simulation.minimize` and
+:py:meth:`~MDMC.MD.simulation.Simulation.run` the
+:class:`~MDMC.MD.simulation.Simulation`.  The results of the simulation can then
+be accessed through :class:`~MDMC.MD.simulation.Simulation`, for example via the
+property :py:attr:`~MDMC.MD.simulation.Simulation.trajectory`, or through the
+creation of observables such as the dynamic structure factor :math:`S(Q, \omega)``
+
+These are explained in the following notebooks:
+
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/running-a-simulation.ipynb
+   notebooks/creating-an-observable.ipynb

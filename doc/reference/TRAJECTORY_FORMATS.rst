@@ -23,7 +23,7 @@ analyzed by any other packages if needed.
 Package: NETCDF
 ----------------
 
-NetDCF is an Amber-style trajectory file format.
+NetCDF is an Amber-style trajectory file format.
 NetCDF files are binary, portable and self-describing.
 NetDCF has a better performance on a large number of processors and super-computers.
 Note that style netcdf outputs all atoms sorted by atom tag while style netcdf/mpiio outputs 
