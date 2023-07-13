@@ -105,7 +105,7 @@ jobs:
       - name: Install Requirements
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "apt-get install pandoc -y && pip install . -r requirements.txt -r .dev_requirements.txt"
       - name: Convert Notebooks
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/tutorials/notebook-test-config.py"
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "jupyter nbconvert --config doc/notebook-test-config.py"
       - name: Test Notebooks
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "pytest --nbmake --nbmake-timeout=2000 -k ".nbconvert.ipynb""
 

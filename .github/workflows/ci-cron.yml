@@ -276,7 +276,9 @@ jobs:
       - name: Install Requirements
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install ."
       - name: Make Documentation
-        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "make -d -C $(pwd)/doc html"
+        run: |
+          docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "sphinx-apidoc $(pwd)/MDMC -o $(pwd)/doc/reference/api/"
+          docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "make -d -C $(pwd)/doc html"
 
   prune-images:
     name: Prune Old Docker Hub Images
