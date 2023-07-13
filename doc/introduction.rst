@@ -9,6 +9,9 @@ parameters:
 
 Simulation
 ----------
+
+*Main page:* :ref:`How to use MDMC: Simulation <simulation-label>`
+
 To run a refinement using MDMC it is first necessary to define the simulation
 setup for which the parameters will be refined. This includes defining a
 :class:`~MDMC.MD.simulation.Universe`, creating a configuration and specifying
@@ -28,18 +31,22 @@ with a number of helper methods aimed at simplifing setting up simulations.
 
 Refinement
 ----------
+
+*Main page:* :ref:`How to use MDMC: Parameter Refinement <parameter-refinement-label>`
+
 To :ref:`refine the parameters <parameter-refinement-label>` of a simulation,
 one or more experimental datasets must be provided and a minimiser must be
 selected.  Here are the descriptions of the available experimental
-:ref:`observables-modules-label` (the objects representing experimental datasets), the :mod:`~MDMC.refinement.minimizers`, and the
-:class:`~MDMC.control.control.Control` class, which runs the refinement.
+:mod:`~MDMC.trajectory_analysis.observables` (the objects representing experimental datasets), 
+the :mod:`~MDMC.refinement.minimizers`, and the :class:`~MDMC.control.control.Control` class, 
+which runs the refinement.
 
 It is possible to refine all of the parameters, or to specify a subset to be
 refined, which is shown in the interactive tutorial `Selecting Fitting
-Parameters <../tutorials/selecting-fitting-parameters.ipynb>`_.
+Parameters <./how-to/use-MDMC/notebooks/selecting-fitting-parameters.ipynb>`_.
 
 For an explanation of the refinement steps, please see the tutorial `Running a
-Refinement <../tutorials/running-a-refinement.ipynb>`_, and for a full
+Refinement <./how-to/use-MDMC/notebooks/running-a-refinement.ipynb>`_, and for a full
 demonstration of MDMC, including setting up a simulation and running
 a refinement, please see the .py files within 'examples'.
 
@@ -47,16 +54,16 @@ a refinement, please see the .py files within 'examples'.
 
 Tutorials
 ---------
-There are a number of tutorials covering different aspects of MDMC located in
-doc/tutorials/.  These tutorials provide a explanation of the main steps to
-creating a simulation and running a refinement.  Major features are described
-in these tutorials, however the full `Modules`_ documentation can be used to get
-descriptions of all of the options available within MDMC.
+There are a number of notebooks covering different aspects of MDMC located in
+the documentation, mainly :ref:`use-MDMC-label`.  These tutorials provide an 
+explanation of the main steps to creating a simulation and running a refinement.
+Major features are described in these tutorials, however the full `Modules`_ 
+documentation can be used to get descriptions of all of the options available within MDMC.
 
-Each of these tutorials is an interactive Jupyter notebook
+Each of these notebooks is an interactive Jupyter notebook
 which can be modified and run by the user; this allows experimentation from an
-established starting point.  The interactive tutorials can be accessed by
-installing Jupyter and running it within the tutorials folder:
+established starting point.  The interactive notebooks can be accessed by
+installing Jupyter and running it within the documentation notebook folder:
 
 .. code-block:: bash
 
@@ -69,7 +76,7 @@ Static copies of these tutorials can be viewed using the links in the sidebar.
 
 Modules
 -------
-The pages in the sidebar under the Modules heading provide documentation for
+The pages in the sidebar under the Reference/MDMC heading provide documentation for
 every function, class and class method in MDMC, including descriptions of
 parameters (or options) which can be used in each of these cases.  This
 documentation is also available when Python is run interactively using Python's

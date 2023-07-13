@@ -76,6 +76,3 @@ Indices
    :maxdepth: 2
    :hidden:
    :caption: Explanation
-
-   explanation/parameter-refinement
-   explanation/simulations

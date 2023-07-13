@@ -1,10 +1,10 @@
-.. _use-MDMC-label::
+.. _use-MDMC-label:
 
 How to use MDMC
 ===============
 
-*For a quick run-through of the whole MDMC workflow, please see the Argon A-to-Z
-tutorial.*
+*For a quick run-through of the whole MDMC workflow, please see the* `Argon A-to-Z
+tutorial. <../tutorials/Argon-a-to-z.ipynb>`_
 
 MDMC consists of two main subsystems; simulation and refinement. The user creates
 a :class:`~MDMC.MD.simulation.Simulation` object, and declares some :class:`~MDMC.MD.parameters.Parameters`
