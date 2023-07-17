@@ -55,6 +55,7 @@ Indices
    :caption: Tutorials
 
    tutorials/Argon-a-to-z.ipynb
+   tutorials/running-a-refinement.ipynb
 
 .. toctree::
    :maxdepth: 2
@@ -70,7 +71,6 @@ Indices
   :caption: Reference
 
   reference/api/modules
-  reference/developer/overview
 
 .. toctree::
    :maxdepth: 2
@@ -79,3 +79,10 @@ Indices
 
    explanation/figure-of-merit
    explanation/minimizers
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Developer Documentation
+
+   developer/overview
