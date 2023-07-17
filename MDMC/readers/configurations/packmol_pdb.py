@@ -1,5 +1,5 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
 from MDMC.MD.structures import Molecule, Atom
 from MDMC.readers.configurations.pdb import ProteinDataBankReader
@@ -45,7 +45,7 @@ class PackmolPDBReader(ProteinDataBankReader):
 
                 if chain_id not in chains_dict:
                     chains_dict[chain_id] = {}
-            
+
                 if atom_molecule_id in chains_dict[chain_id]:
                     chains_dict[chain_id][atom_molecule_id].append(current_atom_obj)
                 else:

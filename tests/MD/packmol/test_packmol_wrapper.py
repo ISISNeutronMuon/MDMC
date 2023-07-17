@@ -14,6 +14,7 @@ pytestmark = [pytest.mark.lammps]
 
 @pytest.fixture()
 def h2o_molecule():
+    """A water molecule."""
     h_1 = Atom("H")
     h_2 = Atom('H', position=[0., 1.63298, 0.])
     o_1 = Atom('O', position=[0., 0.81649, 0.57736])
@@ -23,30 +24,38 @@ def h2o_molecule():
     return h2o_mol
 
 @pytest.fixture()
-def simple_universe_setup(h2o_molecule):
+def water_setup(h2o_molecule):
     setup = PackmolSetup()
     setup.add_cube(h2o_molecule, size=30., density=0.05)
     return setup
-@pytest.fixture()
-def more_complicated_universe_setup(h2o_molecule, simple_universe_setup):
-    simple_universe_setup.add_cube(h2o_molecule, size=40., origin=(30., 30., 30.), density=0.05)
-    return simple_universe_setup
-@pytest.fixture()
-def simple_filled_universe(simple_universe_setup):
-    """Returns the universe result from a packmol run using the simple_universe_setup setup object"""
-    return packmol.PackmolFiller(simple_universe_setup).fill_with_packmol()
 
 @pytest.fixture()
-def simple_filled_universe_filler_object(simple_universe_setup):
+def water_argon_mix_setup(h2o_molecule, water_setup):
+    water_setup.add_cube(Atom("Ar"), size=40., origin=(30., 30., 30.), density=0.05)
+    return water_setup
+
+@pytest.fixture()
+def simple_filled_universe(water_setup):
+    """Returns the universe result from a packmol run using the water_setup setup object"""
+    return packmol.PackmolFiller(water_setup).fill_with_packmol()
+
+@pytest.fixture()
+def complex_filled_universe(water_setup):
+    """Returns the universe result from a packmol run using the water_argon_mix_setup setup object"""
+    return packmol.PackmolFiller(water_argon_mix_setup).fill_with_packmol()
+
+@pytest.fixture()
+def simple_filled_universe_filler_object(water_setup):
     """A `PackmolFiller` Object after running a fill run"""
-    filler = packmol.PackmolFiller(simple_universe_setup)
+    filler = packmol.PackmolFiller(water_setup)
     filler.fill_with_packmol()
     return filler
 
-def test_packmol_result_is_identical_between_runs(simple_filled_universe, simple_universe_setup):
+
+def test_packmol_result_is_identical_between_runs(simple_filled_universe, water_setup):
     """Test that filling is deterministic when using the same setup"""
     universe_1 = simple_filled_universe
-    universe_2 = packmol.PackmolFiller(simple_universe_setup).fill_with_packmol()
+    universe_2 = packmol.PackmolFiller(water_setup).fill_with_packmol()
     assert dir(universe_1) == dir(universe_2)
 
 def test_returns_universe(simple_filled_universe):
@@ -60,9 +69,9 @@ def test_get_packmol_output_name(simple_filled_universe_filler_object):
     correct_name = "output-universe.pdb"
     assert actual_name == correct_name
 
-def test_get_packmol_universe_dimensions(more_complicated_universe_setup):
+def test_get_packmol_universe_dimensions(water_argon_mix_setup):
     """Tests that the dimensions are correctly read from the packmol input"""
-    filled_universe = packmol.PackmolFiller(more_complicated_universe_setup).fill_with_packmol()
+    filled_universe = packmol.PackmolFiller(water_argon_mix_setup).fill_with_packmol()
     actual_dim = filled_universe.dimensions
     correct_dim = [70.,70.,70.]
     assert np.allclose(actual_dim, correct_dim)
@@ -100,3 +109,11 @@ def test_correct_system_properties(simple_filled_universe):
     assert set(simple_filled_universe.element_list) == {"H", "O"}
     # 2 bonded interactions per molecule
     assert len(simple_filled_universe.bonded_interactions) == 2700
+
+def test_complex_system_properties(complex_filled_universe):
+    """Tests to make sure the correct system properties are in the final complex system"""
+    assert simple_filled_universe.n_atoms == 5900
+    assert simple_filled_universe.n_molecules == 1350
+    assert set(simple_filled_universe.element_list) == {"H", "O", "Ar"}
+    # 2 bonded interactions per molecule
+    assert len(simple_filled_universe.bonded_interactions) == 4050
