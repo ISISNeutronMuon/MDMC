@@ -6,7 +6,7 @@ Minimizers
 What is a minimizer?
 --------------------
 
-A minimizer is an [optimisation algorithm or heuristic](https://en.wikipedia.org/wiki/Mathematical_optimization)
+A minimizer is an `optimisation algorithm or heuristic <https://en.wikipedia.org/wiki/Mathematical_optimization>`_
 which takes a set of input parameters and an output function of the inputs, and aims to find which
 combination of inputs makes the output function smallest.
 
@@ -29,7 +29,7 @@ have ways of dealing with this (in fact, this is what the Metropolis-Hastings al
 explained below - does!) Nonetheless, this is an example of a simple minimization heuristic; our
 inputs are the x and y coordinates of Mr. Minimizer's position, and the output is
 his altitude at that location. We call the space of all possible combinations of inputs
-the "parameter space", and the output function the "objective function" (that is, objective
+the "parameter space", and the output function the "objective function" (objective
 as in 'goal' or 'target').
 
 Minimization is a huge field of mathematics, and many more sophisticated algorithms exist. 
@@ -38,7 +38,7 @@ How does MDMC use minimization?
 -------------------------------
 
 MDMC's parameter space for minimization are the parameters governing the forces between
-molecules in a given simulation, and it then aims to minimize the [figure of merit](./figure-of-merit.rst)
+molecules in a given simulation, and it then aims to minimize the :ref:`fom-explanation-label`
 between a simulation using those parameters and experimental data. Through this, it finds
 the parameters which create a simulation that most closely resembles the experimental data.
 
@@ -46,15 +46,16 @@ Derivative-free optimisation
 ----------------------------
 
 There are a variety of popular, ubiquitous minimization algorithms, such as the
-[Levenberg-Marquardt algorithm](https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm)
-or the %%%TODO%%%. However, many of these do not solve the minimization problem that
+`Levenberg-Marquardt algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_
+or the `BFGS algorithm <https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm>`_. 
+However, many of these do not solve the minimization problem that
 MDMC aims to solve. Many fast algorithms rely on being able to calculate the slope or
 gradient of the objective function - in MDMC's case, the figure of merit,
-which is based on the match-up between experimental and simulated data. The experimental data
-is noisy, due to various practical concerns which simply make the figure of merit function 'not 
-[smooth enough](https://en.wikipedia.org/wiki/Smoothness)' to use many of these algorithms.
+which is based on the match-up between experimental and simulated data. Experimental data
+is noisy, which simply makes the figure of merit function 'not 
+`smooth enough <https://en.wikipedia.org/wiki/Smoothness>`_' to use many of these algorithms.
 
-We thus turn to ['derivative-free optimisation'](https://en.wikipedia.org/wiki/Derivative-free_optimization),
+We thus turn to `'derivative-free optimisation' <https://en.wikipedia.org/wiki/Derivative-free_optimization>`_,
 which is a subfield of optimisation that avoids needing gradient information. We will now detail
 the minimizers available in MDMC.
 
@@ -88,21 +89,21 @@ of these points. It uses these values to 'fit' an approximate topography to the 
 and then predicts the values inbetween by interpolation to predict where the lowest
 point is.
 
-The MDMC GPR algorithm creates the grid of values via ['Latin hypercube sampling'](https://en.wikipedia.org/wiki/Latin_hypercube). 
-If we wanted to take a sample size of 4 from a 2D space, a Latin square sample would
+The MDMC GPR algorithm creates the grid of values via `'Latin hypercube sampling' <https://en.wikipedia.org/wiki/Latin_hypercube>`_. 
+If we wanted to take a sample size of 4 from a 2D space, a 'Latin square sample' would
 divide the space into a grid of 4 rows and 4 columns, and then take 4 samples
 such that none of the samples are on the same row or column; imagine a 4x4 chess grid
 where we have placed 4 rooks in such a way that none of them can capture each other.
-This ensures our samples are random, but still evenly distributed. A hypercube is
-the term for the equivalent of a cube in any number of dimensions, so a Latin hypercube
-is the same concept in any number of dimensions (for MDMC, as many dimensions as there
-are parameters).
+This ensures our samples are random, but still more-or-less evenly distributed. A *hypercube* is
+the term for the equivalent of a cube in any number of dimensions (e.g. 2D hypercube is a square,
+3D hypercube is a cube, so on), so a *Latin* hypercube is the same concept in any number of dimensions 
+(for MDMC, as many dimensions as there are parameters).
 
 This method can be extremely effective, as it quickly produces an accurate prediction
 without needing an initial 'guess'. However, it can be more expensive computationally
 than Metropolis-Hastings, as it has to take samples over a region around the initial
-'guess' which may or may not be useful in finding the minimum. It is also not guaranteed
-to find the exact minimum (but will usually be very close!)
+'guess' which may or may not be useful in finding the minimum, especially if the region is very large.
+It is also not mathematically guaranteed to find the exact minimum (but will usually be very close!)
 
 Gaussian Process Optimisation
 -----------------------------
