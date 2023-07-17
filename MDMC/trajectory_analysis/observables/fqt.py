@@ -2,6 +2,7 @@
 from abc import abstractmethod
 from itertools import product
 from typing import TYPE_CHECKING, Generator
+import concurrent
 
 import numpy as np
 
@@ -440,12 +441,9 @@ class AbstractFQt(SQwMixins, Observable):
         futures = (executor.submit(helper_coherent,
                                     configs, vector)
                                     for vector in single_Q_vectors)
-        # The following line makes the code wait for all the calculations to finish.
-        results = [future.result() for future in futures]
-        # At this stage, the results list is fully populated,
-        # and the following loop writes the results into the rho_config array.
-        for q_num in range(len(single_Q_vectors)):
-            rho_config[:, q_num] = results[q_num]
+        # Append to rho_config as completed, block until all futures added
+        for q_num, future in enumerate(concurrent.futures.as_completed(futures)):
+            rho_config[:, q_num] = future.result()
 
         return rho_config
 
@@ -630,9 +628,8 @@ class FQt(AbstractFQt):
                                        rho.T,
                                        weights = incoh_weights**2)
                                        for rho in rho_all)
-            results = (future.result()[:n_t] for future in futures)
-            for result in results:
-                FQt_single_Q += result
+            for future in concurrent.futures.as_completed(futures):
+                FQt_single_Q += future.result()[:n_t]
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:
