@@ -21,29 +21,44 @@ class PackmolPDBReader(ProteinDataBankReader):
             None are necessary for this reader.
 
         """
-        molecules_dict: Dict[str, List[Atom]] = {}
+        # 'chain id' is an identifier for the unique type of molecule in the file
+        # and 'molecule id' is an identifier for a specific copy of said molecule
+        # for, e.g. molecules of two different types,
+        # the chains dict has following structure:
+        # chains_dict = {
+        #   'A': {'1': [...], '2': [...], ...},
+        #   'B': {'1': [...], '2': [...], ...}
+        # }
+        # where [...] is a list of atoms belonging to a specific molecule
+        chains_dict = {}
+
         for line in self.file:
             #chars 0-6 identify what the line is describing
             record_name = line[0:6]
             if record_name in ("ATOM  ", "HETATM"):
                 record = self._parse_atom_record(line)
+                chain_id = record['chain_id']
                 atom_molecule_id = record['molecule_id']
                 current_atom_obj = Atom(record['element_symbol'].capitalize(),
                                         position=record['atom_position'],
                                         name=record['name'])
 
-                if atom_molecule_id in molecules_dict:
-                    molecules_dict[atom_molecule_id].append(current_atom_obj)
+                if chain_id not in chains_dict:
+                    chains_dict[chain_id] = {}
+            
+                if atom_molecule_id in chains_dict[chain_id]:
+                    chains_dict[chain_id][atom_molecule_id].append(current_atom_obj)
                 else:
-                    molecules_dict[atom_molecule_id] = [current_atom_obj]
+                    chains_dict[chain_id][atom_molecule_id] = [current_atom_obj]
 
         # if multiple atoms share an id, this means they are part of the same
         # molecule; create a Molecule object for them
-        for atom_list in molecules_dict.values():
-            if len(atom_list) == 1:
-                self._structures.append(atom_list[0])
-            else:
-                self._structures.append(Molecule(atoms=atom_list))
+        for molecules_dict in chains_dict.values():
+            for atom_list in molecules_dict.values():
+                if len(atom_list) == 1:
+                    self._structures.append(atom_list[0])
+                else:
+                    self._structures.append(Molecule(atoms=atom_list))
 
 
     def _parse_atom_record(self, line):
@@ -55,6 +70,7 @@ class PackmolPDBReader(ProteinDataBankReader):
         """
         record = {
             'name': line[12:16].split()[-1],
+            'chain_id': line[21],
             'molecule_id': int(line[22:26]),
             'atom_position': tuple(float(pos) for pos in [line[30:38],
                                                           line[38:46],
