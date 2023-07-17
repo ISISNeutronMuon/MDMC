@@ -23,4 +23,4 @@ The MDMC interface for these objects is explained in more detail in the followin
    :maxdepth: 1
 
    notebooks/selecting-fitting-parameters.ipynb
-   notebooks/running-a-refinement.ipynb
+   ../../tutorials/running-a-refinement.ipynb

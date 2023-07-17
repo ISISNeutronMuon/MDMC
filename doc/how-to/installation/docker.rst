@@ -18,7 +18,7 @@ by the Docker container). However, to use the external :code:`'ASE'` viewer for
 molecular visualization, X11 forwarding must additionally be enabled **before**
 the instructions below are followed. The difference between
 these viewers is explained in the
-`Molecular Visualization <../tutorials/molecular-visualization.ipynb>`_
+`Molecular Visualization <../use-MDMC/notebooks/molecular-visualization.ipynb>`__
 tutorial. Instructions on how to enable X11 forwarding are in
 :ref:`x11-forwarding-label`.  X11 forwarding occurs by default on Linux, so
 on that platform no additional steps are required.
@@ -74,7 +74,7 @@ is possible to install docker-compose using pip3:
 
 Alternatively, there are `other methods for installing docker-compose <https://docs.docker.com/compose/install/>`_.
 
-.. include:: docker/docker-compose-files.rst
+.. include:: docker/docker-compose-files-linux.rst
 
 :download:`Download mdmc docker-compose tar <../../_static/files/linux/mdmc.tar.gz>`
 
@@ -98,8 +98,7 @@ molecule / universe setups with MDMC. However, the :code:`'X3DOM'` viewer, which
 has almost all of the functionality of the :code:`'ASE'` viewer, can be used in
 a Jupyter notebook **without** enabling X11 forwarding. The difference between
 these viewers is explained in the
-`Molecular Visualization <../tutorials/molecular-visualization.ipynb>`_
-tutorial.
+`Molecular Visualization <../use-MDMC/notebooks/molecular-visualization.ipynb>`__ guide.
 
 Windows
 ^^^^^^^

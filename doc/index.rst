@@ -76,3 +76,6 @@ Indices
    :maxdepth: 2
    :hidden:
    :caption: Explanation
+
+   explanation/figure-of-merit
+   explanation/minimizers
