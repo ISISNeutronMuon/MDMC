@@ -45,7 +45,8 @@ The MDMC interface for these objects is explained in the following notebooks:
 .. toctree::
    :maxdepth: 1
 
-   notebooks/building-a-universe.ipynb
+   notebooks/creating-atomic-configurations.ipynb
+   notebooks/defining-molecule-interactions.ipynb
    notebooks/solvating-a-universe.ipynb
    notebooks/read-configurations.ipynb
    notebooks/molecular-visualization.ipynb
