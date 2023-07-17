@@ -23,8 +23,8 @@ How does MDMC use the figure of merit?
 --------------------------------------
 
 MDMC uses figure of merit as the basis of refinement. We `create a simulation with some
-parameters <../how-to/use-MDMC/notebooks/running-a-simulation.ipynb>`, calculate the
-figure of merit of a `dynamical property <../how-to/use-MDMC/notebooks/creating-an-observable.ipynb>``
+parameters <../how-to/use-MDMC/notebooks/running-a-simulation.ipynb>`_, calculate the
+figure of merit of a `dynamical property <../how-to/use-MDMC/notebooks/creating-an-observable.ipynb>`_
 between our simulation and experimental data, and use :ref:`minimizer-explanation-label`
 to adjust the simulation parameters in order to minimize the figure of merit.
 
