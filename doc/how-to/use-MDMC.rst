@@ -18,7 +18,22 @@ Each of these subsystems are explained in detail, with Jupyter notebooks,
 in the following pages:
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+   :caption: Simulation
 
    use-MDMC/simulations
+   use-MDMC/notebooks/creating-atomic-configurations.ipynb
+   use-MDMC/notebooks/defining-molecule-interactions.ipynb
+   use-MDMC/notebooks/solvating-a-universe.ipynb
+   use-MDMC/notebooks/read-configurations.ipynb
+   use-MDMC/notebooks/molecular-visualization.ipynb
+   use-MDMC/notebooks/applying-a-forcefield.ipynb
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Refinement
+
    use-MDMC/parameter-refinement
+   use-MDMC/notebooks/selecting-fitting-parameters.ipynb
+   ../../tutorials/running-a-refinement.ipynb
+

@@ -43,7 +43,7 @@ It is also possible to:
 The MDMC interface for these objects is explained in the following notebooks:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    notebooks/creating-atomic-configurations.ipynb
    notebooks/defining-molecule-interactions.ipynb

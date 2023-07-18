@@ -20,7 +20,7 @@ used to :py:meth:`~MDMC.control.control.Control.refine` the
 The MDMC interface for these objects is explained in more detail in the following notebooks:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    notebooks/selecting-fitting-parameters.ipynb
    ../../tutorials/running-a-refinement.ipynb
