@@ -2,7 +2,6 @@
 from abc import abstractmethod
 from itertools import product
 from typing import TYPE_CHECKING, Generator
-import concurrent
 
 import numpy as np
 

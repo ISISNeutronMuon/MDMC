@@ -5,7 +5,7 @@ import numpy as np
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import faster_autocorrelation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
-from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor
+from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
@@ -48,7 +48,7 @@ class FQtIncoherent(AbstractFQt):
                                     rho.T,
                                     weights = np.array(weight))
                                     for rho in rho_all))
-        for batch_num, future_batch in enumerate(futures):
+        for future_batch in futures:
             results = [future.result() for future in future_batch]
             for result in results:
                 FQt_single_Q += result

@@ -1,7 +1,6 @@
 """Module defining a class for storing, calculating and reading in observables
 from molecular dynamics trajectories."""
 
-import os
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 

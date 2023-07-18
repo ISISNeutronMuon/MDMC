@@ -18,7 +18,7 @@ def create_executor() -> ThreadPoolExecutor:
     """
 
     # we use a ThreadPoolExecutor as most of the concurrent operations
-    # involve very large arrays; a ProcessPoolExecutor would create a 
+    # involve very large arrays; a ProcessPoolExecutor would create a
     # copy of each of these arrays per thread.
     num_cores = int(os.environ.get("OMP_NUM_THREADS", 1))
     return ThreadPoolExecutor(max_workers=num_cores)
