@@ -14,9 +14,10 @@ from MDMC.common.mathematics import faster_correlation,\
      faster_autocorrelation, \
      UNIT_VECTOR
 from MDMC.resolution import Resolution
-from MDMC.trajectory_analysis.observables.obs import Observable, executor
+from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
+from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 if TYPE_CHECKING:
@@ -427,6 +428,7 @@ class AbstractFQt(SQwMixins, Observable):
         rho_config = np.zeros((len(config),
                                len(single_Q_vectors)),
                                dtype=complex)
+        executor = create_executor()
 
         # For the np.dot product to be broadcast correctly,
         # the [x, y, z] atom positions have to be on axis 1.
@@ -438,12 +440,15 @@ class AbstractFQt(SQwMixins, Observable):
         # with similar values of |Q|.
         # The following lines split the calculation by multiplying
         # the trajectory by each q vector separately.
-        futures = (executor.submit(helper_coherent,
-                                    configs, vector)
-                                    for vector in single_Q_vectors)
+        futures = core_batch((executor.submit(helper_coherent,
+                                              configs, vector)
+                                              for vector in single_Q_vectors))
         # Append to rho_config as completed, block until all futures added
-        for q_num, future in enumerate(futures):
-            rho_config[:, q_num] = future.result()
+        for batch_num, future_batch in enumerate(futures):
+            results = [future.result() for future in future_batch]
+            for result_num, result in enumerate(results):
+                q_num = (batch_num * len(results)) + result_num
+                rho_config[:, q_num] = result
 
         return rho_config
 
@@ -606,6 +611,7 @@ class FQt(AbstractFQt):
         elements = self._trajectory.element_set
         FQt_single_Q = np.zeros(n_t)
         rho_element = {}
+        executor = create_executor()
 
         for element in elements:
             # Get the positions of all atoms (the configuration) of each
@@ -624,12 +630,14 @@ class FQt(AbstractFQt):
             element_configs = np.swapaxes(element_configs, 0, 2)
 
             rho_all = calculate_rho(element_configs, single_Q_vectors)
-            futures = (executor.submit(faster_autocorrelation,
-                                       rho.T,
-                                       weights = incoh_weights**2)
-                                       for rho in rho_all)
-            for future in futures:
-                FQt_single_Q += future.result()[:n_t]
+            futures = core_batch((executor.submit(faster_autocorrelation,
+                                                  rho.T,
+                                                  weights = incoh_weights**2)
+                                                  for rho in rho_all))
+            for future_batch in futures:
+                results = [future.result() for future in future_batch]
+                for result in results:
+                    FQt_single_Q += result[:n_t]
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:

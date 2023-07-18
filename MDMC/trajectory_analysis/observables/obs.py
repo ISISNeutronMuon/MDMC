@@ -4,7 +4,6 @@ from molecular dynamics trajectories."""
 import os
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
-from concurrent.futures import ThreadPoolExecutor as PoolExecutor
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.observables.obs_reader_factory import ObservableReaderFactory
@@ -13,29 +12,6 @@ if TYPE_CHECKING:
     from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
     from typing import Union
 
-N_CPUS_MP = 1
-
-# A (Thread)PoolExecutor is created here, and is later imported
-# by other observables.
-# The same environment variable that defines the number of OMP threads
-# is used here to fix the max number of threads for the pool executor.
-# vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-if "OMP_NUM_THREADS" in os.environ:
-    omp_num_threads_str = os.environ["OMP_NUM_THREADS"]
-    try:
-        omp_num_threads = int(omp_num_threads_str)
-    except ValueError:
-        pass
-    else:
-        if omp_num_threads > 1:
-            N_CPUS_MP = omp_num_threads
-
-# NOTE: The import in line 7 specifies that the PoolExecutor
-# is a ThreadPoolExecutor.
-# There is still a possibility of replacing it with a
-# ProcessPoolExecutor. The thread-based version is better for
-# performance based on the tests so far.
-executor = PoolExecutor(max_workers=N_CPUS_MP)
 
 @repr_decorator('origin', 'data')
 class Observable(ABC):
