@@ -442,7 +442,7 @@ class AbstractFQt(SQwMixins, Observable):
                                     configs, vector)
                                     for vector in single_Q_vectors)
         # Append to rho_config as completed, block until all futures added
-        for q_num, future in enumerate(concurrent.futures.as_completed(futures)):
+        for q_num, future in enumerate(futures):
             rho_config[:, q_num] = future.result()
 
         return rho_config
@@ -628,7 +628,7 @@ class FQt(AbstractFQt):
                                        rho.T,
                                        weights = incoh_weights**2)
                                        for rho in rho_all)
-            for future in concurrent.futures.as_completed(futures):
+            for future in futures:
                 FQt_single_Q += future.result()[:n_t]
 
         # Calculates the coherent contribution to SQw
