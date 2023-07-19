@@ -10,29 +10,39 @@ A minimizer is an `optimisation algorithm or heuristic <https://en.wikipedia.org
 which takes a set of input parameters and an output function of the inputs, and aims to find which
 combination of inputs makes the output function smallest.
 
-Example: Mr. Minimizer
+Example: Gradient Descent
 ----------------------
 
-As a very simple example, imagine an explorer, 'Mr. Minimizer', has parachuted down into uncharted land.
-His job is to find the deepest valley in a large area of the land, and he has been given a set
-of instructions on how to find it:
+To visualise a minimizer, picture a hilly terrain. For this example, our
+minimizer can be seen as a dot on this terrain, or an automaton moving around; many minimizers
+are based on a concept of a 'walk'. The aim of the minimizer is to find the lowest valley
+in this terrain.
 
-1. Take a step in a random direction.
-2. If that step is uphill, go back to where you were before you took the step, and
-   go to step 1.
-3. If the step is downhill, stay there and go to step 1.
+The `gradient descent <https://en.wikipedia.org/wiki/Gradient_descent>`_ algorithm 
+proceeds as follows:
 
-Through this, Mr. Minimizer is guaranteed to end up at the bottom of *some* valley.
-However, if he ends up at the bottom of a valley, he has no way of knowing whether
-it's the deepest in all the land, and he is stuck down there. More complicated algorithms
-have ways of dealing with this (in fact, this is what the Metropolis-Hastings algorithm -
-explained below - does!) Nonetheless, this is an example of a simple minimization heuristic; our
-inputs are the x and y coordinates of Mr. Minimizer's position, and the output is
-his altitude at that location. We call the space of all possible combinations of inputs
-the "parameter space", and the output function the "objective function" (objective
-as in 'goal' or 'target').
+1. Start at some position.
+2. Calculate the gradient, or slope, of the current location. 
+3. Take a step (of some fixed size) in the direction where the slope goes
+   downhill the steepest.
+4. Repeat from to step 2 until reaching a equilibrium point (a point where the gradient
+   is zero in all directions).
+
+Through this, the minimizer guaranteed to end up at the bottom of *some* valley.
+However, if it ends up at the bottom of a valley, it has no way of knowing whether
+it's the deepest in all the land, and it is stuck down there. More complicated algorithms
+have ways of dealing with this (in fact, the Metropolis-Hastings algorithm -
+explained below - solves this problem!). 
+
+Nonetheless, this is an example of minimization; our inputs are the x and y coordinates of the minimizer's 
+current position, and the output is their altitude at that location. 
+We call the space of all possible combinations of inputs the "parameter space",
+and the output function the "objective function" (objective as in 'goal' or 'target').
 
 Minimization is a huge field of mathematics, and many more sophisticated algorithms exist. 
+Popular, ubiquitous minimization algorithms include the
+`Levenberg-Marquardt algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_
+or the `BFGS algorithm <https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm>`_. 
 
 How does MDMC use minimization?
 -------------------------------
@@ -45,68 +55,91 @@ the parameters which create a simulation that most closely resembles the experim
 Derivative-free optimisation
 ----------------------------
 
-There are a variety of popular, ubiquitous minimization algorithms, such as the
-`Levenberg-Marquardt algorithm <https://en.wikipedia.org/wiki/Levenberg%E2%80%93Marquardt_algorithm>`_
-or the `BFGS algorithm <https://en.wikipedia.org/wiki/Broyden%E2%80%93Fletcher%E2%80%93Goldfarb%E2%80%93Shanno_algorithm>`_. 
-However, many of these do not solve the minimization problem that
-MDMC aims to solve. Many fast algorithms rely on being able to calculate the slope or
-gradient of the objective function - in MDMC's case, the figure of merit,
-which is based on the match-up between experimental and simulated data. Experimental data
-is noisy, which simply makes the figure of merit function 'not 
-`smooth enough <https://en.wikipedia.org/wiki/Smoothness>`_' to use many of these algorithms.
+Many fast minimization algorithms, such as the ones above, rely on being able to calculate the slope or gradient
+of the objective function. However, MDMC's objective function (the figure of merit) is based on 
+the difference between experimental and simulated data. Both experimental data and molecular dynamics
+simulations are noisy, which makes the figure of merit 'not `smooth enough <https://en.wikipedia.org/wiki/Smoothness>`_'
+to use many of these algorithms; the idea of a 'slope' does not make sense!
 
 We thus turn to `'derivative-free optimisation' <https://en.wikipedia.org/wiki/Derivative-free_optimization>`_,
-which is a subfield of optimisation that avoids needing gradient information. We will now detail
-the minimizers available in MDMC.
+which is a subfield of optimisation that avoids needing gradient information. Derivative-free optimisation
+is also known as 'black-box optimisation'; the objective function is a 'black-box', where we do not
+have some mathematical formula for it.
+
+We will now detail the minimizers available in MDMC.
 
 Metropolis-Hastings algorithm
 -----------------------------
-The Metropolis-Hastings algorithm (in MDMC, this is called `MMC`, for 'Metropolis Monte Carlo') 
-is a 'random walk' Monte Carlo algorithm; in essence, a far more sophisticated version 
-of the instructions given to Mr. Minimizer in the first section. It uses a more complicated
-method for deciding whether or not to backtrack that avoids it getting stuck in small,
-'local' valleys.
+The `Metropolis-Hastings algorithm <https://en.wikipedia.org/wiki/Metropolis%E2%80%93Hastings_algorithm>`_ 
+(in MDMC, this is called `MMC`, for 'Metropolis Monte Carlo')  is a 'random walk' Monte Carlo algorithm;
+essentially, a more complicated method of the gradient descent example, but using randomness
+and 'backtracking' to avoid needing to know slope data, as well as avoiding getting
+stuck in small, 'local' valleys.
 
 MMC starts at an initial point in parameter space and proposes a random direction to take a step in;
-this proposed point to step to is called the "candidate". It then accepts or rejects the candidate,
-i.e. decides whether or not to *take* that step, at random. The probability of acceptance
-is based on the 'acceptance ratio', whether the objective function at the candidate inputs is
-higher or lower than the current point. This means that unlike our earlier Mr. Minimizer, this
-algorithm is willing to 'walk uphill', particularly up shallow hills.
+this proposed point to step to is called the “candidate”.  If the candidate has a better figure of merit
+than the current position then it is accepted and moved to. However if the candidate 
+has a worse figure of merit it may also be accepted. The probability of acceptance is determined by an 
+exponential factor of how much worse it is than the current value. This means that unlike gradient descent,
+this algorithm is willing to 'walk uphill', particularly up shallow hills.
 
-MMC is a robust algorithm - it is *guaranteed* to eventually find the minimum point in the
-entire space. However, it is quite slow as it can reject steps; when a step is rejected, the
-time used to simulate the function and calculate the figure of merit is essentially wasted.
-Furthermore, if it starts very far away from the minimum, it can only take finite-sized steps.
-This means it might take a long time to randomly wander over to the vague region of the
-minimum if the initial 'guess' of the parameters is not very good.
+MMC is a robust algorithm - it is guaranteed to eventually find the minimum point in the entire space.
+However, it is quite slow as it can reject steps; when a step is rejected, the time used to simulate
+the function and calculate the figure of merit is essentially wasted. Furthermore,
+if it starts very far away from the minimum, it can only take finite-sized steps.
+This means it might take a long time to randomly wander over to the vague region 
+of the minimum if the initial 'guess' of the parameters is not very good.
 
 Gaussian Process Regression
 ---------------------------
-The Gaussian Process Regression (GPR) algorithm aims to 'map out' parameter space. It first
-creates a grid of values in parameter space and calculates the objective function at each
-of these points. It uses these values to 'fit' an approximate topography to the space,
-and then predicts the values inbetween by interpolation to predict where the lowest
-point is.
+The `Gaussian Process Regression <https://scikit-learn.org/stable/modules/gaussian_process.html>`_ (GPR)
+algorithm aims not to minimize, but to 'map out' parameter space. It first creates a grid of values
+in parameter space and calculates the objective function at each of these points.
+It uses these values to 'fit' an approximate topography to the space, and then predicts the values 
+between by interpolation via a defined kernel function to find where the lowest point is.
 
 The MDMC GPR algorithm creates the grid of values via `'Latin hypercube sampling' <https://en.wikipedia.org/wiki/Latin_hypercube>`_. 
 If we wanted to take a sample size of 4 from a 2D space, a 'Latin square sample' would
 divide the space into a grid of 4 rows and 4 columns, and then take 4 samples
-such that none of the samples are on the same row or column; imagine a 4x4 chess grid
-where we have placed 4 rooks in such a way that none of them can capture each other.
+such that none of the samples are on the same row or column; see the diagram below.
 This ensures our samples are random, but still more-or-less evenly distributed. A *hypercube* is
 the term for the equivalent of a cube in any number of dimensions (e.g. 2D hypercube is a square,
 3D hypercube is a cube, so on), so a *Latin* hypercube is the same concept in any number of dimensions 
 (for MDMC, as many dimensions as there are parameters).
 
-This method can be extremely effective, as it quickly produces an accurate prediction
-without needing an initial 'guess'. However, it can be more expensive computationally
-than Metropolis-Hastings, as it has to take samples over a region around the initial
-'guess' which may or may not be useful in finding the minimum, especially if the region is very large.
-It is also not mathematically guaranteed to find the exact minimum (but will usually be very close!)
+.. figure:: ./_static/images/latinsquare.png
+
+   An example of a 4-by-4 Latin square sample. 
+
+This method can be extremely effective, as it quickly produces an accurate prediction without needing an initial 'guess',
+only parameter bounds. It is more computationally expensive than Metropolis-Hastings for choosing points as it
+maps out the whole space - but this is very small compared to the time for the MD simulation. 
+Since it is not strictly a minimizer, we intentionally explore all of the parameter space, 
+giving us a much better idea of where the global minimum lies, at the expense of the accuracy
+of the minimum position. One of the benefits of using Gaussian processes is that as well as
+interpolating between points, the algorithm has an estimation of the uncertainty of every point 
+in the space too. We can build intrinsic uncertainty into the MD simulated points, essentially meaning
+that our interpolation does not need to exactly “fit” the point. As well as this uncertainty, 
+we have uncertainty related to how close we are to a measured point, 
+i.e. the further we have to interpolate, the greater our uncertainty about that value.
 
 Gaussian Process Optimisation
 -----------------------------
-Gaussian Process Optimisation (GPO) combines 'exploration' of the space as in
-the Gaussian Process Regression algorithm, as well as 'exploitation' of
-minima, 'valleys' in the parameter space.
+`Gaussian Process Optimisation <https://scikit-optimize.github.io/stable/auto_examples/bayesian-optimization.html#bayesian-optimization-with-skopt>`_ (GPO)
+combines the 'exploration' of the space from the Gaussian Process Regression algorithm with
+the 'exploitation' of Metropolis-Hastings.
+
+It starts by defining a Latin hypercube in the same way as GPR, to get an initial model
+of the figure of merit 'surface' on the parameter space. 
+
+It then proceeds via an 'ask/tell architecture' with an acquisition function.
+The acquisition function is 'asked' to determine what the next best point to measure at is, generally
+to both minimize uncertainty over the entire space as well as trying to determine the exact
+position of the global minimum. It is then 'told' what the result was, updating the model of the 
+entire figure of merit surface.
+
+The updating of this model adds to the computational cost of figure of merit calculation; furthermore,
+due to the potential large jumps between the points, a reasonable amount of equlibration 
+of the MD simulation is likely required. That said, for noisy data where the gradient is not obtainable
+and the cost of obtaining the data points is large, this approach is likely to be the most efficient possible. 
+`This link to the relevant scikit docs page has more information (and some nice graphs!) on this method. <https://scikit-optimize.github.io/stable/auto_examples/bayesian-optimization.html#bayesian-optimization-with-skopt>`_

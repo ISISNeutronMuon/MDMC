@@ -14,20 +14,26 @@ if TYPE_CHECKING:
 
 class GPO(Minimizer):
     """
-    ``Minimizer`` which uses Gaussian process regression to find the global minimum
-    figure of merit. The optimizer comes from scikit-optimize
+    ``Minimizer`` which uses Gaussian process optimisation to find the global minimum
+    figure of merit. 
+    
+    The optimizer comes from scikit-optimize
     https://scikit-optimize.github.io/stable/modules/generated/skopt.optimizer.Optimizer.html
     It acts in an ask/tell architecture, where the optimizer is "asked" for the best
     parameter values to measure at, then when the measurement is complete, we "tell"
     the optimizer what the result was and it updates its model. The optimizer
-    is configured to cycle between prioritising exploration of the space, and
-    exploitation of the minima, in order to find the global minimum, without becoming
-    stuck in a local minimum. The first ``n_initial`` points will be spaced according to a latin
+    is configured to cycle between prioritising exploration of the space and
+    exploitation of the minima, in order to find the global minimum without becoming
+    stuck in a local minimum.
+     
+    The first ``n_initial`` points will be spaced according to a latin
     hypercube, to cover the available space, subsequent points will then be chosen according
     to the acquisition function and the measured values.
     Due to the potential large jumps between the points, a reasonable amount of equlibration
     of the MD simulation is likely required.
     This optimizer is likely to be the fastest converging (fewest MD steps) option for MDMC.
+
+    Please see the documentation page explanation/minimizers for more information.
 
     Parameters
     ----------
