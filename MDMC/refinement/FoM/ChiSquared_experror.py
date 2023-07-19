@@ -6,8 +6,8 @@ from MDMC.refinement.FoM.FoM_abs import FigureOfMerit, ObservablePair
 
 class ChiSquaredExpError(FigureOfMerit):
     """
-    Calculates the figure of merit as a sum of the square difference between 
-    data points for a single pair of observables, normalised by the errors 
+    Calculates the figure of merit as a sum of the square difference between
+    data points for a single pair of observables, normalised by the errors
     and the number of data points, i.e. the reduced chi-squared.
 
     Please see the documentation page explanation/figure-of-merit for
