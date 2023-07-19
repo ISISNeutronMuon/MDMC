@@ -141,17 +141,24 @@ def test_resolve_density_handles_0_values():
     with pytest.raises(ValueError):
         setup.resolve_density((10.,30.,15.,), 0., "box")
 
-# test if resolve density lets user know when volume of container is changed
 def test_user_informed_when_volume_changed():
+    """test if resolve density lets user know when volume of container is changed"""
     setup = packmol_setup_module.PackmolSetup()
     dimensions, _ = setup.resolve_density((20.,), 0.1271, "sphere")
     # TODO Look at logger or stdout to check for the message
+
+def test_incorrect_shape():
+    """Test if an error is raised if an incorrect shape is given"""
+    with pytest.raises(ValueError):
+        volume = packmol_setup_module.calculate_volume((10,10,10), "incorrect shape")
+
 
 def test_get_system_settings():
     """Tests to make sure the system settings are correctly returned (currently only tolerance)"""
     setup = packmol_setup_module.PackmolSetup()
     system_settings, _ = setup.get_settings()
     assert "tolerance" in system_settings.keys()
+
 def test_get_molecule_settings(h2o_molecule):
     """Tests to make sure the molecule settings are correctly returned"""
     setup = packmol_setup_module.PackmolSetup()

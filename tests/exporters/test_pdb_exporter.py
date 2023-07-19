@@ -60,7 +60,7 @@ def test_coordinates_are_correct(exported_file_text, h2o_molecule):
     for i, line in enumerate(atom_lines):
         expected_positions = [float(pos.split()[-1]) for pos in (line[30:38], line[38:46], line[46:54])]
         real_positions = h2o_molecule.atoms[i].position.tolist()
-        assert np.allclose(expected_positions, real_positions, atol=1.e3)
+        assert np.allclose(expected_positions, real_positions, atol=1e3)
 
 def test_correct_elements_exported(exported_file_text, h2o_molecule):
     """Tests that the elements exported to the file are correct"""
