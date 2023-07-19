@@ -78,18 +78,18 @@ def GPR_with_history(mockcontrol, parameters):
 @pytest.fixture
 def mocked_df():
     return pd.DataFrame(
-        columns=["Unnamed: 0", "FoM", "Change state", "parameter1 (#7)", "parameter2 (#8)"],
+        columns=["Unnamed: 0", "FoM" "parameter1 (#7)", "parameter2 (#8)"],
         data=[
-            [0, 1, "Accepted", 1.0, 2.0],
-            [1, 2, "Accepted", 1.0263066427512766, 2.2784431236642697],
-            [2, 3, "Accepted", 1.0563332898940743, 1.5261781662556804],
-            [3, 4, "Accepted", 0.9517098265051485, 2.578890522713669],
-            [4, 5, "Accepted", 1.2970476059280804, 2.203879231558817],
-            [5, 6, "Accepted", 0.7892038323388955, 1.491195941884538],
-            [6, 7, "Accepted", 0.93540608596101, 1.8776663534533826],
-            [7, 8, "Accepted", 0.855686055831339, 2.4710408940692625],
-            [8, 9, "Accepted", 0.7105919182646769, 1.9649678706679081],
-            [9, 10, "Accepted", 1.1302665513264398, 1.4146366407329378]
+            [0, 1, 1.0, 2.0],
+            [1, 2, 1.0263066427512766, 2.2784431236642697],
+            [2, 3, 1.0563332898940743, 1.5261781662556804],
+            [3, 4, 0.9517098265051485, 2.578890522713669],
+            [4, 5, 1.2970476059280804, 2.203879231558817],
+            [5, 6, 0.7892038323388955, 1.491195941884538],
+            [6, 7, 0.93540608596101, 1.8776663534533826],
+            [7, 8, 0.855686055831339, 2.4710408940692625],
+            [8, 9, 0.7105919182646769, 1.9649678706679081],
+            [9, 10, 1.1302665513264398, 1.4146366407329378]
         ])
 
 @pytest.fixture
@@ -177,9 +177,9 @@ def test_GPR_set_parameter_values(mockcontrol):
 
 def test_GPR_fit(mockcontrol, parameters):
     """Tests that the GPR fit is called with the correct arguments given an input history"""
-    mocked_df = pd.DataFrame(data=[[0,100.0,'Accepted',0.2,2.6],
-                            [1,150.5,'Accepted',1.8,2.6]],
-                            columns=['Unnamed: 0','FoM','Change state','epsilon','sigma'])
+    mocked_df = pd.DataFrame(data=[[0, 100.0, 0.2, 2.6],
+                            [1, 150.5, 1.8, 2.6]],
+                            columns=['Unnamed: 0','FoM','epsilon','sigma'])
 
     with patch("MDMC.refinement.minimizers.GPR.pd.read_csv", autospec=True, return_value=mocked_df):
         with patch("MDMC.refinement.minimizers.GPR.skGPR.fit", autospec=True) as mock_fit:
