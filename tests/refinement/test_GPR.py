@@ -78,7 +78,7 @@ def GPR_with_history(mockcontrol, parameters):
 @pytest.fixture
 def mocked_df():
     return pd.DataFrame(
-        columns=["Unnamed: 0", "FoM" "parameter1 (#7)", "parameter2 (#8)"],
+        columns=["Unnamed: 0", "FoM", "parameter1 (#7)", "parameter2 (#8)"],
         data=[
             [0, 1, 1.0, 2.0],
             [1, 2, 1.0263066427512766, 2.2784431236642697],
