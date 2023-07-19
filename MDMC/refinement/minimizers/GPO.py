@@ -15,8 +15,8 @@ if TYPE_CHECKING:
 class GPO(Minimizer):
     """
     ``Minimizer`` which uses Gaussian process optimisation to find the global minimum
-    figure of merit. 
-    
+    figure of merit.
+
     The optimizer comes from scikit-optimize
     https://scikit-optimize.github.io/stable/modules/generated/skopt.optimizer.Optimizer.html
     It acts in an ask/tell architecture, where the optimizer is "asked" for the best
@@ -25,7 +25,7 @@ class GPO(Minimizer):
     is configured to cycle between prioritising exploration of the space and
     exploitation of the minima, in order to find the global minimum without becoming
     stuck in a local minimum.
-     
+
     The first ``n_initial`` points will be spaced according to a latin
     hypercube, to cover the available space, subsequent points will then be chosen according
     to the acquisition function and the measured values.
