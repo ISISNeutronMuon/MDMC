@@ -12,6 +12,10 @@ from MDMC.MD.packmol.packmol_setup import PackmolSetup
 # lammps mark used to ensure test runs in docker container
 pytestmark = [pytest.mark.lammps]
 
+UNIVERSE_SIZE = 30.  # size of simple_filled_universe
+UNIVERSE_SHIFT = 40.  # size increase when adding argon cube to water setup in water_argon_mix_setup
+MIX_UNIVERSE_SIZE = UNIVERSE_SIZE + UNIVERSE_SHIFT  # size of complex_filled_universe
+
 @pytest.fixture()
 def h2o_molecule():
     """A water molecule."""
@@ -26,22 +30,31 @@ def h2o_molecule():
 @pytest.fixture()
 def water_setup(h2o_molecule):
     setup = PackmolSetup()
-    setup.add_cube(h2o_molecule, size=30., density=0.05)
+    setup.add_cube(h2o_molecule, size=UNIVERSE_SIZE, density=0.05)
     return setup
 
 @pytest.fixture()
 def water_argon_mix_setup(h2o_molecule, water_setup):
-    water_setup.add_cube(Atom("Ar"), size=40., origin=(30., 30., 30.), density=0.05)
+    water_setup.add_cube(Atom("Ar"), size=UNIVERSE_SHIFT, origin=(UNIVERSE_SIZE, UNIVERSE_SIZE, UNIVERSE_SIZE), density=0.05)
     return water_setup
 
 @pytest.fixture()
 def simple_filled_universe(water_setup):
-    """Returns the universe result from a packmol run using the water_setup setup object"""
+    """
+    Returns the universe result from a packmol run using the water_setup setup object
+    
+    This should be a 30Ang cube of water.
+    """
     return packmol.PackmolFiller(water_setup).fill_with_packmol()
 
 @pytest.fixture()
 def complex_filled_universe(water_setup):
-    """Returns the universe result from a packmol run using the water_argon_mix_setup setup object"""
+    """
+    Returns the universe result from a packmol run using the water_argon_mix_setup setup object.
+
+    This should be a 30Ang cube of water, and diagonal to it, a 40Ang cube of argon.
+    
+    """
     return packmol.PackmolFiller(water_argon_mix_setup).fill_with_packmol()
 
 @pytest.fixture()
@@ -73,7 +86,7 @@ def test_get_packmol_universe_dimensions(water_argon_mix_setup):
     """Tests that the dimensions are correctly read from the packmol input"""
     filled_universe = packmol.PackmolFiller(water_argon_mix_setup).fill_with_packmol()
     actual_dim = filled_universe.dimensions
-    correct_dim = [70.,70.,70.]
+    correct_dim = [MIX_UNIVERSE_SIZE, MIX_UNIVERSE_SIZE, MIX_UNIVERSE_SIZE]
     assert np.allclose(actual_dim, correct_dim)
 
 def test_directories_created_correctly(simple_filled_universe_filler_object):
