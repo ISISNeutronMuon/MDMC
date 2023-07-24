@@ -204,7 +204,8 @@ class AbstractFQt(SQwMixins, Observable):
         except KeyError:
             Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        # Calculate FQt for each Q vector
+        # Calculate FQt for each Q value
+        # 'Q_v' is a list of Q_vectors corresponding to a single Q
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
 
