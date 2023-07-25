@@ -31,7 +31,7 @@ This interface is tested as part of MDMC's weekly tests.
 `mdmc/engines` is built from the file `Dockerfile.engines`. Its sections
 are as follows.
 
-1.  The base image; this is the image Python 3.9.6-slim-buster, a Debian
+1.  The base image; this is the image Python 3.11.2-slim-buster, a Debian
     Buster system with Python preinstalled. This allows us fine version
     control over which Python version we are using for MDMC.
 
@@ -39,7 +39,7 @@ are as follows.
     run. Most of them are OS housekeeping, or path variables used so
     that our dependencies run smoothly. Of note is the variable
     `PYTHONUNBUFFERED 1`, which runs Python in ['unbuffered'
-    mode](https://docs.python.org/3.9/using/cmdline.html#envvar-PYTHONUNBUFFERED).
+    mode](https://docs.python.org/3.11/using/cmdline.html#envvar-PYTHONUNBUFFERED).
     This is here because when running LAMMPS in a Jupyter notebook, it
     needs to be able to capture unbuffered stdout in order to work.
 
