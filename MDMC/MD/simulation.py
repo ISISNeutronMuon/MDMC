@@ -1,4 +1,5 @@
 """Module for setting up and running the simulation
+test
 
  Classes for the simulation box, minimizer and integrator."""
 
