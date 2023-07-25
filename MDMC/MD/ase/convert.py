@@ -3,7 +3,6 @@ from functools import reduce
 
 import numpy as np
 import ase
-import ase.build as build
 from ase.geometry.analysis import Analysis
 
 from MDMC.MD import Molecule, Atom, Bond, BondAngle, DihedralAngle
@@ -26,8 +25,8 @@ def convert_ASE_to_MDMC(atoms: ase.atoms.Atoms) -> Molecule:
     # first we filter the unit cell to contain just one molecule,
     # and make all positions <=0 so that we don't have to fiddle
     # with atom positions later.
-    # TODO: fix this! doesn't work if atoms aren't all in the same place.
     ase_molecule = atoms
+    # TODO: fix this! doesn't work if there are multiple molecules.
     #ase_molecule = _reduce_ase_unit_cell(atoms)
     #_make_atom_positions_valid(ase_molecule)
 
@@ -106,3 +105,5 @@ def _make_atom_positions_valid(atoms: ase.atoms.Atoms) -> None:
     min = reduce(np.minimum, atoms.positions, [0., 0., 0.,])
     for atom in atoms:
         atom.position -= min
+
+
