@@ -14,7 +14,6 @@ _OBJECT_PATH = '/MDMC_objects'
 _CONFIG_PATH = '/configurations'
 _GUI_PATH = '/gui'
 
-
 # Reader/experimental data
 #
 # LAMPSQw
@@ -40,7 +39,9 @@ READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
                'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
 
-CONFIG_DATA = {'cif':'/Paracetamol.cif'}
+CONFIG_DATA = {'cif': '/Paracetamol.cif',
+               'pdb_ethanol': '/water.pdb',
+               'pdb_palmitic_acid': '/example_pdb_export.pdb'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 

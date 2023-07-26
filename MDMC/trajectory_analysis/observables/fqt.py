@@ -22,7 +22,6 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 if TYPE_CHECKING:
     from builtins import function
     from typing import Optional
-    from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 # pylint: disable=c-extension-no-member

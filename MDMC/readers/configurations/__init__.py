@@ -1,9 +1,11 @@
-"""A subpackage for reading files containing atomic configurations
-"""
+"""A subpackage for reading files containing atomic configurations"""
 
 from typing import Union, TYPE_CHECKING
 
 from . conf_reader_factory import ConfigurationReaderFactory
+from .conf_reader_factory import ConfigurationReaderFactory
+from . import pdb
+from . import packmol_pdb
 from . import conf_reader
 
 if TYPE_CHECKING:
