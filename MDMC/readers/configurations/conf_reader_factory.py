@@ -6,8 +6,11 @@ from os.path import dirname
 from pkgutil import iter_modules
 from typing import Literal
 
+from ase.io.formats import ioformats 
+
 from MDMC.readers.reader_factory import ReaderFactory
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
+from MDMC.readers.configurations.ase import ASEReader
 
 
 class ConfigurationReaderFactory(ReaderFactory):
@@ -61,6 +64,10 @@ class ConfigurationReaderFactory(ReaderFactory):
                 # First condition ensures some matching classes have been found
                 if classes and classes[0][1].extension == extension:
                     return classes[0][1](file_name)
+                
+                # if no direct reader exists, try ASE reader
+                if extension in ioformats.keys():
+                    return ASEReader(file_name)
 
         raise NotImplementedError(
             f'No implemented reader is compatible with {extension} extension')

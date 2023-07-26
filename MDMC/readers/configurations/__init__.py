@@ -4,7 +4,6 @@
 from typing import Union, TYPE_CHECKING
 
 from . conf_reader_factory import ConfigurationReaderFactory
-from . import cif
 from . import conf_reader
 
 if TYPE_CHECKING:

@@ -1,19 +1,24 @@
 """Converts ASE Atoms objects into MDMC Molecules."""
 from functools import reduce
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 import ase
 from ase.geometry.analysis import Analysis
 
-from MDMC.MD import Molecule, Atom, Bond, BondAngle, DihedralAngle
+from MDMC.MD.structures import Atom
+from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle
 
-def convert_ASE_to_MDMC(atoms: ase.atoms.Atoms) -> Molecule:
+if TYPE_CHECKING:
+    from MDMC.MD import Structure
+
+def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
     """
     Convert an ase Atoms object to a Molecule.
 
     Parameters
     ----------
-    atoms: ase.atoms.Atoms
+    atoms: ase.Atoms
         an ASE Atoms object.
 
     Returns
@@ -66,8 +71,52 @@ def convert_ASE_to_MDMC(atoms: ase.atoms.Atoms) -> Molecule:
 
     return atoms_list
 
+def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
+    """
+    Converts an MDMC ``Atom`` to an ``ase.Atom``
 
-def _reduce_ase_unit_cell(ase_atoms: 'ase.atoms.Atoms') -> ase.atoms.Atoms:
+    Parameters
+    ----------
+    atom : Atom
+        An MDMC ``Atom`` object to be converted to an ``ase.Atom`` object
+
+    Returns
+    -------
+    ase.atom.Atom
+        An ``ASE.Atom`` object which is equivalent to ``atom``
+    """
+
+    return ase.atom.Atom(position=atom.position,
+                         mass=atom.mass,
+                         symbol=atom.element,
+                         charge=atom.charge)
+
+
+def MDMC_to_ASE(structure: 'Structure', cell: np.array = None) -> ase.Atoms:
+    """
+    Convert an MDMC Structure into an ase.Atoms object.
+    Note that ASE infers bonds from the atoms' covalent radius.
+
+    Parameters:
+    -----------
+    structure: Structure
+        the MDMC Structure to convert.
+    cell: np.array, optional, default None
+        provides cell dimensions for the ASE Atoms object.
+        If None, the default cell size (0,0,0) is used.
+
+    Returns:
+    --------
+    ase.Atoms
+        an ASE Atoms object corresponding to the same structure.
+    """
+    if cell is None:
+        cell = np.array([0., 0., 0.,])
+
+    return ase.Atoms([_convert_to_ase_atom(atom) for atom in structure.atoms], cell=cell)
+
+
+def _reduce_ase_unit_cell(ase_atoms: ase.Atoms) -> ase.Atoms:
     """
     Reduces an ``ase.atoms.Atoms`` object from a unit cell of molecules to a
     single molecule
@@ -80,15 +129,15 @@ def _reduce_ase_unit_cell(ase_atoms: 'ase.atoms.Atoms') -> ase.atoms.Atoms:
 
     Returns
     -------
-    ASEAtoms
-        An ``ASEAtoms`` object containing the atoms of a single molecule
+    ase.Atoms
+        An ``ase.Atoms`` object containing the atoms of a single molecule
     """
 
     # we simply choose all atoms connected to atom 0 in the cell
     return ase_atoms[ase.build.connected_indices(ase_atoms, 0)]
 
 
-def _make_atom_positions_valid(atoms: ase.atoms.Atoms) -> None:
+def _make_atom_positions_valid(atoms: ase.Atoms) -> None:
     """
     Sets the positions of all atoms are positive (including 0.)
 

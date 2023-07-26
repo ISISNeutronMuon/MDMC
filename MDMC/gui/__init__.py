@@ -1,35 +1,39 @@
-"""Contains the GUI elements of MDMC
+"""Functions for viewing MDMC configurations via ASE."""
+from typing import Union
 
-Contents
---------
-view
-"""
+import ase.visualize
+from IPython.display import HTML
 
-from MDMC import MD
+from MDMC.MD import Structure, Universe
+from MDMC.MD.ase.convert import MDMC_to_ASE
 
-
-def view(atom_container: 'list[MD.Atom, MD.AtomContainer]', viewer='X3DOM') -> None:
+def view(obj: Union[Structure, Universe], viewer: str = 'X3D') -> Union[HTML, None]:
     """
-    Launches a GUI for viewing collections of ``Atom`` objects
+    View an MDMC Structure or Universe.
+    Wrapper around the ASE viewer.
 
     Parameters
     ----------
-    atom_container : list of Atom, AtomContainer
-        An object which contains some ``Atom`` objects. This can either be in
-        the sense that it is a list of `Atom` objects, or it could be an object
-        which has the ``atoms`` attribute (e.g. an ``AtomContainer``). If
-        ``atom_collection`` also has a ``dimensions`` attribute (such as
-        ``Universe``), then this is used to set the volume displayed; otherwise
-        the volume is determined by the extents of the ``Atom`` objects.
+    obj: Structure or AtomContainer
+        The MDMC molecular object to be viewed.
+    viewer: str
+        The viewer.
+
+    Returns
+    -------
+    HTML or None
+        Either opens the relevant GUI, or returns a HTML object
+        (in the case of HTML viewers like X3D).
     """
 
-    try:
-        dimensions = atom_container.dimensions
-    except AttributeError:
+    if isinstance(obj, Universe):
+        dimensions = obj.dimensions
+    else:
         dimensions = None
-    try:
-        atoms = atom_container.atoms
-    except AttributeError:
-        atoms = atom_container
 
-    return MD.ase.viewer.view(atoms, viewer=viewer, cell=dimensions)
+    ase_atoms = MDMC_to_ASE(obj, cell=dimensions)
+    view = ase.visualize.view(ase_atoms, viewer=viewer)
+    # running the view command will open the window for most viewers, but
+    # for HTML viewers like X3D it needs to be returned
+    if isinstance(view, HTML):
+        return view

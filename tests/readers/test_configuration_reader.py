@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose
 
 from MDMC.MD import Atom
 from MDMC.readers.configurations import read
-from MDMC.readers.configurations.cif import CIF
+from MDMC.readers.configurations.ase import ASEReader
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.conf_reader_factory import \
     ConfigurationReaderFactory
@@ -41,9 +41,9 @@ def test_create_reader_from_ext():
     Tests that a reader can be created from a correctly specified file extension
     """
 
-    cif_ext = CIF.extension
+    cif_ext = ".cif"
     reader = ConfigurationReaderFactory.create_reader_from_ext(cif_ext, data.CONFIG_DATA['cif'])
-    assert isinstance(reader, CIF)
+    assert isinstance(reader, ASEReader)
 
 
 def test_create_reader_from_ext_unimplemented():
