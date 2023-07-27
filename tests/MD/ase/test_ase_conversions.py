@@ -37,27 +37,23 @@ def methanol():
     C = Atom('C', position=[-0.3366, -0.1504,  0.0000], name='99', charge=0., atom_type=2)
     O = Atom('O', position=[ 1.0849, -0.1713,  0.0000], name='96', charge=0., atom_type=3)
     HO = Atom('H', position=[ 1.3606,  0.7699,  0.0000], name='97', charge=0., atom_type=4)
-    # Create the bonds with harmonic potentials
     CH_bond = Bond(C, HC1)
     CO_bond = Bond(C, O)
     OH_bond = Bond(O, HO)
 
-    # Create the H-C-O and H-O-C bond angles
     HCO_angle = BondAngle((HC1, C, O))
     HOC_angle = BondAngle((HO, O, C))
 
-    # Create the H-C-O-H dihedral
     HCOH_dihedral = DihedralAngle((HC1, C, O, HO))
 
-    # Duplicate the HC1 atom
     HC2 = HC1.copy(position=[-0.7006,  0.3636, -0.8900])
 
-    # Create an HCH bond angle
-    HCH_angle = BondAngle((HC1, C, HC2))
+    H1CH2_angle = BondAngle((HC1, C, HC2))
 
-    # Duplicate the HC1 atom again
-    # This atom will have all bond (CH_bond) and bond angles (HCO_angle and HCH_angle) defined
+    # Duplicate the HC1 atom
+    # This atom will have all bond (CH_bond) and bond angles (HCO_angle and H1CH2_angle) defined
     HC3 = HC1.copy(position=[-0.7076, -1.1754,  0.0000])
+    H1CH3_angle = BondAngle((HC1, C, HC3))
 
     # Create the methanol Molecule
     methanol = Molecule(atoms=[HC1, HC2, HC3, C, O, HO])
@@ -104,6 +100,4 @@ def test_convert_involution(molecule):
     converted_molecule = Molecule(atoms=convert.ASE_to_MDMC(convert.MDMC_to_ASE(molecule)))
     assert converted_molecule.formula == molecule.formula
     assert_allclose(converted_molecule.position, molecule.position, atol=1e-7)
-    # as conversion can't tell which bonds are equivalent, we at least make sure
-    # none have been lost!
-    assert len(converted_molecule.bonded_interactions) >= len(molecule.bonded_interactions)
+    assert len(converted_molecule.bonded_interactions) == len(molecule.bonded_interactions)

@@ -44,7 +44,7 @@ fixture_dict = {
 @pytest.mark.parametrize('structures', ['atoms', 'water_molecule', 'universe'])
 def test_view_X3DOM(structures):
     """Tests that the HTML viewer creates the expected objects."""
-    html = view(fixture_dict[structures], viewer='X3DOM')
+    html = view(fixture_dict[structures], viewer='X3D')
     expected = HTML(filename=GUI_DATA[structures + "_X3DOM"])
 
     assert html.data == expected.data

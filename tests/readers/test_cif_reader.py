@@ -31,6 +31,7 @@ def test_cif_reader():
 
     atoms = read(data.CONFIG_DATA['cif'])
     assert isinstance(atoms, list)
+    assert len(atoms) == len(paracetamol_atoms)
     for i in range(len(atoms)):
         assert atoms[i].name == paracetamol_atoms[i].name
         assert_allclose(atoms[i].position, paracetamol_atoms[i].position)
