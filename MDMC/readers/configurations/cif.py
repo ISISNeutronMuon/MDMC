@@ -35,6 +35,8 @@ class CIFReader(ConfigurationReader):
                 if not block.has_structure():
                     continue
 
+                # this is the only place where we differ from ase.io.cif.read_cif:
+                # just get the unsymmetrised structure rather than symmetrising it
                 atoms = block.get_unsymmetrized_structure()
                 images.append(atoms)
 
