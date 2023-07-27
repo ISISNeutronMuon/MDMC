@@ -156,16 +156,19 @@ class Universe(AtomContainer):
         LOGGER.info(r'%s created: {dimensions:%s}',
                     self.__class__,
                     self.dimensions)
+        
+        round_dime = [f"{d:.2f}" if d % 1 != 0 else str(int(d)) for d in self.dimensions]
 
-        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
-                                    [force_field],
-                                    [self.n_atoms]],
-                                   index=['  Dimensions',
-                                          '  Force field',
-                                          '  Number of atoms'])
-
-        if self.verbose:
-            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+        if self.verbose and round_dime:
+          setup_frame = ["Universe created with:"]
+          setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
+          if force_field is not None:
+            setup_frame.append(f"Force field    {force_field}")
+          if self.n_atoms > 0:
+             setup_frame.append(f"Number of atoms    {self.n_atoms}")
+          print('\n'.join(setup_frame))
+          
+          
 
     def __str__(self) -> str:
 
