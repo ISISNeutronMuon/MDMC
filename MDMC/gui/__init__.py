@@ -32,8 +32,9 @@ def view(obj: Union[Structure, Universe], viewer: str = 'X3D') -> Union[HTML, No
         dimensions = None
 
     ase_atoms = MDMC_to_ASE(obj, cell=dimensions)
-    view = ase.visualize.view(ase_atoms, viewer=viewer)
+    output = ase.visualize.view(ase_atoms, viewer=viewer)
     # running the view command will open the window for most viewers, but
     # for HTML viewers like X3D it needs to be returned
-    if isinstance(view, HTML):
-        return view
+    if isinstance(output, HTML):
+        return output
+    return None

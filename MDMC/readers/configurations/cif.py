@@ -55,7 +55,7 @@ class CIFReader(ConfigurationReader):
         The expected file extension for the ``ConfigurationReader``
         """
 
-        return ".cif"
+        return "cif"
 
 
     @property

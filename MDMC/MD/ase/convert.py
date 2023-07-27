@@ -53,20 +53,20 @@ def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
     # have one neighbour list here.
     for index, bonds in enumerate(analysis.unique_bonds[0]):
         interactions_list.extend([Bond(atoms_list[index],
-                                       atoms_list[bonded_atom]) 
+                                       atoms_list[bonded_atom])
                                        for bonded_atom in bonds])
 
     for index, bonds in enumerate(analysis.unique_angles[0]):
         interactions_list.extend([BondAngle(atoms_list[index],
                                             atoms_list[bonded_atoms[0]],
-                                            atoms_list[bonded_atoms[1]]) 
+                                            atoms_list[bonded_atoms[1]])
                                             for bonded_atoms in bonds])
 
     for index, bonds in enumerate(analysis.unique_dihedrals[0]):
         interactions_list.extend([DihedralAngle(atoms_list[index],
                                                 atoms_list[bonded_atoms[0]],
                                                 atoms_list[bonded_atoms[1]],
-                                                atoms_list[bonded_atoms[2]]) 
+                                                atoms_list[bonded_atoms[2]])
                                                 for bonded_atoms in bonds])
 
     return atoms_list
@@ -114,45 +114,3 @@ def MDMC_to_ASE(structure: 'Structure', cell: np.array = None) -> ase.Atoms:
         cell = np.array([0., 0., 0.,])
 
     return ase.Atoms([_convert_to_ase_atom(atom) for atom in structure.atoms], cell=cell)
-
-
-def _reduce_ase_unit_cell(ase_atoms: ase.Atoms) -> ase.Atoms:
-    """
-    Reduces an ``ase.atoms.Atoms`` object from a unit cell of molecules to a
-    single molecule
-
-    Parameters
-    ----------
-    ase_atoms : ase.atoms.Atoms
-        An ``ase.atoms.Atoms`` object from which a single molecule will be
-        extracted
-
-    Returns
-    -------
-    ase.Atoms
-        An ``ase.Atoms`` object containing the atoms of a single molecule
-    """
-
-    # we simply choose all atoms connected to atom 0 in the cell
-    return ase_atoms[ase.build.connected_indices(ase_atoms, 0)]
-
-
-def _make_atom_positions_valid(atoms: ase.Atoms) -> None:
-    """
-    Sets the positions of all atoms are positive (including 0.)
-
-    This is so that all positions are valid within ``Universe``
-
-    Parameters
-    ----------
-    atoms : list
-        A `list` of `Atom` which will have their positions set so that relative
-        distances are preserved and the smallest positions are equal to 0.
-    """
-
-    # Offset atom positions so that they are >= 0.
-    min = reduce(np.minimum, atoms.positions, [0., 0., 0.,])
-    for atom in atoms:
-        atom.position -= min
-
-

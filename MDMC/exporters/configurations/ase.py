@@ -25,7 +25,7 @@ class ASEExporter(Exporter):
             be inferred from the file name.
         """
 
-        format = settings.get('format', None)
+        file_format = settings.get('format', None)
 
         ase_atoms = MDMC_to_ASE(obj)
-        ase.io.write(self.file, images=ase_atoms, format=format)
+        ase.io.write(self.file, images=ase_atoms, format=file_format)

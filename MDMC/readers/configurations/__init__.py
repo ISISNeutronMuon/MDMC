@@ -2,7 +2,6 @@
 
 from typing import Union, TYPE_CHECKING
 
-from . conf_reader_factory import ConfigurationReaderFactory
 from .conf_reader_factory import ConfigurationReaderFactory
 from . import ase
 from . import pdb
