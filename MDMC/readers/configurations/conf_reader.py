@@ -19,6 +19,11 @@ class ConfigurationReader(Reader):
     A ``ConfigurationReader`` is created using ``ConfigurationReaderFactory``
     """
 
+    def __init__(self, file_name: str):
+
+        super().__init__(file_name)
+        self._atoms = None
+
     @property
     @staticmethod
     @abstractmethod
@@ -30,11 +35,9 @@ class ConfigurationReader(Reader):
         raise NotImplementedError
 
     @property
-    @abstractmethod
     def atoms(self) -> 'list[Atom]':
         """
-        All subclasses must implement atoms, which returns a list of ``Atom``
-        objects from the data read from the file
+        The `Atom` objects parsed from the file.
         """
 
-        raise NotImplementedError
+        return self._atoms

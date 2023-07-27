@@ -12,8 +12,16 @@ if TYPE_CHECKING:
 class ASEReader(Reader):
     """Reader that wraps around the ASE reader."""
 
+    def __init__(self, file_name: str):
+
+        super().__init__(file_name)
+        self._atoms = None
+
     @property
     def atoms(self) -> 'list[Atom]':
+        """
+        The atoms parsed from the file.
+        """
 
         return self._atoms
 

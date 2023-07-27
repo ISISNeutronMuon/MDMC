@@ -1,5 +1,4 @@
 """Converts ASE Atoms objects into MDMC Molecules."""
-from functools import reduce
 from typing import TYPE_CHECKING, List
 
 import numpy as np

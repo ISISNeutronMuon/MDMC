@@ -56,13 +56,3 @@ class CIFReader(ConfigurationReader):
         """
 
         return "cif"
-
-
-    @property
-    def atoms(self) -> list['Atom']:
-        """
-        All subclasses must implement atoms, which returns a list of ``Atom``
-        objects from the data read from the file
-        """
-
-        return self._atoms
