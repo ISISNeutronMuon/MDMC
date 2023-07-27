@@ -107,7 +107,7 @@ for key in OBJECT_DATA:
 # html files (for X3DOM viewer)
 
 GUI_DATA = {
-    'atoms_X3DOM': '/atoms.html',
+    'atom_X3DOM': '/atom.html',
     'water_molecule_X3DOM': '/water_molecule.html',
     'universe_X3DOM': '/universe.html'
 }
