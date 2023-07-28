@@ -1,5 +1,5 @@
 """A reader for reading in the PDB configuration of whole packmol systems"""
-from typing import List, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING
 
 from MDMC.MD.structures import Molecule, Atom
 from MDMC.readers.configurations.pdb import ProteinDataBankReader
@@ -9,6 +9,9 @@ if TYPE_CHECKING:
 
 class PackmolPDBReader(ProteinDataBankReader):
     """A class to read in packmol PDB output files"""
+    def __init__(self, file_name: str):
+        super().__init__(file_name)
+        self._structures: List[Structure] = []
 
     def parse(self, **settings: dict) -> None:
         """
@@ -30,7 +33,7 @@ class PackmolPDBReader(ProteinDataBankReader):
         #   'B': {'1': [...], '2': [...], ...}
         # }
         # where [...] is a list of atoms belonging to a specific molecule
-        chains_dict = {}
+        chains_dict: Dict[str, Dict[str, List[Atom]]] = {}
 
         for line in self.file:
             #chars 0-6 identify what the line is describing

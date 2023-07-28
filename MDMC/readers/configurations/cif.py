@@ -17,6 +17,7 @@ class CIFReader(ConfigurationReader):
     """
     Reads a .cif file into an MDMC molecule.
     """
+    extension = 'cif'
 
     def parse(self, **settings: dict) -> None:
         """
@@ -48,11 +49,3 @@ class CIFReader(ConfigurationReader):
                 reader.parse()
                 self._atoms = reader.atoms
 
-    @property
-    @staticmethod
-    def extension() -> str:
-        """
-        The expected file extension for the ``ConfigurationReader``
-        """
-
-        return "cif"

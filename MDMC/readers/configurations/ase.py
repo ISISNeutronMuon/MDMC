@@ -1,21 +1,22 @@
 """MDMC wrapper for the ASE reader."""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import ase.io
 
-from MDMC.readers.reader import Reader
+from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.ase.convert import ASE_to_MDMC
 
 if TYPE_CHECKING:
     from MDMC.MD import Atom
 
-class ASEReader(Reader):
+class ASEReader(ConfigurationReader):
     """Reader that wraps around the ASE reader."""
+    extension = "N/A"
 
     def __init__(self, file_name: str):
 
         super().__init__(file_name)
-        self._atoms = None
+        self._atoms: List[Atom] = []
 
     @property
     def atoms(self) -> 'list[Atom]':

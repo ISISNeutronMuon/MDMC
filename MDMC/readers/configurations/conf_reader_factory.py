@@ -4,7 +4,6 @@ from importlib import import_module
 from inspect import getmembers, isabstract, isclass
 from os.path import dirname
 from pkgutil import iter_modules
-from typing import Literal
 
 from ase.io.formats import ioformats
 
@@ -22,7 +21,7 @@ class ConfigurationReaderFactory(ReaderFactory):
     """
 
     @staticmethod
-    def base_class() -> Literal['ConfigurationReader']:
+    def base_class() -> type['ConfigurationReader']:
 
         return ConfigurationReader
 

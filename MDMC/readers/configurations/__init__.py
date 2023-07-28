@@ -51,6 +51,7 @@ def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[list[At
     """
 
     extension = file.split('.')[-1]
+    reader: conf_reader.ConfigurationReader
 
     try:
         reader = ConfigurationReaderFactory.create_reader(extension, file)
