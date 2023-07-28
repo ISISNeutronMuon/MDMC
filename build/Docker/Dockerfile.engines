@@ -4,7 +4,7 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11.2-slim-buster
 
-# Define environment variable
+# Define environment variables
 ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
 ENV LD_LIBRARY_PATH /opt/MD/lammps/build/
@@ -46,18 +46,18 @@ RUN export LD_LIBRARY_PATH
 # Get packmol
 RUN mkdir /opt/other/packmol
 WORKDIR /opt/other/packmol
-RUN wget https://github.com/m3g/packmol/archive/refs/tags/v20.14.0.tar.gz
-RUN tar -xzvf v20.14.0.tar.gz
-RUN rm v20.14.0.tar.gz
+RUN wget https://github.com/m3g/packmol/archive/refs/tags/v20.14.2.tar.gz
+RUN tar -xzvf v20.14.2.tar.gz
+RUN rm v20.14.2.tar.gz
 
 # Build Packmol
-WORKDIR /opt/other/packmol/packmol-20.14.0
+WORKDIR /opt/other/packmol/packmol-20.14.2
 RUN ./configure /opt/other/gfortran/gcc-12.2.0/
 RUN make
 
 # Add packmol to env variables
-ENV PATH /opt/other/packmol/packmol-20.14.0:$PATH
-ENV PYTHONPATH ${PYTHONPATH}:/opt/other/packmol/packmol-20.14.0/
+ENV PATH /opt/other/packmol/packmol-20.14.2:$PATH
+ENV PYTHONPATH ${PYTHONPATH}:/opt/other/packmol/packmol-20.14.2/
 
 # Get LAMMPS # used to be lammps-stable.tar.gz
 RUN mkdir /opt/MD/lammps
