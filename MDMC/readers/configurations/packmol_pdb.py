@@ -11,7 +11,7 @@ class PackmolPDBReader(ProteinDataBankReader):
     """A class to read in packmol PDB output files"""
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._structures: List[Structure] = []
+        self._structures: List['Structure'] = []
 
     def parse(self, **settings: dict) -> None:
         """

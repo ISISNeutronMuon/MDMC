@@ -26,22 +26,14 @@ def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
         an MDMC Molecule corresponding to the ASE Atoms object.
     """
 
-    # first we filter the unit cell to contain just one molecule,
-    # and make all positions <=0 so that we don't have to fiddle
-    # with atom positions later.
-    ase_molecule = atoms
-    # TODO: fix this! doesn't work if there are multiple molecules.
-    #ase_molecule = _reduce_ase_unit_cell(atoms)
-    #_make_atom_positions_valid(ase_molecule)
-
     # create MDMC Atom objects
-    atoms_list = [Atom(atom.symbol, atom.position, charge=atom.charge) for atom in ase_molecule]
+    atoms_list = [Atom(atom.symbol, atom.position, charge=atom.charge) for atom in atoms]
 
     # the ASE Analysis object contains bond information; the properties unique_bonds,
     # unique_angles and unique_dihedrals contain Bond, BondAngle and DihedralAngle
     # information respectively.
     analysis = Analysis(ase_molecule)
-    interactions_list: List[BondedInteraction] = []
+    interactions_list: List['BondedInteraction'] = []
 
     # ase bond lists have the following structure:
     # index X of the list contains all bonds that start at atom number X.
@@ -91,7 +83,7 @@ def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
                          charge=atom.charge)
 
 
-def MDMC_to_ASE(structure: Union[Structure, Universe],
+def MDMC_to_ASE(structure: Union['Structure', 'Universe'],
                 cell: Optional[np.ndarray] = None) -> ase.Atoms:
     """
     Convert an MDMC Structure into an ase.Atoms object.

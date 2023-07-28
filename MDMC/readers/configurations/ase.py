@@ -16,7 +16,7 @@ class ASEReader(ConfigurationReader):
     def __init__(self, file_name: str):
 
         super().__init__(file_name)
-        self._atoms: List[Atom] = []
+        self._atoms: List['Atom'] = []
 
     @property
     def atoms(self) -> 'list[Atom]':
