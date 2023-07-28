@@ -32,7 +32,7 @@ def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
     # the ASE Analysis object contains bond information; the properties unique_bonds,
     # unique_angles and unique_dihedrals contain Bond, BondAngle and DihedralAngle
     # information respectively.
-    analysis = Analysis(ase_molecule)
+    analysis = Analysis(atoms)
     interactions_list: List['BondedInteraction'] = []
 
     # ase bond lists have the following structure:
