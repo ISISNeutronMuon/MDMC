@@ -7,6 +7,7 @@ from pkgutil import iter_modules
 
 from ase.io.formats import ioformats
 
+import MDMC.readers.configurations
 from MDMC.readers.reader_factory import ReaderFactory
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.ase import ASEReader
@@ -50,23 +51,17 @@ class ConfigurationReaderFactory(ReaderFactory):
             subclass of ``ConfigurationReader``
         """
 
-        for module_info in iter_modules([dirname(__file__)]):
-            name = module_info.name
-            if not name.startswith('_'):
-                module = import_module('.' + name, __package__)
-                classes = getmembers(module,
-                                     lambda m: (isclass(m)
-                                                and not isabstract(m)
-                                                and issubclass(m,
-                                                               cls.base_class())
-                                                ))
-                # First condition ensures some matching classes have been found
-                if classes and classes[0][1].extension == extension:
-                    return classes[0][1](file_name)
+        readers = getmembers(MDMC.readers.configurations,
+                             lambda m: isclass(m)
+                             and not isabstract(m)
+                             and issubclass(m, cls.base_class()))
+        for reader in readers:
+            if reader[1].extension == extension:
+                return reader[1](file_name)
 
-                # if no direct reader exists, try ASE reader
-                if extension in ioformats:
-                    return ASEReader(file_name)
+        # if no direct reader exists, try ASE reader
+        if extension in ioformats:
+            return ASEReader(file_name)
 
         raise NotImplementedError(
             f'No implemented reader is compatible with {extension} extension')

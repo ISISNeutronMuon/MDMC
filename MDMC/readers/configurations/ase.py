@@ -18,14 +18,6 @@ class ASEReader(ConfigurationReader):
         super().__init__(file_name)
         self._atoms: List['Atom'] = []
 
-    @property
-    def atoms(self) -> 'list[Atom]':
-        """
-        The atoms parsed from the file.
-        """
-
-        return self._atoms
-
     def parse(self, **settings: dict) -> None:
         """
         Parses any format supported by ASE's file reader; the file

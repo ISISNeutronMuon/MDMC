@@ -5,6 +5,8 @@ from numpy.testing import assert_allclose
 
 from MDMC.MD import Atom
 from MDMC.readers.configurations import read
+from MDMC.readers.configurations.cif import CIFReader
+from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 from MDMC.readers.configurations.ase import ASEReader
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.readers.configurations.conf_reader_factory import \
@@ -34,12 +36,14 @@ def test_configuration_reader_extension_error():
         DummyConfig()
 
 
-def test_create_reader_from_ext():
+@pytest.mark.parametrize('ext, reader_type', [('cif', CIFReader),
+                                         ('pdb', PackmolPDBReader),
+                                         ('mol', ASEReader)])
+def test_create_reader_from_ext(ext, reader_type):
     """Tests that a reader can be created from a correctly specified file extension"""
 
-    cif_ext = "cif"
-    reader = ConfigurationReaderFactory.create_reader_from_ext(cif_ext, data.CONFIG_DATA['cif'])
-    assert isinstance(reader, ASEReader)
+    reader = ConfigurationReaderFactory.create_reader_from_ext(ext, f"mock.{ext}")
+    assert isinstance(reader, reader_type)
 
 
 def test_create_reader_from_ext_unimplemented():

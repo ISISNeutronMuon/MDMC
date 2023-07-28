@@ -3,9 +3,10 @@
 from typing import Union, TYPE_CHECKING
 
 from .conf_reader_factory import ConfigurationReaderFactory
-from . import ase
-from . import pdb
-from . import packmol_pdb
+from .ase import ASEReader
+from .cif import CIFReader
+from .pdb import ProteinDataBankReader
+from .packmol_pdb import PackmolPDBReader
 from . import conf_reader
 
 if TYPE_CHECKING:
@@ -53,10 +54,7 @@ def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[list[At
     extension = file.split('.')[-1]
     reader: conf_reader.ConfigurationReader
 
-    try:
-        reader = ConfigurationReaderFactory.create_reader(extension, file)
-    except ImportError:
-        reader = ConfigurationReaderFactory.create_reader_from_ext(extension, file)
+    reader = ConfigurationReaderFactory.create_reader_from_ext(extension, file)
 
     if docstring:
         help(reader.parse)
