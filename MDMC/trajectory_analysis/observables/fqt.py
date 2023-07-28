@@ -1,7 +1,7 @@
 """Module for Intermediate Scattering Function class"""
 from abc import abstractmethod
 from itertools import product
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generator
 
 import numpy as np
 
@@ -13,15 +13,15 @@ from MDMC.common.mathematics import faster_correlation,\
      faster_autocorrelation, \
      UNIT_VECTOR
 from MDMC.resolution import Resolution
-from MDMC.trajectory_analysis.observables.obs import Observable, executor
+from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.observables.sqw import SQwMixins
+from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 
 if TYPE_CHECKING:
     from builtins import function
     from typing import Optional
-    from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 # pylint: disable=c-extension-no-member
@@ -46,7 +46,6 @@ class AbstractFQt(SQwMixins, Observable):
         self._use_FFT = True
 
         self.reciprocal_basis = None
-        self.Q_vectors = None
         self.n_Q_vectors = None
         self.Q_values = None
         self.weights = None
@@ -199,31 +198,24 @@ class AbstractFQt(SQwMixins, Observable):
 
         # calculate Q vectors from Q
         self.n_Q_vectors = settings.get('n_Q_vectors', 50)
-        if self.Q_vectors is None:
-            try:
-                self.Q_vectors = np.array(settings['Q_vectors'])
-            except KeyError:
-                self.Q_vectors = self._calculate_Q_vectors(self.Q)
+        try:
+            Q_vectors = settings['Q_vectors']
+        except KeyError:
+            Q_vectors = self._calculate_Q_vectors(self.Q)
 
-        # Determine the shape of Q vectors array. If the number of processors
-        # (comm.size) is not a factor of the first index, mpi4py cannot split
-        # the number of Q vectors equally amongst the processors.
-        shape = list(np.shape(self.Q_vectors))
-
-        Q_vectors = self.Q_vectors
-        axis_0 = 0
-        # Split the Q vectors into a single array of Q vectors for each
-        # processor
-
-        # Calculate FQt for each Q vector for all processors
+        # Calculate FQt for each Q value
+        # 'Q_v' is a list of Q_vectors corresponding to a single Q
         FQt_array = np.array([self._calculate_FQt_single_Q(Q_v) for Q_v
                               in Q_vectors])
 
         # Remove the padded elements at the end of FQt which will be filled
         # with NaN's
-        self.FQt = FQt_array[:shape[0] - axis_0]
+        # FQt_size is the number of Q values if specified, and otherwise we
+        # assume Q is taken from settings and use the number of lists of vectors instead
+        FQt_size = len(self.Q_values) if self.Q_values is not None else len(settings['Q_vectors'])
+        self.FQt = FQt_array[:FQt_size]
 
-    def _calculate_Q_vectors(self, Q_values: list) -> 'np.ndarray':
+    def _calculate_Q_vectors(self, Q_values: list) -> Generator[list, None, None]:
         """
         For each value of Q in ``Q_values`` calculates a number of Q vectors
         (points in reciprocal space) that lie close to that Q value.
@@ -239,19 +231,16 @@ class AbstractFQt(SQwMixins, Observable):
         Q_value : list
             A ``list` of ``float`` for the Q values
 
-        Returns
+        Yields
         -------
-        numpy.ndarray
-            A three dimensional array where the first dimension corresponds to
-            each entry in ``Q_values``, the second dimension is of variable
-            length and contains a number of points in reciprocal space, which
-            are in turn length 3 arrays or "vectors" in reciprocal space.
+        list
+            A list of Q-vectors for each Q-value - each
+            Q-vector is a 3-dimensional vector in reciprocal space.
         """
 
         # Only valid for uniform Q_values
         Q_step = (Q_values[1] - Q_values[0]) / 2.
 
-        Q_vectors = []
         updated_Q_values = []
         for Q in Q_values:
             # For each ``Q``, define a shell in momentum space bounded by
@@ -262,14 +251,12 @@ class AbstractFQt(SQwMixins, Observable):
             vectors = self._calculate_vectors_single_Q(Q_min, Q_max)
 
             if len(vectors) > 0:
-                Q_vectors.append(np.array(vectors))
                 updated_Q_values.append(Q)
+                yield vectors
 
         self.Q_values = updated_Q_values
 
-        return np.array(Q_vectors)
-
-    def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> 'np.ndarray':
+    def _calculate_vectors_single_Q(self, Q_min: float, Q_max: float) -> list:
         """
         Calculates a number of Q vectors that have a magnitude between
         ``Q_min`` and ``Q_max``.
@@ -283,8 +270,8 @@ class AbstractFQt(SQwMixins, Observable):
             The maximum Q value for which a Q vector can be calculated
         Returns
         -------
-        numpy.ndarray
-            An ``array`` of Q vectors which lie within the range defined by
+        list
+            A list of Q vectors which lie within the range defined by
             ``Q_min`` and ``Q_max``
         """
 
@@ -322,7 +309,7 @@ class AbstractFQt(SQwMixins, Observable):
             if len(Q_vectors) >= self.n_Q_vectors:
                 break
 
-        return np.array(Q_vectors)
+        return Q_vectors
 
     @abstractmethod
     def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
@@ -400,6 +387,70 @@ class AbstractFQt(SQwMixins, Observable):
         """
 
         raise NotImplementedError
+
+    def calculate_rho_config(self, config: np.ndarray, single_Q_vectors: list) -> np.ndarray:
+        """
+        Calculate density over an entire configuration.
+
+        Parameters
+        ----------
+        config: np.ndarray
+            An array of atom positions.
+        single_Q_vectors: list
+            A list of Q-vectors for a single value of Q.
+
+        Returns
+        -------
+        np.ndarray
+            An array of rho values for each timestep summed over the atoms in the system,
+            corresponding to each Q
+        """
+        def helper_coherent(configs: np.ndarray,
+                            q_vector: np.ndarray) -> np.ndarray:
+            """A wrapper for the calculate_rho function and the summation
+            of the resulting array. This part of the calculation is handled
+            by numpy, and so it is easy to run in parallel.
+
+            Arguments
+            ---------
+            configs: numpy.ndarray
+                array of atom positions, size (N_timesteps, 3, N_atoms)
+            q_vector: numpy.ndarray
+                q vector in array form, size (3)
+
+            Returns:
+                array of rho values summed over the atoms in the system,
+                size (N_timesteps)
+            """
+            return next(calculate_rho(configs, [q_vector])).sum(axis=1)
+
+        rho_config = np.zeros((len(config),
+                               len(single_Q_vectors)),
+                               dtype=complex)
+        executor = create_executor()
+
+        # For the np.dot product to be broadcast correctly,
+        # the [x, y, z] atom positions have to be on axis 1.
+        # For this reason we swap the axes, moving the
+        # axis of atom numbers to axis 2.
+        # Time axis is still axis 0.
+        configs = np.swapaxes(config, 1, 2)
+        # The single_Q_vectors array contains many q vectors
+        # with similar values of |Q|.
+        # The following lines split the calculation by multiplying
+        # the trajectory by each q vector separately.
+        futures = core_batch((executor.submit(helper_coherent,
+                                              configs, vector)
+                                              for vector in single_Q_vectors))
+        # Append to rho_config as completed, block until all futures added
+        for batch_num, future_batch in enumerate(futures):
+            results = [future.result() for future in future_batch]
+            for result_num, result in enumerate(results):
+                q_num = (batch_num * len(results)) + result_num
+                rho_config[:, q_num] = result
+
+        return rho_config
+
 
     @abstractmethod
     def _set_weights(self) -> None:
@@ -552,33 +603,14 @@ class FQt(AbstractFQt):
                                   'incoh': B_INCOH[element]}
                         for element in self._trajectory.element_set}
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
+    def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
         elements = self._trajectory.element_set
         FQt_single_Q = np.zeros(n_t)
         rho_element = {}
-        n_atoms = 0
-
-        def helper_coherent(configs: np.ndarray,
-                            q_vector: np.ndarray) -> np.ndarray:
-            """A wrapper for the calculate_rho function and the summation
-            of the resulting array. This part of the calculation is handled
-            by numpy, and so it is easy to run in parallel.
-
-            Arguments
-            ---------
-            configs: numpy.ndarray
-                array of atom positions, size (N_timesteps, 3, N_atoms)
-            q_vector: numpy.ndarray
-                q vector in array form, size (3)
-
-            Returns:
-                array of rho values summed over the atoms in the system,
-                size (N_timesteps)
-            """
-            return calculate_rho(configs, q_vector).sum(axis = 1)
+        executor = create_executor()
 
         for element in elements:
             # Get the positions of all atoms (the configuration) of each
@@ -587,49 +619,24 @@ class FQt(AbstractFQt):
             indexes = np.where(np.array(self._trajectory.element_list)
                                == element)
             element_configs = self._trajectory.position[:, indexes[0], :]
-            rho_config = np.zeros((len(element_configs),
-                                   len(single_Q_vectors)),
-                                  dtype=complex)
-
-            # For the np.dot product to be broadcast correctly,
-            # the [x, y, z] atom positions have to be on axis 1.
-            # For this reason we swap the axes, moving the
-            # axis of atom numbers to axis 2.
-            # Time axis is still axis 0.
-            configs = np.swapaxes(element_configs, 1, 2)
-            # The single_Q_vectors array contains many q vectors
-            # with similar values of |Q|.
-            # The following lines split the calculation by multiplying
-            # the trajectory by each q vector separately.
-            futures = [executor.submit(helper_coherent,
-                                       configs, single_Q_vectors[q_num])
-                                       for q_num in range(len(single_Q_vectors))]
-            # The following line makes the code wait for all the calculations to finish.
-            results = [future.result() for future in futures]
-            # At this stage, the results list is fully populated,
-            # and the following loop writes the results into the rho_config array.
-            for q_num in range(len(single_Q_vectors)):
-                rho_config[:, q_num] = results[q_num]
-
-            rho_element[element] = rho_config
-            n_atoms += np.shape(indexes)[1]
+            rho_element[element] = self.calculate_rho_config(element_configs, single_Q_vectors)
 
             # Incoherent contribution
             incoh_weights = self.weights[element]['incoh']
-            configs = np.swapaxes(element_configs,
-                                  1,
-                                  2)
-            configs = np.swapaxes(configs,
-                                  0,
-                                  2)
-            rho_all = calculate_rho(configs, np.array(single_Q_vectors))
-            futures = [executor.submit(faster_autocorrelation,
-                                       rho_all[q_num].T,
-                                       weights = incoh_weights**2)
-                                       for q_num in range(len(rho_all))]
-            results = [future.result()[:n_t] for future in futures]
-            for q_num in np.arange(len(rho_all)):
-                FQt_single_Q += results[q_num]
+
+            # rearrange the axes so that calculate_rho broadcasts correctly
+            element_configs = np.swapaxes(element_configs, 1, 2)
+            element_configs = np.swapaxes(element_configs, 0, 2)
+
+            rho_all = calculate_rho(element_configs, single_Q_vectors)
+            futures = core_batch((executor.submit(faster_autocorrelation,
+                                                  rho.T,
+                                                  weights = incoh_weights**2)
+                                                  for rho in rho_all))
+            for future_batch in futures:
+                results = [future.result() for future in future_batch]
+                for result in results:
+                    FQt_single_Q += result[:n_t]
 
         # Calculates the coherent contribution to SQw
         for element1 in elements:
@@ -641,14 +648,12 @@ class FQt(AbstractFQt):
                                   rho_element[element2])[:n_t]
 
         # Normalise to the number of orthogonal vectors
-        try:
-            norm = np.shape(single_Q_vectors)[0]
-        except IndexError:
-            norm = 1
+        # default to 1 if there are no vectors to avoid division by 0
+        norm = len(single_Q_vectors) or 1
 
-        return FQt_single_Q / (n_atoms * norm)
+        return FQt_single_Q / (self._trajectory.n_atoms * norm)
 
-def calculate_rho(positions: np.ndarray, Q_vector: np.ndarray) -> np.ndarray:
+def calculate_rho(positions: np.ndarray, Q_vectors: list) -> Generator[np.ndarray, None, None]:
     """
     Calculates ``t`` dependent number density in reciprocal space for all
     Q vectors
@@ -661,15 +666,16 @@ def calculate_rho(positions: np.ndarray, Q_vector: np.ndarray) -> np.ndarray:
     positions : numpy.ndarray
         An ``array`` of atomic positions for which the reciprocal space number
         density should be calculated
-    Q_vector : numpy.ndarray
-        An ``array`` of one or more Q vectors with the same Q value
+    Q_vectors : list
+        A list of one or more Q vectors with the same Q value
 
     Returns
     -------
-    numpy.ndarray
-        The reciprocal space number density
+    Generator[np.ndarray]
+        A generator for the reciprocal space number density for each Q-vector.
     """
-    return np.exp(-1j * np.dot(Q_vector, positions))
+    for Q_vector in Q_vectors:
+        yield np.exp(-1j * np.dot(Q_vector, positions))
 
 def get_point_group(dimensions: 'np.ndarray') -> str:
     """

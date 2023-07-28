@@ -5,7 +5,7 @@ import numpy as np
 from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import faster_autocorrelation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
-from MDMC.trajectory_analysis.observables.obs import executor
+from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 
 
@@ -28,13 +28,14 @@ class FQtIncoherent(AbstractFQt):
                         in [self._trajectory.exportAtom(atom_number=x) for x
                             in range(self._trajectory.n_atoms)]]
 
-    def _calculate_FQt_single_Q(self, single_Q_vectors: 'np.ndarray') -> 'np.ndarray':
+    def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
         # Inherit docstring of abstract method
 
         n_t = len(self.t)
         n_atoms = self._trajectory.n_atoms
         FQt_single_Q = np.zeros(n_t)
         weight = self.weights
+        executor = create_executor()
 
         configs = np.swapaxes(self._trajectory.position,
                               1,
@@ -43,13 +44,14 @@ class FQtIncoherent(AbstractFQt):
                               0,
                               2)
         rho_all = calculate_rho(configs, np.array(single_Q_vectors))
-        futures = [executor.submit(faster_autocorrelation,
-                                    rho_all[q_num].T,
+        futures = core_batch((executor.submit(faster_autocorrelation,
+                                    rho.T,
                                     weights = np.array(weight))
-                                    for q_num in range(len(rho_all))]
-        results = [future.result()[:n_t] for future in futures]
-        for q_num in np.arange(len(rho_all)):
-            FQt_single_Q += results[q_num]
+                                    for rho in rho_all))
+        for future_batch in futures:
+            results = [future.result() for future in future_batch]
+            for result in results:
+                FQt_single_Q += result
 
         # Normalise to the number of orthogonal vectors
         try:

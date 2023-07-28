@@ -21,8 +21,8 @@ from pip._internal.req import parse_requirements
 from pip._internal.network.session import PipSession
 
 # Check for valid Python version
-if sys.version_info[:2] < (3, 9):
-    print('MDMC requires Python 3.9 or better. Python {0:d}.{1:d}'
+if sys.version_info[:2] < (3, 11):
+    print('MDMC requires Python 3.11. Python {0:d}.{1:d}'
           ' detected'.format(*sys.version_info[:2]))
 
 packages_test=find_packages()
@@ -36,7 +36,7 @@ setup(
     author_email="support@mdmcproject.org",
     url="https://mdmcproject.org/",
     download_url="https://github.com/MDMCproject",
-    python_requires='>=3.9', # Python 3.8.9 gets stuck on type tips with brackets -> list[str], so 3.9 is needed
+    python_requires='==3.11.2',
     install_requires=[pr.requirement for pr in parse_requirements('requirements.txt', session= PipSession())],
     extras_require={"LAMMPS": ["lammps"]},
     entry_points={"console_scripts": ['MDMC = MDMC.utilities.cli:main']},

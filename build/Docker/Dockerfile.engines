@@ -7,8 +7,8 @@ FROM python:3.11.2-slim-buster
 # Define environment variable
 ENV NAME World
 ENV DEBIAN_FRONTEND noninteractive
-ENV LD_LIBRARY_PATH /lammps/build/
-ENV PYTHONPATH ${PYTHONPATH}:/lammps/build/
+ENV LD_LIBRARY_PATH /opt/MD/lammps/build/
+ENV PYTHONPATH ${PYTHONPATH}:/opt/MD/lammps/build/
 ENV PYTHONUNBUFFERED 1
 
 # Install pip, hdf5, netcdf, bash, git, fortran and blas (for numpy and
@@ -29,12 +29,42 @@ RUN apt-get update && apt-get install --upgrade -y \
   cmake \
   wget \
   python3-tk
-  
+
+RUN mkdir /opt/MD
+RUN touch /root/.bashrc
+
+# Install packmol
+# Install dependencies (gfortran)
+RUN mkdir /opt/other
+RUN mkdir /opt/other/gfortran
+WORKDIR /opt/other/gfortran
+RUN wget https://gfortran.meteodat.ch/download/x86_64/releases/gcc-12.2.0.tar.xz
+RUN tar -xJf gcc-12.2.0.tar.xz
+RUN LD_LIBRARY_PATH="/opt/other/gfortran/gcc-12.2.0/lib64:$LD_LIBRARY_PATH"
+RUN export LD_LIBRARY_PATH
+
+# Get packmol
+RUN mkdir /opt/other/packmol
+WORKDIR /opt/other/packmol
+RUN wget https://github.com/m3g/packmol/archive/refs/tags/v20.14.0.tar.gz
+RUN tar -xzvf v20.14.0.tar.gz
+RUN rm v20.14.0.tar.gz
+
+# Build Packmol
+WORKDIR /opt/other/packmol/packmol-20.14.0
+RUN ./configure /opt/other/gfortran/gcc-12.2.0/
+RUN make
+
+# Add packmol to env variables
+ENV PATH /opt/other/packmol/packmol-20.14.0:$PATH
+ENV PYTHONPATH ${PYTHONPATH}:/opt/other/packmol/packmol-20.14.0/
+
 # Get LAMMPS # used to be lammps-stable.tar.gz
+RUN mkdir /opt/MD/lammps
+WORKDIR /opt/MD/lammps
 RUN wget https://download.lammps.org/tars/lammps-29Sep2021.tar.gz
-RUN mkdir -p /opt/MD/lammps
 RUN tar xvzf lammps-29Sep2021.tar.gz -C /opt/MD/lammps --strip-components=1
-RUN rm /lammps-29Sep2021.tar.gz
+RUN rm /opt/MD/lammps/lammps-29Sep2021.tar.gz
 
 # Build LAMMPS from source
 WORKDIR /opt/MD/lammps/build
@@ -57,12 +87,12 @@ RUN make
 RUN make install-python
 
 # get DLPOLY
-RUN mkdir -p /opt/MD/dlpoly
+RUN mkdir /opt/MD/dlpoly
 WORKDIR /opt/MD/dlpoly
 RUN git clone https://gitlab.com/ccp5/dl-poly.git
-RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/                                                                                                  
+RUN cmake -S dl-poly -Bbuild-dlpoly -DCMAKE_BUILD_TYPE=Release -DWITH_MPI=on -DCMAKE_INSTALL_PREFIX=/usr/
 RUN cd build-dlpoly && make install
- 
+
 # Start in /home
 WORKDIR /home
 
