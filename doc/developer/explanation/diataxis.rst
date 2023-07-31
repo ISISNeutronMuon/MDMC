@@ -4,7 +4,7 @@ Diátaxis
 ========
 
 The MDMC documentation uses the `Diátaxis framework <https://diataxis.fr/>`_, which helps documentation
-be focused around user needs. This improves the quality and variety of documentation by
+stay focused around user needs. This improves the quality and variety of documentation by
 separating it into four 'user contexts', explained below.
 
 Why?
@@ -17,7 +17,8 @@ it easier to write higher-quality, focused documentation on two levels.
    mind when writing the page, and writes with purpose as a result.
 
 -  Documentation-wide focus: documentation aims to cover all user needs
-   with the software, rather than aiming for 'code coverage'.
+   with the software, rather than aiming for the usual 'code coverage'
+   of 'this function is mentioned in the docs, so it has been documented'
 
 -  Tutorials and explanations mean workshops and technical reports plan
    themselves!
@@ -69,9 +70,9 @@ Reference
 Explanation
 ^^^^^^^^^^^
 
--  Explanation is 'understanding-oriented'. It gives a 'high-level' 
-   discussion of the algorithms used and the ideas underlying them. 
-   It is for users (and especially future developers) 
+-  Explanation is 'understanding-oriented'. It gives a 'high-level'
+   discussion of the algorithms used and the ideas underlying them.
+   It is for users (and especially future developers)
    who want to understand the theory and design ideas of the software.
 
 -  It should make sense to someone who doesn't have the software
@@ -80,3 +81,14 @@ Explanation
 -  This would be the 'background' and 'discussion' sections of a paper
    on the software; in fact, both of these would be suitable alternative
    names for this section.
+
+How do I use this?
+------------------
+When writing MDMC documentation, you will have to put your new documentation in
+one of the four categories, because the documentation source is structured that way.
+Once you have done so, the Diátaxis framework provides guidelines to answer
+the following questions:
+
+- Who is this aimed at? (e.g. new users, 'power users', developers)
+- What do I want them to learn? (e.g. familiarity with this framework, how to use this class to do X)
+- What do I assume they know? (familiarity with MD, optimisation, ``matplotlib``, Docker)

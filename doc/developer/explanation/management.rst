@@ -49,13 +49,13 @@ development hours which are better spent on the focus of the current version.
 Needs breaking down
 ^^^^^^^^^^^^^^^^^^^
 An issue marked 'needs breaking down' is one which is too big to be actionable, such
-as "Rewrite all algorithms to use parallelism". This should be broken down into chunks
-such as "Rewrite observable calculation to use parallelism" and "Rewrite MD simulation
-to use parallelism", else taking on the issue completely is a huge undertaking for
+as "Rewrite all algorithms to use type hints". This should be broken down into chunks
+such as "Rewrite observable calculation to use type hints" and "Rewrite the Control class
+to use type hints", else taking on the issue completely is a huge undertaking for
 any developer.
 
 Needs more info
 ^^^^^^^^^^^^^^^
-An issue marked 'needs more info' is not actionable due to lacking information, such
-as how a new feature should be implemented, or what the problem actually *is*. The issue
-should be edited to provide this information.
+An issue marked 'needs more info' is not actionable due to lacking information.
+The way it is currently written is confusing as to how a new feature should be implemented,
+or what the problem actually *is*. The issue should be edited to provide this information.
