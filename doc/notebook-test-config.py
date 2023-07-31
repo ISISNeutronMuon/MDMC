@@ -9,5 +9,6 @@ c.NbConvertApp.notebooks = [
     "doc/how-to/use-MDMC/notebooks/running-a-simulation.ipynb",
     "doc/how-to/use-MDMC/notebooks/selecting-fitting-parameters.ipynb",
     "doc/how-to/use-MDMC/notebooks/solvating-a-universe.ipynb",
-    "doc/how-to/use-MDMC/notebooks/units.ipynb"
+    "doc/how-to/use-MDMC/notebooks/units.ipynb",
+    "doc/tutorials/filling-with-packmol.ipynb"
 ]

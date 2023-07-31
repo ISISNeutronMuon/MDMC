@@ -48,7 +48,7 @@ def simple_filled_universe(water_setup):
     return packmol.PackmolFiller(water_setup).fill_with_packmol()
 
 @pytest.fixture()
-def complex_filled_universe(water_setup):
+def complex_filled_universe(water_argon_mix_setup):
     """
     Returns the universe result from a packmol run using the water_argon_mix_setup setup object.
 
@@ -125,8 +125,8 @@ def test_correct_system_properties(simple_filled_universe):
 
 def test_complex_system_properties(complex_filled_universe):
     """Tests to make sure the correct system properties are in the final complex system"""
-    assert simple_filled_universe.n_atoms == 5900
-    assert simple_filled_universe.n_molecules == 1350
-    assert set(simple_filled_universe.element_list) == {"H", "O", "Ar"}
+    assert complex_filled_universe.n_atoms == 5900
+    assert complex_filled_universe.n_molecules == 1350
+    assert set(complex_filled_universe.element_list) == {"H", "O", "Ar"}
     # 2 bonded interactions per molecule
-    assert len(simple_filled_universe.bonded_interactions) == 4050
+    assert len(complex_filled_universe.bonded_interactions) == 2700
