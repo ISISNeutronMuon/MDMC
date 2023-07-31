@@ -24,11 +24,12 @@ applied to it.
 It is also possible to:
 
  - :py:meth:`~MDMC.MD.simulation.Simulation.fill` and
-   :py:meth:`~MDMC.MD.simulation.Universe.solvate` a Universe
+   :py:meth:`~MDMC.MD.simulation.Universe.solvate` a Universe, as
+   well as `fill it using Packmol <./notebooks/filling-with-packmol.ipynb>`_
 
  - :py:meth:`~MDMC.readers.configurations.read` in configuration and topology
-   (except :class:`~MDMC.MD.structures.Dispersive` interactions) from CIF
-   files (see `Reading atoms from configuration files <../tutorials/read-configurations.ipynb>`_
+   (except :class:`~MDMC.MD.structures.Dispersive` interactions) from
+   files (see `Reading atoms from configuration files <./notebooks/read-configurations.ipynb>`_
    tutorial)
 
  - :py:meth:`~MDMC.gui.view` the configuration and topology in a GUI, to check
@@ -51,9 +52,10 @@ The MDMC interface for these objects is explained in the following notebooks:
    notebooks/read-configurations.ipynb
    notebooks/molecular-visualization.ipynb
    notebooks/applying-a-forcefield.ipynb
+   notebooks/filling-with-packmol.ipynb
 
 Indeed, as mentioned in the :ref:`introduction-label`, MDMC can be used purely to aid
-the setup of MD simulations, without performing a refinement.
+the setup of MD simulations (without performing a refinement) via these methods.
 
 Creating a Simulation
 ---------------------
