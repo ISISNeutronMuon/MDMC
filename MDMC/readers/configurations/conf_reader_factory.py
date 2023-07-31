@@ -1,9 +1,6 @@
 """Factory class for generating readers for configurations"""
 
-from importlib import import_module
 from inspect import getmembers, isabstract, isclass
-from os.path import dirname
-from pkgutil import iter_modules
 
 from ase.io.formats import ioformats
 
