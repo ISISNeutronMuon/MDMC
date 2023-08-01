@@ -1,8 +1,8 @@
-name: cron
-# contains jobs which run on a schedule rather than on a pull-request
+name: review
+# contains jobs which run when a PR is reviewed or approved
 on:
-  schedule:
-  - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
 
 jobs:
@@ -33,10 +33,26 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
-    - name: Run tests
-      run: |
-        docker pull mdmc/mdmc:latest
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.11.2'
+          architecture: x64
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Run tests
+        env:
+          TESTSET: ${{ matrix.testset }}
+        run: |
+          docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -s $(pwd)/tests/;[ $? -eq 0 ]
+          exit 0
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
@@ -163,7 +179,7 @@ jobs:
 
   singularity:
     name: Singularity tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Setup Go
         uses: actions/setup-go@v2
@@ -181,10 +197,10 @@ jobs:
 
       - name: Run tests
         run: |
-           singularity pull docker://mdmc/mdmc:latest
-           singularity exec mdmc_latest.sif pip3 install --upgrade pip
-           singularity exec mdmc_latest.sif pip3 install .
-           singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/
+           singularity pull mdmc.sif docker://mdmc/mdmc:ci-$BRANCH || singularity pull mdmc.sif docker://mdmc/mdmc:latest
+           singularity exec mdmc.sif pip3 install --upgrade pip
+           singularity exec mdmc.sif pip3 install .
+           singularity exec mdmc.sif python3 -m pytest -s $(pwd)/tests/
 
   parallel_tests:
     name: Parallel tests
@@ -213,27 +229,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
       continue-on-error: true
 
-  doc-deploy:
-    name: Documentation-deploy
-    runs-on: ubuntu-20.04
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-    - name: Build documentation
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
-    - name: Deploy
-      env:
-        token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
-      run: |
-        git clone https://github.com/MDMCproject/MDMCproject.github.io
-        cd ./MDMCproject.github.io
-        git checkout ci
-        cp -r  ../doc/_build/html/* ../MDMCproject.github.io/
-        git config --global user.name "Github Actions"
-        git commit -a -m "CI deployment"
-        git merge -X ours master
-        git push https://$token@github.com/MDMCproject/MDMCproject.github.io
-
   documentation:
     name: Documentation
     needs: build # so it can use new docker image if docker image has changed
@@ -253,14 +248,3 @@ jobs:
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install ."
       - name: Make Documentation
         run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "make -d -C $(pwd)/doc html"
-
-  prune-images:
-    name: Prune Old Docker Hub Images
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Prune images
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: source .github/scripts/prune_docker_hub.sh
