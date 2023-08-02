@@ -5,7 +5,7 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from typing import Union, TYPE_CHECKING
+from typing import Self, Union, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -1422,6 +1422,8 @@ class Simulation:
         self.universe = universe
         self.traj_step = traj_step
         self.time_step = time_step
+        self._temperature = settings.get("temperature", None)
+        self._pressure = settings.get("pressure", None)
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self.engine.parent_simulation = self
@@ -1449,12 +1451,46 @@ class Simulation:
             Simulation time step in ``fs``
         """
 
-        return self._time_step
+        return self.
 
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
         self._time_step = value
+        
+    @property
+    def temperature(self) -> float:
+        """
+        Get or set the simulation time step in ``K``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``K``
+        """
+        return self.temperature
+  
+    @temperature.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature(self, value: float) -> None:
+        self.temperature = value
+        
+    @property
+    def pressure(self) -> float:
+        """
+        Get or set the simulation time step in ``Pa``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``PA``
+        """
+        return self.pressure
+    
+    @pressure.setter
+    @unit_decorator(unit=units.PRESSURE)
+    def pressure(self, value: float) -> None:
+         self.pressure = value
 
     @property
     def traj_step(self) -> int:
