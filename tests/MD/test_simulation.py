@@ -129,6 +129,7 @@ def test_create_universe(universe):
     assert universe != universe_unequal
 
 
+
 def test_universe_stdout(capsys):
     univ = sim.Universe(SPCE_DIMENSIONS)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
@@ -139,9 +140,7 @@ Universe created with:
 Dimensions   [18.62, 18.62, 18.62]
 Force field created by solvent SPCE
 '''
-
     assert stdout == expected_output, f"Expected:\n{expected_output}\nActual:\n{stdout}"
-
 
 def test_create_atom(atom):
 
