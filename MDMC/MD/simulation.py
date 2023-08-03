@@ -1415,13 +1415,14 @@ class Simulation:
     trajectory
     """
 
-    # TODO: Potentially separate out universe and simulation setup
+       # TODO: Potentially separate out universe and simulation setup
     def __init__(self, universe: Universe, traj_step: int,
                  time_step: float = 1., engine: str = "lammps", **settings):
-
         self.universe = universe
         self.traj_step = traj_step
         self.time_step = time_step
+        self._temperature = settings.get("temperature", None)
+        self._pressure = settings.get("pressure", None)
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self.engine.parent_simulation = self
@@ -1435,8 +1436,17 @@ class Simulation:
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
 
-        if self.verbose:
-            print(setup_msg)
+        if self.settings:
+            setup_values = []
+            for key, value in self.settings.items():
+                obj = getattr(self, key, None)
+                unit_decorator_str = getattr(obj, "unit_decorator", "") if obj is not None else ""
+                value_str = f"{value} {unit_decorator_str}" if unit_decorator_str else str(value)
+                setup_values.append([value_str])
+            setup_keys = [f'  {key.capitalize()}' for key in self.settings]
+            setup_frame = pd.DataFrame(setup_values, columns=["Value"], index=setup_keys)
+            setup_msg = f'Simulation created with {engine} engine and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
+        print(setup_msg)
 
     @property
     def time_step(self) -> float:
@@ -1455,7 +1465,41 @@ class Simulation:
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
         self._time_step = value
+        
+    @property
+    def temperature(self) -> float:
+        """
+        Get or set the simulation time step in ``K``
 
+        Returns
+        -------
+        `float`
+            Simulation time step in ``K``S
+        """
+        return self._temperature
+
+    @temperature.setter
+    @unit_decorator(unit=units.TEMPERATURE)
+    def temperature(self, value: float)-> None:
+        self._temperature = value
+    
+    
+    @property
+    def pressure(self) -> float:
+        """
+        Get or set the simulation time step in ``Pa``
+
+        Returns
+        -------
+        `float`
+            Simulation time step in ``Pa``
+        """
+        return self._pressure
+    
+    @pressure.setter
+    @unit_decorator(unit=units.PRESSURE)
+    def pressure(self, value: float):
+         self._pressure = value
     @property
     def traj_step(self) -> int:
         """
