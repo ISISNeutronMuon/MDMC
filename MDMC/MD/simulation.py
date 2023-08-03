@@ -2,7 +2,7 @@
 
  Classes for the simulation box, minimizer and integrator."""
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
 from typing import Union, TYPE_CHECKING
@@ -1578,6 +1578,8 @@ class Simulation:
 
         verbose_manager.finish(f"{process.capitalize()}")
 
+    # pylint: disable=dangerous-default-value
+    # we don't mutate it! and 'None' makes no sense for readability
     def auto_equilibrate(self,
                          variables: list[str] = ['temp', 'pe'],
                          eq_step: int = 10,
@@ -1605,22 +1607,23 @@ class Simulation:
         -------
         int
             The number of equilibration steps performed.
+        vals_dict
+            The value of each variable per step, for graphing if desired.
         """
 
         vals_dict = {var: [] for var in variables}
 
         def auto_step() -> None:
             """
-            Performs one step of an equilibration and adds to the value
-            windows.
+            Performs one step of an equilibration and records variable values.
             """
             self.run(eq_step, equilibration=True)
             for var in vals_dict:
                 vals_dict[var].append(self.engine.eval(var))
 
-        def check_stability(var: str) -> bool:
+        def window_is_stationary(var: str) -> bool:
             """
-            Check stability for a variable.
+            Checks stability for a variable by running the KPSS test on a window.
             """
             variable_values = vals_dict[var]
             window = variable_values[-window_size:]
@@ -1631,22 +1634,20 @@ class Simulation:
             # it doesn't have critical values above there; any higher p
             # is brought down to 0.1. thus we use it as our max value for tolerance
             return not results[1] < 0.1 - tolerance
+
         # we perform an initial run of window_size*eq_step steps to create a window.
         for _ in range(window_size):
             auto_step()
 
         # we consider the simulation stable if the rolling window
-        # is stationary (by KPSS)
-        while True:
-            if all(check_stability(var) for var in vals_dict):
-                break
-            else:
-                auto_step()
+        # is stationary for all varriables (by KPSS)
+        while not all(window_is_stationary(var) for var in vals_dict):
+            auto_step()
 
         total_steps = len(list(vals_dict.values())[0]) * eq_step
         print("Auto-equilibration has detected stability "
              f"after {total_steps} equilibration steps.")
-        return total_steps
+        return total_steps, vals_dict
 
     @property
     def trajectory(self) -> Union['CompactTrajectory', None]:

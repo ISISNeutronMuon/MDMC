@@ -119,12 +119,14 @@ class MockSimulation(sim.Simulation):
 
 class MockEngine:
     """
-    A mock engine which 'runs' and returns properties according to a given function.
+    A mock engine which 'runs' for equilibration
+    and returns properties according to a given function.
     """
     def __init__(self, pe_stability_point, temp_stability_point, **ignored):
         self.current_steps = 0
         self.pe_stability_point = pe_stability_point
         self.temp_stability_point = temp_stability_point
+        self.rng = np.random.default_rng(seed=1234567)  # rng for noising functions
 
     def run(self, n_steps, **ignored):
         self.current_steps += n_steps
@@ -136,7 +138,7 @@ class MockEngine:
             else:
                 signal = self.pe_stability_point  # constant chosen so curve is continuous
 
-            return (signal + np.random.normal(0, 50))  # add noise
+            return (signal + self.rng.normal(0, 50))  # add noise
 
         def temp_func(x):
             if x < self.temp_stability_point:
@@ -144,7 +146,7 @@ class MockEngine:
             else:
                 signal = self.temp_stability_point  # constant chosen so curve is continuous
 
-            return (signal + np.random.normal(0, 50))  # add noise
+            return (signal + self.rng.normal(0, 50))  # add noise
 
         def complex_func(x):
             """A more complicated function!"""
@@ -1348,7 +1350,7 @@ def test_auto_equilibrate(universe, variables, pe_stability_point, temp_stabilit
     simulation = MockSimulation(universe, 1, 1,
                                 MockEngine(pe_stability_point, temp_stability_point))
 
-    eq_steps = simulation.auto_equilibrate(variables=variables)
+    eq_steps, _ = simulation.auto_equilibrate(variables=variables)
     # assert that it doesn't under-equilibrate
     assert eq_steps >= max(pe_stability_point, temp_stability_point)
     # assert that it doesn't over-equilibrate
