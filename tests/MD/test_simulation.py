@@ -131,17 +131,15 @@ def test_create_universe(universe):
 
 
 def test_universe_stdout(capsys):
-    # Capture stdout using pytest fixure
     univ = sim.Universe(SPCE_DIMENSIONS)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     captured = capsys.readouterr()
     stdout = captured.out
     expected_output = '''\
-(Universe created with:)
+Universe created with:
 Dimensions   [18.62, 18.62, 18.62]
 Force field created by solvent SPCE
 '''
-
     assert stdout == expected_output, f"Expected:\n{expected_output}\nActual:\n{stdout}"
 
 def test_create_atom(atom):

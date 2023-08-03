@@ -1,4 +1,5 @@
 """Module for setting up and running the simulation
+test
 
  Classes for the simulation box, minimizer and integrator."""
 
@@ -156,18 +157,18 @@ class Universe(AtomContainer):
                     self.__class__,
                     self.dimensions)
         
+
         if self.verbose:
           round_dime = [str(d) for d in np.round(self.dimensions, 2)]
           setup_frame = ["Universe created with:"]
           setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
-          
           if force_field is not None:
             setup_frame.append(f"Force field    {force_field}")
           if self.n_atoms > 0:
              setup_frame.append(f"Number of atoms    {self.n_atoms}")
-             
           print('\n'.join(setup_frame))
-
+          
+          
     def __str__(self) -> str:
 
         return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
