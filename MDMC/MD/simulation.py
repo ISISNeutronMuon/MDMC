@@ -1422,8 +1422,6 @@ class Simulation:
         self.universe = universe
         self.traj_step = traj_step
         self.time_step = time_step
-        self._temperature = settings.get("temperature", None)
-        self._pressure = settings.get("pressure", None)
         self.settings = settings
         self.engine = MDEngineFacadeFactory.create_facade(engine)
         self.engine.parent_simulation = self
@@ -1436,61 +1434,25 @@ class Simulation:
             setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
-
         if self.verbose:
             print(setup_msg)
+
 
     @property
     def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
-
         Returns
         -------
         `float`
             Simulation time step in ``fs``
         """
-
-        return self.
-
+        
+        return self._time_step
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
         self._time_step = value
-        
-    @property
-    def temperature(self) -> float:
-        """
-        Get or set the simulation time step in ``K``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``K``
-        """
-        return self.temperature
-  
-    @temperature.setter
-    @unit_decorator(unit=units.TEMPERATURE)
-    def temperature(self, value: float) -> None:
-        self.temperature = value
-        
-    @property
-    def pressure(self) -> float:
-        """
-        Get or set the simulation time step in ``Pa``
-
-        Returns
-        -------
-        `float`
-            Simulation time step in ``PA``
-        """
-        return self.pressure
-    
-    @pressure.setter
-    @unit_decorator(unit=units.PRESSURE)
-    def pressure(self, value: float) -> None:
-         self.pressure = value
 
     @property
     def traj_step(self) -> int:
