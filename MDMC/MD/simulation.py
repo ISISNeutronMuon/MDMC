@@ -6,7 +6,7 @@ from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
 from typing import Self, Union, TYPE_CHECKING
-
+import textwrap
 import numpy as np
 import pandas as pd
 from verbosemanager import VerboseManager
@@ -156,15 +156,18 @@ class Universe(AtomContainer):
                     self.__class__,
                     self.dimensions)
 
-        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
-                                    [force_field],
-                                    [self.n_atoms]],
-                                   index=['  Dimensions',
-                                          '  Force field',
-                                          '  Number of atoms'])
+        rounded_dimensions = [np.round(d, 2) for d in self.dimensions]
+        setup_data = [
+            ("Universe created with:",""),
+            (f"Dimensions       [{', '.join(str(dim) for dim in rounded_dimensions)}]", ""),
+            (f"Force field                {force_field}", "") if force_field else None,
+            (f"Number of atoms             {self.n_atoms}", "") if self.n_atoms > 0 else None,
+        ]
 
+        setup_data = [item for item in setup_data if item is not None]
+        setup_frame = pd.DataFrame(setup_data, columns=["", ""])
         if self.verbose:
-            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+            print(textwrap.dedent(setup_frame.to_string(index=False)))
 
     def __str__(self) -> str:
 
