@@ -2,10 +2,11 @@
 
  Classes for the simulation box, minimizer and integrator."""
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from itertools import count, filterfalse, product
 import logging
 from typing import Union, TYPE_CHECKING
+from statsmodels.tsa.stattools import kpss
 
 import numpy as np
 import pandas as pd
@@ -1576,6 +1577,76 @@ class Simulation:
                         work_dir=work_dir, **self.settings)
 
         verbose_manager.finish(f"{process.capitalize()}")
+
+    def auto_equilibrate(self,
+                         variables: list[str] = ['temp', 'pe'],
+                         eq_step: int = 10,
+                         window_size: int = 100,
+                         tolerance: float = 0.01) -> int:
+        """
+        Equilibrate until the specified list of variables have stabilised.
+        Uses the KPSS stationarity test to determine
+        whether the variables are stationary in a given window.
+
+        Parameters
+        ----------
+        variables: list[str], default ['temp', 'pe']
+            The variables we use to monitor stability.
+        eq_step: int, default 10
+            The number of equilibration steps between each stability check.
+        window_size: int, default 100
+            The size of the rolling window of stability checks. The simulation
+            is considered stable if it has been stationary for eq_step*window_size
+            equilibration steps.
+        tolerance: float, 0.01
+            The p-value used for the KPSS test.
+
+        Returns
+        -------
+        int
+            The number of equilibration steps performed.
+        """
+
+        vals_dict = {var: [] for var in variables}
+
+        def auto_step() -> None:
+            """
+            Performs one step of an equilibration and adds to the value
+            windows.
+            """
+            self.run(eq_step, equilibration=True)
+            for var in vals_dict:
+                vals_dict[var].append(self.engine.eval(var))
+
+        def check_stability(var: str) -> bool:
+            """
+            Check stability for a variable.
+            """
+            variable_values = vals_dict[var]
+            window = variable_values[-window_size:]
+            results = kpss(window, regression='c')
+            # results[1] is the p-value from the test
+            # note that the alternative hypothesis is "NOT stationary"
+            # also statsmodels never gives above 0.1 as a p-value because
+            # it doesn't have critical values above there; any higher p
+            # is brought down to 0.1. thus we use it as our max value for tolerance
+            return not results[1] < 0.1 - tolerance
+        # we perform an initial run of window_size*eq_step steps to create a window.
+        for _ in range(window_size):
+            auto_step()
+
+        # we consider the simulation stable if the rolling window
+        # is stationary (by KPSS)
+        while True:
+            if all(check_stability(var) for var in vals_dict):
+                break
+            else:
+                auto_step()
+
+        total_steps = len(list(vals_dict.values())[0]) * eq_step
+        print("Auto-equilibration has detected stability "
+             f"after {total_steps} equilibration steps.")
+        return total_steps
 
     @property
     def trajectory(self) -> Union['CompactTrajectory', None]:

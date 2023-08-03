@@ -1,5 +1,5 @@
 """Module containing an abstract base class for MD engine facades"""
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from abc import ABC, abstractmethod
 
 if TYPE_CHECKING:
@@ -214,6 +214,14 @@ class MDEngine(ABC):
     def reset_config(self) -> None:
         """
         Resets the configuration of the simulation to that in ``saved_config``
+        """
+
+        raise NotImplementedError
+
+    @abstractmethod
+    def eval(self, variable: str) -> Any:
+        """
+        Evaluates some simulation variable.
         """
 
         raise NotImplementedError

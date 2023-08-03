@@ -12,3 +12,4 @@ ipython==8.14.0
 ipykernel==6.24.0
 dlpoly-py==0.3.12
 corner==2.2.2
+statsmodels==0.14.0
