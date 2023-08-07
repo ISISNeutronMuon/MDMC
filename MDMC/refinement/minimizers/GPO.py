@@ -55,6 +55,11 @@ class GPO(Minimizer):
         super().__init__(control, parameters)
        
         self._progress_file = "gpo_step.pkl"
+        if os.path.exists(self._progress_file):
+            self.load_progress(self._progress_file)
+        else:
+            self.optimizer()
+            
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
         if self.control.n_steps:
