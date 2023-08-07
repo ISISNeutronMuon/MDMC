@@ -1428,25 +1428,23 @@ class Simulation:
         self.engine.parent_simulation = self
         self.verbose = settings.get('verbose', True)
         self._setup()
-
+        
+        units = {
+            "temperature": "K",
+            "pressure": "Pa"
+        }
+        
         setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
-            setup_values = [[value] for value in self.settings.values()]
+            setup_values = [
+                [f'{value} {units.get(key, "")}' if key in units else value]
+                for key, value in self.settings.items()
+            ]
             setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
-
-        if self.settings:
-            setup_values = []
-            for key, value in self.settings.items():
-                obj = getattr(self, key, None)
-                unit_decorator_str = getattr(obj, "unit_decorator", "") if obj is not None else ""
-                value_str = f"{value} {unit_decorator_str}" if unit_decorator_str else str(value)
-                setup_values.append([value_str])
-            setup_keys = [f'  {key.capitalize()}' for key in self.settings]
-            setup_frame = pd.DataFrame(setup_values, columns=["Value"], index=setup_keys)
-            setup_msg = f'Simulation created with {engine} engine and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
-        print(setup_msg)
+        if self.verbose:
+            print(setup_msg)
 
     @property
     def time_step(self) -> float:
