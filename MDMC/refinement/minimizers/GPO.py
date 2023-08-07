@@ -1,7 +1,7 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from typing import TYPE_CHECKING
 import numpy as np
-
+import pickle
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -53,7 +53,8 @@ class GPO(Minimizer):
 
     def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
         super().__init__(control, parameters)
-
+       
+        self._progress_file = "gpo_step.pkl"
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
         if self.control.n_steps:
@@ -76,6 +77,25 @@ class GPO(Minimizer):
                                    acq_optimizer="sampling", initial_point_generator="lhs",
                                    n_initial_points=self.n_initial, model_queue_size=1)
 
+
+        def refine(self, n_points):
+            if n_points > self.n_initial:
+                self.n_initial = n_points
+                self.optimizer.n_initial_points = self.n_initial
+
+            for _ in range(n_points):
+                next_point = self.optimizer.ask()
+                measured_points = self.perform_measurement(next_point)
+                self.optimizer.tell(next_point, measured_points)
+                self.save_progress(self._progress_file)
+
+        def save_progress(self, filename):
+            with open(filename, "wb") as f:
+                pickle.dump(self.optimizer, f)
+
+        def load_progress(self, filename):
+            with open(filename, "rb") as f:
+                self.optimizer = pickle.load(f)
 
     @property
     def history_columns(self) -> 'list[str]':
