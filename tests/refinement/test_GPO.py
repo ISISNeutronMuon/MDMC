@@ -159,3 +159,32 @@ def test_GPO_FoM_and_coordinates_in_output(GPO_with_history, correct_output_data
 
         assert np.allclose(correct_output_data[1], output_data[1], atol=0.0001, equal_nan=False)
         assert np.allclose(correct_output_data[3], output_data[3], atol=0.0001, equal_nan=False)
+
+
+
+def test_refine_save_load_progress():
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parameter = [space.Real(0, 1, name='parameter1'), space.Real(-1, 1, name='parameter2)']
+            gpo = GPO(parameter)
+            n_points = 5
+            for _ in range(n_points):
+                next_point = gpo.optimizer.ask()
+                gpo.optimizer.tell(next_point, mock_measurement(next_point))
+
+            file_path = f"{temp_dir}/gpo_progress.pkl"
+            gpo.save_progress(file_path)
+
+            gpo_loaded = GPO(parameter)
+            gpo_loaded.load_progress(file_path)
+
+            self.assertTrue(gpo_loaded.optimizer)
+            self.assertEqual(gpo.optimizer.n_initial_points, gpo_loaded.optimizer.n_initial_points)
+       
+            for dim1, dim2 in zip(gpo.optimizer.space.dimensions, gpo_loaded.optimizer.space.dimensions):
+                self.assertEqual(dim1.name, dim2.name)
+                self.assertEqual(dim1.low, dim2.low)
+                self.assertEqual(dim1.high, dim2.high)
+
+            for i in range(len(gpo.optimizer.Xi)):
+                self.assertTrue(np.allclose(gpo.optimizer.Xi[i], gpo_loaded.optimizer.Xi[i]))
+                self.assertAlmostEqual(gpo.optimizer.yi[i], gpo_loaded.optimizer.yi[i], places=6)
