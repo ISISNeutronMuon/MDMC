@@ -629,7 +629,7 @@ class CompositeStructure(Structure, AtomContainer):
         for atom in self.atoms:
             atom.position = self.position + self._CoM_frame_positions[atom]
 
-    def _calc_CoM(self) -> np.ndarray:
+    def calc_CoM(self) -> np.ndarray:
         """
         Returns
         -------
@@ -653,7 +653,7 @@ class CompositeStructure(Structure, AtomContainer):
         # pylint: disable=attribute-defined-outside-init
         # _CoM_frame_positions breaks when defined in init
 
-        CoM = self._calc_CoM()
+        CoM = self.calc_CoM()
         self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
     def rotate(self, x: float = 0., y: float = 0., z: float = 0.) -> None:
@@ -1231,7 +1231,7 @@ class Molecule(CompositeStructure):
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
         if position is None:
-            position = self._calc_CoM()
+            position = self.calc_CoM()
         super().__init__(position, velocity, name)
 
     @property
