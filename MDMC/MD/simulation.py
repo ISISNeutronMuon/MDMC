@@ -1584,7 +1584,7 @@ class Simulation:
                          variables: list[str] = ['temp', 'pe'],
                          eq_step: int = 10,
                          window_size: int = 100,
-                         tolerance: float = 0.01) -> int:
+                         tolerance: float = 0.01) -> (int, dict):
         """
         Equilibrate until the specified list of variables have stabilised.
         Uses the KPSS stationarity test to determine
