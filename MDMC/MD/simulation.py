@@ -5,7 +5,7 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from typing import Union, TYPE_CHECKING
+from typing import Union, Tuple, TYPE_CHECKING
 from statsmodels.tsa.stattools import kpss
 
 import numpy as np
@@ -1584,7 +1584,7 @@ class Simulation:
                          variables: list[str] = ['temp', 'pe'],
                          eq_step: int = 10,
                          window_size: int = 100,
-                         tolerance: float = 0.01) -> (int, dict):
+                         tolerance: float = 0.01) -> Tuple[int, dict]:
         """
         Equilibrate until the specified list of variables have stabilised.
         Uses the KPSS stationarity test to determine
