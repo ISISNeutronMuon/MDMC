@@ -62,4 +62,11 @@ def read(file: str, docstring: bool = False, **settings: dict) -> 'Union[list[At
 
     with reader:
         reader.parse(**settings)
-    return reader.atoms
+    atoms = reader.atoms
+
+    # define variables from settings
+    for setting, values in settings.items():
+        for atom, value in zip(atoms, values):
+            setattr(atom, setting, value)
+
+    return atoms
