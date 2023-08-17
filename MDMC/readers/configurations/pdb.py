@@ -1,12 +1,16 @@
 """Module for reading pdb files"""
 # pylint: disable=no-name-in-module
 import itertools
+from typing import TYPE_CHECKING, List
 
 import numpy as np
 
 from MDMC.MD.interactions import Bond
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
 from MDMC.MD.structures import Atom
+
+if TYPE_CHECKING:
+    from MDMC.MD.interactions import BondedInteraction
 
 
 class ProteinDataBankReader(ConfigurationReader):
@@ -27,13 +31,11 @@ class ProteinDataBankReader(ConfigurationReader):
             pdb_reader.parse()
             water = pdb_reader.molecules[0]
     """
+    extension = 'pdb'
 
     def __init__(self, file_name: str):
         super().__init__(file_name)
-        self._atoms = []
-        self._molecules = []
-        self._structures = []
-        self._bonds = []
+        self._bonds: List['Bond'] = []
 
     def parse(self, **settings: dict) -> None:
         # This follows https://www.wwpdb.org/documentation/file-format v3.30 (line 180 of A4 pdf)
@@ -82,7 +84,7 @@ class ProteinDataBankReader(ConfigurationReader):
         difference = np.subtract(atom1.position, atom2.position)
         bond_length = np.linalg.norm(difference)
         if bond_length < cutoff:
-            self._bonds += Bond((atom1, atom2))
+            self._bonds += [Bond((atom1, atom2))]
 
     @property
     def atoms(self) -> 'list[Atom]':
@@ -93,8 +95,3 @@ class ProteinDataBankReader(ConfigurationReader):
         """Returns the bonds within the molecule,
         as specified by "CONECT" statements in the pdb file"""
         return self._bonds
-
-    @property
-    @staticmethod
-    def extension() -> str:
-        return "pdb"

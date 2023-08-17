@@ -1,3 +1,3 @@
 """Exporters for molecular dynamics configurations."""
-from .pdb import ProteinDataBankExporter
+from .ase import ASEExporter
 from .packmol_input import PackmolInputExporter

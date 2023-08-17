@@ -1,57 +1,50 @@
-"""Module for reading cif files
+"""
+Reads a .cif file into an MDMC molecule, optionally ignoring symmetry data.
+Adapted from https://wiki.fysik.dtu.dk/ase/_modules/ase/io/cif.html#read_cif.
 """
 from typing import TYPE_CHECKING
 
-from MDMC.common.decorators import set_docstring
-from MDMC.MD.ase.cif import ase_read_cif
+from ase.io.cif import parse_cif
+
+from MDMC.MD.ase.convert import ASE_to_MDMC
 from MDMC.readers.configurations.conf_reader import ConfigurationReader
+from MDMC.readers.configurations.ase import ASEReader
 
 if TYPE_CHECKING:
-    from MDMC.MD.structures import Atom
+    from MDMC.MD import Atom
 
-
-class CIF(ConfigurationReader):
-
+class CIFReader(ConfigurationReader):
     """
-    A class for reading CIF configuration files
-
-    Examples
-    --------
-    To use a CIF reader to read a file called 'paracetamol.cif' and create a
-    ``Molecule`` from it (assuming ``Molecule`` has been imported from
-    ``MDMC.MD``):
-
-    .. highlight:: python
-    .. code-block:: python
-
-        file = 'paracetamol.cif'
-        cif = CIF()
-        cif.open(file)
-        # See parse docstring for description of ``names`` parameter
-        # Lines are oxygen, nitrogen, carbon and hydrogen atoms
-        cif.parse(names=['109', '177', # Oxygens
-                         '207', # Nitrogen
-                         '208', '108', '90', '178', '90', '90', '90', '185',
-                         '85', '85', '85', '91', '91', '91', '91', '183', '110']
-                 ) # Hydrogens)
-        paracetamol = Molecule(atoms=cif.atoms)
+    Reads a .cif file into a list of MDMC Atoms.
     """
-
     extension = 'cif'
 
-    def __init__(self, file_name: str):
-
-        super().__init__(file_name)
-        self._atoms = None
-
-    # Dynamically set docstring
-    #pylint: disable=missing-docstring
-    @set_docstring(ase_read_cif.__doc__)
     def parse(self, **settings: dict) -> None:
+        """
+        Parse a .cif file into a list of MDMC Atoms,
+        optionally ignoring symmetry data.
 
-        self._atoms = ase_read_cif(self.file, **settings)
+        Parameters
+        ----------
+        settings:
+            ignore_symmetry: bool, default True
+                Whether to read or ignore symmetry data.
+        """
+        if settings.get('ignore_symmetry', True):
+            images = []
+            for block in parse_cif(self.file):
+                if not block.has_structure():
+                    continue
 
-    @property
-    def atoms(self) -> 'list[Atom]':
+                # this is the only place where we differ from ase.io.cif.read_cif:
+                # just get the unsymmetrised structure rather than symmetrising it
+                atoms = block.get_unsymmetrized_structure()
+                images.append(atoms)
 
-        return self._atoms
+            atoms = list(images)[0]
+            self._atoms = ASE_to_MDMC(atoms)
+        else:  # else, this is just the standard ASE cif parsing
+            reader = ASEReader(self.file_name)
+            with reader:
+                reader.parse()
+                self._atoms = reader.atoms
