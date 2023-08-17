@@ -15,6 +15,7 @@ from math import gcd
 from typing import Callable, Union, TYPE_CHECKING
 import warnings
 import weakref
+import periodictable
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -743,12 +744,15 @@ class Atom(Structure):
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
-        self.element = element
+        try:
+            self.element = periodictable.elements.symbol(element)
+        except ValueError:
+            self.element = element
 
         try:
             self.mass = settings['mass']
         except KeyError:
-            self.mass = atom_properties.MASS[self.element]
+            self.mass = self.element.mass #  atom_properties.MASS[self.element]
 
         self._atom_type = settings.get('atom_type', None)
         self.cutoff = settings.get('cutoff', None)
@@ -812,7 +816,7 @@ class Atom(Structure):
         return ('{0} atom,'
                 '  ID: {1}'
                 '  charge: {2},'
-                '  interactions: {3}'.format(self.element,
+                '  interactions: {3}'.format(self.element.symbol,
                                              self.ID,
                                              self.charge,
                                              [i.name for i
@@ -827,7 +831,7 @@ class Atom(Structure):
         """
 
         return ('{0} {1}  charge: {2}  position: {3}'.format(
-            self.element,
+            self.element.symbol,
             self.__class__.__name__,
             self.charge,
             self.position))
@@ -1164,7 +1168,7 @@ class Atom(Structure):
     def is_equivalent(self, structure: Structure) -> bool:
 
         return isinstance(structure, type(self)) and \
-               all([structure.element == self.element,
+               all([structure.element.symbol == self.element.symbol,
                     structure.mass == self.mass,
                     structure.charge == self.charge,
                     len(self.bonded_interactions) == len(structure.bonded_interactions),
