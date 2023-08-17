@@ -15,13 +15,13 @@ if TYPE_CHECKING:
 
 class CIFReader(ConfigurationReader):
     """
-    Reads a .cif file into an MDMC molecule.
+    Reads a .cif file into a list of MDMC Atoms.
     """
     extension = 'cif'
 
     def parse(self, **settings: dict) -> None:
         """
-        Parse a .cif file into an MDMC molecule,
+        Parse a .cif file into a list of MDMC Atoms,
         optionally ignoring symmetry data.
 
         Parameters

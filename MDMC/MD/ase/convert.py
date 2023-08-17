@@ -5,7 +5,7 @@ import numpy as np
 import ase
 from ase.geometry.analysis import Analysis
 
-from MDMC.MD.structures import Atom
+from MDMC.MD.structures import Atom, Molecule
 from MDMC.MD.interactions import Bond, BondAngle, DihedralAngle
 
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
     """
-    Convert an ase Atoms object to a Molecule.
+    Convert an ASE Atoms object to a list of Atoms.
 
     Parameters
     ----------
@@ -22,8 +22,8 @@ def ASE_to_MDMC(atoms: ase.Atoms) -> List[Atom]:
 
     Returns
     -------
-    Molecule
-        an MDMC Molecule corresponding to the ASE Atoms object.
+    List[Atom]
+        a list of Atoms with bonds corresponding to the ASE Atoms object.
     """
 
     # create MDMC Atom objects
@@ -83,7 +83,7 @@ def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
                          charge=atom.charge)
 
 
-def MDMC_to_ASE(structure: Union['Structure', 'Universe'],
+def MDMC_to_ASE(structure: Union['Structure', 'Universe', List[Atom]],
                 cell: Optional[np.ndarray] = None) -> ase.Atoms:
     """
     Convert an MDMC Structure into an ase.Atoms object.
@@ -91,8 +91,8 @@ def MDMC_to_ASE(structure: Union['Structure', 'Universe'],
 
     Parameters:
     -----------
-    structure: Structure
-        the MDMC Structure to convert.
+    structure: Structure, Universe or List[Atom]
+        the MDMC object to convert.
     cell: np.array, optional, default None
         provides cell dimensions for the ASE Atoms object.
         If None, the default cell size (0,0,0) is used.
@@ -102,6 +102,9 @@ def MDMC_to_ASE(structure: Union['Structure', 'Universe'],
     ase.Atoms
         an ASE Atoms object corresponding to the same structure.
     """
+    if isinstance(structure, list):  # if list of atoms, compile into molecule
+        structure = Molecule(atoms=structure)
+
     if cell is None:
         cell = np.array([0., 0., 0.,])
 
