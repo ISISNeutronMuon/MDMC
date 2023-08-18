@@ -8,7 +8,7 @@ from typing import List
 
 from MDMC.MD.packmol.packmol_setup import PackmolSetup
 from MDMC.MD import Universe, Molecule, Atom, Structure
-from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
+from MDMC.exporters.configurations.ase import ASEExporter
 from MDMC.exporters.configurations.packmol_input import PackmolInputExporter
 from MDMC.readers.configurations.packmol_pdb import PackmolPDBReader
 
@@ -95,7 +95,7 @@ class PackmolFiller:
         for i, structure in enumerate(structures):
             file_name = f"{str(structure.name)}-{str(i)}"
             file_path = os.path.join(self._packmol_files_path, f"{file_name}.pdb")
-            pdb_exporter = ProteinDataBankExporter(file_path)
+            pdb_exporter = ASEExporter(file_path)
             with pdb_exporter:
                 pdb_exporter.write(structure)
             self._mol_file_names[structure] = file_name

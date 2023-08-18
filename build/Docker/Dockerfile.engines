@@ -86,7 +86,7 @@ RUN cmake -C ../cmake/presets/all_on.cmake \
 RUN make
 RUN make install-python
 
-# get DLPOLY
+# get and install DLPOLY
 RUN mkdir /opt/MD/dlpoly
 WORKDIR /opt/MD/dlpoly
 RUN git clone https://gitlab.com/ccp5/dl-poly.git
