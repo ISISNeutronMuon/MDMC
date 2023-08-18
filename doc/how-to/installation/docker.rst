@@ -94,7 +94,7 @@ X11 Forwarding for Docker
 By default, Docker is not configured to enable GUI visualisation (a feature of
 Docker and containers).  To enable this use the X11 system, described below. GUI
 is for example needed for using the :code:`'ASE'` viewer for visualising
-molecule / universe setups with MDMC. However, the :code:`'X3DOM'` viewer, which
+molecule / universe setups with MDMC. However, the :code:`'X3D'` viewer, which
 has almost all of the functionality of the :code:`'ASE'` viewer, can be used in
 a Jupyter notebook **without** enabling X11 forwarding. The difference between
 these viewers is explained in the
