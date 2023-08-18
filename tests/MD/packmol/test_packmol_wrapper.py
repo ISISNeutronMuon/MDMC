@@ -42,7 +42,7 @@ def water_argon_mix_setup(h2o_molecule, water_setup):
 def simple_filled_universe(water_setup):
     """
     Returns the universe result from a packmol run using the water_setup setup object
-    
+
     This should be a 30Ang cube of water.
     """
     return packmol.PackmolFiller(water_setup).fill_with_packmol()
@@ -53,7 +53,7 @@ def complex_filled_universe(water_argon_mix_setup):
     Returns the universe result from a packmol run using the water_argon_mix_setup setup object.
 
     This should be a 30Ang cube of water, and diagonal to it, a 40Ang cube of argon.
-    
+
     """
     return packmol.PackmolFiller(water_argon_mix_setup).fill_with_packmol()
 
@@ -128,5 +128,5 @@ def test_complex_system_properties(complex_filled_universe):
     assert complex_filled_universe.n_atoms == 5900
     assert complex_filled_universe.n_molecules == 1350
     assert set(complex_filled_universe.element_list) == {"H", "O", "Ar"}
-    # 2 bonded interactions per molecule
+    # 2 bonded interactions per molecule, argon has no interactions
     assert len(complex_filled_universe.bonded_interactions) == 2700

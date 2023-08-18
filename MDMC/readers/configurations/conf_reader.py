@@ -1,7 +1,5 @@
 """Module for observable reader abstract class"""
-
-from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from MDMC.common.decorators import repr_decorator
 from MDMC.readers.reader import Reader
@@ -19,22 +17,14 @@ class ConfigurationReader(Reader):
     A ``ConfigurationReader`` is created using ``ConfigurationReaderFactory``
     """
 
-    @property
-    @staticmethod
-    @abstractmethod
-    def extension() -> str:
-        """
-        The expected file extension for the ``ConfigurationReader``
-        """
-
-        raise NotImplementedError
+    def __init__(self, file_name: str):
+        super().__init__(file_name)
+        self._atoms: List['Atom'] = []
 
     @property
-    @abstractmethod
     def atoms(self) -> 'list[Atom]':
         """
-        All subclasses must implement atoms, which returns a list of ``Atom``
-        objects from the data read from the file
+        The `Atom` objects parsed from the file.
         """
 
-        raise NotImplementedError
+        return self._atoms
