@@ -1579,7 +1579,9 @@ class Simulation:
         verbose_manager.finish(f"{process.capitalize()}")
 
     # pylint: disable=dangerous-default-value
-    # we don't mutate it! and 'None' makes no sense for readability
+    # this is flagged up by variables having a list as default value
+    # but we don't mutate the list anywhere in the function, so
+    # this is safe and has better readability
     def auto_equilibrate(self,
                          variables: list[str] = ['temp', 'pe'],
                          eq_step: int = 10,
@@ -1593,7 +1595,7 @@ class Simulation:
         Parameters
         ----------
         variables: list[str], default ['temp', 'pe']
-            The variables we use to monitor stability.
+            The MD engine variables we use to monitor stability.
         eq_step: int, default 10
             The number of equilibration steps between each stability check.
         window_size: int, default 100
@@ -1629,18 +1631,18 @@ class Simulation:
             window = variable_values[-window_size:]
             results = kpss(window, regression='c')
             # results[1] is the p-value from the test
-            # note that the alternative hypothesis is "NOT stationary"
-            # also statsmodels never gives above 0.1 as a p-value because
-            # it doesn't have critical values above there; any higher p
-            # is brought down to 0.1. thus we use it as our max value for tolerance
-            return not results[1] < 0.1 - tolerance
+            # we base our tolerance on the p-value, where the altenrative hypothesis
+            # for KPSS is "NOT stationary" - statsmodels also never gives a p above
+            # 0.1 as it doesn't hold critical values above that point. so for 0.05
+            # tolerance, we are asking that p be greater than 0.95
+            return results[1] > 0.1 - tolerance
 
         # we perform an initial run of window_size*eq_step steps to create a window.
         for _ in range(window_size):
             auto_step()
 
         # we consider the simulation stable if the rolling window
-        # is stationary for all varriables (by KPSS)
+        # is stationary for all variables (by KPSS)
         while not all(window_is_stationary(var) for var in vals_dict):
             auto_step()
 
