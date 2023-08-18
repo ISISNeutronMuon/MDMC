@@ -752,7 +752,10 @@ class Atom(Structure):
         try:
             self.mass = settings['mass']
         except KeyError:
-            self.mass = self.element.mass #  atom_properties.MASS[self.element]
+            try:
+                self.mass = self.element.mass #  atom_properties.MASS[self.element]
+            except AttributeError:
+                periodictable.elements.symbol(element).mass
 
         self._atom_type = settings.get('atom_type', None)
         self.cutoff = settings.get('cutoff', None)
