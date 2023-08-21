@@ -1,3 +1,4 @@
+
 """Module for setting up and running the simulation
 
  Classes for the simulation box, minimizer and integrator."""
@@ -1428,16 +1429,11 @@ class Simulation:
         self.engine.parent_simulation = self
         self.verbose = settings.get('verbose', True)
         self._setup()
-        
-        units = {
-            "temperature": "K",
-            "pressure": "Pa"
-        }
-        
+
         setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
             setup_values = [
-                [f'{value} {units.get(key, "")}' if key in units else value]
+                [f'{value} {units.SYSTEM.get(key.upper(), "")}']
                 for key, value in self.settings.items()
             ]
             setup_keys = [f'  {key}' for key in self.settings]
@@ -1463,7 +1459,7 @@ class Simulation:
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
         self._time_step = value
-        
+
     @property
     def temperature(self) -> float:
         """
@@ -1472,7 +1468,7 @@ class Simulation:
         Returns
         -------
         `float`
-            Simulation time step in ``K``S
+            Simulation time step in ``K``
         """
         return self._temperature
 
@@ -1480,8 +1476,6 @@ class Simulation:
     @unit_decorator(unit=units.TEMPERATURE)
     def temperature(self, value: float)-> None:
         self._temperature = value
-    
-    
     @property
     def pressure(self) -> float:
         """
@@ -1493,11 +1487,12 @@ class Simulation:
             Simulation time step in ``Pa``
         """
         return self._pressure
-    
+
     @pressure.setter
     @unit_decorator(unit=units.PRESSURE)
     def pressure(self, value: float):
-         self._pressure = value
+        self._pressure = value
+
     @property
     def traj_step(self) -> int:
         """
