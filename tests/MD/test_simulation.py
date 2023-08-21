@@ -64,7 +64,7 @@ def water_SPCE_universe(water_molecule):
     water_universe.fill(water_molecule, force_field='SPCE',
                         num_density=WATER_NUM_DENSITY)
     O_atom_type = next(atom.atom_type for atom in water_universe.atoms
-                       if atom.element == 'O')
+                       if atom.element.symbol == 'O')
     O_dispersion = interactions.Dispersion(water_universe, (O_atom_type, O_atom_type))
     yield water_universe
 
@@ -146,7 +146,7 @@ def test_create_atom(atom):
 
     npt.assert_array_equal((0., 0., 0.), atom.position)
     npt.assert_array_equal((0., 0., 0.), atom.velocity)
-    assert atom.element == 'H'
+    assert atom.element.symbol == 'H'
     assert atom.mass == 1.008
 
 
@@ -368,7 +368,7 @@ def test_add_molecule(universe, water_molecule):
 
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
-                       if atom.element == 'O')
+                       if atom.element.symbol == 'O')
     O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     interaction_elements = []
     for interaction in water_molecule.interactions:
@@ -382,7 +382,7 @@ def test_spce_water_molecule(universe, water_molecule):
     universe.add_structure(water_molecule)
     # Add Dispersion interaction
     O_atom_type = next(atom.atom_type for atom in water_molecule.atoms
-                       if atom.element == 'O')
+                       if atom.element.symbol == 'O')
     O_dispersion = interactions.Dispersion(universe, (O_atom_type, O_atom_type))
     universe.add_force_field('SPCE')
 
@@ -914,9 +914,9 @@ def test_universe_fill_equivalence(universe, num_density, water_molecule):
 
     for u in [universe, universe_manual]:
         for atom in u.atoms:
-            if atom.element == 'H':
+            if atom.element.symbol == 'H':
                 assert atom.atom_type == 1
-            elif atom.element == 'O':
+            elif atom.element.symbol == 'O':
                 assert atom.atom_type == 2
 
 

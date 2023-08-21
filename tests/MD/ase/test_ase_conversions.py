@@ -195,7 +195,7 @@ def test_convert_from_ase_atom(element, atom_type, name, set_charge):
                                              name=name,
                                              set_charge=set_charge,
                                              cutoff=10.)
-    assert atom.element == element
+    assert atom.element.symbol == element
     assert atom.atom_type == atom_type
     # If a name is not passed, the name should be the symbol
     name = name if name else ase_atom.symbol

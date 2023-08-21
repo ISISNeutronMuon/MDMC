@@ -836,7 +836,7 @@ def configurations_as_compact_trajectory(*configs: List[TemporalConfiguration])-
     atom_counter = 0
     # we just iterate over Atom objects
     for nat, atom in enumerate(configs[0].atoms):
-        element = atom.element
+        element = atom.element.symbol
         mass = atom.mass
         charge = atom.charge
         elements.append(element)

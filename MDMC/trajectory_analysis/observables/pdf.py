@@ -641,7 +641,7 @@ class PairDistributionFunction(Observable):
         Partitions the atomic positions into paritions of dimensions specified
         by ``part_comps``
 
-        ``Atom`` objects are grouped in partitions by ``Atom.element``
+        ``Atom`` objects are grouped in partitions by ``Atom.element.symbol``
 
         Parameters
         ----------
@@ -650,7 +650,7 @@ class PairDistributionFunction(Observable):
             shape = (num_time_steps, num_atoms, 3)
         element_list : list
             A `list` of `str` with the same length as ``positions``. Each `str`
-            specifies the ``Atom.element`` for the corresponding index in
+            specifies the ``Atom.element.symbol`` for the corresponding index in
             ``positions``.
         part_comps : numpy.ndarray
             A 3 element array specifying the length of each component for all

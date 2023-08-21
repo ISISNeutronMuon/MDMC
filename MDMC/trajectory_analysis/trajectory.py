@@ -170,7 +170,7 @@ class Configuration(AtomCollection):
     @property
     def element_list(self) -> list:
         """
-        Get the `list` of ``Atom.element`` which belong to the ``Configuration``
+        Get the `list` of ``Atom.element.symbol`` which belong to the ``Configuration``
 
         Returns
         -------
@@ -178,7 +178,7 @@ class Configuration(AtomCollection):
             A `list` of `str` for the elements
         """
 
-        return [atom.element for atom in self.atoms]
+        return [atom.element.symbol for atom in self.atoms]
 
     @property
     def molecule_list(self) -> 'list[Molecule]':

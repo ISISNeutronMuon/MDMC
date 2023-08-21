@@ -522,7 +522,7 @@ class CompositeStructure(Structure, AtomContainer):
             The chemical formula using the Hill system
         """
 
-        return get_reduced_chemical_formula([atom.element for atom
+        return get_reduced_chemical_formula([atom.element.symbol for atom
                                              in self.atoms])
 
     @property
@@ -745,7 +745,7 @@ class Atom(Structure):
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
-        
+
         try:
             isotope_re = re.compile(r"\[(\d+)\]")
             element_re = re.compile(r"^[a-zA-Z]{1,2}")

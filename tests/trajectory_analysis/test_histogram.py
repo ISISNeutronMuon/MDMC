@@ -70,9 +70,9 @@ def test_configuration(configuration):
     # Testing filter_by_element
     H_atoms = configuration.filter_by_element('H')
     for atom in H_atoms:
-        assert atom.element == 'H'
+        assert atom.element.symbol == 'H'
     for atom in set(configuration.atoms) - set(H_atoms):
-        assert atom.element != 'H'
+        assert atom.element.symbol != 'H'
 
 def test_trajectory(trajectory):
 
