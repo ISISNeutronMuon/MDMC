@@ -18,6 +18,7 @@ import weakref
 import periodictable
 
 import numpy as np
+import re
 from scipy.spatial.transform import Rotation
 
 from MDMC.common import atom_properties
@@ -728,8 +729,8 @@ class Atom(Structure):
             with other atoms. Must be set if a charge is being added to the atom.
     Attributes
     ----------
-    element : str
-        The atomic element label
+    element : periodictable.core.Element
+        The periodictable atomic element instance 
     """
 
     def __init__(self, element: str,
@@ -740,22 +741,29 @@ class Atom(Structure):
                  charge: float = None, **settings: dict):
 
         self.universe = None
-        # the syntax for optional keyword arguments is: kwargs.get(str, default_value)
+
         super().__init__(position, velocity, name=settings.get('name', element))
         self._nonbonded_interactions = []
         self._bonded_interaction_pairs = []
+        
         try:
-            self.element = periodictable.elements.symbol(element)
-        except ValueError:
-            self.element = element
+            isotope_re = re.compile(r"\[(\d+)\]")
+            element_re = re.compile(r"^[a-zA-Z]{1,2}")
+            el = element_re.findall(element)[0]
+            try:
+                iso = int(isotope_re.findall(element)[0])
+                self.element = periodictable.elements.symbol(el)[iso]
+            except IndexError:
+                self.element = periodictable.elements.symbol(el)
+
+        except ValueError as error:
+            msg = "Please provide a valid element and/or isotope"
+            raise ValueError(msg)
 
         try:
             self.mass = settings['mass']
         except KeyError:
-            try:
-                self.mass = self.element.mass #  atom_properties.MASS[self.element]
-            except AttributeError:
-                periodictable.elements.symbol(element).mass
+            self.mass = self.element.mass
 
         self._atom_type = settings.get('atom_type', None)
         self.cutoff = settings.get('cutoff', None)
