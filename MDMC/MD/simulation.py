@@ -6,8 +6,8 @@ test
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from typing import Self, Union, TYPE_CHECKING
-import textwrap
+from typing import Union, TYPE_CHECKING
+
 import numpy as np
 import pandas as pd
 from verbosemanager import VerboseManager
@@ -157,9 +157,9 @@ class Universe(AtomContainer):
                     self.__class__,
                     self.dimensions)
         
+        round_dime = [f"{d:.2f}" if d % 1 != 0 else str(int(d)) for d in self.dimensions]
 
-        if self.verbose:
-          round_dime = [str(d) for d in np.round(self.dimensions, 2)]
+        if self.verbose and round_dime:
           setup_frame = ["Universe created with:"]
           setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
           if force_field is not None:
@@ -169,6 +169,7 @@ class Universe(AtomContainer):
           print('\n'.join(setup_frame))
           
           
+
     def __str__(self) -> str:
 
         return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
@@ -1437,21 +1438,23 @@ class Simulation:
             setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
+
         if self.verbose:
             print(setup_msg)
-
 
     @property
     def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
+
         Returns
         -------
         `float`
             Simulation time step in ``fs``
         """
-        
+
         return self._time_step
+
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
