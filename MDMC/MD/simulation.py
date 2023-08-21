@@ -155,18 +155,18 @@ class Universe(AtomContainer):
         LOGGER.info(r'%s created: {dimensions:%s}',
                     self.__class__,
                     self.dimensions)
-        
+
         if self.verbose:
-          round_dime = [str(d) for d in np.round(self.dimensions, 2)]
-          setup_frame = ["Universe created with:"]
-          setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
-          
-          if force_field is not None:
-            setup_frame.append(f"Force field    {force_field}")
-          if self.n_atoms > 0:
-             setup_frame.append(f"Number of atoms    {self.n_atoms}")
-             
-          print('\n'.join(setup_frame))
+            round_dime = [str(d) for d in np.round(self.dimensions, 2)]
+            setup_frame = ["Universe created with:"]
+            setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
+
+            if force_field is not None:
+                setup_frame.append(f"Force field    {force_field}")
+            if self.n_atoms > 0:
+                setup_frame.append(f"Number of atoms    {self.n_atoms}")
+
+            print('\n'.join(setup_frame))
 
     def __str__(self) -> str:
 
@@ -1449,7 +1449,7 @@ class Simulation:
         `float`
             Simulation time step in ``fs``
         """
-        
+
         return self._time_step
     @time_step.setter
     @unit_decorator(unit=units.TIME)
