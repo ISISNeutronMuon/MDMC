@@ -192,20 +192,18 @@ def test_create_universe(universe):
     assert universe != universe_unequal
 
 
-
 def test_universe_stdout(capsys):
     # Capture stdout using pytest fixure
     univ = sim.Universe(SPCE_DIMENSIONS)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
-    captured = capsys.readouterr()
-    stdout = captured.out
-    expected_output = '''\
-(Universe created with:)
-Dimensions   [18.62, 18.62, 18.62]
-Force field created by solvent SPCE
-'''
+    stdout = capsys.readouterr().out
+    assert stdout == ('Universe created with:\n'
+                      '  Dimensions       [18.62, 18.62, 18.62]\n'
+                      '  Force field                       None\n'
+                      '  Number of atoms                      0\n'
+                      '\n'
+                      'Force field created by solvent SPCE\n')
 
-    assert stdout == expected_output, f"Expected:\n{expected_output}\nActual:\n{stdout}"
 
 def test_create_atom(atom):
 
