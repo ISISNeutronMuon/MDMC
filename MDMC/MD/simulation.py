@@ -154,7 +154,7 @@ class Universe(AtomContainer):
         LOGGER.info(r'%s created: {dimensions:%s}',
                     self.__class__,
                     self.dimensions)
-
+        
         if self.verbose:
             round_dime = [str(d) for d in np.round(self.dimensions, 2)]
             setup_frame = ["Universe created with:"]
@@ -166,7 +166,7 @@ class Universe(AtomContainer):
                 setup_frame.append(f"Number of atoms    {self.n_atoms}")
 
         print('\n'.join(setup_frame))
-
+        
     def __str__(self) -> str:
 
         return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
