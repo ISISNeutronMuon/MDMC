@@ -198,17 +198,9 @@ def test_universe_stdout(capsys):
     univ = sim.Universe(SPCE_DIMENSIONS,force_field, n_atoms)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     stdout = capsys.readouterr().out
-    expect_output = ( 'Universe created with:\n'
+    assert stdout == ('Universe created with:\n'
                       'Dimensions   [18.62, 18.62, 18.62]\n'
-                      )
-    if force_field is not None and n_atoms != 0:
-        expect_output += (
-            '  Force field       {}\n'.format(force_field) +
-            '  Number of atoms   {}\n'.format(n_atoms)
-        )
-
-    expect_output += 'Force field created by solvent SPCE\n'
-    assert stdout == expect_output
+                      'Force field created by solvent SPCE\n')
 
 
 def test_create_atom(atom):
