@@ -11,16 +11,17 @@ from MDMC.gui import view
 # rather than fixtures and pytest_cases.parametrize because
 # for some reason, when we use fixtures and parametrize over the fixtures,
 # the tests create new atoms which make ase.conversions fall over.
-def atom():
-    """One atom object."""
-    Ar = MD.Atom('Ar', position=(0., 0.81649, 0.57736), charge=-0.8476)
+def atoms():
+    """Two unbonded atom objects."""
+    H1 = MD.Atom('H', charge=0.4238)
+    O = MD.Atom('O', position=(0., 0.81649, 0.57736), charge=-0.8476)
 
-    return Ar
+    return [H1, O]
 
 def water_molecule():
     """A water molecule."""
-    H1 = MD.Atom('H', charge=0.4238)
-    O = MD.Atom('O', position=(0., 0.81649, 0.57736), charge=-0.8476)
+    H1 = atoms()[0]
+    O = atoms()[1]
     HO_bond = MD.Bond((H1, O))
     H2 = H1.copy(position=(0., 1.63298, 0.))
 
@@ -34,16 +35,16 @@ def universe():
     return box
 
 fixture_dict = {
-    'atom': atom(),
+    'atoms': atoms(),
     'water_molecule': water_molecule(),
     'universe': universe()
 }
 
 
-@pytest.mark.parametrize('structures', ['atom', 'water_molecule', 'universe'])
+@pytest.mark.parametrize('structures', ['atoms', 'water_molecule', 'universe'])
 def test_view_X3DOM(structures):
     """Tests that the HTML viewer creates the expected objects."""
-    html = view(fixture_dict[structures], viewer='X3D')
+    html = view(fixture_dict[structures], viewer='X3DOM')
     expected = HTML(filename=GUI_DATA[structures + "_X3DOM"])
 
     assert html.data == expected.data

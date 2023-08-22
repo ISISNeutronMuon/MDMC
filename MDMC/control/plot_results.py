@@ -1,10 +1,7 @@
-"""A module for plotting data and results of a minimization."""
-from abc import ABC, abstractmethod
-
+"""A module for plotting the results of a minimization in a cornerplot"""
 import numpy as np
 import pandas as pd
 import corner
-import IPython.display
 
 from skopt import Optimizer
 
@@ -56,7 +53,8 @@ class PlotResults():
         # Convert to float where possible (i.e. not a string)
 
         FoMs = records['FoM'].to_list()
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'], errors='ignore')
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state',
+                                        'Pred coords', 'Pred FoM'], errors='ignore')
         # TODO this is hard coded to creation of history, may want to change
 
         coordinates = records.values.tolist()
@@ -163,77 +161,3 @@ class PlotResults():
         mean, std = np.mean(data, axis=0), np.std(data, axis=0)
 
         return cornerplot, mean, std
-
-
-class DataPrinter(ABC):
-    """
-    A class for printing data during a minimisation.
-    """
-
-    @abstractmethod
-    def print_data(self, history):
-        """
-        Update table at the end of a refinement step.
-
-        Parameters:
-        history
-            The history of the minimizer data is printed from.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def print_header(self, history):
-        """
-        Create table headers at the start of refinement.
-
-        Parameters:
-        history
-            The history of the minimizer data is printed from.
-        """
-        raise NotImplementedError
-
-
-class PlaintextDataPrinter(DataPrinter):
-    """Plaintext data printer."""
-
-    def print_data(self, history) -> None:
-        with pd.option_context('display.max_colwidth', 12,
-                               'display.precision', 5,
-                               'display.float_format', '{:.4g}'.format):
-            n_step = history.iloc[-1].name
-            output = history.loc[[n_step]].to_string(
-                col_space=12, index=False, header=False).split('\n')
-            data = '{:4d}'.format(n_step) + ''.join(output)
-            print(data)
-
-    def print_header(self, history) -> None:
-        def format_column(column):
-            column = column if len(column) < 13 else column[:9] + '...'
-            return ' ' * (12 - len(column)) + column
-
-        columns = ' '.join([format_column(col) for col
-                            in history.columns])
-        header = 'Step' + columns
-        print(header)
-
-
-class IPythonDataPrinter(DataPrinter):
-    """Prettier IPython data printer, for Jupyter Notebooks, etc."""
-    def __init__(self):
-        self.display = IPython.display.DisplayHandle()
-
-    def print_data(self, history) -> None:
-        history_table = pd.DataFrame(history,
-                                     columns=history.columns)
-        history_table.index.name = "Step"
-        self.display.update(history_table)
-
-    def print_header(self, history) -> None:
-        history_table = pd.DataFrame(columns=history.columns)
-        self.display.display(history_table)
-
-
-data_printers = {
-    'plaintext': PlaintextDataPrinter,
-    'ipython': IPythonDataPrinter
-}

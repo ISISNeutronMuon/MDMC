@@ -29,7 +29,7 @@ from itertools import chain, combinations, count, product
 import logging
 from random import randint
 from tempfile import NamedTemporaryFile
-from typing import Union, Any
+from typing import Union
 import os
 
 import numpy as np
@@ -705,10 +705,6 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
 
     def reset_config(self) -> None:
         self.lmp_universe.set_config(self.saved_config)
-
-    def eval(self, variable: str) -> Any:
-        return self.lmp.eval(variable)
-
 
 
 @repr_decorator('universe')

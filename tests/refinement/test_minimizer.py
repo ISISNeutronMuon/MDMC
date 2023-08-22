@@ -1,6 +1,5 @@
 """Tests the Minimizer base class"""
 from tempfile import NamedTemporaryFile
-from copy import copy
 
 from unittest.mock import patch
 
@@ -114,23 +113,21 @@ def test_minimizer_write_history(mockcontrol, parameters):
                           ([0, 9, 2],
                            ['A', 'C', 'charge', 'equilibrium_state', 'sigma'])
                           ])
-@pytest.mark.parametrize('minimizer_name', MinimizerFactory.get_minimizer_names())
-def test_minimizer_history_columns(mockcontrol, parameters, p_slice, columns, minimizer_name):
+def test_minimizer_history_columns(mockcontrol, parameters, p_slice, columns):
     """
     Tests that the history columns for the` minimizer are as expected,
     including the names of the ``Parameter`` objects which are refined
     """
     parameter_slice = Parameters(list(parameters.values())[slice(*p_slice)])
 
-    minim = MinimizerFactory.create_minimizer(minimizer_name, mockcontrol, parameter_slice)
-    expected_columns = copy(columns)  # copy required else the actual parameters get changed by append
-    expected_columns.append('FoM')
-    if minimizer_name == "MMC":  # only MMC has the 'accept'/'reject' column
-        expected_columns.append('Change state')
+    for minimizer_name in MinimizerFactory.get_minimizer_names():
+        minim = MinimizerFactory.create_minimizer(minimizer_name, mockcontrol, parameter_slice)
+        expected_columns = columns
+        expected_columns.extend(['FoM', 'Change state'])
 
-    for expected_column in expected_columns:
-        assert np.any([expected_column in history_columns for \
-                        history_columns in minim.history_columns])
+        for expected_column in expected_columns:
+            assert np.any([expected_column in history_columns for \
+                            history_columns in minim.history_columns])
 
 
 def test_minimizer_fixed_parameter():
