@@ -1458,7 +1458,7 @@ class Simulation:
         `float`
             Simulation time step in ``fs``
         """
-
+        
         return self._time_step
     @time_step.setter
     @unit_decorator(unit=units.TIME)
