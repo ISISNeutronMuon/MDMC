@@ -5,18 +5,12 @@
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-<<<<<<< HEAD
+
 from typing import Union, Tuple, TYPE_CHECKING
 from statsmodels.tsa.stattools import kpss
-
-=======
-from typing import Self, Union, TYPE_CHECKING
-<<<<<<< HEAD
+from typing import Union, TYPE_CHECKING
 import textwrap
->>>>>>> parent of 56f80d41 (changes to the spacing)
-=======
 
->>>>>>> parent of b4f39954 (change to universe)
 import numpy as np
 import pandas as pd
 from verbosemanager import VerboseManager
@@ -1445,21 +1439,23 @@ class Simulation:
             setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
+
         if self.verbose:
             print(setup_msg)
-
 
     @property
     def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
+
         Returns
         -------
         `float`
             Simulation time step in ``fs``
         """
-        
+
         return self._time_step
+
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
