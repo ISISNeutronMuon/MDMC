@@ -28,3 +28,9 @@ build/lib/
 results*.csv
 
 MDMC.egg-info/
+
+prof
+
+.coverage
+
+.ipynb_checkpoints/
