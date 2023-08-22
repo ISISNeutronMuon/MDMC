@@ -6,7 +6,6 @@ from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
 from typing import Self, Union, TYPE_CHECKING
-import textwrap
 import numpy as np
 import pandas as pd
 from verbosemanager import VerboseManager
