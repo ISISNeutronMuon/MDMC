@@ -20,7 +20,7 @@ jobs:
 
     - name: Update frontend image for Python modules
       env:
-        BRANCH: ${{ github.head_ref }}
+        BRANCH: ${{ github.head_ref }} 
       run: |
         # If no image (mdmc/mdmc:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/mdmc:ci-$BRANCH || exit 0
@@ -29,7 +29,7 @@ jobs:
 
     - name: Update backend image for MD engines
       env:
-        BRANCH: ${{ github.head_ref }}
+        BRANCH: ${{ github.head_ref }} 
       run: |
         # If no image (mdmc/engines:ci-$BRANCH) was created for this PR, just exit as a success
         docker pull mdmc/engines:ci-$BRANCH || exit 0
@@ -51,42 +51,9 @@ jobs:
 
     - name: Rename to master profiling
       run: mv cron-total-profiling.csv master-profiling.csv
-
+    
     - name: Upload as master profiling
       uses: actions/upload-artifact@v3
       with:
         name: master-profiling
         path: master-profiling.csv
-
-  doc-deploy:
-    name: Documentation-deploy
-    needs: update-latest-image
-    runs-on: ubuntu-22.04
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-    - name: Build documentation
-      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
-    - name: Deploy
-      env:
-        token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
-      run: |
-        git clone https://github.com/MDMCproject/MDMCproject.github.io
-        cd ./MDMCproject.github.io
-        git checkout ci
-        cp -r  ../doc/_build/html/* ../MDMCproject.github.io/
-        git config --global user.name "Github Actions"
-        git commit -a -m "CI deployment"
-        git merge -X ours master
-        git push https://$token@github.com/MDMCproject/MDMCproject.github.io
-
-  prune-images:
-    name: Prune Old Docker Hub Images
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Prune images
-        env:
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: source .github/scripts/prune_docker_hub.sh
