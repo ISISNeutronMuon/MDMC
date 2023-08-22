@@ -18,21 +18,12 @@ jobs:
       - name: Check and build container
         env:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          BRANCH: ${{ github.head_ref }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: source .github/scripts/build_container.sh
 
   docker_tests:
     name: Docker including MD tests
     runs-on: ubuntu-22.04
-    steps:
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v3
-
     steps:
       - name: Setup Python
         uses: actions/setup-python@v2
@@ -43,7 +34,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Pull Docker Image
         env:
-          BRANCH: ${{ github.head_ref }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
@@ -54,21 +45,21 @@ jobs:
           docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }} python3 -m pytest -s $(pwd)/tests/;[ $? -eq 0 ]
           exit 0
 
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
-      continue-on-error: true
+      - name: Copy coverage
+        run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+        continue-on-error: true
 
-    - name: Copy profiling info, download profile script reqs. and profile
-      run: |
-        sudo docker cp $(docker ps -lq):/home/prof/ prof/
-        pip3 install pandas
-        python3 .github/scripts/process_prof_data.py prof/ || exit 1
+      - name: Copy profiling info, download profile script reqs. and profile
+        run: |
+          sudo docker cp $(docker ps -lq):/home/prof/ prof/
+          pip3 install pandas
+          python3 .github/scripts/process_prof_data.py prof/ || exit 1
 
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
+      - name: Upload code coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
   basic_tests:
     name: Non-container and not inc MD tests
@@ -139,6 +130,8 @@ jobs:
         run: source .github/scripts/singularity_setup.sh
 
       - name: Run tests
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
            singularity pull mdmc.sif docker://mdmc/mdmc:ci-$BRANCH || singularity pull mdmc.sif docker://mdmc/mdmc:latest
            singularity exec mdmc.sif pip3 install --upgrade pip
@@ -158,8 +151,10 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Run tests
+      env:
+        BRANCH: ${{ github.event.pull_request.head.ref }}
       run: |
-        docker pull mdmc/mdmc:latest
+        docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
         docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" --env OMP_NUM_THREADS=4 mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
 
     - name: Copy coverage
@@ -181,7 +176,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Pull Docker Image
         env:
-          BRANCH: ${{ github.head_ref }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
           echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
