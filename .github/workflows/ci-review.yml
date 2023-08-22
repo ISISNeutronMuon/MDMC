@@ -23,6 +23,7 @@ jobs:
 
   docker_tests:
     name: Docker including MD tests
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Python
@@ -113,6 +114,7 @@ jobs:
 
   singularity:
     name: Singularity tests
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-22.04
     steps:
       - name: Setup Go
@@ -140,6 +142,7 @@ jobs:
 
   parallel_tests:
     name: Parallel tests
+    needs: build # so it can use new docker image if docker image has changed
     runs-on: ubuntu-22.04
     steps:
     - name: Setup Python
