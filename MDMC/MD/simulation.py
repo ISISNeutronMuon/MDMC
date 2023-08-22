@@ -1,6 +1,6 @@
 """Module for setting up and running the simulation
 
- Classes for the simulation box, minimizer and integrator."""
+Classes for the simulation box, minimizer and integrator."""
 
 from collections import defaultdict
 from itertools import count, filterfalse, product
@@ -164,8 +164,12 @@ class Universe(AtomContainer):
                 setup_frame.append(f"Force field    {force_field}")
             if self.n_atoms > 0:
                 setup_frame.append(f"Number of atoms    {self.n_atoms}")
+<<<<<<< HEAD
 
             print('\n'.join(setup_frame))
+=======
+        print('\n'.join(setup_frame))
+>>>>>>> 56f80d411392bbbc99c9438aeb58aa52efdd0c9b
 
     def __str__(self) -> str:
 
