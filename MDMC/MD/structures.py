@@ -454,7 +454,7 @@ class CompositeStructure(Structure, AtomContainer):
                     # Add atom's bonded interactions to memo so that these are
                     # not copied
                     for inter in atom.interactions:
-                        if issubclass(type(inter), BondedInteraction):
+                        if isinstance(inter, BondedInteraction):
                             memo[id(inter)] = inter
                     new_atom = deepcopy(atom, memo)
                     struct_map[atom] = new_atom
@@ -468,7 +468,7 @@ class CompositeStructure(Structure, AtomContainer):
                         new_pair = [struct_map[atom] for atom in pair]
                         # Instead of adding atoms, replace the interaction with new one in copy
                         bond_type = type(inter)
-                        new_interactions.append(bond_type(tuple(new_pair)))
+                        new_interactions.append(bond_type(tuple(new_pair), **vars(inter)))
                     except KeyError:
                         pass
 
