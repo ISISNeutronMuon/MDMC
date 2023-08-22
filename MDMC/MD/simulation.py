@@ -1,6 +1,6 @@
 """Module for setting up and running the simulation
 
- Classes for the simulation box, minimizer and integrator."""
+Classes for the simulation box, minimizer and integrator."""
 
 from collections import defaultdict
 from itertools import count, filterfalse, product
@@ -156,18 +156,7 @@ class Universe(AtomContainer):
         LOGGER.info(r'%s created: {dimensions:%s}',
                     self.__class__,
                     self.dimensions)
-
-<<<<<<< HEAD
-        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
-                                    [force_field],
-                                    [self.n_atoms]],
-                                   index=['  Dimensions',
-                                          '  Force field',
-                                          '  Number of atoms'])
-
-        if self.verbose:
-            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
-=======
+        
         if self.verbose:
             round_dime = [str(d) for d in np.round(self.dimensions, 2)]
             setup_frame = ["Universe created with:"]
@@ -179,8 +168,7 @@ class Universe(AtomContainer):
                 setup_frame.append(f"Number of atoms    {self.n_atoms}")
 
         print('\n'.join(setup_frame))
->>>>>>> s
-
+        
     def __str__(self) -> str:
 
         return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
@@ -1449,15 +1437,14 @@ class Simulation:
             setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
-
         if self.verbose:
             print(setup_msg)
+
 
     @property
     def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
-
         Returns
         -------
         `float`
@@ -1465,7 +1452,6 @@ class Simulation:
         """
 
         return self._time_step
-
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
