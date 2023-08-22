@@ -1,13 +1,18 @@
 """Module for setting up and running the simulation
 
-Classes for the simulation box, minimizer and integrator."""
+ Classes for the simulation box, minimizer and integrator."""
 
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
+<<<<<<< HEAD
 from typing import Union, Tuple, TYPE_CHECKING
 from statsmodels.tsa.stattools import kpss
 
+=======
+from typing import Self, Union, TYPE_CHECKING
+import textwrap
+>>>>>>> parent of 56f80d41 (changes to the spacing)
 import numpy as np
 import pandas as pd
 from verbosemanager import VerboseManager
