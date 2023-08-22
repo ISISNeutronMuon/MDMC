@@ -7,6 +7,7 @@ force_field_factory
 lammps_engine (requires external module lammps.py)
 """
 
+from contextlib import suppress
 from importlib import import_module
 import warnings
 

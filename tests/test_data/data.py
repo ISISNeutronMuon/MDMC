@@ -14,6 +14,7 @@ _OBJECT_PATH = '/MDMC_objects'
 _CONFIG_PATH = '/configurations'
 _GUI_PATH = '/gui'
 
+
 # Reader/experimental data
 #
 # LAMPSQw
@@ -39,9 +40,7 @@ READER_DATA = {'LAMPSQw':'/experimental_data/263K05Awat_LAMP',
                'xml_SQw':'/experimental_data/Well_s_q_omega_Ar_data.xml',
                'LAMPPDF':'/calculated_observables/LAMP_from_nMOLDYN_PDF_water.ref'}
 
-CONFIG_DATA = {'cif': '/Paracetamol.cif',
-               'pdb_ethanol': '/water.pdb',
-               'pdb_palmitic_acid': '/example_pdb_export.pdb'}
+CONFIG_DATA = {'cif':'/Paracetamol.cif'}
 
 RESOLUTION_DATA = {'LAMPSQw':'/262p7K0A5van_LAMP'}
 
@@ -107,7 +106,7 @@ for key in OBJECT_DATA:
 # html files (for X3DOM viewer)
 
 GUI_DATA = {
-    'atom_X3DOM': '/atom.html',
+    'atoms_X3DOM': '/atoms.html',
     'water_molecule_X3DOM': '/water_molecule.html',
     'universe_X3DOM': '/universe.html'
 }

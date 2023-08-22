@@ -5,10 +5,8 @@ c.NbConvertApp.notebooks = [
     "doc/tutorials/Argon-a-to-z.ipynb",
     "doc/tutorials/building-a-universe.ipynb",
     "doc/tutorials/creating-an-observable.ipynb",
-    "doc/tutorials/equilibrating-a-simulation.ipynb",
     "doc/tutorials/running-a-simulation.ipynb",
     "doc/tutorials/selecting-fitting-parameters.ipynb",
     "doc/tutorials/solvating-a-universe.ipynb",
-    "doc/tutorials/units.ipynb",
-    "doc/tutorials/filling-with-packmol.ipynb"
+    "doc/tutorials/units.ipynb"
 ]

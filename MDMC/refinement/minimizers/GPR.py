@@ -71,11 +71,7 @@ class GPR(Minimizer):
         parameter_names = [str(name) for name in parameters.keys()]
 
         samples = st.qmc.LatinHypercube(d=len(parameters), centered=True, seed=1)
-        try:
-            latin_points = samples.random(n=self.control.n_steps)
-        except AttributeError as error:
-            raise AttributeError("GPR requires that the number of refinement steps "
-                                 "is set when initialising Control.") from error
+        latin_points = samples.random(n=self.control.n_steps)
 
         lower_bounds = [self.create_bounds(parameter)[0] for parameter in parameters.values()]
         upper_bounds = [self.create_bounds(parameter)[1] for parameter in parameters.values()]
@@ -148,7 +144,7 @@ class GPR(Minimizer):
         list[str]
             A ``list`` of ``str`` containing all the column labels in the history
         """
-        return ['FoM'] + list(self.parameters)
+        return ['FoM', 'Change state'] + list(self.parameters)
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:
         """
@@ -187,7 +183,7 @@ class GPR(Minimizer):
         """
 
         self.FoM = FoM
-        history = [self.FoM]
+        history = [self.FoM, 'Accepted']
         self.FoM_old = self.FoM
         self.state_changed = True
 
@@ -247,7 +243,7 @@ class GPR(Minimizer):
         min_FOM = np.min(FOMs)
         min_par_index = records.index[records['FoM']==min_FOM].tolist()
 
-        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'], errors='ignore')
+        records = records.drop(columns=['Unnamed: 0', 'FoM', 'Change state'])
         # TODO this is hard coded to creation of history, may want to change
 
         min_pars = records.loc[min_par_index]

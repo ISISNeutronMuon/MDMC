@@ -1,0 +1,290 @@
+name: cron
+# contains jobs which run on a schedule rather than on a pull-request
+on:
+  schedule:
+  - cron:  '30 20 * * 0' # runs at 8:30pm on Sundays
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build docker container
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: fetch  # grabs master to compare if Docker build files changed
+        run: git fetch origin master
+
+      - name: Check and build container
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          BRANCH: ${{ github.head_ref }}
+        run: source .github/scripts/build_container.sh
+
+  docker_tests:
+    name: Docker including MD tests
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        testset: [ "not-lammps" ]
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Run tests
+      run: |
+        docker pull mdmc/mdmc:latest
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]      
+
+    - name: Copy coverage
+      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+      continue-on-error: true
+
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        FILENAME: cron-profiling
+      run: |
+        sudo docker cp $(docker ps -lq):/home/prof/ prof/
+        pip3 install pandas
+        python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
+        if-no-files-found: error
+
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+      continue-on-error: true
+
+  basic_tests:
+    name: Non-container and not inc MD tests
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        testset: [ "lammps" ]
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: apt-get
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin
+    - name: pip install
+      run: |
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r requirements.txt
+        python3 -m pip install -r .dev_requirements.txt
+
+    - name: Run tests
+      #we have to use --ignore instead of -m "not lammps" because pytest reads the whole script before deselecting - thus throwing an error about not having lammps before the mark can be filtered out
+      run: python3 -m pytest -s $(pwd)/tests/ --ignore=tests/system_tests --ignore=tests/MD/test_simulation_lammps.py --ignore=tests/test_imports.py --ignore=tests/MD/test_trajectory.py
+
+    - name: Copy profiling info, download profile script reqs. and profile
+      env:
+        FILENAME: cron-profiling
+      run: |
+        pip3 install pandas
+        python3 .github/scripts/process_prof_data.py prof/ --name $FILENAME || exit 1
+
+    - name: Save profiling info as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cron-${{ matrix.testset }}-profiling
+        path: cron-profiling.csv
+        if-no-files-found: error
+
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
+
+  profiling:
+    name: Profiling
+    needs: [docker_tests, basic_tests]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Own repo to avoid npm bug
+        run: sudo chmod -R 777 /home/
+
+      - name: Download tests artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: /home/
+
+#      # BOOTSTRAPPING: this can be used to upload new master profiling files
+#      - name: create bootstrap master profiling
+#        env:
+#          BRANCH: ${{ github.head_ref }}
+#        run: |
+#          pip3 install pandas
+#          ls /home/
+#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name master-profiling
+#      - name: upload as master profiling
+#        uses: actions/upload-artifact@v3
+#        with:
+#          name: master-profiling
+#          path: master-profiling.csv
+#      # END BOOTSTRAPPING
+
+      - name: Download master profiling for comparison
+        # regular download-artifact can only get artifacts from current run
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: ci-cron.yml
+          name: master-profiling
+        continue-on-error: true
+
+      - name: Combine and compare profiling data
+        run: |
+          pip3 install pandas
+          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name cron-total-profiling --compare "master-profiling.csv" 
+
+      - name: Upload total profiling as artifact if successful
+        uses: actions/upload-artifact@v3
+        with:
+          name: cron-total-profiling
+          path: cron-total-profiling.csv
+
+  windows:
+    name: Python 3.9.0 on Windows (installation check only)
+    runs-on: windows-latest
+    steps:
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+        architecture: x64
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Install
+      run: |
+        pip3 install --upgrade pip
+        pip3 install wheel
+        pip3 install .
+
+    - name: Uninstall
+      run: pip3 uninstall -y MDMC
+
+  singularity:
+    name: Singularity tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.13'
+      - name: Get Singularity requirements
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flawfinder squashfs-tools uuid-dev libuuid1 libffi-dev libssl-dev libssl1.1 libarchive-dev libgpgme11-dev libseccomp-dev
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Singularity
+        run: source .github/scripts/singularity_setup.sh
+
+      - name: Run tests
+        run: |
+           singularity pull docker://mdmc/mdmc:latest
+           singularity exec mdmc_latest.sif pip3 install --upgrade pip
+           singularity exec mdmc_latest.sif pip3 install .
+           singularity exec mdmc_latest.sif python3 -m pytest -s $(pwd)/tests/
+
+  # parallel_system_tests:
+    # name: Docker MPI tests
+    # runs-on: ubuntu-20.04
+    # steps:
+    # - name: Setup Python
+      # uses: actions/setup-python@v2
+      # with:
+        # python-version: '3.8'
+        # architecture: x64
+    # - name: Checkout repo
+      # uses: actions/checkout@v3
+
+    # - name: Docker pull
+      # run: docker pull mdmc/mdmc:latest
+
+    # - name: Run tests
+      # # To avoid issues with both processes accessing the coverage report
+      # # simultaneously, first create the coverage file without mpi using a fake
+      # # PyTest mark so we don't actually run any tests. Then use the
+      # # --cov-append option for the actual tests. Using --allow-run-as-root as
+      # # we are running inside a docker container, so root only affects the
+      # # container. Usually running with this flag is *strongly* discouraged.
+      # run: docker run -t --mount type=bind,source=$(pwd),target=$(pwd) -w $(pwd) mdmc/mdmc:latest /bin/bash -c 'pytest -s -m NONE $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml; mpirun --allow-run-as-root -np 2 pytest -s -m mpi $(pwd)/tests/ --cov=$(pwd)/MDMC --cov-report xml --cov-append'
+
+    # - name: Upload code coverage report
+      # uses: codecov/codecov-action@v1
+      # with:
+        # token: ${{ secrets.CODECOV_TOKEN }}
+
+  doc-deploy:
+    name: Documentation-deploy
+    runs-on: ubuntu-20.04
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+    - name: Build documentation
+      run: docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" mdmc/mdmc:latest /bin/bash -c  "cd $(pwd) && apt-get update &&  apt-get install pandoc -y && pip3 install . && make -d -C $(pwd)/doc html"
+    - name: Deploy
+      env:
+        token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+      run: |
+        git clone https://github.com/MDMCproject/MDMCproject.github.io
+        cd ./MDMCproject.github.io
+        git checkout ci
+        cp -r  ../doc/_build/html/* ../MDMCproject.github.io/
+        git config --global user.name "Github Actions"
+        git commit -a -m "CI deployment"
+        git merge -X ours master
+        git push https://$token@github.com/MDMCproject/MDMCproject.github.io
+
+  documentation:
+    name: Documentation
+    needs: build # so it can use new docker image if docker image has changed
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Create Docker Container
+        run: echo "CONTAINER_HASH=$(echo $(docker run -d -it --mount type=bind,source="$(pwd)",target="$(pwd)" ${{ env.IMG_NAME }}))" >> $GITHUB_ENV
+      - name: Install Requirements
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "cd $(pwd) && apt-get update && apt-get install pandoc -y && pip3 install ."
+      - name: Make Documentation
+        run: docker exec ${{ env.CONTAINER_HASH }} /bin/bash -c "make -d -C $(pwd)/doc html"
+
+  prune-images:
+    name: Prune Old Docker Hub Images
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Prune images
+        env:
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: source .github/scripts/prune_docker_hub.sh
