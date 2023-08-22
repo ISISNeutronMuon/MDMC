@@ -62,14 +62,7 @@ jobs:
       run: |
         sudo docker cp $(docker ps -lq):/home/prof/ prof/
         pip3 install pandas
-        python3 .github/scripts/process_prof_data.py prof/ --name master-profiling.csv || exit 1
-
-    - name: Save profiling info as artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: master-profiling
-        path: master-profiling.csv
-        if-no-files-found: error
+        python3 .github/scripts/process_prof_data.py prof/ || exit 1
 
     - name: Upload code coverage report
       uses: codecov/codecov-action@v1
@@ -105,56 +98,6 @@ jobs:
 
     - name: Uninstall
       run: pip3 uninstall -y MDMC
-
-  profiling:
-    name: Profiling
-    needs: [docker_tests, basic_tests]
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
-      - name: Own repo to avoid npm bug
-        run: sudo chmod -R 777 /home/
-
-      - name: Download tests artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: /home/
-
-#      # BOOTSTRAPPING: this can be used to upload new master profiling files
-#      - name: create bootstrap master profiling
-#        env:
-#          BRANCH: ${{ github.head_ref }}
-#        run: |
-#          pip3 install pandas
-#          ls /home/
-#          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name master-profiling
-#      - name: upload as master profiling
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: master-profiling
-#          path: master-profiling.csv
-#      # END BOOTSTRAPPING
-
-      - name: Download master profiling for comparison
-        # regular download-artifact can only get artifacts from current run
-        uses: dawidd6/action-download-artifact@v2
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          workflow: ci-cron.yml
-          name: master-profiling
-        continue-on-error: true
-
-      - name: Combine and compare profiling data
-        run: |
-          pip3 install pandas
-          python3 .github/scripts/check_deploy_prof_data.py --files "/home/cron-lammps-profiling/cron-profiling.csv" "/home/cron-not-lammps-profiling/cron-profiling.csv" --name cron-total-profiling --compare "master-profiling.csv"
-
-      - name: Upload total profiling as artifact if successful
-        uses: actions/upload-artifact@v3
-        with:
-          name: cron-total-profiling
-          path: cron-total-profiling.csv
 
   windows:
     name: Python 3.9.0 on Windows (installation check only)

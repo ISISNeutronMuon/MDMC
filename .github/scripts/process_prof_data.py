@@ -28,24 +28,14 @@ def main():
         help='the directory of .prof files to be profiled.'
         )
 
-    parser.add_argument(
-        '--name', '-n',
-        type=str,
-        default=f"profiling-{datetime.now()}",
-        help='The name for the output file. Defaults to profiling-[DATE AND TIME]'
-        )
-
     args = parser.parse_args()
     directory = args.dir
-    filename = args.name
 
     summary = CI_profile_summaries(directory)
 
     summary = summary.sort_values(by='tottime', ascending=False)
 
     print("Profiling results:\n", summary)
-    with open(f'{filename}.csv', 'w', encoding='utf-8') as file:
-        file.write(summary.to_csv())
 
 
 if __name__ == "__main__":
