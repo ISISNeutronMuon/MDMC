@@ -1,4 +1,5 @@
 """Module for reader abstract class"""
+from typing import IO
 
 from abc import ABC, abstractmethod
 
@@ -19,7 +20,7 @@ class Reader(ABC):
 
     def __init__(self, file_name: str):
 
-        self.file = None
+        self.file: IO = None
         self.file_name = file_name
 
     def __enter__(self) -> None:

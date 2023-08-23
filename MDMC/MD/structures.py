@@ -432,7 +432,6 @@ class CompositeStructure(Structure, AtomContainer):
         memo : dict
             The memoization `dict`
         """
-
         cls = self.__class__
         unit = cls.__new__(cls)
         memo[id(self)] = unit
@@ -455,18 +454,21 @@ class CompositeStructure(Structure, AtomContainer):
                     # Add atom's bonded interactions to memo so that these are
                     # not copied
                     for inter in atom.interactions:
-                        if issubclass(type(inter), BondedInteraction):
+                        if isinstance(inter, BondedInteraction):
                             memo[id(inter)] = inter
                     new_atom = deepcopy(atom, memo)
                     struct_map[atom] = new_atom
 
                 # Create interactions
+                new_interactions = []
                 for inter, pair in self.bonded_interaction_pairs:
                     # try/except accounts for interactions associated with atoms
                     # that are in a composite subunit
                     try:
                         new_pair = [struct_map[atom] for atom in pair]
-                        inter.add_atoms(*new_pair)
+                        # Instead of adding atoms, replace the interaction with new one in copy
+                        bond_type = type(inter)
+                        new_interactions.append(bond_type(tuple(new_pair), **vars(inter)))
                     except KeyError:
                         pass
 
@@ -477,6 +479,7 @@ class CompositeStructure(Structure, AtomContainer):
                 # List comprehension ensures order of structures in new
                 # structure is the same as in original
                 setattr(unit, k, [struct_map[s] for s in self._structure_list])
+                setattr (unit, "_bonded_interactions", new_interactions)
             else:
                 setattr(unit, k, deepcopy(v, memo))
         return unit
@@ -629,7 +632,7 @@ class CompositeStructure(Structure, AtomContainer):
         for atom in self.atoms:
             atom.position = self.position + self._CoM_frame_positions[atom]
 
-    def _calc_CoM(self) -> np.ndarray:
+    def calc_CoM(self) -> np.ndarray:
         """
         Returns
         -------
@@ -653,7 +656,7 @@ class CompositeStructure(Structure, AtomContainer):
         # pylint: disable=attribute-defined-outside-init
         # _CoM_frame_positions breaks when defined in init
 
-        CoM = self._calc_CoM()
+        CoM = self.calc_CoM()
         self._CoM_frame_positions = {atom: (atom.position - CoM) for atom in self.atoms}
 
     def rotate(self, x: float = 0., y: float = 0., z: float = 0.) -> None:
@@ -1231,7 +1234,7 @@ class Molecule(CompositeStructure):
             structure.parent = self
         self._calc_subunit_position_in_CoM_frame()
         if position is None:
-            position = self._calc_CoM()
+            position = self.calc_CoM()
         super().__init__(position, velocity, name)
 
     @property

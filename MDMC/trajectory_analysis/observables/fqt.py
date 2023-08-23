@@ -22,7 +22,6 @@ from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 if TYPE_CHECKING:
     from builtins import function
     from typing import Optional
-    from MDMC.trajectory_analysis.trajectory import Trajectory
 
 
 # pylint: disable=c-extension-no-member
@@ -444,11 +443,12 @@ class AbstractFQt(SQwMixins, Observable):
                                               configs, vector)
                                               for vector in single_Q_vectors))
         # Append to rho_config as completed, block until all futures added
-        for batch_num, future_batch in enumerate(futures):
+        q_num = 0
+        for future_batch in futures:
             results = [future.result() for future in future_batch]
-            for result_num, result in enumerate(results):
-                q_num = (batch_num * len(results)) + result_num
+            for result in results:
                 rho_config[:, q_num] = result
+                q_num += 1
 
         return rho_config
 
