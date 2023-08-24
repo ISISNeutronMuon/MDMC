@@ -1,11 +1,13 @@
 """Module for setting up and running the simulation
 
-Classes for the simulation box, minimizer and integrator."""
+ Classes for the simulation box, minimizer and integrator."""
 
 from collections import defaultdict
 from itertools import count, filterfalse, product
 import logging
-from typing import Self, Union, TYPE_CHECKING
+from typing import Union, Tuple, TYPE_CHECKING
+from statsmodels.tsa.stattools import kpss
+
 import numpy as np
 import pandas as pd
 from verbosemanager import VerboseManager
@@ -154,19 +156,17 @@ class Universe(AtomContainer):
         LOGGER.info(r'%s created: {dimensions:%s}',
                     self.__class__,
                     self.dimensions)
-        
+
+        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
+                                    [force_field],
+                                    [self.n_atoms]],
+                                   index=['  Dimensions',
+                                          '  Force field',
+                                          '  Number of atoms'])
+
         if self.verbose:
-            round_dime = [str(d) for d in np.round(self.dimensions, 2)]
-            setup_frame = ["Universe created with:"]
-            setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
+            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
 
-            if force_field is not None:
-                setup_frame.append(f"Force field    {force_field}")
-            if self.n_atoms > 0:
-                setup_frame.append(f"Number of atoms    {self.n_atoms}")
-
-        print('\n'.join(setup_frame))
-        
     def __str__(self) -> str:
 
         return (f'Universe with {self.n_atoms} atoms, {self.n_bonded} bonded interactions, '
@@ -1435,14 +1435,15 @@ class Simulation:
             setup_keys = [f'  {key}' for key in self.settings]
             setup_frame = pd.DataFrame(setup_values, index=setup_keys)
             setup_msg += f' and settings:\n{setup_frame.to_string(index=True, header=False)}\n'
+
         if self.verbose:
             print(setup_msg)
-
 
     @property
     def time_step(self) -> float:
         """
         Get or set the simulation time step in ``fs``
+
         Returns
         -------
         `float`
@@ -1450,6 +1451,7 @@ class Simulation:
         """
 
         return self._time_step
+
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
@@ -1575,6 +1577,79 @@ class Simulation:
                         work_dir=work_dir, **self.settings)
 
         verbose_manager.finish(f"{process.capitalize()}")
+
+    # pylint: disable=dangerous-default-value
+    # this is flagged up by variables having a list as default value
+    # but we don't mutate the list anywhere in the function, so
+    # this is safe and has better readability
+    def auto_equilibrate(self,
+                         variables: list[str] = ['temp', 'pe'],
+                         eq_step: int = 10,
+                         window_size: int = 100,
+                         tolerance: float = 0.01) -> Tuple[int, dict]:
+        """
+        Equilibrate until the specified list of variables have stabilised.
+        Uses the KPSS stationarity test to determine
+        whether the variables are stationary in a given window.
+
+        Parameters
+        ----------
+        variables: list[str], default ['temp', 'pe']
+            The MD engine variables we use to monitor stability.
+        eq_step: int, default 10
+            The number of equilibration steps between each stability check.
+        window_size: int, default 100
+            The size of the rolling window of stability checks. The simulation
+            is considered stable if it has been stationary for eq_step*window_size
+            equilibration steps.
+        tolerance: float, 0.01
+            The p-value used for the KPSS test.
+
+        Returns
+        -------
+        int
+            The number of equilibration steps performed.
+        vals_dict
+            The value of each variable per step, for graphing if desired.
+        """
+
+        vals_dict = {var: [] for var in variables}
+
+        def auto_step() -> None:
+            """
+            Performs one step of an equilibration and records variable values.
+            """
+            self.run(eq_step, equilibration=True)
+            for var in vals_dict:
+                vals_dict[var].append(self.engine.eval(var))
+
+        def window_is_stationary(var: str) -> bool:
+            """
+            Checks stability for a variable by running the KPSS test on a window.
+            """
+            variable_values = vals_dict[var]
+            window = variable_values[-window_size:]
+            results = kpss(window, regression='c')
+            # results[1] is the p-value from the test
+            # we base our tolerance on the p-value, where the altenrative hypothesis
+            # for KPSS is "NOT stationary" - statsmodels also never gives a p above
+            # 0.1 as it doesn't hold critical values above that point. so for 0.05
+            # tolerance, we are asking that p be greater than 0.95
+            return results[1] > 0.1 - tolerance
+
+        # we perform an initial run of window_size*eq_step steps to create a window.
+        for _ in range(window_size):
+            auto_step()
+
+        # we consider the simulation stable if the rolling window
+        # is stationary for all variables (by KPSS)
+        while not all(window_is_stationary(var) for var in vals_dict):
+            auto_step()
+
+        total_steps = len(list(vals_dict.values())[0]) * eq_step
+        print("Auto-equilibration has detected stability "
+             f"after {total_steps} equilibration steps.")
+        return total_steps, vals_dict
 
     @property
     def trajectory(self) -> Union['CompactTrajectory', None]:
