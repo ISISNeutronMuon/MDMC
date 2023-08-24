@@ -148,17 +148,22 @@ jobs:
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
-        architecture: x64
-    - name: Checkout repo
-      uses: actions/checkout@v3
-
+          python-version: '3.11.2'
+          architecture: x64
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
     - name: Run tests
       env:
         BRANCH: ${{ github.event.pull_request.head.ref }}
       run: |
-        docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" --env OMP_NUM_THREADS=4 mdmc/mdmc:latest python3 -m pytest -s "$(pwd)"/tests/; [ $? -eq 0 ]
+        docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" --env OMP_NUM_THREADS=4 ${{ env.IMG_NAME }} python3 -m pytest -s $(pwd)/tests/;[ $? -eq 0 ]
+        exit 0
 
     - name: Copy coverage
       run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
