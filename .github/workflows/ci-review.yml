@@ -165,15 +165,15 @@ jobs:
           docker run -t --mount type=bind,source="$(pwd)",target="$(pwd)" --env OMP_NUM_THREADS=4 ${{ env.IMG_NAME }} python3 -m pytest -s $(pwd)/tests/;[ $? -eq 0 ]
           exit 0
 
-    - name: Copy coverage
-      run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
-      continue-on-error: true
+      - name: Copy coverage
+        run: docker cp $(docker ps -lq):/home/coverage.xml coverage.xml || exit 0
+        continue-on-error: true
 
-    - name: Upload code coverage report
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-      continue-on-error: true
+      - name: Upload code coverage report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
 
   documentation:
     name: Documentation
