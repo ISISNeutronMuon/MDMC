@@ -150,14 +150,14 @@ jobs:
         with:
             python-version: '3.11.2'
             architecture: x64
-        - name: Checkout repo
-          uses: actions/checkout@v3
-        - name: Pull Docker Image
-          env:
-            BRANCH: ${{ github.event.pull_request.head.ref }}
-          run: |
-            docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
-            echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Pull Docker Image
+        env:
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+        run: |
+          docker pull -q mdmc/mdmc:ci-$BRANCH || docker pull -q mdmc/mdmc:latest
+          echo "IMG_NAME=$(echo $(docker images --filter=reference='mdmc/mdmc:*' --format "{{.Repository}}:{{.Tag}}"))" >> $GITHUB_ENV
       - name: Run tests
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
