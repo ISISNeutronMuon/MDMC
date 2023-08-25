@@ -205,6 +205,20 @@ def test_universe_stdout(capsys):
                       'Force field created by solvent SPCE\n')
 
 
+def test_simulation_setup(self):
+    settings = {"temperature": 300.0, "pressure": 101325.0}
+    simulation = Simulation(universe=None, engine='lammps', time_step=1.0, traj_step=10)
+    simulation._temperature, simulation._pressure = settings.get("temperature"), settings.get("pressure")
+    expected_setup = [
+        f'  temperature  {settings["temperature"]} {units.SYSTEM.get("TEMPERATURE", "")}',
+        f'  pressure  {settings["pressure"]} {units.SYSTEM.get("PRESSURE", "")}'
+    ]
+    setup_output = StringIO()
+    simulation.setup(setup_output)
+    setup_output.seek(0)
+    actual_setup = setup_output.read().splitlines()
+    assert actual_setup == expected_setup
+
 def test_create_atom(atom):
 
     npt.assert_array_equal((0., 0., 0.), atom.position)
