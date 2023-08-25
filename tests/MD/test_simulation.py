@@ -1199,14 +1199,14 @@ def test_water_model_inheritance():
     assert ValidWaterModel().n_body == 3
 
 @pytest.mark.parametrize("structures, expected",
-                         [([su.Atom('AA', mass=1.0)],
+                         [([su.Atom('H', mass=1.0)],
                            0.001),
-                          ([su.Atom('BB', mass=15.0)],
+                          ([su.Atom('N', mass=15.0)],
                            0.015),
-                          ([su.Molecule(atoms=[su.Atom('CC', mass=2.0),
-                                               su.Atom('DD', mass=21.0)])],
+                          ([su.Molecule(atoms=[su.Atom('He', mass=2.0),
+                                               su.Atom('Na', mass=21.0)])],
                            0.023),
-                          ([su.Atom('AA', mass=1.0), su.Atom('DD', mass=21.0)],
+                          ([su.Atom('H', mass=1.0), su.Atom('Na', mass=21.0)],
                            0.022)])
 def test_universe_density(structures, expected, universe):
     """

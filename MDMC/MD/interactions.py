@@ -478,7 +478,7 @@ class Dispersion(NonBondedInteraction):
         # Each value in universe.atom_types dictionary contain list of atoms
         # with same elements, so use index 0
         # This is determined for all atom types in Dispersion interaction
-        return [self.universe.atom_types[atom_type][0].element
+        return [self.universe.atom_types[atom_type][0].element.symbol
                 for tpl in self.atom_types
                 for atom_type in tpl]
 

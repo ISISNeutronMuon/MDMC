@@ -377,7 +377,7 @@ class Configuration(AtomCollection):
             A `list` of ``Atom`` of the specified ``element``
         """
 
-        return self.filter_atoms(lambda x: x.element == element)
+        return self.filter_atoms(lambda x: x.element.symbol == element)
 
     def scale(self, factor: float, vectors: str = 'positions') -> None:
         """
