@@ -49,5 +49,3 @@ RUN echo alias pip="pip3" >> ~/.bash_aliases
 # https://github.com/open-mpi/ompi/issues/4948
 # https://www.open-mpi.org/faq/?category=sm#what-is-vader
 RUN echo export OMPI_MCA_btl=^vader >> ~/.bashrc
-
-# Meaningless change to provoke rebuild

@@ -104,6 +104,69 @@ def solvated_universe():
 
     yield uni
 
+class MockSimulation(sim.Simulation):
+    """
+    Mock the ``Simulation`` to use the MockEngine.
+    """
+
+    def __init__(self, universe: sim.Universe, traj_step: int,
+                 time_step: float = 1., engine = None, **settings):
+        self.universe = universe
+        self.settings = settings
+        self.traj_step = traj_step
+        self.time_step = time_step
+        self.engine = engine
+
+class MockEngine:
+    """
+    A mock engine which 'runs' for equilibration
+    and returns properties according to a given function.
+    """
+    def __init__(self, pe_stability_point, temp_stability_point, **ignored):
+        self.current_steps = 0
+        self.pe_stability_point = pe_stability_point
+        self.temp_stability_point = temp_stability_point
+        self.rng = np.random.default_rng(seed=1234567)  # rng for noising functions
+
+    def run(self, n_steps, **ignored):
+        self.current_steps += n_steps
+
+    def eval(self, var):
+        def pe_func(x):
+            if x < self.pe_stability_point:
+                signal = x
+            else:
+                signal = self.pe_stability_point  # constant chosen so curve is continuous
+
+            return (signal + self.rng.normal(0, 50))  # add noise
+
+        def temp_func(x):
+            if x < self.temp_stability_point:
+                signal = x
+            else:
+                signal = self.temp_stability_point  # constant chosen so curve is continuous
+
+            return (signal + self.rng.normal(0, 50))  # add noise
+
+        def complex_func(x):
+            """A more complicated function!"""
+            if x < self.temp_stability_point/2:  # use temp stability for convenience
+                signal =  x + 50 * np.sin(0.05*x)
+            elif x < self.temp_stability_point:
+                signal = 2*x - self.temp_stability_point/2
+            else:
+                signal = 3/2 * self.temp_stability_point
+
+            return (signal + np.random.normal(0, 50))  # add noise
+
+        if var == 'pe':
+            return pe_func(self.current_steps)
+        if var == 'temp':
+            return temp_func(self.current_steps)
+        if var == 'complex':
+            return complex_func(self.current_steps)
+
+
 def get_dispersions(inters):
     """
     Parameters
@@ -1276,3 +1339,19 @@ def test_add_force_field_dispersions_atoms(universe, water_molecule):
     atom_types = [disp.atom_types for disp in dispersions]
 
     assert atom_types == [((O_atoms[0].atom_type, O_atoms[0].atom_type), )]
+
+@pytest.mark.parametrize('pe_stability_point, temp_stability_point',
+                         [(2500, 2500),
+                          (2500, 5000),
+                          (1000, 10000),
+                          (0, 1000)])
+@pytest.mark.parametrize('variables', [['pe', 'temp'], ['complex']])
+def test_auto_equilibrate(universe, variables, pe_stability_point, temp_stability_point):
+    simulation = MockSimulation(universe, 1, 1,
+                                MockEngine(pe_stability_point, temp_stability_point))
+
+    eq_steps, _ = simulation.auto_equilibrate(variables=variables)
+    # assert that it doesn't under-equilibrate
+    assert eq_steps >= max(pe_stability_point, temp_stability_point)
+    # assert that it doesn't over-equilibrate
+    assert eq_steps < 2 * max(pe_stability_point, temp_stability_point)

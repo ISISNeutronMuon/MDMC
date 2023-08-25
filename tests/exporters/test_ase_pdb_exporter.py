@@ -1,10 +1,11 @@
+"""Tests the ASE exporter via PDB format."""
 import os.path
 
 import numpy as np
 import pytest
 
 from MDMC.MD import Atom, Bond, BondAngle, Molecule
-from MDMC.exporters.configurations.pdb import ProteinDataBankExporter
+from MDMC.exporters.configurations.ase import ASEExporter
 from tests.test_data.data import _ABS_DIR_PATH
 
 # lammps mark used to ensure test runs in docker container
@@ -30,7 +31,7 @@ def exported_file_path():
 @pytest.fixture()
 def simple_exported_system(h2o_molecule, exported_file_path):
     """Exports a simple water molecule to pdb format"""
-    pdb_exporter = ProteinDataBankExporter(exported_file_path)
+    pdb_exporter = ASEExporter(exported_file_path)
     with pdb_exporter:
         pdb_exporter.write(h2o_molecule)
 
