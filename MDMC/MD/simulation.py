@@ -158,16 +158,15 @@ class Universe(AtomContainer):
                     self.dimensions)
 
         if self.verbose:
-            round_dime = [str(d) for d in np.round(self.dimensions, 2)]
-            setup_frame = ["Universe created with:"]
-            setup_frame.append(f"Dimensions   [{', '.join(round_dime)}]")
-
+            setup_frame = "Universe created with:"
+            if self.dimensions is not None:
+                setup_frame += f"\nDimensions {np.round(self.dimensions, 2)}"
             if force_field is not None:
-                setup_frame.append(f"Force field    {force_field}")
+                setup_frame += f"\nForce field    {force_field}"
             if self.n_atoms > 0:
-                setup_frame.append(f"Number of atoms    {self.n_atoms}")
+                setup_frame += f"\nNumber of atoms    {self.n_atoms}"
+            print(setup_frame)
 
-            print('\n'.join(setup_frame))
 
 
     def __str__(self) -> str:

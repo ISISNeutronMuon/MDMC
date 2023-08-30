@@ -192,24 +192,40 @@ def test_create_universe(universe):
     assert universe != universe_unequal
 
 
-def test_universe_stdout(capsys):
-    # Capture stdout using pytest fixure
-    force_field = None
-    n_atoms = 0
-    univ = sim.Universe(SPCE_DIMENSIONS,force_field, n_atoms)
+def test_universe_with_dimensions_stdout(capsys):
+    # Capture stdout using pytest fixture
+    univ = sim.Universe(SPCE_DIMENSIONS)
     univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
     stdout = capsys.readouterr().out
-    expect_output = ( 'Universe created with:\n'
-                      'Dimensions   [18.62, 18.62, 18.62]\n'
-                      )
-    if force_field is not None and n_atoms != 0:
-        expect_output += (
-            '  Force field       {}\n'.format(force_field) +
-            '  Number of atoms   {}\n'.format(n_atoms)
-        )
+    expected_output = (
+        'Universe created with:\n'
+        'Dimensions [18.62 18.62 18.62]\n'
+        'Force field created by solvent SPCE\n')
+    assert stdout == expected_output
 
-    expect_output += 'Force field created by solvent SPCE\n'
-    assert stdout == expect_output
+def test_universe_with_atoms_stdout(capsys):
+    # Capture stdout using pytest fixture
+    univ = sim.Universe(SPCE_DIMENSIONS, n_atoms=100)
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    stdout = capsys.readouterr().out
+    expected_output = (
+        'Universe created with:\n'
+        'Dimensions [18.62 18.62 18.62]\n'
+        'Number of atoms            100\n'
+        'Force field created by solvent SPCE\n')
+    assert stdout == expected_output
+
+def test_universe_with_force_field_stdout(capsys):
+    # Capture stdout using pytest fixture
+    univ = sim.Universe(SPCE_DIMENSIONS, force_field="Lennard-Jones")
+    univ.solvate(SPCE_DENSITY, tolerance=TOLERANCE)
+    stdout = capsys.readouterr().out
+    expected_output = (
+        'Universe created with:\n'
+        '  Dimensions       [18.62, 18.62, 18.62]\n'
+        '  Force field       Lennard-Jones\n'
+        'Force field created by solvent SPCE\n')
+    assert stdout == expected_output
 
 def test_create_atom(atom):
 
