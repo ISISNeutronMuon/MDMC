@@ -157,23 +157,3 @@ def faster_autocorrelation(input1: np.ndarray,
 
     return corr
 
-def _convolution(input1, input2):
-    """
-    The convolution of two inputs
-
-    THIS FUNCTION HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
-
-    Parameters
-    ----------
-    input1 : numpy.ndarray
-        A 1D ``array`` of data.
-    input2 :  numpy.ndarray
-        A 1D ``array`` of data.
-
-    Raises
-    -------
-    NotImplementedError
-        THIS FUNCTION HAS NOT BEEN IMPLEMENTED
-    """
-
-    raise NotImplementedError
