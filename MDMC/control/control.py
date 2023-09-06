@@ -231,6 +231,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
+            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            self._dset_input_check(dset)
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -926,3 +928,30 @@ class Control:
         dt = self.simulation.traj_step * self.simulation.time_step
         with suppress(AttributeError):
             obs.validate_energy(dt)
+
+    def _dset_input_check(self, dset):
+        """
+
+        Handles error for retrieving data from dset, gives key specific error messages.
+        If the keys are updated then this function also need to be updated in order to keep 
+        full functionality of error handling. Only checks for KeyError.
+
+        Parameters
+        ----------
+        dset : dataset
+            contains observable type, reader type, and file name (or path)
+
+        Returns
+        -------
+        None
+        """
+
+        checks = ['type', 'reader','file_name']
+        inform_checks = ['observable type', 'reader type', 'file name or path']
+        for key in checks:
+            check_info_index = checks.index(key)
+            try:
+                dset_check = dset[key]
+            except KeyError as error:
+                raise KeyError(f" There was an issue retrieving the {inform_checks[check_info_index]} " 
+                                "from the dataset, please check your inputs again.") from error
