@@ -39,8 +39,12 @@ class PlotResults():
         self.minmax_coords, self.FoMs = self.get_measured_points()
 
         # Create the optimizer
-        self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
-                                   acq_optimizer="sampling", model_queue_size=1)
+        try:
+            self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
+                                    acq_optimizer="sampling", model_queue_size=1)
+        except ValueError as error:
+            raise ValueError("Insufficient number of refinement steps, please use at least 10.")
+        
         # Train the optimizer
         self.optimizer.tell(self.parameter_coords, self.FoMs)
 
@@ -88,7 +92,12 @@ class PlotResults():
         random_samples = self.optimizer.space.rvs(self.points, random_state=7)
 
         # make estimations with surrogate
-        model = self.optimizer.models[-1]
+        try:
+            model = self.optimizer.models[-1]
+        except IndexError as error:
+            raise IndexError("Insufficient number of refinement steps, please use at least 10.")
+        
+
         y_random = model.predict(self.optimizer.space.transform(random_samples))
         index_best_objective = np.argmin(y_random)
         min_x = random_samples[index_best_objective]
@@ -141,16 +150,9 @@ class PlotResults():
         corner plot : Matplotlib.figure.Figure
             A plot displaying every parameter combination with their variances and covariances
         """
-        try:
-            _, _, y_random, coords = \
-            self._expected_minimum_random_sampling()
-        except IndexError:
-            msg = ("\n \n Your data file apears not to have any points in, please check you have "
-                   "run the refinement and it saved correctly. \n")
-            print(msg)
 
-            return None
-
+        _, _, y_random, coords = \
+        self._expected_minimum_random_sampling()
         _, reduced_coordinate_list = self._remove_points(y_random, coords)
 
         data = np.empty(shape=np.array(reduced_coordinate_list).shape)

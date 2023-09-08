@@ -459,7 +459,11 @@ class Control:
             pass
 
         # print values of final parameters
-        result_string = self.minimizer.present_result()
+        try:
+            result_string = self.minimizer.present_result()
+        except ValueError as error:
+            raise ValueError("Insufficient number of refinement steps, please use at least 10.")
+        
         if self.verbose != -1:
             print(result_string)
 
