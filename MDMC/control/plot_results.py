@@ -163,37 +163,9 @@ class PlotResults():
         mean, std = np.mean(data, axis=0), np.std(data, axis=0)
 
         return cornerplot, mean, std
+    
 
-
-class DataPrinter(ABC):
-    """
-    A class for printing data during a minimisation.
-    """
-
-    @abstractmethod
-    def print_data(self, history):
-        """
-        Update table at the end of a refinement step.
-
-        Parameters:
-        history
-            The history of the minimizer data is printed from.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
-    def print_header(self, history):
-        """
-        Create table headers at the start of refinement.
-
-        Parameters:
-        history
-            The history of the minimizer data is printed from.
-        """
-        raise NotImplementedError
-
-
-class PlaintextDataPrinter(DataPrinter):
+class PlaintextDataPrinter():
     """Plaintext data printer."""
 
     def print_data(self, history) -> None:
@@ -217,7 +189,7 @@ class PlaintextDataPrinter(DataPrinter):
         print(header)
 
 
-class IPythonDataPrinter(DataPrinter):
+class IPythonDataPrinter():
     """Prettier IPython data printer, for Jupyter Notebooks, etc."""
     def __init__(self):
         self.display = IPython.display.DisplayHandle()
