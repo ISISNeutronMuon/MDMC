@@ -156,4 +156,3 @@ def faster_autocorrelation(input1: np.ndarray,
     corr = prefactor * np.real(cyclic_corr[0:num_steps])
 
     return corr
-
