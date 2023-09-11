@@ -933,7 +933,7 @@ class Control:
         """
 
         Handles error for retrieving data from dset, gives key specific error messages.
-        If the keys are updated then this function also need to be updated in order to keep 
+        If the keys are updated then this function also need to be updated in order to keep
         full functionality of error handling. Only checks for KeyError.
 
         Parameters
@@ -951,7 +951,9 @@ class Control:
         for key in checks:
             check_info_index = checks.index(key)
             try:
-                dset_check = dset[key]
+                dset[key]
             except KeyError as error:
-                raise KeyError(f" There was an issue retrieving the {inform_checks[check_info_index]} " 
+                raise KeyError("There was an issue retrieving the"
+                               f" {inform_checks[check_info_index]} "
                                 "from the dataset, please check your inputs again.") from error
+            
