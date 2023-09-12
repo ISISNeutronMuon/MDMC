@@ -4,12 +4,13 @@ from copy import deepcopy
 from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
-
+from MDMC.refinement.minimizers.GPO import GPO
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
-
+import os
+from skopt import Optimizer
 from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -21,6 +22,10 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from MDMC.refinement.minimizers.GPR import GPR
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from MDMC.MD.parameters import Parameters
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -182,7 +187,7 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
-                 verbose: int = 0,
+                 verbose: int = 3,
                  print_all_settings: bool = False,
                  **settings: dict):
 
@@ -528,6 +533,8 @@ class Control:
         self.step_timings.append(step_timings)
 
 
+
+
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
         Instantiates an insstance of the PlotResults class and generates a cornerplot
@@ -559,7 +566,6 @@ class Control:
             print(f'Parameter means = {means}, Parameter errors = {stds}')
 
         return cornerplot
-
 
     def _generate_FoM(self) -> float:
         """
@@ -926,3 +932,93 @@ class Control:
         dt = self.simulation.traj_step * self.simulation.time_step
         with suppress(AttributeError):
             obs.validate_energy(dt)
+
+    def more_refine(self, n_steps=None) -> pd.DataFrame:
+        self.n_steps
+        if os.path.exists(self.results_filename):
+            df = pd.read_csv(self.results_filename, skiprows=1)
+            refined_points = df.values.tolist()
+
+
+
+            parameter_names = ["Epsilon", "Sigma"]
+
+
+
+            parameter_coords = [row[2:] for row in refined_points]
+            min_coords = np.min(parameter_coords, axis=0)
+            max_coords = np.max(parameter_coords, axis=0)
+            minmax_coords = (min_coords.tolist(), max_coords.tolist())
+
+
+
+            self.optimizer = Optimizer(minmax_coords, "GP", acq_func="gp_hedge", acq_optimizer="sampling",
+                                        initial_point_generator="lhs", model_queue_size=1)
+
+
+
+            step = len(refined_points) + 1
+
+
+
+            while self.n_steps is None or step <= self.n_steps:
+                current_fom = None
+
+
+
+                if refined_points:
+                    current_fom = refined_points[-1][1]
+
+
+
+                verbose_manager = VerboseManager.instance()
+                verbose_manager.start(4, verbose=self.verbose)
+                fom = self._generate_FoM()
+
+
+
+                if current_fom is not None and self.acceptance_criteria(current_fom, fom):
+                    next_parameters = self.step()
+
+
+
+                    if next_parameters is not None:
+                        refined_points.append([step, fom] + list(next_parameters))
+                        step += 1
+                    else:
+                         pass
+
+
+                    parameter_coords = [row[2:] for row in refined_points]
+                    self.optimizer.tell(parameter_coords, [fom])
+
+
+
+                verbose_manager.finish("Calculating observables")
+
+
+
+                if self.reset_config:
+                    if self.minimizer.state_changed:
+                        self.simulation.engine.save_config()
+                    else:
+                        self.simulation.engine.reset_config()
+                    self.minimizer.write_history(self.results_filename)
+
+
+
+                verbose_manager.finish("Refinement step")
+
+
+
+                if self.n_steps is None:
+                    break
+        return pd.DataFrame(refined_points, columns=["Step", "FoM"] + parameter_names)
+
+
+    def acceptance_criteria(self, current_fom, new_fom):
+        improvement_threshold = 0.01
+        if current_fom - new_fom >= improvement_threshold:
+            return True
+        else:
+            return False
