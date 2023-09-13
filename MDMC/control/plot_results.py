@@ -40,11 +40,17 @@ class PlotResults():
 
         # Create the optimizer
         try:
-            self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
-                                    acq_optimizer="sampling", model_queue_size=1)
+            self.optimizer = Optimizer(self.minmax_coords,"GP",
+                                       n_initial_points=min(10, len(self.FoMs)),
+                                       acq_func="gp_hedge", acq_optimizer="sampling",
+                                         model_queue_size=1)
+            if len(self.FoMs) < 10:
+                print(f"WARNING:You have only used {len(self.FoMs)} refinement steps,"
+                      " use a larger number for more meaningful plots.")
         except ValueError as error:
-            raise ValueError("Insufficient number of refinement steps, please use at least 10.")
-        
+            raise ValueError("Insufficient number of refinement steps,"
+                             " please use at least 10.") from error
+
         # Train the optimizer
         self.optimizer.tell(self.parameter_coords, self.FoMs)
 
@@ -92,12 +98,7 @@ class PlotResults():
         random_samples = self.optimizer.space.rvs(self.points, random_state=7)
 
         # make estimations with surrogate
-        try:
-            model = self.optimizer.models[-1]
-        except IndexError as error:
-            raise IndexError("Insufficient number of refinement steps, please use at least 10.")
-        
-
+        model = self.optimizer.models[-1]
         y_random = model.predict(self.optimizer.space.transform(random_samples))
         index_best_objective = np.argmin(y_random)
         min_x = random_samples[index_best_objective]

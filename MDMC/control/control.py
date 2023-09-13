@@ -413,9 +413,10 @@ class Control:
             control.refine(100)
         """
 
-        if n_steps is None:
+        if n_steps is None or n_steps == 0:
             if self.n_steps is None:
-                raise ValueError('The number of maximum refinement steps has not been specified')
+                raise ValueError('The number of maximum refinement steps needs to be'
+                                 ' specified and greater than 0.')
         else:
             self.n_steps = n_steps
 
@@ -459,11 +460,7 @@ class Control:
             pass
 
         # print values of final parameters
-        try:
-            result_string = self.minimizer.present_result()
-        except ValueError as error:
-            raise ValueError("Insufficient number of refinement steps, please use at least 10.")
-        
+        result_string = self.minimizer.present_result()
         if self.verbose != -1:
             print(result_string)
 
