@@ -1449,6 +1449,7 @@ class Simulation:
         """
 
         return self._time_step
+
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:

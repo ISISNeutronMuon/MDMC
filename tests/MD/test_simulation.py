@@ -116,6 +116,8 @@ class MockSimulation(sim.Simulation):
         self.traj_step = traj_step
         self.time_step = time_step
         self.engine = engine
+        self.temperature = settings.get("temperature", 300.0)
+        self.pressure = settings.get("pressure", 101325.0)
 
 class MockEngine:
     """
@@ -206,17 +208,16 @@ def test_universe_stdout(capsys):
 
 
 
-def test_simulation_setup(capsys):
-    engine = "lammps"
-    settings = {
-        "temperature": 300.0,
-        "pressure": 101325.0 }
-    settings_strings = [f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}' for key, value in settings.items()]
+@pytest.mark.parametrize("engine, settings", [
+    ("lammps", {"temperature": 300.0, "pressure": 101325.0})])
+
+def test_simulation_setup(capsys, engine, settings):
+    simulation = MockSimulation(None, 0, engine=engine, **settings)
+    assert simulation is not None
+    captured = capsys.readouterr()
     expected_output = f'Simulation created with {engine} engine and settings:\n'
-    expected_output += "\n".join(settings_strings)
-    actual_output = f'Simulation created with {engine} engine and settings:\n'
-    actual_output += "\n".join(settings_strings)
-    assert expected_output == actual_output
+    expected_output += "\n".join([f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}' for key, value in settings.items()])
+    assert captured.out.strip() == expected_output
 
 
 def test_create_atom(atom):
