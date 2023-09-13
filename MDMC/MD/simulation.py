@@ -157,15 +157,17 @@ class Universe(AtomContainer):
                     self.__class__,
                     self.dimensions)
 
-        setup_frame = pd.DataFrame([[np.round(self.dimensions, 2)],
-                                    [force_field],
-                                    [self.n_atoms]],
-                                   index=['  Dimensions',
-                                          '  Force field',
-                                          '  Number of atoms'])
-
         if self.verbose:
-            print(f'Universe created with:\n{setup_frame.to_string(index=True, header=False)}\n')
+            setup_frame = "Universe created with:"
+            if self.dimensions is not None:
+                setup_frame += f"\nDimensions {np.round(self.dimensions, 2)}"
+            if force_field is not None:
+                setup_frame += f"\nForce field    {force_field}"
+            if self.n_atoms > 0:
+                setup_frame += f"\nNumber of atoms    {self.n_atoms}"
+            print(setup_frame)
+
+
 
     def __str__(self) -> str:
 
