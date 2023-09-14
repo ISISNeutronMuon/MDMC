@@ -208,15 +208,16 @@ def test_universe_stdout(capsys):
 
 
 
+
 @pytest.mark.parametrize("engine, settings", [
     ("lammps", {"temperature": 300.0, "pressure": 101325.0})])
-
 def test_simulation_setup(capsys, engine, settings):
     simulation = MockSimulation(None, 0, engine=engine, **settings)
     assert simulation is not None
     captured = capsys.readouterr()
-    expected_output = f'Simulation created with {engine} engine and settings:\n'
-    expected_output += "\n".join([f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}' for key, value in settings.items()])
+    expected_output = ('Simulation created with lammps engine and settings:\n' \
+                     'temperature: 300.0 K\n' \
+                     'pressure: 101325.0 Pa\n')
     assert captured.out.strip() == expected_output
 
 

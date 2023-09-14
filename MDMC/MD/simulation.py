@@ -1431,7 +1431,8 @@ class Simulation:
 
         setup_msg = f'Simulation created with {engine} engine'
         if self.settings:
-            settings_strings = [f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}' for key, value in self.settings.items()]
+            settings_strings = [f'{key}: {value} {units.SYSTEM.get(key.upper(), "")}'
+                                for key, value in self.settings.items()]
             settings_string = '\n'.join(settings_strings)
             setup_msg += f' and settings:\n{settings_string}\n'
         if self.verbose:
