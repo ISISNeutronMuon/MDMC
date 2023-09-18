@@ -208,7 +208,7 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.settings = settings
         self.n_steps = settings.get('n_steps')
-
+        self.equil_steps = None
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
@@ -667,7 +667,7 @@ class Control:
         ``Observable``
             An ``Observable`` of specified ``type``
         """
-        print(f" HERE: {file_name}")
+
         observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
         observable.use_FFT = use_FFT
@@ -977,5 +977,6 @@ class Control:
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
+
         with suppress(AttributeError):
             obs.validate_energy(dt)

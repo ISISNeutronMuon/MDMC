@@ -47,10 +47,6 @@ simulation = Simulation(universe,
                         temperature=120.,
                         traj_step=15)
 
-# Energy Minimization and equilibration
-simulation.minimize(n_steps=5000)
-simulation.run(n_steps=50000, equilibration=True)
-
 # Setup refinement of the force field parameters
 
 # exp_datasets is a list of dictionaries with one dictionary per experimental
@@ -68,6 +64,10 @@ control = Control(simulation=simulation,
                   exp_datasets=exp_datasets,
                   fit_parameters=fit_parameters,
                   MD_steps=570)
+
+# Energy Minimization and equilibration
+control.minimize(n_steps=5000)
+control.equilibrate(n_steps=50000)
 
 # Run the refinement, i.e. refine the FF parameters against the data.
 # n_steps = 3 is too small, but a good choice to first test this script
