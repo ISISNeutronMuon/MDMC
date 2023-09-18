@@ -52,11 +52,6 @@ simulation = Simulation(universe,
                         traj_step=4000,
                         numprocs=2)
 
-# Energy Minimization and equilibration
-simulation.minimize(n_steps=5000,output_log='minim-water.log',work_dir='minim-water')
-simulation.run(n_steps=25000, equilibration=True,
-                output_log='equil-water.log',work_dir='equil-water')
-
 # Setup refinement
 
 # in general exp_datasets is a list of dictionaries with one dictionary per experimental dataset
@@ -86,6 +81,10 @@ control = Control(simulation=simulation,
                   minimizer_type="MMC",
                   MD_steps=804000,
                   energy_resolution=13.6)
+
+# Energy Minimization and equilibration
+control.minimize(n_steps=5000,output_log='minim-water.log',work_dir='minim-water')
+control.equilibrate(n_steps=25000,output_log='equil-water.log',work_dir='equil-water')
 
 # Run refinement
 control.refine(n_steps=3)
