@@ -433,7 +433,7 @@ class Control:
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate()
+                    self.equilibrate(self.equil_steps)
 
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
@@ -445,7 +445,7 @@ class Control:
         else:
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate()
+                    self.equilibrate(self.equil_steps)
                 self.step()  # advance the refinement by one step
                 count += 1
 
@@ -486,13 +486,66 @@ class Control:
 
         verbose_manager.finish("Refinement")
 
-    def equilibrate(self) -> None:
+    def minimize(self, n_steps: int,
+                 minimize_every: int = 10,
+                 verbose: bool = False, output_log: str = None,
+                 work_dir: str = None, **settings: dict) -> None:
         """
-        Run molecular dynamics to equilibrate the ``Universe``.
+        Perform energy minimisation process on the Universe before equilibration.
+
+        Parameters
+        ----------
+        n_steps : int
+            Total number of the MD run steps
+        minimize_every: int, optional
+            Number of MD steps between two consecutive minimizations
+        verbose: bool, optional
+            Whether to print statements when the minimization has been started and completed
+            (including the number of minimization steps and time taken). Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
+        **settings
+            ``etol`` (`float`)
+                If the energy change between iterations is less than ``etol``,
+                minimization is stopped. Default depends on engine used.
+            ``ftol`` (`float`)
+                If the magnitude of the global force is less than ``ftol``,
+                minimization is stopped. Default depends on engine used.
+            ``maxiter`` (`int`)
+                Maximum number of iterations of a single structure
+                relaxation procedure. Default depends on engine used.
+            ``maxeval`` (`int`)
+                Maximum number of force evaluations to perform. Default depends
+                on engine used.
+
         """
 
-        self.simulation.run(self.equilibration_steps, equilibration=True,
-                            verbose=False)
+        self.simulation.minimize(n_steps, minimize_every, verbose,
+                                 output_log, work_dir, **settings)
+
+    def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
+            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
+
+        """
+        Run molecular dynamics to equilibrate the ``Universe``.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+            Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
+        """
+        self.equil_steps = n_steps
+        self.simulation.run(n_steps,equilibration, verbose ,output_log, work_dir,
+                             **settings)
 
     def step(self) -> None:
         """
@@ -614,7 +667,7 @@ class Control:
         ``Observable``
             An ``Observable`` of specified ``type``
         """
-
+        print(f" HERE: {file_name}")
         observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
         observable.use_FFT = use_FFT
