@@ -208,6 +208,7 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.settings = settings
         self.n_steps = settings.get('n_steps')
+        self.n_step_counter = 0
 
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
@@ -525,7 +526,7 @@ class Control:
         self.simulation.minimize(n_steps, minimize_every, verbose,
                                  output_log, work_dir, **settings)
 
-    def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -544,7 +545,20 @@ class Control:
             Working directory for the MD engine to write to. Default is `None`.
         """
         self.equil_steps = n_steps
-        self.simulation.run(n_steps,equilibration, verbose ,output_log, work_dir,
+
+        if n_steps == None:
+            if self.n_step_counter == 0:
+                print("No equilibration steps have been specified therefore"
+                       " auto_equilibrate will be used.")
+                print("")
+            else:
+                print(f"Refinement step: {self.n_step_counter}")
+            steps_used, var_values = self.simulation.auto_equilibrate()
+            print("")
+            self.n_step_counter += 1
+
+        else:
+            self.simulation.run(n_steps,equilibration, verbose ,output_log, work_dir,
                              **settings)
 
     def step(self) -> None:
