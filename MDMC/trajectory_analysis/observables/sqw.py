@@ -270,37 +270,32 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         dt_required = self.calculate_dt()
+        rounded_dt_required = np.round(dt_required, 5)
         # print(f"Required dt: {dt_required}")
         # print(f"User dt: {dt}")
 
 
         if traj_step is not None and time_step is not None:
 
+
             # Changing the time and traj step to fit the required dt value
 
+            traj_step = np.round(dt_required/time_step)
 
-            if dt_required-dt > 0.00001:
+            time_step = dt_required/traj_step
+            traj_step = int(traj_step)
 
-                time_step_required = dt_required/traj_step
-                time_step_diff = time_step_required - time_step
-                time_diff_frac = time_step_diff/time_step
-                tolerance = 0.1
-
-                if time_diff_frac < tolerance:
-                    time_step += time_step_diff
-                    dt = traj_step * time_step
+            dt = traj_step * time_step
 
 
-                else: # change the traj step
-                    raise NotImplementedError("Chang traj step part")
 
+            print("IMPORTANT: The given traj_step and time_step values were not"
+                    " compatibile with the dataset specified.\nThe values "
+                    "(whilst prioritising time_step) have been changed to"
+                    f" traj_step: {traj_step}, and time_step: {time_step}. \n"
+                    "Context: for this dataset, traj_step multiplied by time_step"
+                    f" must be ~= {rounded_dt_required} (5 d.p). \n")
 
-                print("IMPORTANT: The given traj_step and time_step values were not"
-                      " compatibile with the dataset specified.\nThe values"
-                       f" have been automatically changed to traj_step: {traj_step},"
-                       f" and time_step: {time_step}")
-                print("")
-                
         if self.use_FFT:
             # When using FFT, require all experimental/simulated energies
             # to match
