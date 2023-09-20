@@ -21,8 +21,6 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-# from MDMC.trajectory_analysis.observables.sqw import AbstractSQw
-# from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -683,7 +681,7 @@ class Control:
         ``Observable``
             An ``Observable`` of specified ``type``
         """
-        print(f" HERE: {file_name}")
+
         observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
         observable.use_FFT = use_FFT
@@ -995,9 +993,7 @@ class Control:
         traj_step = self.simulation.traj_step
         time_step = self.simulation.time_step
         dt = traj_step * time_step
-
-        print(f"User: {dt}")
         
         with suppress(AttributeError):
-            obs.validate_energy(dt,traj_step,time_step)
+            self.simulation.traj_step, self.simulation.time_step = obs.validate_energy(dt,traj_step,time_step)
             

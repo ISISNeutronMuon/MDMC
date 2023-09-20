@@ -14,15 +14,7 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
-from MDMC.control import control
-from MDMC.MD import simulation
-import numpy as np
-import os
-from MDMC.control import Control
-from MDMC.MD import Atom, Molecule, Dispersion, LennardJones, Simulation, Universe
-from MDMC.MD.packmol import PackmolSetup, PackmolFiller
-from MDMC.control import control
-from MDMC.control import plot_results
+
 
 class SQwMixins:
     """
@@ -278,8 +270,8 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         dt_required = self.calculate_dt()
-        print(f"Required: {dt_required}")
-        print(f"dt: {dt}")
+        # print(f"Required dt: {dt_required}")
+        # print(f"User dt: {dt}")
 
 
         if traj_step is not None and time_step is not None:
@@ -287,13 +279,11 @@ class AbstractSQw(SQwMixins, Observable):
             # Changing the time and traj step to fit the required dt value
 
 
-            if dt_required-dt > 0.0001:
+            if dt_required-dt > 0.00001:
 
                 time_step_required = dt_required/traj_step
                 time_step_diff = time_step_required - time_step
                 time_diff_frac = time_step_diff/time_step
-
-                print(time_step_diff,time_diff_frac)
                 tolerance = 0.1
 
                 if time_diff_frac < tolerance:
@@ -305,7 +295,11 @@ class AbstractSQw(SQwMixins, Observable):
                     raise NotImplementedError("Chang traj step part")
 
 
-                print(f"dt after change: {dt}")
+                print("IMPORTANT: The given traj_step and time_step values were not"
+                      " compatibile with the dataset specified.\nThe values"
+                       f" have been automatically changed to traj_step: {traj_step},"
+                       f" and time_step: {time_step}")
+                print("")
                 
         if self.use_FFT:
             # When using FFT, require all experimental/simulated energies
@@ -332,6 +326,9 @@ class AbstractSQw(SQwMixins, Observable):
             # Allow for rounding errors by using isclose
             isclose = np.isclose(dt, dt_required, rtol=1e-5)
             assert isclose or dt <= dt_required, msg
+
+        if traj_step is not None and time_step is not None:
+            return traj_step, time_step
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
                          **settings: dict):
