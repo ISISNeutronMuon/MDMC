@@ -14,7 +14,15 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
-
+from MDMC.control import control
+from MDMC.MD import simulation
+import numpy as np
+import os
+from MDMC.control import Control
+from MDMC.MD import Atom, Molecule, Dispersion, LennardJones, Simulation, Universe
+from MDMC.MD.packmol import PackmolSetup, PackmolFiller
+from MDMC.control import control
+from MDMC.control import plot_results
 
 class SQwMixins:
     """
@@ -249,7 +257,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    def validate_energy(self, dt: float) -> None:
+    def validate_energy(self, dt: float, traj_step: float = None, time_step: float = None) -> None:
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -270,6 +278,35 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         dt_required = self.calculate_dt()
+        print(f"Required: {dt_required}")
+        print(f"dt: {dt}")
+
+
+        if traj_step is not None and time_step is not None:
+
+            # Changing the time and traj step to fit the required dt value
+
+
+            if dt_required-dt > 0.0001:
+
+                time_step_required = dt_required/traj_step
+                time_step_diff = time_step_required - time_step
+                time_diff_frac = time_step_diff/time_step
+
+                print(time_step_diff,time_diff_frac)
+                tolerance = 0.1
+
+                if time_diff_frac < tolerance:
+                    time_step += time_step_diff
+                    dt = traj_step * time_step
+
+
+                else: # change the traj step
+                    raise NotImplementedError("Chang traj step part")
+
+
+                print(f"dt after change: {dt}")
+                
         if self.use_FFT:
             # When using FFT, require all experimental/simulated energies
             # to match
