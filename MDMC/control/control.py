@@ -21,6 +21,8 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+# from MDMC.trajectory_analysis.observables.sqw import AbstractSQw
+# from MDMC.trajectory_analysis.observables.sqw import SQwMixins
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -923,6 +925,12 @@ class Control:
 
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
-        dt = self.simulation.traj_step * self.simulation.time_step
+        traj_step = self.simulation.traj_step
+        time_step = self.simulation.time_step
+        dt = traj_step * time_step
+
+        print(f"User: {dt}")
+        
         with suppress(AttributeError):
-            obs.validate_energy(dt)
+            obs.validate_energy(dt,traj_step,time_step)
+            
