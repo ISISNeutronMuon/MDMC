@@ -271,23 +271,23 @@ class AbstractSQw(SQwMixins, Observable):
 
         dt_required = self.calculate_dt()
         rounded_dt_required = np.round(dt_required, 5)
-        # print(f"Required dt: {dt_required}")
-        # print(f"User dt: {dt}")
-
 
         if traj_step is not None and time_step is not None:
 
-
             # Changing the time and traj step to fit the required dt value
+            # by finding the highest traj_step that can fit into the dt_required
+            # and checking to make sure one traj_step higher than this wouldnt be
+            # closer to the required dt value
 
             traj_step = np.round(dt_required/time_step)
 
+            if abs(((traj_step + 1)* time_step)) - dt_required \
+                < abs((traj_step*time_step)-dt_required):
+                traj_step += 1
+
             time_step = dt_required/traj_step
             traj_step = int(traj_step)
-
             dt = traj_step * time_step
-
-
 
             print("IMPORTANT: The given traj_step and time_step values were not"
                     " compatibile with the dataset specified.\nThe values "
