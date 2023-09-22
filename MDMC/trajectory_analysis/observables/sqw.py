@@ -249,7 +249,7 @@ class AbstractSQw(SQwMixins, Observable):
         except KeyError:
             return None
 
-    def validate_energy(self, dt: float, traj_step: float = None, time_step: float = None) -> None:
+    def validate_energy(self, dt: float, traj_step: float = None, time_step: float = None):
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
@@ -323,7 +323,8 @@ class AbstractSQw(SQwMixins, Observable):
             assert isclose or dt <= dt_required, msg
 
         if traj_step is not None and time_step is not None:
-            return traj_step, time_step
+            return True, traj_step, time_step
+        return False, None, None
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
                          **settings: dict):

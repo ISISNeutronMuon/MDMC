@@ -209,7 +209,7 @@ class Control:
         self.settings = settings
         self.n_steps = settings.get('n_steps')
         self.n_step_counter = 0
-
+        self.equil_steps = None
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
@@ -546,14 +546,14 @@ class Control:
         """
         self.equil_steps = n_steps
 
-        if n_steps == None:
+        if n_steps is None:
             if self.n_step_counter == 0:
                 print("No equilibration steps have been specified therefore"
                        " auto_equilibrate will be used.")
                 print("")
             else:
                 print(f"Refinement step: {self.n_step_counter}")
-            steps_used, var_values = self.simulation.auto_equilibrate()
+            self.simulation.auto_equilibrate()
             print("")
             self.n_step_counter += 1
 
@@ -990,10 +990,11 @@ class Control:
 
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
-        traj_step = self.simulation.traj_step
-        time_step = self.simulation.time_step
-        dt = traj_step * time_step
-        
+        dt = self.simulation.traj_step * self.simulation.time_step
+
         with suppress(AttributeError):
-            self.simulation.traj_step, self.simulation.time_step = obs.validate_energy(dt,traj_step,time_step)
-            
+            changed, traj_step, time_step \
+                  = obs.validate_energy(dt,self.simulation.traj_step,self.simulation.time_step)
+            if changed:
+                self.simulation.traj_step = traj_step
+                self.simulation.time_step = time_step
