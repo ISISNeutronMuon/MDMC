@@ -108,4 +108,6 @@ def MDMC_to_ASE(structure: Union['Structure', 'Universe', List[Atom]],
     if cell is None:
         cell = np.array([0., 0., 0.,])
 
+    atom.element = [str(atom.element) for atom in structure.atoms]
+        
     return ase.Atoms([_convert_to_ase_atom(atom) for atom in structure.atoms], cell=cell)
