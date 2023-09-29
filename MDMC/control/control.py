@@ -26,6 +26,8 @@ from MDMC.refinement.minimizers.GPR import GPR
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
+import pickle
+import time
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -933,92 +935,88 @@ class Control:
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
+
+
+
     def more_refine(self, n_steps=None) -> pd.DataFrame:
-        self.n_steps
-        if os.path.exists(self.results_filename):
-            df = pd.read_csv(self.results_filename, skiprows=1)
-            refined_points = df.values.tolist()
+        """
+        This functon performs an additional refinement steps and update the results DataFrame.
+        This method conducts refinement steps on a system and updates a DataFrame with the results.
+        It can run a specified number of steps or continue until the minimizer has converged.
 
+        Parameters:
+        - n_steps (int): Number of refinement steps to perform.
+            Returns:
+        - pd.DataFrame: A DataFrame containing the refined results with columns:
+        - 'Step': The step number.
+        - 'FoM': Figure of Merit.
+        - 'epsilon (#2)': Epsilon value.
+        - 'sigma (#3)': Sigma value.
 
+        """
+        records = pd.read_csv(self.results_filename, header=0, names=['Step', 'FoM', 'epsilon (#2)', 'sigma (#3)'], index_col='Step')
+        records = records.astype(dtype=float, errors='ignore')
+        FoMs = records['FoM'].to_list()
+        records = records.drop(columns=['Unnamed 0', 'FoM', 'Change state'], errors='ignore')
+        verbose_steps = (n_steps + 1) * 4 if n_steps is not None else None
+        self.step_timings = []
+        count = -1
 
-            parameter_names = ["Epsilon", "Sigma"]
+        if self.verbose != -1:
+            self.data_printer.print_header(self.minimizer.history)
+        verbose_manager = VerboseManager.instance()
+        verbose_manager.start(verbose_steps, verbose=self.verbose)
+        new_result = {}
+        total_steps = 0
 
-
-
-            parameter_coords = [row[2:] for row in refined_points]
-            min_coords = np.min(parameter_coords, axis=0)
-            max_coords = np.max(parameter_coords, axis=0)
-            minmax_coords = (min_coords.tolist(), max_coords.tolist())
-
-
-
-            self.optimizer = Optimizer(minmax_coords, "GP", acq_func="gp_hedge", acq_optimizer="sampling",
-                                        initial_point_generator="lhs", model_queue_size=1)
-
-
-
-            step = len(refined_points) + 1
-
-
-
-            while self.n_steps is None or step <= self.n_steps:
-                current_fom = None
-
-
-
-                if refined_points:
-                    current_fom = refined_points[-1][1]
-
-
-
-                verbose_manager = VerboseManager.instance()
-                verbose_manager.start(4, verbose=self.verbose)
-                fom = self._generate_FoM()
-
-
-
-                if current_fom is not None and self.acceptance_criteria(current_fom, fom):
-                    next_parameters = self.step()
-
-
-
-                    if next_parameters is not None:
-                        refined_points.append([step, fom] + list(next_parameters))
-                        step += 1
-                    else:
-                         pass
-
-
-                    parameter_coords = [row[2:] for row in refined_points]
-                    self.optimizer.tell(parameter_coords, [fom])
-
-
-
-                verbose_manager.finish("Calculating observables")
-
-
-
-                if self.reset_config:
-                    if self.minimizer.state_changed:
-                        self.simulation.engine.save_config()
-                    else:
-                        self.simulation.engine.reset_config()
-                    self.minimizer.write_history(self.results_filename)
-
-
-
-                verbose_manager.finish("Refinement step")
-
-
-
-                if self.n_steps is None:
-                    break
-        return pd.DataFrame(refined_points, columns=["Step", "FoM"] + parameter_names)
-
-
-    def acceptance_criteria(self, current_fom, new_fom):
-        improvement_threshold = 0.01
-        if current_fom - new_fom >= improvement_threshold:
-            return True
+        while total_steps < n_steps:
+            if total_steps >= 0 and self.equilibration_steps > 0:
+                self.equilibrate()
+            verbose_manager.header(f"Step {total_steps + 1}")
+            self.step()
+            total_steps += 1
+            if self.verbose == 3:
+                print("")
         else:
-            return False
+            while count < n_steps and not self.minimizer.has_converged():
+                if count >= 0 and self.equilibration_steps > 0:
+                    self.equilibrate()
+                self.step()  # advance the refinement by one step
+                count += 1
+            self.data_printer.print_data(self.minimizer.history)
+            expected_columns = records.columns
+            new_result = {col: new_result.get(col, None) for col in expected_columns}
+            new_result_df = pd.DataFrame([new_result], columns=records.columns)
+            records = pd.concat([records, new_result_df], ignore_index=True)
+            records.to_csv(self.results_filename, sep=',', index_label='Step')
+        try:
+            self.minimizer.reset_parameters()
+            self._update_engine_parameters()
+        except TypeError:
+            pass
+        result_string = self.minimizer.present_result()
+        if self.verbose != -1:
+            print(result_string)
+
+        scaling_keys = []
+        scaling_values = []
+        for i, observable_pair in enumerate(self.observable_pairs):
+            if observable_pair.auto_scale:
+                dset = self.exp_datasets[i]
+                scaling_keys.append(f'  {dset["file_name"]}')
+                scaling_values.append([observable_pair.rescale_factor])
+        if len(scaling_keys) > 0 and len(scaling_values) > 0:
+            scaling_df = pd.DataFrame(scaling_values, index=scaling_keys)
+
+            if self.verbose != -1:
+                print(f'\nAutomatic Scale Factors\n{scaling_df.to_string(index=True, header=False)}')
+        if self.verbose >= 1 and len(self.step_timings) > 0:
+            average_timing = statistics.mean(self.step_timings)
+
+            if self.verbose != -1:
+                print(f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
+
+        verbose_manager.finish("Refinement")
+
+
+
