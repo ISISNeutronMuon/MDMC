@@ -67,10 +67,10 @@ def test_correct_elements_exported(exported_file_text, h2o_molecule):
     """Tests that the elements exported to the file are correct"""
     atom_lines = get_atom_lines(exported_file_text)
     for i, line in enumerate(atom_lines):
-        assert line[76:78].split()[-1] == h2o_molecule.atoms[i].element
+        assert line[76:78].split()[-1] == h2o_molecule.atoms[i].element.symbol
 
 def test_correct_names_exported(exported_file_text, h2o_molecule):
     """Tests that the correct name for the atoms are exported (the element)"""
     atom_lines = get_atom_lines(exported_file_text)
     for i, line in enumerate(atom_lines):
-        assert line[12:16].split()[-1] == h2o_molecule.atoms[i].element
+        assert line[12:16].split()[-1] == h2o_molecule.atoms[i].element.symbol

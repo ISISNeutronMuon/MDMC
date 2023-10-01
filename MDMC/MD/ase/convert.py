@@ -79,7 +79,7 @@ def _convert_to_ase_atom(atom: Atom) -> ase.Atom:
 
     return ase.atom.Atom(position=atom.position,
                          mass=atom.mass,
-                         symbol=atom.element,
+                         symbol=atom.element.symbol,
                          charge=atom.charge)
 
 
@@ -108,6 +108,4 @@ def MDMC_to_ASE(structure: Union['Structure', 'Universe', List[Atom]],
     if cell is None:
         cell = np.array([0., 0., 0.,])
 
-    atom.element = [str(atom.element) for atom in structure.atoms]
-        
     return ase.Atoms([_convert_to_ase_atom(atom) for atom in structure.atoms], cell=cell)
