@@ -1153,32 +1153,6 @@ class Universe(AtomContainer):
         self._solvent_density += len(mols) * solvent_mass / self.volume
 
 
-def _primitive_cubic(dimensions, number):
-    """
-    Generates a primitive cubic structure
-
-    Raises
-    ------
-    NotImplementedError
-        HAS NOT BEEN IMPLEMENTED
-    """
-
-    raise NotImplementedError
-
-
-def _liquid_structure():
-    """
-    Generates a random arrangement of ``Structure`` objects
-
-    Raises
-    ------
-    NotImplementedError
-        HAS NOT BEEN IMPLEMENTED
-    """
-
-    raise NotImplementedError
-
-
 class KSpaceSolver:
     """
     Class describing the k-space solver that is applied to electrostatic and/or
