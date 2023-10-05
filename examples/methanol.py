@@ -50,3 +50,10 @@ for interaction in universe.nonbonded_interactions:
 simulation = Simulation(universe, engine='lammps', time_step=1., temperature=300.,
                         pressure=101325., traj_step=10, thermostat='nose',
                         barostat='nose', t_damp=100, p_damp=1000)
+
+# Run a minimization and equilibration
+simulation.minimize(n_steps=100000)
+# Warning: do not run the equilibration for much more than 100 steps, because the above
+# geometry has not been optimised and may lead to diverging simulations. To run a longer
+# equilibration, a better starting geometry needs to be chosen.
+simulation.run(n_steps=100, equilibration=True)
