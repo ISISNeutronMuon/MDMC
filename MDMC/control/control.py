@@ -208,7 +208,6 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.settings = settings
         self.n_steps = settings.get('n_steps')
-        self.equil_steps = None
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
@@ -433,7 +432,7 @@ class Control:
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate(self.equil_steps)
+                    self.equilibrate(self.equilibration_steps)
 
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
@@ -445,7 +444,7 @@ class Control:
         else:
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate(self.equil_steps)
+                    self.equilibrate(self.equilibration_steps)
                 self.step()  # advance the refinement by one step
                 count += 1
 
@@ -491,7 +490,10 @@ class Control:
                  verbose: bool = False, output_log: str = None,
                  work_dir: str = None, **settings: dict) -> None:
         """
-        Perform energy minimisation process on the Universe before equilibration.
+        Performs an MD run intertwined with periodic structure relaxation.
+        This way after a local minimum is found, the system is taken
+        out of the minimum to explore a larger volume of the parameter
+        space.
 
         Parameters
         ----------
@@ -519,11 +521,10 @@ class Control:
             ``maxeval`` (`int`)
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
-
         """
 
-        self.simulation.minimize(n_steps, minimize_every, verbose,
-                                 output_log, work_dir, **settings)
+        self.simulation.minimize(n_steps,minimize_every,verbose,
+                                 output_log,work_dir, **settings)
 
     def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
@@ -543,9 +544,8 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        self.equil_steps = n_steps
-        self.simulation.run(n_steps,equilibration, verbose ,output_log, work_dir,
-                             **settings)
+        self.simulation.run(n_steps,equilibration,verbose,
+                             output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
