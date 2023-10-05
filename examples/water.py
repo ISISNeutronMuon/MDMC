@@ -47,10 +47,6 @@ simulation = Simulation(universe,
                         temperature=280.,
                         traj_step=4000)
 
-# Energy Minimization and equilibration
-simulation.minimize(n_steps=5000)
-simulation.run(n_steps=25000, equilibration=True)
-
 # Setup refinement
 
 # in general exp_datasets is a list of dictionaries with one dictionary per experimental dataset
@@ -78,6 +74,10 @@ control = Control(simulation=simulation,
                   minimizer_type="MMC",
                   MD_steps=804000,
                   energy_resolution=13.6)
+
+# Energy Minimization and equilibration
+control.minimize(n_steps=5000)
+control.equilibrate(n_steps=25000)
 
 # Run refinement
 control.refine(n_steps=0)
