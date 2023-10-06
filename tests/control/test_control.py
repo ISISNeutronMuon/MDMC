@@ -264,7 +264,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                            reset_config=False)
 
     ctrl.minimizer = minim
-    ctrl.refine(10)
+    ctrl.refine(10, test=True)
 
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
@@ -318,7 +318,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                            reset_config=False)
 
     ctrl.minimizer = minim
-    ctrl.refine(10)
+    ctrl.refine(10, test=True)
     # Capture stdout using pytest fixture
     stdout = capsys.readouterr().out
     stdout_message = ('Control created with:\n'
