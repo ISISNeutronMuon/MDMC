@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
+import logging
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -259,10 +260,18 @@ class AbstractSQw(SQwMixins, Observable):
         ----------
         dt : float
             Frame separation in ``fs``
+        traj_step: float, optional
+            User specified value for the number of 'time_steps' used inbetween snapshots
+            of the simulation, default is None.
+        time_step: float, optional
+            User specified length of time for each update of the atoms trajectories
+            in the simulation, default is None.
 
         Returns
         -------
-        None
+        tuple
+            contains a boolean, and two floats (if traj_step and time_step have values)
+            or two NoneType (if traj_step and time_step were passed in as None).
 
         Raises
         ------
@@ -272,7 +281,7 @@ class AbstractSQw(SQwMixins, Observable):
         dt_required = self.calculate_dt()
         rounded_dt_required = np.round(dt_required, 5)
 
-        if traj_step is not None and time_step is not None:
+        if time_step is not None:
 
             # Changing the time and traj step to fit the required dt value
             # by finding the highest traj_step that can fit into the dt_required
@@ -280,16 +289,11 @@ class AbstractSQw(SQwMixins, Observable):
             # closer to the required dt value
 
             traj_step = np.round(dt_required/time_step)
-
-            if abs(((traj_step + 1)* time_step)) - dt_required \
-                < abs((traj_step*time_step)-dt_required):
-                traj_step += 1
-
             time_step = dt_required/traj_step
             traj_step = int(traj_step)
             dt = traj_step * time_step
 
-            print("IMPORTANT: The given traj_step and time_step values were not"
+            logging.warning(" The given traj_step and time_step values were not"
                     " compatibile with the dataset specified.\nThe values "
                     "(whilst prioritising time_step) have been changed to"
                     f" traj_step: {traj_step}, and time_step: {time_step}. \n"

@@ -535,7 +535,10 @@ class Control:
         Parameters
         ----------
         n_steps : int
-            Number of simulation steps to run
+            Number of simulation steps to run.
+        equilibration : bool, optional
+            If the run is for equilibration (`True`) or production (`False`).
+            Default is `False`.
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
