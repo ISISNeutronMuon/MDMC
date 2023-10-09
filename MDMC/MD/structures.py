@@ -1175,25 +1175,6 @@ class Atom(Structure):
                         zip(self.nonbonded_interactions, structure.nonbonded_interactions))])
 
 
-class _Group(CompositeStructure):
-    """
-    Two or more `Atom` objects that form a subset of a ``Molecule``
-
-    THIS CLASS HAS NOT BEEN IMPLEMENTED AND SO IS CURRENTLY PRIVATE
-
-    Raises
-    ------
-    NotImplementedError
-        THIS CLASS HAS NOT BEEN IMPLEMENTED
-    """
-    # pylint: disable=super-init-not-called
-    # as this is not implemented yet
-
-    def __init__(self):
-
-        raise NotImplementedError
-
-
 class Molecule(CompositeStructure):
     """
     Two or more bonded atoms
