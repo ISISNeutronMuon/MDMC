@@ -2,10 +2,10 @@
 
 from typing import Optional
 
+import logging
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
-import logging
 
 from MDMC.common import units
 from MDMC.common.constants import h, h_bar
@@ -292,13 +292,13 @@ class AbstractSQw(SQwMixins, Observable):
             time_step = dt_required/traj_step
             traj_step = int(traj_step)
             dt = traj_step * time_step
-
+            print(time_step)
             logging.warning(" The given traj_step and time_step values were not"
                     " compatibile with the dataset specified.\nThe values "
                     "(whilst prioritising time_step) have been changed to"
-                    f" traj_step: {traj_step}, and time_step: {time_step}. \n"
+                    " traj_step: %d, and time_step: %f. \n"
                     "Context: for this dataset, traj_step multiplied by time_step"
-                    f" must be ~= {rounded_dt_required} (5 d.p). \n")
+                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,rounded_dt_required)
 
         if self.use_FFT:
             # When using FFT, require all experimental/simulated energies
