@@ -14,6 +14,7 @@ from MDMC.MD.interaction_functions import LennardJones
 import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
+import logger
 
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
@@ -367,7 +368,7 @@ def test_equivalent_top_level_structures_dict(
     assert equivalent_dict[keys[0]] == 28
 
     assert isinstance(keys[1], su.Atom)
-    assert keys[1].element == "Ar"
+    assert keys[1].element.symbol == "Ar"
     assert equivalent_dict[keys[1]] == 65
 
 
@@ -1178,11 +1179,13 @@ def test_solvate_no_spce_wrapping_for_non_int_univ_dimensions():
                                                   ('sigma', 3.166)))])
 def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     """
-    Tests that the parameters of the solvent molcules are set correctly when
+    Tests that the parameters of the solvent molecules are set correctly when
     the solvent has been selected from inbuilt solvents
     """
 
     uni_parameters = solvated_universe.parameters
+
+    print(len(parameters), len(uni_parameters))
 
     assert len(parameters) == len(uni_parameters)
     assert set(parameters) == {(p.type, p.value.real)
@@ -1331,7 +1334,6 @@ def test_add_force_field_dispersions_atoms(universe, water_molecule):
     universe.add_structure(water_molecule)
     #pylint: disable=len-as-condition
     assert len(get_dispersions(universe.nonbonded_interactions)) == 0
-
     O_atoms = su.filter_atoms_element(water_molecule.atoms, 'O')
     universe.add_force_field('SPCE', add_dispersions=O_atoms)
     dispersions = get_dispersions(universe.nonbonded_interactions)

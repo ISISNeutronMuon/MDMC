@@ -86,81 +86,10 @@ def test_convert_from_ase_atom(element):
     """
 
     charge = 1.
-<<<<<<< HEAD
-    ase_atom = ase.atom.Atom(symbol=element, charge=charge)
-    atom = conversions.convert_from_ase_atom(ase_atom,
-                                             atom_type=atom_type,
-                                             name=name,
-                                             set_charge=set_charge,
-                                             cutoff=10.)
-    assert atom.element.symbol == element
-    assert atom.atom_type == atom_type
-    # If a name is not passed, the name should be the symbol
-    name = name if name else ase_atom.symbol
-    assert atom.name == name
-    # If set_charge is False, the charge should be None
-    charge = charge if set_charge else None
-
-
-@pytest.mark.parametrize('IDs, expected',
-                         [(range(1, 20, 1),
-                           range(0, 19, 1)),
-                          (range(1, 50, 2),
-                           range(0, 25, 1)),
-                          ([7, 4, 19, 55],
-                           range(0, 4, 1))])
-def test_get_ase_atoms(IDs, expected):
-    """
-    Tests that an ASEAtoms object can created from a list of atoms
-
-    Parametrized to test with different IDs, as these require conversion due
-    to ASE indexing
-
-    This does not test application of bonds, as these are tested in other
-    functions
-    """
-
-    atoms = []
-    for ID in IDs:
-        atom = Atom('H')
-        atom.ID = ID
-        atoms.append(atom)
-
-    index_conversion = dict(zip(IDs, expected))
-    ase_atoms = conversions.get_ase_atoms(atoms)
-    for i, atom in enumerate(ase_atoms):
-        assert atom.index == index_conversion[ase_atoms.IDs[i]]
-
-
-def test_convert_bond(bond_atom_IDs):
-    """
-    Tests that bonds are correctly converted to integers indexing atoms, where
-    there is no index conversion
-    """
-
-    bond_atoms = map(lambda x: (MockAtom(x[0]), MockAtom(x[1])), bond_atom_IDs)
-    mock_bond = MockBond(bond_atoms)
-
-    ase_bond_atoms = conversions.convert_bond(mock_bond)
-    assert ase_bond_atoms == bond_atom_IDs
-
-
-def test_convert_bond_index_conversion(bond_atom_IDs):
-
-    """
-    Tests that bonds are correctly converted to integers indexing atoms, where
-    there is index conversion
-    """
-
-    index_conv = {1:100, 2:200, 3:300, 4:400, 5:500, 6:600}
-    bond_atoms = map(lambda x: (MockAtom(x[0]), MockAtom(x[1])), bond_atom_IDs)
-    mock_bond = MockBond(bond_atoms)
-=======
     ase_atom = ase.Atoms([ase.Atom(symbol=element, charge=charge)])
     atom = convert.ASE_to_MDMC(ase_atom)[0]
     assert atom.name == ase_atom[0].symbol
     assert atom.charge == ase_atom[0].charge
->>>>>>> master
 
 @parametrize('molecule', [water, methanol])
 def test_convert_involution(molecule):

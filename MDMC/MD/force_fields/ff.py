@@ -535,7 +535,7 @@ class FileForceField(ForceField):
             # single atom when determining ff_atom_type
             # ff_atom_type is different to MDMC atom_type
             atom_name_element = (atom_pairs[1][0].name,
-                                 atom_pairs[1][0].element)
+                                 atom_pairs[1][0].element.symbol)
             cols = ['name', 'element']
             ff_atom_type = filter_ordered_dataframe(atom_name_element,
                                                     self.atoms,

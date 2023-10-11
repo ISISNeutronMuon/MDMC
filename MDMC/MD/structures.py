@@ -759,7 +759,6 @@ class Atom(Structure):
         except ValueError as error:
             msg = "Please provide a valid element and/or isotope"
             raise ValueError(msg)
-
         try:
             self.mass = settings['mass']
         except KeyError:
@@ -1485,7 +1484,7 @@ def filter_atoms_element(atoms: 'list[Atom]', element: str) -> 'list[Atom]':
         ``Atom`` objects of a specific element
     """
 
-    return list(filter(lambda a: a.element == element, atoms))
+    return list(filter(lambda a: a.element.symbol == element, atoms))
 
 
 def get_reduced_chemical_formula(symbols: 'list[str]',
