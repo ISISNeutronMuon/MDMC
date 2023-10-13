@@ -14,7 +14,7 @@ from MDMC.MD.interaction_functions import LennardJones
 import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
-import logger
+import logging
 
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
@@ -28,7 +28,7 @@ WATER_POSITION = (1., 2., 3.)
 WATER_NUM_DENSITY = 0.0333679
 
 TOLERANCE = 1.5
-SPCE_MASS = 18.01499
+SPCE_MASS = 18.01528
 SPCE_DIMENSIONS = np.array([18.6206, 18.6206, 18.6206])
 SPCE_NUM_MOL = len(SPC216['molecules'])  # 216
 SPCE_DENSITY = SPCE_MASS * SPCE_NUM_MOL / np.prod(SPCE_DIMENSIONS)
@@ -1184,8 +1184,6 @@ def test_solvate_parameter_setting(solvated_universe, solvent, parameters):
     """
 
     uni_parameters = solvated_universe.parameters
-
-    print(len(parameters), len(uni_parameters))
 
     assert len(parameters) == len(uni_parameters)
     assert set(parameters) == {(p.type, p.value.real)
