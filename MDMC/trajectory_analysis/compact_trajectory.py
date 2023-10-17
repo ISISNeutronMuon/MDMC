@@ -18,7 +18,7 @@ import numpy as np
 from MDMC.common import units
 from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
-
+import logging
 
 class CompactTrajectory:
     """
@@ -556,7 +556,7 @@ class CompactTrajectory:
             # so we accept a case of no atoms in the CompactTrajectory.
             # We just return False in case we wanted to check in real code if
             # we are trying to set labels on a CompactTrajectory with no atoms.
-        self.element_list = [atom_symbols[atom_id] for atom_id in self.atom_types]
+        self.element_list = [str(atom_symbols[atom_id]) for atom_id in self.atom_types]
         self.element_set = set(self.element_list)
         self.atom_masses = np.array([atom_masses[atom_id] for atom_id in self.atom_types])
         return True
@@ -704,6 +704,7 @@ class CompactTrajectory:
             the specified chemical elements.
         """
         indices = []
+        
         for element in elements:
             if element in self.element_list:
                 index = np.where(np.array(self.element_list) == element)[0].ravel()
