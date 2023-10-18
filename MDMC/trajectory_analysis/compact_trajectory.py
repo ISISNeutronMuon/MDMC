@@ -18,7 +18,6 @@ import numpy as np
 from MDMC.common import units
 from MDMC.MD.structures import Atom
 from MDMC.trajectory_analysis.trajectory import TemporalConfiguration
-import logging
 
 class CompactTrajectory:
     """
