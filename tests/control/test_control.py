@@ -85,6 +85,9 @@ def mock_generate_FoM(self):
 def mock_update_engine_parameters(self):
     pass
 
+def mock_equilibrate(self, *extras):
+    pass
+
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:
@@ -244,6 +247,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
     monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
     monkeypatch.setattr(control.Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
+    monkeypatch.setattr(control.Control, "equilibrate", mock_equilibrate)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -264,7 +268,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
                            reset_config=False)
 
     ctrl.minimizer = minim
-    ctrl.refine(10, test=True)
+    ctrl.refine(10)
 
     # Capture stdout using pytest fixure
     stdout = capsys.readouterr().out
@@ -299,6 +303,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
     monkeypatch.setattr(control.Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
+    monkeypatch.setattr(control.Control, "equilibrate", mock_equilibrate)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -318,7 +323,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
                            reset_config=False)
 
     ctrl.minimizer = minim
-    ctrl.refine(10, test=True)
+    ctrl.refine(10)
     # Capture stdout using pytest fixture
     stdout = capsys.readouterr().out
     stdout_message = ('Control created with:\n'
