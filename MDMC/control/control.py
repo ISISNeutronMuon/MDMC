@@ -544,7 +544,7 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        if n_steps is None or n_steps == 0:
+        if not n_steps:
             self.simulation.auto_equilibrate()
         else:
             self.simulation.run(n_steps,equilibration, verbose,
