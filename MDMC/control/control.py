@@ -431,7 +431,7 @@ class Control:
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
-                if count >= 0 and self.equilibration_steps > 0:
+                if count >= 0:
                     self.equilibrate(self.equilibration_steps)
 
                 verbose_manager.header(f"Step {count + 1}")
@@ -443,7 +443,7 @@ class Control:
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
-                if count >= 0 and self.equilibration_steps > 0:
+                if count >= 0:
                     self.equilibrate(self.equilibration_steps)
                 self.step()  # advance the refinement by one step
                 count += 1
@@ -526,7 +526,7 @@ class Control:
         self.simulation.minimize(n_steps,minimize_every,verbose,
                                  output_log,work_dir, **settings)
 
-    def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -544,8 +544,11 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        self.simulation.run(n_steps,equilibration,verbose,
-                             output_log, work_dir,**settings)
+        if not n_steps:
+            self.simulation.auto_equilibrate()
+        else:
+            self.simulation.run(n_steps,equilibration, verbose,
+                                output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
