@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
-import os
+from pathlib import Path
 from skopt import Optimizer
 from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.common.decorators import repr_decorator
@@ -26,8 +26,7 @@ from MDMC.refinement.minimizers.GPR import GPR
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
-import pickle
-import time
+
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -189,6 +188,7 @@ class Control:
                  minimizer_type: str = 'MMC', FoM_options: dict = None,
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
+                 previous_history: Path = None,
                  verbose: int = 3,
                  print_all_settings: bool = False,
                  **settings: dict):
@@ -220,12 +220,17 @@ class Control:
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
 
+
+
+
+
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
-                                                           self.fit_parameters, **settings)
+                                                           self.fit_parameters, previous_history=previous_history, **settings)
+
 
 
         # Create experimental observables from datasets and placeholders for
@@ -397,6 +402,7 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
+
     def refine(self, n_steps: int = None) -> None:
         """
         Refines the specified potential parameters
@@ -430,8 +436,8 @@ class Control:
         # 4 steps per refinement step, and n + 1 steps total
         verbose_steps = (self.n_steps + 1) * 4
         # initialise step timings list for average step timings at end
-        self.step_timings = []
 
+        self.step_timings = []
         count = -1
 
         if self.verbose != -1:
@@ -622,6 +628,8 @@ class Control:
         ``Observable``
             An ``Observable`` of specified ``type``
         """
+
+        # add error message
 
         observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)

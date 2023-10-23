@@ -2,9 +2,9 @@
 parameters"""
 from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
-
+from pathlib import Path
 import pandas as pd
-
+import csv
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
 
@@ -43,25 +43,41 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters):
+    def __init__(self, control: 'Control', parameters: Parameters, previous_history:Path = None):
+
         self.control = control
+        self.results_filename = control.settings.get('results_filename')
 
-        # First MC step always changes state
-        self.FoM_old = float('inf')
-        self.FoM = None
+        if previous_history is not None:
+            self._history = self.load_history(previous_history)
+            if not self._history.empty:
+                self.FoM_old = self._history['FoM'].iloc[-1]
+            self.FoM = None
 
-        # History of minimization
-        self._history = []
+            if isinstance(parameters, list):
+                parameters = Parameters(parameters)
+            try:
+                if self._check_parameters_fit_with_history(parameters):
+                    self.parameters_old_values = self.get_parameters_old_values(parameters)
+                self.parameters = parameters
+                # Automatically update history with the initial data if there is previous history
+                if isinstance(self.results_filename, str):
+                    initial_data = self.load_history(Path(self.results_filename))
+                    self.update_history(initial_data)
+                else:
+                    raise ValueError("Results filename must be a string.")
+            except ValueError as e:
+                print(f"Error: {e}")
+        else:
+            self._history = pd.DataFrame()
+            self.FoM_old = float('inf')
+            self.FoM = None
+            if isinstance(parameters, list):
+                parameters = Parameters(parameters)
+            self._check_parameters(parameters)
+            self.parameters_old_values = None
+            self.parameters = parameters
 
-        if isinstance(parameters, list):
-            parameters = Parameters(parameters)
-
-        self._check_parameters(parameters)
-        self.parameters_old_values = None
-        self.parameters = parameters
-
-        # Records if most recent step changed the state
-        self.state_changed = None
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -217,3 +233,49 @@ class Minimizer(ABC):
             A string encompassing the output of the minimizer.
         """
         raise NotImplementedError
+
+
+    def load_history(self, file_path: Path):
+        # Implement the logic to load history from the provided path
+        try:
+            df = pd.read_csv(file_path)  # Assuming the history is stored in a CSV file
+            return df
+        except Exception as e:
+            print(f"Error occurred while loading history: {e}")
+            return pd.DataFrame()  # Return an empty DataFrame if loading fails
+
+
+    def update_history(self, new_data):
+        try:
+            if not isinstance(new_data, pd.DataFrame):
+                raise ValueError("New data must be in the form of a pandas DataFrame.")
+            if self._history is not None:
+                if self._history.empty:
+                    self._history = new_data.copy()  # If history is empty, replace it with the new data
+                else:
+                    self._history = pd.concat([self._history, new_data], ignore_index=True)  # Append new data to the existing history
+            else:
+                self._history = new_data.copy()  # If history is None, replace it with the new data
+        except Exception as e:
+            print(f"Error occurred while updating history: {e}")
+
+    def save_history(self, file_path: Path):
+        if self._history:
+            self._history.to_csv(file_path, index=False)
+
+    def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
+        if self._history is not None:
+            for parameter in parameters.values():
+                if parameter.fixed:
+                    raise TypeError(f'Parameter {parameter.name} is fixed and cannot be changed.')
+                if parameter.name in self._history.columns and parameter.value != self._history[parameter.name].iloc[-1]:
+                    raise TypeError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
+        return True
+
+    def get_parameters_old_values(self, parameters: Parameters):
+        if not self._history.empty:
+            last_entry = self._history.iloc[-1]
+            old_values = {param.name: last_entry[param.name] for param in parameters.values()}
+            return old_values
+        else:
+            return None

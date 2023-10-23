@@ -1,11 +1,12 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from typing import TYPE_CHECKING
 import numpy as np
-
+import pandas as pd
 from skopt import Optimizer
-
+from pathlib import Path
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
+
 
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
@@ -51,11 +52,12 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
+    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history, **settings: dict):
         super().__init__(control, parameters)
 
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
+        self.previous_history = previous_history,
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
@@ -72,10 +74,20 @@ class GPO(Minimizer):
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-        self.optimizer = Optimizer(self.parameter_bounds,"GP", acq_func="gp_hedge",
-                                   acq_optimizer="sampling", initial_point_generator="lhs",
-                                   n_initial_points=self.n_initial, model_queue_size=1)
+        # add somthing here to change the opitsimer so it can have previous vaules
 
+        if self.previous_history is not None:
+            self._history = self.load_previous_history(previous_history)
+            if not self._history or len(self._history) < self.n_initial:
+                self.optimizer = Optimizer(
+                    self.parameter_bounds, "GP", acq_func="gp_hedge",
+                    acq_optimizer="sampling", initial_point_generator="lhs",
+                    n_initial_points=self.n_initial, model_queue_size=1)
+            else:
+                self.optimizer = Optimizer(
+                    self.parameter_bounds, "GP", acq_func="gp_hedge",
+                    acq_optimizer="sampling", initial_point_generator="lhs",
+                    n_initial_points=len(self._history), model_queue_size=1)
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -211,3 +223,17 @@ class GPO(Minimizer):
                          f'FoM of {minimizer_output[3]}.\n \n ')
 
         return output_string
+
+
+    def load_previous_history(self, previous_history):
+        try:
+            if isinstance(previous_history, str):
+                df = pd.read_csv(previous_history)
+            elif isinstance(previous_history, pd.DataFrame):
+                df = previous_history
+            else:
+                raise ValueError("Invalid data format for previous history.")
+            return df
+        except Exception as e:
+            print(f"Error occurred while loading previous history: {e}")
+            return pd.DataFrame()

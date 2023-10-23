@@ -1,6 +1,7 @@
 """Factory class for generating minimizers"""
 from typing import TYPE_CHECKING
 from glob import glob
+from pathlib import Path
 from importlib import import_module
 from inspect import isclass, isabstract, getmembers
 from os.path import basename, dirname, join, isfile
@@ -19,7 +20,7 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]',
+    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]', previous_history: Path,
                          **settings: dict) -> \
             Minimizer:
         """
@@ -41,7 +42,9 @@ class MinimizerFactory:
         -------
         Minimizer
             A ``Minimizer`` specified by ``module_name``
+
         """
+
 
         try:
             module = import_module('.' + module_name, __package__)
@@ -51,7 +54,8 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](control, parameter, **settings)
+        return classes[0][1](control, parameter, previous_history, **settings)
+
 
     @staticmethod
     def get_minimizer_names() -> 'list[str]':
