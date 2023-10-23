@@ -46,7 +46,7 @@ class Minimizer(ABC):
     def __init__(self, control: 'Control', parameters: Parameters, previous_history:Path = None):
 
         self.control = control
-        self.results_filename = control.settings.get('results_filename')
+        self.results_filename = control.results_filename
 
         if previous_history is not None:
             self._history = self.load_history(previous_history)

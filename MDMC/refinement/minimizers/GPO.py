@@ -52,7 +52,7 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history, **settings: dict):
+    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history=None, **settings: dict):
         super().__init__(control, parameters)
 
         self.parameters = parameters
@@ -225,12 +225,15 @@ class GPO(Minimizer):
         return output_string
 
 
-    def load_previous_history(self, previous_history):
+    def load_previous_history(self):
+        if self.previous_history is None:
+            print("No previous history provided. Starting the minimizer without previous history.")
+            return None
         try:
-            if isinstance(previous_history, str):
-                df = pd.read_csv(previous_history)
-            elif isinstance(previous_history, pd.DataFrame):
-                df = previous_history
+            if isinstance(self.previous_history, str):
+                df = pd.read_csv(self.previous_history)
+            elif isinstance(self.previous_history, pd.DataFrame):
+                df = self.previous_history
             else:
                 raise ValueError("Invalid data format for previous history.")
             return df
