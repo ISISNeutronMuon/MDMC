@@ -69,7 +69,7 @@ class Minimizer(ABC):
             except ValueError as e:
                 print(f"Error: {e}")
         else:
-            self._history = pd.DataFrame()
+            self._history = []
             self.FoM_old = float('inf')
             self.FoM = None
             if isinstance(parameters, list):

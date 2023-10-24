@@ -22,7 +22,6 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from MDMC.refinement.minimizers.GPR import GPR
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
