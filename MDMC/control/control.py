@@ -232,7 +232,7 @@ class Control:
                 use_FFT = True
 
             # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
-            self._dset_input_check(dset)
+            self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -929,31 +929,29 @@ class Control:
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
-    def _dset_input_check(self, dset):
+    def _input_check(self, general_set, inputs) -> None:
         """
 
-        Handles error for retrieving data from dset, gives key specific error messages.
-        If the keys are updated then this function also need to be updated in order to keep
-        full functionality of error handling. Only checks for KeyError.
+        Handles error for retrieving data from a set where the input is not found.
+        This was made in a general way to be used for any dataset or set of inputs.
 
         Parameters
         ----------
-        dset : dataset
-            contains observable type, reader type, and file name (or path)
+        general_set : A general dataset
+            A variable that contains a set of information for input checking against,
+            for example 'dset' contains the observable type, file_name and reader type,
+            for checking inputs.
 
         Returns
         -------
         None
         """
 
-        checks = ['type', 'reader','file_name']
-        inform_checks = ['observable type', 'reader type', 'file name or path']
-        for key in checks:
-            check_info_index = checks.index(key)
+        for input_check in inputs:
             try:
-                dset[key]
+                general_set[input_check]
             except KeyError as error:
-                raise KeyError("There was an issue retrieving the"
-                               f" {inform_checks[check_info_index]} "
+                raise KeyError("There was an issue retrieving the input: "
+                               f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
             
