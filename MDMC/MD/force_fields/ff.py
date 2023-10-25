@@ -347,8 +347,8 @@ class FileForceField(ForceField):
                     tuple_groups.append(self.atom_name_group[(atom.name,
                                                               atom.element.symbol)])
                 except KeyError as error:
-                    raise KeyError(f'Unable to find atom of element "{atom.element.symbol}" recorded with'
-                                   f' the name "{atom.name}" '
+                    raise KeyError(f'Unable to find atom of element "{atom.element.symbol}" '
+                                   f'recorded with the name "{atom.name}" '
                                    'in the specified force field file.') from error
 
             groups.add(tuple(tuple_groups))

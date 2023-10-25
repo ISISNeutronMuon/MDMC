@@ -15,13 +15,12 @@ from math import gcd
 from typing import Callable, Union, TYPE_CHECKING
 import warnings
 import weakref
-import periodictable
+import re
 
 import numpy as np
-import re
 from scipy.spatial.transform import Rotation
+import periodictable
 
-from MDMC.common import atom_properties
 from MDMC.MD.interactions import Coulombic, BondedInteraction
 from MDMC.common.decorators import repr_decorator, unit_decorator,\
     unit_decorator_getter
@@ -730,7 +729,7 @@ class Atom(Structure):
     Attributes
     ----------
     element : periodictable.core.Element
-        The periodictable atomic element instance 
+        The periodictable atomic element instance
     """
 
     def __init__(self, element: str,
@@ -758,7 +757,7 @@ class Atom(Structure):
 
         except ValueError as error:
             msg = "Please provide a valid element and/or isotope"
-            raise ValueError(msg)
+            raise ValueError(msg) from error
         try:
             self.mass = settings['mass']
         except KeyError:

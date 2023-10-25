@@ -703,7 +703,7 @@ class CompactTrajectory:
             the specified chemical elements.
         """
         indices = []
-        
+
         for element in elements:
             if element in self.element_list:
                 index = np.where(np.array(self.element_list) == element)[0].ravel()
