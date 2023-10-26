@@ -4,13 +4,11 @@ from copy import deepcopy
 from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
-from MDMC.refinement.minimizers.GPO import GPO
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
 from pathlib import Path
-from skopt import Optimizer
 from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters

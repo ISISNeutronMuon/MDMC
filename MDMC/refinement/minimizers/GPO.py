@@ -77,7 +77,7 @@ class GPO(Minimizer):
         # add somthing here to change the opitsimer so it can have previous vaules
 
         if self.previous_history is not None:
-            self._history = self.load_previous_history(previous_history)
+            self._history = self.previous_history
             if not self._history or len(self._history) < self.n_initial:
                 self.optimizer = Optimizer(
                     self.parameter_bounds, "GP", acq_func="gp_hedge",
@@ -225,18 +225,3 @@ class GPO(Minimizer):
         return output_string
 
 
-    def load_previous_history(self):
-        if self.previous_history is None:
-            print("No previous history provided. Starting the minimizer without previous history.")
-            return None
-        try:
-            if isinstance(self.previous_history, str):
-                df = pd.read_csv(self.previous_history)
-            elif isinstance(self.previous_history, pd.DataFrame):
-                df = self.previous_history
-            else:
-                raise ValueError("Invalid data format for previous history.")
-            return df
-        except Exception as e:
-            print(f"Error occurred while loading previous history: {e}")
-            return pd.DataFrame()

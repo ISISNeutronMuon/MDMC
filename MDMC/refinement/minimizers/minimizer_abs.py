@@ -44,28 +44,17 @@ class Minimizer(ABC):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, previous_history:Path = None):
-
         self.control = control
-        self.results_filename = control.results_filename
-
         if previous_history is not None:
             self._history = self.load_history(previous_history)
-            if not self._history.empty:
-                self.FoM_old = self._history['FoM'].iloc[-1]
+            self.FoM_old = self._history['FoM'].iloc[-1]
             self.FoM = None
-
             if isinstance(parameters, list):
                 parameters = Parameters(parameters)
             try:
                 if self._check_parameters_fit_with_history(parameters):
                     self.parameters_old_values = self.get_parameters_old_values(parameters)
                 self.parameters = parameters
-                # Automatically update history with the initial data if there is previous history
-                if isinstance(self.results_filename, str):
-                    initial_data = self.load_history(Path(self.results_filename))
-                    self.update_history(initial_data)
-                else:
-                    raise ValueError("Results filename must be a string.")
             except ValueError as e:
                 print(f"Error: {e}")
         else:
@@ -77,6 +66,8 @@ class Minimizer(ABC):
             self._check_parameters(parameters)
             self.parameters_old_values = None
             self.parameters = parameters
+
+
 
 
     @abstractmethod
@@ -161,6 +152,7 @@ class Minimizer(ABC):
         ------
         ValueError
             If any ``Parameter`` is fixed
+            If there is mismatch with previous value in history.
         """
 
         for parameter in parameters.values():
@@ -236,13 +228,12 @@ class Minimizer(ABC):
 
 
     def load_history(self, file_path: Path):
-        # Implement the logic to load history from the provided path
         try:
-            df = pd.read_csv(file_path)  # Assuming the history is stored in a CSV file
+            df = pd.read_csv(file_path)
             return df
         except Exception as e:
             print(f"Error occurred while loading history: {e}")
-            return pd.DataFrame()  # Return an empty DataFrame if loading fails
+            return pd.DataFrame()
 
 
     def update_history(self, new_data):
@@ -251,11 +242,11 @@ class Minimizer(ABC):
                 raise ValueError("New data must be in the form of a pandas DataFrame.")
             if self._history is not None:
                 if self._history.empty:
-                    self._history = new_data.copy()  # If history is empty, replace it with the new data
+                    self._history = new_data.copy()
                 else:
-                    self._history = pd.concat([self._history, new_data], ignore_index=True)  # Append new data to the existing history
+                    self._history = pd.concat([self._history, new_data], ignore_index=True)
             else:
-                self._history = new_data.copy()  # If history is None, replace it with the new data
+                self._history = new_data.copy()
         except Exception as e:
             print(f"Error occurred while updating history: {e}")
 
@@ -264,13 +255,16 @@ class Minimizer(ABC):
             self._history.to_csv(file_path, index=False)
 
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
-        if self._history is not None:
-            for parameter in parameters.values():
-                if parameter.fixed:
-                    raise TypeError(f'Parameter {parameter.name} is fixed and cannot be changed.')
+        for parameter in parameters.values():
+            if self._history is not None:
+                if parameter.fixed is True:
+                    raise ValueError(
+                        f'Parameter {parameter.name} is fixed, and so cannot be refined')
+                if parameter.tied is True:
+                    raise ValueError(f'Parameter {parameter.name} is tied to the value of '
+                                    'another parameter and so cannot be refined')
                 if parameter.name in self._history.columns and parameter.value != self._history[parameter.name].iloc[-1]:
-                    raise TypeError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
-        return True
+                    raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
 
     def get_parameters_old_values(self, parameters: Parameters):
         if not self._history.empty:
