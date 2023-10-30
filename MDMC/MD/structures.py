@@ -10,7 +10,6 @@ from collections import Counter, OrderedDict
 from copy import deepcopy
 from functools import lru_cache, reduce
 from itertools import count
-import logging
 from math import gcd
 from typing import Callable, Union, TYPE_CHECKING
 import warnings
@@ -694,8 +693,8 @@ class Atom(Structure):
 
     Parameters
     ----------
-    element : str
-        The atomic element label.
+    element : periodictable.core.Element
+        The periodictable atomic element instance 
     position : list, tuple, numpy.ndarray, optional
         A 3 element `list`, `tuple` or ``array`` with the position in units of
         ``Ang``. The default is ``(0., 0., 0.)``.
@@ -749,6 +748,7 @@ class Atom(Structure):
             isotope_re = re.compile(r"\[(\d+)\]")
             element_re = re.compile(r"^[a-zA-Z]{1,2}")
             el = element_re.findall(element)[0]
+            logging.critical('%s, element string here' % el)
             try:
                 iso = int(isotope_re.findall(element)[0])
                 self.element = periodictable.elements.symbol(el)[iso]

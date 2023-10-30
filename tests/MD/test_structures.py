@@ -9,12 +9,14 @@ from itertools import combinations, permutations
 import numpy as np
 import pytest
 from pytest_cases import parametrize
+import periodictable
 
 from MDMC.MD.interaction_functions import Coulomb
 from MDMC.MD.simulation import Universe
 from MDMC.MD.structures import (Atom, BoundingBox, Molecule,
                                       get_reduced_chemical_formula)
 from MDMC.MD.interactions import Coulombic
+from MDMC.MD.structures import Atom
 
 ATOM_TYPES = [1, 2, 3]
 POS_MASS = [((0, 0, 0), 1), ((-1, 2, 1), 2), ((2, 1, -2), 3)]
@@ -471,3 +473,38 @@ def test_neutral_atom_has_no_charge(atom, atom_charge):
 
     assert len(atom.interactions) == 0
     assert len(atom_charge.interactions) == 1
+
+@pytest.mark.parametrize('element', ['H', 'O','Pb', 'Ca'])
+def test_periodictable_elements(element):
+    test_atom = Atom(element, name='test atom')
+    actual_atom = periodictable.elements.symbol(element)
+    
+    logging.critical('%s, %s' % (type(test_atom.element), test_atom.element.symbol))
+    
+    assert type(test_atom.element) is periodictable.core.Element
+    assert str(test_atom.element) == element == actual_atom.symbol
+    
+    assert test_atom.mass == actual_atom.mass
+    assert test_atom.element.number == actual_atom.number
+    
+    assert test_atom.charge == None
+    
+
+@pytest.mark.parametrize('atom_type, element, isotope_num',[('He[3]', 'He', 3), ('K[40]', 'K', 40)])
+def test_periodictabel_isotopes_(atom_type,element,isotope_num):
+    
+    test_atom = Atom(atom_type, name='test atom')
+    actual_atom = periodictable.elements.symbol(element)[isotope_num]
+    
+    assert type(test_atom.element) is periodictable.core.Isotope
+    assert str(test_atom.element) == '%d-%s' % (isotope_num, element)
+    
+    assert test_atom.mass == actual_atom.mass
+    assert test_atom.element.number == actual_atom.number
+    
+    assert test_atom.charge == None
+
+@pytest.mark.parametrize('element', ['X', 'Fo', 'He[5]', 'Si[20]'])
+def test_periodictable_invalid_element_or_isotope(element):
+    with pytest.raises(Exception):
+        Atom(element, 'test atom')
