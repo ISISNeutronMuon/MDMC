@@ -52,7 +52,7 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history=None, **settings: dict):
+    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history= None, **settings: dict):
         super().__init__(control, parameters)
 
         self.parameters = parameters
@@ -74,7 +74,7 @@ class GPO(Minimizer):
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-        # add somthing here to change the opitsimer so it can have previous vaules
+
 
         if self.previous_history is not None:
             self._history = self.previous_history

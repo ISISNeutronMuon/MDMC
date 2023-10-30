@@ -44,7 +44,6 @@ class Minimizer(ABC):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, previous_history:Path = None):
-
         self.control = control
         self.results_filename = None
 
@@ -60,7 +59,6 @@ class Minimizer(ABC):
                 self.parameters = parameters
                 if isinstance(self.results_filename, str):
                     initial_data = self.load_history(Path(self.results_filename))
-                    self.update_history(initial_data)
                 else:
                     raise ValueError("Results filename must be a string.")
             except ValueError as e:
@@ -74,7 +72,6 @@ class Minimizer(ABC):
             self._check_parameters(parameters)
             self.parameters_old_values = None
             self.parameters = parameters
-
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -242,30 +239,21 @@ class Minimizer(ABC):
             return pd.DataFrame()
 
 
-    def update_history(self, new_data):
+    def load_history(self, file_path: Path):
         try:
-            if not isinstance(new_data, pd.DataFrame):
-                raise ValueError("New data must be in the form of a pandas DataFrame.")
-            if self._history is not None:
-                if self._history.empty:
-                    self._history = new_data.copy()
-                else:
-                    self._history = pd.concat([self._history, new_data], ignore_index=True)
-            else:
-                self._history = new_data.copy()
+            df = pd.read_csv(file_path)
+            return df
         except Exception as e:
-            print(f"Error occurred while updating history: {e}")
-
+            print(f"Error occurred while loading history: {e}")
+            return pd.DataFrame()
 
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
-        for parameter in parameters.values():
-            if self._history is not None:
+        if self._history is not None:
+            for parameter in parameters.values():
                 if parameter.fixed is True:
-                    raise ValueError(
-                        f'Parameter {parameter.name} is fixed, and so cannot be refined')
+                    raise ValueError(f'Parameter {parameter.name} is fixed.')
                 if parameter.tied is True:
-                    raise ValueError(f'Parameter {parameter.name} is tied to the value of '
-                                    'another parameter and so cannot be refined')
+                    raise ValueError(f'Parameter {parameter.name} is tied to another parameter.')
                 if parameter.name in self._history.columns and parameter.value != self._history[parameter.name].iloc[-1]:
                     raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
 

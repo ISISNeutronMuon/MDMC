@@ -20,9 +20,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from MDMC.MD.parameters import Parameters
+
 
 
 
@@ -217,18 +215,12 @@ class Control:
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
 
-
-
-
-
         # Minimizer FoM_old is always initialised to infinity, so that first MC
         # step (i.e. the setup) is always accepted.
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
                                                            self.fit_parameters, previous_history=previous_history, **settings)
-
-
 
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
@@ -433,7 +425,6 @@ class Control:
         # 4 steps per refinement step, and n + 1 steps total
         verbose_steps = (self.n_steps + 1) * 4
         # initialise step timings list for average step timings at end
-
         self.step_timings = []
         count = -1
 
@@ -536,9 +527,6 @@ class Control:
 
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
-
-
-
 
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
