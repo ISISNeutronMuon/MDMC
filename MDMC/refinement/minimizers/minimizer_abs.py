@@ -44,7 +44,10 @@ class Minimizer(ABC):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, previous_history:Path = None):
+
         self.control = control
+        self.results_filename = None
+
         if previous_history is not None:
             self._history = self.load_history(previous_history)
             self.FoM_old = self._history['FoM'].iloc[-1]
@@ -55,6 +58,11 @@ class Minimizer(ABC):
                 if self._check_parameters_fit_with_history(parameters):
                     self.parameters_old_values = self.get_parameters_old_values(parameters)
                 self.parameters = parameters
+                if isinstance(self.results_filename, str):
+                    initial_data = self.load_history(Path(self.results_filename))
+                    self.update_history(initial_data)
+                else:
+                    raise ValueError("Results filename must be a string.")
             except ValueError as e:
                 print(f"Error: {e}")
         else:
@@ -66,8 +74,6 @@ class Minimizer(ABC):
             self._check_parameters(parameters)
             self.parameters_old_values = None
             self.parameters = parameters
-
-
 
 
     @abstractmethod
@@ -250,9 +256,6 @@ class Minimizer(ABC):
         except Exception as e:
             print(f"Error occurred while updating history: {e}")
 
-    def save_history(self, file_path: Path):
-        if self._history:
-            self._history.to_csv(file_path, index=False)
 
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
         for parameter in parameters.values():
