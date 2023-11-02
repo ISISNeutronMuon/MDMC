@@ -14,6 +14,7 @@ import MDMC.MD.simulation as sim
 from MDMC.MD.solvents.SPC_config import SPC216
 import MDMC.MD.structures as su
 from MDMC.common import units
+import difflib
 
 
 UNIVERSE_DIMENSIONS = (10., 10., 10.)
@@ -116,8 +117,8 @@ class MockSimulation(sim.Simulation):
         self.traj_step = traj_step
         self.time_step = time_step
         self.engine = engine
-        self.temperature = settings.get("temperature", 300.0)
-        self.pressure = settings.get("pressure", 101325.0)
+        self.temperature = settings.get("temperature")
+        self.pressure = settings.get("pressure")
 
 class MockEngine:
     """
@@ -209,16 +210,19 @@ def test_universe_stdout(capsys):
 
 
 
-@pytest.mark.parametrize("engine, settings", [
-    ("lammps", {"temperature": 300.0, "pressure": 101325.0})])
-def test_simulation_setup(capsys, engine, settings):
-    simulation = MockSimulation(None, 0, engine=engine, **settings)
+
+def test_simulation_setup(capsys):
+    engine = "lammps"
+    settings = {"temperature": 300.0, "pressure": 101325.0}
+    simulation = MockSimulation(0, engine, **settings)
     assert simulation is not None
-    captured = capsys.readouterr()
-    expected_output = ('Simulation created with lammps engine and settings:\n' \
-                     'temperature: 300.0 K\n' \
-                     'pressure: 101325.0 Pa\n')
-    assert captured.out.strip() == expected_output
+    captured = capsys.readouterr().out
+    expected_output = (
+        'Simulation created with lammps engine and settings:\n'
+        'temperature: 300.0 K\n'
+        'pressure: 101325.0 Pa\n')
+    assert captured == expected_output
+
 
 
 def test_create_atom(atom):
