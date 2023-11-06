@@ -478,29 +478,25 @@ def test_neutral_atom_has_no_charge(atom, atom_charge):
 @pytest.mark.parametrize('element', ['H', 'O','Pb', 'Ca'])
 def test_periodictable_elements(element):
     """
-    Tests that different elements created by MDMC match (in properties) those
-    created straight from the periodictable module.
+    Tests that different elements and checmical symbols created by MDMC match (in properties) those created straight from the periodictable module.
     """
-
     test_atom = Atom(element, name='test atom')
     actual_atom = periodictable.elements.symbol(element)
     
     assert type(test_atom.element) is periodictable.core.Element
     assert str(test_atom.element) == element == actual_atom.symbol
-    
-    test_periodictable_asserts(test_atom,actual_atom)
 
 
 @pytest.mark.parametrize('atom_type, element, isotope_num'
                          , [('He[3]', 'He',3),('U[235]', 'U',235),
-                            ('K[40]', 'K', 40),('He[4]', 'He', 4)])
-def test_periodictable_isotopes(atom_type,element,isotope_num):
+                            ('He[3]', 'He', 3), ('K[40]', 'K', 40),
+                        ('He[4]', 'He', 4)])
+def test_periodictable_isotopes_and_abundances(atom_type,element,isotope_num):
     """
     Tests that different isotopes of elements created by MDMC match (in properties)
     those created straight from the periodictable module. This also tests the notation
     of specifying mass number for standard elements (such as He[4]).
     """
-
     test_atom = Atom(atom_type, name='test atom')
         
     actual_atom = periodictable.elements.symbol(element)[isotope_num]
@@ -508,8 +504,6 @@ def test_periodictable_isotopes(atom_type,element,isotope_num):
     assert type(test_atom.element) is periodictable.core.Isotope
     assert str(test_atom.element) == '%d-%s' % (isotope_num, element)
     assert test_atom.element.abundance == actual_atom.abundance
-    
-    test_periodictable_asserts(test_atom,actual_atom)
 
 
 @pytest.mark.parametrize('element', ['X', 'Fo', 'He[5]', 'Si[20]'])
@@ -517,32 +511,26 @@ def test_periodictable_invalid_element_or_isotope(element):
     """
     This tests that using a wrong elemental symbol or specifying a non-existent isotope raises exceptions with atom creation.
     """
-
     with pytest.raises(Exception):
         Atom(element, 'test atom')
-      
-  
-def test_periodictable_asserts(test_atom = None, actual_atom = None):
-    """
-    Contains assert statements that check if a MDMC created atom has the same properties as an identically created atom
-    straight from the periodictable module, as well as checks that isotopes etc are functioning.
-    
-    Parameters
-    ----------
-    
-    test_atom: periodictable.core.Element or periodictable.core.Isotope
-        This is the MDMC created atom which called the periodictable module to create the atom.
-    
-    actual_atom: periodictable.core.Element or periodictable.core.Isotope
-        This the atom created straight from the periodictable module.
-        
-    
-    """
 
-    if test_atom is not None:
-        assert test_atom.mass == actual_atom.mass
-        assert test_atom.element.number == actual_atom.number
-        assert test_atom.element.neutron== actual_atom.neutron
-        assert test_atom.element.density == actual_atom.density
+
+@pytest.mark.parametrize('atom_type, element, isotope_num'
+                         , [('He[3]', 'He',3),('U[235]', 'U',235),
+                            ('He[3]', 'He', 3), ('K[40]', 'K', 40),
+                        ('He[4]', 'He', 4), ('O', None, None), ('Ca', None, None)])
+def test_periodictable_properties(atom_type, element, isotope_num):
+    """
+    Tests that some important MDMC atoms properties are identical to those of an atom made straight from periodictable.
+    """
+    test_atom = Atom(atom_type, name='test atom')
+    
+    if isotope_num is not None:
+        actual_atom = periodictable.elements.symbol(element)[isotope_num]
     else:
-        pass
+        actual_atom = periodictable.elements.symbol(atom_type)
+    
+    assert test_atom.mass == actual_atom.mass
+    assert test_atom.element.number == actual_atom.number
+    assert test_atom.element.neutron== actual_atom.neutron
+    assert test_atom.element.density == actual_atom.density
