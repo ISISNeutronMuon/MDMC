@@ -4,6 +4,7 @@ from netCDF4 import Dataset
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import periodictable
 
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
@@ -66,9 +67,9 @@ def FQt_coh_OO_ref(coh_file):
 
 @pytest.fixture(scope="module")
 def FQt_coh_ref(FQt_coh_HH_ref, FQt_coh_HO_ref, FQt_coh_OO_ref):
-    FQt_coh_ref = (FQt_coh_HH_ref * ap.B_COH['H']**2 * N_H
-                   + FQt_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
-                   + FQt_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
+    FQt_coh_ref = (FQt_coh_HH_ref * periodictable.elements.symbol('H').neutron.b_c**2 * N_H
+                   + FQt_coh_HO_ref * periodictable.elements.symbol('H'.neutron.b_c) * periodictable.elements.symbol('O').neutron.b_c * N_H_O
+                   + FQt_coh_OO_ref * periodictable.elements.symbol('O').neutron.b_c**2 * N_O) / N_TOTAL
     return FQt_coh_ref
 
 @pytest.fixture(scope='module')

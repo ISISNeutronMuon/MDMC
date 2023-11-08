@@ -6,8 +6,8 @@ from typing import Optional
 import warnings
 
 import numpy as np
+import periodictable
 
-from MDMC.common.atom_properties import B_COH
 from MDMC.common import units
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.trajectory_analysis.observables.obs import Observable
@@ -759,7 +759,7 @@ class PairDistributionFunction(Observable):
             the corresponding weight
         """
 
-        return {element: b_coh.get(element, B_COH[element]) for element
+        return {element: b_coh.get(element, periodictable.elements.symbol(element).neutron.b_c) for element
                 in unique_elements}
 
     @staticmethod

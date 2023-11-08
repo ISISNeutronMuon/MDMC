@@ -8,6 +8,7 @@ from netCDF4 import Dataset
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import periodictable
 
 import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
@@ -79,9 +80,9 @@ def SQw_coh_OO_ref(coh_file):
 def SQw_coh_ref(SQw_coh_HH_ref, SQw_coh_HO_ref, SQw_coh_OO_ref):
     # nMOLDYN test file has 50 points in time and frequency, however we can
     # only generate 49 energy points from 50 frames so crop the array in energy
-    SQw_coh_ref = (SQw_coh_HH_ref * ap.B_COH['H']**2 * N_H
-                   + SQw_coh_HO_ref * ap.B_COH['H'] * ap.B_COH['O'] * N_H_O
-                   + SQw_coh_OO_ref * ap.B_COH['O']**2 * N_O) / N_TOTAL
+    SQw_coh_ref = (SQw_coh_HH_ref * periodictable.elements.symbol('H').neutron.b_c**2 * N_H
+                   + SQw_coh_HO_ref * periodictable.elements.symbol('H').neutron.b_c* periodictable.elements.symbol('O').neutron.b_c * N_H_O
+                   + SQw_coh_OO_ref * periodictable.elements.symbol('O').neutron.b_c**2 * N_O) / N_TOTAL
     return SQw_coh_ref[:, :-1]
 
 @pytest.fixture(scope='module')

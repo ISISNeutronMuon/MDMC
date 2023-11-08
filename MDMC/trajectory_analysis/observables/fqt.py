@@ -4,9 +4,10 @@ from itertools import product
 from typing import TYPE_CHECKING, Generator
 
 import numpy as np
+import periodictable
 
 from MDMC.common import units
-from MDMC.common.atom_properties import B_INCOH, B_COH
+from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import faster_correlation,\
@@ -600,7 +601,7 @@ class FQt(AbstractFQt):
         Calculate the neutron weighting for coherent and incoherent scattering
         """
 
-        self.weights = {element: {'coh': B_COH[element],
+        self.weights = {element: {'coh': periodictable.elements.symbol(element).neutron.b_c,
                                   'incoh': B_INCOH[element]}
                         for element in self._trajectory.element_set}
 
