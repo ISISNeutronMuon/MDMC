@@ -7,7 +7,6 @@ import numpy as np
 import periodictable
 
 from MDMC.common import units
-from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.constants import h_bar
 from MDMC.common.decorators import unit_decorator, unit_decorator_getter
 from MDMC.common.mathematics import faster_correlation,\
@@ -601,8 +600,12 @@ class FQt(AbstractFQt):
         Calculate the neutron weighting for coherent and incoherent scattering
         """
 
-        self.weights = {element: {'coh': periodictable.elements.symbol(element).neutron.b_c,
-                                  'incoh': B_INCOH[element]}
+        self.weights = {element: {'coh': periodictable.elements.symbol(element).neutron.b_c\
+                                  if periodictable.elements.symbol(element).neutron.b_c \
+                                          is not None else 0,
+                                  'incoh': periodictable.elements.symbol(element).neutron.b_c_i\
+                                      if periodictable.elements.symbol(element).neutron.b_c_i \
+                                          is not None else calc_incoherent_scatt_length(element)}
                         for element in self._trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
@@ -802,3 +805,34 @@ def wyckoff_symmetries(point: tuple, point_group: str) -> 'set[tuple]':
               'mmm': orthorhombic}
 
     return groups[point_group](point)
+
+
+def calc_incoherent_scatt_length(element):
+    """
+    Takes the incoherent scattering cross section of element and calculates the incoherent
+    scattering length to be returned.
+    
+    Parameters
+    ----------
+    
+    element: string
+        a string representing the chemical symbol of the element, e.g 'He' for Helium. 
+        
+        
+    Returns
+    -------
+    
+    float
+        Incoherent scattering length of chemical symbol passed in.
+    """
+    
+    xs_incoh = periodictable.elements.symbol(element).neutron.incoherent
+    b_incoh = periodictable.elements.symbol(element).neutron.b_c_i
+    
+    # if xs_incoh is not None and b_incoh is None or b_incoh is 0: #this works!
+    if xs_incoh is not None and not b_incoh:
+        print(xs_incoh, element)
+        b_incoh = float(np.sqrt(100 * xs_incoh / (4 * np.pi)))
+    return(float(b_incoh))
+
+    

@@ -21,8 +21,9 @@ class FQtCoherent(AbstractFQt):
     def _set_weights(self) -> None:
         """Calculate the neutron weighting for coherent scattering"""
 
-        self.weights = {element:periodictable.elements.symbol(element).neutron.b_c for element
-                        in self._trajectory.element_set}
+        self.weights = {element: periodictable.elements.symbol(element).neutron.b_c \
+                        if periodictable.elements.symbol(element).neutron.b_c is not None \
+                        else 0 for element in self._trajectory.element_set}
 
     def _calculate_FQt_single_Q(self, single_Q_vectors: list) -> 'np.ndarray':
         # Inherit docstring of abstract method

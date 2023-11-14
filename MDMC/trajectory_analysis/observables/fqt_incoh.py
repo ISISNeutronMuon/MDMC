@@ -1,12 +1,13 @@
 """Module for incoherent FQt class"""
 
 import numpy as np
+import periodictable
 
-from MDMC.common.atom_properties import B_INCOH
 from MDMC.common.mathematics import faster_autocorrelation
 from MDMC.trajectory_analysis.observables.fqt import AbstractFQt, calculate_rho
 from MDMC.trajectory_analysis.observables.concurrency_tools import create_executor, core_batch
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
+from MDMC.trajectory_analysis.observables.fqt import calc_incoherent_scatt_length
 
 
 @ObservableFactory.register(('IncoherentIntermediateScatteringFunction',
@@ -22,9 +23,11 @@ class FQtIncoherent(AbstractFQt):
     def _set_weights(self) -> None:
         """Calculate the neutron weighting for incoherent scattering"""
 
-        element_weights = {element:  B_INCOH[element]**2 for element  # B_INCOH[element]
+        element_weights = {element:  periodictable.elements.symbol(element).neutron.b_c_i**2\
+                        if periodictable.elements.symbol(element).neutron.b_c_i is not None \
+                            else calc_incoherent_scatt_length(element)**2 for element  # B_INCOH[element]
                            in self._trajectory.element_set}  # TODO: make sure these are 'atom's
-        self.weights = [element_weights[atom.element] for atom
+        self.weights = [element_weights[atom.element.symbol] for atom
                         in [self._trajectory.exportAtom(atom_number=x) for x
                             in range(self._trajectory.n_atoms)]]
 

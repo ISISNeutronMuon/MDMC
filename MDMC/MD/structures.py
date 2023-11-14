@@ -748,7 +748,6 @@ class Atom(Structure):
             isotope_re = re.compile(r"\[(\d+)\]")
             element_re = re.compile(r"^[a-zA-Z]{1,2}")
             el = element_re.findall(element)[0]
-            logging.critical('%s, element string here' % el)
             try:
                 iso = int(isotope_re.findall(element)[0])
                 self.element = periodictable.elements.symbol(el)[iso]

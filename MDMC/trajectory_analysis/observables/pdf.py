@@ -759,7 +759,8 @@ class PairDistributionFunction(Observable):
             the corresponding weight
         """
 
-        return {element: b_coh.get(element, periodictable.elements.symbol(element).neutron.b_c) for element
+        return {element: b_coh.get(element, periodictable.elements.symbol(element).neutron.b_c\
+            if periodictable.elements.symbol(element).neutron.b_c is not None else 0) for element
                 in unique_elements}
 
     @staticmethod
