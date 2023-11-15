@@ -25,8 +25,8 @@ class FQtIncoherent(AbstractFQt):
 
         element_weights = {element:  periodictable.elements.symbol(element).neutron.b_c_i**2\
                         if periodictable.elements.symbol(element).neutron.b_c_i is not None \
-                            else calc_incoherent_scatt_length(element)**2 for element  # B_INCOH[element]
-                           in self._trajectory.element_set}  # TODO: make sure these are 'atom's
+                            else calc_incoherent_scatt_length(element)**2 for element
+                           in self._trajectory.element_set}
         self.weights = [element_weights[atom.element.symbol] for atom
                         in [self._trajectory.exportAtom(atom_number=x) for x
                             in range(self._trajectory.n_atoms)]]

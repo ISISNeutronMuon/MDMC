@@ -694,7 +694,7 @@ class Atom(Structure):
     Parameters
     ----------
     element : periodictable.core.Element
-        The periodictable atomic element instance 
+        The periodictable atomic element instance
     position : list, tuple, numpy.ndarray, optional
         A 3 element `list`, `tuple` or ``array`` with the position in units of
         ``Ang``. The default is ``(0., 0., 0.)``.

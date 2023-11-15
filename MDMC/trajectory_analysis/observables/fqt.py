@@ -811,28 +811,26 @@ def calc_incoherent_scatt_length(element):
     """
     Takes the incoherent scattering cross section of element and calculates the incoherent
     scattering length to be returned.
-    
+
     Parameters
     ----------
-    
+
     element: string
-        a string representing the chemical symbol of the element, e.g 'He' for Helium. 
-        
-        
+        a string representing the chemical symbol of the element, e.g 'He' for Helium.
+
+
     Returns
     -------
-    
+
     float
         Incoherent scattering length of chemical symbol passed in.
     """
-    
+
     xs_incoh = periodictable.elements.symbol(element).neutron.incoherent
     b_incoh = periodictable.elements.symbol(element).neutron.b_c_i
-    
+
     # if xs_incoh is not None and b_incoh is None or b_incoh is 0: #this works!
     if xs_incoh is not None and not b_incoh:
         print(xs_incoh, element)
         b_incoh = float(np.sqrt(100 * xs_incoh / (4 * np.pi)))
-    return(float(b_incoh))
-
-    
+    return float(b_incoh)
