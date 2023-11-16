@@ -829,7 +829,6 @@ def calc_incoherent_scatt_length(element):
     xs_incoh = periodictable.elements.symbol(element).neutron.incoherent
     b_incoh = periodictable.elements.symbol(element).neutron.b_c_i
 
-    # if xs_incoh is not None and b_incoh is None or b_incoh is 0: #this works!
     if xs_incoh is not None and not b_incoh:
         print(xs_incoh, element)
         b_incoh = float(np.sqrt(100 * xs_incoh / (4 * np.pi)))

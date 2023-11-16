@@ -5,9 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 import periodictable
-from periodictable import elements
 
-import MDMC.common.atom_properties as ap
 import MDMC.trajectory_analysis.observables.obs_factory as of
 from MDMC.trajectory_analysis.observables import fqt
 
@@ -30,8 +28,10 @@ N_TOTAL = N_H + N_O
 N_H_O = np.sqrt(N_H * N_O)
 # B_FACTOR is set to a constant rather than calculated using B_COH and B_INCOH
 # as MDMC has a different oxygen B_INCOH value to nMOLDYN
-# B_FACTOR = (ap.B_INCOH['H']**2 * N_H + ap.B_INCOH['O']**2 * N_O) / N_TOTAL
-B_FACTOR = 425.792524267738
+
+# calc_incoherent_scatt_length needs to be imported from MDMC.trajectory_analysis.observables.fqt.py
+# B_FACTOR = (calc_incoherent_scatt_length('H')**2 * N_H + calc_incoherent_scatt_length('O')**2 * N_O) / N_TOTAL
+B_FACTOR = 425.7925244185173
 N_Q_VALUES = 13
 
 @pytest.fixture(scope="module")

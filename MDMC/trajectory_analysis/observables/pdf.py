@@ -255,8 +255,8 @@ class PairDistributionFunction(Observable):
             b_coh : dict
                 A dictionary containing coherent scattering length values for one or more elements.
                 This can be used to calculate the PDF of a system where one or more elements
-                has a coherent scattering length different from the coherent scattering length in
-                MDMC.common.atom_properties (i.e. if it has been isotopically substituted).
+                has a coherent scattering length different from the coherent scattering lengths
+                from periodictable.
             r_min : float
                 The minimum ``r`` (atomic separation) in Angstrom for which the PDF will be
                 calculated. If this, ``r_max``, and ``r_step`` are passed then
@@ -740,8 +740,8 @@ class PairDistributionFunction(Observable):
         """
         Sets the weights for each element
 
-        Uses any scattering lengths passed in b_coh, but defaults to values in
-        ``MDMC.common.atom_properties``
+        Uses any scattering lengths passed in b_coh, but defaults to values from
+        the imported periodictable module.
 
         Parameters
         ----------
