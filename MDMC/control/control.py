@@ -413,7 +413,7 @@ class Control:
             control.refine(100)
         """
 
-        if n_steps is None or n_steps == 0:
+        if not n_steps:
             if self.n_steps is None:
                 raise ValueError('The number of maximum refinement steps needs to be'
                                  ' specified and greater than 0.')

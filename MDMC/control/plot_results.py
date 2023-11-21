@@ -1,6 +1,7 @@
 """A module for plotting data and results of a minimization."""
 from abc import ABC, abstractmethod
 
+import logging
 import numpy as np
 import pandas as pd
 import corner
@@ -40,13 +41,18 @@ class PlotResults():
 
         # Create the optimizer
         try:
+            # The optimizer had a default minimum of 10 points which has since been changed to 2.
+            # We are still using this '10' value here because we are assuming it is a good minimum
+            # for 'meaningful' plots, but technioally anything with 2 points can be minimised and
+            # shouldn't cause an error.
+            old_optimizer_min = 10
             self.optimizer = Optimizer(self.minmax_coords,"GP",
-                                       n_initial_points=min(10, len(self.FoMs)),
+                                       n_initial_points=min(old_optimizer_min, len(self.FoMs)),
                                        acq_func="gp_hedge", acq_optimizer="sampling",
                                          model_queue_size=1)
-            if len(self.FoMs) < 10:
-                print(f"WARNING:You have only used {len(self.FoMs)} refinement steps,"
-                      " use a larger number for more meaningful plots.")
+            if len(self.FoMs) < old_optimizer_min:
+                logging.warning("You have only used %d refinement steps," \
+                      " use a larger number for more meaningful plots.", (len(self.FoMs)))
         except ValueError as error:
             raise ValueError("Insufficient number of refinement steps,"
                              " please use at least 10.") from error
