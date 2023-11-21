@@ -6,8 +6,14 @@ import tempfile
 import pytest
 
 from MDMC.readers.simulations.param_file import ParamFileParser
+from MDMC.MD.parameters import Parameters
+
 
 class TestClassRead:
+    """
+    Test that ParamFileParser correctly pulls values from filess
+    """
+
     def test_parse_simple_file(self):
         """
         Ensure parser can read the file
@@ -17,7 +23,7 @@ class TestClassRead:
             tmp.seek(0)
             parser = ParamFileParser(tmp.name)
             parser.parse()
-            assert parser.param_dict == {'param': 3.5}
+            self.compare_params(parser.param_dict, {'param': 3.5})
 
     def test_parse_multiple_keys(self):
         """
@@ -28,8 +34,7 @@ class TestClassRead:
             tmp.seek(0)
             parser = ParamFileParser(tmp.name)
             parser.parse()
-            assert parser.param_dict == {'param': 3.5, 'paramb': 10.0}
-
+            self.compare_params(parser.param_dict, {'param': 3.5, 'paramb': 10.0})
 
     def test_parse_multiple_keys_lines(self):
         """
@@ -41,7 +46,7 @@ class TestClassRead:
             tmp.seek(0)
             parser = ParamFileParser(tmp.name)
             parser.parse()
-            assert parser.param_dict == {'param': 3.5, 'paramb': 10.0}
+            self.compare_params(parser.param_dict, {'param': 3.5, 'paramb': 10.0})
 
     def test_parse_same_key(self):
         """
@@ -52,7 +57,7 @@ class TestClassRead:
             tmp.seek(0)
             parser = ParamFileParser(tmp.name)
             parser.parse()
-            assert parser.param_dict == {'param': 3.5}
+            self.compare_params(parser.param_dict, {'param': 3.5})
 
     def test_parse_override_key(self):
         """
@@ -63,7 +68,7 @@ class TestClassRead:
             tmp.seek(0)
             parser = ParamFileParser(tmp.name)
             parser.parse()
-            assert parser.param_dict == {'param': 10.0}
+            self.compare_params(parser.param_dict, {'param': 10.0})
 
     def test_parse_multiple_files(self):
         """
@@ -78,7 +83,14 @@ class TestClassRead:
 
             parser = ParamFileParser((tmp1.name, tmp2.name))
             parser.parse()
-            assert parser.param_dict == {'param': 3.5, 'paramb': 10.0}
+            self.compare_params(parser.param_dict, {'param': 3.5, 'paramb': 10.0})
+
+    @staticmethod
+    def compare_params(parameters_list: Parameters, other: dict):
+        """
+        Convert Parameters array back into dictionary for simple comparison
+        """
+        assert {par.type: par.value for par in parameters_list.values()} == other
 
 
 class TestClassFailRead:

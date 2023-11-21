@@ -41,7 +41,7 @@ class ParamFileParser(Reader):
         self._param_dict = Parameters()
 
     def __enter__(self) -> None:
-        self.file = map(lambda fn: open(fn, 'r', encoding='utf-8'), self.file_names)  # noqa: SIM115
+        self.file = map(lambda fn: open(fn, 'r', encoding='utf-8'), self.file_name)  # noqa: SIM115
         return self.file
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
@@ -50,15 +50,15 @@ class ParamFileParser(Reader):
         self.file = None
 
     @property
-    def file_names(self):
+    def file_name(self):
         """ Contained file names """
-        return self._file_names
+        return self._file_name
 
-    @file_names.setter
-    def file_names(self, path: str):
+    @file_name.setter
+    def file_name(self, path: str):
         if isinstance(path, str):
-            self._file_names = (path,)
-        self._file_names = tuple(Path(file) for file in path)
+            path = (path,)
+        self._file_name = tuple(Path(file) for file in path)
 
     @property
     def param_dict(self):
@@ -113,11 +113,11 @@ class ParamFileParser(Reader):
         if isinstance(out_files, str):
             out_files = (out_files,)
 
-        if len(out_files) != len(self.file_names):
+        if len(out_files) != len(self.file_name):
             raise IndexError(f"Number of out files {len(out_files)} "
-                             f"does not match number of in files {len(self.file_names)}")
+                             f"does not match number of in files {len(self.file_name)}")
 
-        for in_filename, out_filename in zip(self.file_names, out_files):
+        for in_filename, out_filename in zip(self.file_name, out_files):
             with (open(in_filename, 'r', encoding='utf-8') as in_file,
                   open(out_filename, 'w', encoding='utf-8') as out_file):
                 for line in in_file:
