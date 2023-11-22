@@ -10,6 +10,7 @@ import pytest
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 from MDMC.MD.simulation import Universe, Shake, PPPM, Simulation
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
+from MDMC.trajectory_analysis.mdanse_trajectory import MdanseTrajectory
 from MDMC.MD.structures import (Atom, Molecule)
 
 pytestmark = pytest.mark.lammps
@@ -206,3 +207,8 @@ def test_trajectory_infinite_for_loop(water_trajectory):
         if iterator > correct_loop_length:
             raise RuntimeError("Infinite loop in CompactTrajectory!")
     assert correct_loop_length == iterator
+
+def test_mdanse_trajectory_creation(water_trajectory):
+    mdanse_trajectory = MdanseTrajectory(water_trajectory)
+    assert len(mdanse_trajectory) == len(water_trajectory)
+    assert mdanse_trajectory.chemical_system._number_of_atoms == water_trajectory.n_atoms
