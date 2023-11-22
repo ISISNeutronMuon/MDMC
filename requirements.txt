@@ -13,3 +13,4 @@ ipykernel==6.25.1
 dlpoly-py==0.3.12
 corner==2.2.2
 statsmodels==0.14.0
+MDANSE==2.0.0

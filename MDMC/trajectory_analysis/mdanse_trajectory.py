@@ -21,6 +21,7 @@ import numpy as np
 from MDANSE.Chemistry.ChemicalEntity import ChemicalSystem, Atom
 from MDANSE.MolecularDynamics.Configuration import PeriodicRealConfiguration
 from MDANSE.MolecularDynamics.UnitCell import UnitCell
+from MDANSE.Extensions import atomic_trajectory
 
 from MDMC.common import units
 from MDMC.trajectory_analysis.compact_trajectory import CompactTrajectory
@@ -40,6 +41,7 @@ class MdanseTrajectory:
 
         self.mdmc_trajectory = mdmc_trajectory
         self.chemical_system = ChemicalSystem("MDMC trajectory")
+        self._unit_cells = [None] * len(mdmc_trajectory)
 
         self.populate_chemical_system()
 
@@ -90,6 +92,86 @@ class MdanseTrajectory:
         """
         return self.mdmc_trajectory.has_velocity
 
+    def read_atomic_trajectory(
+        self,
+        index: int,
+        first: int = 0,
+        last: int = None,
+        step: int = 1,
+        box_coordinates: bool = False,
+    ) -> np.ndarray:
+        """Extracts the trajectory of a single atom from the trajectory object.
+
+        Arguments:
+            index -- index of the atom for which the trajectory will be produced
+
+        Keyword Arguments:
+            first -- index of the first trajectory frame (default: {0})
+            last -- index of the last trajectory frame (default: {None})
+            step -- step size in trajectory frames (default: {1})
+            box_coordinates -- flag: use fractional coordinates? (default: {False})
+
+        Returns:
+            np.ndarray containing the trajectory of a single atom
+        """
+
+        if last is None:
+            last = len(self)
+
+        subtrajectory = self.mdmc_trajectory.subtrajectory(first, last, step, [index])
+        coords = np.squeeze(subtrajectory.position.astype(np.float64))
+        unit_cells = [self.unit_cell(x) for x in range(first, last, step)]
+
+        direct_cells = np.array([uc.transposed_direct for uc in unit_cells])
+        inverse_cells = np.array([uc.transposed_inverse for uc in unit_cells])
+        atomic_traj = atomic_trajectory.atomic_trajectory(
+            coords, direct_cells, inverse_cells, box_coordinates
+        )
+        return atomic_traj
+
+    def read_configuration_trajectory(
+        self,
+        index: int,
+        first: int = 0,
+        last: int = None,
+        step: int = 1,
+        variable: str = "velocities",
+    ) -> np.ndarray:
+        """Extracts the information (i.e. velocity) for a single atom out of the trajectory.
+
+        Arguments:
+            index -- index of the atom for which the velocities will be produced
+
+        Keyword Arguments:
+            first -- index of the first trajectory frame (default: {0})
+            last -- index of the last trajectory frame (default: {None})
+            step -- step size in trajectory frames (default: {1})
+            box_coordinates -- flag: use fractional coordinates? (default: {False})
+
+        Raises:
+            AttributeError: If velocities are not present in the trajectory
+            NotImplementedError: if something else than velocities is needed
+
+        Returns:
+            np.ndarray of velocities of a single atom
+        """
+        if variable == "velocities":
+            if not self.has_velocity:
+                raise AttributeError("Trajectory does not contain velocities")
+        else:
+            raise NotImplementedError("Only velocities are supported")
+
+        temp_trajectory = self.mdmc_trajectory.subtrajectory(
+            first, last, step, atom_filter=[index]
+        )
+
+        result = temp_trajectory.velocity / (
+            self.mdanse_length_unit.conversion_factor
+            / self.mdanse_time_unit.conversion_factor
+        )
+
+        return result
+
     # Here we add the methods that exist only for compatibility with
     # MDANSE MolecularDynamics.Trajectory.Trajectory class
 
@@ -124,6 +206,8 @@ class MdanseTrajectory:
         Returns:
             UnitCell -- the unit cell definition for frame
         """
+        if self._unit_cells[frame] is not None:
+            return self._unit_cells[frame]
         if frame < 0 or frame >= len(self):
             raise IndexError("Invalid frame number")
 
@@ -135,7 +219,9 @@ class MdanseTrajectory:
         cell_3x3[0, 0] = cell[0]
         cell_3x3[1, 1] = cell[1]
         cell_3x3[2, 2] = cell[2]
-        return UnitCell(cell / self.mdanse_length_unit.conversion_factor)
+        result = UnitCell(cell_3x3 / self.mdanse_length_unit.conversion_factor)
+        self._unit_cells[frame] = result
+        return result
 
     def configuration(self, frame: int) -> PeriodicRealConfiguration:
         """Builds and returns an MDANSE PeriodicRealConfiguration

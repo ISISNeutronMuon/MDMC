@@ -3,9 +3,14 @@ Tests for creating Structure, BoundingBox, and Coulombic objects
 and setting their attributes.
 """
 
+import tempfile
+import os
+from os import path
 
 import numpy as np
 import pytest
+from MDANSE.Framework.Jobs import Temperature
+from MDANSE import REGISTRY
 
 from MDMC.MD.interactions import Bond, BondAngle, Coulombic, Dispersion
 from MDMC.MD.simulation import Universe, Shake, PPPM, Simulation
@@ -60,7 +65,7 @@ def water_trajectory():
                             traj_step=1)
 
     # Energy Minimization and equilibration
-    simulation.minimize(n_steps=2000)
+    simulation.minimize(n_steps=50)
     simulation.run(n_steps=2000, equilibration=True)
     simulation.run(n_steps=NUMBER_OF_STEPS)
     traj = simulation.trajectory
@@ -212,3 +217,19 @@ def test_mdanse_trajectory_creation(water_trajectory):
     mdanse_trajectory = MdanseTrajectory(water_trajectory)
     assert len(mdanse_trajectory) == len(water_trajectory)
     assert mdanse_trajectory.chemical_system._number_of_atoms == water_trajectory.n_atoms
+
+@pytest.mark.parametrize('interp_order',[1,2,3])
+def test_mdanse_trajectory_temperature_direct(water_trajectory, interp_order):
+    replacement_trajectory = MdanseTrajectory(water_trajectory)
+    temp_name = tempfile.mktemp()
+    parameters = {}
+    parameters['frames'] = (0, 10, 1)
+    parameters['interpolation_order'] = interp_order
+    parameters['output_files'] = (temp_name, ('hdf',))
+    parameters['running_mode'] = ('monoprocessor',)
+    parameters['trajectory'] = replacement_trajectory
+    temp = REGISTRY['job']['temp'](mdmc_input_override=True)
+    temp.run(parameters,status=True)
+    assert path.exists(temp_name + '.h5')
+    assert path.isfile(temp_name + '.h5')
+    os.remove(temp_name + '.h5')
