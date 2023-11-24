@@ -21,8 +21,8 @@ class TestClassRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {param: 3.5}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
-            parser.parse()
+            parser = ParamFileParser({'main': tmp.name})
+            parser.parse(testing=True)
             self.compare_params(parser.param_dict, {'param': 3.5})
 
     def test_parse_multiple_keys(self):
@@ -32,8 +32,8 @@ class TestClassRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {param: 3.5} {paramb: 10}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
-            parser.parse()
+            parser = ParamFileParser({'main': tmp.name})
+            parser.parse(testing=True)
             self.compare_params(parser.param_dict, {'param': 3.5, 'paramb': 10.0})
 
     def test_parse_multiple_keys_lines(self):
@@ -44,8 +44,8 @@ class TestClassRead:
             tmp.write("""The param is {param: 3.5}
                          The second param is {paramb: 10}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
-            parser.parse()
+            parser = ParamFileParser({'main': tmp.name})
+            parser.parse(testing=True)
             self.compare_params(parser.param_dict, {'param': 3.5, 'paramb': 10.0})
 
     def test_parse_same_key(self):
@@ -55,8 +55,8 @@ class TestClassRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {param: 3.5} {param}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
-            parser.parse()
+            parser = ParamFileParser({'main': tmp.name})
+            parser.parse(testing=True)
             self.compare_params(parser.param_dict, {'param': 3.5})
 
     def test_parse_override_key(self):
@@ -66,8 +66,8 @@ class TestClassRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {param: 3.5} {param: 10}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
-            parser.parse()
+            parser = ParamFileParser({'main': tmp.name})
+            parser.parse(testing=True)
             self.compare_params(parser.param_dict, {'param': 10.0})
 
     def test_parse_multiple_files(self):
@@ -81,8 +81,8 @@ class TestClassRead:
             tmp2.write("""The param is {paramb: 10}""")
             tmp2.seek(0)
 
-            parser = ParamFileParser((tmp1.name, tmp2.name))
-            parser.parse()
+            parser = ParamFileParser({'a': tmp1.name, 'b': tmp2.name})
+            parser.parse(testing=True)
             self.compare_params(parser.param_dict, {'param': 3.5, 'paramb': 10.0})
 
     @staticmethod
@@ -90,7 +90,7 @@ class TestClassRead:
         """
         Convert Parameters array back into dictionary for simple comparison
         """
-        assert {par.type: par.value for par in parameters_list.values()} == other
+        assert parameters_list == other
 
 
 class TestClassFailRead:
@@ -101,9 +101,9 @@ class TestClassFailRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {param}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
+            parser = ParamFileParser({'main': tmp.name})
             with pytest.raises(ValueError):
-                parser.parse()
+                parser.parse(testing=True)
 
     def test_parse_invalid_file_empty_value(self):
         """
@@ -112,9 +112,9 @@ class TestClassFailRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {param:}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
+            parser = ParamFileParser({'main': tmp.name})
             with pytest.raises(ValueError):
-                parser.parse()
+                parser.parse(testing=True)
 
     def test_parse_invalid_file_empty(self):
         """
@@ -123,9 +123,9 @@ class TestClassFailRead:
         with tempfile.NamedTemporaryFile(mode="w+") as tmp:
             tmp.write("""The param is {}""")
             tmp.seek(0)
-            parser = ParamFileParser(tmp.name)
+            parser = ParamFileParser({'main': tmp.name})
             with pytest.raises(ValueError):
-                parser.parse()
+                parser.parse(testing=True)
 
 class TestClassWrite:
     pass

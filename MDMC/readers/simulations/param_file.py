@@ -4,9 +4,11 @@ Reader and writer for parametrised files
 
 import re
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import Any, Sequence, Union
 
-from MDMC.MD.parameters import Parameters, Parameter
-from MDMC.readers.reader import Reader
+from MDMC.common.decorators import repr_decorator
+from MDMC.MD.parameters import Parameter, Parameters
 
 # Regexps to recognise numbers
 FNUMBER_RE = r"(?:[+-]?(?:\d*\.?\d+|\d+\.?\d*))"
@@ -27,47 +29,101 @@ BRACK_RE = re.compile(r"\{([^: \t]*)\s*:?.*\}")  # RE to capture non-matched par
 
 OUT_RE = r"{\g<param>}"
 
+PathLike = Union[str, Path]
+PathsDict = dict[str, Union[str, Path]]
 
-class ParamFileParser(Reader):
-    """ParamFileParser reads parametrised files (from `file_names`) and builds a
-    dictionary of the modifiable parameters.
+
+@repr_decorator('param_dict')
+class ParamFileParser():
+    """
+    Class to read and parse parametrised files.
+
+    Reads (from ``file_names``) and builds a `Parameters` object of the
+    modifiable parameters.
 
     It can then dump a copy of the file with parameters replaced by their
     current value as stored in `_param_dict`
+
+    Attributes
+    ----------
+    file_name : dict[str, Path]
+        File names read into object.
+    required_parameters : list[str]
+        Parameters which must be present in the files for them to be valid.
+
     """
 
-    def __init__(self, file_names: str | list[str]):
-        Reader.__init__(self, file_names)
+    def __init__(self, file_names: PathsDict):
+        """
+        Class to read and parse parametrised files.
+
+        Parameters
+        ----------
+        file_names : PathsDict
+            Files to read data from.
+        """
+        self.file_name = file_names
+        self._files = None
+        # These params are always required for functionality
+        self.required_parameters = ["traj_step", "time_step"]
         self._param_dict = Parameters()
 
-    def __enter__(self) -> None:
-        self.file = map(lambda fn: open(fn, 'r', encoding='utf-8'), self.file_name)  # noqa: SIM115
-        return self.file
+    def __call__(self, *keys, **settings):
+        # pylint: disable=consider-using-with
+        to_dump = {key: self.file_name[key] for key in keys}
+        name_parts = ((f"{pth.stem}_", pth.suffix) for pth in to_dump.values())
+
+        self._files = tuple(NamedTemporaryFile(mode="w+", encoding='utf-8',
+                                               prefix=pref, suffix=suff)
+                            for pref, suff in name_parts)
+
+        names = {key: file.name for key, file in zip(to_dump, self._files)}
+        self.dump(names, **settings)
+        for file in self._files:
+            file.seek(0)
+        return self
+
+    def __enter__(self) -> Sequence[PathLike]:
+        """
+        Dump selected keys to file and return paths to said files
+        """
+        return tuple(file.name for file in self._files)
 
     def __exit__(self, exception_type, exception_value, traceback) -> None:
-        for file in self.file:
+        for file in self._files:
             file.close()
-        self.file = None
+        self._files = None
 
     @property
-    def file_name(self):
-        """ Contained file names """
+    def file_name(self) -> dict[str, PathLike]:
+        """
+        Contained file names.
+        """
         return self._file_name
 
     @file_name.setter
-    def file_name(self, path: str):
-        if isinstance(path, str):
-            path = (path,)
-        self._file_name = tuple(Path(file) for file in path)
+    def file_name(self, path: PathsDict):
+        path = dict(path)
+        self._file_name = {key: Path(val) for key, val in path.items()}
 
     @property
-    def param_dict(self):
-        """ Dictionary of found parameters """
+    def param_dict(self) -> dict[str, Any]:
+        """
+        Dictionary of found parameters.
+        """
+        return {parm.type: parm.value for parm in self.as_parameters.values()}
+
+    @property
+    def as_parameters(self):
+        """
+        Return dictionary of found parameters as a `Parameters` object.
+        """
         return self._param_dict
 
     def parse(self, **settings: dict) -> None:
-        """
-        Parses the file data so that it is in a format expected by the class
+        """Parse the data file into a `Parameters` object.
+
+                Parses the file data so that it is in a format expected by the class
         calling the data reader
 
         For readers which are not specific to one data type, the calling class
@@ -76,14 +132,21 @@ class ParamFileParser(Reader):
 
         Parameters
         ----------
-        **settings: dict
-            dictionary of settings for reader
+        **settings : dict
+            Dictionary of settings from user.
+
+        Raises
+        ------
+        KeyError
+            If file doesn't contain all required parameters.
+        ValueError
+            If doubly defined or undefined parameter.
         """
 
         param_dict = {}
 
-        with self as files:
-            for file in files:
+        for filename in self.file_name.values():
+            with open(filename, 'r', encoding='utf-8') as file:
                 for i, line in enumerate(file):
                     for match in PARAM_RE.finditer(line):
                         param, value = match['param'], float(match['value'])
@@ -102,22 +165,39 @@ class ParamFileParser(Reader):
                                              f"Unrecognised parameter {match[0]}:"
                                              "no/invalid initialiser")
 
-        self._param_dict = Parameters([Parameter(name=key, value=val)
+        if (
+            any(param not in param_dict for param in self.required_parameters) and
+            not settings.get("testing", False)
+        ):
+            raise KeyError(f"One of required parameters for "
+                           f"{self.required_parameters} not present in files.")
+
+        self._param_dict = Parameters([Parameter(name=key, value=val,
+                                                 fixed=key in self.required_parameters)
                                        for key, val in param_dict.items()])
 
-    def dump(self, out_files: str | list[str], **settings: dict) -> None:
+    def dump(self, out_files: PathsDict, **settings: dict) -> None:
         """
-        Write the parametrised file out with the parameters
-        replaced with the appropriate values
+        Write the parametrised file with current parameters.
+
+        Parameters
+        ----------
+        out_files : PathsDict
+            Files to write.
+        **settings : dict
+            Extra user options.
+
+        Raises
+        ------
+        KeyError
+            Invalid source file.
         """
-        if isinstance(out_files, str):
-            out_files = (out_files,)
+        for key, out_filename in out_files.items():
+            if key not in self.file_name:
+                raise KeyError(f"No file in known files called {key}")
 
-        if len(out_files) != len(self.file_name):
-            raise IndexError(f"Number of out files {len(out_files)} "
-                             f"does not match number of in files {len(self.file_name)}")
+            in_filename = self.file_name[key]
 
-        for in_filename, out_filename in zip(self.file_name, out_files):
             with (open(in_filename, 'r', encoding='utf-8') as in_file,
                   open(out_filename, 'w', encoding='utf-8') as out_file):
                 for line in in_file:

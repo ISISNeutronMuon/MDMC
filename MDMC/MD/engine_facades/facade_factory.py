@@ -6,11 +6,6 @@ from types import ModuleType
 
 from MDMC.MD.engine_facades.facade import MDEngine
 
-ENGINES = {'lammps_engine': 'LAMMPSEngine',
-           'lammps_file_engine': 'LAMMPSFileEngine',
-           'dlpoly_engine': 'DLPOLYEngine'}
-
-
 class MDEngineFacadeFactory:
 
     """
@@ -33,27 +28,32 @@ class MDEngineFacadeFactory:
         ``MDEngine``
             The specified ``MDEngine``, as determined by the ``module_name``
         """
-        module_name = MDEngineFacadeFactory.standardise_alias(module_name)
-        module = import_module('.' + module_name, __package__)
 
-        classes = getmembers(module, lambda m: (isclass(m) and
-                                                not isabstract(m) and
-                                                issubclass(m, MDEngine) and
-                                                ENGINES[module_name] in m.__name__))
+        try:
+            module = import_module('.' + module_name, __package__)
+        except ImportError:
+            module = MDEngineFacadeFactory.import_from_alias(module_name)
+
+        classes = getmembers(module, lambda m: (isclass(m)
+                                                and not isabstract(m)
+                                                and issubclass(m, MDEngine)))
+
         return classes[0][1]()
 
     @staticmethod
-    def standardise_alias(alias: str) -> ModuleType:
+    def import_from_alias(alias: str) -> ModuleType:
         """
         Converts an ``alias`` into a module name
         """
 
         alias = alias.lower()
+        engines = ['lammps_engine', 'dlpoly_engine']
         if not alias.endswith('_engine'):
             alias += '_engine'
-
-        if alias not in ENGINES:
+        if alias in engines:
+            module_name = alias
+        else:
             raise ImportError(f"The MD engine {alias} is not in the list of recognised engines, "
-                              f"which currently comprises: {tuple(ENGINES.keys())}")
+                              f"which currently comprises: {engines}")
 
-        return alias
+        return import_module('.' + module_name, __package__)

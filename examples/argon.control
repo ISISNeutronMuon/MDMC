@@ -1,0 +1,33 @@
+title my simulation title
+io_file_config dlprun/minim.config
+io_file_field dlprun/FIELD
+io_file_statis /home/jacob/MDMCv0.2_pilot/examples/dlprun/STATIS
+io_file_history /home/jacob/MDMCv0.2_pilot/examples/dlprun/HISTORY
+io_file_historf /home/jacob/MDMCv0.2_pilot/examples/dlprun/HISTORF
+io_file_revive /home/jacob/MDMCv0.2_pilot/examples/dlprun/REVIVE
+io_file_revold /home/jacob/MDMCv0.2_pilot/examples/dlprun/REVOLD
+io_file_revcon /home/jacob/MDMCv0.2_pilot/examples/dlprun/REVCON
+io_file_rdf /home/jacob/MDMCv0.2_pilot/examples/dlprun/RDFDAT
+io_file_msd /home/jacob/MDMCv0.2_pilot/examples/dlprun/MSDTMP
+time_job  100000.0 s
+time_close  10.0 s
+data_dump_frequency  5000 steps
+stats_frequency  100 steps
+print_frequency  100 steps
+stack_size  100 steps
+padding  0.5 Ang
+vdw_method direct
+coul_method off
+cutoff  10.0 Ang
+ensemble nve
+temperature  120.0 K
+timestep  {time_step: 10.188929999999999} ps
+minimisation_criterion off
+minimisation_tolerance  0.001 internal_e
+minimisation_frequency  10 steps
+time_equilibration  0 steps
+traj_calculate ON
+time_run  570 steps
+traj_start  0 steps
+traj_interval  {traj_step: 15} steps
+traj_key pos

@@ -1,90 +1,72 @@
-from tempfile import NamedTemporaryFile
-from pathlib import Path
-from verbosemanager import VerboseManager
+"""
+Parametrised file parser facade for generalised input files.
+"""
 
-from MDMC.common.decorators import (unit_decorator_getter, mod_docstring,
-                                    repr_decorator, unit_decorator)
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any
+
 from MDMC.common import units
-from MDMC.readers.simulation.param_file import ParamFileParser
+from MDMC.common.decorators import repr_decorator, unit_decorator
+from MDMC.MD.parameters import Parameters
+from MDMC.readers.simulations.param_file import ParamFileParser, PathsDict
 
 
 @repr_decorator('files')
-class FileSimulation():
-    def __init__(self,
-                 files: str | list[str],
-                 traj_step: int,
-                 time_step: float = 1.,
-                 **settings):
-        self.parser = ParamFileParser(files)
-        self._setup()
+class FileSimulation(ABC):
+    """
+    Base class for setting up generalised jobs using a parametrised files.
 
-        self.traj_step = traj_step
-        self.time_step = time_step
+    Attributes
+    ----------
+    parser : ParamFileParser
+        Parser to read parametrised files.
+    settings : dict[str, Any]
+        Extra settings passed by users.
+    """
+    def __init__(self,
+                 files: PathsDict,
+                 traj_step: None = None,
+                 time_step: None = None,
+                 **settings):
+        """
+        Base class for setting up generalised jobs using a parametrised files.
+
+        Parameters
+        ----------
+        files : PathsDict
+            Files to load and parse for user parameters.
+        traj_step : None
+            Default number of iterations between dumping data.
+        time_step : None
+            Initial timestep.
+        **settings : dict[str, Any]
+            Extra user arguments.
+        """
+        self.parser = ParamFileParser(files)
         self.settings = settings
         self._temp_files = ()
 
     def _setup(self) -> None:
         """
-        Creates a universe within the ``MDEngine`` with the equivalent
-        configuration and topology to ``self.universe`` and defines the
-        simulation conditions
+        Parse configuration files and load parameters into self.
         """
         self.parser.parse()
 
-    def minimize(self, n_steps: int,
-                 minimize_every: int = 10,
-                 verbose: bool = False, output_log: str = None,
-                 work_dir: str = None, **settings: dict) -> None:
+    @abstractmethod
+    def minimize(self, n_steps: int, **settings: dict) -> None:
         """
-        Performs an MD run intertwined with periodic structure relaxation.
-        This way after a local minimum is found, the system is taken
-        out of the minimum to explore a larger volume of the parameter
-        space.
+        Minimizes the simulation energy
 
         Parameters
         ----------
         n_steps : int
-            Total number of the MD run steps
-        minimize_every: int, optional
-            Number of MD steps between two consecutive minimizations
-        verbose: bool, optional
-            Whether to print statements when the minimization has been started and completed
-            (including the number of minimization steps and time taken). Default is `False`.
-        output_log: str, optional
-            Log file for the MD engine to write to. Default is `None`.
-        work_dir: str, optional
-            Working directory for the MD engine to write to. Default is `None`.
-        **settings
-            ``etol`` (`float`)
-                If the energy change between iterations is less than ``etol``,
-                minimization is stopped. Default depends on engine used.
-            ``ftol`` (`float`)
-                If the magnitude of the global force is less than ``ftol``,
-                minimization is stopped. Default depends on engine used.
-            ``maxiter`` (`int`)
-                Maximum number of iterations of a single structure
-                relaxation procedure. Default depends on engine used.
-            ``maxeval`` (`int`)
-                Maximum number of force evaluations to perform. Default depends
-                on engine used.
+            Maximum number of steps for the MD run.
         """
+        raise NotImplementedError
 
-        verbose_manager = VerboseManager.instance()
-        # to match legacy use of verbose on this function (where verbose was bool) we use bool
-        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
-        # step in this function so verbose levels 2 or 3 would not provide extra information
-        verbose_manager.start(1, verbose=int(verbose))
-
-        verbose_manager.step(f"Running minimization every {minimize_every} steps "
-                             f"in an MD run with {n_steps} steps")
-
-        self.run(n_steps=n_steps, equilibration=True, minimise_every=minimise_every,
-                 output_log=output_log, work_dir=work_dir, **self.settings)
-
-        verbose_manager.finish("Minimization")
-
-    def run(self, n_steps: int, equilibration: bool = False, verbose: bool = False,
-            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
+    @abstractmethod
+    def run(self, n_steps: int, **settings: dict) -> None:
         """
         Runs the MD simulation for the specified number of steps. Trajectories
         for the simulation are only saved when ``equilibration`` is `False`.
@@ -96,73 +78,52 @@ class FileSimulation():
         ----------
         n_steps : int
             Number of simulation steps to run
-        equilibration : bool, optional
-            If the run is for equilibration (`True`) or production (`False`).
-            Default is `False`.
-        verbose: bool, optional
-            Whether to print statements upon starting and completing the run.
-            Default is `False`.
-        output_log: str, optional
-            Log file for the MD engine to write to. Default is `None`.
-        work_dir: str, optional
-            Working directory for the MD engine to write to. Default is `None`.
         """
-
-        process = 'equilibration' if equilibration else 'simulation'
-
-        verbose_manager = VerboseManager.instance()
-        # to match legacy use of verbose on this function (where verbose was bool) we use bool
-        # and convert to int, corresponding to verbose levels 0 or 1; there is only one verbose
-        # step in this function so verbose levels 2 or 3 would not provide extra information
-        verbose_manager.start(1, verbose=int(verbose))
-        verbose_manager.step(f"Running {process} for {n_steps} steps")
-
-        temp_files = self._gen_temp_files()
-        self._run_command(temp_files, n_steps=n_steps, equilibration=equilibration, verbose=verbose,
-                          output_log=output_log, work_dir=work_dir, **self.settings)
-        self._del_temp_files()
-
-        verbose_manager.finish(f"{process.capitalize()}")
-
-    def _gen_temp_files(self) -> list[NamedTemporaryFile]:
-        """
-        Generate a set of temp files representative of the currently stored files
-        """
-        names = ((pth.stem, pth.suffix) for pth in self.parser.file_names)
-        self._temp_files = tuple(NamedTemporaryFile(prefix=pref, suffix=suff)
-                                 for pref, suff in names)
-        return tuple(file.name for file in self._temp_files)
-
-    def _del_temp_files(self) -> None:
-        """
-        Delete contained temp files
-        """
-        for file in self._temp_files:
-            file.close()
-        self._temp_files = ()
+        raise NotImplementedError
 
     @abstractmethod
-    def _run_command(self, files, **settings):
+    def convert_trajectory(self):
         """
-        Run the command to start the MD engine using the files
+        Convert trajectory to MDMC trajectory
         """
         raise NotImplementedError
 
     @property
-    def files(self):
-        self.parser.file_names
+    def files(self) -> dict[str, Path]:
+        """
+        Parametrised files used in specifying job
+
+        Returns
+        -------
+        `dict[str, Path]`
+            Dictionary of internal references to file-paths
+        """
+        return self.parser.file_name
 
     @property
-    def parameters(self):
-        self.parser.params_dict
+    def parameters(self) -> Parameters:
+        """
+        Parameters object containing parameters to fit
+
+        Returns
+        -------
+        `Parameters`
+            Fit parameters to modify
+        """
+
+        return self.parser.as_parameters
 
     @property
-    def universe(self):
-        return self
+    def param_dict(self) -> dict[str, Any]:
+        """
+        Parameters object as bare dict
 
-    @property
-    def engine(self):
-        return self
+        Returns
+        -------
+        `dict[str, Any]`
+            Fit parameters as ordinary dictionary
+        """
+        return self.parser.param_dict
 
     @property
     def time_step(self) -> float:
@@ -174,13 +135,14 @@ class FileSimulation():
         `float`
             Simulation time step in ``fs``
         """
-
-        return self.parameters["time_step"]
+        return self.parameters["time_step"].value
 
     @time_step.setter
     @unit_decorator(unit=units.TIME)
     def time_step(self, value: float) -> None:
-        self.parameters["time_step"] = value
+        print(f"{value=}")
+        param = self.parameters["time_step"]
+        param.value = value
 
     @property
     def traj_step(self) -> int:
@@ -195,14 +157,28 @@ class FileSimulation():
             ``CompactTrajectory`` being stored
         """
 
-        return self.parameters["traj_step"]
+        return self.parameters["traj_step"].value
 
     @traj_step.setter
     def traj_step(self, value: int) -> None:
-        self.parameters["traj_step"] = value
+        param = self.parameters["traj_step"]
+        self.parameters["traj_step"] = param
 
     def update_parameters(self) -> None:
         """
         Dummy function as not needed for file dump type
         """
-        pass
+
+    @property
+    def universe(self):
+        """
+        Dummy property as not needed for file dump type
+        """
+        return self
+
+    @property
+    def engine(self):
+        """
+        Dummy property as not needed for file dump type
+        """
+        return self
