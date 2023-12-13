@@ -210,6 +210,9 @@ class MDEngine(ABC):
 
         raise NotImplementedError
 
+    def clear(self) -> None:
+        raise NotImplementedError
+
     @abstractmethod
     def reset_config(self) -> None:
         """

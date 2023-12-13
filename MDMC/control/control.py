@@ -432,8 +432,21 @@ class Control:
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
+                    
+                    # try:
+                    #     print('before the equilibration in the refine block')
                     self.equilibrate(self.equilibration_steps)
-
+                    print('continued with refinement')
+                    # except:
+                    #     print('third attempt')
+                    #     self.simulation.engine.clear()
+                    #     self.simulation._setup()
+                    #     # self.minimizer.change_parameters()
+                    #     self._update_engine_parameters()
+                    #     print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+                    #     self.equilibrate(self.equilibration_steps)
+                        
+                
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
                 count += 1
@@ -544,8 +557,62 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        self.simulation.run(n_steps,equilibration,verbose,
-                             output_log, work_dir,**settings)
+        
+        first_reset_worked = False
+        second_reset_worked = False
+        
+        try:
+            print('first attempt')
+            self.simulation.run(n_steps,equilibration,verbose,
+                                    output_log, work_dir,**settings);
+            first_reset_worked = True
+        except:
+            first_reset_worked = False
+            
+            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+            
+        if not first_reset_worked:
+            print('second attempt at equil')
+            self.simulation.engine.clear()
+            self.simulation._setup()
+            
+            try:
+                
+                print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+                self.simulation.run(n_steps,equilibration,verbose,
+                                output_log, work_dir,**settings);
+                second_reset_worked = True
+            except:
+                # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+                second_reset_worked = False
+                # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+        
+
+            
+        # self.fit_parameters['epsilon'].value = 1.0243
+        
+        if not first_reset_worked and not second_reset_worked:
+            print('third attempt at equil')
+            self.simulation.engine.clear()
+            self.simulation._setup()
+
+            # for parameter in self.fit_parameters:
+            #     self.fit_parameters[parameter].value = (self.fit_parameters[parameter].constraints[1] - self.fit_parameters[parameter].constraints[0])/2
+            
+            self.fit_parameters['sigma'].value = 3.36
+            self.fit_parameters['epsilon'].value = 1.0243
+            
+            self._update_engine_parameters()
+            
+            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+            try:
+                self.simulation.run(n_steps,equilibration,verbose,
+                                output_log, work_dir,**settings)
+            except:
+                raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+
+
+
 
     def step(self) -> None:
         """
