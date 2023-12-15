@@ -3,14 +3,13 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from skopt import Optimizer
-from pathlib import Path
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
-
 
 if TYPE_CHECKING:
     from MDMC.MD.parameters import Parameters
     from MDMC.control import Control
+    from pathlib import Path
 
 
 class GPO(Minimizer):
@@ -52,8 +51,8 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history= None, **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history: 'Path' = None, **settings: dict):
+        super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
@@ -79,15 +78,14 @@ class GPO(Minimizer):
         if self.previous_history is not None:
             self._history = self.previous_history
             if not self._history or len(self._history) < self.n_initial:
-                self.optimizer = Optimizer(
-                    self.parameter_bounds, "GP", acq_func="gp_hedge",
-                    acq_optimizer="sampling", initial_point_generator="lhs",
-                    n_initial_points=self.n_initial, model_queue_size=1)
+                initial_points = self.n_initial
             else:
-                self.optimizer = Optimizer(
-                    self.parameter_bounds, "GP", acq_func="gp_hedge",
-                    acq_optimizer="sampling", initial_point_generator="lhs",
-                    n_initial_points=len(self._history), model_queue_size=1)
+                initial_points = len(self._history)
+
+            self.optimizer = Optimizer(
+                self.parameter_bounds, "GP", acq_func="gp_hedge",
+                acq_optimizer="sampling", initial_point_generator="lhs",
+                n_initial_points=initial_points, model_queue_size=1)
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -223,5 +221,3 @@ class GPO(Minimizer):
                          f'FoM of {minimizer_output[3]}.\n \n ')
 
         return output_string
-
-

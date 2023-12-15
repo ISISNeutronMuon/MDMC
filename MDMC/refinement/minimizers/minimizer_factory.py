@@ -20,7 +20,7 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]', previous_history: Path,
+    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]', previous_history: 'Path' = None,
                          **settings: dict) -> \
             Minimizer:
         """

@@ -5,8 +5,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import pandas as pd
 import csv
+
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
+
 
 if TYPE_CHECKING:
     from MDMC.control import Control
@@ -43,12 +45,16 @@ class Minimizer(ABC):
         the ``Parameter`` objects from the previous minimizer step
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, previous_history:Path = None):
+    def __init__(self, control: 'Control', parameters: Parameters, previous_history: Path = None):
         self.control = control
         self.results_filename = None
 
+        print('minimizer abstract initialisation')
+        print(previous_history is not None, previous_history)
         if previous_history is not None:
             self._history = self.load_history(previous_history)
+            print('dataframe now')
+            print(self._history)
             self.FoM_old = self._history['FoM'].iloc[-1]
             self.FoM = None
             if isinstance(parameters, list):
@@ -56,6 +62,7 @@ class Minimizer(ABC):
             try:
                 if self._check_parameters_fit_with_history(parameters):
                     self.parameters_old_values = self.get_parameters_old_values(parameters)
+                    print(self.parameters_old_values)
                 self.parameters = parameters
                 if isinstance(self.results_filename, str):
                     initial_data = self.load_history(Path(self.results_filename))
@@ -99,7 +106,7 @@ class Minimizer(ABC):
             variables which are included is concrete implementation specific,
             and is specified by `history_columns`.
         """
-
+        print(self._history,self.history_columns)
         return pd.DataFrame(self._history, columns=self.history_columns)
 
     @property
@@ -239,23 +246,41 @@ class Minimizer(ABC):
             return pd.DataFrame()
 
 
-    def load_history(self, file_path: Path):
-        try:
-            df = pd.read_csv(file_path)
-            return df
-        except Exception as e:
-            print(f"Error occurred while loading history: {e}")
-            return pd.DataFrame()
-
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
         if self._history is not None:
+            #starting at the third index because the first columns are "step number" and "fom"
+            columns_names = list(self._history.columns)[2:]
+
+            if len(columns_names) != len(parameters):
+                raise ValueError(f'A history of {len(self._history.columns) -2}'\
+                    ' is incompatible with the current setup.')
+            else: 
+                split_column_names = []
+                split_parameters = []  
+                for param in columns_names:
+                    param_index = columns_names.index(param)
+                    split_column_names.append(tuple(columns_names[param_index].split(" "))) 
+                    split_parameters.append(tuple(parameters[param].name.split(" ")))
+                    
+                    if split_column_names[param_index][0] != split_parameters[param_index][0]:
+                        raise ValueError(f"The parameters in the minimizer history are not\
+                                         the same as those specified for refining in the current\
+                                         universe setup.")
+                
+                
+            
+            
             for parameter in parameters.values():
+                print(type(parameter.value))
+                print(type(self._history[parameter.name].iloc[-1]))
                 if parameter.fixed is True:
                     raise ValueError(f'Parameter {parameter.name} is fixed.')
                 if parameter.tied is True:
                     raise ValueError(f'Parameter {parameter.name} is tied to another parameter.')
-                if parameter.name in self._history.columns and parameter.value != self._history[parameter.name].iloc[-1]:
-                    raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
+                # if parameter.name in self._history.columns and type(parameter.value) != type(self._history[parameter.name].iloc[-1]):
+                #     raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
+            return True
+                
 
     def get_parameters_old_values(self, parameters: Parameters):
         if not self._history.empty:

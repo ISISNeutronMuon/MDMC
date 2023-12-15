@@ -4,11 +4,14 @@ from copy import deepcopy
 from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
+from pathlib import Path
+import pandas as pd
+
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 from verbosemanager import VerboseManager
-from pathlib import Path
+
 from MDMC.control.plot_results import PlotResults, data_printers
 from MDMC.common.decorators import repr_decorator
 from MDMC.MD.parameters import Parameters
@@ -210,7 +213,6 @@ class Control:
         self.equilibration_steps = equilibration_steps
         self.settings = settings
         self.n_steps = settings.get('n_steps')
-
         self.results_filename = settings.get('results_filename',
                                 f'results_{datetime.now().strftime("%Y-%m-%d--%H-%M-%S")}.csv')
         settings['results_filename'] = self.results_filename
@@ -220,8 +222,8 @@ class Control:
         # pylint: disable=line-too-long
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
-                                                           self.fit_parameters, previous_history=previous_history, **settings)
-
+                                                           self.fit_parameters, previous_history, **settings)
+        print('Minimizer instantiated')
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
@@ -434,7 +436,7 @@ class Control:
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate()
+                    self.equilibrate(self.equilibration_steps)
 
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
@@ -446,7 +448,7 @@ class Control:
         else:
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    self.equilibrate()
+                    self.equilibrate(self.equilibration_steps)
                 self.step()  # advance the refinement by one step
                 count += 1
 
@@ -487,13 +489,67 @@ class Control:
 
         verbose_manager.finish("Refinement")
 
-    def equilibrate(self) -> None:
+    def minimize(self, n_steps: int,
+                 minimize_every: int = 10,
+                 verbose: bool = False, output_log: str = None,
+                 work_dir: str = None, **settings: dict) -> None:
         """
-        Run molecular dynamics to equilibrate the ``Universe``.
+        Performs an MD run intertwined with periodic structure relaxation.
+        This way after a local minimum is found, the system is taken
+        out of the minimum to explore a larger volume of the parameter
+        space.
+
+        Parameters
+        ----------
+        n_steps : int
+            Total number of the MD run steps
+        minimize_every: int, optional
+            Number of MD steps between two consecutive minimizations
+        verbose: bool, optional
+            Whether to print statements when the minimization has been started and completed
+            (including the number of minimization steps and time taken). Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
+        **settings
+            ``etol`` (`float`)
+                If the energy change between iterations is less than ``etol``,
+                minimization is stopped. Default depends on engine used.
+            ``ftol`` (`float`)
+                If the magnitude of the global force is less than ``ftol``,
+                minimization is stopped. Default depends on engine used.
+            ``maxiter`` (`int`)
+                Maximum number of iterations of a single structure
+                relaxation procedure. Default depends on engine used.
+            ``maxeval`` (`int`)
+                Maximum number of force evaluations to perform. Default depends
+                on engine used.
         """
 
-        self.simulation.run(self.equilibration_steps, equilibration=True,
-                            verbose=False)
+        self.simulation.minimize(n_steps,minimize_every,verbose,
+                                 output_log,work_dir, **settings)
+
+    def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
+            output_log: str = None, work_dir: str = None, **settings: dict) -> None:
+
+        """
+        Run molecular dynamics to equilibrate the ``Universe``.
+
+        Parameters
+        ----------
+        n_steps : int
+            Number of simulation steps to run
+        verbose: bool, optional
+            Whether to print statements upon starting and completing the run.
+            Default is `False`.
+        output_log: str, optional
+            Log file for the MD engine to write to. Default is `None`.
+        work_dir: str, optional
+            Working directory for the MD engine to write to. Default is `None`.
+        """
+        self.simulation.run(n_steps,equilibration,verbose,
+                             output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
@@ -613,8 +669,6 @@ class Control:
         ``Observable``
             An ``Observable`` of specified ``type``
         """
-
-        # add error message
 
         observable = ObservableFactory.create_observable(obstype)
         observable.read_from_file(reader=reader, file_name=file_name)
@@ -925,6 +979,7 @@ class Control:
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
+
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
