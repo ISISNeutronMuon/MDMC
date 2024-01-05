@@ -49,25 +49,24 @@ class Minimizer(ABC):
         self.control = control
         self.results_filename = None
 
-        print('minimizer abstract initialisation')
-        print(previous_history is not None, previous_history)
         if previous_history is not None:
-            self._history = self.load_history(previous_history)
-            print('dataframe now')
+            
+            if not isinstance(previous_history, str):
+                self._history = self.load_history(Path(previous_history))
+            else:
+                self._history = self.load_history(previous_history)
+                
             print(self._history)
             self.FoM_old = self._history['FoM'].iloc[-1]
             self.FoM = None
+            
             if isinstance(parameters, list):
                 parameters = Parameters(parameters)
             try:
                 if self._check_parameters_fit_with_history(parameters):
                     self.parameters_old_values = self.get_parameters_old_values(parameters)
-                    print(self.parameters_old_values)
                 self.parameters = parameters
-                if isinstance(self.results_filename, str):
-                    initial_data = self.load_history(Path(self.results_filename))
-                else:
-                    raise ValueError("Results filename must be a string.")
+ 
             except ValueError as e:
                 print(f"Error: {e}")
         else:
@@ -183,7 +182,7 @@ class Minimizer(ABC):
             The name of the output file
         """
 
-        self.history.to_csv(filename)
+        self.history.to_csv(filename, index=False)
 
     def present_result(self) -> str:
         """
@@ -248,31 +247,25 @@ class Minimizer(ABC):
 
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
         if self._history is not None:
-            #starting at the third index because the first columns are "step number" and "fom"
-            columns_names = list(self._history.columns)[2:]
+            columns_names = list(self._history.columns)
 
-            if len(columns_names) != len(parameters):
+            if (len(columns_names)-2) != len(parameters):
                 raise ValueError(f'A history of {len(self._history.columns) -2}'\
                     ' is incompatible with the current setup.')
-            else: 
-                split_column_names = []
-                split_parameters = []  
-                for param in columns_names:
-                    param_index = columns_names.index(param)
-                    split_column_names.append(tuple(columns_names[param_index].split(" "))) 
-                    split_parameters.append(tuple(parameters[param].name.split(" ")))
-                    
-                    if split_column_names[param_index][0] != split_parameters[param_index][0]:
-                        raise ValueError(f"The parameters in the minimizer history are not\
-                                         the same as those specified for refining in the current\
-                                         universe setup.")
-                
-                
             
+            split_param_list = [parameter.split(" ")[0] for parameter in parameters]
+            split_column_list = [column.split(" ")[0] for column in columns_names[2:]]
+            
+            if split_param_list != split_column_list:
+                raise ValueError(f"The parameters in the minimizer history are not\
+                                      the same as those specified for refining in the current\
+                                      universe setup.")
+            param_list = [parameter for parameter in parameters]
+            param_list.insert(0, 'Fom')
+            param_list.insert(0, " ")
+            self._history.columns = param_list
             
             for parameter in parameters.values():
-                print(type(parameter.value))
-                print(type(self._history[parameter.name].iloc[-1]))
                 if parameter.fixed is True:
                     raise ValueError(f'Parameter {parameter.name} is fixed.')
                 if parameter.tied is True:
