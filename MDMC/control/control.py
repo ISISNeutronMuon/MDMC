@@ -22,6 +22,9 @@ from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 
+from skopt import gp_minimize
+from skopt.plots import plot_evaluations
+
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
@@ -583,7 +586,6 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
-
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
         Instantiates an insstance of the PlotResults class and generates a cornerplot
@@ -615,7 +617,6 @@ class Control:
             print(f'Parameter means = {means}, Parameter errors = {stds}')
 
         return cornerplot
-
 
     def _generate_FoM(self) -> float:
         """

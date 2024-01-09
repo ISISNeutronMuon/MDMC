@@ -163,6 +163,34 @@ class PlotResults():
         mean, std = np.mean(data, axis=0), np.std(data, axis=0)
 
         return cornerplot, mean, std
+    
+    def create_cornerplot_skopt(self) -> None:
+        '''
+        To be the Solution for Issue 1341
+        '''
+        # Number of evaluations: n_calls
+        # dimensions: search space - is this the quantiles? It is the dimensions of the sampling space?
+        # func: function to minimize. This is the surrogate function from the 
+        # surrogate function from the sampled points of the original data 
+        # the default acq_func (acq_funcstring, default: "gp_hedge")
+        # acq_optimizer: string, "sampling" or "lbfgs", default: "lbfgs"
+        #   Method to minimize the acquisition function. The fit model is updated with the optimal value obtained by optimizing acq_func with acq_optimizer.
+        #   The acq_func is computed at n_points sampled randomly.
+        #   If set to "sampling", then the point among these n_points where the 
+        #   acq_func is minimum is the next candidate minimum.
+        # random_state: int, RandomState instance, or None (default)
+        # Set random state to something other than None for reproducible results.
+        
+     
+        gp_res = gp_minimize(func, dimensions, n_calls=100,acq_optimizer="sampling", random_state=4)
+
+        _ = plot_objective(gp_res)
+        # Old optimiser:
+        # Create the optimizer
+        # self.optimizer = Optimizer(self.minmax_coords,"GP", acq_func="gp_hedge",
+        #                           acq_optimizer="sampling", model_queue_size=1)
+        # # Train the optimizer
+        # self.optimizer.tell(self.parameter_coords, self.FoMs)
 
 
 class DataPrinter(ABC):
