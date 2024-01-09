@@ -19,6 +19,23 @@ First, install and configure the following software:
 
 If on Linux, add your user to the ``docker`` permissions group with ``sudo usermod -a -G docker $USER``.
 
+If on Windows, to run "docker" without needing the admin password:
+
+- **Command Line Method**:
+  Open Command Prompt as an administrator and enter:
+  
+  .. code-block:: shell
+  
+      net localgroup "docker-users" "<domain>\<user ID>" /add
+
+- **GUI Method**:
+    #. Open Computer Management as an admin.
+    #. Go to System Tools > Local Users and Groups > Groups > docker-users.
+    #. Add your user ID.
+
+Remember to restart your computer for the changes to take effect.
+
+
 Next, install `Visual Studio Code <https://code.visualstudio.com/>`_ and then install the `Remote Development extension pack <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>`_.
 
 Finally, simply start VSCode within the MDMC repo using `code .` or open the
@@ -46,7 +63,8 @@ Finally to build the documentation:
 
 * run `apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16`
 * if not already done install MDMC with `python -m pip install .`
-* cd into `doc` folder and run `make html`. First time you run it will take a bit of time because it runs the code in all the tutorials
+* cd into `doc` folder and run `make html`. First time you run it will take a bit of time because it runs the code in all the tutorials.
+* if the build fails, due to tutorial errors, then update conf.py with `nbsphinx_allow_errors = True`
 
 Note the extra `apt-get install` packages needed to build the docs may change from time to time.
 Please the see the continious integration build instructions which builds the
