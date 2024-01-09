@@ -61,10 +61,10 @@ didn't use containers).
 
 Finally to build the documentation:
 
-* run `apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16`
-* if not already done install MDMC with `python -m pip install .`
-* cd into `doc` folder and run `make html`. First time you run it will take a bit of time because it runs the code in all the tutorials.
-* if the build fails, due to tutorial errors, then update conf.py with `nbsphinx_allow_errors = True`
+#. run `apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16`
+#. if not already done install MDMC with `python -m pip install .`
+#. cd into `doc` folder and run `make html`. First time you run it will take a bit of time because it runs the code in all the tutorials.
+#. if the doc fails to build due to tutorial errors, then update conf.py with `nbsphinx_allow_errors = True` and go back to step 3. 
 
 Note the extra `apt-get install` packages needed to build the docs may change from time to time.
 Please the see the continious integration build instructions which builds the
