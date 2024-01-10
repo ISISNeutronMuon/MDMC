@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 from skopt import Optimizer
+
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 from MDMC.refinement.minimizers.GPR import GPR
 
@@ -56,7 +57,8 @@ class GPO(Minimizer):
 
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
-        self.previous_history = previous_history,
+
+        self.previous_history = previous_history
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
@@ -74,18 +76,22 @@ class GPO(Minimizer):
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
 
-
+        initial_points = self.n_initial
         if self.previous_history is not None:
             self._history = self.previous_history
-            if not self._history or len(self._history) < self.n_initial:
+            print(self._history)
+            # the columnn names wont be accurate (parameter numbers might differ)
+            # but the length should be the same and that all we need for this dataframe.
+            self._history = self.load_history(self._history)
+            if self._history.empty or len(self._history) < self.n_initial:
                 initial_points = self.n_initial
             else:
                 initial_points = len(self._history)
 
-            self.optimizer = Optimizer(
-                self.parameter_bounds, "GP", acq_func="gp_hedge",
-                acq_optimizer="sampling", initial_point_generator="lhs",
-                n_initial_points=initial_points, model_queue_size=1)
+        self.optimizer = Optimizer(
+            self.parameter_bounds, "GP", acq_func="gp_hedge",
+            acq_optimizer="sampling", initial_point_generator= "lhs",
+            n_initial_points=initial_points, model_queue_size=1)
 
     @property
     def history_columns(self) -> 'list[str]':
@@ -180,9 +186,21 @@ class GPO(Minimizer):
             A list of: coordinates of lowest FoM, Minimum FoM, Coordinate of best predicted FoM,
             Minimum predicted FoM
         """
-        FoMs = [FoM[:][0] for FoM in self._history]
+        
+        if self.previous_history is not None:
+            FoMs = self._history['FoM'].values.tolist()
+        else:
+            FoMs = [FoM[:][0] for FoM in self._history]
+
+        
+        
         min_FoM_measured = np.min(FoMs)
-        min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
+        if self.previous_history is not None:
+            min_index = FoMs.index(min_FoM_measured)
+            min_parameters_row = self._history.iloc[min_index]
+            min_parameters_measured = [value for value in min_parameters_row[1:] ]
+        else:
+            min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
         # the [0][0][4:] is just to get the parameters from the _history
 
         return [

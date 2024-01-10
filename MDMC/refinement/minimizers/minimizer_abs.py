@@ -48,9 +48,9 @@ class Minimizer(ABC):
     def __init__(self, control: 'Control', parameters: Parameters, previous_history: Path = None):
         self.control = control
         self.results_filename = None
+        self.previous_history = previous_history
 
         if previous_history is not None:
-            
             if not isinstance(previous_history, str):
                 self._history = self.load_history(Path(previous_history))
             else:
@@ -62,13 +62,13 @@ class Minimizer(ABC):
             
             if isinstance(parameters, list):
                 parameters = Parameters(parameters)
-            try:
-                if self._check_parameters_fit_with_history(parameters):
-                    self.parameters_old_values = self.get_parameters_old_values(parameters)
-                self.parameters = parameters
+            
+            if self._check_parameters_fit_with_history(parameters):
+                self.parameters_old_values = self.get_parameters_old_values(parameters)
+            self.parameters = parameters
  
-            except ValueError as e:
-                print(f"Error: {e}")
+            # except ValueError as e:
+            #     print(f"Error: {e}")
         else:
             self._history = []
             self.FoM_old = float('inf')
@@ -105,8 +105,9 @@ class Minimizer(ABC):
             variables which are included is concrete implementation specific,
             and is specified by `history_columns`.
         """
+
         print(self._history,self.history_columns)
-        return pd.DataFrame(self._history, columns=self.history_columns)
+        return pd.DataFrame(self._history, columns = self.history_columns)
 
     @property
     @abstractmethod
@@ -182,7 +183,7 @@ class Minimizer(ABC):
             The name of the output file
         """
 
-        self.history.to_csv(filename, index=False)
+        self.history.to_csv(filename)
 
     def present_result(self) -> str:
         """
@@ -239,6 +240,7 @@ class Minimizer(ABC):
     def load_history(self, file_path: Path):
         try:
             df = pd.read_csv(file_path)
+            del df[df.columns[0]]
             return df
         except Exception as e:
             print(f"Error occurred while loading history: {e}")
@@ -248,21 +250,21 @@ class Minimizer(ABC):
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
         if self._history is not None:
             columns_names = list(self._history.columns)
-
-            if (len(columns_names)-2) != len(parameters):
+            # using a reduced length for 'column_names' beacuse it includes 'FoM' 
+            # and we want parameters only.
+            if (len(columns_names)-1) != len(parameters):
                 raise ValueError(f'A history of {len(self._history.columns) -2}'\
                     ' is incompatible with the current setup.')
             
             split_param_list = [parameter.split(" ")[0] for parameter in parameters]
-            split_column_list = [column.split(" ")[0] for column in columns_names[2:]]
+            split_column_list = [column.split(" ")[0] for column in columns_names[1:]]
             
             if split_param_list != split_column_list:
-                raise ValueError(f"The parameters in the minimizer history are not\
+                raise ValueError(f"The parameters in the minimizer history are not \
                                       the same as those specified for refining in the current\
                                       universe setup.")
             param_list = [parameter for parameter in parameters]
             param_list.insert(0, 'Fom')
-            param_list.insert(0, " ")
             self._history.columns = param_list
             
             for parameter in parameters.values():
