@@ -272,3 +272,8 @@ class Observable(ABC):
         """
 
         raise NotImplementedError
+
+    @abstractmethod
+    def plot_observables(self) -> None:
+
+        raise NotImplementedError
