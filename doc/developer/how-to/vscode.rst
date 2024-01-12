@@ -1,15 +1,12 @@
-.. _dev_doc_vscode-label:
+Use Containers for VSCode
+=========================
 
-Debugging inside Containers
-===========================
+.. _dev_doc_setupvscode-label:
 
-MDMC's source code has a ``.devcontainer`` folder that can be used by Visual Studio Code
-to run VSCode inside a Docker container. This is very useful for debugging or testing problems in our container setup.
+Setup VSCode inside a Container
+-------------------------------
 
-How to run VSCode inside a container
-------------------------------------
-
-First, `Setup Docker <how-to/setup-docker.rst>`_.
+First, `Setup Docker <use-docker.rst>`_.
 
 Next, install `Visual Studio Code <https://code.visualstudio.com/>`_ and then install the `Remote Development extension pack <https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack>`_.
 
@@ -18,9 +15,12 @@ MDMC repo in VSCode, after a moment, a box in the bottom right-hand corner
 pops up saying "Folder contains a Dev Container configuration file...". Then, click
 "Reopen in Container". If this box does not pop up then open the Command Palette
 (by pressing F1) and run the command **Remote-Containers: Open Folder in
-Container...** toopen the MDMC project inside the MDMC container.
+Container...** to open the MDMC project inside the MDMC container.
 
-In addition, to run or debug the tutorials:
+.. _dev_doc_runtutorials-label:
+
+Run or Debug the Tutorials
+--------------------------
 
 * open terminal in VSCode
 * run `python -m pip install .` to install MDMC
@@ -34,7 +34,10 @@ this setup appears to magically pick up an old version of MDMC then you need to
 delete the build/lib folder in your repo (as you would need to also if you
 didn't use containers).
 
-Finally to build the documentation:
+.. _dev_doc_builddocs-label:
+
+Build the Documentation in VSCode
+---------------------------------
 
 #. run `apt-get update &&  apt-get install pandoc -y && pip3 install sphinx nbsphinx sphinx_rtd_theme docutils==0.16`
 #. if not already done install MDMC with `python -m pip install .`
@@ -44,3 +47,9 @@ Finally to build the documentation:
 Note the extra `apt-get install` packages needed to build the docs may change from time to time.
 Please the see the continious integration build instructions which builds the
 docs for up-to-date instructions on which `apt-get` packages are needed.
+
+Debugging inside Containers
+---------------------------
+
+MDMC's source code has a ``.devcontainer`` folder that can be used by Visual Studio Code
+to run VSCode inside a Docker container. This is very useful for debugging or testing problems in our container setup.

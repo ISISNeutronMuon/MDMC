@@ -1,7 +1,8 @@
 .. _dev_doc_overview-label:
 
-Developer Documentation
-=======================
+Overview
+========
+
 MDMC is open source software. Code contributions to MDMC are welcomed; please
 visit the `MDMC GitHub <https://github.com/MDMCproject/MDMCv0.2_pilot>`_ in
 order to contribute.
@@ -35,25 +36,17 @@ Please note that, at a bare minimum, any pull request must do the following:
   documentation. Our documentation follows the :ref:`diataxis-label` framework, and
   new documentation should be written with these principles in mind.
 
- On Boarding Instructions
--------------------------
+OnBoarding Instructions
+-----------------------
 
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: Explanation
+When onboarding as a developer first read the Overview above.
 
-   explanation/coding_standards
-   explanation/containers
-   explanation/diataxis
-   explanation/management
+Next, read the pages in the :ref:`Explanation <dev_doc_explanation-label>` section of the 
+Developer Documentation.
 
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-   :caption: How-to
-
-   how-to/build-containers
-   how-to/units
-   how-to/setup-docker
-   how-to/vscode
+Instructions to an get start with MDMC in VSCode:
+ 1. :ref:`Set Up Docker <dev_doc_setupdocker-label>`
+ 2. :ref:`Clone Source Code <dev_sourcecode-label>`. Work on a branch - never Master.
+ 3. :ref:`Setup VSCode inside a Container <dev_doc_setupvscode-label>`
+ 4. :ref:`Build Documentation <dev_doc_builddocs-label>`
+ 5. :ref:`Run Tutorials <dev_doc_runtutorials-label>`. Find the correct tutorial order in Tutorials section of User Documentation.

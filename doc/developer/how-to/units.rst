@@ -1,7 +1,7 @@
 .. _dev_doc_units-label:
 
-Using units
-===========
+Use Units
+=========
 All physical quantities within MDMC should possess units.
 
 Everything related to units in MDMC is defined in :py:mod:`MDMC.common.units`.
