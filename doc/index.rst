@@ -80,8 +80,10 @@ Indices
    explanation/explanation
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 3
    :hidden: 
    :caption: Developer Documentation
 
    developer/overview
+   developer/how-to
+   developer/explanation
