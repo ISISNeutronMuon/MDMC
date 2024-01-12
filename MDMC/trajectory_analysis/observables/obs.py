@@ -273,7 +273,11 @@ class Observable(ABC):
 
         raise NotImplementedError
 
-    @abstractmethod
-    def plot_observables(self) -> None:
+    def plot(self) -> None:
+        '''
+        A dummy method to be overwritten.
+        
+        plot will plot the experimental and simulated datasets side by side. 
+        '''
 
-        raise NotImplementedError
+        print("Sorry I don't know how to plot this")
