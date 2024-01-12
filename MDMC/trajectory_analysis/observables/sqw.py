@@ -123,6 +123,14 @@ class SQwMixins:
     def Q(self, value: np.array) -> None:
         self.independent_variables['Q'] = value
 
+    def plot(self) -> None:
+        '''Heatmap of some component of the data
+        data writtern in abstractsqw
+
+        independent x-axis
+        independent y-axis
+        dependent heat
+        '''
 
 class AbstractSQw(SQwMixins, Observable):
 
