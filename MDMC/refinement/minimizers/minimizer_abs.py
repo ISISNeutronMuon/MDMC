@@ -52,23 +52,25 @@ class Minimizer(ABC):
 
         if previous_history is not None:
             if not isinstance(previous_history, str):
-                self._history = self.load_history(Path(previous_history))
+                self.previous_history = Path(self.previous_history)
+                self._history = self.load_history(self.previous_history)
             else:
-                self._history = self.load_history(previous_history)
+                self._history = self.load_history(self.previous_history)
+                
+            self.previous_steps = len(self._history)
                 
             print(self._history)
-            self.FoM_old = self._history['FoM'].iloc[-1]
+            self.FoM_old = self._history[-1][0]
             self.FoM = None
             
             if isinstance(parameters, list):
                 parameters = Parameters(parameters)
             
-            if self._check_parameters_fit_with_history(parameters):
-                self.parameters_old_values = self.get_parameters_old_values(parameters)
+            self._check_parameters_fit_with_history(parameters)
+            self._check_parameters(parameters)
+            self.parameters_old_values = self.get_parameters_old_values(parameters)
             self.parameters = parameters
  
-            # except ValueError as e:
-            #     print(f"Error: {e}")
         else:
             self._history = []
             self.FoM_old = float('inf')
@@ -239,25 +241,33 @@ class Minimizer(ABC):
 
     def load_history(self, file_path: Path):
         try:
-            df = pd.read_csv(file_path)
-            del df[df.columns[0]]
-            return df
-        except Exception as e:
-            print(f"Error occurred while loading history: {e}")
-            return pd.DataFrame()
+            with open(self.previous_history, 'r') as file:
+                file_content = list(csv.reader(file))
+        except ValueError:
+            raise ValueError("Can not find file or path.")
+        
+        # remove empty index and separate column names
+        file_content = [row[1:] for row in file_content]
+        self.column_names = file_content[0]
+        del file_content[0]
+        
+        print(self.column_names)
+        print(file_content)
+        print('good?')
+        
+        return (file_content)
 
 
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
         if self._history is not None:
-            columns_names = list(self._history.columns)
-            # using a reduced length for 'column_names' beacuse it includes 'FoM' 
+            # using a reduced length for 'column_names' because it includes 'FoM' 
             # and we want parameters only.
-            if (len(columns_names)-1) != len(parameters):
+            if (len(self.column_names)-1) != len(parameters):
                 raise ValueError(f'A history of {len(self._history.columns) -2}'\
                     ' is incompatible with the current setup.')
             
             split_param_list = [parameter.split(" ")[0] for parameter in parameters]
-            split_column_list = [column.split(" ")[0] for column in columns_names[1:]]
+            split_column_list = [column.split(" ")[0] for column in self.column_names[1:]]
             
             if split_param_list != split_column_list:
                 raise ValueError(f"The parameters in the minimizer history are not \
@@ -265,22 +275,26 @@ class Minimizer(ABC):
                                       universe setup.")
             param_list = [parameter for parameter in parameters]
             param_list.insert(0, 'Fom')
-            self._history.columns = param_list
+            self.column_names = param_list
             
-            for parameter in parameters.values():
-                if parameter.fixed is True:
-                    raise ValueError(f'Parameter {parameter.name} is fixed.')
-                if parameter.tied is True:
-                    raise ValueError(f'Parameter {parameter.name} is tied to another parameter.')
-                # if parameter.name in self._history.columns and type(parameter.value) != type(self._history[parameter.name].iloc[-1]):
-                #     raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
+            # for parameter in parameters.values():
+            #     if parameter.fixed is True:
+            #         raise ValueError(f'Parameter {parameter.name} is fixed.')
+            #     if parameter.tied is True:
+            #         raise ValueError(f'Parameter {parameter.name} is tied to another parameter.')
+            #     # if parameter.name in self._history.columns and type(parameter.value) != type(self._history[parameter.name].iloc[-1]):
+            #     #     raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
             return True
                 
 
     def get_parameters_old_values(self, parameters: Parameters):
-        if not self._history.empty:
-            last_entry = self._history.iloc[-1]
-            old_values = {param.name: last_entry[param.name] for param in parameters.values()}
+        if self._history:
+            last_entry = self._history[-1]
+            # old_values = {param.name: last_entry[param.name] for param in parameters.values()}
+            old_values = {}
+            for param in parameters.values():
+                pos  = self.column_names.index[param.name]
+                old_values[param.name] = last_entry[pos]
             return old_values
         else:
             return None
