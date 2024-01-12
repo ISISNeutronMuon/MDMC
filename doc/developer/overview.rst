@@ -35,6 +35,9 @@ Please note that, at a bare minimum, any pull request must do the following:
   documentation. Our documentation follows the :ref:`diataxis-label` framework, and
   new documentation should be written with these principles in mind.
 
+ On Boarding Instructions
+-------------------------
+
 .. toctree::
    :maxdepth: 1
    :hidden:
@@ -52,4 +55,5 @@ Please note that, at a bare minimum, any pull request must do the following:
 
    how-to/build-containers
    how-to/units
+   how-to/setup-docker
    how-to/vscode
