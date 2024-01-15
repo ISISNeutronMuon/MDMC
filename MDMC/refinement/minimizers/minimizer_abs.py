@@ -59,7 +59,6 @@ class Minimizer(ABC):
                 
             self.previous_steps = len(self._history)
                 
-            print(self._history)
             self.FoM_old = self._history[-1][0]
             self.FoM = None
             
@@ -108,7 +107,6 @@ class Minimizer(ABC):
             and is specified by `history_columns`.
         """
 
-        print(self._history,self.history_columns)
         return pd.DataFrame(self._history, columns = self.history_columns)
 
     @property
@@ -250,11 +248,7 @@ class Minimizer(ABC):
         file_content = [row[1:] for row in file_content]
         self.column_names = file_content[0]
         del file_content[0]
-        
-        print(self.column_names)
-        print(file_content)
-        print('good?')
-        
+
         return (file_content)
 
 
@@ -293,7 +287,7 @@ class Minimizer(ABC):
             # old_values = {param.name: last_entry[param.name] for param in parameters.values()}
             old_values = {}
             for param in parameters.values():
-                pos  = self.column_names.index[param.name]
+                pos  = self.column_names.index(param.name)
                 old_values[param.name] = last_entry[pos]
             return old_values
         else:

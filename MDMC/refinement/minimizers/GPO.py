@@ -166,11 +166,8 @@ class GPO(Minimizer):
         self.state_changed = True
 
         history.extend(values)
-        print(self._history)
         self._history.append(history)
         
-        
-        print(self._history)
         if not self.has_converged():
             self.change_parameters()
 
@@ -185,6 +182,7 @@ class GPO(Minimizer):
             Minimum predicted FoM
         """
         FoMs = [FoM[:][0] for FoM in self._history]
+        print(FoMs)
 
         min_FoM_measured = np.min(FoMs)
         # if self.previous_history is not None:
