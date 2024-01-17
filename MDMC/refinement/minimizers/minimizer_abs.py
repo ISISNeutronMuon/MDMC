@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import pandas as pd
 import csv
+import numpy as np
 
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
@@ -49,6 +50,7 @@ class Minimizer(ABC):
         self.control = control
         self.results_filename = None
         self.previous_history = previous_history
+        self.previous_steps = 0
 
         if previous_history is not None:
             if not isinstance(previous_history, str):
@@ -240,14 +242,16 @@ class Minimizer(ABC):
     def load_history(self, file_path: Path):
         try:
             with open(self.previous_history, 'r') as file:
-                file_content = list(csv.reader(file))
+                file_content = np.array(list(csv.reader(file)))
         except ValueError:
             raise ValueError("Can not find file or path.")
-        
+
         # remove empty index and separate column names
         file_content = [row[1:] for row in file_content]
         self.column_names = file_content[0]
         del file_content[0]
+        
+        file_content = [np.asfarray(row) for row in file_content]
 
         return (file_content)
 

@@ -86,7 +86,6 @@ class PlotResults():
 
         # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
         random_samples = self.optimizer.space.rvs(self.points, random_state=7)
-
         # make estimations with surrogate
         model = self.optimizer.models[-1]
         y_random = model.predict(self.optimizer.space.transform(random_samples))
@@ -145,7 +144,7 @@ class PlotResults():
             _, _, y_random, coords = \
             self._expected_minimum_random_sampling()
         except IndexError:
-            msg = ("\n \n Your data file apears not to have any points in, please check you have "
+            msg = ("\n \n Your data file appears not to have any points in, please check you have "
                    "run the refinement and it saved correctly. \n")
             print(msg)
 
