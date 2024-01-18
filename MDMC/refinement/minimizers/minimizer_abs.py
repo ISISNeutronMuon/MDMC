@@ -55,9 +55,9 @@ class Minimizer(ABC):
         if previous_history is not None:
             if not isinstance(previous_history, str):
                 self.previous_history = Path(self.previous_history)
-                self._history = self.load_history(self.previous_history)
+                self._history = self.load_history()
             else:
-                self._history = self.load_history(self.previous_history)
+                self._history = self.load_history()
                 
             self.previous_steps = len(self._history)
                 
@@ -69,7 +69,10 @@ class Minimizer(ABC):
             
             self._check_parameters_fit_with_history(parameters)
             self._check_parameters(parameters)
+            print(parameters)
             self.parameters_old_values = self.get_parameters_old_values(parameters)
+            print(parameters)
+            # print(self.parameters_old_values)
             self.parameters = parameters
  
         else:
@@ -239,7 +242,15 @@ class Minimizer(ABC):
         raise NotImplementedError
 
 
-    def load_history(self, file_path: Path):
+    def load_history(self):
+        """Uses the `previous_history` variable to load a file of previous refinement steps.
+        It then formats this into the column names and the actual parameter values. The loaded data
+        is stored as numpy arrays.
+        
+        Returns
+        ----------
+        list of lists
+            A list containing a list for each refinement step from the loaded history file."""
         try:
             with open(self.previous_history, 'r') as file:
                 file_content = np.array(list(csv.reader(file)))
@@ -250,13 +261,25 @@ class Minimizer(ABC):
         file_content = [row[1:] for row in file_content]
         self.column_names = file_content[0]
         del file_content[0]
-        
-        file_content = [np.asfarray(row) for row in file_content]
+        # numpy arrays of floats is a better format for this data
+        try:
+            file_content = [np.asfarray(row) for row in file_content]
+        except:
+            raise TypeError('Can not convert file data to floats, please check the type of data' 
+                            ' in the file')
 
-        return (file_content)
+        return file_content
 
 
     def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
+        """Checks that the parameters loaded in from the file of previous refinement steps are 
+        compatible with those already defined in the control object. If the parameters are the same 
+        but with different numbers (arbitrary), then this is changed to be consistent.
+        
+        Returns
+        ----------
+        bool
+            True if all checks pass and the end of the method is reached."""
         if self._history is not None:
             # using a reduced length for 'column_names' because it includes 'FoM' 
             # and we want parameters only.
@@ -286,13 +309,24 @@ class Minimizer(ABC):
                 
 
     def get_parameters_old_values(self, parameters: Parameters):
+        """Retrieves the last set of parameters from a file containing data of previous
+        refinement steps.
+        
+        Returns
+        ----------
+        
+        dict (if there is a history file loaded:)
+            dictionary of parameter values from the last step.
+        
+        None (if there is no history file loaded)
+            None type.
+        """
         if self._history:
             last_entry = self._history[-1]
             # old_values = {param.name: last_entry[param.name] for param in parameters.values()}
             old_values = {}
-            for param in parameters.values():
-                pos  = self.column_names.index(param.name)
-                old_values[param.name] = last_entry[pos]
+            old_values = {param.name: (last_entry[self.column_names.index(param.name)]) for param in parameters.values()}
+            
             return old_values
         else:
             return None

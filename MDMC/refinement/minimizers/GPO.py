@@ -184,11 +184,6 @@ class GPO(Minimizer):
         FoMs = np.array([float(FoM[:][0]) for FoM in self._history])
         
         min_FoM_measured = np.min(FoMs)
-        # if self.previous_history is not None:
-        #     min_index = FoMs.index(min_FoM_measured)
-        #     min_parameters_row = self._history.iloc[min_index]
-        #     min_parameters_measured = [value for value in min_parameters_row[1:] ]
-        # else:
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
         # the [0][0][4:] is just to get the parameters from the _history
 

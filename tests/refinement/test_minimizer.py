@@ -6,10 +6,12 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+import pandas as pd
 
 from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.refinement.minimizers.minimizer_factory import MinimizerFactory
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
+from MDMC.refinement.minimizers import minimizer_abs
 
 pytestmark = pytest.mark.mpi
 
@@ -151,3 +153,49 @@ def test_minimizer_tied_parameter():
     with pytest.raises(ValueError):
         for minimizer_name in MinimizerFactory.get_minimizer_names():
             minim = MinimizerFactory.create_minimizer(minimizer_name, mockcontrol, parameters)
+
+
+pytest.mark.parametrize("fail, column_names, previous_history",
+                       [('True',['fake 1', 'fake 2'], [['one','two'],['three', 'four']])
+                        ('False',['fake 1', 'fake 2'], [[1,2],[3,4]])])
+def test_load_history(self,fail, column_names, previous_history):
+    """Test that loading a previous refinement file fails when the data type is not able to
+    be converted to a float, and then passes when no problems arise."""
+    
+    self.column_names = column_names
+    self.previous_history = previous_history
+    df = pd.DataFrame(previous_history, columns=column_names)
+    temp_file = NamedTemporaryFile()
+    df.to_csv(temp_file.name)
+    
+    if fail:
+        with pytest.raises(Exception):
+            minimizer_abs.load_history()
+        
+    
+    
+
+pytest.mark.parametrize("column_names,_history",
+                        [(['dummy 1', 'dummy 2'],[[1,2],[3,4]])
+                        (['fake 2', 'fake 3'], [[1,2],[3,4]]), 
+                        (['fake 1', 'fake 2', 'fake3'], [[1,2,3], [4,5,6]])])
+def test_check_parameters_fit_with_history(self, column_names, _history):
+    """Test that an Exception is raised when the parameters, or data type, in the previous refinement file
+    are not compatible with the ones currently defined in the control object 
+    (for example, different name, different number of parameters)."""
+    
+    self.columns_names = column_names
+    self._history = _history
+    
+    parameters['fake 1'] = 1
+    parameters['fake 2'] = 2
+    
+    with pytest.raises(Exception):
+        minimizer_abs._check_parameters_fit_with_history(parameters)
+
+    
+    
+def test_get_parameter_old_values():
+    """Test that the previous parameter values, as loaded in from the previous refinement file 
+    are retrieved correctly"""
+    
