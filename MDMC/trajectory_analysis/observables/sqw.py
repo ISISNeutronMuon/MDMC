@@ -18,6 +18,8 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
+import matplotlib.pyplot as plt
+import pandas as pd
 
 class SQwMixins:
     """
@@ -123,14 +125,6 @@ class SQwMixins:
     def Q(self, value: np.array) -> None:
         self.independent_variables['Q'] = value
 
-    def plot(self) -> None:
-        '''Heatmap of some component of the data
-        data writtern in abstractsqw
-
-        independent x-axis
-        independent y-axis
-        dependent heat
-        '''
 
 class AbstractSQw(SQwMixins, Observable):
 
@@ -233,6 +227,10 @@ class AbstractSQw(SQwMixins, Observable):
                 pass
         return None
 
+    @E.setter
+    def E(self, value: np.array) -> None:
+        self.independent_variables['E'] = value
+    
     @property
     @unit_decorator_getter(unit=units.Unit('ps') ** -1)
     def w(self) -> 'np.array':
@@ -787,6 +785,28 @@ class AbstractSQw(SQwMixins, Observable):
             e_requirements = {'uniform': False, 'zeroed': False}
 
         return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
+    
+    def plot(self) -> plt.Figure:
+        '''Heatmap of some component of the data
+        data writtern in abstractsqw
+
+        independent x-axis - Momentum Q
+        independent y-axis - Energy E (w/omega)
+        dependent heat - Sqw Scattering factor
+        '''
+
+        fig = plt.figure()
+        extent = self.Q[0], self.Q[-1], self.E[0], self.E[-1]
+        plt.imshow(self.SQw, extent = extent, cmap=plt.cm.jet)
+        cbar = plt.colorbar()
+        plt.title('HeatMap of Scattering Factor S(Q,w)',  
+                                     fontweight ="bold") 
+        cbar.set_label("Scattering, S(Q,w)")
+        plt.xlabel('Momentum, Q')
+        plt.ylabel('Energy, w')
+        plt.show()
+
+        return fig
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
