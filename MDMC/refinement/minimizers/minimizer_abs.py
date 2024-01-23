@@ -8,6 +8,7 @@ import csv
 import numpy as np
 
 from MDMC.MD import Parameters
+from MDMC.MD import Parameter
 from MDMC.common.decorators import repr_decorator
 
 
@@ -55,9 +56,11 @@ class Minimizer(ABC):
         if previous_history is not None:
             if not isinstance(previous_history, str):
                 self.previous_history = Path(self.previous_history)
-                self._history = self.load_history()
+                self.column_names, self._history = \
+                self.load_history(self.previous_history)
             else:
-                self._history = self.load_history()
+                self.column_names, self._history = \
+                self.load_history(self.column_names, self.previous_history)
                 
             self.previous_steps = len(self._history)
                 
@@ -67,11 +70,10 @@ class Minimizer(ABC):
             if isinstance(parameters, list):
                 parameters = Parameters(parameters)
             
-            self._check_parameters_fit_with_history(parameters)
+            self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
             self._check_parameters(parameters)
-            print(parameters)
-            self.parameters_old_values = self.get_parameters_old_values(parameters)
-            print(parameters)
+            self.parameters_old_values = self.get_parameters_old_values(parameters, \
+                self.column_names, self._history)
             # print(self.parameters_old_values)
             self.parameters = parameters
  
@@ -242,7 +244,7 @@ class Minimizer(ABC):
         raise NotImplementedError
 
 
-    def load_history(self):
+    def load_history(self, history):
         """Uses the `previous_history` variable to load a file of previous refinement steps.
         It then formats this into the column names and the actual parameter values. The loaded data
         is stored as numpy arrays.
@@ -252,26 +254,26 @@ class Minimizer(ABC):
         list of lists
             A list containing a list for each refinement step from the loaded history file."""
         try:
-            with open(self.previous_history, 'r') as file:
+            with open(history, 'r') as file:
                 file_content = np.array(list(csv.reader(file)))
         except ValueError:
             raise ValueError("Can not find file or path.")
 
         # remove empty index and separate column names
         file_content = [row[1:] for row in file_content]
-        self.column_names = file_content[0]
+        column_names = file_content[0]
         del file_content[0]
         # numpy arrays of floats is a better format for this data
         try:
             file_content = [np.asfarray(row) for row in file_content]
         except:
-            raise TypeError('Can not convert file data to floats, please check the type of data' 
+            raise ValueError('Can not convert file data to floats, please check the type of data' 
                             ' in the file')
 
-        return file_content
+        return column_names , file_content
 
 
-    def _check_parameters_fit_with_history(self, parameters: Parameters) -> bool:
+    def _check_parameters_fit_with_history(self, parameters: Parameters, column_names, history) -> bool:
         """Checks that the parameters loaded in from the file of previous refinement steps are 
         compatible with those already defined in the control object. If the parameters are the same 
         but with different numbers (arbitrary), then this is changed to be consistent.
@@ -280,16 +282,17 @@ class Minimizer(ABC):
         ----------
         bool
             True if all checks pass and the end of the method is reached."""
-        if self._history is not None:
+        if history is not None:
             # using a reduced length for 'column_names' because it includes 'FoM' 
             # and we want parameters only.
-            if (len(self.column_names)-1) != len(parameters):
-                raise ValueError(f'A history of {len(self._history.columns) -2}'\
+            print(column_names)
+            print(parameters)
+            if (len(column_names)-1) != len(parameters):
+                raise ValueError(f'A history of {len(history.columns) -2}'\
                     ' is incompatible with the current setup.')
             
             split_param_list = [parameter.split(" ")[0] for parameter in parameters]
-            split_column_list = [column.split(" ")[0] for column in self.column_names[1:]]
-            
+            split_column_list = [column.split(" ")[0] for column in column_names[1:]]
             if split_param_list != split_column_list:
                 raise ValueError(f"The parameters in the minimizer history are not \
                                       the same as those specified for refining in the current\
@@ -298,17 +301,11 @@ class Minimizer(ABC):
             param_list.insert(0, 'Fom')
             self.column_names = param_list
             
-            # for parameter in parameters.values():
-            #     if parameter.fixed is True:
-            #         raise ValueError(f'Parameter {parameter.name} is fixed.')
-            #     if parameter.tied is True:
-            #         raise ValueError(f'Parameter {parameter.name} is tied to another parameter.')
-            #     # if parameter.name in self._history.columns and type(parameter.value) != type(self._history[parameter.name].iloc[-1]):
-            #     #     raise ValueError(f"Parameter {parameter.name} has a type mismatch with the last recorded value in history.")
             return True
+    
                 
 
-    def get_parameters_old_values(self, parameters: Parameters):
+    def get_parameters_old_values(self, parameters: Parameters,column_names, history):
         """Retrieves the last set of parameters from a file containing data of previous
         refinement steps.
         
@@ -321,12 +318,19 @@ class Minimizer(ABC):
         None (if there is no history file loaded)
             None type.
         """
-        if self._history:
-            last_entry = self._history[-1]
-            # old_values = {param.name: last_entry[param.name] for param in parameters.values()}
-            old_values = {}
-            old_values = {param.name: (last_entry[self.column_names.index(param.name)]) for param in parameters.values()}
-            
-            return old_values
+        if history:
+            try:
+                last_entry = history[-1]
+                old_values = {}
+                old_values = {param.name: (last_entry[column_names.index(param.name)]) \
+                    for param in parameters.values()}
+
+                for param in parameters:
+                    parameters[param].value = old_values[param]
+            except:
+                raise Exception('Issue retrieving most recent parameter values \
+                    from given results file.')
+                
+            return parameters
         else:
             return None

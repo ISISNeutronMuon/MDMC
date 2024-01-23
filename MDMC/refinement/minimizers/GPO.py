@@ -35,7 +35,9 @@ class GPO(Minimizer):
     control: Control
         The ``Control`` object which uses this Minimizer.
     parameters: Parameters
-        The parameters in the simulation Universe to be optimized
+        The parameters in the simulation Universe to be optimized.
+    previous_history : Path
+        The Path to a results file containing previous refinement data.
 
     Settings
     ----------

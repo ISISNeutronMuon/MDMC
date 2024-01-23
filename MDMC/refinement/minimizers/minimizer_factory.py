@@ -54,7 +54,12 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-        return classes[0][1](control, parameter, previous_history, **settings)
+
+        if str(module_name) == 'GPO':
+            return classes[0][1](control, parameter, previous_history, **settings)
+        else:
+            return classes[0][1](control, parameter, **settings)
+            
 
 
     @staticmethod
