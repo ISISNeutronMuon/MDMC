@@ -60,7 +60,7 @@ class Minimizer(ABC):
                 self.load_history(self.previous_history)
             else:
                 self.column_names, self._history = \
-                self.load_history(self.column_names, self.previous_history)
+                self.load_history(self.previous_history)
                 
             self.previous_steps = len(self._history)
                 
@@ -74,7 +74,6 @@ class Minimizer(ABC):
             self._check_parameters(parameters)
             self.parameters_old_values = self.get_parameters_old_values(parameters, \
                 self.column_names, self._history)
-            # print(self.parameters_old_values)
             self.parameters = parameters
  
         else:
@@ -285,8 +284,6 @@ class Minimizer(ABC):
         if history is not None:
             # using a reduced length for 'column_names' because it includes 'FoM' 
             # and we want parameters only.
-            print(column_names)
-            print(parameters)
             if (len(column_names)-1) != len(parameters):
                 raise ValueError(f'A history of {len(history.columns) -2}'\
                     ' is incompatible with the current setup.')
@@ -321,12 +318,8 @@ class Minimizer(ABC):
         if history:
             try:
                 last_entry = history[-1]
-                old_values = {}
-                old_values = {param.name: (last_entry[column_names.index(param.name)]) \
-                    for param in parameters.values()}
-
                 for param in parameters:
-                    parameters[param].value = old_values[param]
+                    parameters[param].value = last_entry[column_names.index(param)]    
             except:
                 raise Exception('Issue retrieving most recent parameter values \
                     from given results file.')
