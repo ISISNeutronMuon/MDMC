@@ -8,7 +8,7 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 if TYPE_CHECKING:
     from MDMC.MD import Parameters
     from MDMC.control import Control
-
+    from pathlib import Path
 
 class MMC(Minimizer):
 
@@ -41,8 +41,10 @@ class MMC(Minimizer):
 
     DISTRIBUTION = {'uniform': np.random.uniform}
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: 'Parameters', \
+        previous_history: 'Path' = None,**settings: dict):
+        
+        super().__init__(control, parameters, previous_history)
         self.MC_norm = settings.get('MC_norm', 1.0)
 
         self.parameters = parameters
@@ -51,7 +53,7 @@ class MMC(Minimizer):
         self.min_steps = settings.get('min_steps', 2)
         distribution = 'uniform'
         self.distribution = self.__class__.DISTRIBUTION[distribution]
-
+        self.previous_history = previous_history
 
     @property
     def history_columns(self) -> 'list[str]':

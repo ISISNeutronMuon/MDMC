@@ -52,6 +52,7 @@ class Minimizer(ABC):
         self.results_filename = None
         self.previous_history = previous_history
         self.previous_steps = 0
+        self.compatible = False
 
         if previous_history is not None:
             if not isinstance(previous_history, str):
@@ -112,7 +113,25 @@ class Minimizer(ABC):
             variables which are included is concrete implementation specific,
             and is specified by `history_columns`.
         """
+        
+        if self.previous_history is not None and self.compatible is False:
+            try:
+                if 'Change state' in self.history_columns and \
+                    ('Accepted' not in self._history[0] or 'Rejected' not in self._history[0]):
+                    for row in self._history:
+                        pos = self.history_columns.index('Change state')
+                        row.insert(pos,'Accepted')
 
+                elif 'Change state' not in self.history_columns and \
+                    ('Accepted' in self._history[0] or 'rejected' in self._history[0]):
+                    remove_list = ['Accepted', 'Rejected'] 
+                    self._history = [filter(lambda x: row.index(x) not in remove_list, row) \
+                        for row in self._history]
+                self.compatible = True
+            except:
+                raise Exception("Failed to make the data compatible with the different minimizers \
+                            used between refinements.")
+                
         return pd.DataFrame(self._history, columns = self.history_columns)
 
     @property
@@ -254,7 +273,7 @@ class Minimizer(ABC):
             A list containing a list for each refinement step from the loaded history file."""
         try:
             with open(history, 'r') as file:
-                file_content = np.array(list(csv.reader(file)))
+                file_content = list(csv.reader(file))
         except ValueError:
             raise ValueError("Can not find file or path.")
 
@@ -264,7 +283,8 @@ class Minimizer(ABC):
         del file_content[0]
         # numpy arrays of floats is a better format for this data
         try:
-            file_content = [np.asfarray(row) for row in file_content]
+            file_content = ([[float(x) if x.isdigit() or x.replace(".","").isnumeric() \
+                else x for x in row] for row in file_content])
         except:
             raise ValueError('Can not convert file data to floats, please check the type of data' 
                             ' in the file')

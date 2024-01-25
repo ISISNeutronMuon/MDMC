@@ -15,6 +15,7 @@ from MDMC.refinement.minimizers.minimizer_abs import Minimizer
 
 if TYPE_CHECKING:
     from MDMC.control import Control
+    from pathlib import Path
 
 
 class GPR(Minimizer):
@@ -40,14 +41,17 @@ class GPR(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: Parameters, **settings: dict):
-        super().__init__(control, parameters)
+    def __init__(self, control: 'Control', parameters: Parameters, \
+        previous_history: 'Path' = None,**settings: dict):
+        
+        super().__init__(control, parameters, previous_history)
         np.random.seed(0) # This should mean results are reproducible in tests
 
         self.parameter_names, self.parameter_point_array = \
         self.create_parameter_point_array(parameters)
         self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
+        self.previous_history = previous_history
 
     def create_parameter_point_array(self,
                                      parameters: Parameters) -> 'tuple[list[str], list[tuple]]':

@@ -55,10 +55,7 @@ class MinimizerFactory:
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
 
-        if str(module_name) == 'GPO':
-            return classes[0][1](control, parameter, previous_history, **settings)
-        else:
-            return classes[0][1](control, parameter, **settings)
+        return classes[0][1](control, parameter, previous_history, **settings)
             
 
 

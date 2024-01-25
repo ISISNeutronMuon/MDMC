@@ -54,7 +54,8 @@ class GPO(Minimizer):
         list of the column titles, and parameter names in the minimizer history
     """
 
-    def __init__(self, control: 'Control', parameters: 'Parameters', previous_history: 'Path' = None, **settings: dict):
+    def __init__(self, control: 'Control', parameters: 'Parameters', \
+        previous_history: 'Path' = None, **settings: dict):
         super().__init__(control, parameters, previous_history)
 
         self.parameters = parameters
