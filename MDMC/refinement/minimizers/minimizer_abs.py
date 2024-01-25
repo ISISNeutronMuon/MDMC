@@ -54,38 +54,30 @@ class Minimizer(ABC):
         self.previous_steps = 0
         self.compatible = False
 
-        if previous_history is not None:
-            if not isinstance(previous_history, str):
+        if isinstance(parameters, list):
+            parameters = Parameters(parameters)
+        self.parameters = parameters
+
+        if previous_history:
+            if isinstance(previous_history, str):
                 self.previous_history = Path(self.previous_history)
-                self.column_names, self._history = \
-                self.load_history(self.previous_history)
-            else:
-                self.column_names, self._history = \
-                self.load_history(self.previous_history)
-                
-            self.previous_steps = len(self._history)
-                
+
+            self.column_names, self._history = \
+            self.load_history(self.previous_history)
+            self.previous_steps = len(self._history) 
             self.FoM_old = self._history[-1][0]
-            self.FoM = None
-            
-            if isinstance(parameters, list):
-                parameters = Parameters(parameters)
-            
+            self.FoM = None   
+            self.different_minimizer_compatibility()
             self._check_parameters_fit_with_history(parameters, self.column_names, self._history)
-            self._check_parameters(parameters)
             self.parameters_old_values = self.get_parameters_old_values(parameters, \
                 self.column_names, self._history)
-            self.parameters = parameters
- 
         else:
             self._history = []
-            self.FoM_old = float('inf')
-            self.FoM = None
-            if isinstance(parameters, list):
-                parameters = Parameters(parameters)
-            self._check_parameters(parameters)
+            self.FoM_old = float('inf')    
             self.parameters_old_values = None
-            self.parameters = parameters
+
+        self._check_parameters(parameters)
+        self.FoM = None
 
     @abstractmethod
     def step(self, FoM: float) -> None:
@@ -113,25 +105,7 @@ class Minimizer(ABC):
             variables which are included is concrete implementation specific,
             and is specified by `history_columns`.
         """
-        
-        if self.previous_history is not None and self.compatible is False:
-            try:
-                if 'Change state' in self.history_columns and \
-                    ('Accepted' not in self._history[0] or 'Rejected' not in self._history[0]):
-                    for row in self._history:
-                        pos = self.history_columns.index('Change state')
-                        row.insert(pos,'Accepted')
-
-                elif 'Change state' not in self.history_columns and \
-                    ('Accepted' in self._history[0] or 'rejected' in self._history[0]):
-                    remove_list = ['Accepted', 'Rejected'] 
-                    self._history = [filter(lambda x: row.index(x) not in remove_list, row) \
-                        for row in self._history]
-                self.compatible = True
-            except:
-                raise Exception("Failed to make the data compatible with the different minimizers \
-                            used between refinements.")
-                
+             
         return pd.DataFrame(self._history, columns = self.history_columns)
 
     @property
@@ -347,3 +321,23 @@ class Minimizer(ABC):
             return parameters
         else:
             return None
+
+    def different_minimizer_compatibility(self):
+                
+        if self.previous_history is not None and self.compatible is False:
+            try:
+                if 'Change state' in self.history_columns and \
+                    ('Accepted' not in self._history[0] or 'Rejected' not in self._history[0]):
+                    for row in self._history:
+                        pos = self.history_columns.index('Change state')
+                        row.insert(pos,'Accepted')
+
+                elif 'Change state' not in self.history_columns and \
+                    ('Accepted' in self._history[0] or 'rejected' in self._history[0]):
+                    remove_list = ['Accepted', 'Rejected'] 
+                    self._history = [filter(lambda x: row.index(x) not in remove_list, row) \
+                        for row in self._history]
+                self.compatible = True
+            except:
+                raise Exception("Failed to make the data compatible with the different minimizers \
+                            used between refinements.")

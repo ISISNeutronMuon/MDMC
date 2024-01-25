@@ -212,3 +212,22 @@ def test_get_parameters_old_values(mockcontrol,column_names, history):
     column_names = [param for param in parameters]
 
     minim.get_parameters_old_values(parameters, column_names, history)
+
+# @patch.multiple(Minimizer, __abstractmethods__=set())
+# @pytest.mark.parametrize("column_names, history", \
+#     [(['FoM', 'Change state'], [[10.0, 1.0,2.0], [15.0, 2.0,3.0]])
+#      (['Fom'], [[10.0, 'Accepted', 1.0, 2.0],[15.0, 'Rejected', 2.0,3.0]])])
+# def diff_minimizers_compatibility(self,mockcontrol, column_names, history):
+    
+#     self.column_names = column_names
+#     self.history = history
+    
+#     parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
+#     parameters = Parameters(parameters)
+    
+#     for param in parameters:
+#         column_names.append(str(param))
+    
+#     minim = Minimizer(mockcontrol,parameters)
+    
+#     minim.history()
