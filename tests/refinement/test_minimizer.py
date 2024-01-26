@@ -174,7 +174,6 @@ def test_load_history(mockcontrol, parameters,fail, column_names, previous_histo
             minim.load_history(Path(temp_file.name))
     else:
         params, _ = minim.load_history(Path(temp_file.name))
-        
         assert list(column_names) == list(params)
         
     
@@ -213,21 +212,20 @@ def test_get_parameters_old_values(mockcontrol,column_names, history):
 
     minim.get_parameters_old_values(parameters, column_names, history)
 
-# @patch.multiple(Minimizer, __abstractmethods__=set())
-# @pytest.mark.parametrize("column_names, history", \
-#     [(['FoM', 'Change state'], [[10.0, 1.0,2.0], [15.0, 2.0,3.0]])
-#      (['Fom'], [[10.0, 'Accepted', 1.0, 2.0],[15.0, 'Rejected', 2.0,3.0]])])
-# def diff_minimizers_compatibility(self,mockcontrol, column_names, history):
+@patch.multiple(Minimizer, __abstractmethods__=set())
+@pytest.mark.parametrize("column_names, history",
+    [(['FoM', 'Change state'], [[10.0, 1.0,2.0], [15.0, 2.0,3.0]])
+     ,(['Fom'], [[10.0, 'Accepted', 1.0, 2.0],[15.0, 'Rejected', 2.0,3.0]])])
+def test_different_minimizer_compatibility(mockcontrol, column_names, history):
+    """
+    Test that a file with data generated using a different minimizer to the one specified with the
+    current set up can be used and is compatible."""
     
-#     self.column_names = column_names
-#     self.history = history
+    parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
+    parameters = Parameters(parameters)
     
-#     parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
-#     parameters = Parameters(parameters)
+    for param in parameters:
+        column_names.append(str(param))
     
-#     for param in parameters:
-#         column_names.append(str(param))
-    
-#     minim = Minimizer(mockcontrol,parameters)
-    
-#     minim.history()
+    minim = Minimizer(mockcontrol,parameters)
+    minim.different_minimizer_compatibility(column_names, history)
