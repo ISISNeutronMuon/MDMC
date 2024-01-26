@@ -223,7 +223,7 @@ def test_mdanse_trajectory_temperature_direct(water_trajectory, interp_order):
     replacement_trajectory = MdanseTrajectory(water_trajectory)
     temp_name = tempfile.mktemp()
     parameters = {}
-    parameters['frames'] = (0, 10, 1)
+    parameters['frames'] = (0, len(replacement_trajectory), 1)
     parameters['interpolation_order'] = interp_order
     parameters['output_files'] = (temp_name, ('hdf',))
     parameters['running_mode'] = ('monoprocessor',)
@@ -233,3 +233,8 @@ def test_mdanse_trajectory_temperature_direct(water_trajectory, interp_order):
     assert path.exists(temp_name + '.h5')
     assert path.isfile(temp_name + '.h5')
     os.remove(temp_name + '.h5')
+    time_result = temp._outputData['time']
+    temperature_result = temp._outputData['temperature']
+    print(time_result)
+    print(temperature_result)
+    assert False
