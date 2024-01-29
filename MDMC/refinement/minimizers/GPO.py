@@ -1,7 +1,6 @@
 """The Gaussian-Process-Optimizer minimizer class"""
 from typing import TYPE_CHECKING
 import numpy as np
-import pandas as pd
 from skopt import Optimizer
 
 from MDMC.refinement.minimizers.minimizer_abs import Minimizer
@@ -61,7 +60,6 @@ class GPO(Minimizer):
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
         self.previous_history = previous_history
-        
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
@@ -78,7 +76,6 @@ class GPO(Minimizer):
         # switches between exploration and exploitation, a sampling acquisition optimizer, and
         # a latin hypercube for determining the positions of the inital 20 points (before points
         # are decided based on the best position as determined by the Gaussian process).
-
         initial_points = self.n_initial
         if not self._history or len(self._history) < self.n_initial:
             initial_points = self.n_initial
@@ -170,7 +167,7 @@ class GPO(Minimizer):
 
         history.extend(values)
         self._history.append(history)
-        
+
         if not self.has_converged():
             self.change_parameters()
 
@@ -185,7 +182,7 @@ class GPO(Minimizer):
             Minimum predicted FoM
         """
         FoMs = np.array([float(FoM[:][0]) for FoM in self._history])
-        
+
         min_FoM_measured = np.min(FoMs)
         min_parameters_measured = self._history[np.where(FoMs == min_FoM_measured)[0][0]][1:]
         # the [0][0][4:] is just to get the parameters from the _history

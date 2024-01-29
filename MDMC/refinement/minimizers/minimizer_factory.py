@@ -20,9 +20,8 @@ class MinimizerFactory:
     """
 
     @staticmethod
-    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]', previous_history: 'Path' = None,
-                         **settings: dict) -> \
-            Minimizer:
+    def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]',
+                         previous_history: 'Path' = None,**settings: dict) -> Minimizer:
         """
         Checks that the module is a supported minimzer and instantiates it as a minimizer.
 
@@ -54,9 +53,9 @@ class MinimizerFactory:
         classes = getmembers(module, lambda m: (isclass(m)
                                                 and not isabstract(m)
                                                 and issubclass(m, Minimizer)))
-
-        return classes[0][1](control, parameter, previous_history, **settings)
-            
+        if previous_history:
+            return classes[0][1](control, parameter, previous_history, **settings)
+        return classes[0][1](control, parameter,**settings)
 
 
     @staticmethod

@@ -155,29 +155,23 @@ def test_minimizer_tied_parameter():
             minim = MinimizerFactory.create_minimizer(minimizer_name, mockcontrol, parameters)
 
 @patch.multiple(Minimizer, __abstractmethods__=set())    
-@pytest.mark.parametrize('fail, column_names, previous_history'
-                        ,[(True,['param 1', 'param 2'], [['one','two'],['three', 'four']])
-                        ,(False,['param 1', 'param 2'], [[1,2],[3,4]])])
-def test_load_history(mockcontrol, parameters,fail, column_names, previous_history):
-    """Test that loading a previous refinement file fails when the data type is not able to
-    be converted to a float, and then passes when no problems arise."""
+@pytest.mark.parametrize('column_names, previous_history'
+                        ,[(['param 1', 'Change state'], [[1,'Accepted'],[2, 'Rejected']])
+                        ,(['param 1', 'param 2'], [[1.0,2.0],[3.14,4.00]])])
+def test_load_history(mockcontrol, parameters,column_names, previous_history):
+    """Test that loading a previous refinement file loads successfully with different
+    types of data."""
     
     minim = Minimizer(mockcontrol, parameters)
-
     df = pd.DataFrame(previous_history, columns=column_names)
     print(df)
     temp_file = NamedTemporaryFile()
     df.to_csv(temp_file.name)
     
-    if fail is True:
-        with pytest.raises(Exception):
-            minim.load_history(Path(temp_file.name))
-    else:
-        params, _ = minim.load_history(Path(temp_file.name))
-        assert list(column_names) == list(params)
-        
-    
-                            
+    params, _ = minim.load_history(Path(temp_file.name))
+    assert list(column_names) == list(params)
+
+ 
 @patch.multiple(Minimizer, __abstractmethods__=set())    
 @pytest.mark.parametrize("column_names,history",
                         [(['FoM','dummy (#1)', 'dummy (#2)'],[[1,2],[3,4]])
@@ -191,10 +185,8 @@ def test_check_parameters_fit_with_history(mockcontrol, parameters,column_names,
     
     parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
     parameters = Parameters(parameters)
-    
     minim = Minimizer(mockcontrol, parameters)
-    
-    
+
     with pytest.raises(Exception):
         minim._check_parameters_fit_with_history(parameters, column_names, history)
 
@@ -207,9 +199,7 @@ def test_get_parameters_old_values(mockcontrol,column_names, history):
     parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
     parameters = Parameters(parameters)
     minim = Minimizer(mockcontrol, parameters)
-    
     column_names = [param for param in parameters]
-
     minim.get_parameters_old_values(parameters, column_names, history)
 
 @patch.multiple(Minimizer, __abstractmethods__=set())
@@ -223,7 +213,6 @@ def test_different_minimizer_compatibility(mockcontrol, column_names, history):
     
     parameters = [Parameter(1.0, 'param'), Parameter(2.0, 'param')]
     parameters = Parameters(parameters)
-    
     for param in parameters:
         column_names.append(str(param))
     

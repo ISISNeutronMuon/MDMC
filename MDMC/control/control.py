@@ -5,7 +5,6 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
-import pandas as pd
 
 import numpy as np
 import pandas as pd
@@ -206,9 +205,6 @@ class Control:
         # if a Parameters object, convert to list first for comprehension
         if isinstance(fit_parameters, Parameters):
             fit_parameters = list(fit_parameters.values())
-        # print('herereree')
-        # for parameter in fit_parameters:
-        #     print(parameter.fixed)
         fit_parameters = [p for p in fit_parameters
                           if (not (p.fixed or p.tied) and p.value != 0)]
         self.fit_parameters = Parameters(fit_parameters)
@@ -978,12 +974,9 @@ class Control:
         -------
         None
         """
-
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step
 
         with suppress(AttributeError):
             obs.validate_energy(dt)
-
-
