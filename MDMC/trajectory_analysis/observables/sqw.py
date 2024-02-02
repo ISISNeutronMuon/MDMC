@@ -18,8 +18,14 @@ from MDMC.trajectory_analysis.observables.obs import Observable
 from MDMC.trajectory_analysis.observables.obs_factory import ObservableFactory
 from MDMC.utilities.trajectory_slicing import slice_trajectory
 
+
+# Import Plotting Libraries
+from mpl_toolkits import mplot3d
 import matplotlib.pyplot as plt
-import pandas as pd
+
+
+# depending on exactly how/where this notebook is run the following widgets command for creating interactive plots might need changing
+
 
 class SQwMixins:
     """
@@ -785,10 +791,9 @@ class AbstractSQw(SQwMixins, Observable):
             e_requirements = {'uniform': False, 'zeroed': False}
 
         return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
-    
-    def plot(self) -> plt.Figure:
-        '''Heatmap of some component of the data
-        data writtern in abstractsqw
+
+    def plotHeatmap(self) -> plt.Figure:
+        '''Heatmap of SQw where:
 
         independent x-axis - Momentum Q
         independent y-axis - Energy E (w/omega)
@@ -797,16 +802,75 @@ class AbstractSQw(SQwMixins, Observable):
 
         fig = plt.figure()
         extent = self.Q[0], self.Q[-1], self.E[0], self.E[-1]
-        plt.imshow(self.SQw, extent = extent, cmap=plt.cm.jet)
+        plt.imshow(self.SQw[0,:,:], extent = extent)
         cbar = plt.colorbar()
         plt.title('HeatMap of Scattering Factor S(Q,w)',  
                                      fontweight ="bold") 
         cbar.set_label("Scattering, S(Q,w)")
         plt.xlabel('Momentum, Q')
         plt.ylabel('Energy, w')
-        plt.show()
 
         return fig
+
+        
+    def plot3D(self,ax: plt.axes = plt.axes(projection ='3d'),noshow: bool = False)-> None: #-> Optional[plt.axes]:
+        '''3D plot of SQw Where:
+
+        independent x-axis - Momentum Q
+        independent y-axis - Energy E (w/omega)
+        dependent z-axis - Sqw Scattering factor
+        '''
+        
+        E, Q = np.meshgrid(self.E, self.Q)
+        ax.plot_surface(Q, E, self.SQw[0,:,:])
+        ax.set_title('3D Plot of Scattering Factor S(Q,w)') 
+        ax.set_xlabel('Momentum, Q')
+        ax.set_ylabel('Energy, w')
+        ax.set_zlabel('Scattering, S(Q,w)')
+        
+        if noshow:
+            pass
+        else:
+            plt.show()
+
+ 
+    '''def plot_slider(self) -> plt.Figure:
+
+        SQw_sim = self.SQw/1
+
+        SQw_sim = self.MD_obs.SQw / self.rescale_factor
+        # Extract the measured S(Q,w) and its errors
+        SQw_exp = self.exp_obs.SQw
+        SQw_err = self.exp_obs.SQw_err
+        # Extract the Q and energy (E) values at which S(Q,w) was measured (Domain)
+        Q = self.exp_obs.Q
+        E = self.exp_obs.E
+
+        fig, ax = plt.subplots()
+        exp_line, = ax.plot(E, SQw_exp[0,0,:], linewidth=1, color='black')
+        sim_line, = ax.plot(E, SQw_sim[0,1,:], linewidth=1, color='blue')
+        ax.legend(labels=['experimental', 'refined'])
+        ax.set_xlabel('E (meV)')
+        ax.set_ylabel('S(Q,E) (arb)')
+        ax.set_title('Argon data')
+
+        fig.subplots_adjust(left=0.25, bottom=0.3)
+        Q_slider_ax  = fig.add_axes([0.25, 0.15, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+        Q_slider = Slider(Q_slider_ax, 'Q index', 0, len(Q)-1, valinit=1, valstep=1)
+        Q_label=plt.text(1,1.7,f'Q={Q[1]} $\AA^{-1}$')
+
+
+        def Q_on_changed(val):
+            exp_line.set_ydata(SQw_exp[0,val])
+            sim_line.set_ydata(SQw_sim[0,val])
+            Q_label.set_text(f'Q={Q[val]} $\AA^{-1}$')
+            fig.canvas.draw_idle()
+            ax.set_ylim(0,max(np.max(SQw_exp[0,val])+0.1,1e-5))
+
+        Q_slider.on_changed(Q_on_changed)
+        plt.show()'''
+
+
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))

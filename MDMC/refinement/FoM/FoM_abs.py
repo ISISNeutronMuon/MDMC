@@ -7,6 +7,9 @@ import numpy as np
 from MDMC.common.decorators import repr_decorator
 from MDMC.trajectory_analysis.observables.obs import Observable
 
+# Import Plotting Libraries
+from mpl_toolkits import mplot3d
+import matplotlib.pyplot as plt
 
 @repr_decorator('weight', 'exp_obs', 'MD_obs', 'rescale_factor', 'auto_scale')
 class ObservablePair:
@@ -325,6 +328,59 @@ class ObservablePair:
         """
 
         return np.array(*self.exp_obs.errors.values()) * self.rescale_factor
+
+    '''def plot_slider(self) -> None:
+        # Extract the calculated S(Q,w) and apply the `rescale_factor` that minimises the 
+        # figure-of-merit (needed as the experimental data is in arbitrary units).
+        SQw_sim = self.MD_obs.SQw / self.rescale_factor
+        # Extract the measured S(Q,w) and its errors
+        SQw_exp = self.exp_obs.SQw
+        SQw_err = self.exp_obs.SQw_err
+        # Extract the Q and energy (E) values at which S(Q,w) was measured (Domain)
+        Q = self.exp_obs.Q
+        E = self.exp_obs.E
+
+        fig, ax = plt.subplots()
+        exp_line, = ax.plot(E, SQw_exp[0,0,:], linewidth=1, color='black')
+        sim_line, = ax.plot(E, SQw_sim[0,1,:], linewidth=1, color='blue')
+        ax.legend(labels=['experimental', 'refined'])
+        ax.set_xlabel('E (meV)')
+        ax.set_ylabel('S(Q,E) (arb)')
+        ax.set_title('Argon data')
+
+        fig.subplots_adjust(left=0.25, bottom=0.3)
+        Q_slider_ax  = fig.add_axes([0.25, 0.15, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+        Q_slider = Slider(Q_slider_ax, 'Q index', 0, len(Q)-1, valinit=1, valstep=1)
+        Q_label=plt.text(1,1.7,f'Q={Q[1]} $\AA^{-1}$')
+
+
+        def Q_on_changed(val):
+            exp_line.set_ydata(SQw_exp[0,val])
+            sim_line.set_ydata(SQw_sim[0,val])
+            Q_label.set_text(f'Q={Q[val]} $\AA^{-1}$')
+            fig.canvas.draw_idle()
+            ax.set_ylim(0,max(np.max(SQw_exp[0,val])+0.1,1e-5))
+
+        Q_slider.on_changed(Q_on_changed)
+        plt.show()'''
+
+    def plot_3D(self) -> None:
+        '''3D plot of Experimental and Simulation for a given Oberservable'''
+        # Create a separate Axes object (some_ax) with a plot
+        fig, axs = plt.subplots(1, 2, subplot_kw={'projection': '3d'}, figsize=(12, 6))
+
+        self.exp_obs.plot3D(ax=axs[0],noshow=True)
+        title = axs[0].get_title() + ' - Experimental'
+        axs[0].set_title(title)
+
+        self.MD_obs.plot3D(ax=axs[1],noshow=True)
+        title = axs[1].get_title() + ' - Simulated'
+        axs[1].set_title(title)
+
+        plt.tight_layout()
+        plt.show()
+
+
 
 
 @repr_decorator('value', 'obs_pairs')
