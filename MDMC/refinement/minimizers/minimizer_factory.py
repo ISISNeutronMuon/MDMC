@@ -21,7 +21,7 @@ class MinimizerFactory:
 
     @staticmethod
     def create_minimizer(module_name: str, control: 'Control', parameter: 'list[str]',
-                         previous_history: 'Path' = None,**settings: dict) -> Minimizer:
+                         previous_history: Path = None,**settings: dict) -> Minimizer:
         """
         Checks that the module is a supported minimzer and instantiates it as a minimizer.
 

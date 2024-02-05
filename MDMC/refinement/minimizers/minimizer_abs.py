@@ -255,7 +255,7 @@ class Minimizer(ABC):
             list of columns names, and a list containing a list for each refinement step
              from the loaded history file."""
         try:
-            with open(history, 'r') as file:
+            with open(history, 'r', encoding='utf-8') as file:
                 file_content = list(csv.reader(file))
         except ValueError as err:
             raise ValueError("Can not find file or path.") from err
@@ -271,7 +271,7 @@ class Minimizer(ABC):
 
 
     def _check_parameters_fit_with_history(self, parameters: Parameters,
-                                           column_names: list, history) -> bool:
+                                           column_names: list, history):
         """Checks that the parameters loaded in from the file of previous refinement steps are
          compatible with those already defined in the control object. If the parameters are the same
          but with different numbers (arbitrary), then this is changed to be consistent.

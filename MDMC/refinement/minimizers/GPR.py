@@ -52,6 +52,7 @@ class GPR(Minimizer):
         self.results_filename = settings.get('results_filename', None)
         self.change_parameters()
         self.previous_history = previous_history
+        self.state_changed = False
 
     def create_parameter_point_array(self,
                                      parameters: Parameters) -> 'tuple[list[str], list[tuple]]':

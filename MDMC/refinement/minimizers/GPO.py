@@ -60,6 +60,7 @@ class GPO(Minimizer):
         self.parameters = parameters
         self.n_initial = settings.get('n_initial', 20)
         self.previous_history = previous_history
+        self.state_changed = False
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9

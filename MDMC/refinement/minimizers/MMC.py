@@ -54,6 +54,7 @@ class MMC(Minimizer):
         distribution = 'uniform'
         self.distribution = self.__class__.DISTRIBUTION[distribution]
         self.previous_history = previous_history
+        self.state_changed = False
 
     @property
     def history_columns(self) -> 'list[str]':

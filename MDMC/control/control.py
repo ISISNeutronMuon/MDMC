@@ -186,7 +186,7 @@ class Control:
                  reset_config: bool = True, MD_steps: int = None,
                  equilibration_steps: int = 0,
                  previous_history: Path = None,
-                 verbose: int = 3,
+                 verbose: int = 0,
                  print_all_settings: bool = False,
                  **settings: dict):
 
@@ -486,7 +486,9 @@ class Control:
                 print(
                 f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
 
+        print(self.step_timings)
         verbose_manager.finish("Refinement")
+        print("end")
 
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
