@@ -536,8 +536,35 @@ class Control:
                 on engine used.
         """
 
-        self.simulation.minimize(n_steps,minimize_every,verbose,
-                                 output_log,work_dir, **settings)
+        # self.simulation.minimize(n_steps,minimize_every,verbose,
+        #                          output_log,work_dir, **settings)
+        
+        
+        first_reset_worked = False    
+        try:
+            print('first attempt')
+            self.simulation.minimize(n_steps,minimize_every,verbose,
+                                        output_log,work_dir, **settings)
+            first_reset_worked = True
+        except:
+            first_reset_worked = False
+            
+            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+            
+        if not first_reset_worked:
+            print('third attempt at equil')
+            self.simulation.engine.clear()
+            self.simulation._setup()
+            self.fit_parameters['sigma'].value = 3.36
+            self.fit_parameters['epsilon'].value = 1.0243
+            self._update_engine_parameters()
+            
+            try:
+                self.simulation.minimize(n_steps,minimize_every,verbose,
+                                    output_log,work_dir, **settings)
+            except:
+                raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+
 
     def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
@@ -585,26 +612,16 @@ class Control:
             except:
                 # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
                 second_reset_worked = False
-                # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
         
-
-            
-        # self.fit_parameters['epsilon'].value = 1.0243
         
         if not first_reset_worked and not second_reset_worked:
             print('third attempt at equil')
             self.simulation.engine.clear()
             self.simulation._setup()
-
-            # for parameter in self.fit_parameters:
-            #     self.fit_parameters[parameter].value = (self.fit_parameters[parameter].constraints[1] - self.fit_parameters[parameter].constraints[0])/2
-            
             self.fit_parameters['sigma'].value = 3.36
             self.fit_parameters['epsilon'].value = 1.0243
-            
             self._update_engine_parameters()
             
-            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
             try:
                 self.simulation.run(n_steps,equilibration,verbose,
                                 output_log, work_dir,**settings)
@@ -703,7 +720,45 @@ class Control:
         Run a molecular dynamics simulation
         """
 
-        self.simulation.run(self.MD_steps, verbose=False)
+        # self.simulation.run(self.MD_steps, verbose=False)
+        
+        first_reset_worked = False
+        second_reset_worked = False
+        
+        try:
+            print('first attempt')
+            self.simulation.run(self.MD_steps, verbose=False);
+            first_reset_worked = True
+        except:
+            first_reset_worked = False
+            
+            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+            
+        if not first_reset_worked:
+            print('second attempt at equil')
+            self.simulation.engine.clear()
+            self.simulation._setup()
+            
+            try:
+                print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
+                self.simulation.run(self.MD_steps, verbose=False);
+                second_reset_worked = True
+            except:
+                # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+                second_reset_worked = False
+        
+        if not first_reset_worked and not second_reset_worked:
+            print('third attempt at equil')
+            self.simulation.engine.clear()
+            self.simulation._setup()
+            self.fit_parameters['sigma'].value = 3.36
+            self.fit_parameters['epsilon'].value = 1.0243
+            self._update_engine_parameters()
+            
+            try:
+                self.simulation.run(self.MD_steps, verbose=False);
+            except:
+                raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
 
     def _update_engine_parameters(self) -> None:
         """
