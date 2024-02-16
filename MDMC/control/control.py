@@ -21,6 +21,7 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
+from random import random
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -436,7 +437,7 @@ class Control:
                     # try:
                     #     print('before the equilibration in the refine block')
                     self.equilibrate(self.equilibration_steps)
-                    print('continued with refinement')
+                    # print('continued with refinement')
                     # except:
                     #     print('third attempt')
                     #     self.simulation.engine.clear()
@@ -535,35 +536,12 @@ class Control:
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
         """
-
-        # self.simulation.minimize(n_steps,minimize_every,verbose,
-        #                          output_log,work_dir, **settings)
-        
-        
-        first_reset_worked = False    
+   
         try:
-            print('first attempt')
             self.simulation.minimize(n_steps,minimize_every,verbose,
                                         output_log,work_dir, **settings)
-            first_reset_worked = True
         except:
-            first_reset_worked = False
-            
-            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
-            
-        if not first_reset_worked:
-            print('third attempt at equil')
-            self.simulation.engine.clear()
-            self.simulation._setup()
-            self.fit_parameters['sigma'].value = 3.36
-            self.fit_parameters['epsilon'].value = 1.0243
-            self._update_engine_parameters()
-            
-            try:
-                self.simulation.minimize(n_steps,minimize_every,verbose,
-                                    output_log,work_dir, **settings)
-            except:
-                raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+                raise Exception('Minimization failed, please check the parameter values.')
 
 
     def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
@@ -596,7 +574,6 @@ class Control:
         except:
             first_reset_worked = False
             
-            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
             
         if not first_reset_worked:
             print('second attempt at equil')
@@ -605,7 +582,6 @@ class Control:
             
             try:
                 
-                print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
                 self.simulation.run(n_steps,equilibration,verbose,
                                 output_log, work_dir,**settings);
                 second_reset_worked = True
@@ -615,16 +591,32 @@ class Control:
         
         
         if not first_reset_worked and not second_reset_worked:
-            print('third attempt at equil')
-            self.simulation.engine.clear()
-            self.simulation._setup()
-            self.fit_parameters['sigma'].value = 3.36
-            self.fit_parameters['epsilon'].value = 1.0243
-            self._update_engine_parameters()
-            
             try:
-                self.simulation.run(n_steps,equilibration,verbose,
-                                output_log, work_dir,**settings)
+                
+                # good_params = False
+                # counter = 0
+                # print(self.minimizer.history)
+                # while good_params == False and counter < 10:
+                #     print('third attempt at equil')
+                #     # FoM = self.minimizer.history.iloc[-1][0]
+                #     print("before")
+                self.simulation.engine.clear()
+                self.simulation._setup()
+                FoM = self._generate_FoM()
+                
+                self.minimizer.step(FoM)
+                self._update_engine_parameters()
+                    # self.minimize(n_steps=50)
+                    
+                try:
+                    self.simulation.run(n_steps,equilibration,verbose,
+                                    output_log, work_dir,**settings)
+                    good_params = True
+                except:
+                    good_params = False
+                    # counter += 1
+                    
+                
             except:
                 raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
 
@@ -719,46 +711,37 @@ class Control:
         """
         Run a molecular dynamics simulation
         """
-
-        # self.simulation.run(self.MD_steps, verbose=False)
         
-        first_reset_worked = False
-        second_reset_worked = False
+        good_params = False
+        counter = 0
+        limit = 10
         
         try:
-            print('first attempt')
-            self.simulation.run(self.MD_steps, verbose=False);
-            first_reset_worked = True
+            self.simulation.run(self.MD_steps, verbose=False)
         except:
-            first_reset_worked = False
             
-            print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
-            
-        if not first_reset_worked:
-            print('second attempt at equil')
-            self.simulation.engine.clear()
-            self.simulation._setup()
-            
-            try:
-                print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
-                self.simulation.run(self.MD_steps, verbose=False);
-                second_reset_worked = True
-            except:
-                # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
-                second_reset_worked = False
-        
-        if not first_reset_worked and not second_reset_worked:
-            print('third attempt at equil')
-            self.simulation.engine.clear()
-            self.simulation._setup()
-            self.fit_parameters['sigma'].value = 3.36
-            self.fit_parameters['epsilon'].value = 1.0243
-            self._update_engine_parameters()
-            
-            try:
-                self.simulation.run(self.MD_steps, verbose=False);
-            except:
-                raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+
+            while good_params == False and counter < limit:
+                print(self.minimizer.history)
+                self.simulation.engine.clear()
+                self.simulation._setup()
+                # FoM = self.minimizer.history.iloc[-1][0]
+                # num = random() * 4000
+                
+                self.minimizer.step(100000)
+                self._update_engine_parameters()
+
+                try:
+                    self.simulation.run(self.MD_steps, verbose=False);
+                    good_params = True
+                except:
+                    good_params = False
+                    # self.minimizer.history.head(-1)
+                    counter += 1
+            if good_params == False:
+                raise Exception('Failed to find good parameters during refinement.\
+                Please check inputs such as parameter values and constraints.')
+                
 
     def _update_engine_parameters(self) -> None:
         """
