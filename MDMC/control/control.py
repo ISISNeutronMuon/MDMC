@@ -22,6 +22,8 @@ from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
 from random import random
+from MDMC.common.units import UnitNDArray
+from MDMC.common.units import unit_array
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -259,6 +261,17 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
+            
+            
+            self.dummy_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
+            self.dummy_observable_pair = ObservablePair(exp_observable,
+                                             self.dummy_MD_obs,
+                                             dset['weight'],
+                                             rescale_factor=np.inf,
+                                             auto_scale=auto_scale)
+            self.dummy_observable_pairs = []
+            self.dummy_observable_pairs.append(self.dummy_observable_pair)
+            
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -278,6 +291,10 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
+        self.dummy_FoM_calculator = FoMFactory.create_FoM(FoM_error, self.dummy_observable_pairs,
+                                                    norm=FoM_norm,
+                                                    n_parameters=len(self.fit_parameters))
+        
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -433,20 +450,7 @@ class Control:
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0 and self.equilibration_steps > 0:
-                    
-                    # try:
-                    #     print('before the equilibration in the refine block')
                     self.equilibrate(self.equilibration_steps)
-                    # print('continued with refinement')
-                    # except:
-                    #     print('third attempt')
-                    #     self.simulation.engine.clear()
-                    #     self.simulation._setup()
-                    #     # self.minimizer.change_parameters()
-                    #     self._update_engine_parameters()
-                    #     print(self.fit_parameters['sigma'].value, self.fit_parameters['epsilon'].value )
-                    #     self.equilibrate(self.equilibration_steps)
-                        
                 
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
@@ -593,13 +597,6 @@ class Control:
         if not first_reset_worked and not second_reset_worked:
             try:
                 
-                # good_params = False
-                # counter = 0
-                # print(self.minimizer.history)
-                # while good_params == False and counter < 10:
-                #     print('third attempt at equil')
-                #     # FoM = self.minimizer.history.iloc[-1][0]
-                #     print("before")
                 self.simulation.engine.clear()
                 self.simulation._setup()
                 FoM = self._generate_FoM()
@@ -714,7 +711,8 @@ class Control:
         
         good_params = False
         counter = 0
-        limit = 10
+        limit = 30
+        
         
         try:
             self.simulation.run(self.MD_steps, verbose=False)
@@ -722,13 +720,20 @@ class Control:
             
 
             while good_params == False and counter < limit:
-                print(self.minimizer.history)
+
+
+                self.dummy_observable_pairs[0].MD_obs._dependent_variables = {}
+                self.dummy_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**9
+                
                 self.simulation.engine.clear()
                 self.simulation._setup()
-                # FoM = self.minimizer.history.iloc[-1][0]
-                # num = random() * 4000
+            
+
+                FoM = self.dummy_FoM_calculator.calculate()
+
                 
-                self.minimizer.step(100000)
+                print(FoM)
+                self.minimizer.step(FoM)
                 self._update_engine_parameters()
 
                 try:
@@ -736,7 +741,9 @@ class Control:
                     good_params = True
                 except:
                     good_params = False
-                    # self.minimizer.history.head(-1)
+                    print(self.minimizer.history)
+                    del self.minimizer._history[-1]
+                    
                     counter += 1
             if good_params == False:
                 raise Exception('Failed to find good parameters during refinement.\
@@ -830,6 +837,7 @@ class Control:
 
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
+            print(trj)
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
