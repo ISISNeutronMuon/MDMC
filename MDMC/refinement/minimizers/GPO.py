@@ -55,7 +55,7 @@ class GPO(Minimizer):
         super().__init__(control, parameters)
 
         self.parameters = parameters
-        self.n_initial = settings.get('n_initial', 20)
+        self.n_initial = settings.get('n_initial', 5)
         if self.control.n_steps:
             self.n_initial = min(self.control.n_steps, self.n_initial)
         self.predicted_FoM = 1e9
@@ -101,6 +101,8 @@ class GPO(Minimizer):
         bool
             Whether or not the minimizer has converged.
         """
+        if self.control.n_steps is None:
+            self.control.n_steps = 0
         return len(self.history) >= self.control.n_steps
 
     def set_parameter_values(self, parameter_names: 'list[str]', values: 'list[float]') -> None:

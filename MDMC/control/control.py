@@ -267,7 +267,7 @@ class Control:
             self.dummy_observable_pair = ObservablePair(exp_observable,
                                              self.dummy_MD_obs,
                                              dset['weight'],
-                                             rescale_factor=np.inf,
+                                             rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.dummy_observable_pairs = []
             self.dummy_observable_pairs.append(self.dummy_observable_pair)
@@ -571,7 +571,6 @@ class Control:
         second_reset_worked = False
         
         try:
-            print('first attempt')
             self.simulation.run(n_steps,equilibration,verbose,
                                     output_log, work_dir,**settings);
             first_reset_worked = True
@@ -580,12 +579,9 @@ class Control:
             
             
         if not first_reset_worked:
-            print('second attempt at equil')
             self.simulation.engine.clear()
             self.simulation._setup()
-            
             try:
-                
                 self.simulation.run(n_steps,equilibration,verbose,
                                 output_log, work_dir,**settings);
                 second_reset_worked = True
@@ -596,26 +592,20 @@ class Control:
         
         if not first_reset_worked and not second_reset_worked:
             try:
-                
                 self.simulation.engine.clear()
                 self.simulation._setup()
-                FoM = self._generate_FoM()
-                
-                self.minimizer.step(FoM)
-                self._update_engine_parameters()
-                    # self.minimize(n_steps=50)
-                    
+                self._run_MD(equil_attempt=True)
+                # self.minimizer.step(FoM)
+                # self._update_engine_parameters()  
                 try:
                     self.simulation.run(n_steps,equilibration,verbose,
                                     output_log, work_dir,**settings)
-                    good_params = True
                 except:
-                    good_params = False
-                    # counter += 1
-                    
-                
+                    dummy = 0
             except:
                 raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+                
+
 
 
 
@@ -704,51 +694,46 @@ class Control:
 
         return FoM_value
 
-    def _run_MD(self) -> None:
+    def _run_MD(self, equil_attempt: bool=False) -> None:
         """
         Run a molecular dynamics simulation
         """
         
         good_params = False
         counter = 0
-        limit = 30
-        
-        
+        limit = 50
+
         try:
-            self.simulation.run(self.MD_steps, verbose=False)
+            if equil_attempt == False:
+                self.simulation.run(self.MD_steps, verbose=False)
         except:
-            
-
             while good_params == False and counter < limit:
-
-
-                self.dummy_observable_pairs[0].MD_obs._dependent_variables = {}
-                self.dummy_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**9
-                
                 self.simulation.engine.clear()
                 self.simulation._setup()
+                self.dummy_observable_pairs[0].MD_obs._dependent_variables = {}
+                self.dummy_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**9
+
             
-
                 FoM = self.dummy_FoM_calculator.calculate()
-
-                
-                print(FoM)
                 self.minimizer.step(FoM)
-                self._update_engine_parameters()
+                self._update_engine_parameters();
 
                 try:
-                    self.simulation.run(self.MD_steps, verbose=False);
+                    self.simulation.run(100, verbose=False);
                     good_params = True
                 except:
                     good_params = False
-                    print(self.minimizer.history)
                     del self.minimizer._history[-1]
-                    
+
+                if good_params == True and equil_attempt == False:
+                    self.equilibrate(self.equilibration_steps)
+                    self.simulation.run(self.MD_steps, verbose=False);
                     counter += 1
+
             if good_params == False:
                 raise Exception('Failed to find good parameters during refinement.\
                 Please check inputs such as parameter values and constraints.')
-                
+            self._update_engine_parameters()
 
     def _update_engine_parameters(self) -> None:
         """
@@ -837,7 +822,6 @@ class Control:
 
         verbose_manager.step("Calculating observables from the MD trajectory")
         for pair in observable_pairs:
-            print(trj)
             obs_timings = pair.MD_obs.calculate_from_MD(trj, verbose=self.verbose, **self.settings)
             if self.verbose == 1 and obs_timings is not None:
                 for key, value in obs_timings.items():
