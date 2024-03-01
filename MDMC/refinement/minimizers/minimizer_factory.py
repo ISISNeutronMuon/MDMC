@@ -44,7 +44,6 @@ class MinimizerFactory:
 
         """
 
-
         try:
             module = import_module('.' + module_name, __package__)
         except ImportError as error:
@@ -56,7 +55,6 @@ class MinimizerFactory:
         if previous_history:
             return classes[0][1](control, parameter, previous_history, **settings)
         return classes[0][1](control, parameter,**settings)
-
 
     @staticmethod
     def get_minimizer_names() -> 'list[str]':

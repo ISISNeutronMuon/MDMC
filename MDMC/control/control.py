@@ -24,8 +24,6 @@ from MDMC.trajectory_analysis.observables.obs_factory \
 from MDMC.trajectory_analysis.observables.obs import Observable
 
 
-
-
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
                 'reset_config', 'fit_parameters', 'MD_steps',
                 'verbose')
@@ -222,7 +220,8 @@ class Control:
         # disable this pylint warning as this can't be fixed in a way that looks good
         self.minimizer = MinimizerFactory.create_minimizer(minimizer_type, self,
                                                            self.fit_parameters, previous_history, **settings)
-        print('Minimizer instantiated')
+
+
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
@@ -392,7 +391,6 @@ class Control:
         return (f"{self.__class__.__name__} refining {len(self.fit_parameters)} parameter{plural} "
                 f"using {exp_dataset_types} data types")
 
-
     def refine(self, n_steps: int = None) -> None:
         """
         Refines the specified potential parameters
@@ -427,6 +425,7 @@ class Control:
         verbose_steps = (self.n_steps + 1) * 4
         # initialise step timings list for average step timings at end
         self.step_timings = []
+
         count = -1
 
         if self.verbose != -1:
@@ -486,9 +485,7 @@ class Control:
                 print(
                 f'\nAverage time per step was {np.round_(average_timing, 2)} seconds.')
 
-        print(self.step_timings)
         verbose_manager.finish("Refinement")
-        print("end")
 
     def minimize(self, n_steps: int,
                  minimize_every: int = 10,
@@ -588,6 +585,7 @@ class Control:
         step_timings = verbose_manager.finish("Refinement step")
         self.step_timings.append(step_timings)
 
+
     def plot_results(self, filename: str=None, points: int=100000, MH_norm: float=20.0) -> None:
         """
         Instantiates an insstance of the PlotResults class and generates a cornerplot
@@ -619,6 +617,7 @@ class Control:
             print(f'Parameter means = {means}, Parameter errors = {stds}')
 
         return cornerplot
+
 
     def _generate_FoM(self) -> float:
         """
@@ -979,6 +978,7 @@ class Control:
         -------
         None
         """
+
         # Calculate the time separation between trajectory frames, dt, imposed
         # by the simulation
         dt = self.simulation.traj_step * self.simulation.time_step

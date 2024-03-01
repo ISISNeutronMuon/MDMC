@@ -2,13 +2,13 @@
 parameters"""
 from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
+
 import csv
 from pathlib import Path
 import pandas as pd
 
 from MDMC.MD import Parameters
 from MDMC.common.decorators import repr_decorator
-
 
 if TYPE_CHECKING:
     from MDMC.control import Control
@@ -46,6 +46,7 @@ class Minimizer(ABC):
     """
 
     def __init__(self, control: 'Control', parameters: Parameters, previous_history: Path = None):
+
         self.control = control
         self.results_filename = None
         self.previous_history = previous_history
@@ -54,8 +55,8 @@ class Minimizer(ABC):
 
         if isinstance(parameters, list):
             parameters = Parameters(parameters)
-        self.parameters = parameters
 
+        self.parameters = parameters
         if previous_history:
             if isinstance(previous_history, str):
                 self.previous_history = Path(self.previous_history)
@@ -104,7 +105,7 @@ class Minimizer(ABC):
             and is specified by `history_columns`.
         """
 
-        return pd.DataFrame(self._history, columns = self.history_columns)
+        return pd.DataFrame(self._history, columns=self.history_columns)
 
     @property
     @abstractmethod

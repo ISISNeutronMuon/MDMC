@@ -86,6 +86,7 @@ class PlotResults():
 
         # sample points from search space, set a random seed for reproducibility = 7 w.l.o.g.
         random_samples = self.optimizer.space.rvs(self.points, random_state=7)
+
         # make estimations with surrogate
         model = self.optimizer.models[-1]
         y_random = model.predict(self.optimizer.space.transform(random_samples))
