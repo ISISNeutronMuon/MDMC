@@ -15,6 +15,18 @@ from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
 
+import numpy as np
+import os
+from MDMC.control import Control
+from MDMC.MD import Atom, Molecule, Dispersion, LennardJones, Simulation, Universe
+from MDMC.MD.packmol import PackmolSetup, PackmolFiller
+from MDMC.control import control
+from MDMC.control import plot_results
+import pathlib
+import pandas as pd
+from MDMC.MD import Parameter
+
+
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
 # before initialising Control so store these as a global variable
@@ -753,3 +765,104 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
+    
+    
+    
+@pytest.mark.skip(reason="no need to test this")
+def control_object_from_Argon_script():
+
+    density = 0.0176
+    universe = Universe(dimensions=23.0668)
+    Ar = Atom('Ar', charge=0., mass=36.0)
+
+    n_ar_atoms = int(density * np.product(universe.dimensions))
+    print(f'Number of argon atoms = {n_ar_atoms}')
+    universe.fill(Ar, num_struc_units=(n_ar_atoms))
+
+    Ar_dispersion = Dispersion(universe,
+                            (Ar.atom_type, Ar.atom_type),
+                            cutoff=8.,
+                            function=LennardJones(epsilon=1.02, sigma=3.36))
+
+    simulation = Simulation(universe,
+                            engine="lammps",
+                            time_step=10.18893,
+                            temperature=120.,
+                            traj_step=15)
+
+    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+                    'type':'SQw',
+                    'reader':'xml_SQw',
+                    'weight':1.,
+                    'auto_scale':True,
+                    'resolution':800}]
+
+    fit_parameters = universe.parameters
+    fit_parameters['sigma'].constraints = [2.0,25.0]
+    fit_parameters['epsilon'].constraints = [0.5, 20]
+    
+    control = Control(simulation=simulation,
+                exp_datasets=exp_datasets,
+                fit_parameters=fit_parameters,
+                minimizer_type="GPO",
+                reset_config=True,
+                MD_steps=4000, 
+                equilibration_steps=4000,
+                data_printer='ipython')
+    return control, fit_parameters
+
+
+
+
+@pytest.mark.parametrize('eps, sig, eps_constr, sig_constr',[(1.02, 3.36, None, None),
+                                                             (2.0, 3.0, None, None), 
+                                                             (3.0,4.0, None, None), 
+                                                             (4.0,8.0, None, None),
+                                                             (1.02, 3.36, [0.02,2.02], [2.36, 4.36]),
+                                                             (1.02, 3.36, [0.5,20], [1,20])])
+def test_control_equil_bad_params(eps,sig, eps_constr, sig_constr):
+    """
+    
+    """
+
+    
+    ctrl, fit_parameters = control_object_from_Argon_script()
+    
+    fit_parameters['epsilon'].value = eps
+    fit_parameters['sigma'].value = sig
+    
+    if eps_constr is None:
+        fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
+        fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
+    else:
+        fit_parameters['epsilon'].constraints = eps_constr
+        fit_parameters['sigma'].constraints = sig_constr
+    
+    ctrl.equilibrate(n_steps=1000)
+    
+@pytest.mark.parametrize('eps, sig, eps_constr, sig_constr',[(1.02, 3.36, None, None),
+                                                             (2.0, 3.0, None, None), 
+                                                             (3.0,4.0, None, None), 
+                                                             (4.0,8.0, None, None),
+                                                             (1.02, 3.36, [0.02,2.02], [2.36, 4.36]),
+                                                             (1.02, 3.36, [0.5,20], [1,20])])
+def test_control_production_bad_params(eps, sig, eps_constr, sig_constr):
+    """
+    
+    """
+    
+    ctrl, fit_parameters = control_object_from_Argon_script()
+    
+    fit_parameters['epsilon'].value = eps
+    fit_parameters['sigma'].value = sig
+    
+    if eps_constr is None:
+        fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
+        fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
+    else:
+        fit_parameters['epsilon'].constraints = eps_constr
+        fit_parameters['sigma'].constraints = sig_constr
+    
+    ctrl.equilibrate(n_steps=1000)
+    ctrl._run_MD()
+

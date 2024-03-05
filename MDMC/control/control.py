@@ -226,6 +226,7 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
+        self.dummy_observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
             try:
@@ -711,9 +712,8 @@ class Control:
                 self.simulation.engine.clear()
                 self.simulation._setup()
                 self.dummy_observable_pairs[0].MD_obs._dependent_variables = {}
-                self.dummy_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**9
+                self.dummy_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
 
-            
                 FoM = self.dummy_FoM_calculator.calculate()
                 self.minimizer.step(FoM)
                 self._update_engine_parameters();
