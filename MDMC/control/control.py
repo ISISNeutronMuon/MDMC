@@ -230,6 +230,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
+            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -983,3 +985,30 @@ class Control:
 
         with suppress(AttributeError):
             obs.validate_energy(dt)
+
+    def _input_check(self, general_set, inputs) -> None:
+        """
+
+        Handles error for retrieving data from a set where the input is not found.
+        This was made in a general way to be used for any dataset or set of inputs.
+
+        Parameters
+        ----------
+        general_set : A general dataset
+            A variable that contains a set of information for input checking against,
+            for example 'dset' contains the observable type, file_name and reader type,
+            for checking inputs.
+
+        Returns
+        -------
+        None
+        """
+
+        for input_check in inputs:
+            try:
+                general_set[input_check]
+            except KeyError as error:
+                raise KeyError("There was an issue retrieving the input: "
+                               f" {input_check} "
+                                "from the dataset, please check your inputs again.") from error
+            
