@@ -768,7 +768,7 @@ def test_control_resolution_function(simulation, exp_datasets):
     
     
     
-@pytest.mark.skip(reason="no need to test this")
+@pytest.mark.skip(reason="used for other tests")
 def control_object_from_Argon_script():
 
     density = 0.0176
@@ -798,7 +798,7 @@ def control_object_from_Argon_script():
                     'resolution':800}]
 
     fit_parameters = universe.parameters
-    fit_parameters['sigma'].constraints = [2.0,25.0]
+    fit_parameters['sigma'].constraints = [1.0,20.0]
     fit_parameters['epsilon'].constraints = [0.5, 20]
     
     control = Control(simulation=simulation,
@@ -814,55 +814,43 @@ def control_object_from_Argon_script():
 
 
 
-@pytest.mark.parametrize('eps, sig, eps_constr, sig_constr',[(1.02, 3.36, None, None),
-                                                             (2.0, 3.0, None, None), 
-                                                             (3.0,4.0, None, None), 
-                                                             (4.0,8.0, None, None),
-                                                             (1.02, 3.36, [0.02,2.02], [2.36, 4.36]),
-                                                             (1.02, 3.36, [0.5,20], [1,20])])
-def test_control_equil_bad_params(eps,sig, eps_constr, sig_constr):
+@pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
+                                    (2.0, 3.0), 
+                                    (3.0,4.0), 
+                                    (4.0,8.0),])
+def test_control_bad_params(eps,sig):
     """
     
     """
 
     
     ctrl, fit_parameters = control_object_from_Argon_script()
-    
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
     
-    if eps_constr is None:
-        fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
-        fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
-    else:
-        fit_parameters['epsilon'].constraints = eps_constr
-        fit_parameters['sigma'].constraints = sig_constr
-    
-    ctrl.equilibrate(n_steps=1000)
-    
-@pytest.mark.parametrize('eps, sig, eps_constr, sig_constr',[(1.02, 3.36, None, None),
-                                                             (2.0, 3.0, None, None), 
-                                                             (3.0,4.0, None, None), 
-                                                             (4.0,8.0, None, None),
-                                                             (1.02, 3.36, [0.02,2.02], [2.36, 4.36]),
-                                                             (1.02, 3.36, [0.5,20], [1,20])])
-def test_control_production_bad_params(eps, sig, eps_constr, sig_constr):
-    """
-    
-    """
-    
-    ctrl, fit_parameters = control_object_from_Argon_script()
-    
-    fit_parameters['epsilon'].value = eps
-    fit_parameters['sigma'].value = sig
-    
-    if eps_constr is None:
-        fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
-        fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
-    else:
-        fit_parameters['epsilon'].constraints = eps_constr
-        fit_parameters['sigma'].constraints = sig_constr
+    fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
+    fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
+
+
+
     
     ctrl.equilibrate(n_steps=1000)
     ctrl._run_MD()
-
+    
+@pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
+                                                             ([0.5,20], [1,20])])
+def test_control_bad_constraints(eps_constr, sig_constr):
+    """
+    
+    """
+    
+    ctrl, fit_parameters = control_object_from_Argon_script()
+    
+    fit_parameters['epsilon'].constraints = eps_constr
+    fit_parameters['sigma'].constraints = sig_constr
+    fit_parameters['epsilon'].value = 1.02
+    fit_parameters['sigma'].value = 3.36
+    
+    
+    ctrl.equilibrate(n_steps=1000)
+    ctrl._run_MD()
