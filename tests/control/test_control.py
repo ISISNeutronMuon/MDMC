@@ -15,19 +15,8 @@ from MDMC.MD.parameters import Parameter, Parameters
 from MDMC.MD.simulation import Simulation, Universe
 from MDMC.resolution.from_file import FileResolution
 from tests.test_data import data
-
-import numpy as np
-import os
 from MDMC.control import Control
-from MDMC.MD import Atom, Molecule, Dispersion, LennardJones, Simulation, Universe
-from MDMC.MD.packmol import PackmolSetup, PackmolFiller
-from MDMC.control import control
-from MDMC.control import plot_results
-import pathlib
-import pandas as pd
-from MDMC.MD import Parameter
-
-
+from MDMC.MD import Atom, Dispersion, LennardJones, Simulation, Universe
 # The requirements for dt and n_frames is different for each experimental
 # dataset, and depends on whether we are using FFT. We need this information
 # before initialising Control so store these as a global variable
@@ -94,14 +83,11 @@ class MockMinimizer:
 def mock_generate_FoM(self):
     return 1000
 
-
 def mock_update_engine_parameters(self):
     pass
 
-
 def mock_equilibrate(self, *extras):
     pass
-
 
 @pytest.mark.skip(reason="used for other tests")
 def control_object_from_Argon_script():
@@ -154,7 +140,6 @@ def control_object_from_Argon_script():
                 equilibration_steps=4000,
                 data_printer='ipython')
     return control, fit_parameters
-
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:
@@ -803,7 +788,6 @@ def test_control_fit_parameters(simulation):
     assert len(ctrl.fit_parameters) == 1
     assert 'constraints' in list(ctrl.fit_parameters.keys())[0]
 
-
 def test_control_resolution_function(simulation, exp_datasets):
     """
     Test that when a resolution file is provided, a resolution function is added to both the
@@ -825,7 +809,6 @@ def test_control_resolution_function(simulation, exp_datasets):
 
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
-    
 
 @pytest.mark.parametrize('steps', [0,None])
 def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeypatch):
@@ -844,7 +827,6 @@ def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeyp
     
     ctrl.equilibrate(steps)
     mock_auto_equilibrate.assert_called()
-    
 
 @pytest.mark.parametrize('steps', [1,50])
 def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch):
@@ -864,7 +846,6 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
     ctrl.equilibrate(steps)
     mock_simulation_run.assert_called()
 
-
 @pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
                                     (2.0, 3.0), 
                                     (3.0,4.0), 
@@ -875,7 +856,6 @@ def test_control_bad_params(eps,sig):
     and production runs handle this and find a new set of better parameters to continue.
     """
 
-    
     ctrl, fit_parameters = control_object_from_Argon_script()
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
@@ -883,12 +863,9 @@ def test_control_bad_params(eps,sig):
     fit_parameters['epsilon'].constraints = [eps-0.5, eps+0.5]
     fit_parameters['sigma'].constraints = [sig-0.5, sig+0.5]
 
-
-
-    
     ctrl.equilibrate(n_steps=1000)
     ctrl._run_MD()
-    
+
 @pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
                                                              ([0.5,20], [1,20])])
 
@@ -899,12 +876,10 @@ def test_control_bad_constraints(eps_constr, sig_constr):
     """
     
     ctrl, fit_parameters = control_object_from_Argon_script()
-    
     fit_parameters['epsilon'].constraints = eps_constr
     fit_parameters['sigma'].constraints = sig_constr
     fit_parameters['epsilon'].value = 1.02
     fit_parameters['sigma'].value = 3.36
-    
     
     ctrl.equilibrate(n_steps=1000)
     ctrl._run_MD()

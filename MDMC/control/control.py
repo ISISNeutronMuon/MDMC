@@ -21,9 +21,6 @@ from MDMC.resolution.resolution_factory import ResolutionFactory
 from MDMC.trajectory_analysis.observables.obs_factory \
     import ObservableFactory
 from MDMC.trajectory_analysis.observables.obs import Observable
-from random import random
-from MDMC.common.units import UnitNDArray
-from MDMC.common.units import unit_array
 
 
 @repr_decorator('simulation', 'exp_datasets', 'FoM_calculator', 'minimizer',
@@ -264,8 +261,7 @@ class Control:
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
             self.observable_pairs.append(observable_pair)
-            
-            
+
             self.empty_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
             self.empty_observable_pair = ObservablePair(exp_observable,
                                              self.empty_MD_obs,
@@ -297,7 +293,6 @@ class Control:
         self.empty_FoM_calculator = FoMFactory.create_FoM(FoM_error, self.empty_observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
-        
 
         # Use specified MD_steps if supplied, else calculate
         # cont_slicing produces small sub-trajectories, so calculation is unnecessary
@@ -454,7 +449,7 @@ class Control:
             while count < n_steps and not self.minimizer.has_converged():
                 if count >= 0:
                     self.equilibrate(self.equilibration_steps)
-                
+
                 verbose_manager.header(f"Step {count + 1}")
                 self.step()  # advance the refinement by one step
                 count += 1
@@ -543,12 +538,11 @@ class Control:
                 Maximum number of force evaluations to perform. Default depends
                 on engine used.
         """
-   
         try:
             self.simulation.minimize(n_steps,minimize_every,verbose,
                                         output_log,work_dir, **settings)
         except:
-                raise Exception('Minimization failed, please check the parameter values.')
+            raise Exception('Minimization failed, please check the parameter values.')
 
 
     def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
@@ -604,6 +598,7 @@ class Control:
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
+
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
@@ -679,7 +674,6 @@ class Control:
             self.simulation.run(self.MD_steps, verbose=False)
         except:
             self.find_good_params()
-            
 
     def _update_engine_parameters(self) -> None:
         """
@@ -1024,7 +1018,6 @@ class Control:
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
-
     def _input_check(self, general_set, inputs) -> None:
         """
 
@@ -1042,7 +1035,7 @@ class Control:
         -------
         None
         """
-        
+
         for input_check in inputs:
             try:
                 general_set[input_check]
@@ -1050,8 +1043,7 @@ class Control:
                 raise KeyError("There was an issue retrieving the input: "
                                f" {input_check} "
                                 "from the dataset, please check your inputs again.") from error
-    
-    
+
     def find_good_params(self, from_equil: bool=False) -> None:
         """
         Perform clears and re-sets of the MD engine when there is an error thrown by the 

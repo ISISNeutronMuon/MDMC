@@ -678,8 +678,7 @@ class LAMMPSEngine(PyLammpsAttribute, MDEngine):
     def update_parameters(self) -> None:
 
         self.lmp_universe.update_parameters()
-        
-        
+
     def clear(self) -> None:
         self.lmp.clear()
 
