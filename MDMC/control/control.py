@@ -5,6 +5,7 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
+import logging
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
@@ -526,7 +527,7 @@ class Control:
         self.simulation.minimize(n_steps,minimize_every,verbose,
                                  output_log,work_dir, **settings)
 
-    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -536,9 +537,6 @@ class Control:
         ----------
         n_steps : int
             Number of simulation steps to run.
-        equilibration : bool, optional
-            If the run is for equilibration (`True`) or production (`False`).
-            Default is `False`.
         verbose: bool, optional
             Whether to print statements upon starting and completing the run.
             Default is `False`.
@@ -550,8 +548,8 @@ class Control:
         if not n_steps:
             self.simulation.auto_equilibrate()
         else:
-            self.simulation.run(n_steps,equilibration, verbose,
-                                output_log, work_dir,**settings)
+            self.simulation.run(n_steps, verbose, output_log, work_dir,**settings,
+                                equilibration=True)
 
     def step(self) -> None:
         """
@@ -968,7 +966,9 @@ class Control:
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself
+        it does not have a ``validate_energy`` function itself. The time step and trajectory step 
+        may be changed in the validate_energy method of the specific observable if necessary, to 
+        achieve an energy separation that matches that of the experimental data.
 
         Parameters
         ----------
@@ -990,3 +990,9 @@ class Control:
             if changed:
                 self.simulation.traj_step = traj_step
                 self.simulation.time_step = time_step
+                logging.warning(" The given traj_step and time_step values were not"
+                    " compatibile with the dataset specified.\nThe values "
+                    "(whilst prioritising time_step) have been changed to"
+                    f" traj_step: {traj_step}, and time_step: {time_step}. \n"
+                    "Context: for this dataset, traj_step multiplied by time_step"
+                    f" must be ~= {time_step*traj_step}. \n")

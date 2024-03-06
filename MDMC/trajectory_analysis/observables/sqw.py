@@ -2,7 +2,6 @@
 
 from typing import Optional
 
-import logging
 import numpy as np
 from numpy.testing import assert_allclose
 from scipy.interpolate import interp2d
@@ -254,14 +253,15 @@ class AbstractSQw(SQwMixins, Observable):
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
-        includes the time separation required in the error.
+        changes the time step and trajectory step to fix this. The time step value is 
+        prioritised here.
 
         Parameters
         ----------
         dt : float
             Frame separation in ``fs``
         traj_step: float, optional
-            User specified value for the number of 'time_steps' used inbetween snapshots
+            User specified value for the number of 'time_steps' used in between snapshots
             of the simulation, default is None.
         time_step: float, optional
             User specified length of time for each update of the atoms trajectories
@@ -279,26 +279,14 @@ class AbstractSQw(SQwMixins, Observable):
         """
 
         dt_required = self.calculate_dt()
-        rounded_dt_required = np.round(dt_required, 5)
 
         if time_step is not None:
 
             # Changing the time and traj step to fit the required dt value
             # by finding the highest traj_step that can fit into the dt_required
-            # and checking to make sure one traj_step higher than this wouldnt be
-            # closer to the required dt value
-
-            traj_step = np.round(dt_required/time_step)
+            traj_step = int(np.round(dt_required/time_step))
             time_step = dt_required/traj_step
-            traj_step = int(traj_step)
             dt = traj_step * time_step
-            print(time_step)
-            logging.warning(" The given traj_step and time_step values were not"
-                    " compatibile with the dataset specified.\nThe values "
-                    "(whilst prioritising time_step) have been changed to"
-                    " traj_step: %d, and time_step: %f. \n"
-                    "Context: for this dataset, traj_step multiplied by time_step"
-                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,rounded_dt_required)
 
         if self.use_FFT:
             # When using FFT, require all experimental/simulated energies
