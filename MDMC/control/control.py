@@ -226,7 +226,7 @@ class Control:
         # Create experimental observables from datasets and placeholders for
         # experimental observables calculated from MD
         self.observable_pairs = []
-        self.dummy_observable_pairs = []
+        self.empty_observable_pairs = []
         minimum_MD_steps = 0
         for dset in exp_datasets:
             try:
@@ -264,14 +264,14 @@ class Control:
             self.observable_pairs.append(observable_pair)
             
             
-            self.dummy_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
-            self.dummy_observable_pair = ObservablePair(exp_observable,
-                                             self.dummy_MD_obs,
+            self.empty_MD_obs = self._create_empty_observable(exp_observable, exp_observable.use_FFT)
+            self.empty_observable_pair = ObservablePair(exp_observable,
+                                             self.empty_MD_obs,
                                              dset['weight'],
                                              rescale_factor=rescale_factor,
                                              auto_scale=auto_scale)
-            self.dummy_observable_pairs = []
-            self.dummy_observable_pairs.append(self.dummy_observable_pair)
+            self.empty_observable_pairs = []
+            self.empty_observable_pairs.append(self.empty_observable_pair)
             
 
             # Take the largest minimum number of MD_steps needed by any dataset
@@ -292,7 +292,7 @@ class Control:
         self.FoM_calculator = FoMFactory.create_FoM(FoM_error, self.observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
-        self.dummy_FoM_calculator = FoMFactory.create_FoM(FoM_error, self.dummy_observable_pairs,
+        self.empty_FoM_calculator = FoMFactory.create_FoM(FoM_error, self.empty_observable_pairs,
                                                     norm=FoM_norm,
                                                     n_parameters=len(self.fit_parameters))
         
@@ -574,41 +574,13 @@ class Control:
         try:
             self.simulation.run(n_steps,equilibration,verbose,
                                     output_log, work_dir,**settings);
-            first_reset_worked = True
         except:
-            first_reset_worked = False
-            
-            
-        if not first_reset_worked:
-            self.simulation.engine.clear()
-            self.simulation._setup()
             try:
+                self.find_good_params(from_equil=True)
                 self.simulation.run(n_steps,equilibration,verbose,
-                                output_log, work_dir,**settings);
-                second_reset_worked = True
-            except:
-                # raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
-                second_reset_worked = False
-        
-        
-        if not first_reset_worked and not second_reset_worked:
-            try:
-                self.simulation.engine.clear()
-                self.simulation._setup()
-                self._run_MD(equil_attempt=True)
-                # self.minimizer.step(FoM)
-                # self._update_engine_parameters()  
-                try:
-                    self.simulation.run(n_steps,equilibration,verbose,
-                                    output_log, work_dir,**settings)
-                except:
-                    dummy = 0
+                                output_log, work_dir,**settings)
             except:
                 raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
-                
-
-
-
 
 
     def step(self) -> None:
@@ -695,45 +667,16 @@ class Control:
 
         return FoM_value
 
-    def _run_MD(self, equil_attempt: bool=False) -> None:
+    def _run_MD(self) -> None:
         """
         Run a molecular dynamics simulation
         """
         
-        good_params = False
-        counter = 0
-        limit = 50
-
         try:
-            if equil_attempt == False:
-                self.simulation.run(self.MD_steps, verbose=False)
+            self.simulation.run(self.MD_steps, verbose=False)
         except:
-            while good_params == False and counter < limit:
-                self.simulation.engine.clear()
-                self.simulation._setup()
-                self.dummy_observable_pairs[0].MD_obs._dependent_variables = {}
-                self.dummy_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
-
-                FoM = self.dummy_FoM_calculator.calculate()
-                self.minimizer.step(FoM)
-                self._update_engine_parameters();
-
-                try:
-                    self.simulation.run(100, verbose=False);
-                    good_params = True
-                except:
-                    good_params = False
-                    del self.minimizer._history[-1]
-
-                if good_params == True and equil_attempt == False:
-                    self.equilibrate(self.equilibration_steps)
-                    self.simulation.run(self.MD_steps, verbose=False);
-                    counter += 1
-
-            if good_params == False:
-                raise Exception('Failed to find good parameters during refinement.\
-                Please check inputs such as parameter values and constraints.')
-            self._update_engine_parameters()
+            self.find_good_params()
+            
 
     def _update_engine_parameters(self) -> None:
         """
@@ -1077,3 +1020,47 @@ class Control:
 
         with suppress(AttributeError):
             obs.validate_energy(dt)
+
+    def find_good_params(self, from_equil: bool=False):
+        """
+        """
+        
+        good_params = False
+        counter = 0
+        limit = 50
+        
+        if from_equil:
+            self.simulation.engine.clear()
+            self.simulation._setup()
+            try:
+                self.simulation.run(100, verbose=False);
+                good_params = True
+            except:
+                good_params = False
+        
+        while not good_params and counter < limit:
+            self.simulation.engine.clear()
+            self.simulation._setup()
+            self.empty_observable_pairs[0].MD_obs._dependent_variables = {}
+            self.empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+
+            FoM = self.empty_FoM_calculator.calculate()
+            self.minimizer.step(FoM)
+            self._update_engine_parameters();
+
+            try:
+                self.simulation.run(100, verbose=False);
+                good_params = True
+            except:
+                good_params = False
+                del self.minimizer._history[-1]
+
+            if good_params and not from_equil:
+                self.equilibrate(self.equilibration_steps)
+                self.simulation.run(self.MD_steps, verbose=False);
+                counter += 1
+
+        if not good_params:
+            raise Exception('Failed to find good parameters during refinement.\
+            Please check inputs such as parameter values and constraints.')
+        self._update_engine_parameters()
