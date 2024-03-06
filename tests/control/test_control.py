@@ -97,6 +97,59 @@ def mock_generate_FoM(self):
 def mock_update_engine_parameters(self):
     pass
 
+@pytest.mark.skip(reason="used for other tests")
+def control_object_from_Argon_script():
+    """
+    Returns
+    -------
+    control : object
+        control object from setting up a universe identical to that of the Argon tutorial
+    fit_parameters : dict
+        dictionary of force field parameters
+
+    """
+
+    density = 0.0176
+    universe = Universe(dimensions=23.0668)
+    Ar = Atom('Ar', charge=0., mass=36.0)
+
+    n_ar_atoms = int(density * np.product(universe.dimensions))
+    print(f'Number of argon atoms = {n_ar_atoms}')
+    universe.fill(Ar, num_struc_units=(n_ar_atoms))
+
+    Ar_dispersion = Dispersion(universe,
+                            (Ar.atom_type, Ar.atom_type),
+                            cutoff=8.,
+                            function=LennardJones(epsilon=1.02, sigma=3.36))
+
+    simulation = Simulation(universe,
+                            engine="lammps",
+                            time_step=10.18893,
+                            temperature=120.,
+                            traj_step=15)
+
+    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+                    'type':'SQw',
+                    'reader':'xml_SQw',
+                    'weight':1.,
+                    'auto_scale':True,
+                    'resolution':800}]
+
+    fit_parameters = universe.parameters
+    fit_parameters['sigma'].constraints = [1.0,20.0]
+    fit_parameters['epsilon'].constraints = [0.5, 20]
+    
+    control = Control(simulation=simulation,
+                exp_datasets=exp_datasets,
+                fit_parameters=fit_parameters,
+                minimizer_type="GPO",
+                reset_config=True,
+                MD_steps=4000, 
+                equilibration_steps=4000,
+                data_printer='ipython')
+    return control, fit_parameters
+
+
 
 @pytest.fixture(scope="module")
 def simulation() -> callable:
@@ -766,61 +819,14 @@ def test_control_resolution_function(simulation, exp_datasets):
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
     
-    
-    
-@pytest.mark.skip(reason="used for other tests")
-def control_object_from_Argon_script():
-
-    density = 0.0176
-    universe = Universe(dimensions=23.0668)
-    Ar = Atom('Ar', charge=0., mass=36.0)
-
-    n_ar_atoms = int(density * np.product(universe.dimensions))
-    print(f'Number of argon atoms = {n_ar_atoms}')
-    universe.fill(Ar, num_struc_units=(n_ar_atoms))
-
-    Ar_dispersion = Dispersion(universe,
-                            (Ar.atom_type, Ar.atom_type),
-                            cutoff=8.,
-                            function=LennardJones(epsilon=1.02, sigma=3.36))
-
-    simulation = Simulation(universe,
-                            engine="lammps",
-                            time_step=10.18893,
-                            temperature=120.,
-                            traj_step=15)
-
-    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
-                    'type':'SQw',
-                    'reader':'xml_SQw',
-                    'weight':1.,
-                    'auto_scale':True,
-                    'resolution':800}]
-
-    fit_parameters = universe.parameters
-    fit_parameters['sigma'].constraints = [1.0,20.0]
-    fit_parameters['epsilon'].constraints = [0.5, 20]
-    
-    control = Control(simulation=simulation,
-                exp_datasets=exp_datasets,
-                fit_parameters=fit_parameters,
-                minimizer_type="GPO",
-                reset_config=True,
-                MD_steps=4000, 
-                equilibration_steps=4000,
-                data_printer='ipython')
-    return control, fit_parameters
-
-
-
-
 @pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
                                     (2.0, 3.0), 
                                     (3.0,4.0), 
                                     (4.0,8.0),])
 def test_control_bad_params(eps,sig):
     """
-    
+    Tests that given a set of bad parameters (which crash the refinement), the equilibration 
+    and production runs handle this and find a new set of better parameters to continue.
     """
 
     
@@ -841,7 +847,8 @@ def test_control_bad_params(eps,sig):
                                                              ([0.5,20], [1,20])])
 def test_control_bad_constraints(eps_constr, sig_constr):
     """
-    
+    Tests that given different sets of constraints on the parameter values (which can possibly crash 
+    the refinement), the equilibration and production runs handle this and continue refining.
     """
     
     ctrl, fit_parameters = control_object_from_Argon_script()

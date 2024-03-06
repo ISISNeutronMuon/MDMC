@@ -568,9 +568,6 @@ class Control:
             Working directory for the MD engine to write to. Default is `None`.
         """
         
-        first_reset_worked = False
-        second_reset_worked = False
-        
         try:
             self.simulation.run(n_steps,equilibration,verbose,
                                     output_log, work_dir,**settings);
@@ -1021,14 +1018,27 @@ class Control:
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
-    def find_good_params(self, from_equil: bool=False):
+    def find_good_params(self, from_equil: bool=False) -> None:
         """
+        Perform clears and re-sets of the MD engine when there is an error thrown by the 
+        equilibration or production methods, and generates a high FoM to find new, better 
+        parameters where necessary.
+        
+        Parameters
+        ----------
+        from_equil : bool
+            information on whether this method was called from the equilibration method or not
+        
+        Returns
+        -------
+        None
         """
         
         good_params = False
         counter = 0
         limit = 50
         
+        # Sometimes the equilibration fails and a reset without changing params fixes this.
         if from_equil:
             self.simulation.engine.clear()
             self.simulation._setup()
@@ -1038,6 +1048,7 @@ class Control:
             except:
                 good_params = False
         
+        # Main loop for finding better params
         while not good_params and counter < limit:
             self.simulation.engine.clear()
             self.simulation._setup()
@@ -1048,6 +1059,7 @@ class Control:
             self.minimizer.step(FoM)
             self._update_engine_parameters();
 
+            # does a small run to make sure no error is thrown.
             try:
                 self.simulation.run(100, verbose=False);
                 good_params = True
@@ -1063,4 +1075,4 @@ class Control:
         if not good_params:
             raise Exception('Failed to find good parameters during refinement.\
             Please check inputs such as parameter values and constraints.')
-        self._update_engine_parameters()
+        # self._update_engine_parameters()
