@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import re
 from typing import List
+from unittest.mock import Mock
 
 from MDMC.control import control
 from MDMC.trajectory_analysis.observables.sqw import SQw
@@ -97,6 +98,11 @@ def mock_generate_FoM(self):
 def mock_update_engine_parameters(self):
     pass
 
+
+def mock_equilibrate(self, *extras):
+    pass
+
+
 @pytest.mark.skip(reason="used for other tests")
 def control_object_from_Argon_script():
     """
@@ -148,7 +154,6 @@ def control_object_from_Argon_script():
                 equilibration_steps=4000,
                 data_printer='ipython')
     return control, fit_parameters
-
 
 
 @pytest.fixture(scope="module")
@@ -309,6 +314,7 @@ def test_control_refine_stdout(simulation, exp_datasets, monkeypatch,
     monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
     monkeypatch.setattr(control.Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
+    monkeypatch.setattr(control.Control, "equilibrate", mock_equilibrate)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -364,6 +370,7 @@ def test_control_refine_stdout_auto_scale(simulation, exp_datasets,
     monkeypatch.setattr(control.Control, "_generate_FoM", mock_generate_FoM)
     monkeypatch.setattr(control.Control, "_update_engine_parameters",
                         mock_update_engine_parameters)
+    monkeypatch.setattr(control.Control, "equilibrate", mock_equilibrate)
 
     # Set history and parameters of MockMinimizer, as these are both involved in
     # output
@@ -819,6 +826,45 @@ def test_control_resolution_function(simulation, exp_datasets):
     assert type(ctrl.observable_pairs[0].exp_obs.resolution) == FileResolution
     assert type(ctrl.observable_pairs[0].MD_obs.resolution) == FileResolution
     
+
+@pytest.mark.parametrize('steps', [0,None])
+def test_control_equilibrate_auto_check(simulation, exp_datasets, steps, monkeypatch):
+    """
+    Tests that when the equilibration method is called with no steps specified
+    (either 0 or None), then the auto_equilibrate method is called.
+    """
+    mock_auto_equilibrate = Mock()
+    monkeypatch.setattr(control.Simulation, "auto_equilibrate", mock_auto_equilibrate)
+    
+    ctrl = control.Control(simulation(traj_step=1, time_step=1),
+                        exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
+                        [],
+                        reset_config=False,
+                        equilibration_steps=steps)
+    
+    ctrl.equilibrate(steps)
+    mock_auto_equilibrate.assert_called()
+    
+
+@pytest.mark.parametrize('steps', [1,50])
+def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypatch):
+    """
+    Tests that when the equilibration method is called with equilibration steps specified
+    (an integer > 0), then the simulation.run method is called accordingly. 
+    """
+    mock_simulation_run = Mock()
+    monkeypatch.setattr(control.Simulation, "run", mock_simulation_run)
+    
+    ctrl = control.Control(simulation(traj_step=1, time_step=1),
+                        exp_datasets(use_FFT=False, file_name='263K05Awat_LAMP'),
+                        [],
+                        reset_config=False,
+                        equilibration_steps=steps)
+    
+    ctrl.equilibrate(steps)
+    mock_simulation_run.assert_called()
+
+
 @pytest.mark.parametrize('eps, sig',[(1.02, 3.36),
                                     (2.0, 3.0), 
                                     (3.0,4.0), 
@@ -845,6 +891,7 @@ def test_control_bad_params(eps,sig):
     
 @pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
                                                              ([0.5,20], [1,20])])
+
 def test_control_bad_constraints(eps_constr, sig_constr):
     """
     Tests that given different sets of constraints on the parameter values (which can possibly crash 

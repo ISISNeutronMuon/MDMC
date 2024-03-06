@@ -234,6 +234,8 @@ class Control:
             except KeyError:
                 use_FFT = True
 
+            # keep the keys in the _dset_input_check function consistent with the ones retrieved from dset
+            self._input_check(dset, inputs = ['type','reader', 'file_name'])
             exp_observable = self._read_observable_from_file(dset['type'],
                                                         dset['reader'],
                                                         dset['file_name'],
@@ -450,7 +452,7 @@ class Control:
             verbose_manager = VerboseManager.instance()
             verbose_manager.start(verbose_steps, verbose=self.verbose)
             while count < n_steps and not self.minimizer.has_converged():
-                if count >= 0 and self.equilibration_steps > 0:
+                if count >= 0:
                     self.equilibrate(self.equilibration_steps)
                 
                 verbose_manager.header(f"Step {count + 1}")
@@ -462,7 +464,7 @@ class Control:
 
         else:
             while count < n_steps and not self.minimizer.has_converged():
-                if count >= 0 and self.equilibration_steps > 0:
+                if count >= 0:
                     self.equilibrate(self.equilibration_steps)
                 self.step()  # advance the refinement by one step
                 count += 1
@@ -549,7 +551,7 @@ class Control:
                 raise Exception('Minimization failed, please check the parameter values.')
 
 
-    def equilibrate(self, n_steps: int, equilibration: bool = True, verbose: bool = False,
+    def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
             output_log: str = None, work_dir: str = None, **settings: dict) -> None:
 
         """
@@ -567,18 +569,23 @@ class Control:
         work_dir: str, optional
             Working directory for the MD engine to write to. Default is `None`.
         """
-        
+
         try:
-            self.simulation.run(n_steps,equilibration,verbose,
-                                    output_log, work_dir,**settings);
+            if not n_steps:
+                self.simulation.auto_equilibrate()
+            else:
+                self.simulation.run(n_steps,equilibration, verbose,
+                                    output_log, work_dir,**settings)
         except:
             try:
                 self.find_good_params(from_equil=True)
-                self.simulation.run(n_steps,equilibration,verbose,
-                                output_log, work_dir,**settings)
+                if not n_steps:
+                    self.simulation.auto_equilibrate()
+                else:
+                    self.simulation.run(n_steps,equilibration, verbose,
+                                        output_log, work_dir,**settings)
             except:
                 raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
-
 
     def step(self) -> None:
         """
@@ -597,7 +604,6 @@ class Control:
         self.minimizer.step(fom)
         # Update the MD engine with new parameters
         self._update_engine_parameters()
-
         # When reset_config=true reset the MD (phasespace) back if the
         # previous step was rejected
         if self.reset_config:
@@ -1018,6 +1024,34 @@ class Control:
         with suppress(AttributeError):
             obs.validate_energy(dt)
 
+
+    def _input_check(self, general_set, inputs) -> None:
+        """
+
+        Handles error for retrieving data from a set where the input is not found.
+        This was made in a general way to be used for any dataset or set of inputs.
+
+        Parameters
+        ----------
+        general_set : A general dataset
+            A variable that contains a set of information for input checking against,
+            for example 'dset' contains the observable type, file_name and reader type,
+            for checking inputs.
+
+        Returns
+        -------
+        None
+        """
+        
+        for input_check in inputs:
+            try:
+                general_set[input_check]
+            except KeyError as error:
+                raise KeyError("There was an issue retrieving the input: "
+                               f" {input_check} "
+                                "from the dataset, please check your inputs again.") from error
+    
+    
     def find_good_params(self, from_equil: bool=False) -> None:
         """
         Perform clears and re-sets of the MD engine when there is an error thrown by the 
@@ -1033,11 +1067,11 @@ class Control:
         -------
         None
         """
-        
+
         good_params = False
         counter = 0
         limit = 50
-        
+
         # Sometimes the equilibration fails and a reset without changing params fixes this.
         if from_equil:
             self.simulation.engine.clear()
@@ -1047,7 +1081,7 @@ class Control:
                 good_params = True
             except:
                 good_params = False
-        
+
         # Main loop for finding better params
         while not good_params and counter < limit:
             self.simulation.engine.clear()
@@ -1075,4 +1109,3 @@ class Control:
         if not good_params:
             raise Exception('Failed to find good parameters during refinement.\
             Please check inputs such as parameter values and constraints.')
-        # self._update_engine_parameters()
