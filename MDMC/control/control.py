@@ -270,7 +270,9 @@ class Control:
                                              auto_scale=auto_scale)
             self.empty_observable_pairs = []
             self.empty_observable_pairs.append(self.empty_observable_pair)
-            
+            self.empty_observable_pairs[0].MD_obs._dependent_variables = {}
+            self.empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
+
 
             # Take the largest minimum number of MD_steps needed by any dataset
             min_MD_steps_dset = self._calculate_minimum_MD_steps(
@@ -541,8 +543,8 @@ class Control:
         try:
             self.simulation.minimize(n_steps,minimize_every,verbose,
                                         output_log,work_dir, **settings)
-        except:
-            raise Exception('Minimization failed, please check the parameter values.')
+        except Exception as exc:
+            raise Exception('Minimization failed, please check the parameter values.') from exc
 
 
     def equilibrate(self, n_steps: int = None, equilibration: bool = True, verbose: bool = False,
@@ -570,7 +572,9 @@ class Control:
             else:
                 self.simulation.run(n_steps,equilibration, verbose,
                                     output_log, work_dir,**settings)
-        except:
+        # pylint: disable=broad-except
+        # in this case it isnt 'broad', its handling an exception thrown by lammps
+        except Exception:
             try:
                 self.find_good_params(from_equil=True)
                 if not n_steps:
@@ -578,8 +582,9 @@ class Control:
                 else:
                     self.simulation.run(n_steps,equilibration, verbose,
                                         output_log, work_dir,**settings)
-            except:
-                raise Exception('Equilibration failed, please check inputs such as parameter values and constraints.')
+            except Exception as exc:
+                raise Exception('Equilibration failed, please check inputs such as parameter\
+                    values and constraints.') from exc
 
     def step(self) -> None:
         """
@@ -669,10 +674,12 @@ class Control:
         """
         Run a molecular dynamics simulation
         """
-        
+
         try:
             self.simulation.run(self.MD_steps, verbose=False)
-        except:
+        # pylint: disable=broad-except
+        # in this case it isnt 'broad', its handling an exception thrown by lammps
+        except Exception:
             self.find_good_params()
 
     def _update_engine_parameters(self) -> None:
@@ -1046,15 +1053,15 @@ class Control:
 
     def find_good_params(self, from_equil: bool=False) -> None:
         """
-        Perform clears and re-sets of the MD engine when there is an error thrown by the 
-        equilibration or production methods, and generates a high FoM to find new, better 
+        Perform clears and re-sets of the MD engine when there is an error thrown by the
+        equilibration or production methods, and generates a high FoM to find new, better
         parameters where necessary.
-        
+
         Parameters
         ----------
         from_equil : bool
             information on whether this method was called from the equilibration method or not
-        
+
         Returns
         -------
         None
@@ -1067,35 +1074,43 @@ class Control:
         # Sometimes the equilibration fails and a reset without changing params fixes this.
         if from_equil:
             self.simulation.engine.clear()
+            # pylint: disable=protected-access
+            # it is necessary to reset and setup the MD engine again
             self.simulation._setup()
             try:
-                self.simulation.run(100, verbose=False);
+                self.simulation.run(100, verbose=False)
                 good_params = True
-            except:
+            # pylint: disable=broad-except
+            # in this case it isnt 'broad', its handling an exception thrown by lammps
+            except Exception:
                 good_params = False
 
         # Main loop for finding better params
         while not good_params and counter < limit:
             self.simulation.engine.clear()
+            # pylint: disable=protected-access
+            # it is necessary to reset and setup the MD engine again
             self.simulation._setup()
-            self.empty_observable_pairs[0].MD_obs._dependent_variables = {}
-            self.empty_observable_pairs[0].MD_obs._dependent_variables['SQw'] = 1 *(10)**-9
 
             FoM = self.empty_FoM_calculator.calculate()
             self.minimizer.step(FoM)
-            self._update_engine_parameters();
+            self._update_engine_parameters()
 
             # does a small run to make sure no error is thrown.
             try:
-                self.simulation.run(100, verbose=False);
+                self.simulation.run(100, verbose=False)
                 good_params = True
-            except:
+            # pylint: disable=broad-except
+            # in this case it isnt 'broad', its handling an exception thrown by lammps
+            except Exception:
                 good_params = False
+                # pylint: disable=protected-access
+                # it is necessary to delete the failed params that were added to the history
                 del self.minimizer._history[-1]
 
             if good_params and not from_equil:
                 self.equilibrate(self.equilibration_steps)
-                self.simulation.run(self.MD_steps, verbose=False);
+                self.simulation.run(self.MD_steps, verbose=False)
                 counter += 1
 
         if not good_params:
