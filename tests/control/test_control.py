@@ -120,7 +120,7 @@ def control_object_from_Argon_script():
                             temperature=120.,
                             traj_step=15)
 
-    exp_datasets = [{'file_name':'/workspaces/MDMCv0.2_pilot/doc/tutorials/data/Well_s_q_omega_Ar_data.xml',
+    exp_datasets = [{'file_name':'tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml',
                     'type':'SQw',
                     'reader':'xml_SQw',
                     'weight':1.,

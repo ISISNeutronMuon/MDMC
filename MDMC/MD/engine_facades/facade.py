@@ -211,6 +211,10 @@ class MDEngine(ABC):
         raise NotImplementedError
 
     def clear(self) -> None:
+        """
+        Deletes all atoms, restores all settings to their default values, and frees all memory 
+        allocated by LAMMPS.
+        """
         raise NotImplementedError
 
     @abstractmethod
