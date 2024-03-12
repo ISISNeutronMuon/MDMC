@@ -212,7 +212,7 @@ class MDEngine(ABC):
 
     def clear(self) -> None:
         """
-        Deletes all atoms, restores all settings to their default values, and frees all memory 
+        Deletes all atoms, restores all settings to their default values, and frees all memory
         allocated by LAMMPS.
         """
         raise NotImplementedError

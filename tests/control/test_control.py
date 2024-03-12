@@ -90,7 +90,7 @@ def mock_equilibrate(self, *extras):
     pass
 
 @pytest.mark.skip(reason="used for other tests")
-def control_object_from_Argon_script():
+def control_object_from_Argon_script(exp_datasets):
     """
     Returns
     -------
@@ -120,19 +120,13 @@ def control_object_from_Argon_script():
                             temperature=120.,
                             traj_step=15)
 
-    exp_datasets = [{'file_name':'tests/test_data/experimental_data/Well_s_q_omega_Ar_data.xml',
-                    'type':'SQw',
-                    'reader':'xml_SQw',
-                    'weight':1.,
-                    'auto_scale':True,
-                    'resolution':800}]
-
+    dataset = exp_datasets(file_name='Well_s_q_omega_Ar_data.xml')
     fit_parameters = universe.parameters
     fit_parameters['sigma'].constraints = [1.0,20.0]
     fit_parameters['epsilon'].constraints = [0.5, 20]
     
     control = Control(simulation=simulation,
-                exp_datasets=exp_datasets,
+                exp_datasets=dataset,
                 fit_parameters=fit_parameters,
                 minimizer_type="GPO",
                 reset_config=True,
@@ -850,13 +844,13 @@ def test_control_equilibrate_run_check(simulation,exp_datasets, steps, monkeypat
                                     (2.0, 3.0), 
                                     (3.0,4.0), 
                                     (4.0,8.0),])
-def test_control_bad_params(eps,sig):
+def test_control_bad_params(exp_datasets, eps,sig):
     """
     Tests that given a set of bad parameters (which crash the refinement), the equilibration 
     and production runs handle this and find a new set of better parameters to continue.
     """
 
-    ctrl, fit_parameters = control_object_from_Argon_script()
+    ctrl, fit_parameters = control_object_from_Argon_script(exp_datasets)
     fit_parameters['epsilon'].value = eps
     fit_parameters['sigma'].value = sig
     
@@ -869,13 +863,13 @@ def test_control_bad_params(eps,sig):
 @pytest.mark.parametrize('eps_constr, sig_constr',[([0.02,2.02], [2.36, 4.36]),
                                                              ([0.5,20], [1,20])])
 
-def test_control_bad_constraints(eps_constr, sig_constr):
+def test_control_bad_constraints(exp_datasets,eps_constr, sig_constr):
     """
     Tests that given different sets of constraints on the parameter values (which can possibly crash 
     the refinement), the equilibration and production runs handle this and continue refining.
     """
     
-    ctrl, fit_parameters = control_object_from_Argon_script()
+    ctrl, fit_parameters = control_object_from_Argon_script(exp_datasets)
     fit_parameters['epsilon'].constraints = eps_constr
     fit_parameters['sigma'].constraints = sig_constr
     fit_parameters['epsilon'].value = 1.02
