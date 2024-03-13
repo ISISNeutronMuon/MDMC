@@ -281,10 +281,9 @@ class AbstractSQw(SQwMixins, Observable):
         dt_required = self.calculate_dt()
 
         if time_step is not None:
-
             # Changing the time and traj step to fit the required dt value
             # by finding the highest traj_step that can fit into the dt_required
-            traj_step = int(np.round(dt_required/time_step))
+            traj_step = np.ndarray.round(dt_required/time_step)
             time_step = dt_required/traj_step
             dt = traj_step * time_step
 
@@ -315,8 +314,8 @@ class AbstractSQw(SQwMixins, Observable):
             assert isclose or dt <= dt_required, msg
 
         if traj_step is not None and time_step is not None:
-            return True, traj_step, time_step
-        return False, None, None
+            return True, traj_step, time_step, dt_required
+        return False, None, None, dt_required
 
     def calculate_from_MD(self, MD_input: CompactTrajectory, verbose: int = 0,
                          **settings: dict):

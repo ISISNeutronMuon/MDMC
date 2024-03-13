@@ -688,6 +688,35 @@ def test_control_MD_steps_rejected(simulation, exp_datasets, use_FFT,
                         MD_steps=1)
 
 
+@pytest.mark.parametrize('file_name',
+                         ['263K05Awat_LAMP', 'Well_s_q_omega_Ar_data.xml'])
+@pytest.mark.parametrize('traj_step', [2, 5, 25])
+@pytest.mark.parametrize('use_FFT', [True, False])
+def test_control_validate_energy(simulation, exp_datasets, use_FFT, traj_step,
+                                 file_name):
+    """
+    Test that the time_step and traj_step values are changed correctly when an incorrect 
+    time separation is specified.
+    """
+
+    if use_FFT:
+        key = 'use_FFT'
+    else:
+        key = 'no_FFT'
+    dt = DATASET_INFO[key][file_name]['dt']
+    time_step = 2 * dt / traj_step
+    print(time_step, traj_step)
+    ctrl = control.Control(simulation(traj_step=traj_step, time_step=time_step),
+                    exp_datasets(use_FFT=use_FFT, file_name=file_name),
+                    [],
+                    verbose=-1,
+                    reset_config=False)
+    
+    traj_step_required = np.ndarray.round(ctrl.dt_required/time_step)
+    time_step_required = ctrl.dt_required/ traj_step_required
+    
+    assert ctrl.simulation.time_step == time_step_required
+    assert ctrl.simulation.traj_step == traj_step_required
 def test_control_fit_parameters(simulation):
     """
     Test that unsuitable fit_parameters are removed from the Control object:

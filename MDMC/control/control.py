@@ -985,7 +985,7 @@ class Control:
         dt = self.simulation.traj_step * self.simulation.time_step
 
         with suppress(AttributeError):
-            changed, traj_step, time_step \
+            changed, traj_step, time_step, self.dt_required \
                   = obs.validate_energy(dt,self.simulation.traj_step,self.simulation.time_step)
             if changed:
                 self.simulation.traj_step = traj_step
