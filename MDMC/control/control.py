@@ -966,8 +966,8 @@ class Control:
     def _validate_energy(self, obs: Observable) -> None:
         """
         Try and validate the energy of the ``Observable`` provided, and pass if
-        it does not have a ``validate_energy`` function itself. The time step and trajectory step 
-        may be changed in the validate_energy method of the specific observable if necessary, to 
+        it does not have a ``validate_energy`` function itself. The time step and trajectory step
+        may be changed in the validate_energy method of the specific observable if necessary, to
         achieve an energy separation that matches that of the experimental data.
 
         Parameters
@@ -993,6 +993,6 @@ class Control:
                 logging.warning(" The given traj_step and time_step values were not"
                     " compatibile with the dataset specified.\nThe values "
                     "(whilst prioritising time_step) have been changed to"
-                    f" traj_step: {traj_step}, and time_step: {time_step}. \n"
+                    " traj_step: %d, and time_step: %f. \n"
                     "Context: for this dataset, traj_step multiplied by time_step"
-                    f" must be ~= {time_step*traj_step}. \n")
+                    " must be ~= %f (6 d.p). \n" , traj_step,time_step,self.dt_required)
