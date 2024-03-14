@@ -248,12 +248,11 @@ class AbstractSQw(SQwMixins, Observable):
             return self.errors['SQw']
         except KeyError:
             return None
-
     def validate_energy(self, dt: float, traj_step: float = None, time_step: float = None):
         """
         Asserts that the user set frame separation ``dt`` leads to energy
         separation that matches that of the experiment. If not, it
-        changes the time step and trajectory step to fix this. The time step value is 
+        changes the time step and trajectory step to fix this. The time step value is
         prioritised here.
 
         Parameters
@@ -283,7 +282,10 @@ class AbstractSQw(SQwMixins, Observable):
         if time_step is not None:
             # Changing the time and traj step to fit the required dt value
             # by finding the highest traj_step that can fit into the dt_required
-            traj_step = np.ndarray.round(dt_required/time_step)
+            traj_step = int(np.ndarray.round(dt_required/time_step))
+            if traj_step == 0:
+                traj_step += 1
+
             time_step = dt_required/traj_step
             dt = traj_step * time_step
 

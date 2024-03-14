@@ -550,8 +550,7 @@ class Control:
         if not n_steps:
             self.simulation.auto_equilibrate()
         else:
-            self.simulation.run(n_steps, verbose, output_log, work_dir,**settings,
-                                equilibration=True)
+            self.simulation.run(n_steps, True, verbose, output_log, work_dir,**settings)
 
     def step(self) -> None:
         """
