@@ -5,6 +5,7 @@ from typing import List, Dict
 from contextlib import suppress
 from datetime import datetime
 
+import logging
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
@@ -629,7 +630,16 @@ class Control:
         """
         self._run_MD()
         self._calculate_observables(self.simulation, self.observable_pairs)
+        FQt_size = len(self.observable_pairs[0].MD_obs.dependent_variables['SQw'][0])
 
+        if len(self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0]) != FQt_size:
+            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0] = \
+            self.observable_pairs[0].exp_obs.dependent_variables['SQw'][0][-FQt_size:]
+            self.observable_pairs[0].exp_obs.errors['SQw'][0] = \
+            self.observable_pairs[0].exp_obs.errors['SQw'][0][-FQt_size:]
+            logging.warning(" The specified box size was not able to recreate the lowest q"
+                            " values of the experimental data and so this data has been trimmed.")
+            
         FoM_value = self.FoM_calculator.calculate()
 
         return FoM_value
