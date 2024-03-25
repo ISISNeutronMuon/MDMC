@@ -908,3 +908,74 @@ class PairDistributionFunction(Observable):
         """
 
         return {'r': {'uniform': True, 'zeroed': False}}
+
+    def plot(self,title: str = None, minimum_R: float = None) -> None:
+            '''
+            Plot of Experimental and Simulation for a given Oberservable
+
+            Parameters
+            ----------
+            title : string
+              Title for plot.
+            minimum_R: int
+              The minimum radius to remove invalid distances.
+            '''
+            # Default
+            self._plot(title=title,minimum_R=minimum_R)
+
+
+    def _plot(self, *,
+              dependent_variable: np.array = None,
+              minimum_R: float = None,
+              noshow: bool = False,
+              ax: plt.axes = None,
+              title: str = None)-> None:
+        """
+        Plot of PDF Observable:
+
+        independent x-axis - R, Radius
+        dependent y-axis - PDF, Pair Distribution Function
+
+        Parameters
+        ----------
+        dependent_variable: np.array
+          Optional parameter to allow users to apply a rescale factor before
+          plotting the obserable.
+        minimum_R: float
+          The minimum radius to remove invalid distances.
+        noshow : bool
+          Optional parameter so users can choose if the plot is shown. Default
+          value is False, the plot will be shown.
+        ax: plt.axes
+          Optional parameter to input an existing axes object for example when
+          plotting a subplot or plots over one another.
+        title : string
+          Title for plot.
+        """
+
+        if ax is None:
+            ax = plt.axes()
+
+        independent_variable = self.r
+
+        if dependent_variable is None:
+            dependent_variable = self.PDF
+
+        if minimum_R is not None:
+            difference_array = np.absolute(independent_variable-minimum_R)
+            truncation_index = difference_array.argmin()
+
+            dependent_variable = dependent_variable[truncation_index:]
+            independent_variable = independent_variable[truncation_index:]
+
+        ax.plot(independent_variable, dependent_variable, linewidth=1, color='black')
+        ax.set_xlabel('r $(\AA)$')
+        ax.set_ylabel('PDF')
+
+        if title is None:
+            title = "Plot of Pair Distribution Function"
+        ax.set_title(title)
+
+        if not noshow:
+            plt.tight_layout()
+            plt.show()
