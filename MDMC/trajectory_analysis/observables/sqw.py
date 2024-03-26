@@ -976,13 +976,13 @@ class AbstractSQw(SQwMixins, Observable):
                                        facecolor='lightgoldenrodyellow')
         slider = Slider(slider_ax, independent_variable_name+' index', 0, 
                         len(independent_variable)-1, valinit=1, valstep=1)
-        slider_label=plt.text(1,1.7,f'{independent_variable_name}={independent_variable[1]}, {independent_variable.unit}')
+        slider_label=plt.text(1,1.7,f'{independent_variable_name}={round(independent_variable[1],2)}, {independent_variable.unit}')
 
         def Q_on_changed(val):
             for i, dependent_variable in enumerate(dependent_variable_list):
                 ax.get_lines()[i].set_ydata(dependent_variable[0,val])
 
-            slider_label.set_text(f'{independent_variable_name}={independent_variable[val]}, {independent_variable.unit}')
+            slider_label.set_text(f'{independent_variable_name}={round(independent_variable[val],2)}, {independent_variable.unit}')
             fig.canvas.draw_idle()
             ax.set_ylim(0,max(np.max(dependent_variable_list[0][0,val])+0.1,1e-5))
 

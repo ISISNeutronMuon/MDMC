@@ -384,6 +384,9 @@ class ObservablePair:
                      ' Observable', 
                      fontsize=21)
         
+        plt.tight_layout()
+        plt.show()
+        
     def _slider(self) -> None:
         '''
         Slider Plot of an Experimental and Simulated Oberservable 
@@ -449,6 +452,9 @@ class ObservablePair:
         fig.suptitle('Experimental and Simulated For '+obs_name+
                      ' Observable', 
                      fontsize=21)
+        
+        plt.tight_layout()
+        plt.show()
          
     def plot(self,plot_type: Literal[None,"slider", "heatmap"]=None) -> None:
         '''
@@ -474,8 +480,6 @@ class ObservablePair:
         elif plot_type is 'heatmap':
             self._heatmap()
 
-        plt.tight_layout()
-        plt.show()
 
 @repr_decorator('value', 'obs_pairs')
 class FigureOfMerit(ABC):
