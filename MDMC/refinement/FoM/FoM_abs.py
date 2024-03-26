@@ -142,7 +142,7 @@ class ObservablePair:
         """
         new_obs = ObservableFactory.create_observable(self.MD_obs.name)
 
-        new_obs._dependent_variables = {self.MD_obs.name: np.abs(self.calculate_difference())}
+        new_obs.dependent_variables = {self.MD_obs.name: np.abs(self.calculate_difference())}
         new_obs.errors = {self.MD_obs.name: self.calculate_errors()}
         new_obs.independent_variables = self.MD_obs.independent_variables
 
@@ -365,17 +365,17 @@ class ObservablePair:
         elif domain_dimensions == 2:
             fig, axs = plt.subplots(1, 2, subplot_kw={'projection': '3d'}, figsize=(15, 6))
 
-        # If the observable is experimental apply the 'rescale_factor' that 
-        # minimizes the Figure-of-Merit (needed as the experimental data is 
+        # If the observable is experimental apply the 'rescale_factor' that
+        # minimizes the Figure-of-Merit (needed as the experimental data is
         # arbitrary units).
         exp_dependent_variable=(np.array(*self.exp_obs.dependent_variables.values())
                                 * self.rescale_factor)
-        self.exp_obs._plot(ax=axs[0],dependent_variable=exp_dependent_variable,
+        self.exp_obs.default_plot(ax=axs[0],dependent_variable=exp_dependent_variable,
                            noshow=True)
         title = axs[0].get_title() + ' - Experimental'
         axs[0].set_title(title)
 
-        self.MD_obs._plot(ax=axs[1],noshow=True)
+        self.MD_obs.default_plot(ax=axs[1],noshow=True)
         title = axs[1].get_title() + ' - Simulated'
         axs[1].set_title(title)
 
@@ -383,10 +383,10 @@ class ObservablePair:
         fig.suptitle('Comparing Experimental and Simulated For '+obs_name+
                      ' Observable', 
                      fontsize=21)
-        
+
         plt.tight_layout()
         plt.show()
-        
+
     def _slider(self) -> None:
         '''
         Slider Plot of an Experimental and Simulated Oberservable 
@@ -402,15 +402,15 @@ class ObservablePair:
         '''
         figax = plt.subplots()
 
-        # If the observable is experimental apply the 'rescale_factor' that 
-        # minimizes the Figure-of-Merit (needed as the experimental data is 
+        # If the observable is experimental apply the 'rescale_factor' that
+        # minimizes the Figure-of-Merit (needed as the experimental data is
         # arbitrary units).
         exp_dependent_variable=(np.array(*self.exp_obs.dependent_variables.values())
                                 * self.rescale_factor)
 
-        self.MD_obs._slider(other_dependent_variable=exp_dependent_variable,
+        self.MD_obs.slider_plot(other_dependent_variable=exp_dependent_variable,
                             figax=figax)
-        
+
         figax[1].legend(labels=['Refined', 'Experimemtal'])
 
     def _heatmap(self) -> None:
@@ -433,18 +433,18 @@ class ObservablePair:
 
         fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 
-        # If the observable is experimental apply the 'rescale_factor' that 
-        # minimizes the Figure-of-Merit (needed as the experimental data is 
+        # If the observable is experimental apply the 'rescale_factor' that
+        # minimizes the Figure-of-Merit (needed as the experimental data is
         # arbitrary units).
         exp_dependent_variable=(np.array(*self.exp_obs.dependent_variables.values())
                                 * self.rescale_factor)
-        self.exp_obs._heatmap(ax=axs[0], 
+        self.exp_obs.heatmap_plot(ax=axs[0],
                               dependent_variable=exp_dependent_variable,
                               noshow=True)
         title = axs[0].get_title() + ' - Experimental'
         axs[0].set_title(title)
 
-        self.MD_obs._heatmap(ax=axs[1], noshow=True)
+        self.MD_obs.heatmap_plot(ax=axs[1], noshow=True)
         title = axs[1].get_title() + ' - Simulated'
         axs[1].set_title(title)
 
@@ -452,10 +452,10 @@ class ObservablePair:
         fig.suptitle('Experimental and Simulated For '+obs_name+
                      ' Observable', 
                      fontsize=21)
-        
+
         plt.tight_layout()
         plt.show()
-         
+
     def plot(self,plot_type: Literal[None,"slider", "heatmap"]=None) -> None:
         '''
         Plot of the Experimental and Simulation Observables. ' 
@@ -475,9 +475,9 @@ class ObservablePair:
         if plot_type is None:
             # Default
             self._plot()
-        elif plot_type is 'slider':
+        elif plot_type == 'slider':
             self._slider()
-        elif plot_type is 'heatmap':
+        elif plot_type == 'heatmap':
             self._heatmap()
 
 

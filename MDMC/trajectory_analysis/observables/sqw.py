@@ -788,7 +788,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         return {'E': e_requirements, 'Q': {'uniform': True, 'zeroed': False}}
 
-    def _heatmap(self, *,
+    def heatmap_plot(self, *,
               dependent_variable: np.ndarray = None,
               noshow: bool = False,
               ax: plt.axes = None)-> None:
@@ -834,7 +834,7 @@ class AbstractSQw(SQwMixins, Observable):
             plt.tight_layout()
             plt.show()
 
-    def _plot(self, *,
+    def default_plot(self, *,
               dependent_variable: np.ndarray = None,
               noshow: bool = False,
               ax: plt.axes = None)-> None:
@@ -875,7 +875,7 @@ class AbstractSQw(SQwMixins, Observable):
             plt.tight_layout()
             plt.show()
 
-    def _slider(self, *,
+    def slider_plot(self, *,
                 other_dependent_variable: Optional[np.ndarray] = None,
                 figax: Optional[Tuple[plt.Figure, plt.Axes]]=None) -> None:
         '''
@@ -1006,11 +1006,11 @@ class AbstractSQw(SQwMixins, Observable):
 
         if plot_type is None:
             # Default
-            self._plot()
+            self.default_plot()
         elif plot_type == 'slider':
-            self._slider()
+            self.slider_plot()
         elif plot_type == 'heatmap':
-            self._heatmap()
+            self.heatmap_plot()
 
 
 @ObservableFactory.register(('DynamicStructureFactor', 'SQw'))
