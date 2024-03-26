@@ -921,10 +921,10 @@ class PairDistributionFunction(Observable):
           The minimum radius to remove invalid distances.
         '''
         # Default
-        self._plot(title=title,minimum_R=minimum_R)
+        self.default_plot(title=title,minimum_R=minimum_R)
 
 
-    def _plot(self, *,
+    def default_plot(self, *,
               dependent_variable: np.array = None,
               minimum_R: float = None,
               noshow: bool = False,
