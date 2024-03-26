@@ -814,21 +814,21 @@ class AbstractSQw(SQwMixins, Observable):
 
         if ax is None:
             ax = plt.axes()
-        
+
         if dependent_variable is None:
             dependent_variable = self.SQw
 
         extent = self.Q[0], self.Q[-1], self.E[0], self.E[-1]
 
         im=ax.imshow(dependent_variable[0,:,:], extent = extent, aspect='auto')
-        
-        cbar = ax.figure.colorbar(im, ax=ax, **{})
-        cbar.ax.set_ylabel("Scattering, S(Q,$\omega$)", rotation=-90, va="bottom")
 
-        cbar.set_label("Scattering, S(Q,$\omega$)")
-        ax.set_title('HeatMap of Scattering Factor S(Q,$\omega$)')
-        ax.set_xlabel('Momentum, Q, ($\AA^{-1}$)')
-        ax.set_ylabel('Energy, $\omega$, (meV)')
+        cbar = ax.figure.colorbar(im, ax=ax, **{})
+        cbar.ax.set_ylabel(r"Scattering, S(Q,$\omega$)", rotation=-90, va="bottom")
+
+        cbar.set_label(r"Scattering, S(Q,$\omega$)")
+        ax.set_title(r'HeatMap of Scattering Factor S(Q,$\omega$)')
+        ax.set_xlabel(r'Momentum, Q, ($\AA^{-1}$)')
+        ax.set_ylabel(r'Energy, $\omega$, (meV)')
 
         if not noshow:
             plt.tight_layout()
@@ -856,19 +856,19 @@ class AbstractSQw(SQwMixins, Observable):
           Optional parameter to input an existing axes object for example when 
           plotting a subplot or plots over one another.
         """
-        
+
         if ax is None:
             ax = plt.axes(projection ='3d')
-        
+
         if dependent_variable is None:
             dependent_variable = self.SQw
 
         E, Q = np.meshgrid(self.E, self.Q)
         ax.plot_surface(Q, E, dependent_variable[0,:,:])
-        ax.set_title('3D Plot of Scattering Factor S(Q,$\omega$)')
-        ax.set_xlabel('Momentum, Q, ($\AA^{-1}$)')
-        ax.set_ylabel('Energy, $\omega$, (meV)')
-        ax.set_zlabel('Scattering, S(Q,$\omega$)')
+        ax.set_title(r'3D Plot of Scattering Factor S(Q,$\omega$)')
+        ax.set_xlabel(r'Momentum, Q, ($\AA^{-1}$)')
+        ax.set_ylabel(r'Energy, $\omega$, (meV)')
+        ax.set_zlabel(r'Scattering, S(Q,$\omega$)')
         ax.set_box_aspect(aspect=None, zoom=0.9)
 
         if not noshow:
@@ -901,14 +901,14 @@ class AbstractSQw(SQwMixins, Observable):
 
         # Variables Name and Units
         slider_variable_name = 'Q'
-        fixed_variable_name = 'E, $\omega$'
+        fixed_variable_name = r'E, $\omega$'
 
-        ax.set_ylabel(f'S(Q,$\omega$) ({dependent_variable.unit})')
+        ax.set_ylabel(fr'S(Q,$\omega$) ({dependent_variable.unit})')
 
         # Add Lines to Axes
         self._add_line(ax,fixed_variable,
                        dependent_variable[0,0,:],fixed_variable_name)
-        
+
         dependent_variable_list = [dependent_variable]
 
         # Add Experimental Observable Line
@@ -943,12 +943,12 @@ class AbstractSQw(SQwMixins, Observable):
         # Plot obs line
         ax.plot(independent_variable, dependent_variable, linewidth=1)
 
-        if independent_variable_name is not None: 
+        if independent_variable_name is not None:
             label=independent_variable_name+', '+ independent_variable.unit
             ax.set_xlabel(label)
         else:
             ax.set_xlabel(independent_variable.unit)
-    
+
     @staticmethod
     def _add_slider(figax: Tuple[plt.Figure, plt.Axes],
                     independent_variable: np.ndarray,
@@ -969,27 +969,31 @@ class AbstractSQw(SQwMixins, Observable):
         independent_variable_name: str
           Name of the independent variable for slider label
         '''
-        
+
         fig, ax = figax
         fig.subplots_adjust(left=0.25, bottom=0.3)
-        slider_ax  = fig.add_axes([0.25, 0.15, 0.65, 0.03], 
+        slider_ax  = fig.add_axes([0.25, 0.15, 0.65, 0.03],
                                        facecolor='lightgoldenrodyellow')
-        slider = Slider(slider_ax, independent_variable_name+' index', 0, 
+        slider = Slider(slider_ax, independent_variable_name+' index', 0,
                         len(independent_variable)-1, valinit=1, valstep=1)
-        slider_label=plt.text(1,1.7,f'{independent_variable_name}={round(independent_variable[1],2)}, {independent_variable.unit}')
+        slider_label=plt.text(1,1.7,f'{independent_variable_name}='
+                                    f'{round(independent_variable[1],2)},'
+                                    f' {independent_variable.unit}')
 
         def Q_on_changed(val):
             for i, dependent_variable in enumerate(dependent_variable_list):
                 ax.get_lines()[i].set_ydata(dependent_variable[0,val])
 
-            slider_label.set_text(f'{independent_variable_name}={round(independent_variable[val],2)}, {independent_variable.unit}')
+            slider_label.set_text(f'{independent_variable_name}='
+                                  f'{round(independent_variable[val],2)},' 
+                                  f' {independent_variable.unit}')
             fig.canvas.draw_idle()
             ax.set_ylim(0,max(np.max(dependent_variable_list[0][0,val])+0.1,1e-5))
 
         slider.on_changed(Q_on_changed)
-        
+
         plt.show()
-    
+
     def plot(self,plot_type: Literal["slider", "heatmap", None]=None) -> None:
         '''
         Plot of Experimental and Simulation for a given Oberservable
@@ -1003,9 +1007,9 @@ class AbstractSQw(SQwMixins, Observable):
         if plot_type is None:
             # Default
             self._plot()
-        elif plot_type is 'slider':
+        elif plot_type == 'slider':
             self._slider()
-        elif plot_type is 'heatmap':
+        elif plot_type == 'heatmap':
             self._heatmap()
 
 

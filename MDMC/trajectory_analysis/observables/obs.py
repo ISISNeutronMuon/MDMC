@@ -276,8 +276,8 @@ class Observable(ABC):
     def plot(self) -> None:
         '''
         A dummy method to be overwritten.
-        
-        plot will plot the experimental and simulated datasets side by side. 
+
+        plot will plot the experimental and simulated datasets side by side.
         '''
 
         print("Sorry I don't know how to plot this")

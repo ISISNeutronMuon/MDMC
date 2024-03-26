@@ -910,18 +910,18 @@ class PairDistributionFunction(Observable):
         return {'r': {'uniform': True, 'zeroed': False}}
 
     def plot(self,title: str = None, minimum_R: float = None) -> None:
-            '''
-            Plot of Experimental and Simulation for a given Oberservable
+        '''
+        Plot of Experimental and Simulation for a given Oberservable
 
-            Parameters
-            ----------
-            title : string
-              Title for plot.
-            minimum_R: int
-              The minimum radius to remove invalid distances.
-            '''
-            # Default
-            self._plot(title=title,minimum_R=minimum_R)
+        Parameters
+        ----------
+        title : string
+          Title for plot.
+        minimum_R : int
+          The minimum radius to remove invalid distances.
+        '''
+        # Default
+        self._plot(title=title,minimum_R=minimum_R)
 
 
     def _plot(self, *,
@@ -969,7 +969,7 @@ class PairDistributionFunction(Observable):
             independent_variable = independent_variable[truncation_index:]
 
         ax.plot(independent_variable, dependent_variable, linewidth=1, color='black')
-        ax.set_xlabel('r $(\AA)$')
+        ax.set_xlabel(r'r $(\AA)$')
         ax.set_ylabel('PDF')
 
         if title is None:
