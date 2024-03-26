@@ -803,12 +803,12 @@ class AbstractSQw(SQwMixins, Observable):
         ----------
         dependent_variable : np.ndarray
           Optional parameter to allow users to apply a rescale factor before
-          plotting the obserable.  
+          plotting the obserable.
         noshow : bool
-          Optional parameter so users can choose if the plot is shown. Default 
-          value is False, the plot will be shown. 
+          Optional parameter so users can choose if the plot is shown. Default
+          value is False, the plot will be shown.
         ax: plt.axes
-          Optional parameter to input an existing axes object for example when 
+          Optional parameter to input an existing axes object for example when
           plotting a subplot or plots over one another.
         """
 
@@ -848,12 +848,12 @@ class AbstractSQw(SQwMixins, Observable):
         ----------
         dependent_variable : np.ndarray
           Optional parameter to allow users to apply a rescale factor before
-          plotting the obserable.  
+          plotting the obserable.
         noshow : bool
-          Optional parameter so users can choose if the plot is shown. Default 
-          value is False, the plot will be shown. 
+          Optional parameter so users can choose if the plot is shown. Default
+          value is False, the plot will be shown.
         ax: plt.axes
-          Optional parameter to input an existing axes object for example when 
+          Optional parameter to input an existing axes object for example when
           plotting a subplot or plots over one another.
         """
 
@@ -879,14 +879,17 @@ class AbstractSQw(SQwMixins, Observable):
                 other_dependent_variable: Optional[np.ndarray] = None,
                 figax: Optional[Tuple[plt.Figure, plt.Axes]]=None) -> None:
         '''
-        
+        Slider Plot of an Experimental and Simulated Oberservable
+
+        Plot of SQw as a function of E with slider on Q.
+
         Parameters
-        ---------- 
+        ----------
         other_dependent_variable : np.ndarray
-          Optional parameter allows users to input the dependent variable from 
-          another observable so they can be compared in the plot. 
+          Optional parameter allows users to input the dependent variable from
+          another observable so they can be compared in the plot.
         figax: Tuple[plt.Figure, plt.Axes]
-          Optional parameter to input an existing axes and figure object, for 
+          Optional parameter to input an existing axes and figure object, for
           example when overlaying plots over one another.
         '''
 
@@ -926,12 +929,12 @@ class AbstractSQw(SQwMixins, Observable):
                   dependent_variable: np.ndarray,
                   independent_variable_name: str = None)-> None:
         '''Add lines to plt.axes.
-        
+
         Parameters
-        ---------- 
+        ----------
         ax : plt.Axes
-          Optional parameter to input an existing axes object for example when 
-          plotting a subplot or plots over one another. 
+          Optional parameter to input an existing axes object for example when
+          plotting a subplot or plots over one another.
         independent_variable: np.ndarray
           Data for x-axis of plot.
         dependent_variable: np.ndarray
@@ -955,16 +958,16 @@ class AbstractSQw(SQwMixins, Observable):
                     independent_variable_name: str,
                     dependent_variable_list: list[np.ndarray]):
         ''' Add a slider widget to plot
-        
+
         Parameters
-        ---------- 
+        ----------
         figax: Tuple[plt.Figure, plt.Axes]
-          Input an existing axes and figure object, for 
-          example when overlaying plots over one another. 
+          Input an existing axes and figure object, for
+          example when overlaying plots over one another.
         independent_variable: np.ndarray
           Variable to be used on the slider widget.
         dependent_variable_list: list[np.ndarray]
-          List of dependent variable for y-axis of plot to be updated when the 
+          List of dependent variable for y-axis of plot to be updated when the
           slider is changed.
         independent_variable_name: str
           Name of the independent variable for slider label
@@ -997,7 +1000,7 @@ class AbstractSQw(SQwMixins, Observable):
     def plot(self,plot_type: Literal["slider", "heatmap", None]=None) -> None:
         '''
         Plot of Experimental and Simulation for a given Oberservable
-        
+
         Parameters
         ----------
         plot_type : string

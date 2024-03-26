@@ -131,14 +131,15 @@ class ObservablePair:
 
     @property
     def residual(self) -> Observable:
-        """ 
+        """
         Assumes a single dependent variable and single dependent variable error
         for each ``Observable``
 
         Returns
         -------
         Observable
-             The computed residual between experimental and simulated``Observable``
+             The computed residual between experimental and simulated
+             ``Observable``
         """
         new_obs = ObservableFactory.create_observable(self.MD_obs.name)
 
@@ -350,7 +351,7 @@ class ObservablePair:
         Plots of The Experimental and Simulated Observable
 
         For observables with 2 independent variables:
-        - 3D plot: dependent variable on z-axis, independent variables on x-, 
+        - 3D plot: dependent variable on z-axis, independent variables on x-,
           y- axes.
 
         For observables with 1 independent variable:
@@ -389,15 +390,15 @@ class ObservablePair:
 
     def _slider(self) -> None:
         '''
-        Slider Plot of an Experimental and Simulated Oberservable 
+        Slider Plot of an Experimental and Simulated Oberservable
 
         - The observable must have 2 independent variables.
 
-        - Slider Plot: users view a "slice" of the data where the dependent 
-          variable is on y-axis and one of the independent variables on the 
-          x-axis with the other independent variable fixed (a slice of the 3D 
-          data). 
-          The user can use a slider to change the value of the fixed independent 
+        - Slider Plot: users view a "slice" of the data where the dependent
+          variable is on y-axis and one of the independent variables on the
+          x-axis with the other independent variable fixed (a slice of the 3D
+          data).
+          The user can use a slider to change the value of the fixed independent
           variable.  Users can then compare the observables closely.
         '''
         figax = plt.subplots()
@@ -415,12 +416,12 @@ class ObservablePair:
 
     def _heatmap(self) -> None:
         '''
-        Heatmap Plots of an Experimental and Simulated Oberservable 
+        Heatmap Plots of an Experimental and Simulated Oberservable
 
         - The observable must have 2 independent variables.
 
-        - Heatmaps: two-dimensional representation of data in which dependent 
-          variable is represented by colors ("heat"). Each of the two axis is 
+        - Heatmaps: two-dimensional representation of data in which dependent
+          variable is represented by colors ("heat"). Each of the two axis is
           for one of the independent variables. Users can, therefore, have an
           immediate visual summary of each observable for comparison.
         '''
@@ -458,17 +459,17 @@ class ObservablePair:
 
     def plot(self,plot_type: Literal[None,"slider", "heatmap"]=None) -> None:
         '''
-        Plot of the Experimental and Simulation Observables. ' 
-        
+        Plot of the Experimental and Simulation Observables.
+
         Parameters
         ----------
         plot_type : string
             The ``type`` of figure to be plot:
             default: None - plots side by side. For 1 independent variable is a
                             line plot, 2 independent is 3D plot.
-            "slider": For observables with 2 independent variables, plots a line 
+            "slider": For observables with 2 independent variables, plots a line
                       line graph in 1 variable and slider of the other variable.
-            "heatmap": For observables with 2 independent variables, dependent 
+            "heatmap": For observables with 2 independent variables, dependent
                        variable is the heat, independent on axis.
         '''
 
