@@ -397,18 +397,18 @@ class ObservablePair:
           The user can use a slider to change the value of the fixed independent 
           variable.  Users can then compare the observables closely.
         '''
-        figaxs = plt.subplots()
+        figax = plt.subplots()
 
         # If the observable is experimental apply the 'rescale_factor' that 
         # minimizes the Figure-of-Merit (needed as the experimental data is 
         # arbitrary units).
         exp_dependent_variable=(np.array(*self.exp_obs.dependent_variables.values())
-                 * self.rescale_factor)
+                                * self.rescale_factor)
 
         self.MD_obs._slider(other_dependent_variable=exp_dependent_variable,
-                            figax=figaxs)
+                            figax=figax)
         
-        figaxs[1].legend(labels=['Refined', 'Experimemtal'])
+        figax[1].legend(labels=['Refined', 'Experimemtal'])
 
     def _heatmap(self) -> None:
         '''

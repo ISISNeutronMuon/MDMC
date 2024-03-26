@@ -905,7 +905,7 @@ class AbstractSQw(SQwMixins, Observable):
 
         ax.set_ylabel(f'S(Q,$\omega$) ({dependent_variable.unit})')
 
-        # Add Line to Axes
+        # Add Lines to Axes
         self._add_line(ax,fixed_variable,
                        dependent_variable[0,0,:],fixed_variable_name)
         
