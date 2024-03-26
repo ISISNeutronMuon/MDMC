@@ -382,7 +382,7 @@ class ObservablePair:
 
         obs_name = list(self.MD_obs.dependent_variables.keys())[0]
         fig.suptitle('Comparing Experimental and Simulated For '+obs_name+
-                     ' Observable', 
+                     ' Observable',
                      fontsize=21)
 
         plt.tight_layout()
@@ -451,7 +451,7 @@ class ObservablePair:
 
         obs_name = self.MD_obs.name
         fig.suptitle('Experimental and Simulated For '+obs_name+
-                     ' Observable', 
+                     ' Observable',
                      fontsize=21)
 
         plt.tight_layout()

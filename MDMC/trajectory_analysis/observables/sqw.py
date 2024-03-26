@@ -988,7 +988,7 @@ class AbstractSQw(SQwMixins, Observable):
                 ax.get_lines()[i].set_ydata(dependent_variable[0,val])
 
             slider_label.set_text(f'{independent_variable_name}='
-                                  f'{round(independent_variable[val],2)},' 
+                                  f'{round(independent_variable[val],2)},'
                                   f' {independent_variable.unit}')
             fig.canvas.draw_idle()
             ax.set_ylim(0,max(np.max(dependent_variable_list[0][0,val])+0.1,1e-5))
